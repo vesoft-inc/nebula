@@ -8,13 +8,14 @@
 #define GRAPH_YIELDEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/Executor.h"
+#include "graph/TraverseExecutor.h"
+#include "meta/SchemaProviderIf.h"
+#include "graph/AggregateFunction.h"
 
 namespace nebula {
 namespace graph {
 
-// For now, YIELD is used only for evaluating instant expressions
-class YieldExecutor final : public Executor {
+class YieldExecutor final : public TraverseExecutor {
 public:
     YieldExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -26,17 +27,46 @@ public:
 
     void execute() override;
 
+    void feedResult(std::unique_ptr<InterimResult> result) override;
+
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    std::vector<std::string> getResultColumnNames() const;
+    Status prepareYield();
+
+    Status prepareWhere();
+
+    Status syntaxCheck();
+
+    Status beforeExecute();
+
+    Status executeInputs();
+
+    Status getOutputSchema(const InterimResult *inputs, SchemaWriter *outputSchema) const;
+
+    Status executeConstant();
+
+    void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
+
+    Status checkAggFun();
+
+    Status getAggResultWriter(cpp2::RowValue row, RowSetWriter* rsWriter);
+
+    Status AggregateConstant();
 
 private:
     YieldSentence                              *sentence_;
     std::vector<YieldColumn*>                   yields_;
+    std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
+    std::unique_ptr<ExpressionContext>          expCtx_;
+    Expression                                 *filter_{nullptr};
+    std::string                                 varname_;
+    std::vector<std::string>                    resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    std::vector<nebula::cpp2::SupportedType>    colTypes_;
+    std::vector<std::shared_ptr<AggFun>>        aggFuns_;
+    bool                                        hasSetResult_{false};
 };
-
 }   // namespace graph
 }   // namespace nebula
 

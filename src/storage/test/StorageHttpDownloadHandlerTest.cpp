@@ -7,14 +7,14 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "http/HttpClient.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
-#include "storage/StorageHttpDownloadHandler.h"
+#include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/test/MockHdfsHelper.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {
@@ -34,25 +34,28 @@ public:
         pool_->start(1);
 
         VLOG(1) << "Starting web service...";
-        WebService::registerHandler("/download", [this] {
-            auto handler =  new storage::StorageHttpDownloadHandler();
+        webSvc_ = std::make_unique<WebService>();
+        auto& router = webSvc_->router();
+        router.get("/download").handler([this](nebula::web::PathParams&&) {
+            auto handler = new storage::StorageHttpDownloadHandler();
             std::vector<std::string> paths{rootPath_->path()};
             handler->init(helper.get(), pool_.get(), kv_.get(), paths);
             return handler;
         });
-        auto status = WebService::start();
+        auto status = webSvc_->start();
         ASSERT_TRUE(status.ok()) << status;
     }
 
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        WebService::stop();
+        webSvc_.reset();
         pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
@@ -69,6 +72,22 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
     }
     {
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download successfully", resp.value());
+    }
+    {
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0&edge=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download successfully", resp.value());
+    }
+    {
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0&tag=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
@@ -107,4 +126,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

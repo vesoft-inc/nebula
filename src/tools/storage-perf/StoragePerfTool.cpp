@@ -8,9 +8,12 @@
 #include "thread/GenericWorker.h"
 #include "time/Duration.h"
 #include "storage/client/StorageClient.h"
+#include <folly/TokenBucket.h>
+#include <folly/stats/TimeseriesHistogram.h>
+#include <folly/stats/BucketedTimeSeries.h>
 
-DEFINE_int32(threads, 2, "Total threads for perf");
-DEFINE_int32(qps, 1000, "Total qps for the perf tool");
+DEFINE_int32(threads, 1, "Total threads for perf");
+DEFINE_double(qps, 1000, "Total qps for the perf tool");
 DEFINE_int32(totalReqs, 10000, "Total requests during this perf test");
 DEFINE_int32(io_threads, 10, "Client io threads");
 DEFINE_string(method, "getNeighbors", "method type being tested,"
@@ -23,6 +26,9 @@ DEFINE_string(space_name, "test", "Specify the space name");
 DEFINE_string(tag_name, "test_tag", "Specify the tag name");
 DEFINE_string(edge_name, "test_edge", "Specify the edge name");
 DEFINE_bool(random_message, false, "Whether to write random message to storage service");
+DEFINE_int32(concurrency, 50, "concurrent requests");
+DEFINE_int32(batch_num, 1, "batch vertices for one request");
+
 
 namespace nebula {
 namespace storage {
@@ -31,36 +37,12 @@ thread_local uint32_t position = 1;
 
 class Perf {
 public:
+    Perf()
+        : latencies_(10, 0, 3000, {10, {std::chrono::seconds(20)}})
+        , qps_(10, 0, 1000000, {10, {std::chrono::seconds(20)}}) {}
+
     int run() {
-        uint32_t qpsPerThread = FLAGS_qps / FLAGS_threads;
-        int32_t radix = qpsPerThread / 1000;
-        int32_t slotSize = sizeof(slots_) / sizeof(int32_t);
-        std::fill(slots_, slots_ + slotSize, radix);
-
-        int32_t remained = qpsPerThread % 1000 / 100;
-        if (remained != 0) {
-            int32_t step = slotSize / remained - 1;
-            if (step == 0) {
-                step = 1;
-            }
-            for (int32_t i = 0; i < remained; i++) {
-                int32_t p = (i + i * step) % slotSize;
-                if (slots_[p] == radix) {
-                    slots_[p] += 1;
-                } else {
-                    while (slots_[++p] == (radix + 1)) {}
-                    slots_[p] += 1;
-                }
-            }
-        }
-
-        std::stringstream stream;
-        for (int32_t slot : slots_) {
-            stream << slot << " ";
-        }
-        LOG(INFO) << "Total threads " << FLAGS_threads
-                  << ", qpsPerThread " << qpsPerThread
-                  << ", slots " << stream.str();
+        LOG(INFO) << "Total threads " << FLAGS_threads << ", qps " << FLAGS_qps;
         auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
         if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
             LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
@@ -68,13 +50,10 @@ public:
             return EXIT_FAILURE;
         }
 
-        std::vector<std::unique_ptr<thread::GenericWorker>> threads;
-        for (int32_t i = 0; i < FLAGS_threads; i++) {
-            auto t = std::make_unique<thread::GenericWorker>();
-            threads.emplace_back(std::move(t));
-        }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
-        mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value());
+        meta::MetaClientOptions options;
+        options.skipConfig_ = true;
+        mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value(), options);
         CHECK(mClient_->waitForMetadReady());
 
         auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
@@ -100,36 +79,44 @@ public:
 
         client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
         time::Duration duration;
-        static uint32_t interval = 1;
-        for (auto& t : threads) {
-            CHECK(t->start("TaskThread"));
-            if (FLAGS_method == "getNeighbors") {
-                t->addRepeatTask(interval, &Perf::getNeighborsTask, this);
-            } else if (FLAGS_method == "addVertices") {
-                t->addRepeatTask(interval, &Perf::addVerticesTask, this);
-            } else if (FLAGS_method == "addEdges") {
-                t->addRepeatTask(interval, &Perf::addEdgesTask, this);
-            } else {
-                t->addRepeatTask(interval, &Perf::getVerticesTask, this);
-            }
-        }
 
-        while (finishedRequests_ < FLAGS_totalReqs) {
-            if (finishedRequests_ % 1000 == 0) {
-                LOG(INFO) << "Total " << FLAGS_totalReqs << ", finished " << finishedRequests_;
-            }
-            usleep(1000 * 30);
+        std::vector<std::thread> threads;
+        threads.reserve(FLAGS_threads);
+        for (int i = 0; i < FLAGS_threads; i++) {
+            threads.emplace_back(std::bind(&Perf::runInternal, this));
         }
         for (auto& t : threads) {
-            t->stop();
+            t.join();
         }
-        for (auto& t : threads) {
-            t->wait();
-        }
+        threadPool_->stop();
         LOG(INFO) << "Total time cost " << duration.elapsedInMSec() << "ms, "
                   << "total requests " << finishedRequests_;
         return 0;
     }
+
+
+    void runInternal() {
+        while (finishedRequests_ < FLAGS_totalReqs) {
+            if (FLAGS_method == "getNeighbors") {
+                getNeighborsTask();
+            } else if (FLAGS_method == "addVertices") {
+                addVerticesTask();
+            } else if (FLAGS_method == "addEdges") {
+                addEdgesTask();
+            } else {
+                getVerticesTask();
+            }
+            PLOG_EVERY_N(INFO, 2000)
+                << "Progress "
+                << finishedRequests_/static_cast<double>(FLAGS_totalReqs) * 100 << "%"
+                << ", qps=" << qps_.rate(0)
+                << ", latency(us) median = " << latencies_.getPercentileEstimate(0.5, 0)
+                << ", p90 = " << latencies_.getPercentileEstimate(0.9, 0)
+                << ", p99 = " << latencies_.getPercentileEstimate(0.99, 0);
+            usleep(500);
+        }
+    }
+
 
 private:
     std::vector<VertexID> randomVertices() {
@@ -157,27 +144,26 @@ private:
 
     std::string genData(int32_t size) {
         if (FLAGS_random_message) {
-            std::stringstream stream;
-            for (int32_t index = 0; index < size;) {
-                const char *array = folly::to<std::string>(folly::Random::rand32(128)).c_str();
-                int32_t length = sizeof(array) / sizeof(char);
-                for (int32_t i = 0; i < length; i++) {
-                    stream << array[i];
-                    index++;
-                }
-            }
-            return stream.str();
+            auto randchar = []() -> char {
+                const char charset[] =
+                "0123456789"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz";
+                const size_t maxIndex = (sizeof(charset) - 1);
+                return charset[folly::Random::rand32(maxIndex)];
+            };
+            std::string str(size, 0);
+            std::generate_n(str.begin(), size, randchar);
+            return str;
         } else {
             return std::string(size, ' ');
         }
     }
 
     std::vector<storage::cpp2::Vertex> genVertices() {
-        static int32_t size = sizeof(slots_) / sizeof(int32_t);
         std::vector<storage::cpp2::Vertex> vertices;
         static VertexID vId = FLAGS_min_vertex_id;
-        position = (position + 1) % size;
-        for (int32_t i = 0; i < slots_[position]; i++) {
+        for (int i = 0; i < FLAGS_batch_num; i++) {
             storage::cpp2::Vertex v;
             v.set_id(vId++);
             decltype(v.tags) tags;
@@ -193,91 +179,122 @@ private:
     }
 
     std::vector<storage::cpp2::Edge> genEdges() {
-        static int32_t size = sizeof(slots_) / sizeof(int32_t);
         std::vector<storage::cpp2::Edge> edges;
         static VertexID vId = FLAGS_min_vertex_id;
-        position = (position + 1) % size;
-        for (int32_t i = 0; i< slots_[position]; i++) {
-            storage::cpp2::Edge edge;
-            storage::cpp2::EdgeKey eKey;
-            eKey.set_src(vId);
-            eKey.set_edge_type(edgeType_);
-            eKey.set_dst(vId + 1);
-            eKey.set_ranking(0);
-            edge.set_key(std::move(eKey));
-            auto props = genData(FLAGS_size);
-            edge.set_props(std::move(props));
-            edges.emplace_back(std::move(edge));
-        }
+        storage::cpp2::Edge edge;
+        storage::cpp2::EdgeKey eKey;
+        eKey.set_src(vId);
+        eKey.set_edge_type(edgeType_);
+        eKey.set_dst(vId + 1);
+        eKey.set_ranking(0);
+        edge.set_key(std::move(eKey));
+        auto props = genData(FLAGS_size);
+        edge.set_props(std::move(props));
+        edges.emplace_back(std::move(edge));
+        vId++;
         return edges;
     }
 
     void getNeighborsTask() {
         auto* evb = threadPool_->getEventBase();
-        std::vector<EdgeType> e(edgeType_);
-        auto f =
-          client_->getNeighbors(spaceId_, randomVertices(), std::move(e), "", randomCols())
+        auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
+        for (auto i = 0; i < tokens; i++) {
+            auto start = time::WallClock::fastNowInMicroSec();
+            client_->getNeighbors(spaceId_, randomVertices(), {edgeType_}, "", randomCols())
                 .via(evb)
-                .then([this](auto&& resps) {
+                .thenValue([this, start](auto&& resps) {
                     if (!resps.succeeded()) {
                         LOG(ERROR) << "Request failed!";
                     } else {
                         VLOG(3) << "request successed!";
                     }
                     this->finishedRequests_++;
-                    VLOG(3) << "request successed!";
+                    auto now = time::WallClock::fastNowInMicroSec();
+                    latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                        now - start);
+                    qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
                 })
-                .onError([](folly::FutureException&) { LOG(ERROR) << "request failed!"; });
+                .thenError([this](auto&& e) {
+                    LOG(ERROR) << "request failed, e = " << e.what();
+                    this->finishedRequests_++;
+                });
+        }
     }
 
     void addVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addVertices(spaceId_, genVertices(), true)
-                    .via(evb).then([this](auto&& resps) {
+        auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
+        for (auto i = 0; i < tokens; i++) {
+            auto vertices = genVertices();
+            auto start = time::WallClock::fastNowInMicroSec();
+            client_->addVertices(spaceId_, std::move(vertices), true)
+                    .via(evb).thenValue([this, start](auto&& resps) {
                         if (!resps.succeeded()) {
                             for (auto& entry : resps.failedParts()) {
                                 LOG(ERROR) << "Request failed, part " << entry.first
                                            << ", error " << static_cast<int32_t>(entry.second);
                             }
                         } else {
-                            VLOG(3) << "request successed!";
+                            VLOG(1) << "request successed!";
                         }
                         this->finishedRequests_++;
-                     }).onError([](folly::FutureException& e) {
+                        auto now = time::WallClock::fastNowInMicroSec();
+                        latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                            now - start);
+                        qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+                     }).thenError([this](auto&& e) {
                         LOG(ERROR) << "Request failed, e = " << e.what();
+                        this->finishedRequests_++;
                      });
+        }
     }
 
     void addEdgesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addEdges(spaceId_, genEdges(), true)
-                    .via(evb).then([this](auto&& resps) {
+        auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
+        for (auto i = 0; i < tokens; i++) {
+            auto start = time::WallClock::fastNowInMicroSec();
+            client_->addEdges(spaceId_, genEdges(), true)
+                    .via(evb).thenValue([this, start](auto&& resps) {
                         if (!resps.succeeded()) {
                             LOG(ERROR) << "Request failed!";
                         } else {
                             VLOG(3) << "request successed!";
                         }
                         this->finishedRequests_++;
-                        VLOG(3) << "request successed!";
-                     }).onError([](folly::FutureException&) {
+                        auto now = time::WallClock::fastNowInMicroSec();
+                        latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                            now - start);
+                        qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+                     }).thenError([this](auto&&) {
                         LOG(ERROR) << "Request failed!";
+                        this->finishedRequests_++;
                      });
+        }
     }
 
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getVertexProps(spaceId_, randomVertices(), randomCols())
-                    .via(evb).then([this](auto&& resps) {
+        auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
+        for (auto i = 0; i < tokens; i++) {
+            auto start = time::WallClock::fastNowInMicroSec();
+            client_->getVertexProps(spaceId_, randomVertices(), randomCols())
+                    .via(evb).thenValue([this, start](auto&& resps) {
                         if (!resps.succeeded()) {
                             LOG(ERROR) << "Request failed!";
                         } else {
                             VLOG(3) << "request successed!";
                         }
                         this->finishedRequests_++;
-                        VLOG(3) << "request successed!";
-                     }).onError([](folly::FutureException&) {
+                        auto now = time::WallClock::fastNowInMicroSec();
+                        latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
+                                            now - start);
+                        qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+                     }).thenError([this](auto&&) {
+                        this->finishedRequests_++;
                         LOG(ERROR) << "Request failed!";
                      });
+        }
     }
 
 private:
@@ -288,7 +305,9 @@ private:
     GraphSpaceID spaceId_;
     TagID tagId_;
     EdgeType edgeType_;
-    int32_t slots_[10];
+    folly::DynamicTokenBucket tokenBucket_;
+    folly::TimeseriesHistogram<int64_t> latencies_;
+    folly::TimeseriesHistogram<int64_t> qps_;
 };
 
 }  // namespace storage

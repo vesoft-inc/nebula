@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: graphd-services
+  namespace: {{ .Values.namespace }}
+data:
+  3699: "{{ .Values.namespace}}/nebula-graphd:{{ .Values.port.graphd.thriftPort }}"
+  13000: "{{ .Values.namespace}}/nebula-graphd:{{ .Values.port.graphd.httpPort }}"
+  13002: "{{ .Values.namespace}}/nebula-graphd:{{ .Values.port.graphd.http2Port }}"

@@ -17,6 +17,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:network_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         wangle
@@ -24,4 +25,11 @@ nebula_add_executable(
         ${NCURSES_LIBRARY}
 )
 
-install(TARGETS nebula DESTINATION bin)
+install(
+    TARGETS
+        nebula
+    DESTINATION
+        bin
+    COMPONENT
+        console
+)

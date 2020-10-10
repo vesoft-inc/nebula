@@ -6,6 +6,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
@@ -18,4 +19,3 @@ nebula_add_test(
         gtest
         gtest_main
 )
-

@@ -8,6 +8,7 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include "charset/Charset.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
@@ -18,22 +19,19 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
+using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
+using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
-        onFinished(); \
-        return; \
-    }
-
-#define CHECK_USER_ID_AND_RETURN(userID) \
-    if (userExist(userID) == Status::UserNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
     }
@@ -43,7 +41,7 @@ using nebula::network::NetworkUtils;
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
-        resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
+        handleErrorCode(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
     }
@@ -51,8 +49,8 @@ using nebula::network::NetworkUtils;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore)
-            : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore, stats::Stats* stats = nullptr)
+            : kvstore_(kvstore), stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -65,35 +63,27 @@ protected:
      * Destroy current instance when finished.
      * */
     void onFinished() {
+        stats::Stats::addStatsValue(stats_,
+                                    resp_.get_code() == cpp2::ErrorCode::SUCCEEDED,
+                                    this->duration_.elapsedInUSec());
         promise_.setValue(std::move(resp_));
         delete this;
     }
 
-    cpp2::ErrorCode to(kvstore::ResultCode code) {
-        switch (code) {
-        case kvstore::ResultCode::SUCCEEDED:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        case kvstore::ResultCode::ERR_LEADER_CHANGED:
-            return cpp2::ErrorCode::E_LEADER_CHANGED;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleErrorCode(cpp2::ErrorCode code, GraphSpaceID spaceId = kDefaultSpaceId,
+                         PartitionID partId = kDefaultPartId) {
+        resp_.set_code(code);
+        if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+            handleLeaderChanged(spaceId, partId);
         }
     }
 
-    cpp2::ErrorCode to(const Status& status) {
-        switch (status.code()) {
-        case Status::kOk:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case Status::kSpaceNotFound:
-        case Status::kHostNotFound:
-        case Status::kTagNotFound:
-        case Status::kUserNotFound:
-        case Status::kCfgNotFound:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto leaderRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(leaderRet)) {
+            resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+        } else {
+            resp_.set_code(MetaCommon::to(nebula::error(leaderRet)));
         }
     }
 
@@ -111,9 +101,10 @@ protected:
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
-        case EntryType::USER:
-            thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
+            break;
+        case EntryType::INDEX:
+            thriftID.set_index_id(static_cast<IndexID>(id));
             break;
         }
         return thriftID;
@@ -151,18 +142,19 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end.
      * */
-     StatusOr<std::vector<std::string>> doScan(const std::string& start,
-                                               const std::string& end);
-     /**
+    StatusOr<std::vector<std::string>> doScan(const std::string& start,
+                                              const std::string& end);
+    /**
      * General multi remove function.
-     **/
-     void doMultiRemove(std::vector<std::string> keys);
+     * */
+    void doMultiRemove(std::vector<std::string> keys);
+
+    kvstore::ResultCode multiRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts
@@ -180,9 +172,9 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
-     * Check userId exist or not.
+     * Check user exist or not.
      **/
-    Status userExist(UserID userId);
+    Status userExist(const std::string& account);
 
     /**
      * Check host has been registered or not.
@@ -200,20 +192,68 @@ protected:
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
+     * Fetch the latest version tag's fields.
+     */
+    std::unordered_map<std::string, nebula::cpp2::ValueType>
+    getLatestTagFields(const nebula::cpp2::Schema& latestTagSchema);
+
+    /**
+     * Fetch the latest version tag's schema.
+     */
+    StatusOr<nebula::cpp2::Schema>
+    getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId);
+
+    /**
+     * Check if tag or edge has ttl
+     */
+    bool tagOrEdgeHasTTL(const nebula::cpp2::Schema& latestSchema);
+
+    /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<UserID> getUserId(const std::string& account);
+    /**
+     * Fetch the latest version edge's fields.
+     */
+    std::unordered_map<std::string, nebula::cpp2::ValueType>
+    getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeSchema);
 
-    bool checkPassword(UserID userId, const std::string& password);
 
-    StatusOr<std::string> getUserAccount(UserID userId);
+    /**
+     * Fetch the latest version edge's schema.
+     */
+    StatusOr<nebula::cpp2::Schema>
+    getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType);
+
+    StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
+
+    bool checkPassword(const std::string& account, const std::string& password);
+
+    kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
+
+    void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
+
+    void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
+
+    /**
+     * Check the edge or tag contains indexes when alter it.
+     **/
+    cpp2::ErrorCode indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                               const std::vector<cpp2::AlterSchemaItem>& alterItems);
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
+
+    bool checkIndexExist(const std::vector<std::string>& fields,
+                         const nebula::cpp2::IndexItem& item);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+    stats::Stats* stats_ = nullptr;
+    time::Duration duration_;
 };
 
 }  // namespace meta

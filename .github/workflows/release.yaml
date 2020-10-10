@@ -1,0 +1,92 @@
+name: release
+
+on:
+  release:
+    types:
+      - published
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: package and upload release assets
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - centos6
+          - centos7
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: package
+        run: ./package/package.sh
+      - name: vars
+        id: vars
+        env:
+          SHA_EXT: sha256sum.txt
+        run: |
+          tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
+          filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
+          sha256sum $filename > $filename.$SHA_EXT
+          echo "::set-output name=tag::$tag"
+          echo "::set-output name=filepath::$filename"
+          echo "::set-output name=shafilepath::$filename.$SHA_EXT"
+      - name: upload release asset
+        run: |
+          ./ci/scripts/upload-github-release-asset.sh \
+            github_token=${{ secrets.GITHUB_TOKEN }} \
+            repo=${{ github.repository }} \
+            tag=${{ steps.vars.outputs.tag }} \
+            filepath=${{ steps.vars.outputs.filepath }}
+          ./ci/scripts/upload-github-release-asset.sh \
+            github_token=${{ secrets.GITHUB_TOKEN }} \
+            repo=${{ github.repository }} \
+            tag=${{ steps.vars.outputs.tag }} \
+            filepath=${{ steps.vars.outputs.shafilepath }}
+      - name: upload package to oss
+        run: |
+          ./ci/scripts/upload-oss.sh \
+            OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} \
+            OSS_ID=${{ secrets.OSS_ID }} \
+            OSS_SECRET=${{ secrets.OSS_SECRET }} \
+            tag=${{ steps.vars.outputs.tag }} \
+            filepath=${{ steps.vars.outputs.filepath }}
+          ./ci/scripts/upload-oss.sh \
+            OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} \
+            OSS_ID=${{ secrets.OSS_ID }} \
+            OSS_SECRET=${{ secrets.OSS_SECRET }} \
+            tag=${{ steps.vars.outputs.tag }} \
+            filepath=${{ steps.vars.outputs.shafilepath }}
+
+  docker:
+    name: build docker images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - metad
+          - storaged
+          - graphd
+          - console
+          - graph
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}
+          tags: latest
+          tag_with_ref: true
+          dockerfile: docker/Dockerfile.${{ matrix.service }}
+          cache_froms: vesoft/nebula-dev:centos7,centos:7
+          add_git_labels: true

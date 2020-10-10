@@ -17,7 +17,7 @@ bool RowValue::operator<(const RowValue& rhs) const {
 }
 
 SetExecutor::SetExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "set") {
     sentence_ = static_cast<SetSentence*>(sentence);
 }
 
@@ -44,20 +44,26 @@ Status SetExecutor::prepare() {
         return status;
     }
 
+    if (sentence_->op() != SetSentence::Operator::UNION &&
+            sentence_->op() != SetSentence::Operator::INTERSECT &&
+            sentence_->op() != SetSentence::Operator::MINUS) {
+        LOG(ERROR) << "Unknown operator: " << sentence_->op();
+        return Status::Error("Unknown operator: %d", sentence_->op());
+    }
     return Status::OK();
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] () {
-        return;
+    futures_.emplace_back(leftP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
+        leftP_.setValue();
     };
 
-    futures_.emplace_back(leftP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->leftResult_ = std::move(result);
         VLOG(3) << "Left result set.";
-        leftP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -72,16 +78,16 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] () {
-        return;
+    futures_.emplace_back(rightP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
+        rightP_.setValue();
     };
 
-    futures_.emplace_back(rightP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->rightResult_ = std::move(result);
         VLOG(3) << "Right result set.";
-        rightP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -98,7 +104,12 @@ void SetExecutor::setRight() {
 void SetExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status));
+        return;
+    }
+
+    if (hasFeedResult_) {
+        onError_(Status::Error("Set operation not support input yet."));
         return;
     }
 
@@ -114,15 +125,14 @@ void SetExecutor::execute() {
             msg += leftS_.toString();
             msg += " rhs has error: ";
             msg += rightS_.toString();
-            onError_(Status::Error(msg));
+            doError(Status::Error(msg));
             return;
         }
 
         if (leftResult_ == nullptr || rightResult_ == nullptr) {
             // Should not reach here.
-            LOG(ERROR) << "Get null input: " << leftResult_.get()
-                        << " " << rightResult_.get();
-            onError_(Status::Error("Internal error."));
+            LOG(ERROR) << "Get null input.";
+            doError(Status::Error("Get null input."));
             return;
         }
 
@@ -131,7 +141,7 @@ void SetExecutor::execute() {
         if (colNames_.size() != rightResult_->getColNames().size()) {
             std::string err = "Field count not match.";
             LOG(ERROR) << err;
-            onError_(Status::Error(std::move(err)));
+            doError(Status::Error(std::move(err)));
             return;
         }
         if (!leftResult_->hasData() && !rightResult_->hasData()) {
@@ -151,8 +161,6 @@ void SetExecutor::execute() {
             case SetSentence::Operator::MINUS:
                 doMinus();
                 break;
-            default:
-                LOG(FATAL) << "Unknown operator: " << sentence_->op();
         }
     };
     folly::collectAll(futures_).via(runner).thenValue(cb);
@@ -175,23 +183,20 @@ void SetExecutor::doUnion() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -199,8 +204,7 @@ void SetExecutor::doUnion() {
     if (!castingMap_.empty()) {
         auto stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(std::move(stat));
             return;
         }
     }
@@ -278,23 +282,20 @@ void SetExecutor::doIntersect() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -302,8 +303,7 @@ void SetExecutor::doIntersect() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(std::move(stat));
             return;
         }
     }
@@ -338,23 +338,20 @@ void SetExecutor::doMinus() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -362,8 +359,7 @@ void SetExecutor::doMinus() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(stat);
             return;
         }
     }
@@ -383,14 +379,14 @@ void SetExecutor::doMinus() {
 }
 
 void SetExecutor::onEmptyInputs() {
-    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (onResult_) {
+        auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
     }
-    DCHECK(onFinish_);
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
@@ -406,16 +402,14 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
         if (result->hasData()) {
             auto ret = result->getRows();
             if (!ret.ok()) {
-                DCHECK(onError_);
-                onError_(std::move(ret).status());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
 
-    DCHECK(onFinish_);
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
@@ -423,7 +417,8 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         auto ret = InterimResult::getInterim(resultSchema_, rows);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Interim result failed.";
-            onError_(std::move(ret).status());
+            doError(std::move(ret).status());
+            return;
         }
         onResult_(std::move(ret).value());
     } else {
@@ -431,18 +426,20 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         resp_->set_column_names(std::move(colNames_));
         resp_->set_rows(std::move(rows));
     }
-    DCHECK(onFinish_);
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     // Feed input for set operator is an act of reservation.
     UNUSED(result);
-    LOG(FATAL) << "Set operation not support input yet.";
+    LOG(ERROR) << "Set operation not support input yet.";
+    hasFeedResult_ = true;
 }
 
 void SetExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
         return;
     }
 

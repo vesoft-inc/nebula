@@ -5,13 +5,13 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/UpdateVertexProcessor.h"
+#include "storage/mutate/UpdateVertexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -21,12 +21,12 @@ namespace storage {
 void mockData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (int32_t partId = 0; partId < 3; partId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // NOTE: the range of tagId is [3001, 3008], excluding 3009(for insert test).
-            for (auto tagId = 3001; tagId < 3010 - 1; tagId++) {
+            for (int32_t tagId = 3001; tagId < 3010 - 1; tagId++) {
                 // Write multi versions, we should get/update the latest version
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId,
                             std::numeric_limits<int32_t>::max() - version);
                     RowWriter writer;
@@ -58,6 +58,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -77,9 +78,9 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     auto* left = new RelationalExpression(srcExp1,
                                           RelationalExpression::Operator::GE,
                                           priExp1);
-    // right string: $^.3003.tag_3003_col_3 == tag_string_col_3_2;
-    auto* tag2 = new std::string("3003");
-    auto* prop2 = new std::string("tag_3003_col_3");
+    // right string: $^.3001.tag_3001_col_3 == tag_string_col_3_2;
+    auto* tag2 = new std::string("3001");
+    auto* prop2 = new std::string("tag_3001_col_3");
     auto* srcExp2 = new SourcePropertyExpression(tag2, prop2);
     std::string col3("tag_string_col_3_2");
     auto* priExp2 = new PrimaryExpression(col3);
@@ -98,29 +99,32 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     PrimaryExpression val1(1L);
     item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
-    // string: 3005.tag_3005_col_4 = tag_string_col_4_2_new
+    // string: 3001.tag_3001_col_4 = tag_string_col_4_2_new
     cpp2::UpdateItem item2;
-    item2.set_name("3005");
-    item2.set_prop("tag_3005_col_4");
+    item2.set_name("3001");
+    item2.set_prop("tag_3001_col_4");
     std::string col4new("tag_string_col_4_2_new");
     PrimaryExpression val2(col4new);
     item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
-    // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
+    // Return tag props: 3001.tag_3001_col_0, 3001.tag_3001_col_2, 3001.tag_3001_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
         SourcePropertyExpression sourcePropExp(
-            new std::string(folly::to<std::string>(3001 + i * 2)),
-            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
+            new std::string(folly::to<std::string>(3001)),
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001, i * 2)));
         tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
     }
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -143,7 +147,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
                 }
                 case 1: {
                     auto&& v1 = value(std::move(res));
-                    EXPECT_EQ(0 + 3003 + 2 + 2, boost::get<int64_t>(v1));
+                    EXPECT_EQ(0 + 3001 + 2 + 2, boost::get<int64_t>(v1));
                     break;
                 }
                 case 2: {
@@ -156,23 +160,20 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
             }
         }
     }
-    // get tag3001, tag3003 and tag3005 from kvstore directly
+    // get tag3001 from kvstore directly
     std::vector<std::string> keys;
     std::vector<std::string> values;
     auto lastVersion = std::numeric_limits<int32_t>::max() - 2;
-    for (int i = 0; i < 3; i++) {
-        // tagId = 3001 + i * 2
-        auto vertexKey = NebulaKeyUtils::vertexKey(partId, vertexId, 3001 + i * 2, lastVersion);
-        keys.emplace_back(vertexKey);
-    }
-    kvstore::ResultCode code = kv->multiGet(spaceId, partId, std::move(keys), &values);
-    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
-    EXPECT_EQ(3, values.size());
-    for (int i = 0; i < 3; i++) {
-        auto tagSchema = schemaMan->getTagSchema(spaceId, 3001 + i * 2);
-        auto tagReader = RowReader::getRowReader(values[i], tagSchema);
+    auto vertexKey = NebulaKeyUtils::vertexKey(partId, vertexId, 3001, lastVersion);
+    keys.emplace_back(vertexKey);
+    auto ret = kv->multiGet(spaceId, partId, std::move(keys), &values);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret.first);
+    EXPECT_EQ(1, values.size());
+    auto tagSchema = schemaMan->getTagSchema(spaceId, 3001);
+    auto tagReader = RowReader::getRowReader(values[0], tagSchema);
+    for (int i = 0; i < 1; i++) {
         auto res = RowReader::getPropByName(tagReader.get(),
-                                            folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2));
+                                            folly::stringPrintf("tag_%d_col_%d", 3001, i*2));
         CHECK(ok(res));
         switch (i) {
             case 0: {
@@ -182,7 +183,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
             }
             case 1: {
                 auto&& v1 = value(std::move(res));
-                EXPECT_EQ(0 + 3003 + 2 + 2, boost::get<int64_t>(v1));
+                EXPECT_EQ(0 + 3001 + 2 + 2, boost::get<int64_t>(v1));
                 break;
             }
             case 2: {
@@ -203,6 +204,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -216,10 +218,10 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_filter("");
     LOG(INFO) << "Build update items...";
     std::vector<cpp2::UpdateItem> items;
-    // int: 3001.tag_3001_col_0 = 1
+    // int: 3009.tag_3009_col_0 = 1
     cpp2::UpdateItem item1;
-    item1.set_name("3001");
-    item1.set_prop("tag_3001_col_0");
+    item1.set_name("3009");
+    item1.set_prop("tag_3009_col_0");
     PrimaryExpression val1(1L);
     item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
@@ -233,19 +235,12 @@ TEST(UpdateVertexTest, Insertable_Test) {
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
-    // Return tag props: tag_3001_col_0, tag_3003_col_2, tag_3005_col_4
+    // Return tag props: tag_3009_col_0, tag_3009_col_2, tag_3009_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
         SourcePropertyExpression sourcePropExp(
-            new std::string(folly::to<std::string>(3001 + i * 2)),
-            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
-        tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
-    }
-    // tag_3009_col_0 ~ tag_3009_col_5
-    for (int i = 0; i < 6; i++) {
-        SourcePropertyExpression sourcePropExp(
             new std::string(folly::to<std::string>(3009)),
-            new std::string(folly::stringPrintf("tag_3009_col_%d", i)));
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3009, i * 2)));
         tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
     }
     req.set_return_columns(std::move(tmpColumns));
@@ -254,7 +249,10 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -265,18 +263,18 @@ TEST(UpdateVertexTest, Insertable_Test) {
     ASSERT_TRUE(resp.__isset.schema);
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     auto reader = RowReader::getRowReader(resp.data, provider);
-    EXPECT_EQ(3 + 6, reader->numFields());
-    // 3001.tag_3001_col_0
+    EXPECT_EQ(3, reader->numFields());
+    // 3009.tag_3009_col_0
     auto res = RowReader::getPropByIndex(reader.get(), 0);
     if (ok(res)) {
         auto&& v = value(std::move(res));
         EXPECT_EQ(1L, boost::get<int64_t>(v));
     }
-    // 3003.tag_3003_col_2
+    // 3009.tag_3009_col_2
     res = RowReader::getPropByIndex(reader.get(), 1);
     if (ok(res)) {
         auto&& v = value(std::move(res));
-        EXPECT_EQ(0 + 3003 + 2 + 2, boost::get<int64_t>(v));
+        EXPECT_EQ(0, boost::get<int64_t>(v));
     }
     // 3009.tag_3009_col_4
     res = RowReader::getPropByIndex(reader.get(), 7);
@@ -304,6 +302,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -330,7 +329,10 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -350,6 +352,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -378,7 +381,10 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -389,6 +395,63 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
                     == resp.result.failed_codes[0].code);
     EXPECT_FALSE(nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER
                     == resp.result.failed_codes[0].code);
+}
+
+TEST(UpdateVertexTest, CorruptDataTest) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    LOG(INFO) << "Write a vertex with empty value!";
+
+    // partId, srcId, tagId, version
+    auto key = NebulaKeyUtils::vertexKey(0, 10, 3001, 0);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::make_pair(key, ""));
+    folly::Baton<> baton;
+    kv->asyncMultiPut(0, 0, std::move(data),
+        [&](kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
+    baton.wait();
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    VertexID vertexId = 10;
+    cpp2::UpdateVertexRequest req;
+    req.set_space_id(spaceId);
+    req.set_vertex_id(vertexId);
+    req.set_part_id(partId);
+    req.set_filter("");
+    LOG(INFO) << "Build update items...";
+    std::vector<cpp2::UpdateItem> items;
+    // int: 3001.tag_3001_col_0 = 1L
+    cpp2::UpdateItem item;
+    item.set_name("3001");
+    item.set_prop("tag_3001_col_0");
+    PrimaryExpression val(1L);
+    item.set_value(Expression::encode(&val));
+    items.emplace_back(item);
+    req.set_update_items(std::move(items));
+    req.set_insertable(false);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, resp.result.failed_codes.size());
+    EXPECT_TRUE(cpp2::ErrorCode::E_TAG_NOT_FOUND == resp.result.failed_codes[0].code);
+    EXPECT_EQ(0, resp.result.failed_codes[0].part_id);
 }
 
 }  // namespace storage

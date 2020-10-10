@@ -102,6 +102,16 @@ void GetStatsHandler::addOneStat(folly::dynamic& vals,
 }
 
 
+void GetStatsHandler::addOneStat(folly::dynamic& vals,
+                                 const std::string& statName,
+                                 const std::string& error) const {
+    folly::dynamic stat = folly::dynamic::object();
+    stat["name"] = statName;
+    stat["value"] = error;
+    vals.push_back(std::move(stat));
+}
+
+
 folly::dynamic GetStatsHandler::getStats() const {
     auto stats = folly::dynamic::array();
     if (statNames_.empty()) {
@@ -109,8 +119,13 @@ folly::dynamic GetStatsHandler::getStats() const {
         StatsManager::readAllValue(stats);
     } else {
         for (auto& sn : statNames_) {
-            int64_t statValue = StatsManager::readValue(sn);
-            addOneStat(stats, sn, statValue);
+            auto status = StatsManager::readValue(sn);
+            if (status.ok()) {
+                int64_t statValue = status.value();
+                addOneStat(stats, sn, statValue);
+            } else {
+                addOneStat(stats, sn, status.status().toString());
+            }
         }
     }
 

@@ -10,6 +10,7 @@ scalaVersion := "2.10.5"
 name := "nebula-spark-sstfile-generator"
 version := "1.0.0-beta"
 
+scalaSource in Compile := baseDirectory.value / "src/main/scala/com/vesoft/tools"
 test in assembly in ThisBuild := {}
 
 //not include src and doc when dist

@@ -69,6 +69,7 @@ private:
     std::vector<std::string>                                    colNames_;
     std::shared_ptr<const meta::SchemaProviderIf>               resultSchema_;
     std::unique_ptr<cpp2::ExecutionResponse>                    resp_;
+    bool                                                        hasFeedResult_{false};
 };
 
 }   // namespace graph

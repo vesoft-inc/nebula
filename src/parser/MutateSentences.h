@@ -12,6 +12,8 @@
 
 namespace nebula {
 
+class EdgeKeys;
+
 class PropertyList final {
 public:
     void addProp(std::string *propname) {
@@ -321,6 +323,8 @@ public:
 
     std::string toString() const;
 
+    StatusOr<std::string> toEvaledString() const;
+
 private:
     std::unique_ptr<std::string>                field_;
     std::unique_ptr<Expression>                 value_;
@@ -343,6 +347,8 @@ public:
     }
 
     std::string toString() const;
+
+    StatusOr<std::string> toEvaledString() const;
 
 private:
     std::vector<std::unique_ptr<UpdateItem>>    items_;
@@ -441,7 +447,7 @@ public:
         hasRank_ = true;
     }
 
-    const int64_t getRank() const {
+    int64_t getRank() const {
         return rank_;
     }
 
@@ -492,66 +498,40 @@ private:
 };
 
 
-class DeleteVertexSentence final : public Sentence {
+class DeleteVerticesSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(Expression *vid) {
-        vid_.reset(vid);
+    explicit DeleteVerticesSentence(VertexIDList *vidList) {
+        vidList_.reset(vidList);
         kind_ = Kind::kDeleteVertex;
     }
 
-    Expression* vid() const {
-        return vid_.get();
+    VertexIDList* vidList() const {
+        return vidList_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<Expression>                  vid_;
+    std::unique_ptr<VertexIDList>                vidList_;
 };
 
 
-class EdgeList final {
+class DeleteEdgesSentence final : public Sentence {
 public:
-    void addEdge(Expression *srcid, Expression *dstid) {
-        edges_.emplace_back(srcid, dstid);
+    explicit DeleteEdgesSentence(std::string *edge,
+                                 EdgeKeys    *keys);
+
+    const std::string* edge() const {
+        return edge_.get();
     }
 
-    const auto& edges() const {
-        return edges_;
-    }
-
-    std::string toString() const;
-
-private:
-    using EdgeItem = std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>;
-    std::vector<EdgeItem>                       edges_;
-};
-
-
-class DeleteEdgeSentence final : public Sentence {
-public:
-    explicit DeleteEdgeSentence(EdgeList *edgeList) {
-        edgeList_.reset(edgeList);
-        kind_ = Kind::kDeleteEdge;
-    }
-
-    const EdgeList* edgeList() const {
-        return edgeList_.get();
-    }
-
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
-    }
-
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
-    }
+    EdgeKeys* keys() const;
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<EdgeList>                   edgeList_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<EdgeKeys>                   edgeKeys_;
 };
 
 
@@ -569,7 +549,7 @@ public:
         host_.reset(host);
     }
 
-    const int32_t port() const {
+    int32_t port() const {
         return port_;
     }
 
@@ -616,12 +596,30 @@ public:
         delete url;
     }
 
+    void setEdge(std::string* edge) {
+        edge_.reset(edge);
+    }
+
+    const std::string* edge() const {
+        return edge_.get();
+    }
+
+    void setTag(std::string* tag) {
+        tag_.reset(tag);
+    }
+
+    const std::string* tag() const {
+        return tag_.get();
+    }
+
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>                host_;
     int32_t                                     port_;
     std::unique_ptr<std::string>                path_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                tag_;
 };
 
 class IngestSentence final : public Sentence {
@@ -630,7 +628,43 @@ public:
         kind_ = Kind::kIngest;
     }
 
+    void setEdge(std::string* edge) {
+        edge_.reset(edge);
+    }
+
+    const std::string* edge() const {
+        return edge_.get();
+    }
+
+    void setTag(std::string* tag) {
+        tag_.reset(tag);
+    }
+
+    const std::string* tag() const {
+        return tag_.get();
+    }
+
     std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                tag_;
 };
+
+class AdminSentence final : public Sentence {
+public:
+    explicit AdminSentence(const std::string& op) : op_(op) {
+        kind_ = Kind::kAdmin;
+    }
+
+    void addPara(const std::string& para);
+    std::string toString() const override;
+    std::string getType() const;
+    std::vector<std::string> getParas() const;
+private:
+    std::string             op_;
+    std::vector<std::string> paras_;
+};
+
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

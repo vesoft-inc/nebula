@@ -30,6 +30,14 @@ public:
         kAlterEdge,
         kDescribeTag,
         kDescribeEdge,
+        kCreateTagIndex,
+        kCreateEdgeIndex,
+        kDropTagIndex,
+        kDropEdgeIndex,
+        kDescribeTagIndex,
+        kDescribeEdgeIndex,
+        kRebuildTagIndex,
+        kRebuildEdgeIndex,
         kDropTag,
         kDropEdge,
         kInsertVertex,
@@ -38,10 +46,8 @@ public:
         kUpdateEdge,
         kShow,
         kDeleteVertex,
-        kDeleteEdge,
-        kFind,
-        kAddHosts,
-        kRemoveHosts,
+        kDeleteEdges,
+        kLookup,
         kCreateSpace,
         kDropSpace,
         kDescribeSpace,
@@ -59,6 +65,13 @@ public:
         kFetchVertices,
         kFetchEdges,
         kBalance,
+        kFindPath,
+        kLimit,
+        KGroupBy,
+        kReturn,
+        kCreateSnapshot,
+        kDropSnapshot,
+        kAdmin,
     };
 
     Kind kind() const {
@@ -67,6 +80,31 @@ public:
 
 protected:
     Kind                kind_{Kind::kUnknown};
+};
+
+class CreateSentence : public Sentence {
+public:
+    explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
+    virtual ~CreateSentence() {}
+
+    bool isIfNotExist() {
+        return ifNotExist_;
+    }
+
+private:
+    bool ifNotExist_{false};
+};
+
+class DropSentence : public Sentence {
+public:
+    explicit  DropSentence(bool ifExists) : ifExists_{ifExists} {}
+    virtual ~DropSentence() = default;
+
+    bool isIfExists() {
+        return ifExists_;
+    }
+private:
+    bool ifExists_{false};
 };
 
 inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {

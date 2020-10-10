@@ -16,14 +16,12 @@
 #include "network/NetworkUtils.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
-    FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
@@ -49,14 +47,14 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
+    meta::MetaClientOptions options;
+    options.localHost_ = localHost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
-                                                      localHost,
-                                                      kClusterId,
-                                                      true);
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
+                                                      options);
+    LOG(INFO) << "Add hosts automatically and create space....";
     mClient->waitForMetadReady();
     VLOG(1) << "The storage server has been added to the meta service";
 
@@ -72,30 +70,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // SchemaMan We need to switch to Meta Server
                                            // based version
                                            false);
-
-    auto ret = mClient->createSpace("default", 10, 1).get();
+    meta::SpaceDesc spaceDesc("default", 10, 1);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(FLAGS_load_data_interval_secs + 1);
-    auto* nKV = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
-    while (true) {
-        int readyNum = 0;
-        for (auto partId = 1; partId <= 10; partId++) {
-            auto retLeader = nKV->partLeader(spaceId, partId);
-            if (ok(retLeader)) {
-                auto leader = value(std::move(retLeader));
-                if (leader != HostAddr(0, 0)) {
-                    readyNum++;
-                }
-            }
-        }
-        if (readyNum == 10) {
-            LOG(INFO) << "All leaders have been elected!";
-            break;
-        }
-        usleep(100000);
-    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
     // VerticesInterfacesTest(addVertices and getVertexProps)
@@ -110,14 +91,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 cpp2::Tag t;
                 t.set_tag_id(tagId);
                 // Generate some tag props.
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                t.set_props(writer.encode());
+                auto val = TestUtils::setupEncode();
+                t.set_props(std::move(val));
                 tags.emplace_back(std::move(t));
             }
             v.set_tags(std::move(tags));
@@ -142,7 +117,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(TestUtils::vetexPropDef(
+            retCols.emplace_back(TestUtils::vertexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
@@ -179,7 +154,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
             checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                      folly::stringPrintf("tag_string_col_4"));
+                                      folly::stringPrintf("string_col_4"));
         }
     }
 
@@ -193,18 +168,12 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             decltype(edge.key) edgeKey;
             edgeKey.set_src(srcId);
             edgeKey.set_edge_type(101);
-            edgeKey.set_dst(srcId*100 + 2);
-            edgeKey.set_ranking(srcId*100 + 3);
+            edgeKey.set_dst(srcId * 100 + 2);
+            edgeKey.set_ranking(srcId * 100 + 3);
             edge.set_key(std::move(edgeKey));
             // Generate some edge props.
-            RowWriter writer;
-            for (int32_t iInt = 0; iInt < 10; iInt++) {
-                writer << iInt;
-            }
-            for (int32_t iString = 10; iString < 20; iString++) {
-                writer << folly::stringPrintf("string_col_%d", iString);
-            }
-            edge.set_props(writer.encode());
+            auto val = TestUtils::setupEncode(10, 20);
+            edge.set_props(std::move(val));
             edges.emplace_back(std::move(edge));
         }
         auto f = client->addEdges(spaceId, std::move(edges), true);
@@ -221,8 +190,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             cpp2::EdgeKey edgeKey;
             edgeKey.set_src(srcId);
             edgeKey.set_edge_type(101);
-            edgeKey.set_dst(srcId*100 + 2);
-            edgeKey.set_ranking(srcId*100 + 3);
+            edgeKey.set_dst(srcId * 100 + 2);
+            edgeKey.set_ranking(srcId * 100 + 3);
             edgeKeys.emplace_back(std::move(edgeKey));
         }
         for (int i = 0; i < 20; i++) {
@@ -235,27 +204,27 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto& results = resp.responses();
         ASSERT_EQ(1, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
-        EXPECT_EQ(3 + 20, results[0].schema.columns.size());
+        EXPECT_EQ(4 + 20, results[0].schema.columns.size());
 
         auto edgeProvider = std::make_shared<ResultSchemaProvider>(results[0].schema);
         RowSetReader rsReader(edgeProvider, results[0].data);
         auto it = rsReader.begin();
         while (it) {
-            EXPECT_EQ(3 + 20, it->numFields());
+            EXPECT_EQ(4 + 20, it->numFields());
             auto fieldIt = it->begin();
             int index = 0;
             while (fieldIt) {
-                if (index < 3) {  // _src | _rank | _dst
+                if (index < 4) {  // _src | _rank | _dst
                     int64_t vid;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getVid(vid));
-                } else if (index >= 13) {  // the last 10 STRING fields
+                } else if (index >= 14) {  // the last 10 STRING fields
                     folly::StringPiece stringCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getString(stringCol));
-                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 3), stringCol);
+                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 4), stringCol);
                 } else {  // the middle 10 INT fields
                     int32_t intCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(intCol));
-                    EXPECT_EQ(index - 3, intCol);
+                    EXPECT_EQ(index - 4, intCol);
                 }
                 ++index;
                 ++fieldIt;
@@ -266,64 +235,52 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         EXPECT_EQ(it, rsReader.end());
     }
     {
+        std::unordered_map<VertexID, std::vector<cpp2::EdgeKey>> edgeKeys;
+        std::vector<VertexID> vertices;
         for (int64_t srcId = 0; srcId < 10; srcId++) {
-            std::vector<cpp2::EdgeKey> edgeKeys;
-            // Get all edgeKeys of a vertex
-            {
-                auto f = client->getEdgeKeys(spaceId, srcId);
-                auto resp = std::move(f).get();
-                ASSERT_TRUE(resp.ok());
-                auto edgeKeyResp =  std::move(resp).value();
-                auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
-                edgeKeys = *(edgeKeyResp.get_edge_keys());
+            vertices.emplace_back(srcId);
+        }
 
-                // Check edgeKeys
-                CHECK_EQ(1, edgeKeys.size());
-                auto& edge = edgeKeys[0];
-                CHECK_EQ(srcId, edge.get_src());
-                CHECK_EQ(101, edge.get_edge_type());
-                CHECK_EQ(srcId*100 + 3, edge.get_ranking());
-                CHECK_EQ(srcId*100 + 2, edge.get_dst());
-            }
-            // Delete all edges of a vertex
-            {
-                auto f = client->deleteEdges(spaceId, edgeKeys);
+        // Delete all edges of a vertex
+        {
+            for (int64_t srcId = 0; srcId < 10; srcId++) {
+                std::vector<cpp2::EdgeKey> keys;
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(101);
+                key.set_ranking(srcId * 100 + 3);
+                key.set_dst(srcId * 100 + 2);
+                keys.emplace_back(std::move(key));
+                auto f = client->deleteEdges(spaceId, keys);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.succeeded());
-
-                // Check that edges have been successfully deleted
-                auto cf = client->getEdgeKeys(spaceId, srcId);
-                auto cresp = std::move(cf).get();
-                ASSERT_TRUE(cresp.ok());
-                auto edgeKeyResp =  std::move(cresp).value();
-                auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
-                ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
+                for (auto& response : std::move(resp).responses()) {
+                    ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+                }
             }
-            // Delete a vertex
-            {
-                auto f = client->deleteVertex(spaceId, srcId);
-                auto resp = std::move(f).get();
-                ASSERT_TRUE(resp.ok());
-                auto  execResp = std::move(resp).value();
-                auto& result = execResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
+        }
+        // Delete a vertex
+        {
+            auto f = client->deleteVertices(spaceId, vertices);
+            auto resp = std::move(f).get();
+            ASSERT_TRUE(resp.succeeded());
+            auto  responses = std::move(resp).responses();
+            for (auto& response : responses) {
+                ASSERT_EQ(0, response.get_result().get_failed_codes().size());
+            }
 
-                // Check that this vertex has been successfully deleted
-                std::vector<VertexID> vIds{srcId};
-                std::vector<cpp2::PropDef> retCols;
-                retCols.emplace_back(
-                    TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
-                auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
-                auto cresp = std::move(cf).get();
-                ASSERT_TRUE(cresp.succeeded());
-                auto& results = cresp.responses();
-                ASSERT_EQ(1, results.size());
-                EXPECT_EQ(0, results[0].result.failed_codes.size());
-                // TODO bug: the results[0].vertices.size should be equal 0
-                EXPECT_EQ(1, results[0].vertices.size());
-                EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
+            // Check that this vertex has been successfully deleted
+            std::vector<cpp2::PropDef> retCols;
+            retCols.emplace_back(
+                TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
+            auto cf = client->getVertexProps(spaceId, std::move(vertices), std::move(retCols));
+            auto cresp = std::move(cf).get();
+            ASSERT_TRUE(cresp.succeeded());
+            auto& results = cresp.responses();
+            ASSERT_EQ(1, results.size());
+            EXPECT_EQ(0, results[0].result.failed_codes.size());
+            for (auto vertex : results[0].vertices) {
+                EXPECT_EQ(0, vertex.tag_data.size());
             }
         }
     }
@@ -394,15 +351,17 @@ public:
     explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
         : StorageClient(ioThreadPool, nullptr) {}
 
-    int32_t partsNum(GraphSpaceID) const override {
+    StatusOr<int32_t> partsNum(GraphSpaceID) const override {
         return parts_.size();
     }
 
-    PartMeta getPartMeta(GraphSpaceID, PartitionID partId) const override {
+    StatusOr<PartMeta> getPartMeta(GraphSpaceID, PartitionID partId) const override {
         auto it = parts_.find(partId);
         CHECK(it != parts_.end());
         return it->second;
     }
+
+    void loadLeader() const override {}
 
     std::unordered_map<PartitionID, PartMeta> parts_;
 };
@@ -425,12 +384,12 @@ TEST(StorageClientTest, LeaderChangeTest) {
     tsc.parts_.emplace(1, std::move(pm));
 
     folly::Baton<true, std::atomic> baton;
-    tsc.getNeighbors(0, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).then([&] {
+    tsc.getNeighbors(1, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).thenValue([&] (auto&&) {
         baton.post();
     });
     baton.wait();
     ASSERT_EQ(1, tsc.leaders_.size());
-    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(1, 1)]);
 }
 
 }  // namespace storage

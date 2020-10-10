@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "kvstore/raftex/SnapshotManager.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include "kvstore/raftex/RaftPart.h"
 
 DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");
@@ -33,14 +33,21 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
         auto commitLogIdAndTerm = part->lastCommittedLogId();
         const auto& localhost = part->address();
         std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-        LOG(INFO) << part->idStr_ << "Begin to send the snapshot";
+        LOG(INFO) << part->idStr_ << "Begin to send the snapshot"
+                                  << ", commitLogId = " << commitLogIdAndTerm.first
+                                  << ", commitLogTerm = " << commitLogIdAndTerm.second;
         accessAllRowsInSnapshot(spaceId,
                                 partId,
                                 [&, this, p = std::move(p)] (
-                                           std::vector<std::string>&& data,
+                                           const std::vector<std::string>& data,
                                            int64_t totalCount,
                                            int64_t totalSize,
-                                           bool finished) mutable {
+                                           SnapshotStatus status) mutable -> bool {
+            if (status == SnapshotStatus::FAILED) {
+                LOG(INFO) << part->idStr_ << "Snapshot send failed, the leader changed?";
+                p.setValue(Status::Error("Send snapshot failed!"));
+                return false;
+            }
             int retry = FLAGS_snapshot_send_retry_times;
             while (retry-- > 0) {
                 auto f = send(spaceId,
@@ -49,49 +56,56 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                               commitLogIdAndTerm.first,
                               commitLogIdAndTerm.second,
                               localhost,
-                              std::move(data),
+                              data,
                               totalSize,
                               totalCount,
                               dst,
-                              finished);
+                              status == SnapshotStatus::DONE);
                 // TODO(heng): we send request one by one to avoid too large memory occupied.
                 try {
                     auto resp  = std::move(f).get();
                     if (resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
                         VLOG(1) << part->idStr_ << "has sended count " << totalCount;
-                        if (finished) {
+                        if (status == SnapshotStatus::DONE) {
                             LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                                                       << ", totalSize " << totalSize;
                             p.setValue(Status::OK());
                         }
-                        return;
+                        return true;
+                    } else {
+                        LOG(INFO) << part->idStr_
+                                  << "Sending snapshot failed, we don't retry anymore!"
+                                  << "The error code is "
+                                  << static_cast<int32_t>(resp.get_error_code());
+                        p.setValue(Status::Error("Send snapshot failed!"));
+                        return false;
                     }
                 } catch (const std::exception& e) {
-                    LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what();
-                    p.setValue(Status::Error("Send snapshot failed!"));
-                    return;
+                    LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what()
+                               << ", retry " << retry << " times";
+                    continue;
                 }
             }
             LOG(WARNING) << part->idStr_ << "Send snapshot failed!";
-            p.setValue(Status::Error("Send snapshot failed"));
-            return;
+            p.setValue(Status::Error("Send snapshot failed!"));
+            return false;
         });
     });
     return fut;
 }
 
 folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
-                                                                GraphSpaceID spaceId,
-                                                                PartitionID partId,
-                                                                TermID termId,
-                                                                LogID committedLogId,
-                                                                TermID committedLogTerm,
-                                                                const HostAddr& localhost,
-                                                                std::vector<std::string>&& data,
-                                                                int64_t totalSize,
-                                                                int64_t totalCount,
-                                                                const HostAddr& addr,
-                                                                bool finished) {
+                                                            GraphSpaceID spaceId,
+                                                            PartitionID partId,
+                                                            TermID termId,
+                                                            LogID committedLogId,
+                                                            TermID committedLogTerm,
+                                                            const HostAddr& localhost,
+                                                            const std::vector<std::string>& data,
+                                                            int64_t totalSize,
+                                                            int64_t totalCount,
+                                                            const HostAddr& addr,
+                                                            bool finished) {
     VLOG(2) << "Send snapshot request to " << addr;
     raftex::cpp2::SendSnapshotRequest req;
     req.set_space(spaceId);
@@ -101,7 +115,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     req.set_committed_log_term(committedLogTerm);
     req.set_leader_ip(localhost.first);
     req.set_leader_port(localhost.second);
-    req.set_rows(std::move(data));
+    req.set_rows(data);
     req.set_total_size(totalSize);
     req.set_total_count(totalCount);
     req.set_done(finished);

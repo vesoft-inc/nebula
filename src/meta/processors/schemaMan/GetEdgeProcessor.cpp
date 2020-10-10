@@ -14,7 +14,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     auto edgeTypeRet = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (!edgeTypeRet.ok()) {
-        resp_.set_code(to(edgeTypeRet.status()));
+        handleErrorCode(MetaCommon::to(edgeTypeRet.status()));
         onFinished();
         return;
     }
@@ -28,7 +28,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
         if (!ret.ok()) {
             LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
                        << req.get_edge_name() << ", version " << req.get_version() << " not found";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
@@ -41,7 +41,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
         if (!ret.ok()) {
             LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
                        << req.get_edge_name() << ", version " << req.get_version() << " not found";
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
@@ -50,6 +50,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
 
     VLOG(3) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
             << req.get_edge_name() << ", version " << req.get_version();
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }

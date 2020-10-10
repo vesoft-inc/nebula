@@ -8,22 +8,21 @@
 #include "base/Status.h"
 #include <termios.h>
 #include <unistd.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "readline/readline.h"
+#include "readline/history.h"
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
 #include "fs/FileUtils.h"
+#include "network/NetworkUtils.h"
 
+DECLARE_string(addr);
+DECLARE_int32(port);
 DECLARE_string(u);
 DECLARE_string(p);
 DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
 namespace graph {
-
-const int32_t kMaxAuthInfoRetries = 3;
-const int32_t kMaxUsernameLen = 16;
-const int32_t kMaxPasswordLen = 24;
 
 CliManager::CliManager() {
     if (!fs::FileUtils::isStdinTTY()) {
@@ -45,64 +44,20 @@ CliManager::CliManager() {
 }
 
 
-bool CliManager::connect(const std::string& addr,
-                         uint16_t port,
-                         const std::string& username,
-                         const std::string& password) {
-    char user[kMaxUsernameLen + 1];
-    char pass[kMaxPasswordLen + 1];
+bool CliManager::connect() {
+    addr_ = FLAGS_addr;
+    port_ = FLAGS_port;
+    username_ = FLAGS_u;
+    std::string passwd = FLAGS_p;
 
-    strncpy(user, username.c_str(), kMaxUsernameLen);
-    user[kMaxUsernameLen] = '\0';
-    strncpy(pass, password.c_str(), kMaxPasswordLen);
-    pass[kMaxPasswordLen] = '\0';
-
-    // Make sure username is not empty
-    if (FLAGS_u.empty()) {
-        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(user); i++) {
-            // Need to interactively get the username
-            std::cout << "Username: ";
-            std::cin.getline(user, kMaxUsernameLen);
-            user[kMaxUsernameLen] = '\0';
-        }
-    } else {
-        strcpy(user, FLAGS_u.c_str());  // NOLINT
-    }
-    if (!strlen(user)) {
-        std::cout << "Authentication failed: "
-                     "Need a valid username to authenticate\n\n";
+    IPv4 temp;
+    if (!network::NetworkUtils::ipv4ToInt(addr_, temp)) {
+        std::cout << "Invalid ip string\n";
         return false;
     }
-
-    // Make sure password is not empty
-    if (FLAGS_p.empty()) {
-        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(pass); i++) {
-            // Need to interactively get the password
-            std::cout << "Password: ";
-            termios oldTerminal;
-            tcgetattr(STDIN_FILENO, &oldTerminal);
-            termios newTerminal = oldTerminal;
-            newTerminal.c_lflag &= ~ECHO;
-            tcsetattr(STDIN_FILENO, TCSANOW, &newTerminal);
-            std::cin.getline(pass, kMaxPasswordLen);
-            pass[kMaxPasswordLen] = '\0';
-            tcsetattr(STDIN_FILENO, TCSANOW, &oldTerminal);
-        }
-    } else {
-        strcpy(pass, FLAGS_p.c_str());  // NOLINT
-    }
-    if (!strlen(pass)) {
-        std::cout << "Authentication failed: "
-                     "Need a valid password\n\n";
-        return false;
-    }
-
-    addr_ = addr;
-    port_ = port;
-    username_ = user;
 
     auto client = std::make_unique<GraphClient>(addr_, port_);
-    cpp2::ErrorCode res = client->connect(user, pass);
+    cpp2::ErrorCode res = client->connect(username_, passwd);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "
@@ -126,64 +81,76 @@ void CliManager::batch(const std::string& filename) {
 
 
 void CliManager::loop() {
-    // TODO(dutor) Detect if `stdin' is being attached to a TTY
-    std::string cmd;
     loadHistory();
+
     while (true) {
+        std::string cmd;
         std::string line;
-        if (!readLine(line, !cmd.empty())) {
+        auto quit = !this->readLine(line, false/*linebreak*/);
+        // EOF
+        if (quit) {
             break;
         }
+        // Empty line
         if (line.empty()) {
-            cmd.clear();
             continue;
         }
-
-        if (line.back() == '\\') {
+        // Line break
+        while (!quit && !line.empty() && line.back() == '\\') {
             line.resize(line.size() - 1);
-            if (cmd.empty()) {
-                cmd = line;
-            } else if (cmd.back() == ' ') {
-                cmd += line;
-            } else {
-                cmd = cmd + " " + line;
-            }
+            cmd += line;
+            quit = !this->readLine(line, true/*linebreak*/);
             continue;
         }
-
+        // EOF
+        if (quit) {
+            break;
+        }
+        // Execute the whole command
         cmd += line;
-
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
-
-        cmd.clear();
     }
+
     saveHistory();
+    fprintf(stderr, "Bye!\n");
 }
 
 
 bool CliManager::readLine(std::string &line, bool linebreak) {
-    auto ok = true;
-    char prompt[256];
-    if (isInteractive_) {
-        static auto color = 0u;
-        ::snprintf(prompt, sizeof(prompt),
+    // Setup the prompt
+    std::string prompt;
+    static auto color = 0u;
+    do {
+        if (!isInteractive_) {
+            break;
+        }
+        auto purePrompt = folly::stringPrintf("(%s@nebula) [%s]> ",
+                                              username_.c_str(),
+                                              cmdProcessor_->getSpaceName().c_str());
+        if (linebreak) {
+            purePrompt.assign(purePrompt.size() - 3, ' ');
+            purePrompt += "-> ";
+        } else {
+            color++;
+        }
+
+        prompt = folly::stringPrintf(
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[1;%um"        // color codes start
                    "\002"              // RL_PROMPT_END_IGNORE
-                   "(%s@%s) [%s]> "    // prompt "(user@host) [spaceName]"
+                   "%s"                // prompt "(user@host:port) [spaceName]"
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[0m"           // restore color code
                    "\002",             // RL_PROMPT_END_IGNORE
-                   color++ % 6 + 31, username_.c_str(),
-                   addr_.c_str(), cmdProcessor_->getSpaceName().c_str());
-    } else {
-        prompt[0] = '\0';   // prompt
-    }
+                   color % 6 + 31,
+                   purePrompt.c_str());
+    } while (false);
 
-    auto *input = ::readline(linebreak ? "": prompt);
-
+    // Read one line
+    auto *input = ::readline(prompt.c_str());
+    auto ok = true;
     do {
         // EOF
         if (input == nullptr) {

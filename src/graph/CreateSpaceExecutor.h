@@ -27,11 +27,10 @@ public:
 
 private:
     CreateSpaceSentence            *sentence_{nullptr};
-    const std::string              *spaceName_{nullptr};
     // TODO Due to the currently design of the createSpace interface,
-    // it's impossible to express *not specified*, so we use 0 to indicate this.
-    int32_t                         partNum_{0};
-    int32_t                         replicaFactor_{0};
+    // it's impossible to express *not specified*, so we use 0 to
+    // indicate partNum_ and replicaFactor_ in spaceDesc_.
+    meta::SpaceDesc                spaceDesc_;
 };
 
 }   // namespace graph

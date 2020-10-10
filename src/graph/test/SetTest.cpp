@@ -46,12 +46,12 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -78,17 +78,17 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : manu.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    manu.name(), std::get<1>(serve), std::get<0>(serve));
+                    manu.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -116,13 +116,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -150,13 +150,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -184,13 +184,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -218,13 +218,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -252,7 +252,7 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -260,7 +260,7 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -293,7 +293,7 @@ TEST_F(SetTest, UnionAllTest) {
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, std::string> record(
                     tony.name(),
-                    folly::to<std::string>(std::get<1>(serve)));
+                    folly::to<std::string>(std::get<2>(serve)));
             expected.emplace_back(std::move(record));
         }
     }
@@ -311,7 +311,7 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t> record(
-                    tony.name(), std::get<1>(serve));
+                    tony.name(), std::get<2>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -352,7 +352,7 @@ TEST_F(SetTest, UnionDistinct) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -381,7 +381,7 @@ TEST_F(SetTest, UnionDistinct) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -416,7 +416,7 @@ TEST_F(SetTest, Minus) {
             }
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -446,7 +446,7 @@ TEST_F(SetTest, Intersect) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -480,14 +480,151 @@ TEST_F(SetTest, Mix) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : manu.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                manu.name(), std::get<1>(serve), std::get<0>(serve));
+                manu.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
-TEST_F(SetTest, NoInput) {
+TEST_F(SetTest, AssignSet) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var = "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION ALL "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name;"
+                    "YIELD $var.*";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.$^.player.name"}, {"$var.serve.start_year"}, {"$var.$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : tim.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var = "
+                    "(GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION ALL "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name);"
+                    "YIELD $var.*";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.$^.player.name"}, {"$var.serve.start_year"}, {"$var.$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : tim.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt =
+            "$var = (GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            " MINUS "
+            "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name;"
+            "YIELD $var.*";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.$^.player.name"}, {"$var.serve.start_year"}, {"$var.$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            if (player.name() == tony.name()) {
+                continue;
+            }
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt =
+            "$var = (GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            " INTERSECT "
+            "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name;"
+            "YIELD $var.*";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.$^.player.name"}, {"$var.serve.start_year"}, {"$var.$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(SetTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
@@ -497,11 +634,38 @@ TEST_F(SetTest, NoInput) {
                     "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
                     " INTERSECT "
                     "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name";
-        auto &nobody = players_["Nobody"];
         auto query = folly::stringPrintf(
-                fmt, nobody.vid(), nobody.vid(), nobody.vid(), nobody.vid());
+                fmt, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var = GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " MINUS "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " INTERSECT "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name;"
+                    "YIELD $var.*";
+        auto query = folly::stringPrintf(
+                fmt, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.serve.start_year"}, {"$var.$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }

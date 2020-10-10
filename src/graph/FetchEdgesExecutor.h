@@ -32,6 +32,8 @@ private:
 
     Status prepareEdgeKeys();
 
+    Status checkEdgeProps();
+
     Status setupEdgeKeys();
 
     Status setupEdgeKeysFromExpr();
@@ -58,6 +60,9 @@ private:
     std::string                                            *rank_{nullptr};
     std::string                                             varname_;
     std::function<size_t(const storage::cpp2::EdgeKey)>     hash_;
+    std::string                                             edgeSrcName_;
+    std::string                                             edgeDstName_;
+    std::string                                             edgeRankName_;
 };
 }  // namespace graph
 }  // namespace nebula

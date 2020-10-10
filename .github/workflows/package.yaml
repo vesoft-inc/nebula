@@ -1,0 +1,40 @@
+name: package
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: build package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - centos6
+          - centos7
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Package
+        run: ./package/package.sh
+      - name: Upload oss
+        run: |
+          filepath=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
+          ./ci/scripts/upload-oss.sh \
+            OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} \
+            OSS_ID=${{ secrets.OSS_ID }} \
+            OSS_SECRET=${{ secrets.OSS_SECRET }} \
+            filepath=$filepath \
+            nightly=true
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}-nightly
+          path: build/cpack_output

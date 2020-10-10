@@ -1,0 +1,115 @@
+name: pull_request
+
+on:
+  pull_request:
+    types: [synchronize, reopened, labeled]
+    branches:
+      - master
+      - 'v[0-9]+.*'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: cpplint
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Cpplint
+        run: |
+          ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+
+  build:
+    name: build
+    needs: lint
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+          - ubuntu1804
+        compiler:
+          - gcc-9.2
+          - clang-9
+        exclude:
+          - os: centos7
+            compiler: clang-9
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      env:
+        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+        CCACHE_MAXSIZE: 1G
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --mount type=tmpfs,destination=/tmp/ccache/nebula,tmpfs-size=1073741824 --cap-add=SYS_PTRACE
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Prepare environment
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+      - name: CMake
+        run: |
+          case ${{ matrix.os }} in
+          centos7)
+            # build with coverage
+            cmake -DENABLE_COVERAGE=ON -B build/
+            ;;
+          ubuntu1804)
+            case ${{ matrix.compiler }} in
+            gcc*)
+              # build with release type
+              cmake -DCMAKE_BUILD_TYPE=Release -B build/
+              ;;
+            clang*)
+              cmake \
+                -DCMAKE_CXX_COMPILER=clang++ \
+                -DCMAKE_C_COMPILER=clang \
+                -DENABLE_ASAN=on \
+                -B build/
+              ;;
+            esac
+            ;;
+          esac
+      - name: Make
+        run: cmake --build build/ -j $(($(nproc)/2+1))
+      - name: CTest with multiple threads
+        timeout-minutes: 15
+        working-directory: build
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest \
+            -j $(($(nproc)/2+1)) \
+            --timeout 400 \
+            --output-on-failure
+      - name: CTest with single thread
+        if: failure()
+        timeout-minutes: 30
+        working-directory: build
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=0
+        run: |
+          ctest \
+            --timeout 400 \
+            --output-on-failure \
+            --rerun-failed
+      - name: Testing Coverage Report
+        working-directory: build
+        if: success() && matrix.compiler == 'gcc-9.2' && matrix.os == 'centos7'
+        run: |
+          set -e
+          fastcov -o coverage.info -l --exclude=scanner.lex
+          lcov --remove coverage.info '*/opt/vesoft/*' -o clean.info
+          bash <(curl -s https://codecov.io/bash) -Z -f clean.info
+      - name: Cleanup
+        if: always()
+        run: rm -rf build

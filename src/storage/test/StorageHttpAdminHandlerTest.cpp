@@ -7,9 +7,10 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <folly/json.h>
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "webservice/test/TestUtils.h"
-#include "storage/StorageHttpAdminHandler.h"
+#include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
 
@@ -27,22 +28,27 @@ public:
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpAdminHandler.XXXXXX");
         kv_ = TestUtils::initKV(rootPath_->path());
         schemaMan_ = TestUtils::mockSchemaMan();
+
         VLOG(1) << "Starting web service...";
-        WebService::registerHandler("/admin", [this] {
+        webSvc_ = std::make_unique<WebService>();
+        auto& router = webSvc_->router();
+        router.get("/admin").handler([this](nebula::web::PathParams&&) {
             return new storage::StorageHttpAdminHandler(schemaMan_.get(), kv_.get());
         });
-        auto status = WebService::start();
+        auto status = webSvc_->start();
         ASSERT_TRUE(status.ok()) << status;
     }
 
     void TearDown() override {
-        WebService::stop();
+        webSvc_.reset();
         schemaMan_.reset();
         kv_.reset();
         rootPath_.reset();
         VLOG(1) << "Web service stopped";
     }
 
+protected:
+    std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<meta::SchemaManager> schemaMan_;
@@ -113,4 +119,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

@@ -21,6 +21,7 @@ typedef boost::any Value;
 
 class NebulaCodec {
 public:
+    virtual ~NebulaCodec() = default;
     virtual std::string encode(std::vector<Value> values,
                                std::shared_ptr<const meta::SchemaProviderIf> schema
                                    = std::shared_ptr<const meta::SchemaProviderIf>()) = 0;

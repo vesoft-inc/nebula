@@ -7,6 +7,7 @@
 #ifndef DATAMAN_ROWSETREADER_H_
 #define DATAMAN_ROWSETREADER_H_
 
+#include "RowReader.h"
 #include "base/Base.h"
 #include "gen-cpp2/storage_types.h"
 #include "meta/SchemaProviderIf.h"
@@ -33,7 +34,7 @@ public:
         // The total length of the encoded row set
         const folly::StringPiece& data_;
 
-        std::unique_ptr<RowReader> reader_;
+        RowReader reader_ = RowReader::getEmptyRowReader();
         // The offset of the current row
         int64_t offset_;
         // The length of the current row
@@ -65,6 +66,10 @@ public:
 
     Iterator begin() const noexcept;
     Iterator end() const noexcept;
+
+    folly::StringPiece getData() const noexcept {
+        return data_;
+    }
 
 private:
     std::shared_ptr<const meta::SchemaProviderIf> schema_;

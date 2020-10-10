@@ -85,13 +85,19 @@ protected:
     template <typename T, size_t N>
     using uniform_tuple_t = typename uniform_tuple<T, N>::type;
 
-    Rows respToRecords(const cpp2::ExecutionResponse &resp) {
+    Rows respToRecords(const cpp2::ExecutionResponse &resp,
+                       std::unordered_set<uint16_t> ignoreColIndex = {}) {
         CHECK(resp.get_rows() != nullptr);
         Rows result;
         for (auto &row : *resp.get_rows()) {
             auto &columns = row.get_columns();
             result.emplace_back();
-            result.back().assign(columns.begin(), columns.end());
+            for (auto i = 0u; i < columns.size(); i++) {
+                if (ignoreColIndex.find(i) != ignoreColIndex.end()) {
+                    continue;
+                }
+                result.back().emplace_back(columns[i]);
+            }
         }
         return result;
     }
@@ -180,7 +186,9 @@ protected:
 
     template <typename Tuple>
     AssertionResult verifyResult(const cpp2::ExecutionResponse &resp,
-                                 std::vector<Tuple> &expected, bool sortEnable = true) {
+                                 std::vector<Tuple> &expected,
+                                 bool sortEnable = true,
+                                 std::unordered_set<uint16_t> ignoreColIndex = {}) {
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             auto *errmsg = resp.get_error_msg();
             return TestError() << "Query failed with `"
@@ -192,9 +200,13 @@ protected:
             return TestOK();
         }
 
+        if (resp.get_rows() == nullptr) {
+            return TestError() << "No response data";
+        }
+
         std::vector<Tuple> rows;
         try {
-            rows = rowsToTuples<Tuple>(respToRecords(resp));
+            rows = rowsToTuples<Tuple>(respToRecords(resp, std::move(ignoreColIndex)));
         } catch (const AssertionResult &e) {
             return e;
         } catch (const std::exception &e) {
@@ -214,7 +226,8 @@ protected:
             std::sort(rows.begin(), rows.end());
             std::sort(expected.begin(), expected.end());
         }
-        for (auto i = 0u; i < rows.size(); i++) {
+
+        for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
             if (rows[i] != expected[i]) {
                 return TestError() << rows[i] << " vs. " << expected[i];
             }

@@ -77,6 +77,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
     }
     auto schema = rsReader_->schema();
     auto columnCnt = schema->getNumFields();
+    VLOG(1) << "columnCnt: " << columnCnt;
     std::vector<cpp2::RowValue> rows;
     folly::StringPiece piece;
     using nebula::cpp2::SupportedType;
@@ -85,25 +86,32 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
         std::vector<cpp2::ColumnValue> row;
         row.reserve(columnCnt);
         auto fieldIter = schema->begin();
+        int64_t cnt = 0;
         while (fieldIter) {
+            ++cnt;
             auto type = fieldIter->getType().type;
             auto field = fieldIter->getName();
+            VLOG(1) << "field: " << field << " type: " << static_cast<int64_t>(type);
             row.emplace_back();
             switch (type) {
                 case SupportedType::VID: {
                     int64_t v;
                     auto rc = rowIter->getVid(field, v);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get vid from interim failed.");
+                        return Status::Error(
+                                "Get vid from interim failed, field: %s, index: %ld.",
+                                field, cnt);
                     }
-                    row.back().set_integer(v);
+                    row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {
                     double v;
                     auto rc = rowIter->getDouble(field, v);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get double from interim failed.");
+                        return Status::Error(
+                                "Get double from interim failed, field: %s, index: %ld.",
+                                field, cnt);
                     }
                     row.back().set_double_precision(v);
                     break;
@@ -112,7 +120,9 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                     bool v;
                     auto rc = rowIter->getBool(field, v);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get bool from interim failed.");
+                        return Status::Error(
+                                "Get bool from interim failed, field: %s, index: %ld.",
+                                field, cnt);
                     }
                     row.back().set_bool_val(v);
                     break;
@@ -120,7 +130,9 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                 case SupportedType::STRING: {
                     auto rc = rowIter->getString(field, piece);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get bool from interim failed.");
+                        return Status::Error(
+                                "Get string from interim failed, field: %s, index: %ld.",
+                                field, cnt);
                     }
                     row.back().set_str(piece.toString());
                     break;
@@ -128,14 +140,22 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                 case SupportedType::INT: {
                     int64_t v;
                     auto rc = rowIter->getInt(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error(
+                                "Get int from interim failed, field: %s, index: %ld.",
+                                field, cnt);
+                    }
                     row.back().set_integer(v);
                     break;
                 }
                 case SupportedType::TIMESTAMP: {
                     int64_t v;
                     auto rc = rowIter->getInt(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error(
+                                "Get timestamp from interim failed, field: %s, index: %ld.",
+                                field, cnt);
+                    }
                     row.back().set_timestamp(v);
                     break;
                 }
@@ -170,8 +190,15 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
     for (auto i = 0u; i < columnCnt; i++) {
         auto name = schema->getFieldName(i);
         if (vidColumn == name) {
-            if (schema->getFieldType(i).type != SupportedType::VID) {
-                return Status::Error("The specific vid column is not type of VID.");
+            VLOG(1) << "col name: " << vidColumn << ", col index: " << i;
+            if (schema->getFieldType(i).type != SupportedType::INT &&
+                schema->getFieldType(i).type != SupportedType::VID &&
+                schema->getFieldType(i).type != SupportedType::TIMESTAMP) {
+                return Status::Error(
+                    "Build internal index for input data failed. "
+                    "The specific vid column `%s' is not type of VID, INT or TIMESTAMP, "
+                    "column index: %u.",
+                    vidColumn.c_str(), i);
             }
             vidIndex = i;
         }
@@ -193,7 +220,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                         return Status::Error("Get vid from interim failed.");
                     }
                     if (i == vidIndex) {
-                        index->vidToRowIndex_[v] = rowIndex++;
+                        index->vidToRowIndex_.emplace(v, rowIndex++);
                     }
                     row.emplace_back(v);
                     break;
@@ -220,7 +247,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                     folly::StringPiece piece;
                     auto rc = rowIter->getString(i, piece);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get bool from interim failed.");
+                        return Status::Error("Get string from interim failed.");
                     }
                     row.emplace_back(piece.toString());
                     break;
@@ -229,7 +256,12 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                 case SupportedType::TIMESTAMP: {
                     int64_t v;
                     auto rc = rowIter->getInt(i, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get int from interim failed.");
+                    }
+                    if (i == vidIndex) {
+                        index->vidToRowIndex_.emplace(v, rowIndex++);
+                    }
                     row.emplace_back(v);
                     break;
                 }
@@ -244,17 +276,13 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         ++rowIter;
     }
     index->schema_ = schema;
-    return std::move(index);
+    return index;
 }
 
-
-OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
-    const std::string &col) const {
-    uint32_t rowIndex = 0;
-    {
-        auto iter = vidToRowIndex_.find(id);
-        DCHECK(iter != vidToRowIndex_.end());
-        rowIndex = iter->second;
+OptVariantType
+InterimResult::InterimResultIndex::getColumnWithRow(std::size_t row, const std::string &col) const {
+    if (row >= rows_.size()) {
+        return Status::Error("Out of range");
     }
     uint32_t columnIndex = 0;
     {
@@ -265,25 +293,16 @@ OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
         }
         columnIndex = iter->second;
     }
-    return rows_[rowIndex][columnIndex];
+    return rows_[row][columnIndex];
 }
 
-
-nebula::cpp2::SupportedType InterimResult::InterimResultIndex::getColumnType(
+nebula::cpp2::SupportedType InterimResult::getColumnType(
     const std::string &col) const {
-    uint32_t columnIndex = 0;
-    auto iter = columnToIndex_.find(col);
-    if (iter == columnToIndex_.end()) {
-        LOG(ERROR) << "Prop `" << col << "' not found";
+    auto schema = rsReader_->schema();
+    if (schema == nullptr) {
         return nebula::cpp2::SupportedType::UNKNOWN;
     }
-    columnIndex = iter->second;
-
-
-    if (schema_ == nullptr) {
-        return nebula::cpp2::SupportedType::UNKNOWN;
-    }
-    auto type = schema_->getFieldType(columnIndex);
+    auto type = schema->getFieldType(col);
     return type.type;
 }
 
@@ -339,7 +358,7 @@ Status InterimResult::castToInt(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string `%s' to int failed.", col->get_str().c_str());
             }
         }
         default:
@@ -376,7 +395,7 @@ Status InterimResult::castToVid(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string %s to vid failed.", col->get_str().c_str());
             }
         }
         default:
@@ -413,7 +432,7 @@ Status InterimResult::castToTimestamp(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string %s to timestamp failed.", col->get_str().c_str());
             }
         }
         default:
@@ -580,7 +599,62 @@ InterimResult::getInterim(
     }
     auto result = std::make_unique<InterimResult>(std::move(colNames));
     result->setInterim(std::move(rsWriter));
-    return std::move(result);
+    return result;
+}
+
+Status InterimResult::applyTo(std::function<Status(const RowReader *reader)> visitor,
+                              int64_t limit) const {
+    auto status = Status::OK();
+    auto iter = rsReader_->begin();
+    while (iter && (limit > 0)) {
+        status = visitor(&*iter);
+        if (!status.ok()) {
+            break;
+        }
+        --limit;
+        ++iter;
+    }
+    return status;
+}
+
+Status InterimResult::getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                      RowSetWriter *rsWriter) {
+    if (rsWriter == nullptr) {
+        return Status::Error("rsWriter is nullptr");
+    }
+    using Type = cpp2::ColumnValue::Type;
+    for (auto &row : rows) {
+        RowWriter writer(rsWriter->schema());
+        auto columns = row.get_columns();
+        for (auto &column : columns) {
+            switch (column.getType()) {
+                case Type::id:
+                    writer << column.get_id();
+                    break;
+                case Type::integer:
+                    writer << column.get_integer();
+                    break;
+                case Type::double_precision:
+                    writer << column.get_double_precision();
+                    break;
+                case Type::bool_val:
+                    writer << column.get_bool_val();
+                    break;
+                case Type::str:
+                    writer << column.get_str();
+                    break;
+                case Type::timestamp:
+                    writer << column.get_timestamp();
+                    break;
+                default:
+                    LOG(ERROR) << "Not Support: " << column.getType();
+                    return Status::Error("Not Support: %d", column.getType());
+            }
+        }
+        rsWriter->addRow(writer);
+    }
+
+    return Status::OK();
 }
 }   // namespace graph
 }   // namespace nebula

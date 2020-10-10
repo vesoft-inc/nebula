@@ -72,26 +72,44 @@ public:
 
 
 public:
-    static std::unique_ptr<RowReader> getTagPropReader(
+    RowReader(const RowReader&) = delete;
+    RowReader& operator=(const RowReader&) = delete;
+    RowReader(RowReader&& x) = default;
+    RowReader& operator=(RowReader&& x) = default;
+
+    static RowReader getTagPropReader(
         meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag);
 
-    static std::unique_ptr<RowReader> getEdgePropReader(
+    static RowReader getEdgePropReader(
         meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         EdgeType edge);
 
-    static std::unique_ptr<RowReader> getRowReader(
+    static RowReader getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
+
+    static RowReader getEmptyRowReader() {
+        return RowReader();
+    }
 
     static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
                                                 const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
-        switch (vType.type) {
+        auto defaultVal = getDefaultProp(vType.type);
+        if (!defaultVal.ok()) {
+            LOG(ERROR) << "Get default value for `" << prop << "' failed: " << defaultVal.status();
+        }
+
+        return defaultVal;
+    }
+
+    static StatusOr<VariantType> getDefaultProp(const nebula::cpp2::SupportedType& type) {
+        switch (type) {
             case nebula::cpp2::SupportedType::BOOL: {
                 return false;
             }
@@ -109,8 +127,8 @@ public:
                 return static_cast<std::string>("");
             }
             default:
-                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(vType.type));
-                LOG(ERROR) << "Unknown type: " << msg;
+                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(type));
+                LOG(ERROR) << msg;
                 return Status::Error(msg);
         }
     }
@@ -169,7 +187,7 @@ public:
                 return v.toString();
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                VLOG(2) << "Unknown type: " << static_cast<int32_t>(vType.type);
                 return ResultType::E_DATA_INVALID;
         }
     }
@@ -229,13 +247,10 @@ public:
                 return v.toString();
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
+                VLOG(2) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
                 return ResultType::E_DATA_INVALID;
         }
     }
-
-    virtual ~RowReader() = default;
-
     SchemaVer schemaVer() const noexcept;
     int32_t numFields() const noexcept;
 
@@ -267,9 +282,55 @@ public:
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
-
     std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
         return schema_;
+    }
+
+    static int32_t getSchemaVer(folly::StringPiece row);
+
+    folly::StringPiece getData() const noexcept {
+        return data_;
+    }
+
+    operator bool() const noexcept {
+        return operator!=(nullptr);
+    }
+
+    bool operator==(std::nullptr_t) const noexcept {
+        return !data_.data();
+    }
+
+    bool operator==(const RowReader& x) const noexcept {
+        return data_ == x.data_;
+    }
+
+    bool operator!=(std::nullptr_t) const noexcept {
+        return static_cast<bool>(data_.data());
+    }
+
+    bool operator!=(const RowReader& x) const noexcept {
+        return data_ != x.data_;
+    }
+
+    RowReader* operator->() const noexcept {
+        return get();
+    }
+
+    RowReader* get() const noexcept {
+        return const_cast<RowReader*>(this);
+    }
+
+    RowReader* get() noexcept {
+        return this;
+    }
+
+    RowReader& operator*() const noexcept {
+        return *get();
+    }
+
+    void reset() noexcept {
+        this->~RowReader();
+        new(this) RowReader();
     }
 
     // TODO getPath(const std::string& name) const noexcept;
@@ -294,8 +355,7 @@ private:
     mutable std::vector<int64_t> offsets_;
 
 private:
-    static int32_t getSchemaVer(folly::StringPiece row);
-
+    RowReader() = default;
     RowReader(folly::StringPiece row,
               std::shared_ptr<const meta::SchemaProviderIf> schema);
 

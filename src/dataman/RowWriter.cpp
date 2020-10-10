@@ -171,7 +171,7 @@ RowWriter& RowWriter::operator<<(folly::StringPiece v) noexcept {
     switch (type->get_type()) {
         case SupportedType::STRING: {
             writeInt(v.size());
-            cord_ << v;
+            cord_.write(v.data(), v.size());
             break;
         }
         default: {

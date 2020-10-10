@@ -24,6 +24,9 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -36,5 +39,7 @@ install(
         simple_kv_verify
     DESTINATION
         bin
+    COMPONENT
+        tool
 )
 

@@ -12,7 +12,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -22,14 +22,6 @@ protected:
     void SetUp() override {
         TestBase::SetUp();
         // ...
-    }
-
-    void TearDown() override {
-        // ...
-        TestBase::TearDown();
-    }
-
-    static void SetUpTestCase() {
         client_ = gEnv->getClient();
         storagePort_ = gEnv->storageServerPort();
 
@@ -40,7 +32,10 @@ protected:
         ASSERT_TRUE(prepareData());
     }
 
-    static void TearDownTestCase() {
+    void TearDown() override {
+        // ...
+        TestBase::TearDown();
+
         ASSERT_TRUE(removeData());
         client_.reset();
     }
@@ -62,15 +57,6 @@ std::unique_ptr<GraphClient> UpdateTestBase::client_;
 
 // static
 AssertionResult UpdateTestBase::prepareSchema() {
-    {
-        cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", storagePort_);
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE myspace_test2(partition_num=1, replica_factor=1)";
@@ -111,6 +97,16 @@ AssertionResult UpdateTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
+    // create tag with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG student_default(name string, age int, "
+                          "gender string DEFAULT \"one\", birthday int DEFAULT 2010)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE EDGE like(likeness double)";
@@ -127,7 +123,17 @@ AssertionResult UpdateTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    // create edge with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE select_default(grade int, "
+                          "year TIMESTAMP DEFAULT 1546308000)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 
@@ -261,14 +267,6 @@ AssertionResult UpdateTestBase::removeData() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "DROP SPACE myspace_test2";
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u", storagePort_);
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";

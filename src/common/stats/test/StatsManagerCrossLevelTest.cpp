@@ -31,12 +31,14 @@ TEST(StatsManager, CrossLevelTest) {
     }
 
     // The first number of each thread should be moved to the next level
-    EXPECT_EQ(4500, StatsManager::readValue("stat03.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat03.SUM.600"));
-    EXPECT_EQ(90, StatsManager::readValue("stat03.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat03.COUNT.600"));
-    EXPECT_EQ(99, StatsManager::readValue("stat03.p99.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat03.P99.600"));
+    EXPECT_EQ(4500, StatsManager::readValue("stat03.sum.60").value());
+    EXPECT_EQ(460, StatsManager::readValue("stat03.sum.5").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat03.SUM.600").value());
+    EXPECT_EQ(90, StatsManager::readValue("stat03.count.60").value());
+    EXPECT_EQ(10, StatsManager::readValue("stat03.count.5").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat03.COUNT.600").value());
+    EXPECT_EQ(99, StatsManager::readValue("stat03.p99.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat03.P99.600").value());
 }
 
 }   // namespace stats

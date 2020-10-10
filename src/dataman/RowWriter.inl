@@ -22,7 +22,8 @@ RowWriter::operator<<(T v) noexcept {
             break;
         }
         default: {
-            LOG(ERROR) << "Incompatible value type \"int\"";
+            LOG(ERROR) << "Incompatible value type \"int\""
+                       << ", current type " << static_cast<int32_t>(type->get_type());
             writeInt(0);
             break;
         }
@@ -39,7 +40,7 @@ RowWriter::writeInt(T v) {
     uint8_t buf[10];
     size_t len = folly::encodeVarint(v, buf);
     DCHECK_GT(len, 0UL);
-    cord_ << folly::ByteRange(buf, len);
+    cord_.write(reinterpret_cast<const char*>(&buf[0]), len);
 }
 
 }  // namespace nebula

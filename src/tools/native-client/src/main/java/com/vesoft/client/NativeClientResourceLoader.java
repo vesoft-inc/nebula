@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,22 +19,28 @@ public class NativeClientResourceLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
 
     public static void resourceLoader() {
-        try (InputStream stream = ClassLoader.class.getResourceAsStream(NEBULA_LIB_NAME)) {
-            if (stream == null) {
-                throw new RuntimeException(NEBULA_LIB_NAME + " was not found in JAR");
-            }
-
-            File file = File.createTempFile("lib", ".so");
-            if (!file.exists()) {
-                throw new RuntimeException(file.getAbsolutePath() + " does not exist");
-            }
-            file.deleteOnExit();
-
-            Files.copy(stream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            System.load(file.getAbsolutePath());
-
-        } catch (IOException e) {
-            LOGGER.error("libnebula_native_client Open Failed {}", e.getMessage());
+        InputStream stream = ClassLoader.class.getResourceAsStream(NEBULA_LIB_NAME);
+        if (stream == null) {
+            throw new RuntimeException(NEBULA_LIB_NAME + " was not found in JAR");
         }
+
+        File file = null;
+        try {
+            file = File.createTempFile("lib", ".so");
+        } catch (IOException e) {
+            LOGGER.error("libnebula_native_client Create Failed {}", e.getMessage());
+        }
+
+        if (!file.exists()) {
+            throw new RuntimeException(file.getAbsolutePath() + " does not exist");
+        }
+        file.deleteOnExit();
+
+        try {
+            Files.copy(stream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.error("libnebula_native_client Copy Failed {}", e.getMessage());
+        }
+        System.load(file.getAbsolutePath());
     }
 }

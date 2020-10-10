@@ -8,6 +8,10 @@
 
 namespace nebula {
 
+Configuration::Configuration() {
+    content_ = std::make_unique<folly::dynamic>(folly::dynamic::object());
+}
+
 Configuration::Configuration(folly::dynamic content) {
     CHECK(content.isObject()) << "The content is not a valid configuration";
     content_ = std::make_unique<folly::dynamic>(std::move(content));
@@ -71,6 +75,22 @@ Status Configuration::parseFromString(const std::string &content) {
         return Status::Error("Illegal format (%s)", e.what());
     }
     return Status::OK();
+}
+
+std::string Configuration::dumpToString() const {
+    std::string json;
+    if (content_ != nullptr) {
+        json = folly::toJson(*content_);
+    }
+    return json;
+}
+
+std::string Configuration::dumpToPrettyString() const {
+    std::string json;
+    if (content_ != nullptr) {
+        json = folly::toPrettyJson(*content_);
+    }
+    return json;
 }
 
 
@@ -144,6 +164,17 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
 }
 
 
+Status Configuration::upsertStringField(const char* key, const std::string& val) {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end() || iter->second.isString()) {
+        (*content_)[key] = val;
+        return Status::OK();
+    }
+    return Status::Error("Item \"%s\" not found or it is not an string", key);
+}
+
+
 Status Configuration::fetchAsIntArray(
         const char *key,
         std::vector<int64_t> &val) const {
@@ -160,7 +191,8 @@ Status Configuration::fetchAsIntArray(
         try {
             val.emplace_back(entry.asInt());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -183,7 +215,8 @@ Status Configuration::fetchAsDoubleArray(
         try {
             val.emplace_back(entry.asDouble());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -206,7 +239,8 @@ Status Configuration::fetchAsBoolArray(
         try {
             val.emplace_back(entry.asBool());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -229,7 +263,8 @@ Status Configuration::fetchAsStringArray(
         try {
             val.emplace_back(entry.asString());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -242,7 +277,8 @@ Status Configuration::forEachKey(std::function<void(const std::string&)> process
         try {
             processor(key.asString());
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();
@@ -256,7 +292,8 @@ Status Configuration::forEachItem(
         try {
             processor(item.first.asString(), item.second);
         } catch (const std::exception& ex) {
-            return Status::Error(ex.what());
+            // Avoid format sercure by literal
+            return Status::Error("%s", ex.what());
         }
     }
     return Status::OK();

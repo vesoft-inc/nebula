@@ -30,6 +30,7 @@ private:
 
 private:
     CreateEdgeSentence                         *sentence_{nullptr};
+    std::unique_ptr<ExpressionContext>         exprCtx_{nullptr};
     nebula::cpp2::Schema                        schema_;
 };
 

@@ -11,7 +11,6 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,22 +44,30 @@ public class NativeClient {
         }
     }
 
-    private static final int PARTITION_ID = 4;
-    private static final int VERTEX_ID = 8;
-    private static final int TAG_ID = 4;
-    private static final int TAG_VERSION = 8;
-    private static final int EDGE_TYPE = 4;
-    private static final int EDGE_RANKING = 8;
-    private static final int EDGE_VERSION = 8;
-    private static final int VERTEX_SIZE = PARTITION_ID + VERTEX_ID + TAG_ID + TAG_VERSION;
-    private static final int EDGE_SIZE = PARTITION_ID + VERTEX_ID + EDGE_TYPE + EDGE_RANKING + VERTEX_ID + EDGE_VERSION;
+    private static final int PARTITION_ID_SIZE = 4;
+    private static final int VERTEX_ID_SIZE = 8;
+    private static final int TAG_ID_SIZE = 4;
+    private static final int TAG_VERSION_SIZE = 8;
+    private static final int EDGE_TYPE_SIZE = 4;
+    private static final int EDGE_RANKING_SIZE = 8;
+    private static final int EDGE_VERSION_SIZE = 8;
+    private static final int VERTEX_SIZE = PARTITION_ID_SIZE + VERTEX_ID_SIZE
+        + TAG_ID_SIZE + TAG_VERSION_SIZE;
+    private static final int EDGE_SIZE = PARTITION_ID_SIZE + VERTEX_ID_SIZE
+        + EDGE_TYPE_SIZE + EDGE_RANKING_SIZE + VERTEX_ID_SIZE + EDGE_VERSION_SIZE;
+
+    private static final int DATA_KEY_TYPE = 0x00000001;
+    private static final int TAG_MASK      = 0xBFFFFFFF;
+    private static final int EDGE_MASK     = 0x40000000;
 
     public static byte[] createEdgeKey(int partitionId, long srcId, int edgeType,
                                        long edgeRank, long dstId, long edgeVersion) {
         ByteBuffer buffer = ByteBuffer.allocate(EDGE_SIZE);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
+        partitionId = (partitionId << 8) | DATA_KEY_TYPE;
         buffer.putInt(partitionId);
         buffer.putLong(srcId);
+        edgeType |= EDGE_MASK;
         buffer.putInt(edgeType);
         buffer.putLong(edgeRank);
         buffer.putLong(dstId);
@@ -72,8 +79,10 @@ public class NativeClient {
                                          int tagId, long tagVersion) {
         ByteBuffer buffer = ByteBuffer.allocate(VERTEX_SIZE);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
+        partitionId = (partitionId << 8) | DATA_KEY_TYPE;
         buffer.putInt(partitionId);
         buffer.putLong(vertexId);
+        tagId &= TAG_MASK;
         buffer.putInt(tagId);
         buffer.putLong(tagVersion);
         return buffer.array();

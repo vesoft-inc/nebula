@@ -43,6 +43,7 @@ enum class AppendLogResult {
     E_SENDING_SNAPSHOT = -8,
     E_INVALID_PEER = -9,
     E_NOT_ENOUGH_ACKS = -10,
+    E_WRITE_BLOCKING = -11,
 };
 
 enum class LogType {
@@ -67,7 +68,7 @@ class AppendLogsIterator;
  * otherwise it will return the new operation's encoded string whick should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
-using AtomicOp = folly::Function<std::string(void)>;
+using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -181,6 +182,13 @@ public:
      * */
     AppendLogResult isCatchedUp(const HostAddr& peer);
 
+    bool linkCurrentWAL(const char* newPath);
+
+    /**
+     * Reset my peers if not equals the argument
+     */
+    void checkAndResetPeers(const std::vector<HostAddr>& peers);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -200,6 +208,10 @@ public:
     void processSendSnapshotRequest(
         const cpp2::SendSnapshotRequest& req,
         cpp2::SendSnapshotResponse& resp);
+
+    bool leaseValid();
+
+    bool needToCleanWal();
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -316,7 +328,7 @@ private:
 
     bool needToStartElection();
 
-    void statusPolling();
+    void statusPolling(int64_t startTime);
 
     bool needToCleanupSnapshot();
 
@@ -334,7 +346,9 @@ private:
         std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results);
+    Role processElectionResponses(const ElectionResponses& results,
+                                  std::vector<std::shared_ptr<Host>> hosts,
+                                  TermID proposedTerm);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -478,15 +492,27 @@ protected:
     // When the partition is the leader, the leader_ is same as addr_
     HostAddr leader_;
 
+    // After voted for somebody, it will not be empty anymore.
+    // And it will be reset to empty after current election finished.
+    HostAddr votedAddr_{0, 0};
+
     // The current term id
-    //
-    // When the partition voted for someone, termId will be set to
     // the term id proposed by that candidate
     TermID term_{0};
     // During normal operation, proposedTerm_ is equal to term_,
     // when the partition becomes a candidate, proposedTerm_ will be
     // bumped up by 1 every time when sending out the AskForVote
     // Request
+
+    // If voted for somebody, the proposeTerm will be reset to the candidate
+    // propose term. So we could use it to prevent revote if someone else ask for
+    // vote for current proposedTerm.
+
+    // TODO(heng) We should persist it on the disk in the future
+    // Otherwise, after restart the whole cluster, maybe the stale
+    // leader still has the unsend log with larger term, and after other
+    // replicas elected the new leader, the stale one will not join in the
+    // Raft group any more.
     TermID proposedTerm_{0};
 
     // The id and term of the last-sent log
@@ -497,9 +523,14 @@ protected:
 
     // To record how long ago when the last leader message received
     time::Duration lastMsgRecvDur_;
-    // To record how long ago when the last log message or heartbeat
-    // was sent
+    // To record how long ago when the last log message or heartbeat was sent
     time::Duration lastMsgSentDur_;
+    // To record when the last message was accepted by majority peers
+    uint64_t lastMsgAcceptedTime_{0};
+    // How long between last message was sent and was accepted by majority peers
+    uint64_t lastMsgAcceptedCostMs_{0};
+    // Make sure only one election is in progress
+    std::atomic_bool inElection_{false};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
@@ -520,6 +551,10 @@ protected:
 
     // Used to bypass the stale command
     int64_t startTimeMs_ = 0;
+
+    std::atomic<uint64_t> weight_;
+
+    bool blocking_{false};
 };
 
 }  // namespace raftex

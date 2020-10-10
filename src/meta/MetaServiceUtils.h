@@ -10,23 +10,30 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/Common.h"
+#include "common/base/ThriftTypes.h"
 
 namespace nebula {
 namespace meta {
 
 enum class EntryType : int8_t {
-    SPACE = 0x01,
-    TAG   = 0x02,
-    EDGE  = 0x03,
-    USER  = 0x04,
-    CONFIG = 0x05,
+    SPACE       = 0x01,
+    TAG         = 0x02,
+    EDGE        = 0x03,
+    INDEX       = 0x04,
+    CONFIG      = 0x05,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
+using LeaderParts = std::unordered_map<GraphSpaceID, std::vector<PartitionID>>;
 
 class MetaServiceUtils final {
 public:
     MetaServiceUtils() = delete;
+
+    static std::string lastUpdateTimeKey();
+
+    static std::string lastUpdateTimeVal(const int64_t timeInMilliSec);
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
@@ -42,9 +49,13 @@ public:
 
     static std::string partKey(GraphSpaceID spaceId, PartitionID partId);
 
+    static GraphSpaceID parsePartKeySpaceId(folly::StringPiece key);
+
+    static PartitionID parsePartKeyPartId(folly::StringPiece key);
+
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
-    static const std::string& partPrefix();
+    static std::string partPrefix();
 
     static std::string partPrefix(GraphSpaceID spaceId);
 
@@ -60,17 +71,29 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
+    static std::string leaderKey(IPv4 ip, Port port);
+
+    static std::string leaderVal(const LeaderParts& leaderParts);
+
+    static const std::string& leaderPrefix();
+
+    static nebula::cpp2::HostAddr parseLeaderKey(folly::StringPiece key);
+
+    static LeaderParts parseLeaderVal(folly::StringPiece val);
+
     static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
 
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
-    static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
+    static std::string schemaEdgeVal(const std::string& name, const nebula::cpp2::Schema& schema);
 
     static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
+
+    static std::string schemaTagVal(const std::string& name, const nebula::cpp2::Schema& schema);
 
     static SchemaVer parseTagVersion(folly::StringPiece key);
 
@@ -78,9 +101,31 @@ public:
 
     static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
-    static std::string schemaTagVal(const std::string& name, nebula::cpp2::Schema schema);
-
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
+
+    static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
+
+    static std::string indexVal(const nebula::cpp2::IndexItem& item);
+
+    static std::string indexPrefix(GraphSpaceID spaceId);
+
+    static nebula::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
+
+    static std::string rebuildIndexStatus(GraphSpaceID space,
+                                          char type,
+                                          const std::string& indexName);
+
+    static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
+
+    static std::string rebuildIndexStatusPrefix();
+
+    static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'T');
+    }
+
+    static std::string rebuildEdgeIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'E');
+    }
 
     static std::string indexSpaceKey(const std::string& name);
 
@@ -88,43 +133,51 @@ public:
 
     static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
+    static std::string indexIndexKey(GraphSpaceID spaceId, const std::string& name);
+
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  prop,
-                                           const nebula::cpp2::ColumnDef col,
-                                           const cpp2::AlterSchemaOp op);
+                                           std::vector<kvstore::KV>& defaultKVs,
+                                           std::vector<std::string>& removeDefaultKeys,
+                                           GraphSpaceID spaceId,
+                                           TagID/*EdgeType*/ id,
+                                           nebula::cpp2::ColumnDef col,
+                                           cpp2::AlterSchemaOp op);
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
-                                           nebula::cpp2::SchemaProp alterSchemaProp);
+                                           nebula::cpp2::SchemaProp alterSchemaProp,
+                                           bool existIndex);
 
-    static std::string indexUserKey(const std::string& account);
+    static std::string userKey(const std::string& account);
 
-    static std::string userKey(UserID userId);
+    static std::string userVal(const std::string& val);
 
-    static std::string userVal(const std::string& password,
-                               const cpp2::UserItem& userItem);
+    static std::string parseUser(folly::StringPiece key);
 
-    static folly::StringPiece userItemVal(folly::StringPiece rawVal);
+    static std::string parseUserPwd(folly::StringPiece val);
 
-    static std::string replaceUserVal(const cpp2::UserItem& user, folly::StringPiece rawVal);
+    static std::string roleKey(GraphSpaceID spaceId, const std::string& account);
 
-    static std::string roleKey(GraphSpaceID spaceId, UserID userId);
+    static std::string roleVal(nebula::cpp2::RoleType roleType);
 
-    static std::string roleVal(cpp2::RoleType roleType);
+    static std::string parseRoleUser(folly::StringPiece key);
 
-    static std::string changePassword(folly::StringPiece val, folly::StringPiece newPwd);
-
-    static cpp2::UserItem parseUserItem(folly::StringPiece val);
+    static GraphSpaceID parseRoleSpace(folly::StringPiece key);
 
     static std::string rolesPrefix();
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
 
-    static UserID parseRoleUserId(folly::StringPiece val);
+    static std::string parseRoleStr(folly::StringPiece key);
 
-    static UserID parseUserId(folly::StringPiece val);
+    static std::string defaultKey(GraphSpaceID spaceId,
+                                  TagID/*EdgeType*/ id,
+                                  const std::string& field);
+
+    static const std::string& defaultPrefix();
 
     static std::string configKey(const cpp2::ConfigModule& module,
                                  const std::string& name);
@@ -138,6 +191,19 @@ public:
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 
     static cpp2::ConfigItem parseConfigValue(folly::StringPiece rawData);
+
+    static std::string snapshotKey(const std::string& name);
+
+    static std::string snapshotVal(const cpp2::SnapshotStatus& status ,
+                                   const std::string& hosts);
+
+    static cpp2::SnapshotStatus parseSnapshotStatus(folly::StringPiece rawData);
+
+    static std::string parseSnapshotHosts(folly::StringPiece rawData);
+
+    static std::string parseSnapshotName(folly::StringPiece rawData);
+
+    static const std::string& snapshotPrefix();
 };
 
 }  // namespace meta

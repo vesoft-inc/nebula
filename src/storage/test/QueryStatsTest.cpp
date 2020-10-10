@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
-#include "base/NebulaKeyUtils.h"
+#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/QueryStatsProcessor.h"
+#include "storage/query/QueryStatsProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -18,33 +18,19 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 3; partId++) {
+    for (int32_t partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                RowWriter writer;
-                for (int64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(3, 6);
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
-                RowWriter writer(nullptr);
-                for (int64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
@@ -73,7 +59,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 2; i++) {
         tmpColumns.emplace_back(
-            TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
+            TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
                                     cpp2::StatType::AVG, 3001 + i * 2));
     }
     // Return edge props col_0, col_2, col_4 ... col_18
@@ -145,7 +131,8 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     buildRequest(req);
 
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), executor.get());
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

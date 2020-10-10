@@ -18,7 +18,8 @@ namespace nebula {
 namespace graph {
 
 DownloadExecutor::DownloadExecutor(Sentence *sentence,
-                                   ExecutionContext *ectx) : Executor(ectx) {
+                                   ExecutionContext *ectx)
+    : Executor(ectx, "download") {
     sentence_ = static_cast<DownloadSentence*>(sentence);
 }
 
@@ -29,8 +30,7 @@ Status DownloadExecutor::prepare() {
 void DownloadExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -44,21 +44,50 @@ void DownloadExecutor::execute() {
     if (hdfsHost == nullptr || hdfsPort == 0 || hdfsPath == nullptr) {
         LOG(ERROR) << "URL Parse Failed";
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        onError_(Status::Error("URL Parse Failed"));
+        doError(Status::Error("URL Parse Failed"));
         return;
     }
 
-    auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, spaceId]() {
-        static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&space=%d";
-        auto url = folly::stringPrintf(tmp, metaHost.c_str(), FLAGS_ws_meta_http_port,
-                                       "download-dispatch", hdfsHost->c_str(),
-                                       hdfsPort, hdfsPath->c_str(), spaceId);
+    std::string url;
+
+    if (sentence_->edge()) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(
+            spaceId, *sentence_->edge());
+        if (!edgeStatus.ok()) {
+            doError(Status::Error("edge not found."));
+            return;
+        }
+        auto edgeType = edgeStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d&edge=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId, edgeType);
+    } else if (sentence_->tag()) {
+        auto tagStatus = ectx()->schemaManager()->toTagID(
+            spaceId, *sentence_->tag());
+        if (!tagStatus.ok()) {
+            doError(Status::Error("tag not found."));
+            return;
+        }
+        auto tagType = tagStatus.value();
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d&tag=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId, tagType);
+    } else {
+        url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
+            metaHost.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(), spaceId);
+    }
+
+    auto func = [url] {
         auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile dispatch successfully") {
             LOG(INFO) << "Download Successfully";
             return true;
         } else {
-            LOG(ERROR) << "Download Failed ";
+            LOG(ERROR) << "Download Failed: " << result.value();
             return false;
         }
     };
@@ -68,19 +97,16 @@ void DownloadExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp) {
-            DCHECK(onError_);
-            onError_(Status::Error("Download Failed"));
+            doError(Status::Error("Download Failed"));
             return;
         }
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Download exception: " << e.what();
+        doError(Status::Error("Download exception: %s", e.what().c_str()));
         return;
     };
 

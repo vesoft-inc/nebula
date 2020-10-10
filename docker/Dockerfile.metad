@@ -1,15 +1,14 @@
-FROM vesoft/nebula-dev:centos as builder
+FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && . /etc/profile.d/devtoolset-8-enable.sh \
-  && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula metad
+  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/RPMS/x86_64/nebula-base-*.el7.x86_64.rpm /usr/local/nebula/nebula-base.rpm
-COPY --from=builder /home/nebula/RPMS/x86_64/nebula-metad-*.el7.x86_64.rpm /usr/local/nebula/nebula-metad.rpm
+COPY --from=builder /home/nebula/BUILD/build/nebula-graph-*-Linux-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/build/nebula-graph-*-Linux-meta.rpm /usr/local/nebula/nebula-metad.rpm
 
 WORKDIR /usr/local/nebula
 

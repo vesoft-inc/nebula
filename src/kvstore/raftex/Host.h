@@ -53,6 +53,18 @@ public:
         stopped_ = true;
     }
 
+    void reset() {
+        std::unique_lock<std::mutex> g(lock_);
+        noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
+        logIdToSend_ = 0;
+        logTermToSend_ = 0;
+        lastLogIdSent_ = 0;
+        lastLogTermSent_ = 0;
+        committedLogId_ = 0;
+        sendingSnapshot_ = false;
+        followerCommittedLogId_ = 0;
+    }
+
     void waitForStop();
 
     bool isLearner() const {
@@ -64,7 +76,8 @@ public:
     }
 
     folly::Future<cpp2::AskForVoteResponse> askForVote(
-        const cpp2::AskForVoteRequest& req);
+        const cpp2::AskForVoteRequest& req,
+        folly::EventBase* eb);
 
     // When logId == lastLogIdSent, it is a heartbeat
     folly::Future<cpp2::AppendLogResponse> appendLogs(
@@ -132,6 +145,9 @@ private:
 
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
+
+    // CommittedLogId of follower
+    LogID followerCommittedLogId_{0};
 };
 
 }  // namespace raftex

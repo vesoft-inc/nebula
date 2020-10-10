@@ -9,6 +9,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
@@ -24,6 +25,9 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -36,4 +40,52 @@ install(
         storage_perf
     DESTINATION
         bin
+    COMPONENT
+        tool
+)
+
+nebula_add_executable(
+    NAME
+        storage_integrity
+    SOURCES
+        StorageIntegrityTool.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_client>
+        $<TARGET_OBJECTS:storage_service_handler>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:kvstore_obj>
+        $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:raftex_obj>
+        $<TARGET_OBJECTS:raftex_thrift_obj>
+        $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+        $<TARGET_OBJECTS:dataman_obj>
+        $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:filter_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:convert_time_type_utils_obj>
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+install(
+    TARGETS
+        storage_integrity
+    DESTINATION
+        bin
+    COMPONENT
+        tool
 )

@@ -36,7 +36,7 @@ public:
 protected:
     virtual ~GflagsManager() = default;
 
-    static std::unordered_map<std::string, cpp2::ConfigMode>
+    static std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>>
            parseConfigJson(const std::string& json);
 
     template<typename ValueType>

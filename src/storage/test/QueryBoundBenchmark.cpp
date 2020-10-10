@@ -11,8 +11,8 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/QueryBoundProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "storage/query/QueryBoundProcessor.h"
+#include "utils/NebulaKeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"
@@ -31,44 +31,30 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 6; partId++) {
+    for (PartitionID partId = 0; partId < 6; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = 1; vertexId < 1000; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (VertexID vertexId = 1; vertexId < 1000; vertexId++) {
+            for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(3, 6);
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (auto version = 0; version < 3; version++) {
+                for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                  dstId - 10001, dstId,
                                                  std::numeric_limits<int>::max() - version);
-                    RowWriter writer(nullptr);
-                    for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                        writer << numInt;
-                    }
-                    for (auto numString = 10; numString < 20; numString++) {
-                        writer << folly::stringPrintf("string_col_%d_%d", numString, version);
-                    }
-                    auto val = writer.encode();
+                    auto val = TestUtils::setupEncode(10, 20);
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (auto srcId = 20001; srcId <= 20005; srcId++) {
+            for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (auto version = 0; version < 3; version++) {
+                for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                  srcId - 20001, srcId,
                                                  std::numeric_limits<int>::max() - version);
@@ -89,7 +75,7 @@ void setUp(const char* path) {
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
+    for (TagID tagId = 3001; tagId < 3010; tagId++) {
         schema->addTagSchema(
             0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
     }
@@ -100,8 +86,8 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (auto partId = 0; partId < FLAGS_req_parts; partId++) {
-        for (auto vertexId = 1; vertexId <= FLAGS_vrpp; vertexId++) {
+    for (PartitionID partId = 0; partId < FLAGS_req_parts; partId++) {
+        for (VertexID vertexId = 1; vertexId <= FLAGS_vrpp; vertexId++) {
             tmpIds[partId].push_back(vertexId);
         }
     }
@@ -112,7 +98,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        tmpColumns.emplace_back(TestUtils::vetexPropDef(
+        tmpColumns.emplace_back(TestUtils::vertexPropDef(
             folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
     tmpColumns.emplace_back(
@@ -140,10 +126,10 @@ void run(int32_t iters, int32_t handlerNum) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(FLAGS_handler_num);
     for (decltype(iters) i = 0; i < iters; i++) {
         auto* processor
-                = nebula::storage::QueryBoundProcessor::instance(
-                                                            gKV.get(),
-                                                            schema.get(),
-                                                            executor.get());
+                = nebula::storage::QueryBoundProcessor::instance(gKV.get(),
+                                                                 schema.get(),
+                                                                 nullptr,
+                                                                 executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -188,4 +174,22 @@ query_bound_3                                               41.18ms    24.29
 query_bound_10                                              13.69ms    73.04
 ============================================================================
 
+2020/02/26:
+Debug version:
+============================================================================
+QueryBoundBenchmark.cpprelative  						  time/iter  iters/s
+============================================================================
+query_bound_1                                               79.76ms    12.54
+query_bound_3                                               27.89ms    35.85
+query_bound_10                                              10.88ms    91.87
+============================================================================
+
+Release version:
+============================================================================
+QueryBoundBenchmark.cpprelative                           time/iter  iters/s
+============================================================================
+query_bound_1                                               12.59ms    79.45
+query_bound_3                                                4.97ms   201.39
+query_bound_10                                               3.34ms   299.08
+============================================================================
 */

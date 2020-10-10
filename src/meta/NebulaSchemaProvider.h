@@ -26,16 +26,33 @@ public:
         const char* getName() const override {
             return name_.c_str();
         }
+
         const nebula::cpp2::ValueType& getType() const override {
             return type_;
         }
+
         bool isValid() const override {
             return true;
+        }
+
+        bool hasDefaultValue() const override {
+            return hasDefaultValue_;
+        }
+
+        VariantType getDefaultValue() const override {
+            return defaultValue_;
+        }
+
+        void setDefaultValue(VariantType value) {
+            hasDefaultValue_ = true;
+            defaultValue_ = std::move(value);
         }
 
     private:
         std::string name_;
         nebula::cpp2::ValueType type_;
+        bool hasDefaultValue_{false};
+        VariantType defaultValue_;
     };
 
 public:
@@ -54,11 +71,17 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    nebula::cpp2::Schema toSchema() const override;
+
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
+
+    void addDefaultValue(folly::StringPiece name, const nebula::cpp2::Value &value);
 
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 
     const nebula::cpp2::SchemaProp getProp() const;
+    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const override;
+    const StatusOr<VariantType> getDefaultValue(int64_t index) const override;
 
 protected:
     NebulaSchemaProvider() = default;

@@ -10,14 +10,32 @@
 namespace nebula {
 namespace http {
 
-StatusOr<std::string> HttpClient::get(const std::string& path) {
-    auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", path.c_str());
-    LOG(INFO) << "HTTP Get Command: " << command;
+StatusOr<std::string> HttpClient::get(const std::string& path, const std::string& options) {
+    auto command = folly::stringPrintf("/usr/bin/curl %s \"%s\"", options.c_str(), path.c_str());
+    LOG(INFO) << "HTTP Start Get Command: " << command;
+    auto result = nebula::ProcessUtils::runCommand(command.c_str());
+
+    if (result.ok()) {
+        LOG(INFO) << "HTTP Get Finished: " << command << " : " << result.value();
+        return result;
+    } else {
+        LOG(INFO) << "HTTP Get Failed: " << command << " : " << result.status().toString();
+        return Status::Error(folly::stringPrintf("Http Get Failed: %s", path.c_str()));
+    }
+}
+
+StatusOr<std::string> HttpClient::post(const std::string& path, const std::string& header) {
+    auto command = folly::stringPrintf("/usr/bin/curl -X POST %s \"%s\"",
+                                       header.c_str(),
+                                       path.c_str());
+    LOG(INFO) << "HTTP Start Post Command: " << command;
     auto result = nebula::ProcessUtils::runCommand(command.c_str());
     if (result.ok()) {
-        return result.value();
+        LOG(INFO) << "HTTP Post Finished: " << command << " : " << result.value();
+        return result;
     } else {
-        return Status::Error(folly::stringPrintf("Http Get Failed: %s", path.c_str()));
+        LOG(INFO) << "HTTP Post Failed: " << command << " : " << result.status().toString();
+        return Status::Error(folly::stringPrintf("Http Post Failed: %s", path.c_str()));
     }
 }
 

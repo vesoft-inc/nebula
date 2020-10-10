@@ -30,6 +30,9 @@ enum ErrorCode {
     E_EDGE_PROP_NOT_FOUND = -21,
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
+    E_EDGE_NOT_FOUND = -24,
+    E_TAG_NOT_FOUND = -25,
+    E_INDEX_NOT_FOUND = -26,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -37,9 +40,21 @@ enum ErrorCode {
     E_INVALID_STORE = -33,
     E_INVALID_PEER  = -34,
     E_RETRY_EXHAUSTED = -35,
+    E_TRANSFER_LEADER_FAILED = -36,
 
     // meta client failed
     E_LOAD_META_FAILED = -41,
+
+    // checkpoint failed
+    E_FAILED_TO_CHECKPOINT = -50,
+    E_CHECKPOINT_BLOCKED = -51,
+
+    // Filter out
+    E_FILTER_OUT         = -60,
+
+    // partial result, used for kv interfaces
+    E_PARTIAL_RESULT = -99,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -50,6 +65,11 @@ enum PropOwner {
     EDGE = 3,
 } (cpp.enum_strict)
 
+enum EngineSignType {
+    BLOCK_ON = 1,
+    BLOCK_OFF = 2,
+}
+
 union EntryId {
     1: common.TagID tag_id,
     2: common.EdgeType edge_type,
@@ -58,8 +78,8 @@ union EntryId {
 struct PropDef {
     1: PropOwner owner,
     2: EntryId   id,
-    3: string name,      // Property name
-    4: StatType stat,    // calc stats when setted.
+    3: string    name,    // Property name
+    4: StatType  stat,    // calc stats when setted.
 }
 
 enum StatType {
@@ -75,9 +95,28 @@ struct ResultCode {
     3: optional common.HostAddr  leader,
 }
 
+struct EdgeKey {
+    1: common.VertexID src,
+    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
+    // When query edge props, the field could be unset.
+    2: common.EdgeType edge_type,
+    3: common.EdgeRanking ranking,
+    4: common.VertexID dst,
+}
+
+struct Edge {
+    1: EdgeKey key,
+    2: binary props,
+}
+
+struct IdAndProp {
+    1: common.VertexID dst,
+    2: binary props,
+}
+
 struct EdgeData {
-    1: common.EdgeType type,
-    2: binary          data,   // decode according to edge_schema.
+    1: common.EdgeType   type,
+    3: list<IdAndProp>   edges,  // dstId and it's props
 }
 
 struct TagData {
@@ -89,6 +128,11 @@ struct VertexData {
     1: common.VertexID       vertex_id,
     2: list<TagData>         tag_data,
     3: list<EdgeData>        edge_data,
+}
+
+struct VertexIndexData {
+    1: common.VertexID       vertex_id,
+    2: binary                props,
 }
 
 struct ResponseCommon {
@@ -103,6 +147,7 @@ struct QueryResponse {
     2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
     3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
     4: optional list<VertexData> vertices,
+    5: optional i32 total_edges,
 }
 
 struct ExecResponse {
@@ -121,11 +166,6 @@ struct QueryStatsResponse {
     3: optional binary data,
 }
 
-struct EdgeKeyResponse {
-    1: required ResponseCommon result,
-    2: optional list<EdgeKey> edge_keys,      // out-edges and in-edges
-}
-
 struct Tag {
     1: common.TagID tag_id,
     2: binary props,
@@ -134,20 +174,6 @@ struct Tag {
 struct Vertex {
     1: common.VertexID id,
     2: list<Tag> tags,
-}
-
-struct EdgeKey {
-    1: common.VertexID src,
-    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
-    // When query edge props, the field could be unset.
-    2: common.EdgeType edge_type,
-    3: common.EdgeRanking ranking,
-    4: common.VertexID dst,
-}
-
-struct Edge {
-    1: EdgeKey key,
-    2: binary props,
 }
 
 struct GetNeighborsRequest {
@@ -191,16 +217,9 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
-struct EdgeKeyRequest {
+struct DeleteVerticesRequest {
     1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: common.VertexID vid,
-}
-
-struct DeleteVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.VertexID     vid;
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct DeleteEdgesRequest {
@@ -210,15 +229,14 @@ struct DeleteEdgesRequest {
 }
 
 struct AdminExecResp {
-    1: ErrorCode code,
-    // Only valid when code is E_LEADER_CHANAGED.
-    2: common.HostAddr  leader,
+    1: required ResponseCommon result,
 }
 
 struct AddPartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: bool                as_learner,
+    4: list<common.HostAddr> peers,
 }
 
 struct RemovePartReq {
@@ -252,11 +270,17 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
+struct CheckPeersReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: list<common.HostAddr> peers,
+}
+
 struct GetLeaderReq {
 }
 
 struct GetLeaderResp {
-    1: ErrorCode                 code,
+    1: required ResponseCommon result,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
@@ -274,23 +298,80 @@ struct UpdateItem {
 }
 
 struct UpdateVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.VertexID vertex_id,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    1: common.GraphSpaceID      space_id,
+    2: common.VertexID          vertex_id,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
 }
 
 struct UpdateEdgeRequest {
+    1: common.GraphSpaceID      space_id,
+    2: EdgeKey                  edge_key,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
+}
+
+struct ScanEdgeRequest {
     1: common.GraphSpaceID space_id,
-    2: EdgeKey edge_key,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.EdgeType, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of edge in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanEdgeResponse {
+    1: required ResponseCommon result,
+    2: map<common.EdgeType, common.Schema> (cpp.template = "std::unordered_map") edge_schema,
+    3: list<ScanEdge> edge_data,
+    4: bool has_next,
+    5: binary next_cursor, // next start key of scan
+}
+
+struct ScanEdge {
+    1: common.VertexID src,
+    2: common.EdgeType type,
+    3: common.VertexID dst,
+    4: binary value, // decode according to edge_schema.
+}
+
+struct ScanVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.TagID, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of tag in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanVertex {
+    1: common.VertexID  vertexId,
+    2: common.TagID     tagId,
+    3: binary           value,                  // decode according to vertex_schema.
+}
+
+struct ScanVertexResponse {
+    1: required ResponseCommon result,
+    2: map<common.TagID, common.Schema> (cpp.template = "std::unordered_map") vertex_schema,
+    3: list<ScanVertex> vertex_data,
+    4: bool has_next,
+    5: binary next_cursor,          // next start key of scan
 }
 
 struct PutRequest {
@@ -311,6 +392,9 @@ struct RemoveRangeRequest {
 struct GetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
 struct PrefixRequest {
@@ -339,6 +423,44 @@ struct GetUUIDResp {
     2: common.VertexID id,
 }
 
+struct BlockingSignRequest {
+    1: common.GraphSpaceID          space_id,
+    2: required EngineSignType      sign,
+}
+
+struct CreateCPRequest {
+    1: common.GraphSpaceID          space_id,
+    2: string                       name,
+}
+
+struct DropCPRequest {
+    1: common.GraphSpaceID          space_id,
+    2: string                       name,
+}
+
+struct RebuildIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: list<common.PartitionID>     parts,
+    3: common.IndexID               index_id,
+    4: bool                         is_offline,
+}
+
+struct LookUpIndexRequest {
+    1: common.GraphSpaceID       space_id,
+    2: list<common.PartitionID>  parts,
+    3: common.IndexID            index_id,
+    4: binary                    filter,
+    5: list<string>              return_columns,
+    6: bool                      is_edge,
+}
+
+struct LookUpIndexResp {
+    1: required ResponseCommon             result,
+    2: optional common.Schema              schema,
+    3: optional list<VertexIndexData>      vertices,
+    4: optional list<Edge>                 edges,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -351,12 +473,14 @@ service StorageService {
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
 
-    EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+    ExecResponse deleteVertices(1: DeleteVerticesRequest req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
@@ -365,7 +489,17 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    AdminExecResp checkPeers(1: CheckPeersReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
+    // Interfaces for manage checkpoint
+    AdminExecResp createCheckpoint(1: CreateCPRequest req);
+    AdminExecResp dropCheckpoint(1: DropCPRequest req);
+    AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
+    // Interfaces for rebuild index
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);
@@ -374,4 +508,7 @@ service StorageService {
     ExecResponse      removeRange(1: RemoveRangeRequest req);
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
+
+    // Interfaces for edge and vertex index scan
+    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req);
 }

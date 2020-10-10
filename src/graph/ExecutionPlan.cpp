@@ -6,19 +6,22 @@
 
 #include "base/Base.h"
 #include "graph/ExecutionPlan.h"
+#include "stats/StatsManager.h"
 
 namespace nebula {
 namespace graph {
 
 void ExecutionPlan::execute() {
     auto *rctx = ectx()->rctx();
-    FLOG_INFO("Parsing query: %s", rctx->query().c_str());
+    VLOG(1) << "Parsing query: " << rctx->query().c_str();
 
     Status status;
     do {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
+            LOG(ERROR) << "Do cmd `" << rctx->query() << "' failed: " << status;
+            stats::Stats::addStatsValue(parseStats_.get(), false);
             break;
         }
 
@@ -37,7 +40,8 @@ void ExecutionPlan::execute() {
     }
 
     // Prepared
-    auto onFinish = [this] () {
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         this->onFinish();
     };
     auto onError = [this] (Status s) {
@@ -54,9 +58,14 @@ void ExecutionPlan::onFinish() {
     auto *rctx = ectx()->rctx();
     executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::Stats::addStatsValue(allStats_.get(), true, latency);
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
+    if (!ectx()->getWarningMsg().empty()) {
+        rctx->resp().set_warning_msg(
+                folly::stringPrintf("%s.", folly::join(", ", ectx()->getWarningMsg()).c_str()));
+    }
     rctx->finish();
 
     // The `ExecutionPlan' is the root node holding all resources during the execution.
@@ -68,16 +77,20 @@ void ExecutionPlan::onFinish() {
 
 
 void ExecutionPlan::onError(Status status) {
+    LOG(ERROR) << "Execute failed: " << status.toString();
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
     } else if (status.isStatementEmpty()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_STATEMENT_EMTPY);
+    } else if (status.isPermissionError()) {
+        rctx->resp().set_error_code(cpp2::ErrorCode::E_BAD_PERMISSION);
     } else {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }
     rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::Stats::addStatsValue(allStats_.get(), false, latency);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

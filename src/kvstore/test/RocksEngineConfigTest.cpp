@@ -24,13 +24,17 @@ namespace kvstore {
 TEST(RocksEngineConfigTest, SimpleOptionTest) {
     fs::TempDir rootPath("/tmp/SimpleOptionTest.XXXXXX");
 
-    FLAGS_rocksdb_db_options = "stats_dump_period_sec=200;"
-                               "enable_write_thread_adaptive_yield=false;"
-                               "write_thread_max_yield_usec=600";
-    FLAGS_rocksdb_column_family_options = "max_write_buffer_number=4;"
-                                          "min_write_buffer_number_to_merge=2;"
-                                          "max_write_buffer_number_to_maintain=1";
-    FLAGS_rocksdb_block_based_table_options = "block_restart_interval=2";
+    FLAGS_rocksdb_db_options = R"({
+                                   "stats_dump_period_sec":"200",
+                                   "enable_write_thread_adaptive_yield":"false",
+                                   "write_thread_max_yield_usec":"600"
+                               })";
+    FLAGS_rocksdb_column_family_options = R"({
+                                              "max_write_buffer_number":"4",
+                                              "min_write_buffer_number_to_merge":"2",
+                                              "max_write_buffer_number_to_maintain":"1"
+                                          })";
+    FLAGS_rocksdb_block_based_table_options = R"({"block_restart_interval":"2"})";
 
     // Create the RocksEngine instance
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
@@ -65,15 +69,15 @@ TEST(RocksEngineConfigTest, SimpleOptionTest) {
     EXPECT_EQ(2, loadedBbtOpt->block_restart_interval);
 
     // Clean up
-    FLAGS_rocksdb_db_options = "";
-    FLAGS_rocksdb_column_family_options = "";
-    FLAGS_rocksdb_block_based_table_options = "";
+    FLAGS_rocksdb_db_options = "{}";
+    FLAGS_rocksdb_column_family_options = "{}";
+    FLAGS_rocksdb_block_based_table_options = "{}";
 }
 
 
 TEST(RocksEngineConfigTest, createOptionsTest) {
     rocksdb::Options options;
-    FLAGS_rocksdb_db_options = "stats_dump_period_sec=aaaaaa";
+    FLAGS_rocksdb_db_options = R"({"stats_dump_period_sec":"aaaaaa"})";
 
     rocksdb::Status s = initRocksdbOptions(options);
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
@@ -81,7 +85,83 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
               s.ToString());
 
     // Clean up
-    FLAGS_rocksdb_db_options = "";
+    FLAGS_rocksdb_db_options = "{}";
+}
+
+TEST(RocksEngineConfigTest, StatisticsConfigTest) {
+    {
+        FLAGS_enable_rocksdb_statistics = false;
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(nullptr, getDBStatistics());
+    }
+
+    {
+        FLAGS_enable_rocksdb_statistics = true;
+        FLAGS_rocksdb_stats_level = "kExceptTimers";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        std::shared_ptr<rocksdb::Statistics> stats = getDBStatistics();
+        ASSERT_EQ(rocksdb::StatsLevel::kExceptTimers, stats->get_stats_level());
+    }
+}
+
+TEST(RocksEngineConfigTest, CompressionConfigTest) {
+    {
+        FLAGS_rocksdb_compression = "lz4";
+        FLAGS_rocksdb_compression_per_level = "no:no::mp3::zstd";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_EQ(rocksdb::Status::kInvalidArgument, status.code());
+    }
+
+    {
+        FLAGS_rocksdb_compression = "lz4";
+        FLAGS_rocksdb_compression_per_level = "no:no::snappy::zstd";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[1]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[2]);
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression_per_level[3]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[4]);
+        ASSERT_EQ(rocksdb::kZSTD, options.compression_per_level[5]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[6]);
+
+        rocksdb::DB* db = nullptr;
+        SCOPE_EXIT { delete db; };
+        options.create_if_missing = true;
+        fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+        status = rocksdb::DB::Open(options, rootPath.path(), &db);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+    }
+
+    {
+        FLAGS_rocksdb_compression = "snappy";
+        FLAGS_rocksdb_compression_per_level = "no:snappy:lz4:lz4hc:zstd:zlib:bzip2";
+        rocksdb::Options options;
+        auto status = initRocksdbOptions(options);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression);
+        ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);
+        ASSERT_EQ(rocksdb::kSnappyCompression, options.compression_per_level[1]);
+        ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[2]);
+        ASSERT_EQ(rocksdb::kLZ4HCCompression, options.compression_per_level[3]);
+        ASSERT_EQ(rocksdb::kZSTD, options.compression_per_level[4]);
+        ASSERT_EQ(rocksdb::kZlibCompression, options.compression_per_level[5]);
+        ASSERT_EQ(rocksdb::kBZip2Compression, options.compression_per_level[6]);
+
+        rocksdb::DB* db = nullptr;
+        SCOPE_EXIT { delete db; };
+        options.create_if_missing = true;
+        fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+        status = rocksdb::DB::Open(options, rootPath.path(), &db);
+        ASSERT_TRUE(status.ok()) << status.ToString();
+    }
 }
 
 }  // namespace kvstore

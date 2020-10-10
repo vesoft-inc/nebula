@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "base/Cord.h"
+#include "base/Logging.h"
 
 namespace nebula {
 
@@ -223,15 +223,6 @@ Cord& Cord::operator<<(const std::string& value) {
 
 Cord& Cord::operator<<(const char* value) {
     return write(value, strlen(value));
-}
-
-
-Cord& Cord::operator<<(const folly::StringPiece value) {
-    return write(value.begin(), value.size());
-}
-
-Cord& Cord::operator<<(const folly::ByteRange value) {
-    return write(reinterpret_cast<const char*>(value.begin()), value.size());
 }
 
 Cord& Cord::operator<<(const Cord& rhs) {

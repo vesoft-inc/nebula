@@ -25,14 +25,16 @@ struct FileBasedWalPolicy {
     int32_t ttl = 86400;
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
-    size_t fileSize = 128 * 1024L * 1024L;
+    size_t fileSize = 16 * 1024L * 1024L;
 
     // Size of each buffer (in byte)
     size_t bufferSize = 8 * 1024L * 1024L;
 
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
-    size_t numBuffers = 4;
+    size_t numBuffers = 2;
+    // Whether fsync needs to be called every write
+    bool sync = false;
 };
 
 
@@ -42,6 +44,8 @@ using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::s
 class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
+    FRIEND_TEST(FileBasedWal, CheckLastWalTest);
+    FRIEND_TEST(FileBasedWal, LinkTest);
     friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
@@ -107,6 +111,9 @@ public:
     std::unique_ptr<LogIterator> iterator(LogID firstLogId,
                                           LogID lastLogId) override;
 
+    /** It is not thread-safe */
+    bool linkCurrentWAL(const char* newPath) override;
+
     // Iterates through all wal file info in reversed order
     // (from the latest to the earliest)
     // The iteration finishes when the functor returns false or reaches
@@ -141,12 +148,14 @@ private:
     // Scan all WAL files
     void scanAllWalFiles();
 
+    void scanLastWal(WalFileInfoPtr info, LogID firstId);
+
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
-    // Retrieve the term id for the given log id in the given WAL file
-    TermID readTermId(const char* path, LogID logId);
+    // Rollback to logId in given file
+    void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
     // Return the last buffer.
     // If the last buffer is big enough, create a new one
@@ -196,7 +205,8 @@ private:
     mutable std::mutex buffersMutex_;
 
     PreProcessor preProcessor_;
-    std::atomic_int onGoingBuffersNum_{0};
+
+    folly::RWSpinLock rollbackLock_;
 };
 
 }  // namespace wal

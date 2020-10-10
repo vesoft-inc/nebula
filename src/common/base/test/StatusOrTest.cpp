@@ -92,12 +92,14 @@ TEST(StatusOr, ReturnFromMoveOnlyValue) {
             // the following code, in the combination of NVRO and implicit conversion.
             // We use `std::move' explicitly for now
             auto ptr = std::make_unique<std::string>("SomeValue");
-            return std::move(ptr);
+            return ptr;
         };
         auto result = foo();
         ASSERT_TRUE(result.ok());
         ASSERT_EQ("SomeValue", *result.value());
     }
+
+    /*
     // return move only from compatible named value
     {
         auto foo = [] () -> StatusOr<std::shared_ptr<std::string>> {
@@ -111,6 +113,7 @@ TEST(StatusOr, ReturnFromMoveOnlyValue) {
         ASSERT_TRUE(result.ok());
         ASSERT_EQ("SomeValue", *result.value());
     }
+    */
 }
 
 
@@ -423,6 +426,7 @@ TEST(StatusOr, Destruct) {
 }
 
 
+/*
 TEST(StatusOr, ConstructibleButNotConvertible) {
     struct ConstructibleButNotConvertible {
         explicit ConstructibleButNotConvertible(double) {}
@@ -431,7 +435,6 @@ TEST(StatusOr, ConstructibleButNotConvertible) {
 }
 
 
-/*
 TEST(StatusOr, ConvertibleButNotConstructible) {
     struct ConvertibleButNotConstructible {
         explicit ConvertibleButNotConstructible(double) = delete;

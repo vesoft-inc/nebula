@@ -20,15 +20,14 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
             getOneConfig(module, name, items);
         } else {
             getOneConfig(cpp2::ConfigModule::GRAPH, name, items);
-            getOneConfig(cpp2::ConfigModule::META, name, items);
             getOneConfig(cpp2::ConfigModule::STORAGE, name, items);
         }
     }
 
     if (items.empty()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
     } else {
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_items(std::move(items));
     }
     onFinished();

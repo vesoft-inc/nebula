@@ -2,19 +2,23 @@
 *.so
 *.DS_Store
 
+# build
 build
 _build
 _build.log
 _install
 install_manifest.txt
 
-# ccls
+# lsp
 .ccls
+.ccls-cache
+.clangd/
 compile_commands.json
 
 src/common/base/Base.h.gch
 gen-*
 
+# cmake
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CMakeCache.txt
@@ -26,3 +30,15 @@ Testing/
 target/
 cluster.id
 pids/
+
+# IDE
+.idea/
+.project
+.settings/
+.classpath
+cmake-build-debug/
+cmake-build-release/
+.vscode/
+cmake-build-debug*
+cmake-build-release*
+

@@ -21,12 +21,18 @@
 #include "graph/DropEdgeExecutor.h"
 #include "graph/DescribeTagExecutor.h"
 #include "graph/DescribeEdgeExecutor.h"
+#include "graph/CreateTagIndexExecutor.h"
+#include "graph/CreateEdgeIndexExecutor.h"
+#include "graph/DropTagIndexExecutor.h"
+#include "graph/DropEdgeIndexExecutor.h"
+#include "graph/DescribeTagIndexExecutor.h"
+#include "graph/DescribeEdgeIndexExecutor.h"
+#include "graph/RebuildTagIndexExecutor.h"
+#include "graph/RebuildEdgeIndexExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
 #include "graph/ShowExecutor.h"
-#include "graph/AddHostsExecutor.h"
-#include "graph/RemoveHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
@@ -34,17 +40,27 @@
 #include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/IngestExecutor.h"
+#include "graph/AdminJobExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
 #include "graph/FetchEdgesExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/SetExecutor.h"
-#include "graph/FindExecutor.h"
+#include "graph/LookupExecutor.h"
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
-#include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteVerticesExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
+#include "graph/FindPathExecutor.h"
+#include "graph/LimitExecutor.h"
+#include "graph/GroupByExecutor.h"
+#include "graph/ReturnExecutor.h"
+#include "graph/CreateSnapshotExecutor.h"
+#include "graph/DropSnapshotExecutor.h"
+#include "graph/UserExecutor.h"
+#include "graph/PrivilegeExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -86,6 +102,30 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDropEdge:
              executor = std::make_unique<DropEdgeExecutor>(sentence, ectx());
              break;
+        case Sentence::Kind::kCreateTagIndex:
+            executor = std::make_unique<CreateTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateEdgeIndex:
+            executor = std::make_unique<CreateEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeTagIndex:
+            executor = std::make_unique<DescribeTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeEdgeIndex:
+            executor = std::make_unique<DescribeEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropTagIndex:
+             executor = std::make_unique<DropTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kDropEdgeIndex:
+             executor = std::make_unique<DropEdgeIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRebuildTagIndex:
+             executor = std::make_unique<RebuildTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRebuildEdgeIndex:
+             executor = std::make_unique<RebuildEdgeIndexExecutor>(sentence, ectx());
+             break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
             break;
@@ -97,12 +137,6 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kAssignment:
             executor = std::make_unique<AssignmentExecutor>(sentence, ectx());
-            break;
-        case Sentence::Kind::kAddHosts:
-            executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
-            break;
-        case Sentence::Kind::kRemoveHosts:
-            executor = std::make_unique<RemoveHostsExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kCreateSpace:
             executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());
@@ -128,6 +162,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kConfig:
             executor = std::make_unique<ConfigExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::KGroupBy:
+            executor = std::make_unique<GroupByExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kFetchVertices:
             executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx());
             break;
@@ -140,14 +177,17 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kMatch:
             executor = std::make_unique<MatchExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kFind:
-            executor = std::make_unique<FindExecutor>(sentence, ectx());
+        case Sentence::Kind::kLookup:
+            executor = std::make_unique<LookupExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kBalance:
             executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDeleteVertex:
-            executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            executor = std::make_unique<DeleteVerticesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUpdateVertex:
             executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
@@ -155,12 +195,48 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kUpdateEdge:
             executor = std::make_unique<UpdateEdgeExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kFindPath:
+            executor = std::make_unique<FindPathExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kLimit:
+            executor = std::make_unique<LimitExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kReturn:
+            executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSnapshot:
+            executor = std::make_unique<CreateSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSnapshot:
+            executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAdmin:
+            executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateUser:
+            executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropUser:
+            executor = std::make_unique<DropUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterUser:
+            executor = std::make_unique<AlterUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kChangePassword:
+            executor = std::make_unique<ChangePasswordExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kGrant:
+            executor = std::make_unique<GrantExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRevoke:
+            executor = std::make_unique<RevokeExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
-            LOG(FATAL) << "Sentence kind unknown";
-            break;
+            LOG(ERROR) << "Sentence kind unknown";
+            return nullptr;
         default:
-            LOG(FATAL) << "Sentence kind illegal: " << kind;
-            break;
+            LOG(ERROR) << "Sentence kind illegal: " << kind;
+            return nullptr;
     }
     return executor;
 }
@@ -182,7 +258,7 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
     }
 }
 
-void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
+Status Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     switch (value.which()) {
         case VAR_INT64:
             writer << boost::get<int64_t>(value);
@@ -197,8 +273,10 @@ void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
             writer << boost::get<std::string>(value);
             break;
         default:
-            LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            LOG(ERROR) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            return Status::Error("Unknown value type: %d", value.which());
     }
+    return Status::OK();
 }
 
 bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
@@ -219,77 +297,92 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     return false;
 }
 
-Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                                std::vector<std::string*> props) {
-    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-        auto schemaFieldName = schema->getFieldName(fieldIndex);
-        if (UNLIKELY(nullptr == schemaFieldName)) {
-            return Status::Error("Invalid field index");
+StatusOr<cpp2::ColumnValue> Executor::toColumnValue(const VariantType& value,
+                                                    cpp2::ColumnValue::Type type) const {
+    cpp2::ColumnValue colVal;
+    try {
+        if (type == cpp2::ColumnValue::Type::__EMPTY__) {
+            switch (value.which()) {
+                case VAR_INT64:
+                    colVal.set_integer(boost::get<int64_t>(value));
+                    break;
+                case VAR_DOUBLE:
+                    colVal.set_double_precision(boost::get<double>(value));
+                    break;
+                case VAR_BOOL:
+                    colVal.set_bool_val(boost::get<bool>(value));
+                    break;
+                case VAR_STR:
+                    colVal.set_str(boost::get<std::string>(value));
+                    break;
+                default:
+                    LOG(ERROR) << "Wrong Type: " << value.which();
+                    return Status::Error("Wrong Type: %d", value.which());
+            }
+            return colVal;
         }
-        if (schemaFieldName != *props[fieldIndex]) {
-            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
-                       << ", input field " << *props[fieldIndex];
-            return Status::Error("Input field name `%s' is wrong",
-                                 props[fieldIndex]->c_str());
+        switch (type) {
+            case cpp2::ColumnValue::Type::id:
+                colVal.set_id(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::integer:
+                colVal.set_integer(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::timestamp:
+                colVal.set_timestamp(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::double_precision:
+                colVal.set_double_precision(boost::get<double>(value));
+                break;
+            case cpp2::ColumnValue::Type::bool_val:
+                colVal.set_bool_val(boost::get<bool>(value));
+                break;
+            case cpp2::ColumnValue::Type::str:
+                colVal.set_str(boost::get<std::string>(value));
+                break;
+            default:
+                LOG(ERROR) << "Wrong Type: " << static_cast<int32_t>(type);
+                return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
         }
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
     }
-    return Status::OK();
+    return colVal;
 }
 
-StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
-    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
-        return Status::Error("Invalid value type");
-    }
-
-    int64_t timestamp;
-    if (value.which() == VAR_STR) {
-        static const std::regex reg("^([1-9]\\d{3})-"
-                                    "(0[1-9]|1[0-2]|\\d)-"
-                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
-                                    "(20|21|22|23|[0-1]\\d|\\d):"
-                                    "([0-5]\\d|\\d):"
-                                    "([0-5]\\d|\\d)$");
-        std::smatch result;
-        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
-            return Status::Error("Invalid timestamp type");
-        }
-        struct tm time;
-        memset(&time, 0, sizeof(time));
-        time.tm_year = atoi(result[1].str().c_str()) - 1900;
-        time.tm_mon = atoi(result[2].str().c_str()) - 1;
-        time.tm_mday = atoi(result[3].str().c_str());
-        time.tm_hour = atoi(result[4].str().c_str());
-        time.tm_min = atoi(result[5].str().c_str());
-        time.tm_sec = atoi(result[6].str().c_str());
-        timestamp = mktime(&time);
-    } else {
-        timestamp = boost::get<int64_t>(value);
-    }
-
-    // The mainstream Linux kernel's implementation constrains this
-    static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
-    if (timestamp < 0 || (timestamp > maxTimestamp)) {
-        return Status::Error("Invalid timestamp type");
-    }
-    return timestamp;
-}
-
-nebula::cpp2::SupportedType Executor::ColumnTypeToSupportedType(ColumnType type) const {
-    switch (type) {
-        case ColumnType::INT:
-            return nebula::cpp2::SupportedType::INT;
-        case ColumnType::STRING:
-            return nebula::cpp2::SupportedType::STRING;
-        case ColumnType::DOUBLE:
-            return nebula::cpp2::SupportedType::DOUBLE;
-        case ColumnType::BOOL:
-            return nebula::cpp2::SupportedType::BOOL;
-        case ColumnType::TIMESTAMP:
-            return nebula::cpp2::SupportedType::TIMESTAMP;
+OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
+    switch (value.getType()) {
+        case cpp2::ColumnValue::Type::id:
+            return value.get_id();
+        case cpp2::ColumnValue::Type::integer:
+            return value.get_integer();
+        case cpp2::ColumnValue::Type::bool_val:
+            return value.get_bool_val();
+        case cpp2::ColumnValue::Type::double_precision:
+            return value.get_double_precision();
+        case cpp2::ColumnValue::Type::str:
+            return value.get_str();
+        case cpp2::ColumnValue::Type::timestamp:
+            return value.get_timestamp();
         default:
-            LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(type);
-            return nebula::cpp2::SupportedType::UNKNOWN;
+            break;
     }
+
+    LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
+    return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
+}
+
+void Executor::doError(Status status, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec(), count);
+    DCHECK(onError_);
+    onError_(std::move(status));
+}
+
+void Executor::doFinish(ProcessControl pro, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
+    DCHECK(onFinish_);
+    onFinish_(pro);
 }
 }   // namespace graph
 }   // namespace nebula

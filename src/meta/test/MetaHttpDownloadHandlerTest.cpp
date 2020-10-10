@@ -7,14 +7,14 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "http/HttpClient.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
-#include "storage/StorageHttpDownloadHandler.h"
+#include "storage/http/StorageHttpDownloadHandler.h"
 #include "fs/TempDir.h"
 
-DECLARE_int32(load_data_interval_secs);
 DECLARE_string(pid_file);
 DECLARE_int32(ws_storage_http_port);
 
@@ -46,18 +46,21 @@ public:
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(3);
 
-        WebService::registerHandler("/download-dispatch", [this] {
+        webSvc_ = std::make_unique<WebService>();
+        auto& router = webSvc_->router();
+
+        router.get("/download-dispatch").handler([this](nebula::web::PathParams&&) {
             auto handler = new meta::MetaHttpDownloadHandler();
             handler->init(kv_.get(), helper.get(), pool_.get());
             return handler;
         });
-        WebService::registerHandler("/download", [this] {
+        router.get("/download").handler([this](nebula::web::PathParams&&) {
             auto handler = new storage::StorageHttpDownloadHandler();
             std::vector<std::string> paths{rootPath_->path()};
             handler->init(helper.get(), pool_.get(), kv_.get(), paths);
             return handler;
         });
-        auto status = WebService::start();
+        auto status = webSvc_->start();
         FLAGS_ws_storage_http_port = FLAGS_ws_http_port;
         ASSERT_TRUE(status.ok()) << status;
     }
@@ -65,12 +68,13 @@ public:
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        WebService::stop();
+        webSvc_.reset();
         pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
@@ -87,6 +91,22 @@ TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
     }
     {
         auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch successfully", resp.value());
+    }
+    {
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1&edge=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch successfully", resp.value());
+    }
+    {
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1&tag=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);

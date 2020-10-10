@@ -17,8 +17,8 @@ ServerBasedSchemaManager::~ServerBasedSchemaManager() {
 }
 
 void ServerBasedSchemaManager::init(MetaClient *client) {
+    CHECK_NOTNULL(client);
     metaClient_ = client;
-    CHECK_NOTNULL(metaClient_);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -27,7 +27,7 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
     CHECK(metaClient_);
     // ver less 0, get the newest ver
     if (ver < 0) {
-        auto ret = getNewestTagSchemaVer(space, tag);
+        auto ret = getLatestTagSchemaVersion(space, tag);
         if (!ret.ok()) {
             return std::shared_ptr<const SchemaProviderIf>();
         }
@@ -41,47 +41,11 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
     return std::shared_ptr<const SchemaProviderIf>();
 }
 
-std::shared_ptr<const SchemaProviderIf>
-ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
-                                       folly::StringPiece tagName,
-                                       SchemaVer ver) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto spaceId = spaceStatus.value();
-    auto tagStatus = toTagID(spaceId, tagName);
-    if (!tagStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto tagId = tagStatus.value();
-    return getTagSchema(spaceId, tagId, ver);
-}
-
 // Returns a negative number when the schema does not exist
-StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space,
-                                                                    TagID tag) {
+StatusOr<SchemaVer> ServerBasedSchemaManager::getLatestTagSchemaVersion(GraphSpaceID space,
+                                                                        TagID tag) {
     CHECK(metaClient_);
-    return  metaClient_->getNewestTagVerFromCache(space, tag);
-}
-
-SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                                          folly::StringPiece tagName) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return -1;
-    }
-    auto spaceId = spaceStatus.value();
-    auto tagStatus = toTagID(spaceId, tagName);
-    if (!tagStatus.ok()) {
-        return -1;
-    }
-    auto tagId = tagStatus.value();
-    auto ret = getNewestTagSchemaVer(spaceId, tagId);
-    if (!ret.ok()) {
-        return -1;
-    }
-    return ret.value();
+    return  metaClient_->getLatestTagVersionFromCache(space, tag);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -90,7 +54,7 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
     CHECK(metaClient_);
     // ver less 0, get the newest ver
     if (ver < 0) {
-        auto ret = getNewestEdgeSchemaVer(space, edge);
+        auto ret = getLatestEdgeSchemaVersion(space, edge);
         if (!ret.ok()) {
             return std::shared_ptr<const SchemaProviderIf>();
         }
@@ -105,47 +69,11 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
     return std::shared_ptr<const SchemaProviderIf>();
 }
 
-std::shared_ptr<const SchemaProviderIf>
-ServerBasedSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
-                                        folly::StringPiece typeName,
-                                        SchemaVer ver) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto spaceId = spaceStatus.value();
-    auto edgeStatus = toEdgeType(spaceId, typeName);
-    if (!edgeStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto edgeType = edgeStatus.value();
-    return getEdgeSchema(spaceId, edgeType, ver);
-}
-
 // Returns a negative number when the schema does not exist
-StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
-                                                                     EdgeType edge) {
+StatusOr<SchemaVer> ServerBasedSchemaManager::getLatestEdgeSchemaVersion(GraphSpaceID space,
+                                                                         EdgeType edge) {
     CHECK(metaClient_);
-    return  metaClient_->getNewestEdgeVerFromCache(space, edge);
-}
-
-SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                                           folly::StringPiece typeName) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return -1;
-    }
-    auto spaceId = spaceStatus.value();
-    auto edgeStatus = toEdgeType(spaceId, typeName);
-    if (!edgeStatus.ok()) {
-        return -1;
-    }
-    auto edgeType = edgeStatus.value();
-    auto ret = getNewestEdgeSchemaVer(spaceId, edgeType);
-    if (!ret.ok()) {
-        return -1;
-    }
-    return ret.value();
+    return  metaClient_->getLatestEdgeVersionFromCache(space, edge);
 }
 
 StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
@@ -154,13 +82,18 @@ StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPie
 }
 
 StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
-                                        folly::StringPiece tagName) {
+                                                  folly::StringPiece tagName) {
     CHECK(metaClient_);
     return metaClient_->getTagIDByNameFromCache(space, tagName.str());
 }
 
+StatusOr<std::string> ServerBasedSchemaManager::toTagName(GraphSpaceID space, TagID tagId) {
+    CHECK(metaClient_);
+    return metaClient_->getTagNameByIdFromCache(space, tagId);
+}
+
 StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
-                                              folly::StringPiece typeName) {
+                                                        folly::StringPiece typeName) {
     CHECK(metaClient_);
     return metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
 }
@@ -173,6 +106,11 @@ StatusOr<std::string> ServerBasedSchemaManager::toEdgeName(GraphSpaceID space, E
 StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllEdge(GraphSpaceID space) {
     CHECK(metaClient_);
     return metaClient_->getAllEdgeFromCache(space);
+}
+
+StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllTag(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->getAllTagFromCache(space);
 }
 
 }  // namespace meta

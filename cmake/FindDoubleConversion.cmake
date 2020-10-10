@@ -13,7 +13,7 @@
 #  DoubleConversion_INCLUDE_DIR      The double-conversion includes directories.
 #  DoubleConversion_LIBRARY          The double-conversion library.
 
-find_path(DoubleConversion_INCLUDE_DIR NAMES double-conversion.h)
+find_path(DoubleConversion_INCLUDE_DIR NAMES double-conversion/double-conversion.h)
 find_library(DoubleConversion_LIBRARY NAMES libdouble-conversion.a)
 
 if(DoubleConversion_INCLUDE_DIR AND DoubleConversion_LIBRARY)

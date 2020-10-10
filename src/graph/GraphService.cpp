@@ -6,25 +6,38 @@
 
 #include "base/Base.h"
 #include "graph/GraphService.h"
-#include "time/Duration.h"
 #include "graph/RequestContext.h"
-#include "graph/SimpleAuthenticator.h"
 #include "storage/client/StorageClient.h"
+#include "graph/GraphFlags.h"
+#include "common/encryption/MD5Utils.h"
+
+DECLARE_string(meta_server_addrs);
+DECLARE_bool(local_config);
 
 namespace nebula {
 namespace graph {
 
-GraphService::GraphService() {
-}
-
-
-GraphService::~GraphService() = default;
-
-
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
+    auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    if (!addrs.ok()) {
+        return addrs.status();
+    }
+
+    meta::MetaClientOptions options;
+    options.serviceName_ = "graph";
+    options.skipConfig_ = FLAGS_local_config;
+    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor,
+                                                     std::move(addrs.value()),
+                                                     options);
+    // load data try 3 time
+    bool loadDataOk = metaClient_->waitForMetadReady(3);
+    if (!loadDataOk) {
+        // Resort to retrying in the background
+        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
+    }
+
     sessionManager_ = std::make_unique<SessionManager>();
-    executionEngine_ = std::make_unique<ExecutionEngine>();
-    authenticator_ = std::make_unique<SimpleAuthenticator>();
+    executionEngine_ = std::make_unique<ExecutionEngine>(metaClient_.get());
 
     return executionEngine_->init(std::move(ioExecutor));
 }
@@ -34,26 +47,72 @@ folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
         const std::string& username,
         const std::string& password) {
     auto *peer = getConnectionContext()->getPeerAddress();
-    FVLOG2("Authenticating user %s from %s", username.c_str(), peer->describe().c_str());
+    LOG(INFO) << "Authenticating user " << username << " from " << peer->describe();
 
     RequestContext<cpp2::AuthResponse> ctx;
     auto session = sessionManager_->createSession();
-    session->setUser(username);
+    session->setAccount(username);
     ctx.setSession(std::move(session));
 
-    if (authenticator_->auth(username, password)) {
-        ctx.resp().set_error_code(cpp2::ErrorCode::SUCCEEDED);
-        ctx.resp().set_session_id(ctx.session()->id());
+    if (!FLAGS_enable_authorize) {
+        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
+    } else if (auth(username, password)) {
+        auto roles = metaClient_->getRolesByUserFromCache(username);
+        for (const auto& role : roles) {
+            ctx.session()->setRole(role.get_space_id(), toRole(role.get_role_type()));
+        }
+        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
     } else {
-        sessionManager_->removeSession(ctx.session()->id());
-        ctx.resp().set_error_code(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
-        ctx.resp().set_error_msg(getErrorStr(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD));
+        onHandle(ctx, cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
     }
 
     ctx.finish();
     return ctx.future();
 }
 
+void GraphService::onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code) {
+    ctx.resp().set_error_code(code);
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        sessionManager_->removeSession(ctx.session()->id());
+        ctx.resp().set_error_msg(getErrorStr(code));
+    } else {
+        ctx.resp().set_session_id(ctx.session()->id());
+    }
+}
+
+session::Role GraphService::toRole(nebula::cpp2::RoleType role) {
+    switch (role) {
+        case nebula::cpp2::RoleType::GOD : {
+            return session::Role::GOD;
+        }
+        case nebula::cpp2::RoleType::ADMIN : {
+            return session::Role::ADMIN;
+        }
+        case nebula::cpp2::RoleType::DBA : {
+            return session::Role::DBA;
+        }
+        case nebula::cpp2::RoleType::USER : {
+            return session::Role::USER;
+        }
+        case nebula::cpp2::RoleType::GUEST : {
+            return session::Role::GUEST;
+        }
+    }
+    return session::Role::INVALID_ROLE;
+}
+
+bool GraphService::auth(const std::string& username, const std::string& password) {
+    std::string auth_type = FLAGS_auth_type;
+    folly::toLowerAscii(auth_type);
+    if (!auth_type.compare("password")) {
+        auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient_.get());
+        return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
+    } else if (!auth_type.compare("cloud")) {
+        auto authenticator = std::make_unique<CloudAuthenticator>(metaClient_.get());
+        return authenticator->auth(username, password);
+    }
+    return false;
+}
 
 void GraphService::signout(int64_t sessionId) {
     VLOG(2) << "Sign out session " << sessionId;
@@ -99,6 +158,10 @@ const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
         return "The session timed out";
     case cpp2::ErrorCode::E_SYNTAX_ERROR:
         return "Syntax error";
+    case cpp2::ErrorCode::E_USER_NOT_FOUND:
+        return "User not exist";
+    case cpp2::ErrorCode::E_BAD_PERMISSION:
+        return "Permission denied";
     /**********************
      * Unknown error
      **********************/
