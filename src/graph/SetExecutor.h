@@ -60,8 +60,6 @@ private:
     std::unique_ptr<TraverseExecutor>                           right_;
     std::unique_ptr<InterimResult>                              leftResult_;
     std::unique_ptr<InterimResult>                              rightResult_;
-    folly::Promise<folly::Unit>                                 leftP_;
-    folly::Promise<folly::Unit>                                 rightP_;
     std::vector<folly::Future<folly::Unit>>                     futures_;
     Status                                                      leftS_;
     Status                                                      rightS_;

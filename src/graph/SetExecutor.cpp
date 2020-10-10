@@ -54,10 +54,8 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    futures_.emplace_back(leftP_.getFuture());
-    auto onFinish = [this] (Executor::ProcessControl ctr) {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        leftP_.setValue();
     };
 
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
@@ -69,7 +67,6 @@ void SetExecutor::setLeft() {
     auto onError = [this] (Status s) {
         VLOG(3) << "Left error:" << s.toString();
         leftS_ = std::move(s);
-        leftP_.setValue();
     };
 
     left_->setOnResult(onResult);
@@ -78,10 +75,8 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    futures_.emplace_back(rightP_.getFuture());
-    auto onFinish = [this] (Executor::ProcessControl ctr) {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        rightP_.setValue();
     };
 
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
@@ -93,7 +88,6 @@ void SetExecutor::setRight() {
     auto onError = [this] (Status s) {
         VLOG(3) << "Right error: " << s.toString();
         rightS_ = std::move(s);
-        rightP_.setValue();
     };
 
     right_->setOnResult(onResult);
@@ -114,18 +108,41 @@ void SetExecutor::execute() {
     }
 
     auto *runner = ectx()->rctx()->runner();
-    runner->add([this] () mutable { left_->execute(); });
-    runner->add([this] () mutable { right_->execute(); });
 
-    auto cb = [this] (auto &&result) {
-        UNUSED(result);
-        if (!leftS_.ok() || !rightS_.ok()) {
+    auto lTask = [this] () mutable { left_->execute(); };
+    auto lError = [this] (auto &&e) {
+        std::stringstream ss;
+        ss << "Exception when handle left subquery: " << e.what();
+        LOG(ERROR) << ss.str();
+        leftS_ = Status::Error(ss.str());
+    };
+    auto lF = std::move(folly::makeFuture()).via(runner).then(lTask).thenError(lError);
+    futures_.emplace_back(std::move(lF));
+
+    auto rTask = [this] () mutable { right_->execute(); };
+    auto rError = [this] (auto &&e) {
+        std::stringstream ss;
+        ss << "Exception when handle right subquery: " << e.what();
+        LOG(ERROR) << ss.str();
+        rightS_ = Status::Error(ss.str());
+    };
+    auto rF = std::move(folly::makeFuture()).via(runner).then(rTask).thenError(rError);
+    futures_.emplace_back(std::move(rF));
+
+    auto cb = [this] () {
+        if (!leftS_.ok()) {
             std::string msg;
-            msg += "lhs has error: ";
+            msg += "left subquery has error: ";
             msg += leftS_.toString();
-            msg += " rhs has error: ";
+            doError(Status::Error(std::move(msg)));
+            return;
+        }
+
+        if (!rightS_.ok()) {
+            std::string msg;
+            msg += "right subquery has error: ";
             msg += rightS_.toString();
-            doError(Status::Error(msg));
+            doError(Status::Error(std::move(msg)));
             return;
         }
 
@@ -163,7 +180,13 @@ void SetExecutor::execute() {
                 break;
         }
     };
-    folly::collectAll(futures_).via(runner).thenValue(cb);
+    auto error = [this](auto &&e) {
+        std::stringstream ss;
+        ss << "Exception when handle set operation: " << e.what();
+        LOG(ERROR) << ss.str();
+        doError(Status::Error(ss.str()));
+    };
+    folly::collectAll(futures_).via(runner).then(cb).thenError(error);
 }
 
 void SetExecutor::doUnion() {
