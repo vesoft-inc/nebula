@@ -2157,9 +2157,6 @@ bool operator<(const Value& lhs, const Value& rhs) {
         case Value::Type::STRING: {
             return lhs.getStr() < rhs.getStr();
         }
-        case Value::Type::DATE: {
-            return lhs.getDate() < rhs.getDate();
-        }
         case Value::Type::VERTEX: {
             return lhs.getVertex() < rhs.getVertex();
         }
@@ -2169,8 +2166,15 @@ bool operator<(const Value& lhs, const Value& rhs) {
         case Value::Type::PATH: {
             return lhs.getPath() < rhs.getPath();
         }
-        case Value::Type::TIME:
-        case Value::Type::DATETIME:
+        case Value::Type::TIME: {
+            return lhs.getTime() < rhs.getTime();
+        }
+        case Value::Type::DATE: {
+            return lhs.getDate() < rhs.getDate();
+        }
+        case Value::Type::DATETIME: {
+            return lhs.getDateTime() < rhs.getDateTime();
+        }
         case Value::Type::LIST:
         case Value::Type::MAP:
         case Value::Type::SET:

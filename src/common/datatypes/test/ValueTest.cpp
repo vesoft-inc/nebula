@@ -210,8 +210,13 @@ TEST(Value, Comparison) {
     Value vStr2("World");
     Value vBool1(false);
     Value vBool2(true);
+    Value vTime1(Time(23, 19, 55, 23));
+    Value vTime2(Time(00, 12, 45, 32));
     Value vDate1(Date(2020, 1, 1));
     Value vDate2(Date(2019, 12, 1));
+    Value vDateTime1(DateTime(1998, 9, 8, 12, 30, 04, 56));
+    Value vDateTime2(DateTime(1998, 9, 8, 13, 30, 04, 56));
+    Value vDateTime3(DateTime(1998, 9, 8, 13, 30, 04, 56));  // for further tests
 
     // null/empty
     {
@@ -382,7 +387,32 @@ TEST(Value, Comparison) {
         EXPECT_EQ(Value::Type::BOOL, v.type());
         EXPECT_EQ(true, v.getBool());
     }
+    // time
+    {
+        Value v = vTime1 == vTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
 
+        v = vDate1 != vDate2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vDate1 > vDate2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vDate1 < vDate2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
+
+        v = vDate1 >= vDate2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vDate1 <= vDate2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
+    }
     // date
     {
         Value v = vDate1 == vDate2;
@@ -408,6 +438,32 @@ TEST(Value, Comparison) {
         v = vDate1 <= vDate2;
         EXPECT_EQ(Value::Type::BOOL, v.type());
         EXPECT_EQ(false, v.getBool());
+    }
+    // datetime
+    {
+        Value v = vDateTime1 == vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
+
+        v = vDateTime1 != vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vDateTime1 > vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
+
+        v = vDateTime1 < vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vDateTime1 >= vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(false, v.getBool());
+
+        v = vDateTime1 <= vDateTime2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
     }
 }
 

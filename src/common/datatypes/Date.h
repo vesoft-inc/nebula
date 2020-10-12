@@ -81,6 +81,9 @@ struct Time {
     int8_t sec;
     int32_t microsec;
 
+    Time() : hour{0}, minute{0}, sec{0}, microsec{0} {}
+    Time(int8_t h, int8_t m, int8_t s, int32_t us) : hour{h}, minute{m}, sec{s}, microsec{us} {}
+
     void clear() {
         hour = 0;
         minute = 0;
@@ -93,6 +96,22 @@ struct Time {
                minute == rhs.minute &&
                sec == rhs.sec &&
                microsec == rhs.microsec;
+    }
+
+    bool operator<(const Time& rhs) const {
+        if (!(hour == rhs.hour)) {
+            return hour < rhs.hour;
+        }
+        if (!(minute == rhs.minute)) {
+            return minute < rhs.minute;
+        }
+        if (!(sec == rhs.sec)) {
+            return sec < rhs.sec;
+        }
+        if (!(microsec == rhs.microsec)) {
+            return microsec < rhs.microsec;
+        }
+        return false;
     }
 
     std::string toString() const;
@@ -112,10 +131,14 @@ struct DateTime {
     int8_t sec;
     int32_t microsec;
 
+    DateTime() : year{0}, month{1}, day{1}, hour{0}, minute{0}, sec{0}, microsec{0} {}
+    DateTime(int16_t y, int8_t mon, int8_t d, int8_t h, int8_t m, int8_t s, int32_t us) :
+        year{y}, month{mon}, day{d}, hour{h}, minute{m}, sec{s}, microsec{us} {}
+
     void clear() {
         year = 0;
-        month = 0;
-        day = 0;
+        month = 1;
+        day = 1;
         hour = 0;
         minute = 0;
         sec = 0;
@@ -130,6 +153,30 @@ struct DateTime {
                minute == rhs.minute &&
                sec == rhs.sec &&
                microsec == rhs.microsec;
+    }
+    bool operator<(const DateTime& rhs) const {
+        if (!(year == rhs.year)) {
+            return year < rhs.year;
+        }
+        if (!(month == rhs.month)) {
+            return month < rhs.month;
+        }
+        if (!(day == rhs.day)) {
+            return day < rhs.day;
+        }
+        if (!(hour == rhs.hour)) {
+            return hour < rhs.hour;
+        }
+        if (!(minute == rhs.minute)) {
+            return minute < rhs.minute;
+        }
+        if (!(sec == rhs.sec)) {
+            return sec < rhs.sec;
+        }
+        if (!(microsec == rhs.microsec)) {
+            return microsec < rhs.microsec;
+        }
+        return false;
     }
 
     std::string toString() const;
