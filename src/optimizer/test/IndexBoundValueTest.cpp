@@ -189,6 +189,70 @@ TEST(IndexBoundValueTest, DateTest) {
               OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(Date(2019, 1, 1))));
 }
 
+TEST(IndexBoundValueTest, TimeTest) {
+    meta::cpp2::ColumnDef col;
+    {
+        meta::cpp2::ColumnTypeDef typeDef;
+        typeDef.set_type(meta::cpp2::PropertyType::TIME);
+        col.set_type(std::move(typeDef));
+    }
+    // TODO(shylock) us may limited to 999999
+    Time maxT{24, 60, 60, std::numeric_limits<int32_t>::max()};
+
+    Time minT = Time();
+
+    EXPECT_EQ(maxT, OptimizerUtils::boundValue(col, OP::MAX, Value(maxT)).getTime());
+    EXPECT_EQ(minT, OptimizerUtils::boundValue(col, OP::MIN, Value(maxT)).getTime());
+    EXPECT_EQ(maxT, OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(maxT)).getTime());
+
+    {
+        Time actual, expect;
+        actual.microsec = std::numeric_limits<int32_t>::max();
+        actual.sec = 60;
+        actual.minute = 60;
+        actual.hour = 22;
+
+        expect.microsec = 1;
+        expect.sec = 1;
+        expect.minute = 1;
+        expect.hour = 23;
+        EXPECT_EQ(expect,
+                  OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(actual)).getTime());
+    }
+    {
+        Time actual, expect;
+        actual.microsec = std::numeric_limits<int32_t>::max();
+        actual.sec = 34;
+        actual.minute = 60;
+        actual.hour = 24;
+
+        expect.microsec = 1;
+        expect.sec = 35;
+        expect.minute = 60;
+        expect.hour = 24;
+        EXPECT_EQ(expect,
+                  OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(actual)).getTime());
+    }
+    {
+        Time expect = Time();
+        EXPECT_EQ(expect, OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(expect)));
+    }
+    {
+        Time actual, expect;
+        actual.microsec = std::numeric_limits<int32_t>::max();
+        actual.sec = 34;
+        actual.minute = 60;
+        actual.hour = 24;
+
+        expect.microsec = std::numeric_limits<int32_t>::max() - 1;
+        expect.sec = 34;
+        expect.minute = 60;
+        expect.hour = 24;
+        EXPECT_EQ(expect,
+                  OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(actual)).getTime());
+    }
+}
+
 TEST(IndexBoundValueTest, DateTimeTest) {
     meta::cpp2::ColumnDef col;
     {
