@@ -41,6 +41,8 @@ public:
         kRelIn,
         kRelNotIn,
         kContains,
+        kStartsWith,
+        kEndsWith,
         kSubscript,
         kAttribute,
         kLabelAttribute,

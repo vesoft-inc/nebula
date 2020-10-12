@@ -296,6 +296,16 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kStartsWith: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kStartsWith);
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kEndsWith: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kEndsWith);
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kSubscript: {
             exp = std::make_unique<SubscriptExpression>();
             exp->resetFrom(decoder);
@@ -495,6 +505,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kContains:
             os << "Contains";
+            break;
+        case Expression::Kind::kStartsWith:
+            os << "StartsWith";
+            break;
+        case Expression::Kind::kEndsWith:
+            os << "EndsWith";
             break;
         case Expression::Kind::kSubscript:
             os << "Subscript";
