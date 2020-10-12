@@ -341,16 +341,14 @@ bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef 
 
 bool SchemaUtil::isValidVid(const Value &value, meta::cpp2::PropertyType type) {
     auto vidType = propTypeToValueType(type);
-    if ((vidType != Value::Type::STRING
-            && vidType != Value::Type::INT)  // compatible with 1.0
-            || value.type() != vidType) {
+    if (!isValidVid(value) || value.type() != vidType) {
         return false;
     }
     return true;
 }
 
 bool SchemaUtil::isValidVid(const Value &value) {
-    if (!value.isStr() && !value.isInt()) {
+    if (!value.isStr() && !value.isInt()) {  // compatible with 1.0
         return false;
     }
     return true;
