@@ -486,40 +486,44 @@ class NebulaTestSuite(object):
         assert empty, msg
 
     @classmethod
-    def check_path_result(self, rows, expect):
+    def check_path_result_without_prop(self, rows, expect):
         msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
         assert len(rows) == len(expect), msg
         for exp in expect:
-            path = ttypes.Path()
-            path.entry_list = []
-            for ecol, j in zip(exp, range(len(exp))):
-                if j % 2 == 0 or j == len(exp):
-                    pathEntry = ttypes.PathEntry()
-                    vertex = ttypes.Vertex()
-                    vertex.id = ecol
-                    pathEntry.set_vertex(vertex)
-                    path.entry_list.append(pathEntry)
+            path = CommonTtypes.Path()
+            path.steps = []
+            for col, j in zip(exp, range(len(exp))):
+                if j == 0:
+                    src = CommonTtypes.Vertex()
+                    src.vid = col
+                    src.tags = []
+                    path.src = src
                 else:
-                    assert len(ecol) == 2, \
-                        "invalid values size in expect result"
-                    pathEntry = ttypes.PathEntry()
-                    edge = ttypes.Edge()
-                    edge.type = ecol[0]
-                    edge.ranking = ecol[1]
-                    pathEntry.set_edge(edge)
-                    path.entry_list.append(pathEntry)
+                    assert len(col) == 3, \
+                        "{} invalid values size in expect result".format(exp.__repr__())
+                    step = CommonTtypes.Step()
+                    step.name = col[0]
+                    step.ranking = col[1]
+                    step.type = 1
+                    dst = CommonTtypes.Vertex()
+                    dst.vid = col[2]
+                    dst.tags = []
+                    step.dst = dst
+                    step.props = {}
+                    path.steps.append(step)
             find = False
             for row in rows:
                 assert len(row.values) == 1, \
                     "invalid values size in rows: {}".format(row)
-                assert row.values[0].getType()() == ttypes.Value.PATH, \
+                assert row.values[0].getType() == CommonTtypes.Value.PVAL, \
                     "invalid column path type: {}".format(row.values[0].getType()())
-                if row.values[0].get_path() == path:
+                if row.values[0].get_pVal() == path:
                     find = True
                     break
-            msg = self.check_format_str.format(row.values[0].get_path(), path)
+            msg = self.check_format_str.format(row.values[0].get_pVal(), path)
             assert find, msg
             rows.remove(row)
+        assert len(rows) == 0
 
     @classmethod
     def check_error_msg(self, resp, expect):

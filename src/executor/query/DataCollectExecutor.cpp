@@ -37,6 +37,10 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
             NG_RETURN_IF_ERROR(collectMToN(vars, dc->mToN(), dc->distinct()));
             break;
         }
+        case DataCollect::CollectKind::kBFSShortest: {
+            NG_RETURN_IF_ERROR(collectBFSShortest(vars));
+            break;
+        }
         default:
             LOG(FATAL) << "Unknown data collect type: " << static_cast<int64_t>(dc->collectKind());
     }
@@ -83,7 +87,9 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
                 }
                 ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));
             } else {
-                return Status::Error("Iterator should be kind of GetNeighborIter.");
+                std::stringstream msg;
+                msg << "Iterator should be kind of GetNeighborIter, but was: " << iter->kind();
+                return Status::Error(msg.str());
             }
         }
     }
@@ -134,13 +140,20 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
                     ds.rows.emplace_back(seqIter->moveRow());
                 }
             } else {
-                return Status::Error("Iterator should be kind of SequentialIter.");
+                std::stringstream msg;
+                msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
+                return Status::Error(msg.str());
             }
             itersHolder.emplace_back(std::move(iter));
         }
     }
     result_.setDataSet(std::move(ds));
     return Status::OK();
+}
+
+Status DataCollectExecutor::collectBFSShortest(const std::vector<std::string>& vars) {
+    // Will rewrite this method once we implement returning the props for the path.
+    return rowBasedMove(vars);
 }
 }  // namespace graph
 }  // namespace nebula

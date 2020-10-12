@@ -36,7 +36,8 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
         }
         case PlanNode::Kind::kUnion:
         case PlanNode::Kind::kIntersect:
-        case PlanNode::Kind::kMinus: {
+        case PlanNode::Kind::kMinus:
+        case PlanNode::Kind::kConjunctPath: {
             auto bNode = static_cast<const BiInputNode*>(node);
             makePlanNodeDesc(bNode->left(), planDesc);
             makePlanNodeDesc(bNode->right(), planDesc);

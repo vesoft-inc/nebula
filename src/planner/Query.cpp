@@ -128,15 +128,19 @@ std::unique_ptr<cpp2::PlanNodeDescription> DataCollect::explain() const {
     addDescription("inputVars", folly::toJson(util::toJson(inputVars_)), desc.get());
     switch (collectKind_) {
         case CollectKind::kSubgraph: {
-            addDescription("kind", "subgraph", desc.get());
+            addDescription("kind", "SUBGRAPH", desc.get());
             break;
         }
         case CollectKind::kRowBasedMove: {
-            addDescription("kind", "row", desc.get());
+            addDescription("kind", "ROW", desc.get());
             break;
         }
         case CollectKind::kMToN: {
-            addDescription("kind", "m to n", desc.get());
+            addDescription("kind", "M TO N", desc.get());
+            break;
+        }
+        case CollectKind::kBFSShortest: {
+            addDescription("kind", "BFS SHORTEST", desc.get());
             break;
         }
     }

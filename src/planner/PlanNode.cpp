@@ -176,6 +176,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "SetConfig";
         case Kind::kGetConfig:
             return "GetConfig";
+        case Kind::kBFSShortest:
+            return "BFSShortest";
+        case Kind::kConjunctPath:
+            return "ConjunctPath";
             // no default so the compiler will warning when lack
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

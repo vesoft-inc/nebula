@@ -104,6 +104,8 @@ public:
         kShowConfigs,
         kSetConfig,
         kGetConfig,
+        kBFSShortest,
+        kConjunctPath,
     };
 
     PlanNode(int64_t id, Kind kind);
@@ -237,11 +239,11 @@ protected:
 
 class BiInputNode : public PlanNode {
 public:
-    void setLeft(const PlanNode* left) {
+    void setLeftDep(const PlanNode* left) {
         setDep(0, left);
     }
 
-    void setRight(const PlanNode* right) {
+    void setRightDep(const PlanNode* right) {
         setDep(1, right);
     }
 
@@ -274,12 +276,21 @@ public:
 protected:
     BiInputNode(int64_t id, Kind kind, PlanNode* left, PlanNode* right)
         : PlanNode(id, kind) {
-        DCHECK(left != nullptr);
-        DCHECK(right != nullptr);
-        dependencies_.emplace_back(left);
-        dependencies_.emplace_back(right);
-        inputVars_.emplace_back(left->outputVar());
-        inputVars_.emplace_back(right->outputVar());
+        if (left != nullptr) {
+            dependencies_.emplace_back(left);
+            inputVars_.emplace_back(left->outputVar());
+        } else {
+            dependencies_.emplace_back();
+            inputVars_.emplace_back();
+        }
+
+        if (right != nullptr) {
+            dependencies_.emplace_back(right);
+            inputVars_.emplace_back(right->outputVar());
+        } else {
+            dependencies_.emplace_back();
+            inputVars_.emplace_back();
+        }
     }
 };
 

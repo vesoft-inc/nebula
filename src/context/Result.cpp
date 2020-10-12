@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 const Result& Result::EmptyResult() {
-    static Result kEmptyResult = ResultBuilder().iter(Iterator::Kind::kDefault).finish();
+    static Result kEmptyResult =
+        ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).finish();
     return kEmptyResult;
 }
 

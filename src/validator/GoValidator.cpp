@@ -222,7 +222,7 @@ Status GoValidator::buildNStepsPlan() {
     std::string startVidsVar;
     PlanNode* dedupStartVid = nullptr;
     if (!from_.vids.empty() && from_.srcRef == nullptr) {
-        startVidsVar = buildConstantInput();
+        buildConstantInput(from_, startVidsVar, src_);
     } else {
         dedupStartVid = buildRuntimeInput();
         startVidsVar = dedupStartVid->outputVar();
@@ -277,7 +277,7 @@ Status GoValidator::buildMToNPlan() {
     std::string startVidsVar;
     PlanNode* dedupStartVid = nullptr;
     if (!from_.vids.empty() && from_.srcRef == nullptr) {
-        startVidsVar = buildConstantInput();
+        buildConstantInput(from_, startVidsVar, src_);
     } else {
         dedupStartVid = buildRuntimeInput();
         startVidsVar = dedupStartVid->outputVar();
@@ -590,7 +590,7 @@ Status GoValidator::buildOneStepPlan() {
     std::string startVidsVar;
     PlanNode* dedupStartVid = nullptr;
     if (!from_.vids.empty() && from_.srcRef == nullptr) {
-        startVidsVar = buildConstantInput();
+        buildConstantInput(from_, startVidsVar, src_);
     } else {
         dedupStartVid = buildRuntimeInput();
         startVidsVar = dedupStartVid->outputVar();

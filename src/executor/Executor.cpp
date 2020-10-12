@@ -34,6 +34,8 @@
 #include "executor/admin/SubmitJobExecutor.h"
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
+#include "executor/algo/BFSShortestPathExecutor.h"
+#include "executor/algo/ConjunctPathExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
@@ -364,6 +366,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kShowCollation: {
             return pool->add(new ShowCollationExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kBFSShortest: {
+            return pool->add(new BFSShortestPathExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kConjunctPath: {
+            return pool->add(new ConjunctPathExecutor(node, qctx));
         }
         case PlanNode::Kind::kUnknown: {
             break;

@@ -48,7 +48,6 @@ SET(EXEC_QUERY_TEST_OBJS
 SET(EXEC_QUERY_TEST_LIBS
     ${THRIFT_LIBRARIES}
     gtest
-    gtest_main
     wangle
     proxygenhttpserver
     proxygenlib
@@ -58,6 +57,7 @@ nebula_add_test(
     NAME
         executor_test
     SOURCES
+        TestMain.cpp
         LogicExecutorsTest.cpp
         ProjectTest.cpp
         GetNeighborsTest.cpp
@@ -70,6 +70,8 @@ nebula_add_test(
         TopNTest.cpp
         AggregateTest.cpp
         DataJoinTest.cpp
+        BFSShortestTest.cpp
+        ConjunctPathTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES

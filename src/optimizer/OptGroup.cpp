@@ -169,8 +169,8 @@ const PlanNode *OptGroupExpr::getPlan() const {
         case 2: {
             DCHECK_EQ(dependencies_.size(), 2U);
             auto bNode = static_cast<BiInputNode *>(node_);
-            bNode->setLeft(dependencies_[0]->getPlan());
-            bNode->setRight(dependencies_[1]->getPlan());
+            bNode->setLeftDep(dependencies_[0]->getPlan());
+            bNode->setRightDep(dependencies_[1]->getPlan());
             break;
         }
     }

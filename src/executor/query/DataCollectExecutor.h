@@ -27,6 +27,8 @@ private:
 
     Status collectMToN(const std::vector<std::string>& vars, StepClause::MToN* mToN, bool distinct);
 
+    Status collectBFSShortest(const std::vector<std::string>& vars);
+
     std::vector<std::string>    colNames_;
     Value                       result_;
 };
