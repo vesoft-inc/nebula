@@ -14,40 +14,40 @@ namespace graph {
 
 class CreateSpaceExecutor final : public Executor {
 public:
-    CreateSpaceExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("CreateSpaceExecutor", node, ectx) {}
+    CreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("CreateSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class DescSpaceExecutor final : public Executor {
 public:
-    DescSpaceExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DescSpaceExecutor", node, ectx) {}
+    DescSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+            : Executor("DescSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class DropSpaceExecutor final : public Executor {
 public:
-    DropSpaceExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DropSpaceExecutor", node, ectx) {}
+    DropSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+            : Executor("DropSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class ShowSpacesExecutor final : public Executor {
 public:
-    ShowSpacesExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowSpacesExecutor", node, ectx) {}
+    ShowSpacesExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowSpacesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class ShowCreateSpaceExecutor final : public Executor {
 public:
-    ShowCreateSpaceExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowCreateSpaceExecutor", node, ectx) {}
+    ShowCreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowCreateSpaceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

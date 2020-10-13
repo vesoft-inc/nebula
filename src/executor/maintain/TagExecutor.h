@@ -14,16 +14,16 @@ namespace graph {
 
 class CreateTagExecutor final : public Executor {
 public:
-    CreateTagExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("CreateTagExecutor", node, ectx) {}
+    CreateTagExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("CreateTagExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class DescTagExecutor final : public Executor {
 public:
-    DescTagExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("DescTagExecutor", node, ectx) {}
+    DescTagExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("DescTagExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -33,24 +33,24 @@ private:
 
 class DropTagExecutor final : public Executor {
 public:
-    DropTagExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("DropTagExecutor", node, ectx) {}
+    DropTagExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("DropTagExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class ShowTagsExecutor final : public Executor {
 public:
-    ShowTagsExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("ShowTagsExecutor", node, ectx) {}
+    ShowTagsExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowTagsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class ShowCreateTagExecutor final : public Executor {
 public:
-    ShowCreateTagExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("ShowTagsExecutor", node, ectx) {}
+    ShowCreateTagExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowTagsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

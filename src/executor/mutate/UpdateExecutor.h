@@ -17,8 +17,8 @@ class UpdateBaseExecutor : public QueryStorageExecutor {
 public:
     UpdateBaseExecutor(const std::string &execName,
                        const PlanNode *node,
-                       QueryContext *ectx)
-        : QueryStorageExecutor(execName, node, ectx) {}
+                       QueryContext *qctx)
+        : QueryStorageExecutor(execName, node, qctx) {}
 
     virtual ~UpdateBaseExecutor() {}
 
@@ -31,16 +31,16 @@ protected:
 
 class UpdateVertexExecutor final : public UpdateBaseExecutor {
 public:
-    UpdateVertexExecutor(const PlanNode *node, QueryContext *ectx)
-        : UpdateBaseExecutor("UpdateVertexExecutor", node, ectx) {}
+    UpdateVertexExecutor(const PlanNode *node, QueryContext *qctx)
+        : UpdateBaseExecutor("UpdateVertexExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class UpdateEdgeExecutor final : public UpdateBaseExecutor {
 public:
-    UpdateEdgeExecutor(const PlanNode *node, QueryContext *ectx)
-        : UpdateBaseExecutor("UpdateEdgeExecutor", node, ectx) {}
+    UpdateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
+        : UpdateBaseExecutor("UpdateEdgeExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };

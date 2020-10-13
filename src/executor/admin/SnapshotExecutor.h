@@ -14,8 +14,8 @@ namespace graph {
 
 class CreateSnapshotExecutor final : public Executor {
 public:
-    CreateSnapshotExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("CreateSnapshotExecutor", node, ectx) {}
+    CreateSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("CreateSnapshotExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -25,8 +25,8 @@ private:
 
 class DropSnapshotExecutor final : public Executor {
 public:
-    DropSnapshotExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("DropSnapshotExecutor", node, ectx) {}
+    DropSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
+            : Executor("DropSnapshotExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -36,8 +36,8 @@ private:
 
 class ShowSnapshotsExecutor final : public Executor {
 public:
-    ShowSnapshotsExecutor(const PlanNode *node, QueryContext *ectx)
-            : Executor("ShowSnapshotsExecutor", node, ectx) {}
+    ShowSnapshotsExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowSnapshotsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

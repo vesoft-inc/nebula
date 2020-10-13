@@ -15,8 +15,8 @@ namespace graph {
 
 class ShowBalanceExecutor final : public Executor {
 public:
-    ShowBalanceExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("ShowBalanceExecutor", node, ectx) {}
+    ShowBalanceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("ShowBalanceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

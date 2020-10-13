@@ -15,8 +15,8 @@ namespace graph {
 
 class ConfigBaseExecutor : public Executor {
 public:
-    ConfigBaseExecutor(const std::string &name, const PlanNode *node, QueryContext *ectx)
-        : Executor(name, node, ectx) {}
+    ConfigBaseExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+        : Executor(name, node, qctx) {}
 
 protected:
     std::vector<Value> generateColumns(const meta::cpp2::ConfigItem &item);
@@ -25,16 +25,16 @@ protected:
 
 class ShowConfigsExecutor final : public ConfigBaseExecutor {
 public:
-    ShowConfigsExecutor(const PlanNode *node, QueryContext *ectx)
-        : ConfigBaseExecutor("ShowConfigsExecutor", node, ectx) {}
+    ShowConfigsExecutor(const PlanNode *node, QueryContext *qctx)
+        : ConfigBaseExecutor("ShowConfigsExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 };
 
 class SetConfigExecutor final : public ConfigBaseExecutor {
 public:
-    SetConfigExecutor(const PlanNode *node, QueryContext *ectx)
-        : ConfigBaseExecutor("SetConfigExecutor", node, ectx) {}
+    SetConfigExecutor(const PlanNode *node, QueryContext *qctx)
+        : ConfigBaseExecutor("SetConfigExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -45,8 +45,8 @@ private:
 
 class GetConfigExecutor final : public ConfigBaseExecutor {
 public:
-    GetConfigExecutor(const PlanNode *node, QueryContext *ectx)
-        : ConfigBaseExecutor("GetConfigExecutor", node, ectx) {}
+    GetConfigExecutor(const PlanNode *node, QueryContext *qctx)
+        : ConfigBaseExecutor("GetConfigExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

@@ -14,8 +14,8 @@ namespace graph {
 
 class GrantRoleExecutor final : public Executor {
 public:
-    GrantRoleExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("GrantRoleExecutor", node, ectx) {}
+    GrantRoleExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("GrantRoleExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

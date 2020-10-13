@@ -15,8 +15,8 @@ namespace graph {
 
 class StopBalanceExecutor final : public Executor {
 public:
-    StopBalanceExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("StopBalanceExecutor", node, ectx) {}
+    StopBalanceExecutor(const PlanNode *node, QueryContext *qctx)
+        : Executor("StopBalanceExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
