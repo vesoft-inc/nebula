@@ -7,6 +7,7 @@ build
 _build
 _build.log
 _install
+install
 bin/
 install_manifest.txt
 

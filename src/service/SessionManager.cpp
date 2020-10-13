@@ -81,6 +81,9 @@ int64_t SessionManager::newSessionId() {
 
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more efficient.
 void SessionManager::reclaimExpiredSessions() {
+    if (FLAGS_session_idle_timeout_secs == 0) {
+        return;
+    }
     folly::RWSpinLock::WriteHolder holder(rwlock_);
     if (activeSessions_.empty()) {
         return;
