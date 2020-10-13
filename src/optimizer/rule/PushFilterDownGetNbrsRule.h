@@ -31,9 +31,6 @@ public:
 private:
     PushFilterDownGetNbrsRule();
 
-    graph::GetNeighbors *cloneGetNbrs(graph::QueryContext *qctx,
-                                      const graph::GetNeighbors *getNbrs) const;
-
     std::pair<bool, const OptGroupExpr *> findMatchedGroupExpr(const OptGroupExpr *groupExpr) const;
 };
 

@@ -130,8 +130,6 @@ private:
                       const meta::cpp2::ColumnDef& col,
                       Value& begin, Value& end) const;
 
-    IndexScan* cloneIndexScan(graph::QueryContext *qctx, const OptGroupExpr *groupExpr) const;
-
     bool isEdge(const OptGroupExpr *groupExpr) const;
 
     int32_t schemaId(const OptGroupExpr *groupExpr) const;

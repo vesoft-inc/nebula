@@ -75,7 +75,7 @@ Status PushFilterDownGetNbrsRule::transform(QueryContext *qctx,
         newGNFilter = logicExpr.encode();
     }
 
-    auto newGN = cloneGetNbrs(qctx, gn);
+    auto newGN = gn->clone(qctx);
     newGN->setFilter(newGNFilter);
 
     OptGroupExpr *newGroupExpr = nullptr;
@@ -119,44 +119,6 @@ std::pair<bool, const OptGroupExpr *> PushFilterDownGetNbrsRule::findMatchedGrou
         }
     }
     return std::make_pair(false, nullptr);
-}
-
-GetNeighbors *PushFilterDownGetNbrsRule::cloneGetNbrs(QueryContext *qctx,
-                                                      const GetNeighbors *gn) const {
-    auto newGN = GetNeighbors::make(qctx, nullptr, gn->space());
-    newGN->setSrc(gn->src());
-    newGN->setEdgeTypes(gn->edgeTypes());
-    newGN->setEdgeDirection(gn->edgeDirection());
-    newGN->setDedup(gn->dedup());
-    newGN->setRandom(gn->random());
-    newGN->setLimit(gn->limit());
-    newGN->setInputVar(gn->inputVar());
-    newGN->setOutputVar(gn->outputVar());
-
-    if (gn->vertexProps()) {
-        auto vertexProps = *gn->vertexProps();
-        auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(std::move(vertexProps));
-        newGN->setVertexProps(std::move(vertexPropsPtr));
-    }
-
-    if (gn->edgeProps()) {
-        auto edgeProps = *gn->edgeProps();
-        auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-        newGN->setEdgeProps(std::move(edgePropsPtr));
-    }
-
-    if (gn->statProps()) {
-        auto statProps = *gn->statProps();
-        auto statPropsPtr = std::make_unique<decltype(statProps)>(std::move(statProps));
-        newGN->setStatProps(std::move(statPropsPtr));
-    }
-
-    if (gn->exprs()) {
-        auto exprs = *gn->exprs();
-        auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
-        newGN->setExprs(std::move(exprsPtr));
-    }
-    return newGN;
 }
 
 }   // namespace opt

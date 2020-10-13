@@ -10,6 +10,8 @@
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
 
+using nebula::graph::IndexScan;
+
 namespace nebula {
 namespace opt {
 std::unique_ptr<OptRule> IndexScanRule::kInstance =
@@ -39,7 +41,7 @@ Status IndexScanRule::transform(graph::QueryContext *qctx,
     ret = createIndexQueryCtx(iqctx, kind, items, qctx, groupExpr);
     NG_RETURN_IF_ERROR(ret);
 
-    auto newIN = cloneIndexScan(qctx, groupExpr);
+    auto newIN = static_cast<const IndexScan*>(groupExpr->node())->clone(qctx);
     newIN->setIndexQueryContext(std::move(iqctx));
     auto newGroupExpr = OptGroupExpr::create(qctx, newIN, groupExpr->group());
     if (groupExpr->dependencies().size() != 1) {
@@ -232,21 +234,6 @@ Status IndexScanRule::boundValue(const FilterItem& item,
             return Status::SemanticError();
     }
     return Status::OK();
-}
-
-IndexScan* IndexScanRule::cloneIndexScan(graph::QueryContext *qctx,
-                                         const OptGroupExpr *groupExpr) const {
-    auto in = static_cast<const IndexScan *>(groupExpr->node());
-    auto ctx = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
-    auto returnCols = std::make_unique<std::vector<std::string>>(*in->returnColumns());
-    auto indexScan = IndexScan::make(qctx,
-                                     nullptr,
-                                     in->space(),
-                                     std::move(ctx),
-                                     std::move(returnCols),
-                                     in->isEdge(),
-                                     in->schemaId());
-    return indexScan;
 }
 
 bool IndexScanRule::isEdge(const OptGroupExpr *groupExpr) const {
