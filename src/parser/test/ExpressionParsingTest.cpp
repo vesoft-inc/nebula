@@ -240,6 +240,19 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                      make<LabelExpression>("c"));
     add("1 NOT CONTAINS 2 NOT CONTAINS 3", ast);
     */
+    ast = make<RelationalExpression>(Kind::kStartsWith,
+                                     make<RelationalExpression>(Kind::kStartsWith,
+                                         make<LabelExpression>("a"),
+                                         make<LabelExpression>("b")),
+                                     make<LabelExpression>("c"));
+    add("a STARTS WITH b STARTS WITH c", ast);
+
+    ast = make<RelationalExpression>(Kind::kEndsWith,
+                                     make<RelationalExpression>(Kind::kEndsWith,
+                                         make<LabelExpression>("a"),
+                                         make<LabelExpression>("b")),
+                                     make<LabelExpression>("c"));
+    add("a ENDS WITH b ENDS WITH c", ast);
 
     ast = make<SubscriptExpression>(make<SubscriptExpression>(
                                         make<LabelExpression>("a"),

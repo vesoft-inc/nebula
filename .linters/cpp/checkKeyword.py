@@ -83,7 +83,6 @@ reserved_key_words = [
     'KW_BY',
     'KW_IN',
     'KW_NOT_IN',
-    'KW_NOT_CONTAINS',
     'KW_DOWNLOAD',
     'KW_GET',
     'KW_OF',

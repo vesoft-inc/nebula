@@ -29,7 +29,7 @@ T_NULL_BAD_DATA.set_nVal(CommonTtypes.NullType.BAD_DATA)
 T_NULL_BAD_TYPE = CommonTtypes.Value()
 T_NULL_BAD_TYPE.set_nVal(CommonTtypes.NullType.BAD_TYPE)
 T_NULL_UNKNOWN_PROP = CommonTtypes.Value()
-T_NULL_BAD_TYPE.set_nVal(CommonTtypes.NullType.UNKNOWN_PROP)
+T_NULL_UNKNOWN_PROP.set_nVal(CommonTtypes.NullType.UNKNOWN_PROP)
 T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
 T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 
@@ -423,6 +423,7 @@ class NebulaTestSuite(object):
         if resp.data is None:
             assert False, 'resp.data is None'
         rows = resp.data.rows
+        
         if not is_regex:
             msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
             assert len(rows) == len(expect), msg

@@ -148,6 +148,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_OUT KW_BOTH KW_SUBGRAPH
 %token KW_EXPLAIN KW_PROFILE KW_FORMAT
 %token KW_CONTAINS
+%token KW_STARTS_WITH
+%token KW_ENDS_WITH
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -289,7 +291,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 %left OR KW_OR KW_XOR
 %left AND KW_AND
-%left EQ NE LT LE GT GE KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS
+%left EQ NE LT LE GT GE KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT KW_NOT
@@ -367,8 +369,10 @@ unreserved_keyword
     | KW_ALL                { $$ = new std::string("all"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
-    | KW_NOT_CONTAINS           { $$ = new std::string("contains"); }
+    | KW_NOT_CONTAINS       { $$ = new std::string("not_contains"); }
     | KW_CONTAINS           { $$ = new std::string("contains"); }
+    | KW_STARTS_WITH        { $$ = new std::string("starts_with"); }
+    | KW_ENDS_WITH          { $$ = new std::string("ends_with"); }
     | KW_VID_TYPE           { $$ = new std::string("vid_type"); }
     ;
 
@@ -465,6 +469,12 @@ expression
     }
     | expression KW_CONTAINS expression {
         $$ = new RelationalExpression(Expression::Kind::kContains, $1, $3);
+    }
+    | expression KW_STARTS_WITH expression {
+        $$ = new RelationalExpression(Expression::Kind::kStartsWith, $1, $3);
+    }
+    | expression KW_ENDS_WITH expression {
+        $$ = new RelationalExpression(Expression::Kind::kEndsWith, $1, $3);
     }
     | expression EQ expression {
         $$ = new RelationalExpression(Expression::Kind::kRelEQ, $1, $3);

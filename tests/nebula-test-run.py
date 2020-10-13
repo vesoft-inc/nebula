@@ -110,7 +110,7 @@ if __name__ == "__main__":
         # Switch to your $src_dir/tests
         os.chdir(TEST_DIR)
         error_code = executor.run_tests(args)
-        data_loader.drop_data()
+        # data_loader.drop_data()
     except Exception as x:
         print('\033[31m' + str(x) + '\033[0m')
 

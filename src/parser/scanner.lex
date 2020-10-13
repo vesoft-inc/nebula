@@ -170,6 +170,8 @@ BOTH                        ([Bb][Oo][Tt][Hh])
 SUBGRAPH                    ([Ss][Uu][Bb][Gg][Rr][Aa][Pp][Hh])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
 NOT_CONTAINS                ({NOT}{blanks}{CONTAINS})
+STARTS_WITH                 ([Ss][Tt][Aa][Rr][Tt][Ss]{blanks}[Ww][Ii][Tt][Hh])
+ENDS_WITH                   ([Ee][Nn][Dd][Ss]{blanks}[Ww][Ii][Tt][Hh])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -340,6 +342,8 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {SUBGRAPH}                  { return TokenType::KW_SUBGRAPH; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 {NOT_CONTAINS}              { return TokenType::KW_NOT_CONTAINS; }
+{STARTS_WITH}               { return TokenType::KW_STARTS_WITH;}
+{ENDS_WITH}                 { return TokenType::KW_ENDS_WITH;}
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
