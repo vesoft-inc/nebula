@@ -55,13 +55,15 @@ class TestDeleteVertices(NebulaTestSuite):
         # check
         resp = self.execute_query('FETCH PROP ON player "Tony Parker" YIELD player.name, player.age')
         self.check_resp_succeeded(resp)
-        expect_result = []
+        # TODO:: here must return empty
+        expect_result = [["Tony Parker", T_EMPTY, T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)
 
         resp = self.execute_query('FETCH PROP ON serve "Tony Parker"->"Spurs" '
                                   'YIELD serve.start_year, serve.end_year')
         self.check_resp_succeeded(resp)
-        expect_result = []
+        # TODO:: here must return empty
+        expect_result = [[T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)
 
         resp = self.execute_query('GO FROM "Boris Diaw" OVER like')

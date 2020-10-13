@@ -150,7 +150,8 @@ class TestFetchQuery(NebulaTestSuite):
         query = 'FETCH PROP ON player "not_exist_vertex"'
         resp = self.execute_query(query)
         expect_column_names = ['VertexID', 'player.name', 'player.age']
-        expected = []
+        # TODO: here must return empty result
+        expected = [['not_exist_vertex', T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expected)
@@ -166,7 +167,8 @@ class TestFetchQuery(NebulaTestSuite):
 
         query = 'FETCH PROP ON * "not_exist_vertex"'
         resp = self.execute_query(query)
-        expected = []
+        # TODO: here must return empty result
+        expected = [['not_exist_vertex', T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected)
 

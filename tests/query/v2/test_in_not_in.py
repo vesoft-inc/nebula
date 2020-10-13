@@ -36,9 +36,7 @@ class TestINandNotIn(NebulaTestSuite):
 
         expected_data = {
             "column_names" : ['like._dst'],
-            "rows" : [
-                []
-            ]
+            "rows" : []
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
@@ -116,7 +114,9 @@ class TestINandNotIn(NebulaTestSuite):
         expected_data = {
             "column_names" : ['$$.player.name'],
             "rows" : [
-                ['LaMarcus Aldridge']
+                ['LaMarcus Aldridge'],
+                ['Manu Ginobili'],
+                ['Tim Duncan'],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -223,9 +223,7 @@ class TestINandNotIn(NebulaTestSuite):
 
         expected_data = {
             "column_names" : ['like._dst'],
-            "rows" : [
-                []
-            ]
+            "rows" : []
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])

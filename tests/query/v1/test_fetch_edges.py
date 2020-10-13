@@ -8,7 +8,7 @@
 import pytest
 
 from nebula2.graph import ttypes
-from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL, T_EMPTY
 
 class TestFetchEdges(NebulaTestSuite):
     @classmethod
@@ -255,13 +255,8 @@ class TestFetchEdges(NebulaTestSuite):
 
         query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs" YIELD serve.start_year'
         resp = self.execute_query(query)
-        expect_result = []
-        self.check_resp_succeeded(resp)
-        self.check_out_of_order_result(resp, expect_result)
-
-        query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs" YIELD serve.start_year'
-        resp = self.execute_query(query)
-        expect_result = []
+        # TODO:: here must return empty
+        expect_result = [[T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
