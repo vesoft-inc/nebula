@@ -103,7 +103,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
 
-    if ( force_single_part ) {
+    if (FLAGS_force_single_part) {
         properties.set_partition_num(1);
     }
 
