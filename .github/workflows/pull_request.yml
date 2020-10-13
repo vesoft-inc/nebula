@@ -132,4 +132,4 @@ jobs:
         timeout-minutes: 25
       - name: Cleanup
         if: ${{ always() }}
-        run: rm -rf "${{ github.workspace }}"
+        run: rm -rf build modules
