@@ -148,7 +148,7 @@ PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::stri
     columns->addColumn(column);
 
     srcVidColName_ = vctx_->anonColGen()->getCol();
-    if (!exprProps_.inputProps().empty() || !exprProps_.varProps().empty()) {
+    if (from_.fromType != FromType::kInstantExpr) {
         column =
             new YieldColumn(new InputPropertyExpression(new std::string(kVid)),
                             new std::string(srcVidColName_));

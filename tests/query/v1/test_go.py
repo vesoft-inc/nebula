@@ -963,12 +963,17 @@ class TestGoQuery(NebulaTestSuite):
         expected_data = {
             "column_names" : ["like._dst"],
             "rows" : [
-                ["Tony Parker"],
-                ["Manu Ginobili"],
-                ["Manu Ginobili"],
-                ["Tim Duncan"],
-                ["Tim Duncan"],
                 ["LaMarcus Aldridge"],
+                ["LaMarcus Aldridge"],
+                ["Manu Ginobili"],
+                ["Manu Ginobili"],
+                ["Tim Duncan"],
+                ["Tim Duncan"],
+                ["Tim Duncan"],
+                ["Manu Ginobili"],
+                ["Manu Ginobili"],
+                ["Tony Parker"],
+                ["Tony Parker"],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
