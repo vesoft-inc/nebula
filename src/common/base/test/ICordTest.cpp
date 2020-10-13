@@ -1,17 +1,21 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
+#include "common/base/ICord.h"
 #include <gtest/gtest.h>
-#include "common/base/Cord.h"
+
+#define Cord ICord<>
 
 namespace nebula {
 
 TEST(CordTest, multipleBlocks) {
-    Cord cord(128);
+    // Disabled
+    // auto c = new Cord<>;
+
+    ICord<128> cord;
 
     std::string buf;
     for (int i = 0; i < 100; i++) {

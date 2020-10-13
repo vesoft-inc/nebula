@@ -157,9 +157,6 @@
 
 #undef LOG_EVERY_N
 #define LOG_EVERY_N(severity, n) \
-  GOOGLE_GLOG_COMPILE_ASSERT(google::GLOG_ ## severity < \
-                             google::NUM_SEVERITIES,     \
-                             INVALID_REQUESTED_LOG_SEVERITY);           \
   SOME_KIND_OF_LOG_EVERY_N(severity, (n), google::LogMessage::SendToLog)
 
 #undef LOG_IF_EVERY_N

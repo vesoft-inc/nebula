@@ -23,7 +23,6 @@ DEFINE_int32(meta_client_timeout_ms, 60 * 1000,
              "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id",
               "file path saved clusterId");
-DECLARE_string(gflags_mode_json);
 
 
 namespace nebula {
@@ -757,7 +756,7 @@ MetaClient::submitJob(cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::
                     return client->future_runAdminJob(request);
                 }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
                     return resp.get_result();
-                }, std::move(promise));
+                }, std::move(promise), true);
     return future;
 }
 

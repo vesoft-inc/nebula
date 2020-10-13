@@ -732,9 +732,10 @@ struct TransLeaderReq {
 
 
 struct AddPartReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: bool                as_learner,
+    1: common.GraphSpaceID   space_id,
+    2: common.PartitionID    part_id,
+    3: bool                  as_learner,
+    4: list<common.HostAddr> peers,
 }
 
 

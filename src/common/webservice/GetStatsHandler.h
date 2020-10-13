@@ -31,8 +31,8 @@ public:
 
     void onError(proxygen::ProxygenError err) noexcept override;
 
-private:
-    folly::dynamic getStats() const;
+protected:
+    virtual folly::dynamic getStats() const;
     void addOneStat(folly::dynamic& vals, const std::string& statName,
                     int64_t statValue) const;
     void addOneStat(folly::dynamic& vals,
@@ -40,7 +40,7 @@ private:
                     const std::string& error) const;
     std::string toStr(folly::dynamic& vals) const;
 
-private:
+protected:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
     std::vector<std::string> statNames_;
