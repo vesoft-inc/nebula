@@ -89,10 +89,11 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             }
 
             auto props = newEdge.get_props();
-            auto retEnc = encodeRowVal(schema.get(), propNames, props);
+            WriteResult wRet;
+            auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
             if (!retEnc.ok()) {
                 LOG(ERROR) << retEnc.status();
-                pushResultCode(cpp2::ErrorCode::E_DATA_TYPE_MISMATCH, partId);
+                pushResultCode(writeResultTo(wRet, true), partId);
                 onFinished();
                 return;
             }

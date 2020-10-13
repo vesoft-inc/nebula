@@ -20,6 +20,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     case kvstore::ResultCode::ERR_PART_NOT_FOUND:
         return cpp2::ErrorCode::E_PART_NOT_FOUND;
+    case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
+        return cpp2::ErrorCode::E_KEY_NOT_FOUND;
     case kvstore::ResultCode::ERR_CONSENSUS_ERROR:
         return cpp2::ErrorCode::E_CONSENSUS_ERROR;
     case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
@@ -36,12 +38,45 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     case kvstore::ResultCode::ERR_TAG_NOT_FOUND:
         return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+    case kvstore::ResultCode::ERR_ATOMIC_OP_FAILED:
+        return cpp2::ErrorCode::E_ATOMIC_OP_FAILED;
+    case kvstore::ResultCode::ERR_TAG_PROP_NOT_FOUND:
+        return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+    case kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND:
+        return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+    case kvstore::ResultCode::ERR_RESULT_OVERFLOW:
+        return cpp2::ErrorCode::E_OUT_OF_RANGE;
     case kvstore::ResultCode::ERR_INVALID_DATA:
         return cpp2::ErrorCode::E_INVALID_DATA;
     case kvstore::ResultCode::ERR_BUILD_INDEX_FAILED:
         return cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
     case kvstore::ResultCode::ERR_INVALID_OPERATION:
         return cpp2::ErrorCode::E_INVALID_OPERATION;
+    default:
+        return cpp2::ErrorCode::E_UNKNOWN;
+    }
+}
+
+template <typename RESP>
+cpp2::ErrorCode BaseProcessor<RESP>::writeResultTo(WriteResult code, bool isEdge) {
+    switch (code) {
+    case WriteResult::SUCCEEDED:
+        return cpp2::ErrorCode::SUCCEEDED;
+    case WriteResult::UNKNOWN_FIELD:
+        if (isEdge) {
+            return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+        }
+        return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+    case WriteResult::NOT_NULLABLE:
+        return cpp2::ErrorCode::E_NOT_NULLABLE;
+    case WriteResult::TYPE_MISMATCH:
+        return cpp2::ErrorCode::E_DATA_TYPE_MISMATCH;
+    case WriteResult::FIELD_UNSET:
+        return cpp2::ErrorCode::E_FIELD_UNSET;
+    case WriteResult::OUT_OF_RANGE:
+        return cpp2::ErrorCode::E_OUT_OF_RANGE;
+    case WriteResult::INCORRECT_VALUE:
+        return cpp2::ErrorCode::E_INVALID_FIELD_VALUE;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -175,27 +210,28 @@ template <typename RESP>
 StatusOr<std::string>
 BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                   const std::vector<std::string>& propNames,
-                                  const std::vector<Value>& props) {
+                                  const std::vector<Value>& props,
+                                  WriteResult& wRet) {
     RowWriterV2 rowWrite(schema);
     // If req.prop_names is not empty, use the property name in req.prop_names
     // Otherwise, use property name in schema
     if (!propNames.empty()) {
         for (size_t i = 0; i < propNames.size(); i++) {
-            auto wRet = rowWrite.setValue(propNames[i], props[i]);
+            wRet = rowWrite.setValue(propNames[i], props[i]);
             if (wRet != WriteResult::SUCCEEDED) {
                 return Status::Error("Add field faild");
             }
         }
     } else {
         for (size_t i = 0; i < props.size(); i++) {
-            auto wRet = rowWrite.setValue(i, props[i]);
+            wRet = rowWrite.setValue(i, props[i]);
             if (wRet != WriteResult::SUCCEEDED) {
                 return Status::Error("Add field faild");
             }
         }
     }
 
-    auto wRet = rowWrite.finish();
+    wRet = rowWrite.finish();
     if (wRet != WriteResult::SUCCEEDED) {
         return Status::Error("Add field faild");
     }

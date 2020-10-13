@@ -254,7 +254,7 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
         auto schema = schemas.back().get();
         if (!schema) {
             VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.edge_type;
-            return cpp2::ErrorCode::E_UNKNOWN;
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         planContext_->edgeSchema_ = schema;
     } else {

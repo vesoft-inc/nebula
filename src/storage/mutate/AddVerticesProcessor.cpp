@@ -88,10 +88,11 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                     propNames = iter->second;
                 }
 
-                auto retEnc = encodeRowVal(schema.get(), propNames, props);
+                WriteResult wRet;
+                auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
                 if (!retEnc.ok()) {
                     LOG(ERROR) << retEnc.status();
-                    pushResultCode(cpp2::ErrorCode::E_DATA_TYPE_MISMATCH, partId);
+                    pushResultCode(writeResultTo(wRet, false), partId);
                     onFinished();
                     return;
                 }

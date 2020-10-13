@@ -69,6 +69,8 @@ protected:
 
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
+    cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
+
     nebula::meta::cpp2::ColumnDef columnDef(std::string name,
                                             nebula::meta::cpp2::PropertyType type);
 
@@ -87,7 +89,8 @@ protected:
 
     StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                        const std::vector<std::string>& propNames,
-                                       const std::vector<Value>& props);
+                                       const std::vector<Value>& props,
+                                       WriteResult& wRet);
 
 protected:
     StorageEnv*                                     env_{nullptr};

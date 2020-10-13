@@ -253,7 +253,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         auto schema = schemas.back().get();
         if (!schema) {
             VLOG(1) << "Fail to get schema in TagId " << tagId_;
-            return cpp2::ErrorCode::E_UNKNOWN;
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         planContext_->tagSchema_ = schema;
     } else {

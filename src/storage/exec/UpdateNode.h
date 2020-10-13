@@ -231,7 +231,7 @@ public:
         schema_ = schemaIter->second.back().get();
         if (!schema_) {
             LOG(ERROR) << "Get nullptr schema";
-            return kvstore::ResultCode::ERR_UNKNOWN;
+            return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
         }
 
         auto iter = tagContext_->tagNames_.find(tagId_);
@@ -519,7 +519,7 @@ public:
         schema_ = schemaIter->second.back().get();
         if (!schema_) {
             LOG(ERROR) << "Get nullptr schema";
-            return kvstore::ResultCode::ERR_UNKNOWN;
+            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
         }
 
         auto iter = edgeContext_->edgeNames_.find(edgeType_);
