@@ -3,6 +3,7 @@
 install(
     FILES
         nebula-graphd.conf.default
+        nebula-graphd.conf.production
     PERMISSIONS
         OWNER_READ
         GROUP_READ
