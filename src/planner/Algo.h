@@ -19,12 +19,12 @@ class ProduceSemiShortestPath : public PlanNode {
 class BFSShortestPath : public SingleInputNode {
 public:
     static BFSShortestPath* make(QueryContext* qctx, PlanNode* input) {
-        return qctx->objPool()->add(new BFSShortestPath(qctx->genId(), input));
+        return qctx->objPool()->add(new BFSShortestPath(qctx, input));
     }
 
 private:
-    BFSShortestPath(int64_t id, PlanNode* input)
-        : SingleInputNode(id, Kind::kBFSShortest, input) {}
+    BFSShortestPath(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kBFSShortest, input) {}
 };
 
 class ConjunctPath : public BiInputNode {
@@ -40,7 +40,7 @@ public:
                               PlanNode* left,
                               PlanNode* right,
                               PathKind pathKind) {
-        return qctx->objPool()->add(new ConjunctPath(qctx->genId(), left, right, pathKind));
+        return qctx->objPool()->add(new ConjunctPath(qctx, left, right, pathKind));
     }
 
     PathKind pathKind() const {
@@ -48,8 +48,8 @@ public:
     }
 
 private:
-    ConjunctPath(int64_t id, PlanNode* left, PlanNode* right, PathKind pathKind)
-        : BiInputNode(id, Kind::kConjunctPath, left, right) {
+    ConjunctPath(QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind)
+        : BiInputNode(qctx, Kind::kConjunctPath, left, right) {
         pathKind_ = pathKind;
     }
 

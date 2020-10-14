@@ -21,6 +21,7 @@ class LimitTest : public QueryTestBase {
 
 #define LIMIT_RESUTL_CHECK(outputName, offset, count, expected)                                    \
     do {                                                                                           \
+        qctx_->symTable()->newVariable(outputName);                                                \
         auto start = StartNode::make(qctx_.get());                                                 \
         auto* limitNode = Limit::make(qctx_.get(), start, offset, count);                          \
         limitNode->setInputVar("input_neighbor");                                                  \

@@ -34,7 +34,7 @@ Status OrderByValidator::toPlan() {
     auto *sortNode = Sort::make(qctx_, plan->root(), std::move(colOrderTypes_));
     std::vector<std::string> colNames;
     for (auto &col : outputs_) {
-        colNames.emplace_back(col.first);
+        colNames.emplace_back(col.name);
     }
     sortNode->setColNames(std::move(colNames));
     root_ = sortNode;

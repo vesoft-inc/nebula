@@ -84,7 +84,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
     std::vector<storage::cpp2::EdgeKey> edgeKeys;
     const auto& spaceInfo = qctx()->rctx()->session()->space();
     if (!edgeKeyRefs.empty()) {
-        auto& inputVar = deNode->inputVar();
+        auto inputVar = deNode->inputVar();
         DCHECK(!inputVar.empty());
         auto& inputResult = ectx_->getResult(inputVar);
         auto iter = inputResult.iter();

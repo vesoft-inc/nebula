@@ -317,13 +317,13 @@ void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
 void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
     auto *prop = expr->prop();
     auto found = std::find_if(
-        inputs_.cbegin(), inputs_.cend(), [&prop](auto &col) { return *prop == col.first; });
+        inputs_.cbegin(), inputs_.cend(), [&prop](auto &col) { return *prop == col.name; });
     if (found == inputs_.cend()) {
         status_ = Status::SemanticError(
             "`%s', not exist prop `%s'", expr->toString().c_str(), prop->c_str());
         return;
     }
-    type_ = found->second;
+    type_ = found->type;
 }
 
 void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
@@ -336,13 +336,13 @@ void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
     auto *prop = expr->prop();
     auto cols = vctx_->getVar(*var);
     auto found =
-        std::find_if(cols.begin(), cols.end(), [&prop](auto &col) { return *prop == col.first; });
+        std::find_if(cols.begin(), cols.end(), [&prop](auto &col) { return *prop == col.name; });
     if (found == cols.end()) {
         status_ = Status::SemanticError(
             "`%s', not exist prop `%s'", expr->toString().c_str(), prop->c_str());
         return;
     }
-    type_ = found->second;
+    type_ = found->type;
 }
 
 void DeduceTypeVisitor::visit(DestPropertyExpression *expr) {

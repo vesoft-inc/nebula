@@ -23,6 +23,7 @@ public:
 
 #define DEDUP_RESUTL_CHECK(inputName, outputName, sentence, expected)                              \
     do {                                                                                           \
+        qctx_->symTable()->newVariable(outputName);                                                \
         auto yieldSentence = getYieldSentence(sentence);                                           \
         auto* dedupNode = Dedup::make(qctx_.get(), nullptr);                                       \
         dedupNode->setInputVar(inputName);                                                         \

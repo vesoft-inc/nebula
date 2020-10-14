@@ -8,8 +8,8 @@
 #define UTIL_ANONVARGENERATOR_H_
 
 #include "common/base/Base.h"
-
 #include "util/IdGenerator.h"
+#include "context/Symbols.h"
 
 namespace nebula {
 namespace graph {
@@ -18,15 +18,21 @@ namespace graph {
  */
 class AnonVarGenerator final {
 public:
-    AnonVarGenerator() {
+    explicit AnonVarGenerator(SymbolTable* symTable) {
+        DCHECK(symTable != nullptr);
         idGen_ = std::make_unique<IdGenerator>();
+        symTable_ = symTable;
     }
 
     std::string getVar() const {
-        return folly::stringPrintf("__UNAMED_VAR_%ld", idGen_->id());
+        auto var = folly::stringPrintf("__UNAMED_VAR_%ld", idGen_->id());
+        symTable_->newVariable(var);
+        VLOG(1) << "Build anon var: " << var;
+        return var;
     }
 
 private:
+    SymbolTable*                    symTable_{nullptr};
     std::unique_ptr<IdGenerator>    idGen_;
 };
 }  // namespace graph

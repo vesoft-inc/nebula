@@ -20,6 +20,7 @@ class SortTest : public QueryTestBase {};
 
 #define SORT_RESUTL_CHECK(input_name, outputName, multi, factors, expected)                        \
     do {                                                                                           \
+        qctx_->symTable()->newVariable(outputName);                                                \
         auto start = StartNode::make(qctx_.get());                                                 \
         auto* sortNode = Sort::make(qctx_.get(), start, factors);                                  \
         sortNode->setInputVar(input_name);                                                         \

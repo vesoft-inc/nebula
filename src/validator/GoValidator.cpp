@@ -510,7 +510,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
                         {joinHashKey}, {from_.srcRef});
     std::vector<std::string> colNames = dependencyForJoinInput->colNames();
     for (auto& col : outputs_) {
-        colNames.emplace_back(col.first);
+        colNames.emplace_back(col.name);
     }
     joinInput->setColNames(std::move(colNames));
     VLOG(1) << joinInput->outputVar();

@@ -20,6 +20,7 @@ class TopNTest : public QueryTestBase {};
 
 #define TOPN_RESUTL_CHECK(input_name, outputName, multi, factors, offset, count, expected)         \
     do {                                                                                           \
+        qctx_->symTable()->newVariable(outputName);                                                \
         auto start = StartNode::make(qctx_.get());                                                 \
         auto* topnNode = TopN::make(qctx_.get(), start, factors, offset, count);                   \
         topnNode->setInputVar(input_name);                                                         \

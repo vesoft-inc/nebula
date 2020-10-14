@@ -30,7 +30,7 @@ Status LimitValidator::toPlan() {
     auto *limitNode = Limit::make(qctx_, plan->root(), offset_, count_);
     std::vector<std::string> colNames;
     for (auto &col : outputs_) {
-        colNames.emplace_back(col.first);
+        colNames.emplace_back(col.name);
     }
     limitNode->setColNames(std::move(colNames));
     root_ = limitNode;

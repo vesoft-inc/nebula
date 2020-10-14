@@ -106,6 +106,7 @@ protected:
                             "_tag:tag1:prop1:prop2",
                             "_edge:+edge1:prop1:prop2:_dst:_rank",
                             "_expr"};
+            qctx_->symTable()->newVariable("empty_get_neighbors");
             qctx_->ectx()->setResult("empty_get_neighbors",
                                      ResultBuilder()
                                          .value(Value(std::move(ds)))
@@ -121,6 +122,8 @@ protected:
 };
 
 TEST_F(BFSShortestTest, BFSShortest) {
+    qctx_->symTable()->newVariable("input");
+
     auto* bfs = BFSShortestPath::make(qctx_.get(), nullptr);
     bfs->setInputVar("input");
     bfs->setColNames({"_vid", "edge"});

@@ -13,9 +13,14 @@
 namespace nebula {
 namespace graph {
 
-PlanNode::PlanNode(int64_t id, Kind kind) : kind_(kind), id_(id) {
-    DCHECK_GE(id_, 0);
-    outputVars_.emplace_back(folly::stringPrintf("__%s_%ld", toString(kind_), id_));
+PlanNode::PlanNode(QueryContext* qctx, Kind kind) : qctx_(qctx), kind_(kind) {
+    DCHECK(qctx != nullptr);
+    id_ = qctx_->genId();
+    auto varName = folly::stringPrintf("__%s_%ld", toString(kind_), id_);
+    auto* variable = qctx_->symTable()->newVariable(varName);
+    VLOG(1) << "New variable: " << varName;
+    outputVars_.emplace_back(variable);
+    qctx_->symTable()->writtenBy(varName, this);
 }
 
 // static
@@ -205,7 +210,6 @@ std::unique_ptr<cpp2::PlanNodeDescription> PlanNode::explain() const {
     desc->set_id(id_);
     desc->set_name(toString(kind_));
     desc->set_output_var(folly::toJson(util::toJson(outputVars_)));
-    addDescription("colNames", folly::toJson(util::toJson(colNames_)), desc.get());
     return desc;
 }
 

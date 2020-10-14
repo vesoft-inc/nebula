@@ -27,7 +27,7 @@ Status SetValidator::validateImpl() {
     }
 
     for (size_t i = 0, e = lCols.size(); i < e; i++) {
-        if (lCols[i].first != rCols[i].first) {
+        if (lCols[i].name != rCols[i].name) {
             return Status::SemanticError(
                 "different column names to UNION/INTERSECT/MINUS are not supported");
         }

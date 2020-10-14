@@ -57,6 +57,7 @@ class AggregateTest : public testing::Test {
         row.values.emplace_back(Value::kNullValue);
         ds.rows.emplace_back(std::move(row));
 
+        qctx_->symTable()->newVariable(*input_);
         qctx_->ectx()->setResult(*input_, ResultBuilder().value(Value(ds)).finish());
     }
 

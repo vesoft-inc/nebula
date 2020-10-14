@@ -77,6 +77,7 @@ protected:
                               .value(Value(datasetList))
                               .iter(Iterator::Kind::kGetNeighbors)
                               .finish();
+            qctx_->symTable()->newVariable("input_neighbor");
             qctx_->ectx()->setResult("input_neighbor", std::move(result));
         }
         // sequential
@@ -88,6 +89,7 @@ protected:
             dataset.emplace_back(Row({"Kate", "Kate", 19, "School2", 2009, 2013}));
             dataset.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
             dataset.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
+            qctx_->symTable()->newVariable("input_sequential");
             qctx_->ectx()->setResult("input_sequential",
                                      ResultBuilder().value(Value(dataset)).finish());
         }
@@ -98,6 +100,7 @@ protected:
             lds.emplace_back(Row({"Joy", "Joy", Value::kNullValue, "School2", 2009, 2012}));
             lds.emplace_back(Row({"Tom", "Tom", 20, "School2", 2008, 2012}));
             lds.emplace_back(Row({"Kate", "Kate", 19, "School2", 2009, 2013}));
+            qctx_->symTable()->newVariable("left_neighbor");
             qctx_->ectx()->setResult("left_sequential",
                                      ResultBuilder().value(Value(lds)).finish());
 
@@ -112,12 +115,14 @@ protected:
             ResultBuilder builder;
             builder.value(lIter->valuePtr())
                 .iter(std::make_unique<SequentialIter>(std::move(lIter), std::move(rIter)));
+            qctx_->symTable()->newVariable("union_sequential");
             qctx_->ectx()->setResult("union_sequential", builder.finish());
         }
         // empty
         {
             DataSet dataset({kVid, "_stats", "_tag:person:name:age",
                              "_edge:+study:_dst:start_year:end_year", "_expr"});
+            qctx_->symTable()->newVariable("empty");
             qctx_->ectx()->setResult("empty",
                                      ResultBuilder().value(Value(dataset)).finish());
         }

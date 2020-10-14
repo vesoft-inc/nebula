@@ -343,6 +343,8 @@ Status DeleteVerticesValidator::toPlan() {
         vidVar = buildVIds();
     } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
         vidVar = *static_cast<PropertyExpression*>(vidRef_)->sym();
+    } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kInputProperty) {
+        vidVar = inputVarName_;
     }
 
     std::vector<storage::cpp2::EdgeProp> edgeProps;
@@ -498,6 +500,8 @@ Status DeleteEdgesValidator::checkInput() {
 
     if (edgeKeyRef->srcid()->kind() == Expression::Kind::kVarProperty) {
         edgeKeyVar_ = *static_cast<PropertyExpression*>(edgeKeyRef->srcid())->sym();
+    } else if (edgeKeyRef->srcid()->kind() == Expression::Kind::kInputProperty) {
+        edgeKeyVar_ = inputVarName_;
     }
     return Status::OK();
 }

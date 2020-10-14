@@ -150,7 +150,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
             // it's always a root of expression.
             if (*ipe->prop() == "*") {
                 for (auto &colDef : inputs_) {
-                    auto newExpr = new InputPropertyExpression(new std::string(colDef.first));
+                    auto newExpr = new InputPropertyExpression(new std::string(colDef.name));
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 if (!column->getAggFunName().empty()) {
@@ -169,7 +169,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
                 auto &varColDefs = vctx_->getVar(*var);
                 for (auto &colDef : varColDefs) {
                     auto newExpr = new VariablePropertyExpression(new std::string(*var),
-                                                                  new std::string(colDef.first));
+                                                                  new std::string(colDef.name));
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 if (!column->getAggFunName().empty()) {
@@ -216,7 +216,7 @@ Status YieldValidator::toPlan() {
         filter = Filter::make(qctx_, nullptr, filterCondition_);
         std::vector<std::string> colNames(inputs_.size());
         std::transform(
-            inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &in) { return in.first; });
+            inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });
         filter->setColNames(std::move(colNames));
         if (!constantExprVar_.empty()) {
             filter->setInputVar(constantExprVar_);

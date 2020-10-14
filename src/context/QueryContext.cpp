@@ -33,9 +33,10 @@ QueryContext::QueryContext() {
 void QueryContext::init() {
     objPool_ = std::make_unique<ObjectPool>();
     ep_ = std::make_unique<ExecutionPlan>();
-    vctx_ = std::make_unique<ValidateContext>();
     ectx_ = std::make_unique<ExecutionContext>();
     idGen_ = std::make_unique<IdGenerator>(0);
+    symTable_ = std::make_unique<SymbolTable>(objPool_.get());
+    vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));
 }
 
 void QueryContext::addProfilingData(int64_t planNodeId, cpp2::ProfilingStats&& profilingStats) {

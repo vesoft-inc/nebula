@@ -9,6 +9,8 @@
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
+#include "context/QueryContext.h"
+#include "context/Symbols.h"
 
 namespace nebula {
 namespace graph {
@@ -108,7 +110,7 @@ public:
         kConjunctPath,
     };
 
-    PlanNode(int64_t id, Kind kind);
+    PlanNode(QueryContext* qctx, Kind kind);
 
     virtual ~PlanNode() = default;
 
@@ -127,24 +129,36 @@ public:
 
     void setOutputVar(std::string var) {
         DCHECK_EQ(1, outputVars_.size());
-        outputVars_[0] = (std::move(var));
+        auto* outputVarPtr = qctx_->symTable()->getVar(var);
+        DCHECK(outputVarPtr != nullptr);
+        auto oldVar = outputVars_[0]->name;
+        outputVarPtr->colNames = outputVars_[0]->colNames;
+        outputVars_[0] = outputVarPtr;
+        qctx_->symTable()->updateWrittenBy(oldVar, var, this);
     }
 
     std::string outputVar(size_t index = 0) const {
         DCHECK_LT(index, outputVars_.size());
+        return outputVars_[index]->name;
+    }
+
+    Variable* outputVarPtr(size_t index = 0) const {
+        DCHECK_LT(index, outputVars_.size());
         return outputVars_[index];
     }
 
-    const std::vector<std::string>& outputVars() const {
+    const std::vector<Variable*>& outputVars() const {
         return outputVars_;
     }
 
     std::vector<std::string> colNames() const {
-        return colNames_;
+        DCHECK(!outputVars_.empty());
+        return outputVars_[0]->colNames;
     }
 
     const std::vector<std::string>& colNamesRef() const {
-        return colNames_;
+        DCHECK(!outputVars_.empty());
+        return outputVars_[0]->colNames;
     }
 
     void setId(int64_t id) {
@@ -152,11 +166,13 @@ public:
     }
 
     void setColNames(std::vector<std::string>&& cols) {
-        colNames_ = std::move(cols);
+        DCHECK(!outputVars_.empty());
+        outputVars_[0]->colNames = std::move(cols);
     }
 
     void setColNames(const std::vector<std::string>& cols) {
-        colNames_ = cols;
+        DCHECK(!outputVars_.empty());
+        outputVars_[0]->colNames = cols;
     }
 
     const PlanNode* dep(size_t index = 0) const {
@@ -182,13 +198,13 @@ public:
 protected:
     static void addDescription(std::string key, std::string value, cpp2::PlanNodeDescription* desc);
 
+    QueryContext*                            qctx_{nullptr};
     Kind                                     kind_{Kind::kUnknown};
     int64_t                                  id_{-1};
     double                                   cost_{0.0};
-    std::vector<std::string>                 colNames_;
     std::vector<const PlanNode*>             dependencies_;
-    std::vector<std::string>                 inputVars_;
-    std::vector<std::string>                 outputVars_;
+    std::vector<Variable*>                   inputVars_;
+    std::vector<Variable*>                   outputVars_;
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
@@ -204,8 +220,8 @@ public:
     }
 
 protected:
-    SingleDependencyNode(int64_t id, Kind kind, const PlanNode* dep)
-        : PlanNode(id, kind) {
+    SingleDependencyNode(QueryContext* qctx, Kind kind, const PlanNode* dep)
+        : PlanNode(qctx, kind) {
         dependencies_.emplace_back(dep);
     }
 
@@ -216,23 +232,40 @@ class SingleInputNode : public SingleDependencyNode {
 public:
     void setInputVar(std::string inputVar) {
         DCHECK(!inputVars_.empty());
-        inputVars_[0] = std::move(inputVar);
+        auto* inputVarPtr = qctx_->symTable()->getVar(inputVar);
+        DCHECK(inputVarPtr != nullptr);
+        std::string oldVar;
+        if (inputVars_[0] != nullptr) {
+            oldVar = inputVars_[0]->name;
+        }
+        inputVars_[0] = inputVarPtr;
+        if (!oldVar.empty()) {
+            qctx_->symTable()->updateReadBy(oldVar, inputVar, this);
+        } else {
+            qctx_->symTable()->readBy(inputVar, this);
+        }
     }
 
-    const std::string& inputVar() const {
+    std::string inputVar() const {
         DCHECK(!inputVars_.empty());
-        return inputVars_[0];
+        if (inputVars_[0] != nullptr) {
+            return inputVars_[0]->name;
+        } else {
+            return "";
+        }
     }
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    SingleInputNode(int64_t id, Kind kind, const PlanNode* dep)
-        : SingleDependencyNode(id, kind, dep) {
+    SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep)
+        : SingleDependencyNode(qctx, kind, dep) {
         if (dep != nullptr) {
-            inputVars_.emplace_back(dep->outputVar());
+            auto* inputVarPtr = dep->outputVarPtr();
+            inputVars_.emplace_back(inputVarPtr);
+            qctx_->symTable()->readBy(inputVarPtr->name, this);
         } else {
-            inputVars_.resize(1);
+            inputVars_.emplace_back(nullptr);
         }
     }
 };
@@ -248,11 +281,35 @@ public:
     }
 
     void setLeftVar(std::string leftVar) {
-        inputVars_[0] = std::move(leftVar);
+        DCHECK_GE(inputVars_.size(), 1);
+        auto* leftVarPtr = qctx_->symTable()->getVar(leftVar);
+        DCHECK(leftVarPtr != nullptr);
+        std::string oldVar;
+        if (inputVars_[0] != nullptr) {
+            oldVar = inputVars_[0]->name;
+        }
+        inputVars_[0] = leftVarPtr;
+        if (!oldVar.empty()) {
+            qctx_->symTable()->updateReadBy(oldVar, leftVar, this);
+        } else {
+            qctx_->symTable()->readBy(leftVar, this);
+        }
     }
 
     void setRightVar(std::string rightVar) {
-        inputVars_[1] = std::move(rightVar);
+        DCHECK_EQ(inputVars_.size(), 2);
+        auto* rightVarPtr = qctx_->symTable()->getVar(rightVar);
+        DCHECK(rightVarPtr != nullptr);
+        std::string oldVar;
+        if (inputVars_[1] != nullptr) {
+            oldVar = inputVars_[1]->name;
+        }
+        inputVars_[1] = rightVarPtr;
+        if (!oldVar.empty()) {
+            qctx_->symTable()->updateReadBy(oldVar, rightVar, this);
+        } else {
+            qctx_->symTable()->readBy(rightVar, this);
+        }
     }
 
     const PlanNode* left() const {
@@ -264,33 +321,30 @@ public:
     }
 
     const std::string& leftInputVar() const {
-        return inputVars_[0];
+        return inputVars_[0]->name;
     }
 
     const std::string& rightInputVar() const {
-        return inputVars_[1];
+        return inputVars_[1]->name;
     }
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    BiInputNode(int64_t id, Kind kind, PlanNode* left, PlanNode* right)
-        : PlanNode(id, kind) {
-        if (left != nullptr) {
-            dependencies_.emplace_back(left);
-            inputVars_.emplace_back(left->outputVar());
-        } else {
-            dependencies_.emplace_back();
-            inputVars_.emplace_back();
-        }
+    BiInputNode(QueryContext* qctx, Kind kind, PlanNode* left, PlanNode* right)
+        : PlanNode(qctx, kind) {
+        DCHECK(left != nullptr);
+        DCHECK(right != nullptr);
 
-        if (right != nullptr) {
-            dependencies_.emplace_back(right);
-            inputVars_.emplace_back(right->outputVar());
-        } else {
-            dependencies_.emplace_back();
-            inputVars_.emplace_back();
-        }
+        dependencies_.emplace_back(left);
+        auto* leftVarPtr = left->outputVarPtr();
+        inputVars_.emplace_back(leftVarPtr);
+        qctx_->symTable()->readBy(leftVarPtr->name, this);
+
+        dependencies_.emplace_back(right);
+        auto* rightVarPtr = right->outputVarPtr();
+        inputVars_.emplace_back(rightVarPtr);
+        qctx_->symTable()->readBy(rightVarPtr->name, this);
     }
 };
 

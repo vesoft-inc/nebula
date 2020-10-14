@@ -5,7 +5,6 @@
  */
 
 #include "common/base/Base.h"
-
 #include "validator/test/ValidatorTestBase.h"
 
 DECLARE_uint32(max_allowed_statements);

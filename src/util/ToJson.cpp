@@ -11,6 +11,7 @@
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/interface/gen-cpp2/storage_types.h"
+#include "context/Symbols.h"
 #include "parser/EdgeKey.h"
 #include "util/SchemaUtil.h"
 
@@ -231,5 +232,17 @@ folly::dynamic toJson(const storage::cpp2::Expr &expr) {
     return obj;
 }
 
+folly::dynamic toJson(const graph::Variable *var) {
+    folly::dynamic obj = folly::dynamic::object();
+    if (var == nullptr) {
+        return obj;
+    }
+    obj.insert("name", var->name);
+    std::stringstream ss;
+    ss << var->type;
+    obj.insert("type", ss.str());
+    obj.insert("colNames", toJson(var->colNames));
+    return obj;
+}
 }   // namespace util
 }   // namespace nebula

@@ -7,24 +7,22 @@
 #ifndef CONTEXT_VALIDATECONTEXT_H_
 #define CONTEXT_VALIDATECONTEXT_H_
 
-#include "common/meta/SchemaManager.h"
-#include "common/datatypes/Value.h"
 #include "common/charset/Charset.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/SchemaManager.h"
+#include "context/Symbols.h"
 #include "planner/ExecutionPlan.h"
-#include "util/AnonVarGenerator.h"
-#include "util/AnonColGenerator.h"
 #include "service/Session.h"
+#include "util/AnonColGenerator.h"
+#include "util/AnonVarGenerator.h"
 
 namespace nebula {
 namespace graph {
 
-using ColDef = std::pair<std::string, Value::Type>;
-using ColsDef = std::vector<ColDef>;
-
 class ValidateContext final {
 public:
-    ValidateContext() {
-        anonVarGen_ = std::make_unique<AnonVarGenerator>();
+    explicit ValidateContext(std::unique_ptr<AnonVarGenerator> varGen) {
+        anonVarGen_ = std::move(varGen);
         anonColGen_ = std::make_unique<AnonColGenerator>();
     }
 
