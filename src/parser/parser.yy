@@ -797,8 +797,13 @@ group_clause
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
-		s->setWhereClause($3);
-		$$ = s;
+        s->setWhereClause($3);
+        $$ = s;
+    }
+    | KW_YIELD KW_DISTINCT yield_columns where_clause {
+        auto *s = new YieldSentence($3, true);
+        s->setWhereClause($4);
+        $$ = s;
     }
     ;
 
