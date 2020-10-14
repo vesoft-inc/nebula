@@ -42,6 +42,7 @@ Status IndexScanValidator::prepareFrom() {
 
 Status IndexScanValidator::prepareYield() {
     auto *sentence = static_cast<const LookupSentence *>(sentence_);
+    returnCols_ = std::make_unique<std::vector<std::string>>();
     if (sentence->yieldClause() == nullptr) {
         return Status::OK();
     }
@@ -55,7 +56,6 @@ Status IndexScanValidator::prepareYield() {
                ? Status::EdgeNotFound("Edge schema not found : %s", from->c_str())
                : Status::TagNotFound("Tag schema not found : %s", from->c_str());
     }
-    returnCols_ = std::make_unique<std::vector<std::string>>();
     for (auto col : columns) {
         std::string schemaName, colName;
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
