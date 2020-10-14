@@ -24,8 +24,7 @@ private:
 
     kvstore::ResultCode buildIndexGlobal(GraphSpaceID space,
                                          PartitionID part,
-                                         IndexID indexID,
-                                         const IndexItems& cols) override;
+                                         std::shared_ptr<meta::cpp2::IndexItem> item) override;
 };
 
 }  // namespace storage

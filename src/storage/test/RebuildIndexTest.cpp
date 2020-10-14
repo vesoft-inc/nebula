@@ -58,6 +58,182 @@ AdminTaskManager* RebuildIndexTest::manager_{nullptr};
 std::unique_ptr<fs::TempDir> RebuildIndexTest::rootPath_{nullptr};
 std::unique_ptr<nebula::mock::MockCluster> RebuildIndexTest::cluster_{nullptr};
 
+
+// Check data after rebuild index, then delete data
+TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
+    // Add Vertices
+    {
+        auto* processor = AddVerticesProcessor::instance(RebuildIndexTest::env_, nullptr);
+        cpp2::AddVerticesRequest req = mock::MockData::mockAddVerticesReq();
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+    }
+
+    cpp2::TaskPara parameter;
+    parameter.set_space_id(1);
+    std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
+    parameter.set_parts(parts);
+
+    cpp2::AddAdminTaskRequest request;
+    request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
+    request.set_job_id(3);
+    request.set_task_id(13);
+    request.set_para(std::move(parameter));
+
+    auto callback = [](cpp2::ErrorCode) {};
+    TaskContext context(request, callback);
+
+    auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
+    manager_->addAsyncTask(task);
+
+    // Wait for the task finished
+    do {
+        usleep(50);
+    } while (!manager_->isFinished(context.jobId_, context.taskId_));
+
+    // Check the data count
+    LOG(INFO) << "Check rebuild tag index...";
+    auto vidSizeRet = RebuildIndexTest::env_->schemaMan_->getSpaceVidLen(1);
+    auto vidSize = vidSizeRet.value();
+    EXPECT_LT(0, vidSize);
+    int dataNum = 0;
+    for (auto part : parts) {
+        auto prefix = NebulaKeyUtils::partPrefix(part);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter && iter->valid()) {
+            if (NebulaKeyUtils::isVertex(vidSize, iter->key())) {
+                dataNum++;
+            }
+            iter->next();
+        }
+    }
+    // The number of vertices is 81, the count of players_ and teams_
+    EXPECT_EQ(81, dataNum);
+
+    // Check the index data count
+    int indexDataNum = 0;
+    for (auto part : parts) {
+        auto prefix = IndexKeyUtils::indexPrefix(part);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter && iter->valid()) {
+            indexDataNum++;
+            iter->next();
+        }
+    }
+    // The number of vertices index is 81, the count of players_ and teams_
+    EXPECT_EQ(81, indexDataNum);
+
+    RebuildIndexTest::env_->rebuildIndexGuard_->clear();
+    sleep(1);
+
+    // Delete vertices
+    {
+        auto* processor = DeleteVerticesProcessor::instance(RebuildIndexTest::env_, nullptr);
+
+        LOG(INFO) << "Build DeleteVerticesRequest...";
+        cpp2::DeleteVerticesRequest req = mock::MockData::mockDeleteVerticesReq();
+
+        LOG(INFO) << "Test DeleteVerticesProcessor...";
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+    }
+}
+
+// Check data after rebuild index, then delete data
+TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
+    // Add Edges
+    {
+        auto* processor = AddEdgesProcessor::instance(RebuildIndexTest::env_, nullptr);
+        cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq();
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+    }
+
+    cpp2::TaskPara parameter;
+    parameter.set_space_id(1);
+    std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
+    parameter.set_parts(parts);
+
+    cpp2::AddAdminTaskRequest request;
+    request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
+    request.set_job_id(6);
+    request.set_task_id(16);
+    request.set_para(std::move(parameter));
+
+    auto callback = [](cpp2::ErrorCode) {};
+    TaskContext context(request, callback);
+    auto task = std::make_shared<RebuildEdgeIndexTask>(RebuildIndexTest::env_, std::move(context));
+    manager_->addAsyncTask(task);
+
+    // Wait for the task finished
+    do {
+        usleep(50);
+    } while (!manager_->isFinished(context.jobId_, context.taskId_));
+
+    // Check the data count
+    LOG(INFO) << "Check rebuild edge index...";
+    auto vidSizeRet = RebuildIndexTest::env_->schemaMan_->getSpaceVidLen(1);
+    auto vidSize = vidSizeRet.value();
+    EXPECT_LT(0, vidSize);
+    int dataNum = 0;
+    for (auto part : parts) {
+        auto prefix = NebulaKeyUtils::partPrefix(part);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter && iter->valid()) {
+            if (NebulaKeyUtils::isEdge(vidSize, iter->key())) {
+                dataNum++;
+            }
+            iter->next();
+        }
+    }
+    // The number of edges is 334, only serves_ count
+    EXPECT_EQ(334, dataNum);
+
+    // Check the index data count
+    int indexDataNum = 0;
+    for (auto part : parts) {
+        auto prefix = IndexKeyUtils::indexPrefix(part);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter && iter->valid()) {
+            indexDataNum++;
+            iter->next();
+        }
+    }
+    // The number of edges index is 167, only positive side count of serves_
+    EXPECT_EQ(167, indexDataNum);
+
+    RebuildIndexTest::env_->rebuildIndexGuard_->clear();
+    sleep(1);
+
+    // Delete edges
+    {
+        auto* processor = DeleteEdgesProcessor::instance(RebuildIndexTest::env_, nullptr);
+        LOG(INFO) << "Build DeleteEdgesRequest...";
+        cpp2::DeleteEdgesRequest req = mock::MockData::mockDeleteEdgesReq();
+
+        LOG(INFO) << "Test DeleteEdgesProcessor...";
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+    }
+}
+
+
 TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
     auto writer = std::make_unique<thread::GenericWorker>();
     EXPECT_TRUE(writer->start());

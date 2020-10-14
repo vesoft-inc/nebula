@@ -20,8 +20,7 @@ RebuildEdgeIndexTask::getIndexes(GraphSpaceID space) {
 kvstore::ResultCode
 RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
                                        PartitionID part,
-                                       IndexID indexID,
-                                       const IndexItems& items) {
+                                       std::shared_ptr<meta::cpp2::IndexItem> item) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild Edge Index is Canceled";
         return kvstore::ResultCode::SUCCEEDED;
@@ -76,13 +75,8 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        auto indexed = [edgeType](const std::shared_ptr<meta::cpp2::IndexItem> item) {
-            return item->get_schema_id().get_edge_type() == edgeType;
-        };
-
-        // Check this record is indexed.
-        // If not built any index will skip to the next one.
-        if (!std::any_of(items.begin(), items.end(), indexed)) {
+        // Check whether this record contains the index of indexId
+        if (item->get_schema_id().get_edge_type() != edgeType) {
             VLOG(3) << "This record is not built index.";
             iter->next();
             continue;
@@ -111,24 +105,19 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        for (auto& item : items) {
-            if (item->get_schema_id().get_edge_type() != edgeType) {
-                continue;
-            }
-            std::vector<Value::Type> colsType;
-            auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                               item->get_fields(),
-                                                               colsType);
-            auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
-                                                        part,
-                                                        indexID,
-                                                        source.data(),
-                                                        ranking,
-                                                        destination.data(),
-                                                        valuesRet.value(),
-                                                        std::move(colsType));
-            data.emplace_back(std::move(indexKey), "");
-        }
+        std::vector<Value::Type> colsType;
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                           item->get_fields(),
+                                                           colsType);
+        auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
+                                                    part,
+                                                    item->get_index_id(),
+                                                    source.data(),
+                                                    ranking,
+                                                    destination.data(),
+                                                    valuesRet.value(),
+                                                    std::move(colsType));
+        data.emplace_back(std::move(indexKey), "");
         iter->next();
     }
 

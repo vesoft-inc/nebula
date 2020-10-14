@@ -47,7 +47,7 @@ RebuildIndexTask::genSubTasks() {
                                                        IndexState::STARTING);
             std::function<kvstore::ResultCode()> task = std::bind(&RebuildIndexTask::genSubTask,
                                                                   this, space_, part,
-                                                                  item->get_index_id(), items);
+                                                                  item);
             tasks.emplace_back(std::move(task));
         }
     }
@@ -57,8 +57,8 @@ RebuildIndexTask::genSubTasks() {
 kvstore::ResultCode
 RebuildIndexTask::genSubTask(GraphSpaceID space,
                              PartitionID part,
-                             IndexID indexID,
-                             const IndexItems& items) {
+                             std::shared_ptr<meta::cpp2::IndexItem> item) {
+    auto indexID = item->get_index_id();
     auto result = removeLegacyLogs(space, part);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
@@ -71,7 +71,7 @@ RebuildIndexTask::genSubTask(GraphSpaceID space,
                                      IndexState::BUILDING);
 
     LOG(INFO) << "Start building index";
-    result = buildIndexGlobal(space, part, indexID, items);
+    result = buildIndexGlobal(space, part, item);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Building index failed";
         return kvstore::ResultCode::ERR_BUILD_INDEX_FAILED;

@@ -112,6 +112,15 @@ std::string IndexKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
 }
 
 // static
+std::string IndexKeyUtils::indexPrefix(PartitionID partId) {
+    PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(sizeof(PartitionID));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+    return key;
+}
+
+// static
 StatusOr<std::vector<Value>>
 IndexKeyUtils::collectIndexValues(RowReader* reader,
                                   const std::vector<nebula::meta::cpp2::ColumnDef>& cols,

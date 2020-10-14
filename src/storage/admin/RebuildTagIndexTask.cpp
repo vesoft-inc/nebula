@@ -21,8 +21,7 @@ RebuildTagIndexTask::getIndexes(GraphSpaceID space) {
 kvstore::ResultCode
 RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
                                       PartitionID part,
-                                      IndexID indexID,
-                                      const IndexItems& items) {
+                                      std::shared_ptr<meta::cpp2::IndexItem> item) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild Tag Index is Canceled";
         return kvstore::ResultCode::SUCCEEDED;
@@ -71,13 +70,9 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
         }
 
         auto tagID = NebulaKeyUtils::getTagId(vidSize, key);
-        auto indexed = [tagID](const std::shared_ptr<meta::cpp2::IndexItem> item) {
-            return item->get_schema_id().get_tag_id() == tagID;
-        };
 
-        // Check this record is indexed.
-        // If not built any index will skip to the next one.
-        if (!std::any_of(items.begin(), items.end(), indexed)) {
+        // Check whether this record contains the index of indexId
+        if (item->get_schema_id().get_tag_id() != tagID) {
             VLOG(3) << "This record is not built index.";
             iter->next();
             continue;
@@ -98,22 +93,17 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        for (auto& item : items) {
-            if (item->get_schema_id().get_tag_id() != tagID) {
-                continue;
-            }
-            std::vector<Value::Type> colsType;
-            auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                               item->get_fields(),
-                                                               colsType);
-            auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
-                                                          part,
-                                                          indexID,
-                                                          vertex.data(),
-                                                          valuesRet.value(),
-                                                          std::move(colsType));
-            data.emplace_back(std::move(indexKey), "");
-        }
+        std::vector<Value::Type> colsType;
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                           item->get_fields(),
+                                                           colsType);
+        auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
+                                                      part,
+                                                      item->get_index_id(),
+                                                      vertex.data(),
+                                                      valuesRet.value(),
+                                                      std::move(colsType));
+        data.emplace_back(std::move(indexKey), "");
         iter->next();
     }
 

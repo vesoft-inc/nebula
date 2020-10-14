@@ -470,6 +470,8 @@ public:
 
     static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
+    static std::string indexPrefix(PartitionID partId);
+
     static StatusOr<std::vector<Value>>
     collectIndexValues(RowReader* reader,
                        const std::vector<nebula::meta::cpp2::ColumnDef>& cols,
