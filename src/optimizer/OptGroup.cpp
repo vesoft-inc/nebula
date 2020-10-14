@@ -32,6 +32,7 @@ OptGroup::OptGroup(QueryContext *qctx) noexcept : qctx_(qctx) {
 }
 
 void OptGroup::addGroupExpr(OptGroupExpr *groupExpr) {
+    DCHECK(groupExpr != nullptr);
     DCHECK(groupExpr->group() == this);
     groupExprs_.emplace_back(groupExpr);
 }
@@ -49,20 +50,24 @@ Status OptGroup::explore(const OptRule *rule) {
 
     for (auto iter = groupExprs_.begin(); iter != groupExprs_.end();) {
         auto groupExpr = *iter;
+        DCHECK(groupExpr != nullptr);
         if (groupExpr->isExplored(rule)) {
+            ++iter;
             continue;
         }
         // Bottom to up exploration
         NG_RETURN_IF_ERROR(groupExpr->explore(rule));
 
         // Find more equivalents
-        if (!rule->match(groupExpr)) {
+        auto status = rule->match(groupExpr);
+        if (!status.ok()) {
             ++iter;
             continue;
         }
-
-        OptRule::TransformResult result;
-        NG_RETURN_IF_ERROR(rule->transform(qctx_, groupExpr, &result));
+        auto matched = std::move(status).value();
+        auto resStatus = rule->transform(qctx_, matched);
+        NG_RETURN_IF_ERROR(resStatus);
+        auto result = std::move(resStatus).value();
         if (result.eraseAll) {
             groupExprs_.clear();
             for (auto nge : result.newGroupExprs) {
@@ -86,6 +91,19 @@ Status OptGroup::explore(const OptRule *rule) {
         }
     }
 
+    return Status::OK();
+}
+
+Status OptGroup::exploreUtilMaxRound(const OptRule *rule) {
+    auto maxRound = kMaxExplorationRound;
+    while (!isExplored(rule)) {
+        if (0 < maxRound--) {
+            NG_RETURN_IF_ERROR(explore(rule));
+        } else {
+            setExplored(rule);
+            break;
+        }
+    }
     return Status::OK();
 }
 
@@ -123,19 +141,19 @@ OptGroupExpr::OptGroupExpr(PlanNode *node, const OptGroup *group) noexcept
 }
 
 Status OptGroupExpr::explore(const OptRule *rule) {
-    if (isExplored(rule)) return Status::OK();
+    if (isExplored(rule)) {
+        return Status::OK();
+    }
     setExplored(rule);
 
     for (auto dep : dependencies_) {
-        if (!dep->isExplored(rule)) {
-            NG_RETURN_IF_ERROR(dep->explore(rule));
-        }
+        DCHECK(dep != nullptr);
+        NG_RETURN_IF_ERROR(dep->exploreUtilMaxRound(rule));
     }
 
     for (auto body : bodies_) {
-        if (!body->isExplored(rule)) {
-            NG_RETURN_IF_ERROR(body->explore(rule));
-        }
+        DCHECK(body != nullptr);
+        NG_RETURN_IF_ERROR(body->exploreUtilMaxRound(rule));
     }
     return Status::OK();
 }

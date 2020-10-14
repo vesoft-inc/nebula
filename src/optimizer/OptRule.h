@@ -7,11 +7,12 @@
 #ifndef OPTIMIZER_OPTRULE_H_
 #define OPTIMIZER_OPTRULE_H_
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
 #include "planner/PlanNode.h"
 
 namespace nebula {
@@ -22,21 +23,43 @@ class QueryContext;
 namespace opt {
 
 class OptGroupExpr;
+class OptGroup;
+
+struct MatchedResult {
+    const OptGroupExpr *node{nullptr};
+    std::vector<MatchedResult> dependencies;
+};
+
+class Pattern final {
+public:
+    static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
+
+    StatusOr<MatchedResult> match(const OptGroupExpr *groupNode) const;
+
+private:
+    Pattern() = default;
+    StatusOr<MatchedResult> match(const OptGroup *group) const;
+
+    graph::PlanNode::Kind kind_;
+    std::vector<Pattern> dependencies_;
+};
 
 class OptRule {
 public:
     struct TransformResult {
-        bool eraseCurr;
-        bool eraseAll;
+        bool eraseCurr{false};
+        bool eraseAll{false};
         std::vector<OptGroupExpr *> newGroupExprs;
     };
 
+    StatusOr<MatchedResult> match(const OptGroupExpr *groupExpr) const;
+
     virtual ~OptRule() = default;
 
-    virtual bool match(const OptGroupExpr *groupExpr) const = 0;
-    virtual Status transform(graph::QueryContext *qctx,
-                             const OptGroupExpr *groupExpr,
-                             TransformResult *result) const = 0;
+    virtual const Pattern &pattern() const = 0;
+    virtual bool match(const MatchedResult &matched) const;
+    virtual StatusOr<TransformResult> transform(graph::QueryContext *qctx,
+                                                const MatchedResult &matched) const = 0;
     virtual std::string toString() const = 0;
 
 protected:
@@ -45,8 +68,8 @@ protected:
 
 class RuleSet final {
 public:
-    static RuleSet &defaultRules();
-    static RuleSet &queryRules();
+    static RuleSet &DefaultRules();
+    static RuleSet &QueryRules();
 
     RuleSet *addRule(const OptRule *rule);
 

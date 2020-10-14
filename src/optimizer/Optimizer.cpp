@@ -43,12 +43,9 @@ Status Optimizer::prepare() {
 }
 
 Status Optimizer::doExploration() {
-    // TODO(yee): Apply all rules recursively, not only once round
     for (auto ruleSet : ruleSets_) {
         for (auto rule : ruleSet->rules()) {
-            if (!rootGroup_->isExplored(rule)) {
-                NG_RETURN_IF_ERROR(rootGroup_->explore(rule));
-            }
+            NG_RETURN_IF_ERROR(rootGroup_->exploreUtilMaxRound(rule));
         }
     }
     return Status::OK();

@@ -20,18 +20,15 @@ namespace opt {
 
 class PushFilterDownGetNbrsRule final : public OptRule {
 public:
-    static std::unique_ptr<OptRule> kInstance;
-
-    bool match(const OptGroupExpr *groupExpr) const override;
-    Status transform(graph::QueryContext *qctx,
-                     const OptGroupExpr *groupExpr,
-                     TransformResult *result) const override;
+    const Pattern &pattern() const override;
+    StatusOr<TransformResult> transform(graph::QueryContext *qctx,
+                                        const MatchedResult &matched) const override;
     std::string toString() const override;
 
 private:
     PushFilterDownGetNbrsRule();
 
-    std::pair<bool, const OptGroupExpr *> findMatchedGroupExpr(const OptGroupExpr *groupExpr) const;
+    static std::unique_ptr<OptRule> kInstance;
 };
 
 }   // namespace opt

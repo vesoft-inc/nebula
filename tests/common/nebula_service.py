@@ -111,7 +111,6 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-
     def start(self, debug_log=True):
         os.chdir(self.work_dir)
 

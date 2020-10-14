@@ -27,9 +27,9 @@ namespace graph {
 QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx) {
     qctx_ = std::move(qctx);
     scheduler_ = std::make_unique<Scheduler>(qctx_.get());
-    std::vector<const RuleSet *> rulesets{&RuleSet::defaultRules()};
+    std::vector<const RuleSet *> rulesets{&RuleSet::DefaultRules()};
     if (FLAGS_enable_optimizer) {
-        rulesets.emplace_back(&RuleSet::queryRules());
+        rulesets.emplace_back(&RuleSet::QueryRules());
     }
     optimizer_ = std::make_unique<Optimizer>(qctx_.get(), std::move(rulesets));
 }

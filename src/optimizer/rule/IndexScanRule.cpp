@@ -18,22 +18,23 @@ std::unique_ptr<OptRule> IndexScanRule::kInstance =
     std::unique_ptr<IndexScanRule>(new IndexScanRule());
 
 IndexScanRule::IndexScanRule() {
-    RuleSet::defaultRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
-bool IndexScanRule::match(const OptGroupExpr *groupExpr) const {
-    return groupExpr->node()->kind() == PlanNode::Kind::kIndexScan;
+const Pattern& IndexScanRule::pattern() const {
+    static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kIndexScan);
+    return pattern;
 }
 
-Status IndexScanRule::transform(graph::QueryContext *qctx,
-                                const OptGroupExpr *groupExpr,
-                                TransformResult *result) const {
-    FilterItems items;
-    ScanKind kind;
+StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext* qctx,
+                                                            const MatchedResult& matched) const {
+    auto groupExpr = matched.node;
     auto filter = filterExpr(groupExpr);
     if (filter == nullptr) {
         return Status::SemanticError("WHERE clause error");
     }
+    FilterItems items;
+    ScanKind kind;
     auto ret = analyzeExpression(filter.get(), &items, &kind, isEdge(groupExpr));
     NG_RETURN_IF_ERROR(ret);
 
@@ -48,9 +49,10 @@ Status IndexScanRule::transform(graph::QueryContext *qctx,
         return Status::Error("Plan node dependencies error");
     }
     newGroupExpr->dependsOn(groupExpr->dependencies()[0]);
-    result->newGroupExprs.emplace_back(newGroupExpr);
-    result->eraseAll = true;
-    return Status::OK();
+    TransformResult result;
+    result.newGroupExprs.emplace_back(newGroupExpr);
+    result.eraseAll = true;
+    return result;
 }
 
 std::string IndexScanRule::toString() const {
@@ -256,6 +258,7 @@ IndexScanRule::filterExpr(const OptGroupExpr *groupExpr) const {
     auto in = static_cast<const IndexScan *>(groupExpr->node());
     auto qct = in->queryContext();
     // The initial IndexScan plan node has only one queryContext.
+    // TODO(yee): Move this condition to match interface
     if (qct->size() != 1) {
         LOG(ERROR) << "Index Scan plan node error";
         return nullptr;
