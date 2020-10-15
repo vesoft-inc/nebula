@@ -151,12 +151,11 @@ class TestYield(NebulaTestSuite):
         expect_result = [[3]]
         self.check_result(resp, expect_result)
 
-    @pytest.mark.skip(reason="")
     def test_in_call(self):
-        query = 'YIELD udf_is_in(1,0,1,2), 123'
+        query = 'YIELD 1 IN [0,1,2], 123'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["udf_is_in(1,0,1,2)", "123"]
+        columns = ["(1 IN [0,1,2])", "123"]
         self.check_column_names(resp, columns)
         expect_result = [[True, 123]]
         self.check_result(resp, expect_result)

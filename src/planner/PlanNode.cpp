@@ -83,21 +83,21 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
         case Kind::kAlterEdge:
             return "AlterEdge";
         case Kind::kCreateTagIndex:
-            return "kCreateTagIndex";
+            return "CreateTagIndex";
         case Kind::kCreateEdgeIndex:
-            return "kCreateEdgeIndex";
+            return "CreateEdgeIndex";
         case Kind::kDropTagIndex:
-            return "kDropTagIndex";
+            return "DropTagIndex";
         case Kind::kDropEdgeIndex:
-            return "kDropEdgeIndex";
+            return "DropEdgeIndex";
         case Kind::kDescTagIndex:
-            return "kDescTagIndex";
+            return "DescTagIndex";
         case Kind::kDescEdgeIndex:
-            return "kDescEdgeIndex";
+            return "DescEdgeIndex";
         case Kind::kRebuildTagIndex:
-            return "kRebuildTagIndex";
+            return "RebuildTagIndex";
         case Kind::kRebuildEdgeIndex:
-            return "kRebuildEdgeIndex";
+            return "RebuildEdgeIndex";
         case Kind::kInsertVertices:
             return "InsertVertices";
         case Kind::kInsertEdges:
