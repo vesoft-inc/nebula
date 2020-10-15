@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_CONJUNCTPATHEXECUTOR_H_
-#define EXECUTOR_QUERY_CONJUNCTPATHEXECUTOR_H_
+#ifndef EXECUTOR_ALGO_CONJUNCTPATHEXECUTOR_H_
+#define EXECUTOR_ALGO_CONJUNCTPATHEXECUTOR_H_
 
 #include "executor/Executor.h"
 
@@ -38,4 +38,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXECUTOR_QUERY_CONJUNCTPATHEXECUTOR_H_
+#endif  // EXECUTOR_ALGO_CONJUNCTPATHEXECUTOR_H_

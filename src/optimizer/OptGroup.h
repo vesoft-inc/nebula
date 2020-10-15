@@ -50,7 +50,7 @@ public:
     }
 
     Status explore(const OptRule *rule);
-    Status exploreUtilMaxRound(const OptRule *rule);
+    Status exploreUntilMaxRound(const OptRule *rule);
     double getCost() const;
     const graph::PlanNode *getPlan() const;
 

@@ -18,6 +18,7 @@
 #include "common/clients/storage/GraphStorageClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/charset/Charset.h"
+#include "optimizer/Optimizer.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
@@ -31,8 +32,8 @@ namespace graph {
 
 class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    QueryEngine();
-    ~QueryEngine();
+    QueryEngine() = default;
+    ~QueryEngine() = default;
 
     Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
@@ -49,6 +50,7 @@ private:
     // std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::GraphStorageClient>      storage_;
     std::unique_ptr<meta::MetaClient>                 metaClient_;
+    std::unique_ptr<opt::Optimizer>                   optimizer_;
     CharsetInfo*                                      charsetInfo_{nullptr};
 };
 

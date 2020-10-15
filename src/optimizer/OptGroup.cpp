@@ -94,7 +94,7 @@ Status OptGroup::explore(const OptRule *rule) {
     return Status::OK();
 }
 
-Status OptGroup::exploreUtilMaxRound(const OptRule *rule) {
+Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
     auto maxRound = kMaxExplorationRound;
     while (!isExplored(rule)) {
         if (0 < maxRound--) {
@@ -148,12 +148,12 @@ Status OptGroupExpr::explore(const OptRule *rule) {
 
     for (auto dep : dependencies_) {
         DCHECK(dep != nullptr);
-        NG_RETURN_IF_ERROR(dep->exploreUtilMaxRound(rule));
+        NG_RETURN_IF_ERROR(dep->exploreUntilMaxRound(rule));
     }
 
     for (auto body : bodies_) {
         DCHECK(body != nullptr);
-        NG_RETURN_IF_ERROR(body->exploreUtilMaxRound(rule));
+        NG_RETURN_IF_ERROR(body->exploreUntilMaxRound(rule));
     }
     return Status::OK();
 }

@@ -25,22 +25,20 @@ class RuleSet;
 
 class Optimizer final {
 public:
-    Optimizer(graph::QueryContext *qctx, std::vector<const RuleSet *> ruleSets);
+    explicit Optimizer(std::vector<const RuleSet *> ruleSets);
     ~Optimizer() = default;
 
-    StatusOr<const graph::PlanNode *> findBestPlan(graph::PlanNode *root);
+    StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
 
 private:
-    Status prepare();
-    Status doExploration();
+    StatusOr<OptGroup *> prepare(graph::QueryContext *qctx, graph::PlanNode *root);
+    Status doExploration(OptGroup *rootGroup);
 
-    OptGroup *convertToGroup(graph::PlanNode *node);
+    OptGroup *convertToGroup(graph::QueryContext *qctx,
+                             graph::PlanNode *node,
+                             std::unordered_map<int64_t, OptGroup *> *visited);
 
-    graph::QueryContext *qctx_{nullptr};
-    graph::PlanNode *rootNode_{nullptr};
-    OptGroup *rootGroup_{nullptr};
     std::vector<const RuleSet *> ruleSets_;
-    std::unordered_map<int64_t, OptGroup *> visitedNodes_;
 };
 
 }   // namespace opt

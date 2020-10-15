@@ -4,24 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include "service/QueryEngine.h"
-#include "service/QueryInstance.h"
+
+#include "common/base/Base.h"
 #include "context/QueryContext.h"
+#include "optimizer/OptRule.h"
+#include "service/QueryInstance.h"
 
 DECLARE_bool(local_config);
+DECLARE_bool(enable_optimizer);
 DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace graph {
-
-QueryEngine::QueryEngine() {
-}
-
-
-QueryEngine::~QueryEngine() {
-}
-
 
 Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
@@ -52,6 +47,12 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
                                                              metaClient_.get());
     charsetInfo_ = CharsetInfo::instance();
 
+    std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
+    if (FLAGS_enable_optimizer) {
+        rulesets.emplace_back(&opt::RuleSet::QueryRules());
+    }
+    optimizer_ = std::make_unique<opt::Optimizer>(rulesets);
+
     return Status::OK();
 }
 
@@ -62,7 +63,7 @@ void QueryEngine::execute(RequestContextPtr rctx) {
                                                storage_.get(),
                                                metaClient_.get(),
                                                charsetInfo_);
-    auto* instance = new QueryInstance(std::move(ectx));
+    auto* instance = new QueryInstance(std::move(ectx), optimizer_.get());
     instance->execute();
 }
 

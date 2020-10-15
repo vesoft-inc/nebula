@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_BFSSHORTESTPATHEXECUTOR_H_
-#define EXECUTOR_QUERY_BFSSHORTESTPATHEXECUTOR_H_
+#ifndef EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
+#define EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
 
 #include "executor/Executor.h"
 
@@ -23,4 +23,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif
+#endif   // EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_

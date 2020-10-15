@@ -23,42 +23,44 @@ using nebula::graph::SingleDependencyNode;
 namespace nebula {
 namespace opt {
 
-Optimizer::Optimizer(QueryContext *qctx, std::vector<const RuleSet *> ruleSets)
-    : qctx_(qctx), ruleSets_(std::move(ruleSets)) {
+Optimizer::Optimizer(std::vector<const RuleSet *> ruleSets) : ruleSets_(std::move(ruleSets)) {}
+
+StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
     DCHECK(qctx != nullptr);
+
+    auto root = qctx->plan()->root();
+    auto status = prepare(qctx, root);
+    NG_RETURN_IF_ERROR(status);
+    auto rootGroup = std::move(status).value();
+
+    NG_RETURN_IF_ERROR(doExploration(rootGroup));
+    return rootGroup->getPlan();
 }
 
-StatusOr<const PlanNode *> Optimizer::findBestPlan(PlanNode *root) {
-    DCHECK(root != nullptr);
-    rootNode_ = root;
-    NG_RETURN_IF_ERROR(prepare());
-    NG_RETURN_IF_ERROR(doExploration());
-    return rootGroup_->getPlan();
+StatusOr<OptGroup *> Optimizer::prepare(QueryContext *qctx, PlanNode *root) {
+    std::unordered_map<int64_t, OptGroup *> visited;
+    return convertToGroup(qctx, root, &visited);
 }
 
-Status Optimizer::prepare() {
-    visitedNodes_.clear();
-    rootGroup_ = convertToGroup(rootNode_);
-    return Status::OK();
-}
-
-Status Optimizer::doExploration() {
+Status Optimizer::doExploration(OptGroup *rootGroup) {
     for (auto ruleSet : ruleSets_) {
         for (auto rule : ruleSet->rules()) {
-            NG_RETURN_IF_ERROR(rootGroup_->exploreUtilMaxRound(rule));
+            NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
         }
     }
     return Status::OK();
 }
 
-OptGroup *Optimizer::convertToGroup(PlanNode *node) {
-    auto iter = visitedNodes_.find(node->id());
-    if (iter != visitedNodes_.cend()) {
+OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
+                                    PlanNode *node,
+                                    std::unordered_map<int64_t, OptGroup *> *visited) {
+    auto iter = visited->find(node->id());
+    if (iter != visited->cend()) {
         return iter->second;
     }
 
-    auto group = OptGroup::create(qctx_);
-    auto groupExpr = group->makeGroupExpr(qctx_, node);
+    auto group = OptGroup::create(qctx);
+    auto groupExpr = group->makeGroupExpr(qctx, node);
 
     switch (node->dependencies().size()) {
         case 0: {
@@ -68,26 +70,29 @@ OptGroup *Optimizer::convertToGroup(PlanNode *node) {
         case 1: {
             if (node->kind() == PlanNode::Kind::kSelect) {
                 auto select = static_cast<Select *>(node);
-                auto then = convertToGroup(const_cast<PlanNode *>(select->then()));
+                auto then = convertToGroup(qctx, const_cast<PlanNode *>(select->then()), visited);
                 groupExpr->addBody(then);
-                auto otherwise = convertToGroup(const_cast<PlanNode *>(select->otherwise()));
+                auto otherNode = const_cast<PlanNode *>(select->otherwise());
+                auto otherwise = convertToGroup(qctx, otherNode, visited);
                 groupExpr->addBody(otherwise);
             } else if (node->kind() == PlanNode::Kind::kLoop) {
                 auto loop = static_cast<Loop *>(node);
-                auto body = convertToGroup(const_cast<PlanNode *>(loop->body()));
+                auto body = convertToGroup(qctx, const_cast<PlanNode *>(loop->body()), visited);
                 groupExpr->addBody(body);
             }
             auto dep = static_cast<SingleDependencyNode *>(node)->dep();
             DCHECK(dep != nullptr);
-            auto depGroup = convertToGroup(const_cast<graph::PlanNode *>(dep));
+            auto depGroup = convertToGroup(qctx, const_cast<graph::PlanNode *>(dep), visited);
             groupExpr->dependsOn(depGroup);
             break;
         }
         case 2: {
             auto bNode = static_cast<BiInputNode *>(node);
-            auto leftGroup = convertToGroup(const_cast<graph::PlanNode *>(bNode->left()));
+            auto leftNode = const_cast<graph::PlanNode *>(bNode->left());
+            auto leftGroup = convertToGroup(qctx, leftNode, visited);
             groupExpr->dependsOn(leftGroup);
-            auto rightGroup = convertToGroup(const_cast<graph::PlanNode *>(bNode->right()));
+            auto rightNode = const_cast<graph::PlanNode *>(bNode->right());
+            auto rightGroup = convertToGroup(qctx, rightNode, visited);
             groupExpr->dependsOn(rightGroup);
             break;
         }
@@ -97,7 +102,7 @@ OptGroup *Optimizer::convertToGroup(PlanNode *node) {
             break;
         }
     }
-    visitedNodes_.emplace(node->id(), group);
+    visited->emplace(node->id(), group);
     return group;
 }
 

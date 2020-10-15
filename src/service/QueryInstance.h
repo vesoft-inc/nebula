@@ -26,7 +26,7 @@ namespace graph {
 
 class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit QueryInstance(std::unique_ptr<QueryContext> qctx);
+    explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
     ~QueryInstance() = default;
 
     void execute();
@@ -56,7 +56,7 @@ private:
     std::unique_ptr<Sentence>                   sentence_;
     std::unique_ptr<QueryContext>               qctx_;
     std::unique_ptr<Scheduler>                  scheduler_;
-    std::unique_ptr<opt::Optimizer>             optimizer_;
+    opt::Optimizer*                             optimizer_{nullptr};
 };
 
 }   // namespace graph

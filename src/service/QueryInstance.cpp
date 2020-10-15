@@ -14,7 +14,6 @@
 #include "planner/ExecutionPlan.h"
 #include "planner/PlanNode.h"
 #include "scheduler/Scheduler.h"
-#include "service/GraphFlags.h"
 #include "validator/Validator.h"
 
 using nebula::opt::Optimizer;
@@ -24,14 +23,10 @@ using nebula::opt::RuleSet;
 namespace nebula {
 namespace graph {
 
-QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx) {
+QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *optimizer) {
     qctx_ = std::move(qctx);
+    optimizer_ = DCHECK_NOTNULL(optimizer);
     scheduler_ = std::make_unique<Scheduler>(qctx_.get());
-    std::vector<const RuleSet *> rulesets{&RuleSet::DefaultRules()};
-    if (FLAGS_enable_optimizer) {
-        rulesets.emplace_back(&RuleSet::QueryRules());
-    }
-    optimizer_ = std::make_unique<Optimizer>(qctx_.get(), std::move(rulesets));
 }
 
 void QueryInstance::execute() {
@@ -67,7 +62,7 @@ Status QueryInstance::validateAndOptimize() {
 
     NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
 
-    auto rootStatus = optimizer_->findBestPlan(qctx_->plan()->root());
+    auto rootStatus = optimizer_->findBestPlan(qctx_.get());
     NG_RETURN_IF_ERROR(rootStatus);
     auto newRoot = std::move(rootStatus).value();
     qctx_->setPlan(std::make_unique<ExecutionPlan>(const_cast<PlanNode *>(newRoot)));

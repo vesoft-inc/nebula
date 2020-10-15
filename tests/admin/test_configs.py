@@ -59,7 +59,6 @@ class TestConfigs(NebulaTestSuite):
         expected_result = [['GRAPH', 'v', 'int', 'MUTABLE', v],
                            ['GRAPH', 'minloglevel', 'int', 'MUTABLE', 0],
                            ['GRAPH', 'slow_op_threshhold_ms', 'int', 'MUTABLE', 50],
-                           ['GRAPH', 'enable_optimizer', 'bool', 'MUTABLE', True],
                            ['GRAPH', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
                            ['GRAPH', 'meta_client_retry_times', 'int', 'MUTABLE', 3]]
         self.check_out_of_order_result(resp, expected_result)
