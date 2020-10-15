@@ -631,7 +631,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     }
 
     if (!checkAppendLogResult(res)) {
-        // Mosy likely failed because the parttion is not leader
+        // Most likely failed because the partition is not leader
         LOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
@@ -1290,7 +1290,7 @@ void RaftPart::processAskForVoteRequest(
         const cpp2::AskForVoteRequest& req,
         cpp2::AskForVoteResponse& resp) {
     LOG(INFO) << idStr_
-              << "Recieved a VOTING request"
+              << "Received a VOTING request"
               << ": space = " << req.get_space()
               << ", partition = " << req.get_part()
               << ", candidateAddr = "
