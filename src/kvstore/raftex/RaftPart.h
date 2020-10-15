@@ -65,7 +65,7 @@ class AppendLogsIterator;
 
 /**
  * The operation will be atomic, if the operation failed, empty string will be returned,
- * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * otherwise it will return the new operation's encoded string which should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
 using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
