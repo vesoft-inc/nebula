@@ -59,6 +59,12 @@ public:
         return !srcTagProps_.empty() || !dstTagProps_.empty();
     }
 
+    bool isAllPropsEmpty() const {
+        return inputProps_.empty() && varProps_.empty() &&
+               srcTagProps_.empty() && edgeProps_.empty() &&
+               dstTagProps_.empty();
+    }
+
     void insertInputProp(folly::StringPiece prop);
     void insertVarProp(const std::string& outputVar, folly::StringPiece prop);
     void insertSrcTagProp(TagID tagId, folly::StringPiece prop);

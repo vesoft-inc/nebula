@@ -202,6 +202,38 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
+    def test_pipe_only_yield_input_prop(self):
+        stmt = '''GO FROM "Tracy McGrady" OVER like YIELD like._dst as vid \
+            | GO FROM $-.vid OVER like YIELD $-.vid as id'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names" : ["id"],
+            "rows" : [
+                ["Kobe Bryant"],
+                ["Grant Hill"],
+                ["Rudy Gay"]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+    def test_pipe_only_yield_constant(self):
+        stmt = '''GO FROM "Tracy McGrady" OVER like YIELD like._dst as vid \
+            | GO FROM $-.vid OVER like YIELD 3'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names" : ["3"],
+            "rows" : [
+                [3],
+                [3],
+                [3]
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
     def test_assignment_empty_result(self):
         stmt = '''$var = GO FROM "-1" OVER like YIELD like._dst as id; \
             GO FROM $var.id OVER like'''
