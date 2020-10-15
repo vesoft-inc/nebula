@@ -65,6 +65,8 @@ private:
 
     PlanNode* buildJoinDstProps(PlanNode* projectSrcDstProps);
 
+    PlanNode* projectSrcDstVidsFromGN(PlanNode* dep, PlanNode* gn);
+
 private:
     Over                                                    over_;
     Expression*                                             filter_{nullptr};

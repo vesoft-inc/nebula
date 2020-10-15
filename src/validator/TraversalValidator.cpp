@@ -137,8 +137,6 @@ Status TraversalValidator::validateStep(const StepClause* clause, Steps& step) {
     return Status::OK();
 }
 
-
-
 PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar) {
     Project* project = nullptr;
     auto* columns = qctx_->objPool()->add(new YieldColumns());
@@ -146,14 +144,6 @@ PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::stri
         new EdgePropertyExpression(new std::string("*"), new std::string(kDst)),
         new std::string(kVid));
     columns->addColumn(column);
-
-    srcVidColName_ = vctx_->anonColGen()->getCol();
-    if (from_.fromType != FromType::kInstantExpr) {
-        column =
-            new YieldColumn(new InputPropertyExpression(new std::string(kVid)),
-                            new std::string(srcVidColName_));
-        columns->addColumn(column);
-    }
 
     project = Project::make(qctx_, gn, columns);
     project->setInputVar(gn->outputVar());
