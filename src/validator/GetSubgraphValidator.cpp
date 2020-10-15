@@ -143,7 +143,7 @@ Expression* GetSubgraphValidator::buildFilterCondition(int64_t step) {
         } else {
             left = new RelationalExpression(Expression::Kind::kRelIn,
                                             new EdgeDstIdExpression(new std::string("*")),
-                                            new ListExpression(startVidList_.release()));
+                                            new SetExpression(startVidList_.release()));
         }
         auto* lastestVidsDataSet = new VersionedVariableExpression(new std::string(collectVar_),
                                                                    new ConstantExpression(0));
@@ -198,7 +198,7 @@ Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& input
         Aggregate::make(qctx_,
                         getVertex,
                         {},
-                        {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], true)});
+                        {Aggregate::GroupItem(column->expr(), AggFun::nameIdMap_[fun], false)});
     collectVertex->setInputVar(getVertex->outputVar());
     collectVertex->setColNames({"_vertices"});
 
@@ -227,7 +227,7 @@ Status GetSubgraphValidator::toPlan() {
             new VariablePropertyExpression(new std::string(var), new std::string(kVid)),
             new std::string(kVid));
         qctx_->objPool()->add(column);
-        column->setAggFunction(new std::string("COLLECT"));
+        column->setAggFunction(new std::string("COLLECT_SET"));
         auto fun = column->getAggFunName();
         collectRunTimeStartVids =
             Aggregate::make(qctx_,
@@ -261,7 +261,7 @@ Status GetSubgraphValidator::toPlan() {
         new VariablePropertyExpression(new std::string(var), new std::string(kVid)),
         new std::string(kVid));
     qctx_->objPool()->add(column);
-    column->setAggFunction(new std::string("COLLECT"));
+    column->setAggFunction(new std::string("COLLECT_SET"));
     auto fun = column->getAggFunName();
     auto* collect =
         Aggregate::make(qctx_,

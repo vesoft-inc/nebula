@@ -16,6 +16,7 @@ from nebula2.common import ttypes as CommonTtypes
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
+import functools
 import re
 
 
@@ -484,6 +485,103 @@ class NebulaTestSuite(object):
         elif len(resp.data.rows) == 0:
             empty = True
         assert empty, msg
+
+    def compare_vertex(self, vertex1, vertex2):
+        assert isinstance(vertex1, CommonTtypes.Vertex) and isinstance(vertex2, CommonTtypes.Vertex)
+        if vertex1.vid != vertex2.vid:
+            if vertex1.vid < vertex2.vid:
+                return -1
+            return 1
+        if len(vertex1.tags) != len(vertex2.tags):
+            return len(vertex1.tags) - len(vertex2.tags)
+        return 0
+
+    def compare_edge(self, edge1, edge2):
+        assert isinstance(edge1, CommonTtypes.Edge) and isinstance(edge2, CommonTtypes.Edge)
+        if edge1.src != edge2.src:
+            if edge1.src < edge2.src:
+                return -1
+            return 1
+        if edge1.dst != edge2.dst:
+            if edge1.dst < edge2.dst:
+                return -1
+            return 1
+        if edge1.type != edge2.type:
+            return edge1.type - edge2.type
+        if edge1.ranking != edge2.ranking:
+            return edge1.ranking - edge2.ranking
+        if len(edge1.props) != len(edge2.props):
+            return len(edge1.props) - len(edge2.props)
+        return 0
+
+    def sort_vertex_list(self, rows):
+        assert len(rows) == 1
+        if isinstance(rows[0], CommonTtypes.Row):
+            vertex_list = list(map(lambda v : v.get_vVal(), rows[0].values[0].get_lVal().values))
+            sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
+        elif isinstance(rows[0], list):
+            vertex_list = list(map(lambda v : v.get_vVal(), rows[0][0]))
+            sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
+        else:
+            assert False
+        return sort_vertex_list
+
+    def sort_vertex_edge_list(self, rows):
+        new_rows = list()
+        for row in rows:
+            new_row = list()
+            if isinstance(row, CommonTtypes.Row):
+                vertex_list = row.values[0].get_lVal().values
+                new_vertex_list = list(map(lambda v : v.get_vVal(), vertex_list))
+                new_row.extend(sorted(new_vertex_list, key = functools.cmp_to_key(self.compare_vertex)))
+
+                edge_list = row.values[1].get_lVal().values
+                new_edge_list = list(map(lambda e : e.get_eVal(), edge_list))
+                new_row.extend(sorted(new_edge_list, key = functools.cmp_to_key(self.compare_edge)))
+            elif isinstance(row, list):
+                vertex_list = list(map(lambda v : v.get_vVal(), row[0]))
+                sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
+                new_row.extend(sort_vertex_list)
+
+                edge_list = list(map(lambda e: e.get_eVal(), row[1]))
+                sort_edge_list = sorted(edge_list, key = functools.cmp_to_key(self.compare_edge))
+                new_row.extend(sort_edge_list)
+            else:
+                assert False, "Unsupport type : {}".format(type(row))
+
+            new_rows.append(new_row)
+        return new_rows
+
+    def check_subgraph_result(self, resp, expect):
+        if resp.data is None and len(expect) == 0:
+            return True
+
+        if resp.data is None:
+            return False, 'resp.data is None'
+
+        rows = resp.data.rows
+
+        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
+        assert len(rows) == len(expect), msg
+
+        if len(resp.data.column_names) == 1:
+            new_rows = self.sort_vertex_list(rows)
+            new_expect = self.sort_vertex_list(expect)
+        else:
+            new_rows = self.sort_vertex_edge_list(rows)
+            new_expect = self.sort_vertex_edge_list(expect)
+
+        for exp in new_expect:
+            find = False
+            for row in new_rows:
+                if row == exp:
+                    find = True
+                    new_rows.remove(row)
+                    break
+            assert find, 'Can not find {}'.format(exp)
+
+        assert len(new_rows) == 0
+
 
     @classmethod
     def check_path_result_without_prop(self, rows, expect):
