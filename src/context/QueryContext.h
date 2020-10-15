@@ -106,6 +106,10 @@ public:
         return sm_;
     }
 
+    meta::IndexManager* indexMng() const {
+        return im_;
+    }
+
     storage::GraphStorageClient* getStorageClient() const {
         return storageClient_;
     }

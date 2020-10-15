@@ -17,7 +17,7 @@ namespace graph {
 std::unique_ptr<cpp2::PlanNodeDescription> CreateSchemaNode::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("name", name_, desc.get());
-    addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+    addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
     addDescription("schema", folly::toJson(util::toJson(schema_)), desc.get());
     return desc;
 }
@@ -49,7 +49,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> CreateIndexNode::explain() const {
     addDescription("schemaName", schemaName_, desc.get());
     addDescription("indexName", indexName_, desc.get());
     addDescription("fields", folly::toJson(util::toJson(fields_)), desc.get());
-    addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+    addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
     return desc;
 }
 

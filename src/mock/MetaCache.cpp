@@ -266,11 +266,98 @@ Status MetaCache::AlterEdge(const meta::cpp2::AlterEdgeReq &req) {
     return alterSchemaProp(schema, prop);
 }
 
-Status MetaCache::createTagIndex(const meta::cpp2::CreateTagIndexReq&) {
+Status MetaCache::createTagIndex(const meta::cpp2::CreateTagIndexReq& req, IndexID &indexId) {
+    folly::RWSpinLock::WriteHolder holder(lock_);
+    CHECK_SPACE_ID(req.get_space_id());
+    auto ifNotExists = req.get_if_not_exists();
+    auto tagName = req.get_tag_name();
+    auto indexName = req.get_index_name();
+    auto &tagIndexes = spaceIter->second.tagIndexes_;
+    auto findIndexIter = tagIndexes.find(indexName);
+    if (ifNotExists && findIndexIter != tagIndexes.end()) {
+        indexId = findIndexIter->second.get_index_id();
+        return Status::OK();
+    }
+    if (findIndexIter != tagIndexes.end()) {
+        LOG(INFO) << "\tIndex already exist";
+        return Status::Error("Index already exist");
+    }
+
+    if (req.get_fields().empty()) {
+        return Status::Error("column is empty");
+    }
+
+    auto &tagSchemas = spaceIter->second.tagSchemas_;
+    auto findTagIter = tagSchemas.find(tagName);
+    if (findTagIter == tagSchemas.end()) {
+        return Status::Error("Tag Not found");
+    }
+    auto tagId = findTagIter->second.get_tag_id();
+
+    indexId = ++id_;
+    meta::cpp2::IndexItem indexItem;
+    meta::cpp2::SchemaID schemaID;
+    schemaID.set_tag_id(tagId);
+    indexItem.set_schema_id(std::move(schemaID));
+    indexItem.set_schema_name(tagName);
+    indexItem.set_index_id(indexId);
+    indexItem.set_index_name(indexName);
+
+    std::vector<meta::cpp2::ColumnDef> columns;
+    for (auto &field : req.get_fields()) {
+        meta::cpp2::ColumnDef column;
+        column.set_name(std::move(field));
+        columns.emplace_back(std::move(column));
+    }
+    indexItem.set_fields(std::move(columns));
+    tagIndexes[indexName] = std::move(indexItem);
     return Status::OK();
 }
 
-Status MetaCache::createEdgeIndex(const meta::cpp2::CreateEdgeIndexReq&) {
+Status MetaCache::createEdgeIndex(const meta::cpp2::CreateEdgeIndexReq& req, IndexID &indexId) {
+    folly::RWSpinLock::WriteHolder holder(lock_);
+    CHECK_SPACE_ID(req.get_space_id());
+    auto ifNotExists = req.get_if_not_exists();
+    auto edgeName = req.get_edge_name();
+    auto indexName = req.get_index_name();
+    auto &edgeIndexes = spaceIter->second.edgeIndexes_;
+    auto findIndexIter = edgeIndexes.find(indexName);
+    if (ifNotExists && findIndexIter != edgeIndexes.end()) {
+        indexId = findIndexIter->second.get_index_id();
+        return Status::OK();
+    }
+    if (findIndexIter != edgeIndexes.end()) {
+        return Status::Error("Index already exist");
+    }
+
+    if (req.get_fields().empty()) {
+        return Status::Error("column is empty");
+    }
+
+    auto &edgeSchemas = spaceIter->second.edgeSchemas_;
+    auto findEdgeIter = edgeSchemas.find(edgeName);
+    if (findEdgeIter == edgeSchemas.end()) {
+        return Status::Error("Edge Not found");
+    }
+    auto edgeType = findEdgeIter->second.get_edge_type();
+
+    indexId = ++id_;
+    meta::cpp2::IndexItem indexItem;
+    meta::cpp2::SchemaID schemaID;
+    schemaID.set_edge_type(edgeType);
+    indexItem.set_schema_id(std::move(schemaID));
+    indexItem.set_schema_name(edgeName);
+    indexItem.set_index_id(indexId);
+    indexItem.set_index_name(indexName);
+
+    std::vector<meta::cpp2::ColumnDef> columns;
+    for (auto &field : req.get_fields()) {
+        meta::cpp2::ColumnDef column;
+        column.set_name(std::move(field));
+        columns.emplace_back(std::move(column));
+    }
+    indexItem.set_fields(std::move(columns));
+    edgeIndexes[indexName] = std::move(indexItem);
     return Status::OK();
 }
 

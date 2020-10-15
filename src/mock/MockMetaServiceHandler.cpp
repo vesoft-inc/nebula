@@ -357,8 +357,23 @@ MockMetaServiceHandler::future_listEdges(const meta::cpp2::ListEdgesReq& req) {
 }
 
 folly::Future<meta::cpp2::ExecResp>
-MockMetaServiceHandler::future_createTagIndex(const meta::cpp2::CreateTagIndexReq&) {
-    RETURN_SUCCESSED();
+MockMetaServiceHandler::future_createTagIndex(const meta::cpp2::CreateTagIndexReq& req) {
+    folly::Promise<meta::cpp2::ExecResp> promise;
+    auto future = promise.getFuture();
+    meta::cpp2::ExecResp resp;
+    IndexID indexId = 0;
+    auto status = MetaCache::instance().createTagIndex(req, indexId);
+    if (!status.ok()) {
+        resp.set_code(meta::cpp2::ErrorCode::E_UNKNOWN);
+        promise.setValue(std::move(resp));
+        return future;
+    }
+    resp.set_code(meta::cpp2::ErrorCode::SUCCEEDED);
+    meta::cpp2::ID id;
+    id.set_index_id(indexId);
+    resp.set_id(std::move(id));
+    promise.setValue(std::move(resp));
+    return future;
 }
 
 folly::Future<meta::cpp2::ExecResp>

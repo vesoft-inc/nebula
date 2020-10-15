@@ -86,6 +86,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        index_test
+    SOURCES
+        IndexTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_LIB}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        proxygenhttpserver
+        proxygenlib
+        wangle
+        gtest
+        gtest_main
+)
+
+nebula_add_test(
+    NAME
         acl_test
     SOURCES
         ACLTest.cpp

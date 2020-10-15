@@ -50,9 +50,9 @@ public:
 
     Status AlterEdge(const meta::cpp2::AlterEdgeReq &req);
 
-    Status createTagIndex(const meta::cpp2::CreateTagIndexReq &req);
+    Status createTagIndex(const meta::cpp2::CreateTagIndexReq &req, IndexID &indexId);
 
-    Status createEdgeIndex(const meta::cpp2::CreateEdgeIndexReq &req);
+    Status createEdgeIndex(const meta::cpp2::CreateEdgeIndexReq &req, IndexID &indexId);
 
     Status dropTagIndex(const meta::cpp2::DropTagIndexReq &req);
 
