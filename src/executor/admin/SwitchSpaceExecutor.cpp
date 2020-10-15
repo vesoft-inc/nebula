@@ -6,6 +6,8 @@
 
 #include "executor/admin/SwitchSpaceExecutor.h"
 
+#include "service/PermissionManager.h"
+#include "planner/Query.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "context/QueryContext.h"
@@ -29,6 +31,8 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
                 }
 
                 auto spaceId = resp.value().get_space_id();
+                auto *session = qctx_->rctx()->session();
+                NG_RETURN_IF_ERROR(PermissionManager::canReadSpace(session, spaceId));
                 const auto& properties = resp.value().get_properties();
 
                 SpaceInfo spaceInfo;

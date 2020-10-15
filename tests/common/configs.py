@@ -6,8 +6,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 all_configs = {'--address'        : ['address', '', 'Address of the Nebula'],
-               '--user'           : ['user', 'user', 'The user of Nebula'],
-               '--password'       : ['password', 'password', 'The password of Nebula'],
+               '--user'           : ['user', 'root', 'The user of Nebula'],
+               '--password'       : ['password', 'nebula', 'The password of Nebula'],
                '--partition_num'  : ['partition_num', '10', 'The partition_num of Nebula\'s space'],
                '--replica_factor' : ['replica_factor', '1', 'The replica_factor of Nebula\'s space'],
                '--data_dir'       : ['data_dir', '', 'Data Preload Directory for Nebula'],

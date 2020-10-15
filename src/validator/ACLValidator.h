@@ -109,7 +109,11 @@ public:
 private:
     Status validateImpl() override;
 
+    Status checkPermission() override;
+
     Status toPlan() override;
+
+    GraphSpaceID targetSpaceId_{-1};
 };
 
 }   // namespace graph

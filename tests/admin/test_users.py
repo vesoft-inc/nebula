@@ -56,11 +56,12 @@ class TestUsers(NebulaTestSuite):
 
         query = 'SHOW USERS'
         expected_column_names = ['Account']
-        expected_result = [['root'], ['user1'], ['user2']]
+        expected_result = [[['root']], [['user1']], [['user2']]]
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
-        self.check_out_of_order_result(resp, expected_result)
+        for row in expected_result:
+            self.search_result(resp, row)
 
     def test_alter_users(self):
         # not exist user
@@ -91,11 +92,12 @@ class TestUsers(NebulaTestSuite):
 
         query = 'SHOW USERS'
         expected_column_names = ['Account']
-        expected_result = [['root'], ['user1'], ['user2']]
+        expected_result = [[['root']], [['user1']], [['user2']]]
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
-        self.check_out_of_order_result(resp, expected_result)
+        for row in expected_result:
+            self.search_result(resp, row)
 
     def test_change_password(self):
         # user is not exists. expect fail.
@@ -140,11 +142,12 @@ class TestUsers(NebulaTestSuite):
 
         query = 'SHOW USERS'
         expected_column_names = ['Account']
-        expected_result = [['root'], ['user1'], ['user2']]
+        expected_result = [[['root']], [['user1']], [['user2']]]
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
-        self.check_out_of_order_result(resp, expected_result)
+        for row in expected_result:
+            self.search_result(resp, row)
 
         query = 'GRANT ROLE DBA ON user_space TO user2'
         resp = self.execute(query)

@@ -10,7 +10,6 @@
 #include "common/clients/storage/GraphStorageClient.h"
 #include "service/GraphService.h"
 #include "service/RequestContext.h"
-#include "service/SimpleAuthenticator.h"
 #include "service/GraphFlags.h"
 #include "service/PasswordAuthenticator.h"
 #include "service/CloudAuthenticator.h"
@@ -98,12 +97,28 @@ const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
         return "The session timed out";
     case cpp2::ErrorCode::E_SYNTAX_ERROR:
         return "Syntax error";
+    case cpp2::ErrorCode::E_SEMANTIC_ERROR:
+        return "Semantic error";
+    // TODO(shylock) fix the typo
+    case cpp2::ErrorCode::E_STATEMENT_EMTPY:
+        return "Statement emtpy";
+    case cpp2::ErrorCode::E_EXECUTION_ERROR:
+        return "Execution error";
+    case cpp2::ErrorCode::E_RPC_FAILURE:
+        return "RPC failure";
+    case cpp2::ErrorCode::E_DISCONNECTED:
+        return "Disconnected";
+    case cpp2::ErrorCode::E_FAIL_TO_CONNECT:
+        return "Fail to connect";
+    case cpp2::ErrorCode::E_BAD_PERMISSION:
+        return "Bad permission";
+    case cpp2::ErrorCode::E_USER_NOT_FOUND:
+        return "User not found";
+    }
     /**********************
      * Unknown error
      **********************/
-    default:
-        return "Unknown error";
-    }
+    return "Unknown error";
 }
 
 void GraphService::onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code) {
@@ -117,16 +132,14 @@ void GraphService::onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::Error
 }
 
 bool GraphService::auth(const std::string& username, const std::string& password) {
-    std::string authType = FLAGS_auth_type;
-    folly::toLowerAscii(authType);
-    if (!authType.compare("password")) {
+    if (FLAGS_auth_type == "password") {
         auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
         return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
-    } else if (!authType.compare("cloud")) {
+    } else if (FLAGS_auth_type == "cloud") {
         auto authenticator = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
         return authenticator->auth(username, password);
     }
-    LOG(WARNING) << "Unknown auth type: " << authType;
+    LOG(WARNING) << "Unknown auth type: " << FLAGS_auth_type;
     return false;
 }
 

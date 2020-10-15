@@ -168,6 +168,14 @@ Status ShowCreateSpaceValidator::validateImpl() {
     return Status::OK();
 }
 
+Status ShowCreateSpaceValidator::checkPermission() {
+    auto sentence = static_cast<ShowCreateSpaceSentence*>(sentence_);
+    auto spaceIdResult = qctx_->schemaMng()->toGraphSpaceID(*sentence->spaceName());
+    NG_RETURN_IF_ERROR(spaceIdResult);
+    auto targetSpaceId = spaceIdResult.value();
+    return PermissionManager::canReadSpace(qctx_->rctx()->session(), targetSpaceId);
+}
+
 Status ShowCreateSpaceValidator::toPlan() {
     auto sentence = static_cast<ShowCreateSpaceSentence*>(sentence_);
     auto spaceName = *sentence->spaceName();

@@ -52,6 +52,7 @@
 --ws_http_port=13000
 # HTTP2 service port
 --ws_h2_port=13002
+
 # The default charset when a space is created
 --default_charset=utf8
 # The defaule collate when a space is created

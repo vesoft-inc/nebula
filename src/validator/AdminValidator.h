@@ -81,6 +81,8 @@ public:
 private:
     Status validateImpl() override;
 
+    Status checkPermission() override;
+
     Status toPlan() override;
 };
 

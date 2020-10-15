@@ -1,14 +1,15 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
-*
-* This source code is licensed under Apache 2.0 License,
-* attached with Common Clause Condition 1.0, found in the LICENSES directory.
-*/
+ *
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ */
 
 #include "common/base/Base.h"
 #include "common/clients/meta/MetaClient.h"
 
-#include "util/SchemaUtil.h"
 #include "planner/Admin.h"
+#include "service/PermissionManager.h"
+#include "util/SchemaUtil.h"
 #include "validator/ACLValidator.h"
 
 namespace nebula {
@@ -19,7 +20,7 @@ static std::size_t kPasswordMaxLength = 24;
 
 // create user
 Status CreateUserValidator::validateImpl() {
-    const auto *sentence = static_cast<const CreateUserSentence*>(sentence_);
+    const auto *sentence = static_cast<const CreateUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -30,15 +31,14 @@ Status CreateUserValidator::validateImpl() {
 }
 
 Status CreateUserValidator::toPlan() {
-    auto sentence = static_cast<CreateUserSentence*>(sentence_);
-    return genSingleNodePlan<CreateUser>(sentence->getAccount(),
-                                         sentence->getPassword(),
-                                         sentence->ifNotExists());
+    auto sentence = static_cast<CreateUserSentence *>(sentence_);
+    return genSingleNodePlan<CreateUser>(
+        sentence->getAccount(), sentence->getPassword(), sentence->ifNotExists());
 }
 
 // drop user
 Status DropUserValidator::validateImpl() {
-    const auto *sentence = static_cast<const DropUserSentence*>(sentence_);
+    const auto *sentence = static_cast<const DropUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -46,14 +46,13 @@ Status DropUserValidator::validateImpl() {
 }
 
 Status DropUserValidator::toPlan() {
-    auto sentence = static_cast<DropUserSentence*>(sentence_);
-    return genSingleNodePlan<DropUser>(sentence->getAccount(),
-                                       sentence->ifExists());
+    auto sentence = static_cast<DropUserSentence *>(sentence_);
+    return genSingleNodePlan<DropUser>(sentence->getAccount(), sentence->ifExists());
 }
 
 // update user
 Status UpdateUserValidator::validateImpl() {
-    const auto *sentence = static_cast<const AlterUserSentence*>(sentence_);
+    const auto *sentence = static_cast<const AlterUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -64,9 +63,8 @@ Status UpdateUserValidator::validateImpl() {
 }
 
 Status UpdateUserValidator::toPlan() {
-    auto sentence = static_cast<AlterUserSentence*>(sentence_);
-    return genSingleNodePlan<UpdateUser>(sentence->getAccount(),
-                                         sentence->getPassword());
+    auto sentence = static_cast<AlterUserSentence *>(sentence_);
+    return genSingleNodePlan<UpdateUser>(sentence->getAccount(), sentence->getPassword());
 }
 
 // show users
@@ -80,7 +78,7 @@ Status ShowUsersValidator::toPlan() {
 
 // change password
 Status ChangePasswordValidator::validateImpl() {
-    const auto *sentence = static_cast<const ChangePasswordSentence*>(sentence_);
+    const auto *sentence = static_cast<const ChangePasswordSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -96,15 +94,14 @@ Status ChangePasswordValidator::validateImpl() {
 }
 
 Status ChangePasswordValidator::toPlan() {
-    auto sentence = static_cast<ChangePasswordSentence*>(sentence_);
-    return genSingleNodePlan<ChangePassword>(sentence->getAccount(),
-                                             sentence->getOldPwd(),
-                                             sentence->getNewPwd());
+    auto sentence = static_cast<ChangePasswordSentence *>(sentence_);
+    return genSingleNodePlan<ChangePassword>(
+        sentence->getAccount(), sentence->getOldPwd(), sentence->getNewPwd());
 }
 
 // grant role
 Status GrantRoleValidator::validateImpl() {
-    const auto *sentence = static_cast<const GrantSentence*>(sentence_);
+    const auto *sentence = static_cast<const GrantSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -112,7 +109,7 @@ Status GrantRoleValidator::validateImpl() {
 }
 
 Status GrantRoleValidator::toPlan() {
-    auto sentence = static_cast<GrantSentence*>(sentence_);
+    auto sentence = static_cast<GrantSentence *>(sentence_);
     return genSingleNodePlan<GrantRole>(sentence->getAccount(),
                                         sentence->getAclItemClause()->getSpaceName(),
                                         sentence->getAclItemClause()->getRoleType());
@@ -120,7 +117,7 @@ Status GrantRoleValidator::toPlan() {
 
 // revoke role
 Status RevokeRoleValidator::validateImpl() {
-    const auto *sentence = static_cast<const RevokeSentence*>(sentence_);
+    const auto *sentence = static_cast<const RevokeSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
         return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
     }
@@ -128,7 +125,7 @@ Status RevokeRoleValidator::validateImpl() {
 }
 
 Status RevokeRoleValidator::toPlan() {
-    auto sentence = static_cast<RevokeSentence*>(sentence_);
+    auto sentence = static_cast<RevokeSentence *>(sentence_);
     return genSingleNodePlan<RevokeRole>(sentence->getAccount(),
                                          sentence->getAclItemClause()->getSpaceName(),
                                          sentence->getAclItemClause()->getRoleType());
@@ -136,16 +133,20 @@ Status RevokeRoleValidator::toPlan() {
 
 // show roles in space
 Status ShowRolesInSpaceValidator::validateImpl() {
+    auto sentence = static_cast<ShowRolesSentence *>(sentence_);
+    auto spaceIdResult = qctx_->schemaMng()->toGraphSpaceID(*sentence->name());
+    NG_RETURN_IF_ERROR(spaceIdResult);
+    targetSpaceId_ = spaceIdResult.value();
     return Status::OK();
 }
 
-Status ShowRolesInSpaceValidator::toPlan() {
-    auto sentence = static_cast<ShowRolesSentence*>(sentence_);
-    auto spaceIdResult = qctx_->schemaMng()->toGraphSpaceID(*sentence->name());
-    NG_RETURN_IF_ERROR(spaceIdResult);
-    auto spaceId = spaceIdResult.value();
-    return genSingleNodePlan<ListRoles>(spaceId);
+Status ShowRolesInSpaceValidator::checkPermission() {
+    return PermissionManager::canReadSpace(qctx_->rctx()->session(), targetSpaceId_);
 }
 
-}  // namespace graph
-}  // namespace nebula
+Status ShowRolesInSpaceValidator::toPlan() {
+    return genSingleNodePlan<ListRoles>(targetSpaceId_);
+}
+
+}   // namespace graph
+}   // namespace nebula

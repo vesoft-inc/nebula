@@ -266,8 +266,15 @@ Status Validator::validate() {
 
     auto status = validateImpl();
     if (!status.ok()) {
-        if (status.isSemanticError()) return status;
+        if (status.isSemanticError() || status.isPermissionError()) {
+            return status;
+        }
         return Status::SemanticError(status.message());
+    }
+
+    // Execute after validateImpl because need field from it
+    if (FLAGS_enable_authorize) {
+        NG_RETURN_IF_ERROR(checkPermission());
     }
 
     status = toPlan();

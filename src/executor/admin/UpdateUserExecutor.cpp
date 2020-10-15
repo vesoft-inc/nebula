@@ -4,9 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/encryption/MD5Utils.h"
+
+#include "context/QueryContext.h"
 #include "executor/admin/UpdateUserExecutor.h"
 #include "planner/Admin.h"
-#include "context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -18,7 +20,9 @@ folly::Future<Status> UpdateUserExecutor::execute() {
 
 folly::Future<Status> UpdateUserExecutor::updateUser() {
     auto *uuNode = asNode<UpdateUser>(node());
-    return qctx()->getMetaClient()->alterUser(*uuNode->username(), *uuNode->password())
+    return qctx()
+        ->getMetaClient()
+        ->alterUser(*uuNode->username(), encryption::MD5Utils::md5Encode(*uuNode->password()))
         .via(runner())
         .then([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);

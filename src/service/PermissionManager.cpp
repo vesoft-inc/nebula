@@ -10,17 +10,16 @@ namespace nebula {
 namespace graph {
 
 // static
-bool PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
+Status PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
     if (!FLAGS_enable_authorize) {
-        return true;
+        return Status::OK();
     }
     if (session->isGod()) {
-        return true;
+        return Status::OK();
     }
-    bool havePermission = false;
     auto roleResult = session->roleWithSpace(spaceId);
     if (!roleResult.ok()) {
-        return havePermission;
+        return Status::PermissionError("No permission to read space.");
     }
     auto role = roleResult.value();
     switch (role) {
@@ -29,26 +28,27 @@ bool PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
         case meta::cpp2::RoleType::DBA :
         case meta::cpp2::RoleType::USER :
         case meta::cpp2::RoleType::GUEST : {
-            havePermission = true;
-            break;
+            return Status::OK();
         }
     }
-    return havePermission;
+    return Status::PermissionError("No permission to read space.");
 }
 
 // static
-bool PermissionManager::canReadSchemaOrData(Session *session) {
-    if (session->space().id == -1) {
-        LOG(ERROR) << "The space name is not set";
-        return false;
+Status PermissionManager::canReadSchemaOrData(Session *session) {
+    if (!FLAGS_enable_authorize) {
+        return Status::OK();
     }
     if (session->isGod()) {
-        return true;
+        return Status::OK();
     }
-    bool havePermission = false;
+    if (session->space().id == -1) {
+        LOG(ERROR) << "No space selected";
+        return Status::PermissionError("No space selected.");
+    }
     auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
-        return havePermission;
+        return Status::PermissionError("No permission to read schema/data.");
     }
     auto role = roleResult.value();
     switch (role) {
@@ -57,104 +57,121 @@ bool PermissionManager::canReadSchemaOrData(Session *session) {
         case meta::cpp2::RoleType::DBA :
         case meta::cpp2::RoleType::USER :
         case meta::cpp2::RoleType::GUEST : {
-            havePermission = true;
-            break;
+            return Status::OK();
         }
     }
-    return havePermission;
+    return Status::PermissionError("No permission to read schema/data.");
 }
 
 // static
-bool PermissionManager::canWriteSpace(Session *session) {
-    return session->isGod();
-}
-
-// static
-bool PermissionManager::canWriteSchema(Session *session) {
-    if (session->space().id == -1) {
-        LOG(ERROR) << "The space name is not set";
-        return false;
+Status PermissionManager::canWriteSpace(Session *session) {
+    if (!FLAGS_enable_authorize) {
+        return Status::OK();
     }
     if (session->isGod()) {
-        return true;
+        return Status::OK();
     }
-    bool havePermission = false;
+    return Status::PermissionError("No permission to write space.");
+}
+
+// static
+Status PermissionManager::canWriteSchema(Session *session) {
+    if (!FLAGS_enable_authorize) {
+        return Status::OK();
+    }
+    if (session->isGod()) {
+        return Status::OK();
+    }
+    if (session->space().id == -1) {
+        LOG(ERROR) << "No space selected";
+        return Status::PermissionError("No space selected.");
+    }
     auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
-        return havePermission;
+        return Status::PermissionError("No permission to write schema.");
     }
     auto role = roleResult.value();
     switch (role) {
         case meta::cpp2::RoleType::GOD :
         case meta::cpp2::RoleType::ADMIN :
         case meta::cpp2::RoleType::DBA : {
-            havePermission = true;
-            break;
+            return Status::OK();
         }
         case meta::cpp2::RoleType::USER :
         case meta::cpp2::RoleType::GUEST :
-            break;
+            return Status::PermissionError("No permission to write schema.");
     }
-    return havePermission;
+    return Status::PermissionError("No permission to write schema.");
 }
 
 // static
-bool PermissionManager::canWriteUser(Session *session) {
-    return session->isGod();
+Status PermissionManager::canWriteUser(Session *session) {
+    if (!FLAGS_enable_authorize) {
+        return Status::OK();
+    }
+    if (session->isGod()) {
+        return Status::OK();
+    } else {
+        return Status::PermissionError("No permission to write user.");
+    }
 }
 
-bool PermissionManager::canWriteRole(Session *session,
+Status PermissionManager::canWriteRole(Session *session,
                                      meta::cpp2::RoleType targetRole,
                                      GraphSpaceID spaceId,
                                      const std::string& targetUser) {
     if (!FLAGS_enable_authorize) {
-        return true;
+        return Status::OK();
     }
     /**
      * Reject grant or revoke to himself.
      */
      if (session->user() == targetUser) {
-         return false;
+         return Status::PermissionError("No permission to grant/revoke yourself.");
      }
     /*
      * Reject any user grant or revoke role to GOD
      */
     if (targetRole == meta::cpp2::RoleType::GOD) {
-        return false;
+        return Status::PermissionError("No permission to grant/revoke god user.");
     }
     /*
      * God user can be grant or revoke any one.
      */
     if (session->isGod()) {
-        return true;
+        return Status::OK();
     }
     /**
      * Only allow ADMIN user grant or revoke other user to DBA, USER, GUEST.
      */
     auto roleResult = session->roleWithSpace(spaceId);
     if (!roleResult.ok()) {
-        return false;
+        return Status::PermissionError("No permission to write grant/revoke role.");
     }
     auto role = roleResult.value();
     if (role == meta::cpp2::RoleType::ADMIN && targetRole != meta::cpp2::RoleType::ADMIN) {
-        return true;
+        return Status::OK();
     }
-    return false;
+    return Status::PermissionError("No permission to grant/revoke `%s' to `%s'.",
+                                   meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role),
+                                   targetUser.c_str());
 }
 
 // static
-bool PermissionManager::canWriteData(Session *session) {
-    if (session->space().id == -1) {
-        LOG(ERROR) << "The space name is not set";
-        return false;
+Status PermissionManager::canWriteData(Session *session) {
+    if (!FLAGS_enable_authorize) {
+        return Status::OK();
     }
     if (session->isGod()) {
-        return true;
+        return Status::OK();
     }
-    bool havePermission = false;
+    if (session->space().id == -1) {
+        LOG(ERROR) << "No space selected.";
+        return Status::PermissionError("No space selected.");
+    }
     auto roleResult = session->roleWithSpace(session->space().id);
     if (!roleResult.ok()) {
-        return havePermission;
+        return Status::PermissionError("No permission to write data.");
     }
     auto role = roleResult.value();
     switch (role) {
@@ -162,13 +179,12 @@ bool PermissionManager::canWriteData(Session *session) {
         case meta::cpp2::RoleType::ADMIN :
         case meta::cpp2::RoleType::DBA :
         case meta::cpp2::RoleType::USER : {
-            havePermission = true;
-            break;
+            return Status::OK();
         }
         case meta::cpp2::RoleType::GUEST :
-            break;
+            return Status::PermissionError("No permission to write data.");
     }
-    return havePermission;
+    return Status::PermissionError("No permission to write data.");
 }
 }   // namespace graph
 }   // namespace nebula

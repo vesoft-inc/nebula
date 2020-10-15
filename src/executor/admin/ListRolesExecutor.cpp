@@ -5,8 +5,9 @@
  */
 
 #include "executor/admin/ListRolesExecutor.h"
-#include "planner/Admin.h"
 #include "context/QueryContext.h"
+#include "planner/Admin.h"
+#include "service/PermissionManager.h"
 
 namespace nebula {
 namespace graph {
@@ -18,7 +19,9 @@ folly::Future<Status> ListRolesExecutor::execute() {
 
 folly::Future<Status> ListRolesExecutor::listRoles() {
     auto *lrNode = asNode<ListRoles>(node());
-    return qctx()->getMetaClient()->listRoles(lrNode->space())
+    return qctx()
+        ->getMetaClient()
+        ->listRoles(lrNode->space())
         .via(runner())
         .then([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
             SCOPED_TIMER(&execTime_);
@@ -27,12 +30,22 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
             }
             nebula::DataSet v({"Account", "Role Type"});
             auto items = std::move(resp).value();
-            for (const auto &item : items) {
-                v.emplace_back(nebula::Row(
-                    {
-                        item.get_user_id(),
-                        meta::cpp2::_RoleType_VALUES_TO_NAMES.at(item.get_role_type())
-                    }));
+            // Only god and admin show all roles, other roles only show themselves
+            const auto &account = qctx_->rctx()->session()->user();
+            auto foundItem = std::find_if(items.begin(), items.end(), [&account](const auto &item) {
+                return item.get_user_id() == account;
+            });
+            if (foundItem != items.end() &&
+                foundItem->get_role_type() != meta::cpp2::RoleType::ADMIN) {
+                v.emplace_back(
+                    Row({foundItem->get_user_id(),
+                         meta::cpp2::_RoleType_VALUES_TO_NAMES.at(foundItem->get_role_type())}));
+            } else {
+                for (const auto &item : items) {
+                    v.emplace_back(nebula::Row(
+                        {item.get_user_id(),
+                         meta::cpp2::_RoleType_VALUES_TO_NAMES.at(item.get_role_type())}));
+                }
             }
             return finish(std::move(v));
         });

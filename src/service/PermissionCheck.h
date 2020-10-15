@@ -18,9 +18,9 @@ class PermissionCheck final {
 public:
     PermissionCheck() = delete;
 
-    static bool permissionCheck(Session *session,
-                                Sentence* sentence,
-                                GraphSpaceID targetSpace = -1);
+    static Status permissionCheck(Session *session,
+                                  Sentence* sentence,
+                                  GraphSpaceID targetSpace = -1);
 };
 }  // namespace graph
 }  // namespace nebula

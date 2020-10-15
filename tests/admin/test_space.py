@@ -55,6 +55,8 @@ class TestSpace(NebulaTestSuite):
         self.check_result(resp, expect_result, {0})
 
         # show create space
+        # TODO(shylock) need meta cache to permission checking
+        time.sleep(self.delay)
         resp = self.client.execute_query('SHOW CREATE SPACE default_space')
         self.check_resp_succeeded(resp)
 

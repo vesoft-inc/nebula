@@ -6,6 +6,7 @@
 
 #include "executor/admin/SpaceExecutor.h"
 #include "context/QueryContext.h"
+#include "service/PermissionManager.h"
 #include "planner/Admin.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
@@ -39,6 +40,14 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                     LOG(ERROR) << resp.status();
                     return resp.status();
                 }
+                auto &spaceItem = resp.value();
+                auto &properties = spaceItem.get_properties();
+                auto spaceId = spaceItem.get_space_id();
+
+                // check permission
+                auto *session = qctx_->rctx()->session();
+                NG_RETURN_IF_ERROR(PermissionManager::canReadSpace(session, spaceId));
+
                 DataSet dataSet;
                 dataSet.colNames = {"ID",
                                     "Name",
@@ -47,10 +56,8 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                                     "Charset",
                                     "Collate",
                                     "Vid Type"};
-                auto &spaceItem = resp.value();
-                auto &properties = spaceItem.get_properties();
                 Row row;
-                row.values.emplace_back(spaceItem.get_space_id());
+                row.values.emplace_back(spaceId);
                 row.values.emplace_back(properties.get_space_name());
                 row.values.emplace_back(properties.get_partition_num());
                 row.values.emplace_back(properties.get_replica_factor());
@@ -102,6 +109,10 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
             DataSet dataSet({"Name"});
             std::set<std::string> orderSpaceNames;
             for (auto &space : spaceItems) {
+                if (!PermissionManager::canReadSpace(qctx_->rctx()->session(),
+                                                     space.first).ok()) {
+                    continue;
+                }
                 orderSpaceNames.emplace(space.second);
             }
             for (auto &name : orderSpaceNames) {
