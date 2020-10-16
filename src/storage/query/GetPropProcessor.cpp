@@ -99,7 +99,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(nebula::DataSet* result) {
         tags.emplace_back(tag.get());
         plan.addNode(std::move(tag));
     }
-    auto output = std::make_unique<GetTagPropNode>(tags, result);
+    auto output = std::make_unique<GetTagPropNode>(planContext_.get(), tags, result);
     for (auto* tag : tags) {
         output->addDependency(tag);
     }

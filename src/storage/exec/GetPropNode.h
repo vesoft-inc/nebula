@@ -18,13 +18,25 @@ class GetTagPropNode : public QueryNode<VertexID> {
 public:
     using RelNode<VertexID>::execute;
 
-    explicit GetTagPropNode(std::vector<TagNode*> tagNodes,
+    explicit GetTagPropNode(PlanContext *planCtx,
+                            std::vector<TagNode*> tagNodes,
                             nebula::DataSet* resultDataSet)
-        : tagNodes_(std::move(tagNodes))
-        , resultDataSet_(resultDataSet) {}
+        : planContext_(planCtx),
+          tagNodes_(std::move(tagNodes)),
+          resultDataSet_(resultDataSet) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
-        auto ret = RelNode::execute(partId, vId);
+        // check is vertex exists
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId);
+        auto ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
+                                                        partId, prefix, &iter);
+        if (ret != kvstore::ResultCode::SUCCEEDED || iter == nullptr || !iter->valid()) {
+            // not emplace row when vertex not exists
+            return kvstore::ResultCode::SUCCEEDED;
+        }
+
+        ret = RelNode::execute(partId, vId);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
@@ -70,8 +82,9 @@ public:
     }
 
 private:
+    PlanContext          *planContext_;
     std::vector<TagNode*> tagNodes_;
-    nebula::DataSet* resultDataSet_;
+    nebula::DataSet      *resultDataSet_;
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {

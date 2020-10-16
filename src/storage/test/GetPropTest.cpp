@@ -332,10 +332,29 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         {
             std::vector<nebula::Row> expected;
+            ASSERT_TRUE(resp.__isset.props);
+            verifyResult(expected, resp.props);
+        }
+    }
+    {
+        // Not exists and exists
+        LOG(INFO) << "GetNotExisted";
+        std::vector<VertexID> vertices = {"Not existed", "Tim Duncan"};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        auto req = buildVertexRequest(totalParts, vertices, tags);
+
+        auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        {
+            std::vector<nebula::Row> expected;
             nebula::Row row;
-            std::vector<Value> values;
-            values.emplace_back("Not existed");
-            for (size_t i = 0; i < 1 + 11 + 11; i++) {
+            std::vector<Value> values {  // player
+                "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
+            for (size_t i = 0; i < 1 + 11; i++) {  // team and tag3
                 values.emplace_back(Value());
             }
             row.values = std::move(values);
