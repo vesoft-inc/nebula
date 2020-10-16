@@ -34,7 +34,7 @@
 # RPC timeout for raft client (ms)
 --raft_rpc_timeout_ms=500
 ## recycle Raft WAL
---wal_ttl=3600
+--wal_ttl=14400
 
 ########## Disk ##########
 # Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
