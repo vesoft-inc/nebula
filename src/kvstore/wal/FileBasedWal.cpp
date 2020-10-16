@@ -61,7 +61,10 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
                   << ", path is " << info->path();
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
-        CHECK_GE(currFd_, 0);
+        if (currFd_ < 0) {
+            LOG(FATAL) << "Failed to open the file \"" << info->path() << "\" ("
+                       << errno << "): " << strerror(errno);
+        }
     }
 }
 
@@ -284,15 +287,22 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
-    CHECK_EQ(fsync(currFd_), 0) << strerror(errno);
+    if (!policy_.sync) {
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
+        }
+    }
+
     // Close the file
-    CHECK_EQ(close(currFd_), 0) << strerror(errno);
+    if (::close(currFd_) == -1) {
+        LOG(WARNING) << "close wal \"" << currInfo_->path()
+                     << "\" failed, error: " << strerror(errno);
+    }
     currFd_ = -1;
 
     auto now = time::WallClock::fastNowInSec();
     currInfo_->setMTime(now);
-//    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
-//        << currInfo_->path() << " size does not match";
     struct utimbuf timebuf;
     timebuf.modtime = currInfo_->mtime();
     timebuf.actime = currInfo_->mtime();
@@ -526,6 +536,13 @@ bool FileBasedWal::appendLogInternal(LogID id,
         LOG(FATAL) << idStr_ << "bytesWritten:" << bytesWritten << ", expected:" << strBuf.size()
                    << ", error:" << strerror(errno);
     }
+
+    if (policy_.sync) {
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
+        }
+    }
     currInfo_->setSize(currInfo_->size() + strBuf.size());
     currInfo_->setLastId(id);
     currInfo_->setLastTerm(term);
@@ -686,14 +703,20 @@ void FileBasedWal::cleanWAL(int32_t ttl) {
         return;
     }
     auto now = time::WallClock::fastNowInSec();
-    // We skip the latest wal file because it is beging written now.
+    // In theory we only need to keep the latest wal file because it is beging written now.
+    // However, sometimes will trigger raft snapshot even only a small amount of logs is missing,
+    // especially when we reboot all storage, so se keep one more wal.
     size_t index = 0;
     auto it = walFiles_.begin();
     auto size = walFiles_.size();
+    if (size < 2) {
+        return;
+    }
     int count = 0;
     int walTTL = ttl == 0 ? policy_.ttl : ttl;
     while (it != walFiles_.end()) {
-        if (index++ < size - 1 &&  (now - it->second->mtime() > walTTL)) {
+        // keep at least two wal
+        if (index++ < size - 2 && (now - it->second->mtime() > walTTL)) {
             VLOG(1) << "Clean wals, Remove " << it->second->path() << ", now: " << now
                     << ", mtime: " << it->second->mtime();
             unlink(it->second->path());

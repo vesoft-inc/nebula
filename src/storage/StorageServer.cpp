@@ -16,6 +16,7 @@
 #include "storage/StorageFlags.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
+#include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -90,6 +91,9 @@ bool StorageServer::initWebService() {
     router.get("/admin").handler([this](web::PathParams&&) {
         return new storage::StorageHttpAdminHandler(schemaMan_.get(), kvstore_.get());
     });
+    router.get("/rocksdb_stats").handler([](web::PathParams&&) {
+        return new storage::StorageHttpStatsHandler();
+    });
 
     auto status = webSvc_->start();
     return status.ok();
@@ -162,7 +166,11 @@ bool StorageServer::start() {
             storageServer_->setStopWorkersOnStopListening(false);
             storageServer_->setInterface(std::move(handler));
 
-            storageSvcStatus_.store(STATUS_RUNNING);
+            ServiceStatus expected = STATUS_UNINITIALIZED;
+            if (!storageSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
+                LOG(ERROR) << "Impossible! How could it happen!";
+                return;
+            }
             LOG(INFO) << "The storage service start on " << localHost_;
             storageServer_->serve();  // Will wait until the server shuts down
         } catch (const std::exception& e) {
@@ -185,7 +193,11 @@ bool StorageServer::start() {
             adminServer_->setStopWorkersOnStopListening(false);
             adminServer_->setInterface(std::move(handler));
 
-            adminSvcStatus_.store(STATUS_RUNNING);
+            ServiceStatus expected = STATUS_UNINITIALIZED;
+            if (!adminSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
+                LOG(ERROR) << "Impossible! How could it happen!";
+                return;
+            }
             LOG(INFO) << "The admin service start on " << adminAddr;
             adminServer_->serve();  // Will wait until the server shuts down
         } catch (const std::exception& e) {
@@ -212,11 +224,18 @@ void StorageServer::waitUntilStop() {
 }
 
 void StorageServer::stop() {
-    if (stopped_) {
+    ServiceStatus adminExpected = ServiceStatus::STATUS_RUNNING;
+    ServiceStatus storageExpected = ServiceStatus::STATUS_RUNNING;
+    if (!adminSvcStatus_.compare_exchange_strong(adminExpected, STATUS_STTOPED) &&
+        !storageSvcStatus_.compare_exchange_strong(storageExpected, STATUS_STTOPED)) {
         LOG(INFO) << "All services has been stopped";
         return;
     }
     stopped_ = true;
+
+    if (kvstore_) {
+        kvstore_->stop();
+    }
 
     webSvc_.reset();
 

@@ -12,6 +12,8 @@
 #include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
 
+DECLARE_int32(custom_filter_interval_secs);
+
 namespace nebula {
 namespace kvstore {
 
@@ -43,21 +45,20 @@ private:
 
 class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
 public:
-    KVCompactionFilterFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs):
-        spaceId_(spaceId), customFilterIntervalSecs_(customFilterIntervalSecs) {}
+    explicit KVCompactionFilterFactory(GraphSpaceID spaceId) : spaceId_(spaceId) {}
 
     virtual ~KVCompactionFilterFactory() = default;
 
     std::unique_ptr<rocksdb::CompactionFilter>
     CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
         auto now = time::WallClock::fastNowInSec();
-        if (context.is_full_compaction) {
-            LOG(INFO) << "Do full compaction!";
+        if (context.is_full_compaction || context.is_manual_compaction) {
+            LOG(INFO) << "Do full/manual compaction!";
             lastRunCustomFilterTimeSec_ = now;
             return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
         } else {
-            if (customFilterIntervalSecs_ >= 0
-                    && now - lastRunCustomFilterTimeSec_ > customFilterIntervalSecs_) {
+            if (FLAGS_custom_filter_interval_secs >= 0
+                    && now - lastRunCustomFilterTimeSec_ > FLAGS_custom_filter_interval_secs) {
                 LOG(INFO) << "Do custom minor compaction!";
                 lastRunCustomFilterTimeSec_ = now;
                 return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
@@ -75,9 +76,6 @@ public:
 
 private:
     GraphSpaceID spaceId_;
-    // -1 means always do default minor compaction.
-    // 0 means always do custom minor compaction
-    int32_t customFilterIntervalSecs_ = 0;
     int32_t lastRunCustomFilterTimeSec_ = 0;
 };
 
@@ -88,7 +86,7 @@ public:
     virtual ~CompactionFilterFactoryBuilder() = default;
 
     virtual std::shared_ptr<KVCompactionFilterFactory>
-    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) = 0;
+    buildCfFactory(GraphSpaceID spaceId) = 0;
 };
 
 }   // namespace kvstore

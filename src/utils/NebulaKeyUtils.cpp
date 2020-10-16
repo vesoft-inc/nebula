@@ -193,6 +193,14 @@ std::string NebulaKeyUtils::partPrefix(PartitionID partId) {
 }
 
 // static
+std::string NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
+    // snapshot of meta would be all key-value pairs
+    if (partId == 0) {
+        return "";
+    }
+    return partPrefix(partId);
+}
+
 std::string NebulaKeyUtils::systemPrefix() {
     int8_t type = static_cast<uint32_t>(NebulaKeyType::kSystem);
     std::string key;

@@ -73,7 +73,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                             VLOG(3) << "Evict vertex cache for VID " << vid
                                     << ", TagID " << tagId;
-                            vertexCache_->evict(std::make_pair(vid.getStr(), tagId), partId);
+                            vertexCache_->evict(std::make_pair(vid.getStr(), tagId));
                         }
                         keys.emplace_back(key.str());
                     }
@@ -121,7 +121,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
                     VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex.getStr(), tagId), partId);
+                    vertexCache_->evict(std::make_pair(vertex.getStr(), tagId));
                 }
             }
 

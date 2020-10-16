@@ -44,7 +44,7 @@ public:
         for (const auto& vId : vids) {
             VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << planContext_->tagId_;
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                auto result = vertexCache_->get(std::make_pair(vId, planContext_->tagId_), partId);
+                auto result = vertexCache_->get(std::make_pair(vId, planContext_->tagId_));
                 if (result.ok()) {
                     auto vertexKey = NebulaKeyUtils::vertexKey(planContext_->vIdLen_,
                                                                partId,

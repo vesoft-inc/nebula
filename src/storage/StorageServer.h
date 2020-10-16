@@ -55,8 +55,8 @@ private:
 
     std::unique_ptr<std::thread> storageThread_;
     std::unique_ptr<std::thread> adminThread_;
-    std::atomic_int storageSvcStatus_{STATUS_UNINITIALIZED};
-    std::atomic_int adminSvcStatus_{STATUS_UNINITIALIZED};
+    std::atomic<ServiceStatus> storageSvcStatus_{STATUS_UNINITIALIZED};
+    std::atomic<ServiceStatus> adminSvcStatus_{STATUS_UNINITIALIZED};
 
     std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
     std::unique_ptr<apache::thrift::ThriftServer> adminServer_;

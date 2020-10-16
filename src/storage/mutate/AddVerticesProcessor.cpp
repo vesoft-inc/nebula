@@ -99,7 +99,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
 
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                    vertexCache_->evict(std::make_pair(vid.getStr(), tagId), partId);
+                    vertexCache_->evict(std::make_pair(vid.getStr(), tagId));
                     VLOG(3) << "Evict cache for vId " << vid
                             << ", tagId " << tagId;
                 }

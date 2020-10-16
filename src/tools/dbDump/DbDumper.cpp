@@ -529,6 +529,9 @@ inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
 }
 
 void DbDumper::printValue(const RowReader* reader) {
+    if (reader == nullptr) {
+        return;
+    }
     std::cout << " value: ";
     auto schema = reader->getSchema();
     if (schema == nullptr) {

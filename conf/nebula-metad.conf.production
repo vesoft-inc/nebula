@@ -37,3 +37,8 @@
 --default_parts_num=100
 # The default replica factor when a space is created
 --default_replica_factor=1
+
+--heartbeat_interval_secs=10
+
+############## rocksdb Options ##############
+--rocksdb_wal_sync=true

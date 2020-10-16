@@ -279,7 +279,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             if (ts > startTimeMs_) {
                 commitTransLeader(newLeader);
             } else {
-                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader;
+                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader
+                          << ", the part is opened at " << startTimeMs_
+                          << ", but the log timestamp is " << ts;
             }
             break;
         }
@@ -289,7 +291,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             if (ts > startTimeMs_) {
                 commitRemovePeer(peer);
             } else {
-                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer;
+                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer
+                          << ", the part is opened at " << startTimeMs_
+                          << ", but the log timestamp is " << ts;
             }
             break;
         }
@@ -307,8 +311,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             return false;
         }
     }
-    return engine_->commitBatchWrite(std::move(batch), FLAGS_rocksdb_disable_wal)
-                    == ResultCode::SUCCEEDED;
+    return engine_->commitBatchWrite(std::move(batch),
+                                     FLAGS_rocksdb_disable_wal,
+                                     FLAGS_rocksdb_wal_sync) == ResultCode::SUCCEEDED;
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
@@ -365,7 +370,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess add learner " << learner;
                     addLearner(learner);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
+                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -376,7 +383,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
                     preProcessTransLeader(newLeader);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
+                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -387,7 +396,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess add peer " << peer;
                     addPeer(peer);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
+                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -398,7 +409,9 @@ bool Part::preProcessLog(LogID logId,
                     LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
                     preProcessRemovePeer(peer);
                 } else {
-                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
+                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer
+                              << ", the part is opened at " << startTimeMs_
+                              << ", but the log timestamp is " << ts;
                 }
                 break;
             }
@@ -420,6 +433,9 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
             return ResultCode::ERR_WRITE_BLOCK_ERROR;
         case raftex::AppendLogResult::E_ATOMIC_OP_FAILURE:
             return ResultCode::ERR_ATOMIC_OP_FAILED;
+        case raftex::AppendLogResult::E_BUFFER_OVERFLOW:
+            LOG_EVERY_N(ERROR, 100) << idStr_ << "RaftPart buffer is full";
+            return ResultCode::ERR_CONSENSUS_ERROR;
         default:
             LOG(ERROR) << idStr_ << "Consensus error "
                        << static_cast<int32_t>(res);

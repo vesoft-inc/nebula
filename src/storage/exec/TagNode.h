@@ -50,7 +50,7 @@ public:
 
         // when update, has already evicted
         if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
-            auto result = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_), partId);
+            auto result = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_));
             if (result.ok()) {
                 cacheResult_ = std::move(result).value();
                 iter_.reset(new SingleTagIterator(planContext_, cacheResult_, schemas_, &ttl_));

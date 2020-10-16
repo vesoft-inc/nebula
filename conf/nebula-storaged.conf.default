@@ -28,9 +28,17 @@
 # HTTP2 service port
 --ws_h2_port=12002
 
-########## storage ##########
-# Root data path, multiple paths should be splitted by comma.
-# One path per instance, if --engine_type is `rocksdb'
+######### Raft #########
+# Raft election timeout
+--raft_heartbeat_interval_secs=30
+# RPC timeout for raft client (ms)
+--raft_rpc_timeout_ms=500
+## recycle Raft WAL
+--wal_ttl=3600
+
+########## Disk ##########
+# Root data path. Split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
+# One path per Rocksdb instance.
 --data_path=data/storage
 
 # The default reserved bytes for one batch operation
@@ -40,6 +48,39 @@
 --rocksdb_block_cache=4
 # The type of storage engine, `rocksdb', `memory', etc.
 --engine_type=rocksdb
+
+# Compression algorithm, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
+# For the sake of binary compatibility, the default value is snappy.
+# Recommend to use:
+#   * lz4 to gain more CPU performance, with the same compression ratio with snappy
+#   * zstd to occupy less disk space
+#   * lz4hc for the read-heavy write-light scenario
+--rocksdb_compression=snappy
+
+# Set different compressions for different levels
+# For example, if --rocksdb_compression is snappy,
+# "no:no:lz4:lz4::zstd" is identical to "no:no:lz4:lz4:snappy:zstd:snappy"
+# In order to disable compression for level 0/1, set it to "no:no"
+--rocksdb_compression_per_level=
+
+# Whether or not to enable rocksdb's statistics, disabled by default
+--enable_rocksdb_statistics=false
+
+# Statslevel used by rocksdb to collection statistics, optional values are
+#   * kExceptHistogramOrTimers, disable timer stats, and skip histogram stats
+#   * kExceptTimers, Skip timer stats
+#   * kExceptDetailedTimers, Collect all stats except time inside mutex lock AND time spent on compression.
+#   * kExceptTimeForMutex, Collect all stats except the counters requiring to get time inside the mutex lock.
+#   * kAll, Collect all stats
+--rocksdb_stats_level=kExceptHistogramOrTimers
+
+# Whether or not to enable rocksdb's prefix bloom filter, disabled by default.
+--enable_rocksdb_prefix_filtering=false
+# Whether or not to enable the whole key filtering.
+--enable_rocksdb_whole_key_filtering=true
+# The prefix length for each key to use as the filter value.
+# can be 12 bytes(PartitionId + VertexID), or 16 bytes(PartitionId + VertexID + TagID/EdgeType).
+--rocksdb_filtering_prefix_length=12
 
 ############## rocksdb Options ##############
 --rocksdb_disable_wal=true

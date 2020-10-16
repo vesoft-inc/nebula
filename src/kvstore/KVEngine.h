@@ -36,6 +36,8 @@ public:
 
     virtual ~KVEngine() = default;
 
+    virtual void stop() = 0;
+
     // Retrieve the root path for the data
     // If the store is persistent, a valid path will be returned
     // Otherwise, nullptr will be returned
@@ -44,7 +46,8 @@ public:
     virtual std::unique_ptr<WriteBatch> startBatchWrite() = 0;
 
     virtual ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
-                                        bool disableWAL = true) = 0;
+                                        bool disableWAL = true,
+                                        bool sync = false) = 0;
 
     // Read a single key
     virtual ResultCode get(const std::string& key, std::string* value) = 0;

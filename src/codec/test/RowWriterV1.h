@@ -8,7 +8,7 @@
 #define CODEC_TEST_ROWWRITERV1_H_
 
 #include "common/base/Base.h"
-#include "common/base/Cord.h"
+#include "common/base/ICord.h"
 #include "codec/test/SchemaWriter.h"
 
 namespace nebula {
@@ -70,7 +70,7 @@ public:
 
 private:
     const meta::SchemaProviderIf* schema_;
-    Cord cord_;
+    ICord<> cord_;
 
     int64_t colNum_ = 0;
 

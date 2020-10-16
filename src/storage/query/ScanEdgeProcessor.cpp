@@ -87,6 +87,10 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
             // only return specified columns
             auto reader = RowReaderWrapper::getEdgePropReader(
                 schemaMan_, value, spaceId_, edgeType);
+            if (reader == nullptr) {
+                LOG(WARNING) << "Skip the bad format row";
+                continue;
+            }
             RowWriter writer;
             PropsCollector collector(&writer);
             auto& props = ctxIter->second;

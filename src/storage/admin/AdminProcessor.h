@@ -138,7 +138,11 @@ public:
             LOG(INFO) << "Space " << spaceId << " not exist, create it!";
             store->addSpace(spaceId);
         }
-        store->addPart(spaceId, partId, req.get_as_learner());
+        std::vector<HostAddr> peers;
+        for (auto& p : req.get_peers()) {
+            peers.emplace_back(kvstore::NebulaStore::getRaftAddr(HostAddr(p.host, p.port)));
+        }
+        store->addPart(spaceId, partId, req.get_as_learner(), peers);
         onFinished();
     }
 

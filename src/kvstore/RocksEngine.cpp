@@ -7,6 +7,7 @@
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
 #include <folly/String.h>
+#include <rocksdb/convenience.h>
 #include "kvstore/RocksEngine.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
@@ -106,15 +107,25 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     LOG(INFO) << "open rocksdb on " << path;
 }
 
+void RocksEngine::stop() {
+    if (db_) {
+        // Because we trigger compaction in WebService, we need to stop all background work
+        // before we stop HttpServer.
+        rocksdb::CancelAllBackgroundWork(db_.get(), true);
+    }
+}
 
 std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
     return std::make_unique<RocksWriteBatch>();
 }
 
 
-ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch, bool disableWAL) {
+ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                         bool disableWAL,
+                                         bool sync) {
     rocksdb::WriteOptions options;
     options.disableWAL = disableWAL;
+    options.sync = sync;
     auto* b = static_cast<RocksWriteBatch*>(batch.get());
     rocksdb::Status status = db_->Write(options, b->data());
     if (status.ok()) {
@@ -168,6 +179,7 @@ ResultCode RocksEngine::range(const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.total_order_seek = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
@@ -180,6 +192,7 @@ ResultCode RocksEngine::range(const std::string& start,
 ResultCode RocksEngine::prefix(const std::string& prefix,
                                std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
@@ -193,6 +206,7 @@ ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
                                         const std::string& prefix,
                                         std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));

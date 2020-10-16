@@ -44,6 +44,7 @@ protected:
         adminClient_ = std::make_unique<AdminClient>(std::move(injector));
 
         jobMgr = JobManager::getInstance();
+        jobMgr->status_ = JobManager::Status::NOT_START;
         jobMgr->init(kv_.get());
     }
 
@@ -205,6 +206,8 @@ TEST_F(JobManagerTest, showJob) {
 }
 
 TEST_F(JobManagerTest, recoverJob) {
+    // set status to prevent running the job since AdminClient is a injector
+    jobMgr->status_ = JobManager::Status::NOT_START;
     int32_t nJob = 3;
     for (auto i = 0; i != nJob; ++i) {
         JobDescription jd(i, cpp2::AdminCmd::FLUSH, {"test_space"});

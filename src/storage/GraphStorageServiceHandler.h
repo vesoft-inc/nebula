@@ -24,8 +24,21 @@ class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
 public:
     explicit GraphStorageServiceHandler(StorageEnv* env)
         : env_(env)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
-        , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        if (FLAGS_reader_handlers_type == "io") {
+            auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
+            readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
+                                                                        std::move(tf));
+        } else {
+            if (FLAGS_reader_handlers_type != "cpu") {
+                LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
+            }
+            using TM = apache::thrift::concurrency::PriorityThreadManager;
+            auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+            pool->setNamePrefix("reader-pool");
+            pool->start();
+            readerPool_ = std::move(pool);
+        }
         addVerticesQpsStat_ = stats::Stats("storage", "add_vertices");
         addEdgesQpsStat_ = stats::Stats("storage", "add_edges");
         delVerticesQpsStat_ = stats::Stats("storage", "del_vertices");
@@ -68,7 +81,7 @@ public:
 private:
     StorageEnv*                                     env_{nullptr};
     VertexCache                                     vertexCache_;
-    std::unique_ptr<folly::IOThreadPoolExecutor>    readerPool_;
+    std::shared_ptr<folly::Executor>                readerPool_;
 
     stats::Stats                                    addVerticesQpsStat_;
     stats::Stats                                    addEdgesQpsStat_;

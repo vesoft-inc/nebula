@@ -36,3 +36,5 @@ DEFINE_int32(reader_handlers, 32, "Total reader handlers");
 
 DEFINE_bool(enable_multi_versions, false, "If true, the insert timestamp will be the wall clock. "
                                           "If false, always has the same timestamp of max");
+
+DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cpu,io");

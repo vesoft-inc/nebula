@@ -108,6 +108,10 @@ public:
             }
             auto reader = nebula::RowReaderWrapper::getTagPropReader(
                 schemaMan_, spaceId, tagId, val);
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format vertex";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
@@ -118,6 +122,10 @@ public:
             }
             auto reader = nebula::RowReaderWrapper::getEdgePropReader(
                 schemaMan_, spaceId, std::abs(edgeType), val);
+            if (reader == nullptr) {
+                VLOG(3) << "Remove the bad format edge!";
+                return false;
+            }
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;
@@ -185,9 +193,8 @@ public:
     StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
                                    meta::IndexManager* indexMan,
                                    GraphSpaceID spaceId,
-                                   size_t vIdLen,
-                                   int32_t customFilterIntervalSecs):
-        KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
+                                   size_t vIdLen):
+        KVCompactionFilterFactory(spaceId),
         schemaMan_(schemaMan),
         indexMan_(indexMan),
         vIdLen_(vIdLen) {}
@@ -216,7 +223,7 @@ public:
     virtual ~StorageCompactionFilterFactoryBuilder() = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
-    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
+    buildCfFactory(GraphSpaceID spaceId) override {
         auto vIdLen = schemaMan_->getSpaceVidLen(spaceId);
         if (!vIdLen.ok()) {
             return nullptr;
@@ -224,8 +231,7 @@ public:
         return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
                                                                 indexMan_,
                                                                 spaceId,
-                                                                vIdLen.value(),
-                                                                customFilterIntervalSecs);
+                                                                vIdLen.value());
     }
 
 private:

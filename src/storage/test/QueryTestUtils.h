@@ -18,6 +18,7 @@
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);
+DECLARE_bool(enable_rocksdb_prefix_filtering);
 
 namespace nebula {
 namespace storage {
@@ -72,6 +73,10 @@ public:
                                         });
         }
         baton.wait();
+        if (FLAGS_enable_rocksdb_prefix_filtering) {
+            auto code = env->kvstore_->flush(spaceId);
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        }
         return true;
     }
 
@@ -127,6 +132,10 @@ public:
                                             });
             }
             baton.wait();
+        }
+        if (FLAGS_enable_rocksdb_prefix_filtering) {
+            auto code = env->kvstore_->flush(spaceId);
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
         }
         return true;
     }

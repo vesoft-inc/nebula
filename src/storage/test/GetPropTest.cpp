@@ -6,6 +6,7 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include "common/fs/TempDir.h"
+#include "kvstore/RocksEngineConfig.h"
 #include "storage/query/GetPropProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 
@@ -343,6 +344,37 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
             verifyResult(expected, resp.props);
         }
     }
+}
+
+TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
+    FLAGS_enable_rocksdb_statistics = true;
+    FLAGS_enable_rocksdb_prefix_filtering = true;
+
+    fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto totalParts = cluster.getTotalParts();
+    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    auto vIdLen = status.value();
+    std::vector<VertexID> vertices = {"Tim Duncan", "Not Existed"};
+    std::hash<std::string> hash;
+    for (const auto& vId : vertices) {
+        PartitionID partId = (hash(vId) % totalParts) + 1;
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId);
+        auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+        CHECK_EQ(code, nebula::kvstore::ResultCode::SUCCEEDED);
+    }
+
+    std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
+    FLAGS_enable_rocksdb_statistics = false;
+    FLAGS_enable_rocksdb_prefix_filtering = false;
 }
 
 }  // namespace storage
