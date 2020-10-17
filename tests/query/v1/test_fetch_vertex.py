@@ -147,11 +147,19 @@ class TestFetchQuery(NebulaTestSuite):
         self.check_resp_failed(resp)
 
     def test_fetch_vertex_not_exist_vertex(self):
+        # not exist
         query = 'FETCH PROP ON player "not_exist_vertex"'
         resp = self.execute_query(query)
         expect_column_names = ['VertexID', 'player.name', 'player.age']
-        # TODO: here must return empty result
-        expected = [['not_exist_vertex', T_EMPTY, T_EMPTY]]
+        expected = []
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expected)
+
+        # not exist and exist
+        query = 'FETCH PROP ON player "not_exist_vertex", "Boris Diaw"'
+        resp = self.execute_query(query)
+        expected = [['Boris Diaw', 'Boris Diaw', 36]]
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expected)
@@ -165,12 +173,24 @@ class TestFetchQuery(NebulaTestSuite):
         # self.check_column_names(resp, expect_column_names)
         # self.check_out_of_order_result(resp, expected)
 
+        # not exist
         query = 'FETCH PROP ON * "not_exist_vertex"'
         resp = self.execute_query(query)
-        # TODO: here must return empty result
-        expected = [['not_exist_vertex', T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY]]
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expected = []
         self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expected)
+
+        # not exist and exist
+        query = 'FETCH PROP ON * "Boris Diaw", "not_exist_vertex"'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expected = [['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expected)
+
 
     # not compatible to 1.0 * extend to all tag in space
     def test_fetch_vertex_get_all(self):

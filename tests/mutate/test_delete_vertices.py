@@ -55,8 +55,7 @@ class TestDeleteVertices(NebulaTestSuite):
         # check
         resp = self.execute_query('FETCH PROP ON player "Tony Parker" YIELD player.name, player.age')
         self.check_resp_succeeded(resp)
-        # TODO:: here must return empty
-        expect_result = [["Tony Parker", T_EMPTY, T_EMPTY]]
+        expect_result = []
         self.check_out_of_order_result(resp, expect_result)
 
         resp = self.execute_query('FETCH PROP ON serve "Tony Parker"->"Spurs" '
@@ -210,7 +209,6 @@ class TestDeleteVertices(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         resp = self.execute_query('FETCH PROP ON person "101" yield person.name, person.age')
-        # 2.0: when vertex not exist, return NULL
         self.check_resp_succeeded(resp)
-        expect_result = [['101', T_EMPTY, T_EMPTY]]
+        expect_result = []
         self.check_out_of_order_result(resp, expect_result)
