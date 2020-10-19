@@ -73,6 +73,7 @@ enum ErrorCode {
     E_ADD_JOB_FAILURE        = -55,
     E_STOP_JOB_FAILURE       = -56,
     E_SAVE_JOB_FAILURE       = -57,
+    E_BALANCER_FAILURE       = -58,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -174,6 +175,7 @@ struct SpaceDesc {
     4: binary               charset_name,
     5: binary               collate_name,
     6: ColumnTypeDef        vid_type = {"type": PropertyType.FIXED_STRING, "type_length": 8},
+    7: optional binary      group_name,
 }
 
 struct SpaceItem {
@@ -232,7 +234,8 @@ struct HostItem {
     4: map<binary, list<common.PartitionID>>
         (cpp.template = "std::unordered_map") all_parts,
     5: HostRole             role,
-    6: binary               git_info_sha
+    6: binary               git_info_sha,
+    7: optional binary      zone_name,
 }
 
 struct UserItem {
@@ -342,17 +345,17 @@ struct CreateSpaceReq {
 
 struct DropSpaceReq {
     1: binary space_name
-    2: bool if_exists,
+    2: bool   if_exists,
 }
 
 struct ListSpacesReq {
 }
 
 struct ListSpacesResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> spaces,
+    3: list<IdName>     spaces,
 }
 
 struct GetSpaceReq {
@@ -391,10 +394,10 @@ struct ListTagsReq {
 }
 
 struct ListTagsResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<TagItem> tags,
+    3: list<TagItem>    tags,
 }
 
 struct GetTagReq {
@@ -447,10 +450,10 @@ struct ListEdgesReq {
 }
 
 struct ListEdgesResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<EdgeItem> edges,
+    3: list<EdgeItem>   edges,
 }
 
 enum ListHostType {
@@ -459,15 +462,15 @@ enum ListHostType {
 } (cpp.enum_strict)
 
 struct ListHostsReq {
-    1: ListHostType type
+    1: ListHostType      type
     2: optional HostRole role
 }
 
 struct ListHostsResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<HostItem> hosts,
+    3: list<HostItem>   hosts,
 }
 
 struct PartItem {
@@ -478,14 +481,14 @@ struct PartItem {
 }
 
 struct ListPartsReq {
-    1: common.GraphSpaceID space_id,
+    1: common.GraphSpaceID      space_id,
     2: list<common.PartitionID> part_ids;
 }
 
 struct ListPartsResp {
-    1: ErrorCode code,
+    1: ErrorCode       code,
     2: common.HostAddr leader,
-    3: list<PartItem> parts,
+    3: list<PartItem>  parts,
 }
 
 struct GetPartsAllocReq {
@@ -493,7 +496,7 @@ struct GetPartsAllocReq {
 }
 
 struct GetPartsAllocResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
@@ -689,10 +692,10 @@ struct ListRolesReq {
 }
 
 struct ListRolesResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<RoleItem> roles,
+    3: list<RoleItem>   roles,
 }
 
 struct GetUserRolesReq {
@@ -826,6 +829,96 @@ struct ListIndexStatusResp {
     3: list<IndexStatus>    statuses,
 }
 
+// Zone related interface
+struct AddZoneReq {
+    1: binary                 zone_name,
+    2: list<common.HostAddr>  nodes,
+}
+
+struct DropZoneReq {
+    1: binary                 zone_name,
+}
+
+struct AddHostIntoZoneReq {
+    1: common.HostAddr  node,
+    2: binary           zone_name,
+}
+
+struct DropHostFromZoneReq {
+    1: common.HostAddr  node,
+    2: binary           zone_name,
+}
+
+struct GetZoneReq {
+    1: binary                 zone_name,
+}
+
+struct GetZoneResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: list<common.HostAddr>  hosts,
+}
+
+struct ListZonesReq {
+}
+
+struct Zone {
+    1: binary                 zone_name,
+    2: list<common.HostAddr>  nodes,
+}
+
+struct ListZonesResp {
+    1: ErrorCode        code,
+    2: common.HostAddr  leader,
+    3: list<Zone>       zones,
+}
+
+struct DrainZoneReq {
+    1: binary        zone_name,
+}
+
+struct AddGroupReq {
+    1: binary        group_name,
+    2: list<binary>  zone_names,
+}
+
+struct DropGroupReq {
+    1: binary                 group_name,
+}
+
+struct AddZoneIntoGroupReq {
+    1: binary  zone_name,
+    2: binary  group_name,
+}
+
+struct DropZoneFromGroupReq {
+    1: binary  zone_name,
+    2: binary  group_name,
+}
+
+struct GetGroupReq {
+    1: binary                 group_name,
+}
+
+struct GetGroupResp {
+    1: ErrorCode             code,
+    2: common.HostAddr       leader,
+    3: list<binary>          zone_names,
+}
+
+struct ListGroupsReq {
+}
+
+struct Group {
+    1: binary                 group_name,
+    2: list<binary>           zone_names,
+}
+
+struct ListGroupsResp {
+    1: ErrorCode        code,
+    2: common.HostAddr  leader,
+    3: list<Group>      groups,
+}
 
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
@@ -894,4 +987,19 @@ service MetaService {
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
 
     AdminJobResp runAdminJob(1: AdminJobReq req);
+
+    ExecResp       addZone(1: AddZoneReq req);
+    ExecResp       dropZone(1: DropZoneReq req);
+    ExecResp       addHostIntoZone(1: AddHostIntoZoneReq req);
+    ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
+    GetZoneResp    getZone(1: GetZoneReq req);
+    ListZonesResp  listZones(1: ListZonesReq req);
+    ExecResp       drainZone(1: DrainZoneReq req);
+
+    ExecResp       addGroup(1: AddGroupReq req);
+    ExecResp       dropGroup(1: DropGroupReq req);
+    ExecResp       addZoneIntoGroup(1: AddZoneIntoGroupReq req);
+    ExecResp       dropZoneFromGroup(1: DropZoneFromGroupReq req);
+    GetGroupResp   getGroup(1: GetGroupReq req);
+    ListGroupsResp listGroups(1: ListGroupsReq req);
 }

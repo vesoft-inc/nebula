@@ -78,6 +78,10 @@ const char *Status::toString(Code code) {
             return "TagNotFound: ";
         case kEdgeNotFound:
             return "EdgeNotFound: ";
+        case kGroupNotFound:
+            return "GroupNotFound: ";
+        case kZoneNotFound:
+            return "ZoneNotFound: ";
         case kUserNotFound:
             return "UserNotFound: ";
         case kLeaderChanged:

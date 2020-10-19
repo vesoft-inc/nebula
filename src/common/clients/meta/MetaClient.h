@@ -458,6 +458,45 @@ public:
 
     bool checkShadowAccountFromCache(const std::string& account) const;
 
+    folly::Future<StatusOr<bool>>
+    addZone(std::string zoneName, std::vector<HostAddr> nodes);
+
+    folly::Future<StatusOr<bool>>
+    dropZone(std::string zoneName);
+
+    folly::Future<StatusOr<bool>>
+    addHostIntoZone(HostAddr node, std::string zoneName);
+
+    folly::Future<StatusOr<bool>>
+    dropHostFromZone(HostAddr node, std::string zoneName);
+
+    folly::Future<StatusOr<std::vector<HostAddr>>>
+    getZone(std::string zoneName);
+
+    folly::Future<StatusOr<std::vector<cpp2::Zone>>>
+    listZones();
+
+    folly::Future<StatusOr<bool>>
+    drainZone(std::string zoneName);
+
+    folly::Future<StatusOr<bool>>
+    addGroup(std::string groupName, std::vector<std::string> zoneNames);
+
+    folly::Future<StatusOr<bool>>
+    dropGroup(std::string groupName);
+
+    folly::Future<StatusOr<bool>>
+    addZoneIntoGroup(std::string zoneName, std::string groupName);
+
+    folly::Future<StatusOr<bool>>
+    dropZoneFromGroup(std::string zoneName, std::string groupName);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    getGroup(std::string groupName);
+
+    folly::Future<StatusOr<std::vector<cpp2::Group>>>
+    listGroups();
+
     Status refreshCache();
 
     StatusOr<LeaderMap> loadLeader();
