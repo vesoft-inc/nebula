@@ -138,6 +138,22 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
                    sizeof(int8_t));
             return dt;
         }
+        case meta::cpp2::PropertyType::TIME: {
+            Time t;
+            memcpy(reinterpret_cast<void*>(&t.hour),
+                   &data_[offset],
+                   sizeof(int8_t));
+            memcpy(reinterpret_cast<void*>(&t.minute),
+                   &data_[offset + sizeof(int8_t)],
+                   sizeof(int8_t));
+            memcpy(reinterpret_cast<void*>(&t.sec),
+                   &data_[offset + 2 * sizeof(int8_t)],
+                   sizeof(int8_t));
+            memcpy(reinterpret_cast<void*>(&t.microsec),
+                   &data_[offset + 3 * sizeof(int8_t)],
+                   sizeof(int32_t));
+            return t;
+        }
         case meta::cpp2::PropertyType::DATETIME: {
             DateTime dt;
             memcpy(reinterpret_cast<void*>(&dt.year), &data_[offset], sizeof(int16_t));
@@ -161,9 +177,10 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
                    sizeof(int32_t));
             return dt;
         }
-        default:
-            LOG(FATAL) << "Should not reach here";
+        case meta::cpp2::PropertyType::UNKNOWN:
+            break;
     }
+    LOG(FATAL) << "Should not reach here";
 }
 
 }  // namespace nebula

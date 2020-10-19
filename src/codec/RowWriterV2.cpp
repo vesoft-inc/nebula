@@ -207,6 +207,8 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
             return write(index, val.getStr());
         case Value::Type::DATE:
             return write(index, val.getDate());
+        case Value::Type::TIME:
+            return write(index, val.getTime());
         case Value::Type::DATETIME:
             return write(index, val.getDateTime());
         default:
@@ -740,6 +742,27 @@ WriteResult RowWriterV2::write(ssize_t index, const Date& v) noexcept {
     return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const Time& v) noexcept {
+    auto field = schema_->field(index);
+    auto offset = headerLen_ + numNullBytes_ + field->offset();
+    switch (field->type()) {
+        case meta::cpp2::PropertyType::TIME:
+            buf_[offset] = v.hour;
+            buf_[offset + sizeof(int8_t)] = v.minute;
+            buf_[offset + 2 * sizeof(int8_t)] = v.sec;
+            memcpy(&buf_[offset + 3 * sizeof(int8_t)],
+                   reinterpret_cast<const void*>(&v.microsec),
+                   sizeof(int32_t));
+            break;
+        default:
+            return WriteResult::TYPE_MISMATCH;
+    }
+    if (field->nullable()) {
+        clearNullBit(field->nullFlagPos());
+    }
+    isSet_[index] = true;
+    return WriteResult::SUCCEEDED;
+}
 
 WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
     auto field = schema_->field(index);

@@ -191,6 +191,7 @@ private:
     WriteResult write(ssize_t index, const char* v) noexcept;
 
     WriteResult write(ssize_t index, const Date& v) noexcept;
+    WriteResult write(ssize_t index, const Time& v) noexcept;
     WriteResult write(ssize_t index, const DateTime& v) noexcept;
 };
 

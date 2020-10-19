@@ -88,6 +88,8 @@ TEST(RowReaderV2, encodedData) {
     schema.appendCol("date_col", PropertyType::DATE);
     // Col 11: datetime_col -- DATETIME
     schema.appendCol("datetime_col", PropertyType::DATETIME);
+    // Col 12: time_col -- TIME
+    schema.appendCol("time_col", PropertyType::TIME);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
@@ -153,6 +155,12 @@ TEST(RowReaderV2, encodedData) {
     encoded.append(reinterpret_cast<char*>(&year), sizeof(int16_t));
     encoded.append(reinterpret_cast<char*>(&month), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&day), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&hour), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&minute), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&sec), sizeof(int8_t));
+    encoded.append(reinterpret_cast<char*>(&microsec), sizeof(int32_t));
+
+    // Col 12
     encoded.append(reinterpret_cast<char*>(&hour), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&minute), sizeof(int8_t));
     encoded.append(reinterpret_cast<char*>(&sec), sizeof(int8_t));
@@ -290,8 +298,21 @@ TEST(RowReaderV2, encodedData) {
     EXPECT_EQ(Value::Type::DATETIME, val.type());
     EXPECT_EQ(dt, val.getDateTime());
 
-    // Col 12 -- non-existing column
+    // Col 12
+    Time t;
+    t.hour = 10;
+    t.minute = 30;
+    t.sec = 45;
+    t.microsec = 54321;
     val = reader->getValueByIndex(12);
+    EXPECT_EQ(Value::Type::TIME, val.type());
+    EXPECT_EQ(t, val.getTime());
+    val = reader->getValueByName("time_col");
+    EXPECT_EQ(Value::Type::TIME, val.type());
+    EXPECT_EQ(t, val.getTime());
+
+    // Col 13 -- non-existing column
+    val = reader->getValueByIndex(13);
     EXPECT_EQ(Value::Type::NULLVALUE, val.type());
 }
 

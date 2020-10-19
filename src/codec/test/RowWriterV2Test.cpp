@@ -25,6 +25,7 @@ const Date date = {2020, 2, 20};
 const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
 const Value sVal("Hello world!");
 const Value iVal(64);
+const Time t = {10, 30, 45, 0};
 
 TEST(RowWriterV2, NoDefaultValue) {
     SchemaWriter schema(12 /*Schema version*/);
@@ -39,9 +40,10 @@ TEST(RowWriterV2, NoDefaultValue) {
     schema.appendCol("Col09", PropertyType::FIXED_STRING, 12);
     schema.appendCol("Col10", PropertyType::TIMESTAMP);
     schema.appendCol("Col11", PropertyType::DATE);
-    schema.appendCol("Col12", PropertyType::DATETIME);
-    schema.appendCol("Col13", PropertyType::INT64, 0, true);
-    schema.appendCol("Col14", PropertyType::INT32, 0, true);
+    schema.appendCol("Col12", PropertyType::TIME);
+    schema.appendCol("Col13", PropertyType::DATETIME);
+    schema.appendCol("Col14", PropertyType::INT64, 0, true);
+    schema.appendCol("Col15", PropertyType::INT32, 0, true);
 
     ASSERT_EQ(Value::Type::STRING, sVal.type());
     ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -58,9 +60,10 @@ TEST(RowWriterV2, NoDefaultValue) {
     EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(8, fixed));
     EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(9, now));
     EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(10, date));
-    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(11, dt));
-    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setNull(12));
-    // Purposely skip the col14
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(11, t));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(12, dt));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setNull(13));
+    // Purposely skip the col15
     ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finish());
 
     RowWriterV2 writer2(&schema);
@@ -75,9 +78,10 @@ TEST(RowWriterV2, NoDefaultValue) {
     EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col09", fixed));
     EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col10", now));
     EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col11", date));
-    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col12", dt));
-    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setNull("Col13"));
-    // Purposely skip the col14
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col12", t));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col13", dt));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setNull("Col14"));
+    // Purposely skip the col15
     ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
 
     std::string encoded1 = std::move(writer1).moveEncodedStr();
@@ -166,19 +170,26 @@ TEST(RowWriterV2, NoDefaultValue) {
     // Col12
     v1 = reader1->getValueByName("Col12");
     v2 = reader2->getValueByIndex(11);
-    EXPECT_EQ(Value::Type::DATETIME, v1.type());
-    EXPECT_EQ(dt, v1.getDateTime());
+    EXPECT_EQ(Value::Type::TIME, v1.type());
+    EXPECT_EQ(t, v1.getTime());
     EXPECT_EQ(v1, v2);
 
-    // Col13
+    // Col1333
     v1 = reader1->getValueByName("Col13");
     v2 = reader2->getValueByIndex(12);
-    EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
+    EXPECT_EQ(Value::Type::DATETIME, v1.type());
+    EXPECT_EQ(dt, v1.getDateTime());
     EXPECT_EQ(v1, v2);
 
     // Col14
     v1 = reader1->getValueByName("Col14");
     v2 = reader2->getValueByIndex(13);
+    EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
+    EXPECT_EQ(v1, v2);
+
+    // Col15
+    v1 = reader1->getValueByName("Col15");
+    v2 = reader2->getValueByIndex(14);
     EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
     EXPECT_EQ(v1, v2);
 }

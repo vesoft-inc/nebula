@@ -69,6 +69,9 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
         case PropertyType::DATE:
             size = sizeof(int16_t) + 2 * sizeof(int8_t);
             break;
+        case PropertyType::TIME:
+            size = 3 * sizeof(int8_t) + sizeof(int32_t);
+            break;
         case PropertyType::DATETIME:
             size = sizeof(int16_t) + 5 * sizeof(int8_t) + sizeof(int32_t);
             break;
