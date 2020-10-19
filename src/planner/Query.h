@@ -597,6 +597,8 @@ public:
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
+    Project* clone(QueryContext* qctx) const;
+
     const YieldColumns* columns() const {
         return cols_;
     }
@@ -672,6 +674,8 @@ public:
     }
 
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+
+    Limit* clone(QueryContext* qctx) const;
 
 private:
     Limit(QueryContext* qctx, PlanNode* input, int64_t offset, int64_t count)

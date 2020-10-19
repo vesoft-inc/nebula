@@ -78,7 +78,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     if (newFilterGroupExpr != nullptr) {
         // Filter(A&&B)->GetNeighbors(C) => Filter(A)->GetNeighbors(B&&C)
         auto newGroup = OptGroup::create(qctx);
-        newGnGroupExpr = OptGroupExpr::create(qctx, newGN, newGroup);
+        newGnGroupExpr = newGroup->makeGroupExpr(qctx, newGN);
         newFilterGroupExpr->dependsOn(newGroup);
     } else {
         // Filter(A)->GetNeighbors(C) => GetNeighbors(A&&C)

@@ -185,3 +185,39 @@ class TestOptimizer(NebulaTestSuite):
         expected_data = [[50], [55], [60]]
         self.check_exec_plan(resp, expected_plan)
         self.check_result(resp, expected_data)
+
+    def test_LimitPushDownRule(self):
+        resp = self.execute_query('''
+            GO 1 STEPS FROM "James Harden" OVER like REVERSELY
+             | Limit 2
+        ''')
+        expected_plan = [
+            ["DataCollect", [1]],
+            ["Limit", [2]],
+            ["Project", [3]],
+            ["GetNeighbors", [4], ['2']],
+            ["Start", []]
+        ]
+        # expected_data = [[90], [80], [99]]
+        self.check_exec_plan(resp, expected_plan)
+        if resp.data is None:
+            assert False, 'resp.data is None'
+        assert len(resp.data.rows) == 2
+
+        resp = self.execute_query('''
+            GO 1 STEPS FROM "Vince Carter" OVER serve
+            YIELD serve.start_year as start_year
+             | Limit 3, 4
+        ''')
+        expected_plan = [
+            ["DataCollect", [1]],
+            ["Limit", [2]],
+            ["Project", [3]],
+            ["GetNeighbors", [4], ['7']],
+            ["Start", []]
+        ]
+        # expected_data = [[1998], [2004], [2009], [2010], [2011], [2014], [2017], [2018]]
+        self.check_exec_plan(resp, expected_plan)
+        if resp.data is None:
+            assert False, 'resp.data is None'
+        assert len(resp.data.rows) == 4

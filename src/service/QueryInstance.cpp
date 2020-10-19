@@ -135,6 +135,8 @@ void QueryInstance::onError(Status status) {
             break;
         case Status::Code::kBalanced:
         case Status::Code::kEdgeNotFound:
+        case Status::Code::kGroupNotFound:
+        case Status::Code::kZoneNotFound:
         case Status::Code::kError:
         case Status::Code::kHostNotFound:
         case Status::Code::kIndexNotFound:

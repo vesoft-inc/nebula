@@ -121,6 +121,18 @@ std::unique_ptr<cpp2::PlanNodeDescription> Filter::explain() const {
     return desc;
 }
 
+Project* Project::clone(QueryContext* qctx) const {
+    auto cols = qctx->objPool()->add(new YieldColumns());
+    for (auto col : columns()->columns()) {
+        cols->addColumn((col->clone()).release());
+    }
+
+    auto newProj = Project::make(qctx, nullptr, cols);
+    newProj->setInputVar(inputVar());
+    newProj->setOutputVar(outputVar());
+    return newProj;
+}
+
 std::unique_ptr<cpp2::PlanNodeDescription> Project::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("columns", cols_ ? cols_->toString() : "", desc.get());
@@ -131,6 +143,13 @@ std::unique_ptr<cpp2::PlanNodeDescription> Sort::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());
     return desc;
+}
+
+Limit* Limit::clone(QueryContext* qctx) const {
+    auto newLimit = Limit::make(qctx, nullptr, offset_, count_);
+    newLimit->setInputVar(inputVar());
+    newLimit->setOutputVar(outputVar());
+    return newLimit;
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> Limit::explain() const {

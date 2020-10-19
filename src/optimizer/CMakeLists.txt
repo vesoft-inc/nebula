@@ -12,6 +12,7 @@ nebula_add_library(
     OptRule.cpp
     rule/PushFilterDownGetNbrsRule.cpp
     rule/IndexScanRule.cpp
+    rule/LimitPushDownRule.cpp
     rule/TopNRule.cpp
 )
 
