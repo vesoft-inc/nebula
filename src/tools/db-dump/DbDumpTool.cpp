@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "tools/dbDump/DbDumper.h"
+#include "tools/db-dump/DbDumper.h"
 
 void printHelp() {
     fprintf(stderr,
