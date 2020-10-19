@@ -12,6 +12,7 @@ nebula_add_library(
     OptRule.cpp
     rule/PushFilterDownGetNbrsRule.cpp
     rule/IndexScanRule.cpp
+    rule/TopNRule.cpp
 )
 
 nebula_add_subdirectory(test)

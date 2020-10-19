@@ -50,7 +50,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     graph::ExtractFilterExprVisitor visitor;
     condition->accept(&visitor);
     if (!visitor.ok()) {
-        return TransformResult{false, false, {}};
+        return TransformResult::noTransform();
     }
 
     auto pool = qctx->objPool();
@@ -91,8 +91,8 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     }
 
     TransformResult result;
-    result.newGroupExprs.emplace_back(newFilterGroupExpr ? newFilterGroupExpr : newGnGroupExpr);
     result.eraseCurr = true;
+    result.newGroupExprs.emplace_back(newFilterGroupExpr ? newFilterGroupExpr : newGnGroupExpr);
     return result;
 }
 
