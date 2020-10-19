@@ -22,6 +22,8 @@ public:
 
     StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
+    StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID space) override;
+
     // return the newest one if ver less 0
     std::shared_ptr<const NebulaSchemaProvider>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
