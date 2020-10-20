@@ -108,7 +108,7 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                                     cpp2::PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
-                                    Value defaultValue) {
+                                    Expression* defaultValue) {
     size_t size = 0;
     switch (type) {
         case cpp2::PropertyType::BOOL:
@@ -179,8 +179,8 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
     fields_.emplace_back(name.toString(),
                          type,
                          nullable,
-                         !defaultValue.empty(),
-                         std::move(defaultValue),
+                         defaultValue != nullptr,
+                         defaultValue,
                          size,
                          offset,
                          nullFlagPos);

@@ -149,7 +149,7 @@ struct ColumnTypeDef {
 struct ColumnDef {
     1: required binary          name,
     2: required ColumnTypeDef   type,
-    3: optional common.Value    default_value,
+    3: optional binary          default_value,
     4: optional bool            nullable = false,
 }
 

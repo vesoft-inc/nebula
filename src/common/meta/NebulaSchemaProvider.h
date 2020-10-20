@@ -24,7 +24,7 @@ public:
                     cpp2::PropertyType type,
                     bool nullable,
                     bool hasDefault,
-                    Value defaultValue,
+                    Expression* defaultValue,
                     size_t size,
                     size_t offset,
                     size_t nullFlagPos)
@@ -53,8 +53,8 @@ public:
             return hasDefault_;
         }
 
-        const Value& defaultValue() const override {
-            return defaultValue_;
+        Expression* defaultValue() const override {
+            return defaultValue_.get();
         }
 
         size_t size() const override {
@@ -75,7 +75,7 @@ public:
         cpp2::PropertyType type_;
         bool nullable_;
         bool hasDefault_;
-        Value defaultValue_;
+        std::unique_ptr<Expression> defaultValue_;
         size_t size_;
         size_t offset_;
         size_t nullFlagPos_;
@@ -105,7 +105,7 @@ public:
                   cpp2::PropertyType type,
                   size_t fixedStrLen = 0,
                   bool nullable = false,
-                  Value defaultValue = Value());
+                  Expression* defaultValue = nullptr);
 
     void setProp(cpp2::SchemaProp schemaProp);
 

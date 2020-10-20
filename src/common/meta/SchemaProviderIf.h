@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/interface/gen-cpp2/meta_types.h"
+#include "common/expression/Expression.h"
 
 
 namespace nebula {
@@ -25,7 +26,7 @@ public:
         virtual cpp2::PropertyType type() const = 0;
         virtual bool nullable() const = 0;
         virtual bool hasDefault() const = 0;
-        virtual const Value& defaultValue() const = 0;
+        virtual Expression* defaultValue() const = 0;
         // This method returns the number of bytes the field will occupy
         // when the field is persisted on the storage medium
         // For the variant length string, the size will return 8
