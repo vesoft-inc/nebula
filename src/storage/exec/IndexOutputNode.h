@@ -166,7 +166,7 @@ private:
         for (const auto& val : data) {
             Row row;
             auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(vId));
+            row.emplace_back(Value(std::move(vId).subpiece(0, vId.find_first_of('\0'))));
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
@@ -187,7 +187,7 @@ private:
         for (const auto& val : data) {
             Row row;
             auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(std::move(vId)));
+            row.emplace_back(Value(std::move(vId).subpiece(0, vId.find_first_of('\0'))));
 
             // skip vertexID
             for (size_t i = 1; i < returnCols.size(); i++) {
@@ -198,7 +198,12 @@ private:
                                                              cols_,
                                                              false,
                                                              hasNullableCol_);
-                row.emplace_back(std::move(v));
+                if (v.isStr()) {
+                    auto strVal = v.getStr().substr(0, v.getStr().find_first_of('\0'));
+                    row.emplace_back(std::move(strVal));
+                } else {
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
@@ -218,9 +223,9 @@ private:
             auto src = NebulaKeyUtils::getSrcId(planContext_->vIdLen_, val.first);
             auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, val.first);
             auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(std::move(src)));
+            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0'))));
             row.emplace_back(Value(rank));
-            row.emplace_back(Value(std::move(dst)));
+            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0'))));
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
@@ -244,9 +249,9 @@ private:
             auto rank = IndexKeyUtils::getIndexRank(planContext_->vIdLen_, val.first);
             auto dst = IndexKeyUtils::getIndexDstId(planContext_->vIdLen_, val.first);
 
-            row.emplace_back(Value(std::move(src)));
+            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0'))));
             row.emplace_back(Value(std::move(rank)));
-            row.emplace_back(Value(std::move(dst)));
+            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0'))));
 
             // skip column src_ , ranking, dst_
             for (size_t i = 3; i < returnCols.size(); i++) {
@@ -257,7 +262,12 @@ private:
                                                              cols_,
                                                              true,
                                                              hasNullableCol_);
-                row.emplace_back(std::move(v));
+                if (v.isStr()) {
+                    auto strVal = v.getStr().substr(0, v.getStr().find_first_of('\0'));
+                    row.emplace_back(std::move(strVal));
+                } else {
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
