@@ -40,10 +40,10 @@ const Pattern &TopNRule::pattern() const {
 
 StatusOr<OptRule::TransformResult> TopNRule::transform(QueryContext *qctx,
                                                        const MatchedResult &matched) const {
-    auto limitExpr = matched.node;
-    auto sortExpr = matched.dependencies.front().node;
-    auto limit = static_cast<const Limit *>(limitExpr->node());
-    auto sort = static_cast<const Sort *>(sortExpr->node());
+    auto limitGroupNode = matched.node;
+    auto sortGroupNode = matched.dependencies.front().node;
+    auto limit = static_cast<const Limit *>(limitGroupNode->node());
+    auto sort = static_cast<const Sort *>(sortGroupNode->node());
 
     // Currently, we cannot know the total amount of input data,
     // so only apply topn rule when offset of limit is 0
@@ -55,15 +55,14 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(QueryContext *qctx,
     topn->setOutputVar(limit->outputVar());
     topn->setInputVar(sort->inputVar());
     topn->setColNames(sort->colNames());
-    auto topnExpr = OptGroupExpr::create(qctx, topn, limitExpr->group());
-    for (auto dep : sortExpr->dependencies()) {
-        topnExpr->dependsOn(dep);
+    auto topnNode = OptGroupNode::create(qctx, topn, limitGroupNode->group());
+    for (auto dep : sortGroupNode->dependencies()) {
+        topnNode->dependsOn(dep);
     }
 
     TransformResult result;
-    result.newGroupExprs.emplace_back(topnExpr);
+    result.newGroupNodes.emplace_back(topnNode);
     result.eraseAll = true;
-    result.eraseCurr = true;
     return result;
 }
 

@@ -22,11 +22,11 @@ class QueryContext;
 
 namespace opt {
 
-class OptGroupExpr;
+class OptGroupNode;
 class OptGroup;
 
 struct MatchedResult {
-    const OptGroupExpr *node{nullptr};
+    const OptGroupNode *node{nullptr};
     std::vector<MatchedResult> dependencies;
 };
 
@@ -34,7 +34,7 @@ class Pattern final {
 public:
     static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
 
-    StatusOr<MatchedResult> match(const OptGroupExpr *groupNode) const;
+    StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
 private:
     Pattern() = default;
@@ -51,12 +51,13 @@ public:
             static TransformResult kNoTrans{false, false, {}};
             return kNoTrans;
         }
+
         bool eraseCurr{false};
         bool eraseAll{false};
-        std::vector<OptGroupExpr *> newGroupExprs;
+        std::vector<OptGroupNode *> newGroupNodes;
     };
 
-    StatusOr<MatchedResult> match(const OptGroupExpr *groupExpr) const;
+    StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
     virtual ~OptRule() = default;
 

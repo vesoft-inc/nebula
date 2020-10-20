@@ -31,15 +31,15 @@ OptGroup::OptGroup(QueryContext *qctx) noexcept : qctx_(qctx) {
     DCHECK(qctx != nullptr);
 }
 
-void OptGroup::addGroupExpr(OptGroupExpr *groupExpr) {
-    DCHECK(groupExpr != nullptr);
-    DCHECK(groupExpr->group() == this);
-    groupExprs_.emplace_back(groupExpr);
+void OptGroup::addGroupNode(OptGroupNode *groupNode) {
+    DCHECK(groupNode != nullptr);
+    DCHECK(groupNode->group() == this);
+    groupNodes_.emplace_back(groupNode);
 }
 
-OptGroupExpr *OptGroup::makeGroupExpr(QueryContext *qctx, PlanNode *node) {
-    groupExprs_.emplace_back(OptGroupExpr::create(qctx, node, this));
-    return groupExprs_.back();
+OptGroupNode *OptGroup::makeGroupNode(QueryContext *qctx, PlanNode *node) {
+    groupNodes_.emplace_back(OptGroupNode::create(qctx, node, this));
+    return groupNodes_.back();
 }
 
 Status OptGroup::explore(const OptRule *rule) {
@@ -48,18 +48,18 @@ Status OptGroup::explore(const OptRule *rule) {
     }
     setExplored(rule);
 
-    for (auto iter = groupExprs_.begin(); iter != groupExprs_.end();) {
-        auto groupExpr = *iter;
-        DCHECK(groupExpr != nullptr);
-        if (groupExpr->isExplored(rule)) {
+    for (auto iter = groupNodes_.begin(); iter != groupNodes_.end();) {
+        auto groupNode = *iter;
+        DCHECK(groupNode != nullptr);
+        if (groupNode->isExplored(rule)) {
             ++iter;
             continue;
         }
         // Bottom to up exploration
-        NG_RETURN_IF_ERROR(groupExpr->explore(rule));
+        NG_RETURN_IF_ERROR(groupNode->explore(rule));
 
         // Find more equivalents
-        auto status = rule->match(groupExpr);
+        auto status = rule->match(groupNode);
         if (!status.ok()) {
             ++iter;
             continue;
@@ -69,23 +69,23 @@ Status OptGroup::explore(const OptRule *rule) {
         NG_RETURN_IF_ERROR(resStatus);
         auto result = std::move(resStatus).value();
         if (result.eraseAll) {
-            groupExprs_.clear();
-            for (auto nge : result.newGroupExprs) {
-                addGroupExpr(nge);
+            groupNodes_.clear();
+            for (auto ngn : result.newGroupNodes) {
+                addGroupNode(ngn);
             }
             break;
         }
 
-        if (!result.newGroupExprs.empty()) {
-            for (auto nge : result.newGroupExprs) {
-                addGroupExpr(nge);
+        if (!result.newGroupNodes.empty()) {
+            for (auto ngn : result.newGroupNodes) {
+                addGroupNode(ngn);
             }
 
             setUnexplored(rule);
         }
 
         if (result.eraseCurr) {
-            iter = groupExprs_.erase(iter);
+            iter = groupNodes_.erase(iter);
         } else {
             ++iter;
         }
@@ -107,40 +107,40 @@ Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
     return Status::OK();
 }
 
-std::pair<double, const OptGroupExpr *> OptGroup::findMinCostGroupExpr() const {
+std::pair<double, const OptGroupNode *> OptGroup::findMinCostGroupNode() const {
     double minCost = std::numeric_limits<double>::max();
-    const OptGroupExpr *minGroupExpr = nullptr;
-    for (auto &groupExpr : groupExprs_) {
-        double cost = groupExpr->getCost();
+    const OptGroupNode *minGroupNode = nullptr;
+    for (auto &groupNode : groupNodes_) {
+        double cost = groupNode->getCost();
         if (minCost > cost) {
             minCost = cost;
-            minGroupExpr = groupExpr;
+            minGroupNode = groupNode;
         }
     }
-    return std::make_pair(minCost, minGroupExpr);
+    return std::make_pair(minCost, minGroupNode);
 }
 
 double OptGroup::getCost() const {
-    return findMinCostGroupExpr().first;
+    return findMinCostGroupNode().first;
 }
 
 const PlanNode *OptGroup::getPlan() const {
-    const OptGroupExpr *minGroupExpr = findMinCostGroupExpr().second;
-    DCHECK(minGroupExpr != nullptr);
-    return minGroupExpr->getPlan();
+    const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
+    DCHECK(minGroupNode != nullptr);
+    return minGroupNode->getPlan();
 }
 
-OptGroupExpr *OptGroupExpr::create(QueryContext *qctx, PlanNode *node, const OptGroup *group) {
-    return qctx->objPool()->add(new OptGroupExpr(node, group));
+OptGroupNode *OptGroupNode::create(QueryContext *qctx, PlanNode *node, const OptGroup *group) {
+    return qctx->objPool()->add(new OptGroupNode(node, group));
 }
 
-OptGroupExpr::OptGroupExpr(PlanNode *node, const OptGroup *group) noexcept
+OptGroupNode::OptGroupNode(PlanNode *node, const OptGroup *group) noexcept
     : node_(node), group_(group) {
     DCHECK(node != nullptr);
     DCHECK(group != nullptr);
 }
 
-Status OptGroupExpr::explore(const OptRule *rule) {
+Status OptGroupNode::explore(const OptRule *rule) {
     if (isExplored(rule)) {
         return Status::OK();
     }
@@ -158,11 +158,11 @@ Status OptGroupExpr::explore(const OptRule *rule) {
     return Status::OK();
 }
 
-double OptGroupExpr::getCost() const {
+double OptGroupNode::getCost() const {
     return node_->cost();
 }
 
-const PlanNode *OptGroupExpr::getPlan() const {
+const PlanNode *OptGroupNode::getPlan() const {
     switch (node_->dependencies().size()) {
         case 0: {
             DCHECK(dependencies_.empty());

@@ -14,6 +14,7 @@ using nebula::graph::IndexScan;
 
 namespace nebula {
 namespace opt {
+
 std::unique_ptr<OptRule> IndexScanRule::kInstance =
     std::unique_ptr<IndexScanRule>(new IndexScanRule());
 
@@ -28,29 +29,27 @@ const Pattern& IndexScanRule::pattern() const {
 
 StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext* qctx,
                                                             const MatchedResult& matched) const {
-    auto groupExpr = matched.node;
-    auto filter = filterExpr(groupExpr);
+    auto groupNode = matched.node;
+    auto filter = filterExpr(groupNode);
     if (filter == nullptr) {
         return Status::SemanticError("WHERE clause error");
     }
     FilterItems items;
     ScanKind kind;
-    auto ret = analyzeExpression(filter.get(), &items, &kind, isEdge(groupExpr));
-    NG_RETURN_IF_ERROR(ret);
+    NG_RETURN_IF_ERROR(analyzeExpression(filter.get(), &items, &kind, isEdge(groupNode)));
 
     IndexQueryCtx iqctx = std::make_unique<std::vector<IndexQueryContext>>();
-    ret = createIndexQueryCtx(iqctx, kind, items, qctx, groupExpr);
-    NG_RETURN_IF_ERROR(ret);
+    NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
 
-    auto newIN = static_cast<const IndexScan*>(groupExpr->node())->clone(qctx);
+    auto newIN = static_cast<const IndexScan*>(groupNode->node())->clone(qctx);
     newIN->setIndexQueryContext(std::move(iqctx));
-    auto newGroupExpr = OptGroupExpr::create(qctx, newIN, groupExpr->group());
-    if (groupExpr->dependencies().size() != 1) {
+    auto newGroupNode = OptGroupNode::create(qctx, newIN, groupNode->group());
+    if (groupNode->dependencies().size() != 1) {
         return Status::Error("Plan node dependencies error");
     }
-    newGroupExpr->dependsOn(groupExpr->dependencies()[0]);
+    newGroupNode->dependsOn(groupNode->dependencies()[0]);
     TransformResult result;
-    result.newGroupExprs.emplace_back(newGroupExpr);
+    result.newGroupNodes.emplace_back(newGroupNode);
     result.eraseAll = true;
     return result;
 }
@@ -63,17 +62,17 @@ Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx &iqctx,
                                           ScanKind kind,
                                           const FilterItems& items,
                                           graph::QueryContext *qctx,
-                                          const OptGroupExpr *groupExpr) const {
+                                          const OptGroupNode *groupNode) const {
     return kind.isLogicalAnd()
-           ? createIQCWithLogicAnd(iqctx, items, qctx, groupExpr)
-           : createIQCWithLogicOR(iqctx, items, qctx, groupExpr);
+           ? createIQCWithLogicAnd(iqctx, items, qctx, groupNode)
+           : createIQCWithLogicOR(iqctx, items, qctx, groupNode);
 }
 
 Status IndexScanRule::createIQCWithLogicAnd(IndexQueryCtx &iqctx,
                                             const FilterItems& items,
                                             graph::QueryContext *qctx,
-                                            const OptGroupExpr *groupExpr) const {
-    auto index = findOptimalIndex(qctx, groupExpr, items);
+                                            const OptGroupNode *groupNode) const {
+    auto index = findOptimalIndex(qctx, groupNode, items);
     if (index == nullptr) {
         return Status::IndexNotFound("No valid index found");
     }
@@ -84,9 +83,9 @@ Status IndexScanRule::createIQCWithLogicAnd(IndexQueryCtx &iqctx,
 Status IndexScanRule::createIQCWithLogicOR(IndexQueryCtx &iqctx,
                                            const FilterItems& items,
                                            graph::QueryContext *qctx,
-                                           const OptGroupExpr *groupExpr) const {
+                                           const OptGroupNode *groupNode) const {
     for (auto const& item : items.items) {
-        auto index = findOptimalIndex(qctx, groupExpr, FilterItems({item}));
+        auto index = findOptimalIndex(qctx, groupNode, FilterItems({item}));
         if (index == nullptr) {
             return Status::IndexNotFound("No valid index found");
         }
@@ -121,8 +120,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
         if (it != filterItems.items.end()) {
             break;
         }
-        auto ret = appendColHint(hints, filterItems, field);
-        NG_RETURN_IF_ERROR(ret);
+        NG_RETURN_IF_ERROR(appendColHint(hints, filterItems, field));
     }
     ctx.set_index_id(index->get_index_id());
     // TODO (sky) : rewrite expr and set filter
@@ -156,8 +154,7 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
             begin = item.value_;
             break;
         }
-        auto ret = boundValue(item, col, begin, end);
-        NG_RETURN_IF_ERROR(ret);
+        NG_RETURN_IF_ERROR(boundValue(item, col, begin, end));
     }
 
     if (isRangeScan) {
@@ -238,24 +235,24 @@ Status IndexScanRule::boundValue(const FilterItem& item,
     return Status::OK();
 }
 
-bool IndexScanRule::isEdge(const OptGroupExpr *groupExpr) const {
-    auto in = static_cast<const IndexScan *>(groupExpr->node());
+bool IndexScanRule::isEdge(const OptGroupNode *groupNode) const {
+    auto in = static_cast<const IndexScan *>(groupNode->node());
     return in->isEdge();
 }
 
-int32_t IndexScanRule::schemaId(const OptGroupExpr *groupExpr) const {
-    auto in = static_cast<const IndexScan *>(groupExpr->node());
+int32_t IndexScanRule::schemaId(const OptGroupNode *groupNode) const {
+    auto in = static_cast<const IndexScan *>(groupNode->node());
     return in->schemaId();
 }
 
-GraphSpaceID IndexScanRule::spaceId(const OptGroupExpr *groupExpr) const {
-    auto in = static_cast<const IndexScan *>(groupExpr->node());
+GraphSpaceID IndexScanRule::spaceId(const OptGroupNode *groupNode) const {
+    auto in = static_cast<const IndexScan *>(groupNode->node());
     return in->space();
 }
 
 std::unique_ptr<Expression>
-IndexScanRule::filterExpr(const OptGroupExpr *groupExpr) const {
-    auto in = static_cast<const IndexScan *>(groupExpr->node());
+IndexScanRule::filterExpr(const OptGroupNode *groupNode) const {
+    auto in = static_cast<const IndexScan *>(groupNode->node());
     auto qct = in->queryContext();
     // The initial IndexScan plan node has only one queryContext.
     // TODO(yee): Move this condition to match interface
@@ -292,10 +289,8 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
                                                    Expression::encode(*expr).c_str());
                 return Status::NotSupported(errorMsg);
             }
-            auto ret = analyzeExpression(lExpr->left(), items, kind, isEdge);
-            NG_RETURN_IF_ERROR(ret);
-            ret = analyzeExpression(lExpr->right(), items, kind, isEdge);
-            NG_RETURN_IF_ERROR(ret);
+            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->left(), items, kind, isEdge));
+            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->right(), items, kind, isEdge));
             break;
         }
         case Expression::Kind::kRelLE:
@@ -365,11 +360,11 @@ Expression::Kind IndexScanRule::reverseRelationalExprKind(Expression::Kind kind)
 }
 
 IndexItem IndexScanRule::findOptimalIndex(graph::QueryContext *qctx,
-                                          const OptGroupExpr *groupExpr,
+                                          const OptGroupNode *groupNode,
                                           const FilterItems& items) const {
     // The rule of priority is '==' --> '< > <= >=' --> '!='
     // Step 1 : find out all valid indexes for where condition.
-    auto validIndexes = findValidIndex(qctx, groupExpr, items);
+    auto validIndexes = findValidIndex(qctx, groupNode, items);
     if (validIndexes.empty()) {
         LOG(ERROR) << "No valid index found";
         return nullptr;
@@ -389,10 +384,10 @@ IndexItem IndexScanRule::findOptimalIndex(graph::QueryContext *qctx,
 
 std::vector<IndexItem>
 IndexScanRule::allIndexesBySchema(graph::QueryContext *qctx,
-                                  const OptGroupExpr *groupExpr) const {
-    auto ret = isEdge(groupExpr)
-               ? qctx->getMetaClient()->getEdgeIndexesFromCache(spaceId(groupExpr))
-               : qctx->getMetaClient()->getTagIndexesFromCache(spaceId(groupExpr));
+                                  const OptGroupNode *groupNode) const {
+    auto ret = isEdge(groupNode)
+               ? qctx->getMetaClient()->getEdgeIndexesFromCache(spaceId(groupNode))
+               : qctx->getMetaClient()->getTagIndexesFromCache(spaceId(groupNode));
     if (!ret.ok()) {
         LOG(ERROR) << "No index was found";
         return {};
@@ -400,10 +395,10 @@ IndexScanRule::allIndexesBySchema(graph::QueryContext *qctx,
     std::vector<IndexItem> indexes;
     for (auto& index : ret.value()) {
         // TODO (sky) : ignore rebuilding indexes
-        auto id = isEdge(groupExpr)
+        auto id = isEdge(groupNode)
                   ? index->get_schema_id().get_edge_type()
                   : index->get_schema_id().get_tag_id();
-        if (id == schemaId(groupExpr)) {
+        if (id == schemaId(groupNode)) {
             indexes.emplace_back(index);
         }
     }
@@ -416,9 +411,9 @@ IndexScanRule::allIndexesBySchema(graph::QueryContext *qctx,
 
 std::vector<IndexItem>
 IndexScanRule::findValidIndex(graph::QueryContext *qctx,
-                              const OptGroupExpr *groupExpr,
+                              const OptGroupNode *groupNode,
                               const FilterItems& items) const {
-    auto indexes = allIndexesBySchema(qctx, groupExpr);
+    auto indexes = allIndexesBySchema(qctx, groupNode);
     if (indexes.empty()) {
         return indexes;
     }

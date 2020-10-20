@@ -21,24 +21,24 @@ Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Patter
     return pattern;
 }
 
-StatusOr<MatchedResult> Pattern::match(const OptGroupExpr *groupExpr) const {
-    if (groupExpr->node()->kind() != kind_) {
+StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
+    if (groupNode->node()->kind() != kind_) {
         return Status::Error();
     }
 
     if (dependencies_.empty()) {
-        return MatchedResult{groupExpr, {}};
+        return MatchedResult{groupNode, {}};
     }
 
-    if (groupExpr->dependencies().size() != dependencies_.size()) {
+    if (groupNode->dependencies().size() != dependencies_.size()) {
         return Status::Error();
     }
 
     MatchedResult result;
-    result.node = groupExpr;
+    result.node = groupNode;
     result.dependencies.reserve(dependencies_.size());
     for (size_t i = 0; i < dependencies_.size(); ++i) {
-        auto group = groupExpr->dependencies()[i];
+        auto group = groupNode->dependencies()[i];
         const auto &pattern = dependencies_[i];
         auto status = pattern.match(group);
         NG_RETURN_IF_ERROR(status);
@@ -48,7 +48,7 @@ StatusOr<MatchedResult> Pattern::match(const OptGroupExpr *groupExpr) const {
 }
 
 StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
-    for (auto node : group->groupExprs()) {
+    for (auto node : group->groupNodes()) {
         auto status = match(node);
         if (status.ok()) {
             return status;
@@ -57,9 +57,9 @@ StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
     return Status::Error();
 }
 
-StatusOr<MatchedResult> OptRule::match(const OptGroupExpr *groupExpr) const {
+StatusOr<MatchedResult> OptRule::match(const OptGroupNode *groupNode) const {
     const auto &pattern = this->pattern();
-    auto status = pattern.match(groupExpr);
+    auto status = pattern.match(groupNode);
     NG_RETURN_IF_ERROR(status);
     auto matched = std::move(status).value();
     if (!this->match(matched)) {

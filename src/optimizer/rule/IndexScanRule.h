@@ -105,17 +105,17 @@ private:
                                ScanKind kind,
                                const FilterItems& items,
                                graph::QueryContext *qctx,
-                               const OptGroupExpr *groupExpr) const;
+                               const OptGroupNode *groupNode) const;
 
     Status createIQCWithLogicAnd(IndexQueryCtx &iqctx,
                                  const FilterItems& items,
                                  graph::QueryContext *qctx,
-                                 const OptGroupExpr *groupExpr) const;
+                                 const OptGroupNode *groupNode) const;
 
     Status createIQCWithLogicOR(IndexQueryCtx &iqctx,
                                 const FilterItems& items,
                                 graph::QueryContext *qctx,
-                                const OptGroupExpr *groupExpr) const;
+                                const OptGroupNode *groupNode) const;
 
     Status appendIQCtx(const IndexItem& index,
                        const FilterItems& items,
@@ -129,13 +129,13 @@ private:
                       const meta::cpp2::ColumnDef& col,
                       Value& begin, Value& end) const;
 
-    bool isEdge(const OptGroupExpr *groupExpr) const;
+    bool isEdge(const OptGroupNode *groupNode) const;
 
-    int32_t schemaId(const OptGroupExpr *groupExpr) const;
+    int32_t schemaId(const OptGroupNode *groupNode) const;
 
-    GraphSpaceID spaceId(const OptGroupExpr *groupExpr) const;
+    GraphSpaceID spaceId(const OptGroupNode *groupNode) const;
 
-    std::unique_ptr<Expression> filterExpr(const OptGroupExpr *groupExpr) const;
+    std::unique_ptr<Expression> filterExpr(const OptGroupNode *groupNode) const;
 
     Status analyzeExpression(Expression* expr, FilterItems* items,
                              ScanKind* kind, bool isEdge) const;
@@ -148,14 +148,14 @@ private:
     Expression::Kind reverseRelationalExprKind(Expression::Kind kind) const;
 
     IndexItem findOptimalIndex(graph::QueryContext *qctx,
-                               const OptGroupExpr *groupExpr,
+                               const OptGroupNode *groupNode,
                                const FilterItems& items) const;
 
     std::vector<IndexItem>
-    allIndexesBySchema(graph::QueryContext *qctx, const OptGroupExpr *groupExpr) const;
+    allIndexesBySchema(graph::QueryContext *qctx, const OptGroupNode *groupNode) const;
 
     std::vector<IndexItem> findValidIndex(graph::QueryContext *qctx,
-                                          const OptGroupExpr *groupExpr,
+                                          const OptGroupNode *groupNode,
                                           const FilterItems& items) const;
 
     std::vector<IndexItem> findIndexForEqualScan(const std::vector<IndexItem>& indexes,

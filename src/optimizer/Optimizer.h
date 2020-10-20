@@ -20,7 +20,7 @@ class QueryContext;
 namespace opt {
 
 class OptGroup;
-class OptGroupExpr;
+class OptGroupNode;
 class RuleSet;
 
 class Optimizer final {

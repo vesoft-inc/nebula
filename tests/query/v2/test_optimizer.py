@@ -218,6 +218,5 @@ class TestOptimizer(NebulaTestSuite):
         ]
         # expected_data = [[1998], [2004], [2009], [2010], [2011], [2014], [2017], [2018]]
         self.check_exec_plan(resp, expected_plan)
-        if resp.data is None:
-            assert False, 'resp.data is None'
+        assert resp.data is not None, 'resp.data is None'
         assert len(resp.data.rows) == 4

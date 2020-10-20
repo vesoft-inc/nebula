@@ -60,7 +60,7 @@ OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
     }
 
     auto group = OptGroup::create(qctx);
-    auto groupExpr = group->makeGroupExpr(qctx, node);
+    auto groupNode = group->makeGroupNode(qctx, node);
 
     switch (node->dependencies().size()) {
         case 0: {
@@ -71,29 +71,29 @@ OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
             if (node->kind() == PlanNode::Kind::kSelect) {
                 auto select = static_cast<Select *>(node);
                 auto then = convertToGroup(qctx, const_cast<PlanNode *>(select->then()), visited);
-                groupExpr->addBody(then);
+                groupNode->addBody(then);
                 auto otherNode = const_cast<PlanNode *>(select->otherwise());
                 auto otherwise = convertToGroup(qctx, otherNode, visited);
-                groupExpr->addBody(otherwise);
+                groupNode->addBody(otherwise);
             } else if (node->kind() == PlanNode::Kind::kLoop) {
                 auto loop = static_cast<Loop *>(node);
                 auto body = convertToGroup(qctx, const_cast<PlanNode *>(loop->body()), visited);
-                groupExpr->addBody(body);
+                groupNode->addBody(body);
             }
             auto dep = static_cast<SingleDependencyNode *>(node)->dep();
             DCHECK(dep != nullptr);
             auto depGroup = convertToGroup(qctx, const_cast<graph::PlanNode *>(dep), visited);
-            groupExpr->dependsOn(depGroup);
+            groupNode->dependsOn(depGroup);
             break;
         }
         case 2: {
             auto bNode = static_cast<BiInputNode *>(node);
             auto leftNode = const_cast<graph::PlanNode *>(bNode->left());
             auto leftGroup = convertToGroup(qctx, leftNode, visited);
-            groupExpr->dependsOn(leftGroup);
+            groupNode->dependsOn(leftGroup);
             auto rightNode = const_cast<graph::PlanNode *>(bNode->right());
             auto rightGroup = convertToGroup(qctx, rightNode, visited);
-            groupExpr->dependsOn(rightGroup);
+            groupNode->dependsOn(rightGroup);
             break;
         }
         default: {

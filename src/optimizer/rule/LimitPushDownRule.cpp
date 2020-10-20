@@ -44,13 +44,13 @@ const Pattern &LimitPushDownRule::pattern() const {
 StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
     QueryContext *qctx,
     const MatchedResult &matched) const {
-    auto limitExpr = matched.node;
-    auto projExpr = matched.dependencies.front().node;
-    auto gnExpr = matched.dependencies.front().dependencies.front().node;
+    auto limitGroupNode = matched.node;
+    auto projGroupNode = matched.dependencies.front().node;
+    auto gnGroupNode = matched.dependencies.front().dependencies.front().node;
 
-    const auto limit = static_cast<const Limit *>(limitExpr->node());
-    const auto proj = static_cast<const Project *>(projExpr->node());
-    const auto gn = static_cast<const GetNeighbors *>(gnExpr->node());
+    const auto limit = static_cast<const Limit *>(limitGroupNode->node());
+    const auto proj = static_cast<const Project *>(projGroupNode->node());
+    const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
     int64_t limitRows = limit->offset() + limit->count();
     if (limitRows >= gn->limit()) {
@@ -58,27 +58,26 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
     }
 
     auto newLimit = limit->clone(qctx);
-    auto newLimitExpr = OptGroupExpr::create(qctx, newLimit, limitExpr->group());
+    auto newLimitGroupNode = OptGroupNode::create(qctx, newLimit, limitGroupNode->group());
 
     auto newProj = proj->clone(qctx);
     auto newProjGroup = OptGroup::create(qctx);
-    auto newProjExpr = newProjGroup->makeGroupExpr(qctx, newProj);
+    auto newProjGroupNode = newProjGroup->makeGroupNode(qctx, newProj);
 
     auto newGn = gn->clone(qctx);
     newGn->setLimit(limitRows);
     auto newGnGroup = OptGroup::create(qctx);
-    auto newGnExpr = newGnGroup->makeGroupExpr(qctx, newGn);
+    auto newGnGroupNode = newGnGroup->makeGroupNode(qctx, newGn);
 
-    newLimitExpr->dependsOn(newProjGroup);
-    newProjExpr->dependsOn(newGnGroup);
-    for (auto dep : gnExpr->dependencies()) {
-        newGnExpr->dependsOn(dep);
+    newLimitGroupNode->dependsOn(newProjGroup);
+    newProjGroupNode->dependsOn(newGnGroup);
+    for (auto dep : gnGroupNode->dependencies()) {
+        newGnGroupNode->dependsOn(dep);
     }
 
     TransformResult result;
     result.eraseAll = true;
-    result.eraseCurr = true;
-    result.newGroupExprs.emplace_back(newLimitExpr);
+    result.newGroupNodes.emplace_back(newLimitGroupNode);
     return result;
 }
 

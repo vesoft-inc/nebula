@@ -41,10 +41,10 @@ const Pattern &PushFilterDownGetNbrsRule::pattern() const {
 StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     QueryContext *qctx,
     const MatchedResult &matched) const {
-    auto filterGroupExpr = matched.node;
-    auto gnGroupExpr = matched.dependencies.front().node;
-    auto filter = static_cast<const Filter *>(filterGroupExpr->node());
-    auto gn = static_cast<const GetNeighbors *>(gnGroupExpr->node());
+    auto filterGroupNode = matched.node;
+    auto gnGroupNode = matched.dependencies.front().node;
+    auto filter = static_cast<const Filter *>(filterGroupNode->node());
+    auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
     auto condition = filter->condition()->clone();
     graph::ExtractFilterExprVisitor visitor;
@@ -55,12 +55,12 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
 
     auto pool = qctx->objPool();
     auto remainedExpr = std::move(visitor).remainedExpr();
-    OptGroupExpr *newFilterGroupExpr = nullptr;
+    OptGroupNode *newFilterGroupNode = nullptr;
     if (remainedExpr != nullptr) {
         auto newFilter = Filter::make(qctx, nullptr, pool->add(remainedExpr.release()));
         newFilter->setOutputVar(filter->outputVar());
         newFilter->setInputVar(filter->inputVar());
-        newFilterGroupExpr = OptGroupExpr::create(qctx, newFilter, filterGroupExpr->group());
+        newFilterGroupNode = OptGroupNode::create(qctx, newFilter, filterGroupNode->group());
     }
 
     auto newGNFilter = condition->encode();
@@ -74,25 +74,25 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     auto newGN = gn->clone(qctx);
     newGN->setFilter(newGNFilter);
 
-    OptGroupExpr *newGnGroupExpr = nullptr;
-    if (newFilterGroupExpr != nullptr) {
-        // Filter(A&&B)->GetNeighbors(C) => Filter(A)->GetNeighbors(B&&C)
+    OptGroupNode *newGnGroupNode = nullptr;
+    if (newFilterGroupNode != nullptr) {
+        // Filter(A&&B)<-GetNeighbors(C) => Filter(A)<-GetNeighbors(B&&C)
         auto newGroup = OptGroup::create(qctx);
-        newGnGroupExpr = newGroup->makeGroupExpr(qctx, newGN);
-        newFilterGroupExpr->dependsOn(newGroup);
+        newGnGroupNode = newGroup->makeGroupNode(qctx, newGN);
+        newFilterGroupNode->dependsOn(newGroup);
     } else {
-        // Filter(A)->GetNeighbors(C) => GetNeighbors(A&&C)
-        newGnGroupExpr = OptGroupExpr::create(qctx, newGN, filterGroupExpr->group());
+        // Filter(A)<-GetNeighbors(C) => GetNeighbors(A&&C)
+        newGnGroupNode = OptGroupNode::create(qctx, newGN, filterGroupNode->group());
         newGN->setOutputVar(filter->outputVar());
     }
 
-    for (auto dep : gnGroupExpr->dependencies()) {
-        newGnGroupExpr->dependsOn(dep);
+    for (auto dep : gnGroupNode->dependencies()) {
+        newGnGroupNode->dependsOn(dep);
     }
 
     TransformResult result;
     result.eraseCurr = true;
-    result.newGroupExprs.emplace_back(newFilterGroupExpr ? newFilterGroupExpr : newGnGroupExpr);
+    result.newGroupNodes.emplace_back(newFilterGroupNode ? newFilterGroupNode : newGnGroupNode);
     return result;
 }
 
