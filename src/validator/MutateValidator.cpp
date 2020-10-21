@@ -9,9 +9,11 @@
 #include "planner/Mutate.h"
 #include "planner/Query.h"
 #include "util/SchemaUtil.h"
+#include "visitor/RewriteSymExprVisitor.h"
 
 namespace nebula {
 namespace graph {
+
 Status InsertVerticesValidator::validateImpl() {
     spaceId_ = vctx_->whichSpace().id;
     auto status = Status::OK();
@@ -626,135 +628,15 @@ Status UpdateValidator::checkAndResetSymExpr(Expression* inExpr,
 }
 
 // rewrite the expr which has kSymProperty expr to toExpr
-std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression* expr,
+std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression *expr,
                                                             const std::string &sym,
                                                             bool &hasWrongType,
                                                             bool isEdge) {
-    switch (expr->kind()) {
-        case Expression::Kind::kVertex:
-        case Expression::Kind::kEdge:
-        case Expression::Kind::kConstant: {
-            break;
-        }
-        case Expression::Kind::kAdd:
-        case Expression::Kind::kMinus:
-        case Expression::Kind::kMultiply:
-        case Expression::Kind::kDivision:
-        case Expression::Kind::kMod:
-        case Expression::Kind::kRelEQ:
-        case Expression::Kind::kRelNE:
-        case Expression::Kind::kRelLT:
-        case Expression::Kind::kRelLE:
-        case Expression::Kind::kRelGT:
-        case Expression::Kind::kRelGE:
-        case Expression::Kind::kRelIn:
-        case Expression::Kind::kRelNotIn:
-        case Expression::Kind::kContains:
-        case Expression::Kind::kStartsWith:
-        case Expression::Kind::kEndsWith:
-        case Expression::Kind::kLogicalAnd:
-        case Expression::Kind::kLogicalOr:
-        case Expression::Kind::kLogicalXor: {
-            auto biExpr = static_cast<BinaryExpression*>(expr);
-            auto left = rewriteSymExpr(biExpr->left(), sym, hasWrongType, isEdge);
-            if (left != nullptr) {
-                biExpr->setLeft(left.release());
-            }
-            auto right = rewriteSymExpr(biExpr->right(), sym, hasWrongType, isEdge);
-            if (right != nullptr) {
-                biExpr->setRight(right.release());
-            }
-            break;
-        }
-        case Expression::Kind::kUnaryPlus:
-        case Expression::Kind::kUnaryNegate:
-        case Expression::Kind::kUnaryNot: {
-            auto unaryExpr = static_cast<UnaryExpression*>(expr);
-            auto rewrite = rewriteSymExpr(unaryExpr->operand(), sym, hasWrongType, isEdge);
-            if (rewrite != nullptr) {
-                unaryExpr->setOperand(rewrite.release());
-            }
-            break;
-        }
-        case Expression::Kind::kFunctionCall: {
-            auto funcExpr = static_cast<FunctionCallExpression*>(expr);
-            auto* argList = const_cast<ArgumentList*>(funcExpr->args());
-            auto args = argList->moveArgs();
-            for (auto iter = args.begin(); iter < args.end(); ++iter) {
-                auto rewrite = rewriteSymExpr(iter->get(), sym, hasWrongType, isEdge);
-                if (rewrite != nullptr) {
-                    *iter = std::move(rewrite);
-                }
-            }
-            argList->setArgs(std::move(args));
-            break;
-        }
-        case Expression::Kind::kTypeCasting: {
-            auto castExpr = static_cast<TypeCastingExpression*>(expr);
-            auto operand = rewriteSymExpr(castExpr->operand(), sym, hasWrongType, isEdge);
-            if (operand != nullptr) {
-                castExpr->setOperand(operand.release());
-            }
-            break;
-        }
-        case Expression::Kind::kLabelAttribute: {
-            auto laExpr = static_cast<LabelAttributeExpression*>(expr);
-            if (isEdge) {
-                return std::make_unique<EdgePropertyExpression>(
-                        new std::string(*laExpr->left()->name()),
-                        new std::string(*laExpr->right()->name()));
-            } else {
-                hasWrongType = true;
-                return nullptr;
-            }
-        }
-        case Expression::Kind::kLabel: {
-            auto labelExpr = static_cast<LabelExpression*>(expr);
-            if (isEdge) {
-                return std::make_unique<EdgePropertyExpression>(
-                        new std::string(sym), new std::string(*labelExpr->name()));
-            } else {
-                return std::make_unique<SourcePropertyExpression>(
-                        new std::string(sym), new std::string(*labelExpr->name()));
-            }
-        }
-        case Expression::Kind::kSrcProperty: {
-            if (isEdge) {
-                hasWrongType = true;
-            }
-            break;
-        }
-        case Expression::Kind::kEdgeProperty: {
-            if (!isEdge) {
-                hasWrongType = true;
-            }
-            break;
-        }
-        case Expression::Kind::kDstProperty:
-        case Expression::Kind::kTagProperty:
-        case Expression::Kind::kEdgeSrc:
-        case Expression::Kind::kEdgeRank:
-        case Expression::Kind::kEdgeDst:
-        case Expression::Kind::kEdgeType:
-        case Expression::Kind::kUUID:
-        case Expression::Kind::kVar:
-        case Expression::Kind::kVersionedVar:
-        case Expression::Kind::kVarProperty:
-        case Expression::Kind::kInputProperty:
-        case Expression::Kind::kUnaryIncr:
-        case Expression::Kind::kUnaryDecr:
-        case Expression::Kind::kList:   // FIXME(dutor)
-        case Expression::Kind::kSet:
-        case Expression::Kind::kMap:
-        case Expression::Kind::kAttribute:
-        case Expression::Kind::kSubscript: {
-            hasWrongType = true;
-            break;
-        }
-    }
-    return nullptr;
+    RewriteSymExprVisitor visitor(sym, isEdge);
+    expr->accept(&visitor);
+    hasWrongType = visitor.hasWrongType();
+    return std::move(visitor).expr();
 }
-
 
 Status UpdateVertexValidator::validateImpl() {
     auto sentence = static_cast<UpdateVertexSentence*>(sentence_);

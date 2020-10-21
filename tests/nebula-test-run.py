@@ -104,8 +104,8 @@ if __name__ == "__main__":
         print("Running TestExecutor with args: {} ".format(args))
 
         # load nba data
-        data_loader = GlobalDataLoader(TEST_DIR, nebula_ip, nebula_port, configs.user, configs.password)
-        data_loader.load_all_test_data()
+        with GlobalDataLoader(TEST_DIR, nebula_ip, nebula_port, configs.user, configs.password) as data_loader:
+            data_loader.load_all_test_data()
 
         # Switch to your $src_dir/tests
         os.chdir(TEST_DIR)

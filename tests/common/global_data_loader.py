@@ -19,11 +19,18 @@ class GlobalDataLoader(object):
         self.data_dir = data_dir
         self.ip = ip
         self.port = port
-        self.client_pool = ConnectionPool(ip=self.ip, port=self.port, network_timeout=0)
-        self.client = GraphClient(self.client_pool)
         self.user = user
         self.password = password
+
+    def __enter__(self):
+        self.client_pool = ConnectionPool(ip=self.ip, port=self.port, network_timeout=0)
+        self.client = GraphClient(self.client_pool)
         self.client.authenticate(self.user, self.password)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.client.sign_out()
+        self.client_pool.close()
 
     def load_all_test_data(self):
         if self.client is None:
@@ -194,5 +201,3 @@ class GlobalDataLoader(object):
     def drop_data(self):
         resp = self.client.execute('DROP SPACE nba; DROP SPACE student_space;')
         assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
-        self.client.sign_out()
-        self.client_pool.close()
