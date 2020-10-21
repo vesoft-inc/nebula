@@ -54,8 +54,10 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(leftP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
+        leftP_.setValue();
     };
 
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
@@ -67,6 +69,7 @@ void SetExecutor::setLeft() {
     auto onError = [this] (Status s) {
         VLOG(3) << "Left error:" << s.toString();
         leftS_ = std::move(s);
+        leftP_.setValue();
     };
 
     left_->setOnResult(onResult);
@@ -75,8 +78,10 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(rightP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
+        rightP_.setValue();
     };
 
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
@@ -88,6 +93,7 @@ void SetExecutor::setRight() {
     auto onError = [this] (Status s) {
         VLOG(3) << "Right error: " << s.toString();
         rightS_ = std::move(s);
+        rightP_.setValue();
     };
 
     right_->setOnResult(onResult);
@@ -109,25 +115,27 @@ void SetExecutor::execute() {
 
     auto *runner = ectx()->rctx()->runner();
 
-    auto lTask = [this] () mutable { left_->execute(); };
-    auto lError = [this] (auto &&e) {
+    auto lTask = [this] () { left_->execute(); };
+    auto lError = [this](auto &&e) {
+        UNUSED(e);
         std::stringstream ss;
-        ss << "Exception when handle left subquery: " << e.what();
+        ss << "Exception when handle left subquery: " << sentence_->left()->toString();
         LOG(ERROR) << ss.str();
         leftS_ = Status::Error(ss.str());
+        leftP_.setValue();
     };
-    auto lF = std::move(folly::makeFuture()).via(runner).then(lTask).thenError(lError);
-    futures_.emplace_back(std::move(lF));
+    folly::makeFuture().via(runner).then(lTask).thenError(lError);
 
-    auto rTask = [this] () mutable { right_->execute(); };
-    auto rError = [this] (auto &&e) {
+    auto rTask = [this]() { right_->execute(); };
+    auto rError = [this](auto &&e) {
+        UNUSED(e);
         std::stringstream ss;
-        ss << "Exception when handle right subquery: " << e.what();
+        ss << "Exception when handle right subquery: " << sentence_->right()->toString();
         LOG(ERROR) << ss.str();
         rightS_ = Status::Error(ss.str());
+        rightP_.setValue();
     };
-    auto rF = std::move(folly::makeFuture()).via(runner).then(rTask).thenError(rError);
-    futures_.emplace_back(std::move(rF));
+    folly::makeFuture().via(runner).then(rTask).thenError(rError);
 
     auto cb = [this] () {
         if (!leftS_.ok()) {
