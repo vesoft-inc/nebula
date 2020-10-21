@@ -15,6 +15,9 @@
 #include "parser/EdgeKey.h"
 #include "util/SchemaUtil.h"
 
+#include "parser/EdgeKey.h"
+#include "context/QueryExpressionContext.h"
+
 namespace nebula {
 namespace util {
 
@@ -80,7 +83,9 @@ folly::dynamic toJson(const meta::cpp2::ColumnDef &column) {
         obj.insert("nullable", folly::to<std::string>(*column.get_nullable()));
     }
     if (column.__isset.default_value) {
-        obj.insert("defaultValue", column.get_default_value()->toString());
+        graph::QueryExpressionContext ctx;
+        auto value = Expression::decode(*column.get_default_value());
+        obj.insert("defaultValue", value->toString());
     }
     return obj;
 }

@@ -15,11 +15,23 @@
 
 namespace nebula {
 namespace graph {
+class SchemaValidator : public Validator {
+public:
+    SchemaValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
 
-class CreateTagValidator final : public Validator {
+protected:
+    Status validateColumns(const std::vector<ColumnSpecification*> &columnSpecs,
+                           meta::cpp2::Schema &schema);
+protected:
+    std::string                      name_;
+};
+
+class CreateTagValidator final : public SchemaValidator {
 public:
     CreateTagValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
+        : SchemaValidator(sentence, context) {
     }
 
 private:
@@ -27,15 +39,14 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      name_;
     meta::cpp2::Schema               schema_;
     bool                             ifNotExist_;
 };
 
-class CreateEdgeValidator final : public Validator {
+class CreateEdgeValidator final : public SchemaValidator {
 public:
     CreateEdgeValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
+        : SchemaValidator(sentence, context) {
     }
 
 private:
@@ -43,7 +54,6 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                       name_;
     meta::cpp2::Schema                schema_;
     bool                              ifNotExist_;
 };
@@ -82,9 +92,6 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-private:
-    std::string                         name_;
 };
 
 class ShowCreateEdgeValidator final : public Validator {
@@ -98,10 +105,10 @@ private:
     Status toPlan() override;
 };
 
-class AlterValidator : public Validator {
+class AlterValidator : public SchemaValidator {
 public:
     AlterValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : SchemaValidator(sentence, context) {}
 
 protected:
     Status alterSchema(const std::vector<AlterSchemaOptItem*>& schemaOpts,
@@ -110,7 +117,6 @@ protected:
 protected:
     std::vector<meta::cpp2::AlterSchemaItem>          schemaItems_;
     meta::cpp2::SchemaProp                            schemaProp_;
-    std::string                                       name_;
 };
 
 class AlterTagValidator final : public AlterValidator {

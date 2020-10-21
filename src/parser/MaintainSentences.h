@@ -52,9 +52,8 @@ public:
         return defaultValue_ != nullptr;
     }
 
-    Value getDefaultValue() const {
-        graph::QueryExpressionContext ctx(nullptr);
-        return defaultValue_->eval(ctx);
+    Expression* getDefaultValue() const {
+        return defaultValue_.get();
     }
 
 private:

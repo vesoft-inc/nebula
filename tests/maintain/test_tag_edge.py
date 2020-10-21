@@ -6,6 +6,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import time
+import re
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 from tests.common.nebula_test_suite import T_EMPTY, T_NULL
@@ -77,37 +78,34 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute_query('DESCRIBE TAG person')
         self.check_resp_succeeded(resp)
         expect_result = [['name', 'string', 'YES', T_EMPTY],
-                         ['email', 'string', 'YES', T_NULL],
+                         ['email', 'string', 'YES', 'NULL'],
                          ['age', 'int64', 'YES', T_EMPTY],
                          ['gender', 'string', 'YES', T_EMPTY],
                          ['row_timestamp', 'timestamp', 'YES', 2020]]
-        # timestamp has not support
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # test DESC
         resp = self.client.execute_query('DESCRIBE TAG person')
         self.check_resp_succeeded(resp)
         expect_result = [['name', 'string', 'YES', T_EMPTY],
-                         ['email', 'string', 'YES', T_NULL],
+                         ['email', 'string', 'YES', 'NULL'],
                          ['age', 'int64', 'YES', T_EMPTY],
                          ['gender', 'string', 'YES', T_EMPTY],
                          ['row_timestamp', 'timestamp', 'YES', 2020]]
-        # timestamp has not support
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # test show create tag
         resp = self.client.execute_query('SHOW CREATE TAG person')
         self.check_resp_succeeded(resp)
         create_tag_str = 'CREATE TAG `person` (\n' \
-                         '  `name` string NULL,\n' \
-                         '  `email` string NULL DEFAULT "NULL",\n' \
-                         '  `age` int64 NULL,\n' \
-                         '  `gender` string NULL,\n' \
-                         '  `row_timestamp` timestamp NULL DEFAULT 2020\n' \
+                         ' `name` string NULL,\n' \
+                         ' `email` string NULL DEFAULT "NULL",\n' \
+                         ' `age` int64 NULL,\n' \
+                         ' `gender` string NULL,\n' \
+                         ' `row_timestamp` timestamp NULL DEFAULT 2020\n' \
                          ') ttl_duration = 0, ttl_col = ""'
-        # timestamp has not support
         expect_result = [['person', create_tag_str]]
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # check result
         resp = self.client.execute('DROP TAG person')
@@ -133,8 +131,7 @@ class TestSchema(NebulaTestSuite):
                          ['age', 'int64', 'YES', T_EMPTY],
                          ['gender', 'string', 'YES', T_EMPTY],
                          ['row_timestamp', 'timestamp', 'YES', 100]]
-        # timestamp has not support
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # existent tag
         resp = self.client.execute('CREATE TAG person(id int)')
@@ -159,28 +156,26 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute_query('DESCRIBE TAG person')
         self.check_resp_succeeded(resp)
         expect_result = [['name', 'string', 'YES', T_EMPTY],
-                         ['email', 'string', 'YES', T_EMPTY],
-                         ['age', 'int64', 'YES', T_EMPTY],
-                         ['row_timestamp', 'timestamp', 'YES', 2010],
-                         ['col1', 'int', 'YES', T_EMPTY],
+                         ['email', 'string', 'YES', 'NULL'],
+                         ['age', 'string', 'YES', T_EMPTY],
+                         ['row_timestamp', 'timestamp', 'YES', 2020],
+                         ['col1', 'int64', 'YES', T_EMPTY],
                          ['col2', 'string', 'YES', T_EMPTY]]
-        # timestamp has not support
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # check result
         resp = self.client.execute_query('SHOW CREATE TAG person')
         self.check_resp_succeeded(resp)
         create_tag_str = 'CREATE TAG `person` (\n' \
-                         '  `name` string NULL,\n' \
-                         '  `email` string NULL DEFAULT "NULL",\n' \
-                         '  `age` string NULL,\n' \
-                         '  `row_timestamp` timestamp NULL DEFAULT 2020,\n' \
-                         '  `col1` int NULL,\n' \
-                         '  `col2` string NULL\n' \
+                         ' `name` string NULL,\n' \
+                         ' `email` string NULL DEFAULT "NULL",\n' \
+                         ' `age` string NULL,\n' \
+                         ' `row_timestamp` timestamp NULL DEFAULT 2020,\n' \
+                         ' `col1` int64 NULL,\n' \
+                         ' `col2` string NULL\n' \
                          ') ttl_duration = 0, ttl_col = ""';
-        # timestamp has not support
         expect_result = [['person', create_tag_str]]
-        #self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # show tags
         resp = self.client.execute_query('SHOW TAGS')
@@ -195,7 +190,7 @@ class TestSchema(NebulaTestSuite):
 
         # Tag with expression DEFAULT value
         resp = self.client.execute('CREATE TAG default_tag_expr'
-                                   '(id int DEFAULT 3/2*4-5, '
+                                   '(id int64 DEFAULT 3/2*4-5, '
                                    'male bool DEFAULT 3 > 2, '
                                    'height double DEFAULT abs(-176.0), '
                                    'adult bool DEFAULT true && false)')
@@ -292,12 +287,12 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute_query('SHOW CREATE EDGE buy_with_default')
         self.check_resp_succeeded(resp)
         create_edge_str = 'CREATE EDGE `buy_with_default` (\n' \
-                          '  `id` int NULL,\n' \
-                          '  `name` string NULL DEFAULT "NULL",\n' \
-                          '  `time` timestamp NULL DEFAULT 2020\n' \
+                          ' `id` int64 NULL,\n' \
+                          ' `name` string NULL DEFAULT "NULL",\n' \
+                          ' `time` timestamp NULL DEFAULT 2020\n' \
                           ') ttl_duration = 0, ttl_col = "\"'
         expect_result = [['buy_with_default', create_edge_str]]
-        # self.check_result(resp, expect_result)
+        self.check_result(resp, expect_result)
 
         # create edge succeed
         resp = self.client.execute('CREATE EDGE education(id int, time timestamp, school string)')
@@ -485,10 +480,10 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # fetch
-        # resp = self.client.execute('FETCH PROP ON t 1')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['N/A'], [-1], ['NONE']]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.client.execute_query('FETCH PROP ON t "1"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['1', 'N/A', -1, 'none']]
+        self.check_out_of_order_result(resp, expect_result)
 
         # alter drop
         resp = self.client.execute('ALTER TAG t CHANGE (description string NOT NULL)')
@@ -500,10 +495,10 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # fetch
-        # resp = self.client.execute('FETCH PROP ON t "1"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['N/A'], [-1], ['some one']]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.client.execute_query('FETCH PROP ON t "1"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['1', 'N/A', -1, 'some one']]
+        self.check_out_of_order_result(resp, expect_result)
 
         # insert without default prop, failed
         resp = self.client.execute('INSERT VERTEX t() VALUES "1":()')
@@ -524,10 +519,10 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # fetch
-        # resp = self.client.execute('FETCH PROP ON e "1"->"2"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['N/A'], [-1], ['NONE']]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.client.execute_query('FETCH PROP ON e "1"->"2"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['1', '2', 0, 'N/A', -1, 'none']]
+        self.check_out_of_order_result(resp, expect_result)
 
         # alter drop
         resp = self.client.execute('ALTER EDGE e CHANGE (description string NOT NULL)')
@@ -541,14 +536,81 @@ class TestSchema(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # fetch
-        # resp = self.client.execute('FETCH PROP ON e "1"->"2"')
-        # self.check_resp_succeeded(resp)
-        # expect_result = [['N/A'], [-1], ['some one']]
-        # self.check_out_of_order_result(resp, expect_result)
+        resp = self.client.execute_query('FETCH PROP ON e "1"->"2"')
+        self.check_resp_succeeded(resp)
+        expect_result = [['1', '2', 0, 'N/A', -1, 'some one']]
+        self.check_out_of_order_result(resp, expect_result)
 
         # insert without default prop, failed
         resp = self.client.execute('INSERT EDGE e() VALUES "1"->"2":()')
         self.check_resp_failed(resp)
+
+    def test_create_tag_with_function_default_value(self):
+        resp = self.client.execute('CREATE TAG tag_function(name string DEFAULT "N/A", '
+                                   'birthday timestamp DEFAULT now())')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC TAG tag_function;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'YES', 'N/A'],
+                         ['birthday', 'timestamp', 'YES', 'now()']]
+        self.check_result(resp, expect_result)
+
+        resp = self.client.execute_query('SHOW CREATE TAG tag_function;')
+        self.check_resp_succeeded(resp)
+        create_tag_str = 'CREATE TAG `tag_function` (\n' \
+                         ' `name` string NULL DEFAULT "N/A",\n' \
+                         ' `birthday` timestamp NULL DEFAULT now()\n' \
+                         ') ttl_duration = 0, ttl_col = ""'
+        expect_result = [['tag_function', create_tag_str]]
+        self.check_result(resp, expect_result)
+
+        current_timestamp = int(time.time())
+        time.sleep(self.delay)
+        # insert successed
+        resp = self.client.execute('INSERT VERTEX tag_function() VALUES "a":()')
+        self.check_resp_succeeded(resp)
+
+        # fetch
+        resp = self.client.execute_query('FETCH PROP ON tag_function "a"')
+        self.check_resp_succeeded(resp)
+        expect_result = [[re.compile('a'), re.compile('N/A'), re.compile(r'\d+')]]
+        self.check_result(resp, expect_result, is_regex = True)
+        assert(resp.data.rows[0].values[2].get_iVal() > current_timestamp)
+
+    def test_create_edge_with_function_default_value(self):
+        resp = self.client.execute('CREATE EDGE edge_function(name string DEFAULT "N/A", '
+                                   'birthday timestamp DEFAULT now())')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC EDGE edge_function;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'YES', 'N/A'],
+                         ['birthday', 'timestamp', 'YES', 'now()']]
+        self.check_result(resp, expect_result)
+
+        resp = self.client.execute_query('SHOW CREATE EDGE edge_function;')
+        self.check_resp_succeeded(resp)
+        create_tag_str = 'CREATE EDGE `edge_function` (\n' \
+                         ' `name` string NULL DEFAULT "N/A",\n' \
+                         ' `birthday` timestamp NULL DEFAULT now()\n' \
+                         ') ttl_duration = 0, ttl_col = ""'
+        expect_result = [['edge_function', create_tag_str]]
+        self.check_result(resp, expect_result)
+
+        current_timestamp = int(time.time())
+        time.sleep(self.delay)
+        # insert successed
+        resp = self.client.execute('INSERT EDGE edge_function() VALUES "a"->"b":()')
+        self.check_resp_succeeded(resp)
+
+        # fetch
+        resp = self.client.execute_query('FETCH PROP ON edge_function "a"->"b"')
+        self.check_resp_succeeded(resp)
+        expect_result = [[re.compile('a'), re.compile('b'), re.compile(r'\d+'), re.compile('N/A'), re.compile(r'\d+')]]
+        self.check_result(resp, expect_result, is_regex = True)
+        assert(resp.data.rows[0].values[4].get_iVal() > current_timestamp)
+
 
     def test_alter_edge_with_timestamp_default(self):
         resp = self.client.execute('CREATE SPACE issue2009(vid_type = FIXED_STRING(20)); USE issue2009')

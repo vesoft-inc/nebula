@@ -24,9 +24,6 @@ public:
     SchemaUtil() = delete;
 
 public:
-    static Status validateColumns(const std::vector<ColumnSpecification*> &columnSpecs,
-                                  meta::cpp2::Schema &schema);
-
     static Status validateProps(const std::vector<SchemaPropItem*> &schemaProps,
                                 meta::cpp2::Schema &schema);
 

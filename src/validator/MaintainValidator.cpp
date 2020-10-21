@@ -6,6 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
+#include "common/expression/ConstantExpression.h"
 
 #include "util/SchemaUtil.h"
 #include "util/IndexUtil.h"
@@ -17,6 +18,56 @@
 
 namespace nebula {
 namespace graph {
+
+Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification*> &columnSpecs,
+                                        meta::cpp2::Schema &schema) {
+    auto status = Status::OK();
+    std::unordered_set<std::string> nameSet;
+    for (auto& spec : columnSpecs) {
+        if (nameSet.find(*spec->name()) != nameSet.end()) {
+            return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
+        }
+        nameSet.emplace(*spec->name());
+        meta::cpp2::ColumnDef column;
+        auto type = spec->type();
+        column.set_name(*spec->name());
+        column.type.set_type(type);
+        column.set_nullable(spec->isNull());
+        if (meta::cpp2::PropertyType::FIXED_STRING == type) {
+            column.type.set_type_length(spec->typeLen());
+        }
+
+        if (spec->isNull()) {
+            column.set_nullable(true);
+        }
+
+        if (spec->hasDefaultValue()) {
+            if (!evaluableExpr(spec->getDefaultValue())) {
+                return Status::SemanticError("Wrong default value experssion `%s'",
+                                              spec->getDefaultValue()->toString().c_str());
+            }
+            QueryExpressionContext ctx;
+            auto defaultValueExpr = spec->getDefaultValue();
+            auto& value = defaultValueExpr->eval(ctx(nullptr));
+            auto valStatus = SchemaUtil::toSchemaValue(type, value);
+            if (!valStatus.ok()) {
+                return valStatus.status();
+            }
+            // When the timestamp value is string, need to save the int value,
+            // TODO: if support timestamp value is an expression, need to remove the code
+            if (type == meta::cpp2::PropertyType::TIMESTAMP && value.isStr()) {
+                ConstantExpression newExpr(std::move(valStatus).value());
+                column.set_default_value(newExpr.encode());
+            } else {
+                column.set_default_value(defaultValueExpr->encode());
+            }
+        }
+        schema.columns.emplace_back(std::move(column));
+    }
+
+    return Status::OK();
+}
+
 Status CreateTagValidator::validateImpl() {
     auto sentence = static_cast<CreateTagSentence*>(sentence_);
     auto status = Status::OK();
@@ -31,7 +82,7 @@ Status CreateTagValidator::validateImpl() {
             break;
         }
 
-        status = SchemaUtil::validateColumns(sentence->columnSpecs(), schema_);
+        status = validateColumns(sentence->columnSpecs(), schema_);
         if (!status.ok()) {
             VLOG(1) << status;
             break;
@@ -73,7 +124,7 @@ Status CreateEdgeValidator::validateImpl() {
             break;
         }
 
-        status = SchemaUtil::validateColumns(sentence->columnSpecs(), schema_);
+        status = validateColumns(sentence->columnSpecs(), schema_);
         if (!status.ok()) {
             VLOG(1) << status;
             break;
@@ -144,21 +195,7 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem*>& schem
                 }
             } else {
                 const auto& specs = schemaOpt->columnSpecs();
-                for (auto& spec : specs) {
-                    meta::cpp2::ColumnDef column;
-                    column.name = *spec->name();
-                    column.type.set_type(spec->type());
-                    if (spec->hasDefaultValue()) {
-                        column.set_default_value(spec->getDefaultValue());
-                    }
-                    if (spec->type() == meta::cpp2::PropertyType::FIXED_STRING) {
-                        column.type.set_type_length(spec->typeLen());
-                    }
-                    if (spec->isNull()) {
-                        column.set_nullable(true);
-                    }
-                    schema.columns.emplace_back(std::move(column));
-                }
+                NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
             }
 
             schemaItem.set_schema(std::move(schema));
