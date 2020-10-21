@@ -24,14 +24,14 @@ ResultSchemaProvider::ResultSchemaField::ResultSchemaField(
         bool nullable,
         int32_t offset,
         size_t nullFlagPos,
-        Value defaultValue)
+        Expression* defaultValue)
     : name_(std::move(name))
     , type_(type)
     , size_(size)
     , nullable_(nullable)
     , offset_(offset)
     , nullFlagPos_(nullFlagPos)
-    , defaultValue_(std::move(defaultValue)) {}
+    , defaultValue_(defaultValue) {}
 
 
 const char* ResultSchemaProvider::ResultSchemaField::name() const {
@@ -45,7 +45,7 @@ PropertyType ResultSchemaProvider::ResultSchemaField::type() const {
 
 
 bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
-    return !defaultValue_.empty();
+    return defaultValue_ != nullptr;
 }
 
 
@@ -54,8 +54,8 @@ bool ResultSchemaProvider::ResultSchemaField::nullable() const {
 }
 
 
-const Value& ResultSchemaProvider::ResultSchemaField::defaultValue() const {
-    return defaultValue_;
+Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const {
+    return defaultValue_.get();
 }
 
 

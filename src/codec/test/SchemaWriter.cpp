@@ -17,7 +17,7 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       PropertyType type,
                                       int32_t fixedStrLen,
                                       bool nullable,
-                                      Value defaultValue) noexcept {
+                                      Expression* defaultValue) noexcept {
     using folly::hash::SpookyHashV2;
     uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
     DCHECK(nameIndex_.find(hash) == nameIndex_.end());
@@ -90,7 +90,7 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                           nullable,
                           offset,
                           nullFlagPos,
-                          std::move(defaultValue));
+                          defaultValue);
     nameIndex_.emplace(std::make_pair(hash, columns_.size() - 1));
 
     return *this;

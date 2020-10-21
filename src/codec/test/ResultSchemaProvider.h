@@ -22,13 +22,13 @@ public:
                                    bool nullable,
                                    int32_t offset,
                                    size_t nullFlagPos,
-                                   Value defaultValue = Value());
+                                   Expression* defaultValue = nullptr);
 
         const char* name() const override;
         meta::cpp2::PropertyType type() const override;
         bool nullable() const override;
         bool hasDefault() const override;
-        const Value& defaultValue() const override;
+        Expression* defaultValue() const override;
         size_t size() const override;
         size_t offset() const override;
         size_t nullFlagPos() const override;
@@ -40,7 +40,7 @@ public:
         bool nullable_;
         int32_t offset_;
         size_t nullFlagPos_;
-        Value defaultValue_;
+        std::unique_ptr<Expression> defaultValue_;
     };
 
 

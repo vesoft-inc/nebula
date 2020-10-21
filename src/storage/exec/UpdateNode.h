@@ -53,7 +53,7 @@ public:
     kvstore::ResultCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
                                               const std::string& name) {
         if (field->hasDefault()) {
-            props_[name] = field->defaultValue();
+            props_[field->name()] = Expression::eval(field->defaultValue(), *expCtx_);
         } else if (field->nullable()) {
             props_[name] = Value::kNullValue;
         } else {

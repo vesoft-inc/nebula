@@ -549,9 +549,8 @@ TEST(ProcessorTest, CreateTagTest) {
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
         columnWithDefault.type.set_type(PropertyType::BOOL);
-        nebula::Value defaultValue;
-        defaultValue.setStr("default value");
-        columnWithDefault.set_default_value(std::move(defaultValue));
+        ConstantExpression strValue("default value");;
+        columnWithDefault.set_default_value(Expression::encode(strValue));
 
         colsWithDefault.push_back(std::move(columnWithDefault));
         schemaWithDefault.set_columns(std::move(colsWithDefault));
@@ -574,9 +573,8 @@ TEST(ProcessorTest, CreateTagTest) {
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_value_mismatch"));
         columnWithDefault.type.set_type(PropertyType::INT8);
-        nebula::Value defaultValue;
-        defaultValue.setInt(256);
-        columnWithDefault.set_default_value(std::move(defaultValue));
+        ConstantExpression intValue(256);;
+        columnWithDefault.set_default_value(Expression::encode(intValue));
 
         colsWithDefault.push_back(std::move(columnWithDefault));
         schemaWithDefault.set_columns(std::move(colsWithDefault));

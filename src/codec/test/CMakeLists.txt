@@ -23,6 +23,8 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:common_conf_obj>
     $<TARGET_OBJECTS:common_meta_obj>
     $<TARGET_OBJECTS:common_time_function_obj>
+    $<TARGET_OBJECTS:common_expression_obj>
+    $<TARGET_OBJECTS:common_function_manager_obj>
 )
 
 

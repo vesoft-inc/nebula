@@ -7,6 +7,7 @@
 #include "storage/context/StorageExpressionContext.h"
 #include <utils/IndexKeyUtils.h>
 #include "utils/NebulaKeyUtils.h"
+#include "utils/DefaultValueContext.h"
 
 namespace nebula {
 namespace storage {
@@ -24,7 +25,8 @@ Value StorageExpressionContext::readValue(const std::string& propName) const {
         // read null value
         auto nullType = value.getNull();
         if (nullType == NullType::UNKNOWN_PROP && field->hasDefault()) {
-            return field->defaultValue();
+            DefaultValueContext expCtx;
+            return Value(Expression::eval(field->defaultValue(), expCtx));
         }
         return Value::kNullValue;
     }

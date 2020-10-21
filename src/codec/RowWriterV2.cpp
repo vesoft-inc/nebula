@@ -4,8 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "codec/RowWriterV2.h"
 #include "common/function/TimeFunction.h"
+
+#include "codec/RowWriterV2.h"
+#include "utils/DefaultValueContext.h"
 
 namespace nebula {
 
@@ -796,6 +798,7 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
 
 
 WriteResult RowWriterV2::checkUnsetFields() noexcept {
+    DefaultValueContext expCtx;
     for (size_t i = 0; i < schema_->getNumFields(); i++) {
         if (!isSet_[i]) {
             auto field = schema_->field(i);
@@ -806,7 +809,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
 
             WriteResult r = WriteResult::SUCCEEDED;
             if (field->hasDefault()) {
-                const auto& defVal = field->defaultValue();
+                const auto& defVal = Expression::eval(field->defaultValue(), expCtx);
                 switch (defVal.type()) {
                     case Value::Type::NULLVALUE:
                         setNullBit(field->nullFlagPos());

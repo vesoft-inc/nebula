@@ -5,6 +5,7 @@
  */
 
 #include "common/base/Base.h"
+#include "common/expression/ConstantExpression.h"
 #include <gtest/gtest.h>
 #include "codec/RowWriterV2.h"
 #include "codec/RowReaderWrapper.h"
@@ -198,9 +199,9 @@ TEST(RowWriterV2, NoDefaultValue) {
 TEST(RowWriterV2, WithDefaultValue) {
     SchemaWriter schema(7 /*Schema version*/);
     schema.appendCol("Col01", PropertyType::BOOL, 0, true);
-    schema.appendCol("Col02", PropertyType::INT64, 0, false, 12345);
-    schema.appendCol("Col03", PropertyType::STRING, 0, true, str);
-    schema.appendCol("Col04", PropertyType::FIXED_STRING, 12, false, fixed);
+    schema.appendCol("Col02", PropertyType::INT64, 0, false, new ConstantExpression(12345));
+    schema.appendCol("Col03", PropertyType::STRING, 0, true, new ConstantExpression(str));
+    schema.appendCol("Col04", PropertyType::FIXED_STRING, 12, false, new ConstantExpression(fixed));
 
     RowWriterV2 writer(&schema);
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());

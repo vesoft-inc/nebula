@@ -7,12 +7,14 @@
 #ifndef STORAGE_EXEC_QUERYUTILS_H_
 #define STORAGE_EXEC_QUERYUTILS_H_
 
-namespace nebula {
-namespace storage {
-
 #include "common/base/Base.h"
+#include "common/expression/Expression.h"
 #include "storage/CommonUtils.h"
 #include "storage/query/QueryBaseProcessor.h"
+#include "utils/DefaultValueContext.h"
+
+namespace nebula {
+namespace storage {
 
 class QueryUtils final {
 public:
@@ -27,7 +29,8 @@ public:
             if (nullType == NullType::UNKNOWN_PROP) {
                 VLOG(1) << "Fail to read prop " << propName;
                 if (field->hasDefault()) {
-                    return field->defaultValue();
+                    DefaultValueContext expCtx;
+                    return Expression::eval(field->defaultValue(), expCtx);
                 } else if (field->nullable()) {
                     return NullType::__NULL__;
                 }

@@ -121,9 +121,8 @@ TEST(MetaClientTest, InterfacesTest) {
                 cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
-                nebula::Value defaultValue;
-                defaultValue.setStr(std::to_string(i));
-                column.default_value = defaultValue;
+                ConstantExpression defaultValue(std::to_string(i));
+                column.default_value = Expression::encode(defaultValue);
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
@@ -150,9 +149,8 @@ TEST(MetaClientTest, InterfacesTest) {
                 cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
-                nebula::Value defaultValue;
-                defaultValue.setStr(std::to_string(i));
-                column.default_value = defaultValue;
+                ConstantExpression defaultValue(std::to_string(i));
+                column.default_value = Expression::encode(defaultValue);
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
@@ -368,22 +366,21 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<cpp2::ColumnDef> columns;
-        Value defaultValue;
-        defaultValue.setInt(0);
         columns.emplace_back();
         columns.back().set_name("column_i");
-        columns.back().set_default_value(defaultValue);
+        ConstantExpression intValue(Value(0L));
+        columns.back().set_default_value(Expression::encode(intValue));
         columns.back().type.set_type(PropertyType::INT64);
 
-        defaultValue.setFloat(3.14);
         columns.emplace_back();
-        columns.back().set_default_value(defaultValue);
+        ConstantExpression floatValue(Value(3.14));
+        columns.back().set_default_value(Expression::encode(floatValue));
         columns.back().set_name("column_d");
         columns.back().type.set_type(PropertyType::DOUBLE);
 
-        defaultValue.setStr("test");
         columns.emplace_back();
-        columns.back().set_default_value(defaultValue);
+        ConstantExpression strValue("test");
+        columns.back().set_default_value(Expression::encode(strValue));
         columns.back().set_name("column_s");
         columns.back().type.set_type(PropertyType::STRING);
 
@@ -398,17 +395,15 @@ TEST(MetaClientTest, TagTest) {
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
         intColumn.type.set_type(PropertyType::INT64);
-        nebula::Value intValue;
-        intValue.setInt(0);
-        intColumn.set_default_value(intValue);
+        ConstantExpression intValue(Value(0L));
+        intColumn.set_default_value(Expression::encode(intValue));
         columns.emplace_back(std::move(intColumn));
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
         doubleColumn.type.set_type(PropertyType::STRING);
-        nebula::Value doubleValue;
-        doubleValue.setFloat(3.14);
-        doubleColumn.set_default_value(doubleValue);
+        ConstantExpression floatValue(Value(3.14));
+        doubleColumn.set_default_value(Expression::encode(floatValue));
         columns.emplace_back(std::move(doubleColumn));
 
         cpp2::Schema schema;
@@ -481,25 +476,22 @@ TEST(MetaClientTest, EdgeTest) {
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
         intColumn.type.set_type(PropertyType::INT64);
-        nebula::Value intValue;
-        intValue.setInt(0);
-        intColumn.set_default_value(intValue);
+        ConstantExpression intValue(Value(0L));
+        intColumn.set_default_value(Expression::encode(intValue));
         columns.emplace_back(std::move(intColumn));
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
         doubleColumn.type.set_type(PropertyType::DOUBLE);
-        nebula::Value doubleValue;
-        doubleValue.setFloat(3.14);
-        doubleColumn.set_default_value(doubleValue);
+        ConstantExpression floatValue(Value(3.14));
+        doubleColumn.set_default_value(Expression::encode(floatValue));
         columns.emplace_back(std::move(doubleColumn));
 
         cpp2::ColumnDef stringColumn;
         stringColumn.set_name("column_s");
         stringColumn.type.set_type(PropertyType::STRING);
-        nebula::Value stringValue;
-        stringValue.setStr("test");
-        stringColumn.set_default_value(stringValue);
+        ConstantExpression strValue("test");
+        stringColumn.set_default_value(Expression::encode(strValue));
         columns.emplace_back(std::move(stringColumn));
         expectedColumns = columns;
 
@@ -513,17 +505,15 @@ TEST(MetaClientTest, EdgeTest) {
         cpp2::ColumnDef intColumn;
         intColumn.set_name("column_i");
         intColumn.type.set_type(PropertyType::INT64);
-        nebula::Value intValue;
-        intValue.setInt(0);
-        intColumn.set_default_value(intValue);
+        ConstantExpression intValue(Value(0L));
+        intColumn.set_default_value(Expression::encode(intValue));
         columns.emplace_back(std::move(intColumn));
 
         cpp2::ColumnDef doubleColumn;
         doubleColumn.set_name("column_d");
         doubleColumn.type.set_type(PropertyType::STRING);
-        nebula::Value doubleValue;
-        doubleValue.setFloat(3.14);
-        doubleColumn.set_default_value(doubleValue);
+        ConstantExpression floatValue(Value(3.14));
+        doubleColumn.set_default_value(Expression::encode(floatValue));
         columns.emplace_back(std::move(doubleColumn));
         cpp2::Schema schema;
         schema.set_columns(columns);

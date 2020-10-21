@@ -8,6 +8,7 @@
 #define CODEC_TEST_SCHEMAWRITER_H_
 
 #include "common/base/Base.h"
+#include "common/expression/Expression.h"
 #include "codec/test/ResultSchemaProvider.h"
 
 namespace nebula {
@@ -21,7 +22,7 @@ public:
                             meta::cpp2::PropertyType type,
                             int32_t fixedStrLen = 0,
                             bool nullable = false,
-                            Value defaultValue = Value()) noexcept;
+                            Expression* defaultValue = nullptr) noexcept;
 
 private:
 };
