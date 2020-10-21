@@ -35,9 +35,9 @@ public:
     StatusOr<IndexID>
     toEdgeIndexID(GraphSpaceID space, std::string edgeName) override;
 
-    Status checkTagIndexed(GraphSpaceID space, TagID tagID) override;
+    Status checkTagIndexed(GraphSpaceID space, IndexID index) override;
 
-    Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) override;
+    Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override;
 
     void init(MetaClient *client) override;
 

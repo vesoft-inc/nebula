@@ -427,12 +427,12 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId,
 }
 
 
-Status MetaClient::checkTagIndexed(GraphSpaceID space, TagID tagID) {
+Status MetaClient::checkTagIndexed(GraphSpaceID space, IndexID indexID) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(space);
     if (it != localCache_.end()) {
-        auto tagIt = it->second->tagIndexes_.find(tagID);
-        if (tagIt != it->second->tagIndexes_.end()) {
+        auto indexIt = it->second->tagIndexes_.find(indexID);
+        if (indexIt != it->second->tagIndexes_.end()) {
             return Status::OK();
         } else {
             return Status::IndexNotFound();
@@ -442,12 +442,12 @@ Status MetaClient::checkTagIndexed(GraphSpaceID space, TagID tagID) {
 }
 
 
-Status MetaClient::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) {
+Status MetaClient::checkEdgeIndexed(GraphSpaceID space, IndexID indexID) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(space);
     if (it != localCache_.end()) {
-        auto edgeIt = it->second->edgeIndexes_.find(edgeType);
-        if (edgeIt != it->second->edgeIndexes_.end()) {
+        auto indexIt = it->second->edgeIndexes_.find(indexID);
+        if (indexIt != it->second->edgeIndexes_.end()) {
             return Status::OK();
         } else {
             return Status::IndexNotFound();

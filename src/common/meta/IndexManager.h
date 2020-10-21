@@ -41,9 +41,9 @@ public:
     virtual StatusOr<IndexID>
     toEdgeIndexID(GraphSpaceID space, std::string edgeName) = 0;
 
-    virtual Status checkTagIndexed(GraphSpaceID space, TagID tagID) = 0;
+    virtual Status checkTagIndexed(GraphSpaceID space, IndexID index) = 0;
 
-    virtual Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) = 0;
+    virtual Status checkEdgeIndexed(GraphSpaceID space, IndexID index) = 0;
 
 protected:
     IndexManager() = default;

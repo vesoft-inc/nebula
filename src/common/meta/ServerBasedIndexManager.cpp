@@ -59,12 +59,12 @@ ServerBasedIndexManager::toEdgeIndexID(GraphSpaceID space, std::string edgeName)
     return status.value()->get_index_id();
 }
 
-Status ServerBasedIndexManager::checkTagIndexed(GraphSpaceID space, TagID tagID) {
-    return metaClient_->checkTagIndexed(space, tagID);
+Status ServerBasedIndexManager::checkTagIndexed(GraphSpaceID space, IndexID index) {
+    return metaClient_->checkTagIndexed(space, index);
 }
 
-Status ServerBasedIndexManager::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) {
-    return metaClient_->checkEdgeIndexed(space, edgeType);
+Status ServerBasedIndexManager::checkEdgeIndexed(GraphSpaceID space, IndexID index) {
+    return metaClient_->checkEdgeIndexed(space, index);
 }
 
 }  // namespace meta

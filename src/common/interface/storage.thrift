@@ -539,11 +539,10 @@ struct LookupIndexResp {
     //
     // When returning the data for the edge index, it follows this convention:
     // 1. The name of the first column is "_src", it's the ID of the source vertex
-    // 2. The name of the second column is "_type", it's the edge type
-    // 3. The name of the third column is "_ranking", it's the edge ranking
-    // 4. The name of the fource column is "_dst", it's the ID of the destination
+    // 2. The name of the second column is "_ranking", it's the edge ranking
+    // 3. The name of the third column is "_dst", it's the ID of the destination
     //    vertex
-    // 5. Starting from the fifth column, it's the edge property, one column per
+    // 4. Starting from the fourth column, it's the edge property, one column per
     //    peoperty. The column name is in the form of "edge_type_name.prop_name".
     //    If the vertex does NOT have the given property, the value will be a NULL
     2: optional common.DataSet          data,
@@ -569,7 +568,9 @@ struct IndexQueryContext {
     // Used for secondary filtering from a result set
     2: binary                   filter,
     // There are two types of scan: 1, range scan; 2, match scan (prefix);
-    // The columns_hints are not allowed to be empty, At least one index column must be hit.
+    // When the field size of index_id IndexItem is not zero, the columns_hints are not allowed
+    //    to be empty, At least one index column must be hit.
+    // When the field size of index_id IndexItem is zero, the columns_hints must be empty.
     3: list<IndexColumnHint>    column_hints,
 }
 
