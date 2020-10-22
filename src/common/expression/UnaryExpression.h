@@ -15,10 +15,8 @@ class UnaryExpression final : public Expression {
     friend class Expression;
 
 public:
-    UnaryExpression(Kind kind,
-                    Expression* operand = nullptr)
-        : Expression(kind)
-        , operand_(std::move(operand)) {}
+    explicit UnaryExpression(Kind kind, Expression* operand = nullptr)
+        : Expression(kind), operand_(operand) {}
 
     bool operator==(const Expression& rhs) const override;
 

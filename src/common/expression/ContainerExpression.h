@@ -66,18 +66,13 @@ public:
 
     const Value& eval(ExpressionContext &ctx) override;
 
-    std::vector<const Expression*> items() const {
-        std::vector<const Expression*> items;
-        items.reserve(items_.size());
-        for (auto &item : items_) {
-            items.emplace_back(item.get());
-        }
-        return items;
+    const std::vector<std::unique_ptr<Expression>> &items() const {
+        return items_;
     }
 
-    void setItem(size_t index, Expression *item) {
+    void setItem(size_t index, std::unique_ptr<Expression> item) {
         DCHECK_LT(index, items_.size());
-        items_[index].reset(item);
+        items_[index] = std::move(item);
     }
 
     std::vector<std::unique_ptr<Expression>> get() && {
@@ -129,18 +124,13 @@ public:
 
     const Value& eval(ExpressionContext &ctx) override;
 
-    std::vector<const Expression*> items() const {
-        std::vector<const Expression*> items;
-        items.reserve(items_.size());
-        for (auto &item : items_) {
-            items.emplace_back(item.get());
-        }
-        return items;
+    const std::vector<std::unique_ptr<Expression>> &items() const {
+        return items_;
     }
 
-    void setItem(size_t index, Expression *item) {
+    void setItem(size_t index, std::unique_ptr<Expression> item) {
         DCHECK_LT(index, items_.size());
-        items_[index].reset(item);
+        items_[index] = std::move(item);
     }
 
     std::vector<std::unique_ptr<Expression>> get() && {
@@ -182,6 +172,8 @@ private:
 
 class MapExpression final : public Expression {
 public:
+    using Item = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
+
     MapExpression() : Expression(Kind::kMap) {
     }
 
@@ -192,16 +184,10 @@ public:
 
     const Value& eval(ExpressionContext &ctx) override;
 
-    std::vector<std::pair<const std::string*, const Expression*>> items() const {
-        std::vector<std::pair<const std::string*, const Expression*>> items;
-        items.reserve(items_.size());
-        for (auto &item : items_) {
-            items.emplace_back(item.first.get(), item.second.get());
-        }
-        return items;
+    const std::vector<Item> &items() const {
+        return items_;
     }
 
-    using Item = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
     void setItems(std::vector<Item> items) {
         items_ = std::move(items);
     }

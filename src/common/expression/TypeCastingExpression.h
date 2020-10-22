@@ -15,11 +15,9 @@ class TypeCastingExpression final : public Expression {
     friend class Expression;
 
 public:
-    TypeCastingExpression(Value::Type vType = Value::Type::__EMPTY__,
-                          Expression* operand = nullptr)
-        : Expression(Kind::kTypeCasting)
-        , vType_(vType)
-        , operand_(std::move(operand)) {}
+    explicit TypeCastingExpression(Value::Type vType = Value::Type::__EMPTY__,
+                                   Expression* operand = nullptr)
+        : Expression(Kind::kTypeCasting), vType_(vType), operand_(operand) {}
 
     bool operator==(const Expression& rhs) const override;
 

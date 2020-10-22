@@ -23,10 +23,6 @@ public:
         args_.emplace_back(std::move(arg));
     }
 
-    auto moveArgs() {
-        return std::move(args_);
-    }
-
     const auto& args() const {
         return args_;
     }
@@ -37,6 +33,11 @@ public:
 
     size_t numArgs() const {
         return args_.size();
+    }
+
+    void setArg(size_t i, std::unique_ptr<Expression> arg) {
+        DCHECK_LT(i, numArgs());
+        args_[i] = std::move(arg);
     }
 
     void setArgs(std::vector<std::unique_ptr<Expression>> args) {
