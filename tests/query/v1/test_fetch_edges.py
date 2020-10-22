@@ -255,9 +255,21 @@ class TestFetchEdges(NebulaTestSuite):
 
         query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs" YIELD serve.start_year'
         resp = self.execute_query(query)
-        # TODO:: here must return empty
-        expect_result = [[T_EMPTY, T_EMPTY, T_EMPTY, T_EMPTY]]
+        expect_columns_name = ['serve._src',
+                               'serve._dst',
+                               'serve._rank',
+                               'serve.start_year']
+        expect_result = []
         self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_columns_name)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # exists and not exists
+        query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs", "Boris Diaw"->"Hawks" YIELD serve.start_year'
+        resp = self.execute_query(query)
+        expect_result = [["Boris Diaw", "Hawks", 0, 2003]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_columns_name)
         self.check_out_of_order_result(resp, expect_result)
 
     def test_fetch_edges_not_duplicate_column(self):

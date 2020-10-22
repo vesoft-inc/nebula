@@ -189,6 +189,10 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
             }
             return Status::OK();
         }
+        case PlanNode::Kind::kFilter: {
+            // TODO
+            return Status::OK();
+        }
         default:
             LOG(FATAL) << "Unknow plan node kind " << static_cast<int>(l->kind());
     }

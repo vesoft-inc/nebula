@@ -525,6 +525,7 @@ private:
     }
 
 private:
+    // Remain result when true
     Expression*                 condition_{nullptr};
 };
 
