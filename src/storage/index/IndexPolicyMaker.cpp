@@ -78,6 +78,12 @@ bool IndexPolicyMaker::buildPolicy() {
         if (exist == scanItems_.end()) {
             break;
         }
+        // Stop build policy when last operator is range scan,
+        // And other fields will use expression filtering.
+        auto it = scanItems_.rbegin()->second;
+        if (it.endBound_.rel_ != RelationType::kEQRel) {
+            break;
+        }
     }
     // re-check operatorList_.
     // if operatorList_ is not empty, that means there are still fields to filter
