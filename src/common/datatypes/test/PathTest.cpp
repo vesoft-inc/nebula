@@ -48,6 +48,31 @@ TEST(Path, Reverse) {
     }
 }
 
+TEST(Path, removePath) {
+    {
+        Path path;
+        path.src = Vertex("1", {});
+        path.addStep(Step(Vertex("2", {}), 1, "", 0, {}));
+        path.addStep(Step(Vertex("3", {}), 1, "", 0, {}));
+
+        Path path2;
+        path2.src = Vertex("5", {});
+        path2.addStep(Step(Vertex("4", {}), 1, "", 0, {}));
+        path2.addStep(Step(Vertex("3", {}), 1, "", 0, {}));
+
+        std::vector<Path> paths;
+        paths.push_back(path);
+        paths.push_back(path2);
+
+        paths.erase(paths.begin());
+
+        std::vector<Path> expected;
+        expected.push_back(path2);
+        EXPECT_EQ(expected, paths);
+        EXPECT_EQ(expected.size(), paths.size());
+    }
+}
+
 TEST(Path, Base) {
     {
         Path path;

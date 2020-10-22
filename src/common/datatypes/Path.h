@@ -71,7 +71,7 @@ struct Step {
         return *this;
     }
 
-    Step& operator=(Step& rhs) noexcept {
+    Step& operator=(const Step& rhs) noexcept {
         if (&rhs != this) {
             dst = rhs.dst;
             type = rhs.type;
@@ -130,6 +130,22 @@ struct Path {
             os << " ";
         }
         return os.str();
+    }
+
+    Path& operator=(Path&& rhs) noexcept {
+        if (&rhs != this) {
+            src = std::move(rhs.src);
+            steps = std::move(rhs.steps);
+        }
+        return *this;
+    }
+
+    Path& operator=(const Path& rhs) noexcept {
+        if (&rhs != this) {
+            src = rhs.src;
+            steps = rhs.steps;
+        }
+        return *this;
     }
 
     bool operator==(const Path& rhs) const {
