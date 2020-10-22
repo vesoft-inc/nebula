@@ -74,6 +74,15 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             }
             break;
         }
+        case Kind::kNotContains: {
+            if (lhs.isStr() && rhs.isStr()) {
+                result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
+                    lhs.getStr().find(rhs.getStr()) != std::string::npos);
+            } else {
+                return Value::kNullBadType;
+            }
+            break;
+        }
         case Kind::kStartsWith: {
             if (lhs.isStr() && rhs.isStr()) {
                 result_ = lhs.getStr().size() >= rhs.getStr().size() &&
@@ -83,10 +92,30 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             }
             break;
         }
+        case Kind::kNotStartsWith: {
+            if (lhs.isStr() && rhs.isStr()) {
+                result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
+                    lhs.getStr().find(rhs.getStr()) == 0);
+            } else {
+                return Value::kNullBadType;
+            }
+            break;
+        }
         case Kind::kEndsWith: {
             if (lhs.isStr() && rhs.isStr()) {
-                std::size_t lhsLen = lhs.getStr().size(), rhsLen = rhs.getStr().size();
-                result_ = lhsLen >= rhsLen && lhs.getStr().rfind(rhs.getStr()) == lhsLen - rhsLen;
+                result_ = lhs.getStr().size() >= rhs.getStr().size() &&
+                    lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
+                    rhs.getStr().size(), rhs.getStr()) == 0;
+            } else {
+                return Value::kNullBadType;
+            }
+            break;
+        }
+        case Kind::kNotEndsWith: {
+            if (lhs.isStr() && rhs.isStr()) {
+                result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
+                    lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
+                    rhs.getStr().size(), rhs.getStr()) == 0);
             } else {
                 return Value::kNullBadType;
             }
@@ -128,11 +157,20 @@ std::string RelationalExpression::toString() const {
         case Kind::kContains:
             op = " CONTAINS ";
             break;
+        case Kind::kNotContains:
+            op = " NOT CONTAINS ";
+            break;
         case Kind::kStartsWith:
             op = " STARTS WITH ";
             break;
+        case Kind::kNotStartsWith:
+            op = " NOT STARTS WITH ";
+            break;
         case Kind::kEndsWith:
             op = " ENDS WITH ";
+            break;
+        case Kind::kNotEndsWith:
+            op = " NOT ENDS WITH ";
             break;
         default:
             op = " illegal symbol ";

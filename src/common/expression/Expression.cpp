@@ -296,13 +296,28 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kNotContains: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kNotContains);
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kStartsWith: {
             exp = std::make_unique<RelationalExpression>(Expression::Kind::kStartsWith);
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kNotStartsWith: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kNotStartsWith);
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kEndsWith: {
             exp = std::make_unique<RelationalExpression>(Expression::Kind::kEndsWith);
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kNotEndsWith: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kNotEndsWith);
             exp->resetFrom(decoder);
             return exp;
         }
@@ -506,11 +521,20 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
         case Expression::Kind::kContains:
             os << "Contains";
             break;
+        case Expression::Kind::kNotContains:
+            os << "NotContains";
+            break;
         case Expression::Kind::kStartsWith:
             os << "StartsWith";
             break;
+        case Expression::Kind::kNotStartsWith:
+            os << "NotStartsWith";
+            break;
         case Expression::Kind::kEndsWith:
             os << "EndsWith";
+            break;
+        case Expression::Kind::kNotEndsWith:
+            os << "NotEndsWith";
             break;
         case Expression::Kind::kSubscript:
             os << "Subscript";
