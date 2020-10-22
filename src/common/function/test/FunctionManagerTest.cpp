@@ -11,6 +11,8 @@
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/DataSet.h"
+#include "common/datatypes/Vertex.h"
+#include "common/datatypes/Edge.h"
 
 namespace nebula {
 
@@ -533,6 +535,118 @@ TEST_F(FunctionManagerTest, returnType) {
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
+    {
+        auto result = FunctionManager::getReturnType("id", {Value::Type::VERTEX});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::STRING, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("tags", {Value::Type::VERTEX});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("labels", {Value::Type::VERTEX});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("properties", {Value::Type::VERTEX});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::MAP, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("properties", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::MAP, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("type", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::STRING, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("src", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::STRING, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("dst", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::STRING, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("rank", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::INT, result.value());
+    }
+}
+
+TEST_F(FunctionManagerTest, SchemaReleated) {
+    Vertex vertex;
+    Edge edge;
+
+    vertex.vid = "vid";
+    vertex.tags.resize(2);
+    vertex.tags[0].name = "tag1";
+    vertex.tags[0].props = {
+        {"p1", 123},
+        {"p2", "123"},
+        {"p3", true},
+        {"p4", false},
+    };
+    vertex.tags[1].name = "tag2";
+    vertex.tags[1].props = {
+        {"p1", 456},
+        {"p5", "123"},
+        {"p6", true},
+        {"p7", false},
+    };
+
+    edge.src = "src";
+    edge.dst = "dst";
+    edge.type = 0;
+    edge.name = "type";
+    edge.ranking = 123;
+    edge.props = {
+        {"p1", 123},
+        {"p2", 456},
+        {"p3", true},
+        {"p4", false},
+    };
+
+#define TEST_SCHEMA_FUNCTION(fun, arg, expected)        \
+    do {                                                \
+        auto result = FunctionManager::get(fun, 1);     \
+        ASSERT_TRUE(result.ok()) << result.status();    \
+        EXPECT_EQ(expected, result.value()({arg}));     \
+    } while (false)
+
+
+    TEST_SCHEMA_FUNCTION("id", vertex, "vid");
+    TEST_SCHEMA_FUNCTION("tags", vertex, Value(List({"tag1", "tag2"})));
+    TEST_SCHEMA_FUNCTION("labels", vertex, Value(List({"tag1", "tag2"})));
+    TEST_SCHEMA_FUNCTION("properties", vertex, Value(Map({
+                    {"p1", 123},
+                    {"p2", "123"},
+                    {"p3", true},
+                    {"p4", false},
+                    {"p5", "123"},
+                    {"p6", true},
+                    {"p7", false},
+                    })));
+    TEST_SCHEMA_FUNCTION("type", edge, Value("type"));
+    TEST_SCHEMA_FUNCTION("src", edge, Value("src"));
+    TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
+    TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
+    TEST_SCHEMA_FUNCTION("properties", edge, Value(Map({
+                    {"p1", 123},
+                    {"p2", 456},
+                    {"p3", true},
+                    {"p4", false},
+                    })));
+
+#undef TEST_SCHEMA_FUNCTION
 }
 
 }   // namespace nebula

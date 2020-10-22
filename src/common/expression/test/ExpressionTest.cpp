@@ -1642,24 +1642,61 @@ TEST_F(ExpressionTest, MapAttribute) {
 }
 
 TEST_F(ExpressionTest, EdgeAttribute) {
+    Edge edge;
+    edge.name = "type";
+    edge.src = "src";
+    edge.dst = "dst";
+    edge.ranking = 123;
+    edge.props = {
+        {"Magill", "Nancy"},
+        {"Gideon", "Bible"},
+        {"Rocky", "Raccoon"},
+    };
     {
-        Edge edge;
-        edge.props = {
-            {"Magill", "Nancy"},
-            {"Gideon", "Bible"},
-            {"Rocky", "Raccoon"},
-        };
-        auto *left = new ConstantExpression(Value(std::move(edge)));
+        auto *left = new ConstantExpression(Value(edge));
         auto *right = new LabelExpression(new std::string("Rocky"));
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
         ASSERT_EQ("Raccoon", value.getStr());
     }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new LabelExpression(new std::string(kType));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("type", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new LabelExpression(new std::string(kSrc));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("src", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new LabelExpression(new std::string(kDst));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("dst", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new LabelExpression(new std::string(kRank));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(123, value.getInt());
+    }
 }
 
 TEST_F(ExpressionTest, VertexAttribute) {
     Vertex vertex;
+    vertex.vid = "vid";
     vertex.tags.resize(2);
     vertex.tags[0].props = {
         {"Venus", "Mars"},
@@ -1693,6 +1730,14 @@ TEST_F(ExpressionTest, VertexAttribute) {
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
         ASSERT_EQ("Mars", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression(new std::string("_vid"));
+        AttributeExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("vid", value.getStr());
     }
 }
 

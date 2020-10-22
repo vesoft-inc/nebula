@@ -28,6 +28,9 @@ public:
         return std::make_unique<AttributeExpression>(left()->clone().release(),
                                                      right()->clone().release());
     }
+
+private:
+    Value                       result_;
 };
 
 }   // namespace nebula
