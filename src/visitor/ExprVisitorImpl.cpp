@@ -62,8 +62,8 @@ void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
 // container expression
 void ExprVisitorImpl::visit(ListExpression *expr) {
     DCHECK(ok());
-    for (auto item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+    for (auto &item : expr->items()) {
+        item->accept(this);
         if (!ok()) {
             break;
         }
@@ -72,8 +72,8 @@ void ExprVisitorImpl::visit(ListExpression *expr) {
 
 void ExprVisitorImpl::visit(SetExpression *expr) {
     DCHECK(ok());
-    for (auto item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+    for (auto &item : expr->items()) {
+        item->accept(this);
         if (!ok()) {
             break;
         }
@@ -83,7 +83,7 @@ void ExprVisitorImpl::visit(SetExpression *expr) {
 void ExprVisitorImpl::visit(MapExpression *expr) {
     DCHECK(ok());
     for (auto &pair : expr->items()) {
-        const_cast<Expression *>(pair.second)->accept(this);
+        pair.second->accept(this);
         if (!ok()) {
             break;
         }

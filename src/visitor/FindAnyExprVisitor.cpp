@@ -39,7 +39,7 @@ void FindAnyExprVisitor::visit(ListExpression *expr) {
     findExpr(expr);
     if (found_) return;
     for (const auto &item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+        item->accept(this);
         if (found_) return;
     }
 }
@@ -48,7 +48,7 @@ void FindAnyExprVisitor::visit(SetExpression *expr) {
     findExpr(expr);
     if (found_) return;
     for (const auto &item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+        item->accept(this);
         if (found_) return;
     }
 }
@@ -57,7 +57,7 @@ void FindAnyExprVisitor::visit(MapExpression *expr) {
     findExpr(expr);
     if (found_) return;
     for (const auto &pair : expr->items()) {
-        const_cast<Expression *>(pair.second)->accept(this);
+        pair.second->accept(this);
         if (found_) return;
     }
 }

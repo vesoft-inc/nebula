@@ -55,7 +55,7 @@ private:
 
     Expression *createExpr(const LabelAttributeExpression *expr);
     std::vector<std::unique_ptr<Expression>> rewriteExprList(
-        const std::vector<const Expression *> &exprs);
+        const std::vector<std::unique_ptr<Expression>> &exprs);
     static bool isLabelAttrExpr(const Expression *expr);
 
     bool isTag_{false};

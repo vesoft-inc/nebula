@@ -53,12 +53,12 @@ protected:
 
         // Parse and get the expression list
         auto *list = static_cast<const ListExpression*>(parse(buf));
-        auto items = list->items();
+        auto &items = list->items();
         ASSERT_EQ(items_.size(), items.size());
 
         // verify
         for (auto i = 0u; i < items.size(); i++) {
-            auto *parsed = items[i];
+            auto *parsed = items[i].get();
             auto *expected = items_[i].second.get();
             ASSERT_EQ(*parsed, *expected) << "Expression: " << items_[i].first
                                           << ", Expected: " << expected->toString()

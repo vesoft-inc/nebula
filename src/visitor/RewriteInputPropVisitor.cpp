@@ -153,26 +153,24 @@ void RewriteInputPropVisitor::visit(MapExpression* expr) {
     expr->setItems(std::move(items));
 }
 
-void RewriteInputPropVisitor::visit(FunctionCallExpression *expr) {
-    auto* argList = const_cast<ArgumentList*>(expr->args());
-    auto args = argList->moveArgs();
-    for (auto iter = args.begin(); iter < args.end(); ++iter) {
-        iter->get()->accept(this);
+void RewriteInputPropVisitor::visit(FunctionCallExpression* expr) {
+    auto& args = expr->args()->args();
+    for (size_t i = 0; i < args.size(); ++i) {
+        args[i]->accept(this);
         if (ok()) {
-            *iter = std::move(result_);
+            expr->args()->setArg(i, std::move(result_));
         }
     }
-    argList->setArgs(std::move(args));
 }
 
-void RewriteInputPropVisitor::visit(TypeCastingExpression * expr) {
+void RewriteInputPropVisitor::visit(TypeCastingExpression* expr) {
     expr->operand()->accept(this);
     if (ok()) {
         expr->setOperand(result_.release());
     }
 }
 
-void RewriteInputPropVisitor::visitBinaryExpr(BinaryExpression *expr) {
+void RewriteInputPropVisitor::visitBinaryExpr(BinaryExpression* expr) {
     expr->left()->accept(this);
     if (ok()) {
         expr->setLeft(result_.release());
@@ -190,7 +188,7 @@ void RewriteInputPropVisitor::visitUnaryExpr(UnaryExpression* expr) {
     }
 }
 
-void RewriteInputPropVisitor::visitVertexEdgePropExpr(PropertyExpression * expr) {
+void RewriteInputPropVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
     PropertyExpression* propExpr = nullptr;
     switch (expr->kind()) {
         case Expression::Kind::kTagProperty: {
@@ -239,11 +237,11 @@ void RewriteInputPropVisitor::visitVertexEdgePropExpr(PropertyExpression * expr)
     result_ = std::make_unique<InputPropertyExpression>(alias);
 }
 
-void RewriteInputPropVisitor::reportError(const Expression *expr) {
+void RewriteInputPropVisitor::reportError(const Expression* expr) {
     std::stringstream ss;
     ss << "Not supported expression `" << expr->toString() << "' for RewriteInputProps.";
     status_ = Status::SemanticError(ss.str());
 }
 
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

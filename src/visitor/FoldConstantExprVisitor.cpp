@@ -96,45 +96,45 @@ void FoldConstantExprVisitor::visit(VersionedVariableExpression *expr) {
 
 // container expression
 void FoldConstantExprVisitor::visit(ListExpression *expr) {
-    auto items = expr->items();
+    auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
-        auto item = const_cast<Expression *>(items[i]);
+        auto item = items[i].get();
         item->accept(this);
         if (!canBeFolded_) {
             canBeFolded = false;
             continue;
         }
         if (item->kind() != Expression::Kind::kConstant) {
-            expr->setItem(i, fold(item));
+            expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
         }
     }
     canBeFolded_ = canBeFolded;
 }
 
 void FoldConstantExprVisitor::visit(SetExpression *expr) {
-    auto items = expr->items();
+    auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
-        auto item = const_cast<Expression *>(items[i]);
+        auto item = items[i].get();
         item->accept(this);
         if (!canBeFolded_) {
             canBeFolded = false;
             continue;
         }
         if (item->kind() != Expression::Kind::kConstant) {
-            expr->setItem(i, fold(item));
+            expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
         }
     }
     canBeFolded_ = canBeFolded;
 }
 
 void FoldConstantExprVisitor::visit(MapExpression *expr) {
-    auto items = expr->items();
+    auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
         auto &pair = items[i];
-        auto item = const_cast<Expression *>(pair.second);
+        auto item = const_cast<Expression *>(pair.second.get());
         if (!canBeFolded_) {
             canBeFolded = false;
             continue;

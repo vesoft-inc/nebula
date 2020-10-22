@@ -32,22 +32,22 @@ void CollectAllExprsVisitor::visit(FunctionCallExpression *expr) {
 
 void CollectAllExprsVisitor::visit(ListExpression *expr) {
     collectExpr(expr);
-    for (auto item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+    for (auto &item : expr->items()) {
+        item->accept(this);
     }
 }
 
 void CollectAllExprsVisitor::visit(SetExpression *expr) {
     collectExpr(expr);
-    for (auto item : expr->items()) {
-        const_cast<Expression *>(item)->accept(this);
+    for (auto &item : expr->items()) {
+        item->accept(this);
     }
 }
 
 void CollectAllExprsVisitor::visit(MapExpression *expr) {
     collectExpr(expr);
     for (const auto &pair : expr->items()) {
-        const_cast<Expression *>(pair.second)->accept(this);
+        pair.second->accept(this);
     }
 }
 

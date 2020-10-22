@@ -76,15 +76,14 @@ void RewriteSymExprVisitor::visit(LogicalExpression *expr) {
 
 // function call
 void RewriteSymExprVisitor::visit(FunctionCallExpression *expr) {
-    auto *argList = const_cast<ArgumentList *>(expr->args());
-    auto args = argList->moveArgs();
-    for (auto iter = args.begin(); iter < args.end(); ++iter) {
-        iter->get()->accept(this);
+    const auto &args = expr->args()->args();
+    for (size_t i = 0; i < args.size(); ++i) {
+        auto &arg = args[i];
+        arg->accept(this);
         if (expr_) {
-            *iter = std::move(expr_);
+            expr->args()->setArg(i, std::move(expr_));
         }
     }
-    argList->setArgs(std::move(args));
 }
 
 void RewriteSymExprVisitor::visit(UUIDExpression *expr) {
@@ -107,9 +106,9 @@ void RewriteSymExprVisitor::visit(VersionedVariableExpression *expr) {
 void RewriteSymExprVisitor::visit(ListExpression *expr) {
     const auto &items = expr->items();
     for (size_t i = 0; i < items.size(); ++i) {
-        const_cast<Expression *>(items[i])->accept(this);
+        items[i]->accept(this);
         if (expr_) {
-            expr->setItem(i, expr_.release());
+            expr->setItem(i, std::move(expr_));
         }
     }
 }
@@ -117,9 +116,9 @@ void RewriteSymExprVisitor::visit(ListExpression *expr) {
 void RewriteSymExprVisitor::visit(SetExpression *expr) {
     const auto &items = expr->items();
     for (size_t i = 0; i < items.size(); ++i) {
-        const_cast<Expression *>(items[i])->accept(this);
+        items[i]->accept(this);
         if (expr_) {
-            expr->setItem(i, expr_.release());
+            expr->setItem(i, std::move(expr_));
         }
     }
 }
@@ -127,11 +126,10 @@ void RewriteSymExprVisitor::visit(SetExpression *expr) {
 void RewriteSymExprVisitor::visit(MapExpression *expr) {
     const auto &items = expr->items();
     for (size_t i = 0; i < items.size(); ++i) {
-        const auto &key = items[i].first;
-        const auto &value = items[i].second;
-        const_cast<Expression *>(value)->accept(this);
+        items[i].second->accept(this);
         if (expr_) {
-            expr->setItem(i, std::make_pair(std::make_unique<std::string>(*key), std::move(expr_)));
+            auto key = std::make_unique<std::string>(*items[i].first);
+            expr->setItem(i, {std::move(key), std::move(expr_)});
         }
     }
 }
