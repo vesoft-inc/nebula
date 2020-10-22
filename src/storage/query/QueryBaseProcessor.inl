@@ -297,8 +297,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelGE:
         case Expression::Kind::kContains:
+        case Expression::Kind::kNotContains:
         case Expression::Kind::kStartsWith:
+        case Expression::Kind::kNotStartsWith:
         case Expression::Kind::kEndsWith:
+        case Expression::Kind::kNotEndsWith:
         case Expression::Kind::kRelNotIn:
         case Expression::Kind::kRelIn: {
             auto* relExp = static_cast<const RelationalExpression*>(exp);
