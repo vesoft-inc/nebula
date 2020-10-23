@@ -11,6 +11,7 @@
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/DataSet.h"
+#include "common/time/TimeUtils.h"
 #include "common/datatypes/Vertex.h"
 #include "common/datatypes/Edge.h"
 
@@ -201,6 +202,399 @@ TEST_F(FunctionManagerTest, functionCall) {
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({true});
         EXPECT_EQ(res, Value::kNullBadType);
+    }
+    // current time
+    static constexpr std::size_t kCurrentTimeParaNumber = 0;
+    // time from literal
+    static constexpr std::size_t kLiteralTimeParaNumber = 1;
+    // date
+    {
+        auto result = FunctionManager::get("date", kCurrentTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({});
+        EXPECT_EQ(res.type(), Value::Type::DATE);
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({true});
+        EXPECT_EQ(res, Value::kNullBadType);
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"2020-09-15"});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 9, 15))));
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 12}, {"day", 31}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 12, 31))));
+    }
+    // leap year February days
+    {
+        // 2020 is leap
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 2}, {"day", 29}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 2, 29))));
+    }
+    {
+        // 2021 is not leap
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 2}, {"day", 29}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // month different days
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 1}, {"day", 31}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2021, 1, 31))));
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 4}, {"day", 31}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // range [(−32,768, 1, 1), (32,767, 12, 31)]
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::min()},
+                                                  {"month", 1}, {"day", 1}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(std::numeric_limits<int16_t>::min(),
+                                                             1, 1))));
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::max()},
+                                                  {"month", 12}, {"day", 31}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(std::numeric_limits<int16_t>::max(),
+                                                             12, 31))));
+    }
+    // year
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", -32769}, {"month", 12}, {"day", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32768}, {"month", 12}, {"day", 31}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // month
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", -32768}, {"month", 13}, {"day", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767}, {"month", 0}, {"day", 31}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // day
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", -32768}, {"month", 11}, {"day", 0}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767}, {"month", 1}, {"day", 32}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // time
+    {
+        auto result = FunctionManager::get("time", kCurrentTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({});
+        EXPECT_EQ(res.type(), Value::Type::TIME);
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({true});
+        EXPECT_EQ(res, Value::kNullBadType);
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"20:09:15"});
+        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 20}, {"minute", 9}, {"second", 15}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
+    }
+    // range [(0, 0, 0, 0), (23, 59, 59, 999999)]
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 0}, {"minute", 0}, {"second", 0}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(0, 0, 0, 0))));
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", 59}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(23, 59, 59, 0))));
+    }
+    // hour
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", -1}, {"minute", 9}, {"second", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 24}, {"minute", 9}, {"second", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // minute
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", -1}, {"second", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 60}, {"second", 15}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // second
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", -1}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", 60}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // datetime
+    {
+        auto result = FunctionManager::get("datetime", kCurrentTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({});
+        EXPECT_EQ(res.type(), Value::Type::DATETIME);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({true});
+        EXPECT_EQ(res, Value::kNullBadType);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"2020-09-15T20:09:15"});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2020},
+                                                   {"month", 9},
+                                                   {"day", 15},
+                                                   {"hour", 20},
+                                                   {"minute", 9},
+                                                   {"second", 15}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 2020},
+                                                   {"month", 9},
+                                                   {"day", 15},
+                                                   {"hour", 20},
+                                                   {"minute", 9},
+                                                   {"second", 15}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+    }
+    // range [(−32,768, 1, 1, 0, 0, 0, 0), (32,767, 12, 31, 23, 59, 59, 999999)]
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", -32768},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 0},
+                                                   {"minute", 0},
+                                                   {"second", 0}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(-32768, 1, 1, 0, 0, 0, 0))));
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 12},
+                                                   {"day", 31},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(32767,
+                                                                     12, 31, 23, 59, 59, 0))));
+    }
+    // year
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 3276700},
+                                                   {"month", 12},
+                                                   {"day", 31},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", -3276700},
+                                                   {"month", 12},
+                                                   {"day", 31},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // month
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 13},
+                                                   {"day", 31},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 0},
+                                                   {"day", 31},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // day
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 32},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 0},
+                                                   {"hour", 23},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // hour
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 24},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", -1},
+                                                   {"minute", 59},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // minute
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 1},
+                                                   {"minute", 60},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 1},
+                                                   {"minute", -1},
+                                                   {"second", 59}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    // second
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 1},
+                                                   {"minute", 1},
+                                                   {"second", -1}})});
+        EXPECT_EQ(res, Value::kNullBadData);
+    }
+    {
+        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({Map({{"year", 32767},
+                                                   {"month", 1},
+                                                   {"day", 1},
+                                                   {"hour", 1},
+                                                   {"minute", 1},
+                                                   {"second", 60}})});
+        EXPECT_EQ(res, Value::kNullBadData);
     }
 }
 
@@ -534,6 +928,81 @@ TEST_F(FunctionManagerTest, returnType) {
             FunctionManager::getReturnType("size", {Value::Type::BOOL});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    // time
+    {
+        auto result =
+            FunctionManager::getReturnType("time", {Value::Type::BOOL});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("time", {});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::TIME);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("time", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::TIME);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("time", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::TIME);
+    }
+    // date
+    {
+        auto result =
+            FunctionManager::getReturnType("date", {Value::Type::INT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("date", {});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATE);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("date", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATE);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("date", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATE);
+    }
+    // datetime
+    {
+        auto result =
+            FunctionManager::getReturnType("datetime", {Value::Type::FLOAT});
+        ASSERT_FALSE(result.ok());
+        EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("datetime", {});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATETIME);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("datetime", {Value::Type::STRING});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATETIME);
+    }
+    {
+        auto result =
+            FunctionManager::getReturnType("datetime", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(result.value(), Value::Type::DATETIME);
     }
     {
         auto result = FunctionManager::getReturnType("id", {Value::Type::VERTEX});

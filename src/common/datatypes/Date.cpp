@@ -8,9 +8,9 @@
 
 namespace nebula {
 
-static const int64_t daysSoFar[] =
+const int64_t kDaysSoFar[] =
     {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
-static const int64_t leapDaysSoFar[] =
+const int64_t kLeapDaysSoFar[] =
     {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
 
 
@@ -31,9 +31,9 @@ int64_t Date::toInt() const {
     // Month
     if (yearsPassed % 4 == 0) {
         // Leap year
-        days += leapDaysSoFar[month - 1];
+        days += kLeapDaysSoFar[month - 1];
     } else {
-        days += daysSoFar[month - 1];
+        days += kDaysSoFar[month - 1];
     }
 
     // Day
@@ -71,13 +71,13 @@ void Date::fromInt(int64_t days) {
     while (true) {
         if (year % 4 == 0) {
             // Leap year
-            if (daysInYear <= leapDaysSoFar[month]) {
-                day = daysInYear - leapDaysSoFar[month - 1];
+            if (daysInYear <= kLeapDaysSoFar[month]) {
+                day = daysInYear - kLeapDaysSoFar[month - 1];
                 break;
             }
         } else {
-            if (daysInYear <= daysSoFar[month]) {
-                day = daysInYear - daysSoFar[month - 1];
+            if (daysInYear <= kDaysSoFar[month]) {
+                day = daysInYear - kDaysSoFar[month - 1];
                 break;
             }
         }
@@ -99,12 +99,12 @@ Date Date::operator-(int64_t days) const {
 
 
 std::string Date::toString() const {
-    // TODO(shylock) The format should depend on the locale
+    // It's in current timezone already
     return folly::stringPrintf("%d/%02d/%02d", year, month, day);
 }
 
 std::string Time::toString() const {
-    // TODO(shylock) The format should depend on the locale
+    // It's in current timezone already
     return folly::stringPrintf("%02d:%02d:%02d.%06d",
                                hour,
                                minute,
@@ -114,7 +114,7 @@ std::string Time::toString() const {
 
 
 std::string DateTime::toString() const {
-    // TODO(shylock) The format should depend on the locale
+    // It's in current timezone already
     return folly::stringPrintf("%d/%02d/%02d %02d:%02d:%02d.%06d",
                                year,
                                month,

@@ -12,6 +12,7 @@
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/DataSet.h"
+#include "common/time/TimeUtils.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
 
@@ -133,6 +134,15 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
               TypeSignature({Value::Type::SET}, Value::Type::INT),
               TypeSignature({Value::Type::DATASET}, Value::Type::INT),
              }},
+    {"time", {TypeSignature({}, Value::Type::TIME),
+              TypeSignature({Value::Type::STRING}, Value::Type::TIME),
+              TypeSignature({Value::Type::MAP}, Value::Type::TIME)}},
+    {"date", {TypeSignature({}, Value::Type::DATE),
+              TypeSignature({Value::Type::STRING}, Value::Type::DATE),
+              TypeSignature({Value::Type::MAP}, Value::Type::DATE)}},
+    {"datetime", {TypeSignature({}, Value::Type::DATETIME),
+              TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
+              TypeSignature({Value::Type::MAP}, Value::Type::DATETIME)}},
     {"id", {TypeSignature({Value::Type::VERTEX}, Value::Type::STRING),
              }},
     {"tags", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
@@ -787,6 +797,117 @@ FunctionManager::FunctionManager() {
                 default:
                     LOG(ERROR) << "size() has not been implemented for " << args[0].type();
                     return Value::kNullBadType;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["date"];
+        // 0 for corrent time
+        // 1 for string or map
+        attr.minArity_ = 0;
+        attr.maxArity_ = 1;
+        attr.body_ = [](const auto &args) -> Value {
+            switch (args.size()) {
+                case 0: {
+                    auto result = time::TimeUtils::utcDate();
+                    if (!result.ok()) {
+                        return Value::kNullBadData;
+                    }
+                    return Value(std::move(result).value());
+                }
+                case 1: {
+                    if (args[0].isStr()) {
+                        auto result = time::TimeUtils::parseDate(args[0].getStr());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::dateToUTC(result.value());
+                    } else if (args[0].isMap()) {
+                        auto result = time::TimeUtils::dateFromMap(args[0].getMap());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::dateToUTC(result.value());
+                    } else {
+                        return Value::kNullBadType;
+                    }
+                }
+                default:
+                    LOG(FATAL) << "Unexpected arguments count " << args.size();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["time"];
+        // 0 for corrent time
+        // 1 for string or map
+        attr.minArity_ = 0;
+        attr.maxArity_ = 1;
+        attr.body_ = [](const auto &args) -> Value {
+            switch (args.size()) {
+                case 0: {
+                    auto result = time::TimeUtils::utcTime();
+                    if (!result.ok()) {
+                        return Value::kNullBadData;
+                    }
+                    return Value(std::move(result).value());
+                }
+                case 1: {
+                    if (args[0].isStr()) {
+                        auto result = time::TimeUtils::parseTime(args[0].getStr());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::timeToUTC(result.value());
+                    } else if (args[0].isMap()) {
+                        auto result = time::TimeUtils::timeFromMap(args[0].getMap());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::timeToUTC(result.value());
+                    } else {
+                        return Value::kNullBadType;
+                    }
+                }
+                default:
+                    LOG(FATAL) << "Unexpected arguments count " << args.size();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["datetime"];
+        // 0 for corrent time
+        // 1 for string or map
+        attr.minArity_ = 0;
+        attr.maxArity_ = 1;
+        attr.body_ = [](const auto &args) -> Value {
+            switch (args.size()) {
+                case 0: {
+                    auto result = time::TimeUtils::utcDateTime();
+                    if (!result.ok()) {
+                        return Value::kNullBadData;
+                    }
+                    return Value(std::move(result).value());
+                }
+                case 1: {
+                    if (args[0].isStr()) {
+                        auto result = time::TimeUtils::parseDateTime(args[0].getStr());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::dateTimeToUTC(result.value());
+                    } else if (args[0].isMap()) {
+                        auto result = time::TimeUtils::dateTimeFromMap(args[0].getMap());
+                        if (!result.ok()) {
+                            return Value::kNullBadData;
+                        }
+                        return time::TimeUtils::dateTimeToUTC(result.value());
+                    } else {
+                        return Value::kNullBadData;
+                    }
+                }
+                default:
+                    LOG(FATAL) << "Unexpected arguments count " << args.size();
             }
         };
     }

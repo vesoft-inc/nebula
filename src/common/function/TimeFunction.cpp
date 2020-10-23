@@ -5,6 +5,7 @@
 */
 
 #include "common/function/TimeFunction.h"
+#include "common/time/TimeUtils.h"
 
 namespace nebula {
 
@@ -50,7 +51,7 @@ StatusOr<Timestamp> TimeFunction::toTimestamp(const Value &val) {
                 return Status::Error("Incorrect timestamp type: `%s'", val.toString().c_str());
             }
         } else {
-            if (isLeapYear(year)) {
+            if (time::TimeUtils::isLeapYear(year)) {
                 if (day > 29) {
                     return Status::Error("Incorrect timestamp type: `%s'", val.toString().c_str());
                 }
@@ -82,9 +83,5 @@ StatusOr<DateTime> TimeFunction::toDateTime(const Value&) {
     return DateTime();
 }
 
-
-bool TimeFunction::isLeapYear(int32_t year) {
-    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-}
 }  // namespace nebula
 

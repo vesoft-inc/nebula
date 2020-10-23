@@ -10,4 +10,9 @@ nebula_add_library(
     WallClock.cpp
 )
 
+nebula_add_library(
+    time_utils_obj OBJECT
+    TimeUtils.cpp
+)
+
 nebula_add_subdirectory(test)

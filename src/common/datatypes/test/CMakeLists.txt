@@ -39,7 +39,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -55,6 +57,11 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         gtest
+        ${THRIFT_LIBRARIES}
 )
