@@ -1418,6 +1418,9 @@ class TestGoQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
+    # todo: add test for NOT_CONTAINS
+    # def test_not_contains(self):
+
     def test_with_intermediate_data(self):
         # zero to zero
         stmt = "GO 0 TO 0 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"

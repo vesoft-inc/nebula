@@ -170,8 +170,12 @@ BOTH                        ([Bb][Oo][Tt][Hh])
 SUBGRAPH                    ([Ss][Uu][Bb][Gg][Rr][Aa][Pp][Hh])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
 NOT_CONTAINS                ({NOT}{blanks}{CONTAINS})
-STARTS_WITH                 ([Ss][Tt][Aa][Rr][Tt][Ss]{blanks}[Ww][Ii][Tt][Hh])
-ENDS_WITH                   ([Ee][Nn][Dd][Ss]{blanks}[Ww][Ii][Tt][Hh])
+STARTS                      ([Ss][Tt][Aa][Rr][Tt][Ss])
+STARTS_WITH                 ({STARTS}{blanks}{WITH})
+NOT_STARTS_WITH             ({NOT}{blanks}{STARTS}{blanks}{WITH})
+ENDS                        ([Ee][Nn][Dd][Ss])
+ENDS_WITH                   ({ENDS}{blanks}{WITH})
+NOT_ENDS_WITH               ({NOT}{blanks}{ENDS}{blanks}{WITH})
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -342,8 +346,12 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {SUBGRAPH}                  { return TokenType::KW_SUBGRAPH; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 {NOT_CONTAINS}              { return TokenType::KW_NOT_CONTAINS; }
+{STARTS}                    { return TokenType::KW_STARTS;}
 {STARTS_WITH}               { return TokenType::KW_STARTS_WITH;}
+{NOT_STARTS_WITH}           { return TokenType::KW_NOT_STARTS_WITH;}
+{ENDS}                      { return TokenType::KW_ENDS;}
 {ENDS_WITH}                 { return TokenType::KW_ENDS_WITH;}
+{NOT_ENDS_WITH}             { return TokenType::KW_NOT_ENDS_WITH;}
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
