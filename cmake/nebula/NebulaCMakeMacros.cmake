@@ -26,11 +26,6 @@ macro(nebula_add_executable)
             ${nebula_exec_NAME}
             PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/bench
         )
-    else()
-        nebula_link_libraries(
-            ${nebula_exec_NAME}
-            -Wl,--gdb-index
-        )
     endif()
     if(TARGET common_project)
         add_dependencies(
