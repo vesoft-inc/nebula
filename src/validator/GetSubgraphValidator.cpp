@@ -18,33 +18,13 @@ namespace nebula {
 namespace graph {
 
 Status GetSubgraphValidator::validateImpl() {
-    Status status;
     auto* gsSentence = static_cast<GetSubgraphSentence*>(sentence_);
 
-    status = validateStep(gsSentence->step(), steps_);
-    if (!status.ok()) {
-        return status;
-    }
-
-    status = validateStarts(gsSentence->from(), from_);
-    if (!status.ok()) {
-        return status;
-    }
-
-    status = validateInBound(gsSentence->in());
-    if (!status.ok()) {
-        return status;
-    }
-
-    status = validateOutBound(gsSentence->out());
-    if (!status.ok()) {
-        return status;
-    }
-
-    status = validateBothInOutBound(gsSentence->both());
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(validateStep(gsSentence->step(), steps_));
+    NG_RETURN_IF_ERROR(validateStarts(gsSentence->from(), from_));
+    NG_RETURN_IF_ERROR(validateInBound(gsSentence->in()));
+    NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));
+    NG_RETURN_IF_ERROR(validateBothInOutBound(gsSentence->both()));
 
     return Status::OK();
 }
@@ -56,13 +36,11 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
         edgeTypes_.reserve(edgeTypes_.size() + edges.size());
         for (auto* e : edges) {
             if (e->alias() != nullptr) {
-                return Status::Error("Get Subgraph not support rename edge name.");
+                return Status::SemanticError("Get Subgraph not support rename edge name.");
             }
 
             auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
-            if (!et.ok()) {
-                return et.status();
-            }
+            NG_RETURN_IF_ERROR(et);
 
             auto v = -et.value();
             edgeTypes_.emplace(v);
@@ -79,13 +57,11 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
         edgeTypes_.reserve(edgeTypes_.size() + edges.size());
         for (auto* e : out->edges()) {
             if (e->alias() != nullptr) {
-                return Status::Error("Get Subgraph not support rename edge name.");
+                return Status::SemanticError("Get Subgraph not support rename edge name.");
             }
 
             auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
-            if (!et.ok()) {
-                return et.status();
-            }
+            NG_RETURN_IF_ERROR(et);
 
             edgeTypes_.emplace(et.value());
         }
@@ -101,13 +77,11 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
         edgeTypes_.reserve(edgeTypes_.size() + edges.size());
         for (auto* e : out->edges()) {
             if (e->alias() != nullptr) {
-                return Status::Error("Get Subgraph not support rename edge name.");
+                return Status::SemanticError("Get Subgraph not support rename edge name.");
             }
 
             auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
-            if (!et.ok()) {
-                return et.status();
-            }
+            NG_RETURN_IF_ERROR(et);
 
             auto v = et.value();
             edgeTypes_.emplace(v);

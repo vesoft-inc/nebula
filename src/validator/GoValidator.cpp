@@ -27,16 +27,17 @@ Status GoValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
 
     if (!exprProps_.inputProps().empty() && from_.fromType != kPipe) {
-        return Status::Error("$- must be referred in FROM before used in WHERE or YIELD");
+        return Status::SemanticError("$- must be referred in FROM before used in WHERE or YIELD");
     }
 
     if (!exprProps_.varProps().empty() && from_.fromType != kVariable) {
-        return Status::Error("A variable must be referred in FROM before used in WHERE or YIELD");
+        return Status::SemanticError(
+            "A variable must be referred in FROM before used in WHERE or YIELD");
     }
 
     if ((!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) ||
         exprProps_.varProps().size() > 1) {
-        return Status::Error("Only support single input in a go sentence.");
+        return Status::SemanticError("Only support single input in a go sentence.");
     }
 
     NG_RETURN_IF_ERROR(buildColumns());
@@ -53,35 +54,28 @@ Status GoValidator::validateWhere(WhereClause* where) {
 
     if (filter_->kind() == Expression::Kind::kLabelAttribute) {
         auto laExpr = static_cast<LabelAttributeExpression*>(filter_);
-        where->setFilter(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(
-            laExpr));
+        where->setFilter(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(laExpr));
     } else {
         ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(filter_);
     }
 
     auto typeStatus = deduceExprType(filter_);
-    if (!typeStatus.ok()) {
-        return typeStatus.status();
-    }
-
+    NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE) {
         std::stringstream ss;
         ss << "`" << filter_->toString() << "', Filter only accpet bool/null value, "
            << "but was `" << type << "'";
-        return Status::Error(ss.str());
+        return Status::SemanticError(ss.str());
     }
 
-    auto status = deduceProps(filter_, exprProps_);
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(deduceProps(filter_, exprProps_));
     return Status::OK();
 }
 
 Status GoValidator::validateYield(YieldClause* yield) {
     if (yield == nullptr) {
-        return Status::Error("Yield clause nullptr.");
+        return Status::SemanticError("Yield clause nullptr.");
     }
 
     distinct_ = yield->isDistinct();
@@ -112,7 +106,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
             }
 
             if (!col->getAggFunName().empty()) {
-                return Status::Error(
+                return Status::SemanticError(
                     "`%s', not support aggregate function in go sentence.",
                     col->toString().c_str());
             }
@@ -129,7 +123,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
         for (auto& e : exprProps_.edgeProps()) {
             auto found = std::find(over_.edgeTypes.begin(), over_.edgeTypes.end(), e.first);
             if (found == over_.edgeTypes.end()) {
-                return Status::Error("Edges should be declared first in over clause.");
+                return Status::SemanticError("Edges should be declared first in over clause.");
             }
         }
         yields_ = yield->yields();
@@ -262,10 +256,7 @@ Status GoValidator::buildNStepsPlan() {
         loopBody,                                                                   // body
         buildNStepLoopCondition(steps_.steps - 1));
 
-    auto status = oneStep(loop, dedupDstVids->outputVar(), projectFromJoin);
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(oneStep(loop, dedupDstVids->outputVar(), projectFromJoin));
     // reset tail_
     if (projectStartVid_ != nullptr) {
         tail_ = projectStartVid_;
@@ -616,10 +607,7 @@ Status GoValidator::buildOneStepPlan() {
         startVidsVar = dedupStartVid->outputVar();
     }
 
-    auto status = oneStep(dedupStartVid, startVidsVar, nullptr);
-    if (!status.ok()) {
-        return status;
-    }
+    NG_RETURN_IF_ERROR(oneStep(dedupStartVid, startVidsVar, nullptr));
 
     if (projectStartVid_ != nullptr) {
         tail_ = projectStartVid_;

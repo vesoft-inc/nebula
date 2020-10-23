@@ -18,7 +18,7 @@ namespace graph {
 Status SequentialValidator::validateImpl() {
     Status status;
     if (sentence_->kind() != Sentence::Kind::kSequential) {
-        return Status::Error(
+        return Status::SemanticError(
                 "Sequential validator validates a SequentialSentences, but %ld is given.",
                 static_cast<int64_t>(sentence_->kind()));
     }
@@ -26,7 +26,7 @@ Status SequentialValidator::validateImpl() {
     auto sentences = seqSentence->sentences();
 
     if (sentences.size() > static_cast<size_t>(FLAGS_max_allowed_statements)) {
-        return Status::Error("The maximum number of statements allowed has been exceeded");
+        return Status::SemanticError("The maximum number of statements allowed has been exceeded");
     }
 
     DCHECK(!sentences.empty());

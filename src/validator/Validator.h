@@ -100,8 +100,8 @@ protected:
     bool evaluableExpr(const Expression* expr) const;
 
     static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
-                                               folly::StringPiece prop,
-                                               const std::string& validator);
+                                                         folly::StringPiece prop,
+                                                         const std::string& validator);
 
     static Status appendPlan(PlanNode* plan, PlanNode* appended);
 

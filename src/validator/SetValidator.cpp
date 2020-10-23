@@ -70,7 +70,8 @@ Status SetValidator::toPlan() {
             break;
         }
         default:
-            return Status::Error("Unknown operator: %ld", static_cast<int64_t>(setSentence->op()));
+            return Status::SemanticError("Unknown operator: %ld",
+                                         static_cast<int64_t>(setSentence->op()));
     }
 
     bNode->setLeftVar(lRoot->outputVar());

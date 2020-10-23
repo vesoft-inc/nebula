@@ -22,10 +22,12 @@ static std::size_t kPasswordMaxLength = 24;
 Status CreateUserValidator::validateImpl() {
     const auto *sentence = static_cast<const CreateUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     if (sentence->getPassword()->size() > kPasswordMaxLength) {
-        return Status::Error("Password exceed maximum length %ld characters.", kPasswordMaxLength);
+        return Status::SemanticError("Password exceed maximum length %ld characters.",
+                                     kPasswordMaxLength);
     }
     return Status::OK();
 }
@@ -40,7 +42,8 @@ Status CreateUserValidator::toPlan() {
 Status DropUserValidator::validateImpl() {
     const auto *sentence = static_cast<const DropUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     return Status::OK();
 }
@@ -54,10 +57,12 @@ Status DropUserValidator::toPlan() {
 Status UpdateUserValidator::validateImpl() {
     const auto *sentence = static_cast<const AlterUserSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     if (sentence->getPassword()->size() > kPasswordMaxLength) {
-        return Status::Error("Password exceed maximum length %ld characters.", kPasswordMaxLength);
+        return Status::SemanticError("Password exceed maximum length %ld characters.",
+                                     kPasswordMaxLength);
     }
     return Status::OK();
 }
@@ -80,15 +85,16 @@ Status ShowUsersValidator::toPlan() {
 Status ChangePasswordValidator::validateImpl() {
     const auto *sentence = static_cast<const ChangePasswordSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     if (sentence->getOldPwd()->size() > kPasswordMaxLength) {
-        return Status::Error("Old password exceed maximum length %ld characters.",
-                             kPasswordMaxLength);
+        return Status::SemanticError("Old password exceed maximum length %ld characters.",
+                                     kPasswordMaxLength);
     }
     if (sentence->getNewPwd()->size() > kPasswordMaxLength) {
-        return Status::Error("New password exceed maximum length %ld characters.",
-                             kPasswordMaxLength);
+        return Status::SemanticError("New password exceed maximum length %ld characters.",
+                                     kPasswordMaxLength);
     }
     return Status::OK();
 }
@@ -103,7 +109,8 @@ Status ChangePasswordValidator::toPlan() {
 Status GrantRoleValidator::validateImpl() {
     const auto *sentence = static_cast<const GrantSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     return Status::OK();
 }
@@ -119,7 +126,8 @@ Status GrantRoleValidator::toPlan() {
 Status RevokeRoleValidator::validateImpl() {
     const auto *sentence = static_cast<const RevokeSentence *>(sentence_);
     if (sentence->getAccount()->size() > kUsernameMaxLength) {
-        return Status::Error("Username exceed maximum length %ld characters.", kUsernameMaxLength);
+        return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                     kUsernameMaxLength);
     }
     return Status::OK();
 }

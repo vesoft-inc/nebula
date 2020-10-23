@@ -20,12 +20,12 @@ public:
 
 private:
     Status validateImpl() override {
-        return Status::Error("Not support sentence type: %ld, query: %s",
+        return Status::SemanticError("Not support sentence type: %ld, query: %s",
                 static_cast<int64_t>(sentence_->kind()), sentence_->toString().c_str());
     }
 
     Status toPlan() override {
-        return Status::Error("Not support sentence type: %ld, query: %s",
+        return Status::SemanticError("Not support sentence type: %ld, query: %s",
                 static_cast<int64_t>(sentence_->kind()), sentence_->toString().c_str());
     }
 };

@@ -50,9 +50,7 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification*> 
             auto defaultValueExpr = spec->getDefaultValue();
             auto& value = defaultValueExpr->eval(ctx(nullptr));
             auto valStatus = SchemaUtil::toSchemaValue(type, value);
-            if (!valStatus.ok()) {
-                return valStatus.status();
-            }
+            NG_RETURN_IF_ERROR(valStatus);
             // When the timestamp value is string, need to save the int value,
             // TODO: if support timestamp value is an expression, need to remove the code
             if (type == meta::cpp2::PropertyType::TIMESTAMP && value.isStr()) {
@@ -70,35 +68,21 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification*> 
 
 Status CreateTagValidator::validateImpl() {
     auto sentence = static_cast<CreateTagSentence*>(sentence_);
-    auto status = Status::OK();
     name_ = *sentence->name();
     ifNotExist_ = sentence->isIfNotExist();
-    do {
-        // Check the validateContext has the same name schema
-        auto pro = vctx_->getSchema(name_);
-        if (pro != nullptr) {
-            status = Status::Error("Has the same name `%s' in the SequentialSentences",
-                                    name_.c_str());
-            break;
-        }
 
-        status = validateColumns(sentence->columnSpecs(), schema_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-        status = SchemaUtil::validateProps(sentence->getSchemaProps(), schema_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-    } while (false);
-    // Save the schema in validateContext
-    if (status.ok()) {
-        auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
-        vctx_->addSchema(name_, schemaPro);
+    // Check the validateContext has the same name schema
+    auto pro = vctx_->getSchema(name_);
+    if (pro != nullptr) {
+        return Status::SemanticError("Has the same name `%s' in the SequentialSentences",
+                                     name_.c_str());
     }
-    return status;
+    NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
+    NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
+    // Save the schema in validateContext
+    auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+    vctx_->addSchema(name_, schemaPro);
+    return Status::OK();
 }
 
 Status CreateTagValidator::toPlan() {
@@ -115,33 +99,18 @@ Status CreateEdgeValidator::validateImpl() {
     auto status = Status::OK();
     name_ = *sentence->name();
     ifNotExist_ = sentence->isIfNotExist();
-    do {
-        // Check the validateContext has the same name schema
-        auto pro = vctx_->getSchema(name_);
-        if (pro != nullptr) {
-            status = Status::Error("Has the same name `%s' in the SequentialSentences",
-                                    name_.c_str());
-            break;
-        }
-
-        status = validateColumns(sentence->columnSpecs(), schema_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-        status = SchemaUtil::validateProps(sentence->getSchemaProps(), schema_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-    } while (false);
-
-    // Save the schema in validateContext
-    if (status.ok()) {
-        auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
-        vctx_->addSchema(name_, schemaPro);
+    // Check the validateContext has the same name schema
+    auto pro = vctx_->getSchema(name_);
+    if (pro != nullptr) {
+        return Status::SemanticError("Has the same name `%s' in the SequentialSentences",
+                                     name_.c_str());
     }
-    return status;
+    NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
+    NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
+    // Save the schema in validateContext
+    auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+    vctx_->addSchema(name_, schemaPro);
+    return Status::OK();
 }
 
 Status CreateEdgeValidator::toPlan() {
@@ -210,22 +179,18 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem*>& schem
             switch (propType) {
                 case SchemaPropItem::TTL_DURATION:
                     retInt = schemaProp->getTtlDuration();
-                    if (!retInt.ok()) {
-                        return retInt.status();
-                    }
+                    NG_RETURN_IF_ERROR(retInt);
                     ttlDuration = retInt.value();
                     schemaProp_.set_ttl_duration(ttlDuration);
                     break;
                 case SchemaPropItem::TTL_COL:
                     // Check the legality of the column in meta
                     retStr = schemaProp->getTtlCol();
-                    if (!retStr.ok()) {
-                        return retStr.status();
-                    }
+                    NG_RETURN_IF_ERROR(retStr);
                     schemaProp_.set_ttl_col(retStr.value());
                     break;
                 default:
-                    return Status::Error("Property type not support");
+                    return Status::SemanticError("Property type not support");
             }
         }
         return Status::OK();
@@ -357,13 +322,11 @@ Status CreateTagIndexValidator::validateImpl() {
     auto status = Status::OK();
     do {
         auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, name_);
-        if (!tagStatus.ok()) {
-            return tagStatus.status();
-        }
+        NG_RETURN_IF_ERROR(tagStatus);
 
         auto schema_ = qctx_->schemaMng()->getTagSchema(space_.id, tagStatus.value());
         if (schema_ == nullptr) {
-            return Status::Error("No schema found for '%s'", name_.c_str());
+            return Status::SemanticError("No schema found for '%s'", name_.c_str());
         }
 
         status = IndexUtil::validateColumns(fields_);
@@ -396,26 +359,16 @@ Status CreateEdgeIndexValidator::validateImpl() {
     fields_ = sentence->columns();
     ifNotExist_ = sentence->isIfNotExist();
 
-    auto status = Status::OK();
-    do {
-        auto edgeStatus = qctx_->schemaMng()->toEdgeType(space_.id, name_);
-        if (!edgeStatus.ok()) {
-            return edgeStatus.status();
-        }
+    auto edgeStatus = qctx_->schemaMng()->toEdgeType(space_.id, name_);
+    NG_RETURN_IF_ERROR(edgeStatus);
+    auto schema_ = qctx_->schemaMng()->getEdgeSchema(space_.id, edgeStatus.value());
+    if (schema_ == nullptr) {
+        return Status::SemanticError("No schema found for '%s'", name_.c_str());
+    }
 
-        auto schema_ = qctx_->schemaMng()->getEdgeSchema(space_.id, edgeStatus.value());
-        if (schema_ == nullptr) {
-            return Status::Error("No schema found for '%s'", name_.c_str());
-        }
-
-        status = IndexUtil::validateColumns(fields_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-    } while (false);
+    NG_RETURN_IF_ERROR(IndexUtil::validateColumns(fields_));
     // TODO(darion) Save the index
-    return status;
+    return Status::OK();
 }
 
 Status CreateEdgeIndexValidator::toPlan() {

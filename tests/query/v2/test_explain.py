@@ -16,7 +16,7 @@ FORMAT = [
     ('FORMAT="row"', None),
     ('FORMAT="dot"', None),
     ('FORMAT="dot:struct"', None),
-    ('FORMAT="unknown"', ttypes.ErrorCode.E_SEMANTIC_ERROR),
+    ('FORMAT="unknown"', ttypes.ErrorCode.E_SYNTAX_ERROR),
 ]
 
 

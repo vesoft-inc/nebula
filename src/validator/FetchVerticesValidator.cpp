@@ -74,7 +74,7 @@ Status FetchVerticesValidator::check() {
         auto schema = qctx_->schemaMng()->getTagSchema(space_.id, tagId);
         if (schema == nullptr) {
             LOG(ERROR) << "No schema found for " << tagName;
-            return Status::Error("No schema found for `%s'", tagName.c_str());
+            return Status::SemanticError("No schema found for `%s'", tagName.c_str());
         }
         tagsSchema_.emplace(tagId, schema);
     } else {
@@ -157,13 +157,14 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
             return std::move(deducePropsVisitor).status();
         }
         if (exprProps.hasInputVarProperty()) {
-            return Status::Error("Unsupported input/variable property expression in yield.");
+            return Status::SemanticError(
+                "Unsupported input/variable property expression in yield.");
         }
         if (!exprProps.edgeProps().empty()) {
-            return Status::Error("Unsupported edge property expression in yield.");
+            return Status::SemanticError("Unsupported edge property expression in yield.");
         }
         if (exprProps.hasSrcDstTagProperty()) {
-            return Status::Error("Unsupported src/dst property expression in yield.");
+            return Status::SemanticError("Unsupported src/dst property expression in yield.");
         }
 
         colNames_.emplace_back(deduceColName(col));
@@ -173,7 +174,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
         // TODO(shylock) think about the push-down expr
     }
     if (exprProps.tagProps().empty()) {
-        return Status::Error("Unsupported empty tag property expression in yield.");
+        return Status::SemanticError("Unsupported empty tag property expression in yield.");
     }
 
     if (onStar_) {

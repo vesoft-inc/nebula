@@ -321,12 +321,12 @@ class TestYield(NebulaTestSuite):
         query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
         YIELD $$.a.team'''
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
         YIELD $^.a.team'''
         resp = self.execute_query(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
         query = '''$var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team; \
         YIELD a.team'''
