@@ -183,6 +183,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "GetConfig";
         case Kind::kBFSShortest:
             return "BFSShortest";
+        case Kind::kProduceSemiShortestPath:
+            return "ProduceSemiShortestPath";
         case Kind::kConjunctPath:
             return "ConjunctPath";
             // no default so the compiler will warning when lack

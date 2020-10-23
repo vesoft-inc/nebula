@@ -107,6 +107,7 @@ public:
         kSetConfig,
         kGetConfig,
         kBFSShortest,
+        kProduceSemiShortestPath,
         kConjunctPath,
     };
 

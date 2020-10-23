@@ -9,5 +9,9 @@
 namespace nebula {
 namespace graph {
 
+void ProduceSemiShortestPath::setStartsVid(std::vector<Value> starts) {
+    starts_ = std::move(starts);
+}
+
 }  // namnspace graph
 }  // namespace nebula

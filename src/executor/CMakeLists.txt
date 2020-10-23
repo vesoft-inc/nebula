@@ -30,6 +30,7 @@ nebula_add_library(
     query/IndexScanExecutor.cpp
     algo/ConjunctPathExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
+    algo/ProduceSemiShortestPathExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/CreateUserExecutor.cpp
     admin/DropUserExecutor.cpp

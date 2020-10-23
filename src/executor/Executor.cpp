@@ -35,6 +35,7 @@
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
 #include "executor/algo/BFSShortestPathExecutor.h"
+#include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
@@ -369,6 +370,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kBFSShortest: {
             return pool->add(new BFSShortestPathExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kProduceSemiShortestPath: {
+            return pool->add(new ProduceSemiShortestPathExecutor(node, qctx));
         }
         case PlanNode::Kind::kConjunctPath: {
             return pool->add(new ConjunctPathExecutor(node, qctx));

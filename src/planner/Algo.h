@@ -13,7 +13,22 @@
 
 namespace nebula {
 namespace graph {
-class ProduceSemiShortestPath : public PlanNode {
+class ProduceSemiShortestPath : public SingleInputNode {
+public:
+    static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ProduceSemiShortestPath(qctx, input));
+    }
+    void setStartsVid(std::vector<Value> starts);
+
+    std::vector<Value> getStartsVid() const {
+        return starts_;
+    }
+
+private:
+    ProduceSemiShortestPath(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
+
+    std::vector<Value> starts_;
 };
 
 class BFSShortestPath : public SingleInputNode {
