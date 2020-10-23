@@ -72,6 +72,8 @@ public:
 
     StatusOr<int32_t> getSpaceVidLen(GraphSpaceID) override;
 
+    StatusOr<meta::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
+
     // get all version of all tags
     StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) override;
 

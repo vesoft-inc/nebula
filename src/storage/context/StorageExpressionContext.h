@@ -29,18 +29,23 @@ If we need to read value from a user defined plase, just set the related value b
 class StorageExpressionContext final : public ExpressionContext {
 public:
     explicit StorageExpressionContext(size_t vIdLen,
+                                      bool isIntId,
                                       const std::string& name = "",
                                       const meta::NebulaSchemaProvider* schema = nullptr,
                                       bool isEdge = false)
         : vIdLen_(vIdLen)
+        , isIntId_(isIntId)
         , name_(name)
         , schema_(schema)
         , isEdge_(isEdge) {}
 
-    StorageExpressionContext(size_t vIdLen, int32_t vColNum,
+    StorageExpressionContext(size_t vIdLen,
+                             bool isIntId,
+                             int32_t vColNum,
                              bool hasNullableCol,
                              const std::vector<std::pair<std::string, Value::Type>>& indexCols)
         : vIdLen_(vIdLen)
+        , isIntId_(isIntId)
         , vColNum_(vColNum)
         , hasNullableCol_(hasNullableCol)
         , indexCols_(indexCols) {
@@ -160,6 +165,7 @@ public:
 
 private:
     size_t                             vIdLen_;
+    bool                               isIntId_;
 
     RowReader                         *reader_;
     std::string                        key_;

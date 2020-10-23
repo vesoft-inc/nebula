@@ -16,7 +16,8 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         return retCode;
     }
 
-    planContext_ = std::make_unique<PlanContext>(this->env_, spaceId_, this->spaceVidLen_);
+    planContext_ = std::make_unique<PlanContext>(
+        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_);
     const auto& indices = req.get_indices();
     planContext_->isEdge_ = indices.get_is_edge();
     if (planContext_->isEdge_) {
@@ -185,6 +186,7 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
         } else if (!needData && needFilter) {
             auto expr = Expression::decode(ctx.get_filter());
             auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
+                                                                      planContext_->isIntId_,
                                                                       vColNum,
                                                                       hasNullableCol,
                                                                       indexCols);
@@ -196,7 +198,8 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
             filterId++;
         } else {
             auto expr = Expression::decode(ctx.get_filter());
-            auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_);
+            auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
+                                                                      planContext_->isIntId_);
             filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
             out = buildPlanWithDataAndFilter(ctx,
                                              plan,

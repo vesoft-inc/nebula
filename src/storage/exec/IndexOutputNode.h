@@ -166,7 +166,11 @@ private:
         for (const auto& val : data) {
             Row row;
             auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(std::move(vId).subpiece(0, vId.find_first_of('\0'))));
+            if (planContext_->isIntId_) {
+                row.emplace_back(vId);
+            } else {
+                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')));
+            }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
@@ -187,7 +191,11 @@ private:
         for (const auto& val : data) {
             Row row;
             auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(std::move(vId).subpiece(0, vId.find_first_of('\0'))));
+            if (planContext_->isIntId_) {
+                row.emplace_back(vId);
+            } else {
+                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')));
+            }
 
             // skip vertexID
             for (size_t i = 1; i < returnCols.size(); i++) {
@@ -223,9 +231,15 @@ private:
             auto src = NebulaKeyUtils::getSrcId(planContext_->vIdLen_, val.first);
             auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, val.first);
             auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, val.first);
-            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0'))));
-            row.emplace_back(Value(rank));
-            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0'))));
+            if (planContext_->isIntId_) {
+                row.emplace_back(src);
+                row.emplace_back(rank);
+                row.emplace_back(dst);
+            } else {
+                row.emplace_back(src.subpiece(0, src.find_first_of('\0')));
+                row.emplace_back(rank);
+                row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')));
+            }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";

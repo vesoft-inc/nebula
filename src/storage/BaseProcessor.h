@@ -56,6 +56,13 @@ protected:
             return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
         }
         spaceVidLen_ = len.value();
+
+        auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
+        if (!vIdType.ok()) {
+            return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+        }
+        isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+
         return cpp2::ErrorCode::SUCCEEDED;
     }
 
@@ -105,6 +112,7 @@ protected:
     std::mutex                                      lock_;
     int32_t                                         callingNum_{0};
     int32_t                                         spaceVidLen_;
+    bool                                            isIntId_;
 };
 
 }  // namespace storage

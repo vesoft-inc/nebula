@@ -29,6 +29,21 @@ namespace mock {
 
 class MockCluster {
 public:
+    ~MockCluster() {
+        if (metaClient_) {
+            metaClient_->stop();
+        }
+        if (metaKV_) {
+            metaKV_->stop();
+        }
+        if (storageKV_) {
+            storageKV_->stop();
+        }
+        storageAdminServer_.reset();
+        graphStorageServer_.reset();
+        generalStorageServer_.reset();
+    }
+
     void startAll();
 
     void startMeta(int32_t port, const std::string& rootPath, std::string hostname = "");

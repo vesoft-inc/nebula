@@ -20,7 +20,7 @@ void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
         onFinished();
         return;
     }
-    planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_);
+    planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
 
     retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -116,7 +116,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(nebula::DataSet* resu
         edges.emplace_back(edge.get());
         plan.addNode(std::move(edge));
     }
-    auto output = std::make_unique<GetEdgePropNode>(edges, spaceVidLen_, result);
+    auto output = std::make_unique<GetEdgePropNode>(edges, spaceVidLen_, isIntId_, result);
     for (auto* edge : edges) {
         output->addDependency(edge);
     }

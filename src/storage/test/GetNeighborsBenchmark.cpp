@@ -61,7 +61,7 @@ void initContext(std::unique_ptr<nebula::storage::PlanContext>& planCtx,
     nebula::GraphSpaceID spaceId = 1;
     auto* env = gCluster->storageEnv_.get();
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
-    planCtx = std::make_unique<nebula::storage::PlanContext>(env, spaceId, vIdLen);
+    planCtx = std::make_unique<nebula::storage::PlanContext>(env, spaceId, vIdLen, false);
 
     nebula::EdgeType serve = 101;
     edgeContext.schemas_ = std::move(env->schemaMan_->getAllVerEdgeSchema(spaceId)).value();

@@ -98,6 +98,7 @@ protected:
             auto ret = collectEdgeProps(reader,
                                         key,
                                         planContext_->vIdLen_,
+                                        planContext_->isIntId_,
                                         props,
                                         list);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -174,6 +175,7 @@ private:
             auto ret = collectEdgeProps(reader.get(),
                                         std::get<2>(sample),
                                         planContext_->vIdLen_,
+                                        planContext_->isIntId_,
                                         std::get<3>(sample),
                                         list);
             if (ret != kvstore::ResultCode::SUCCEEDED) {

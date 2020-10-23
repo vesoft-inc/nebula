@@ -39,7 +39,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
         onFinished();
         return;
     }
-    planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_);
+    planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
 
     retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -262,6 +262,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
 
     if (expCtx_ == nullptr) {
         expCtx_ = std::make_unique<StorageExpressionContext>(spaceVidLen_,
+                                                             isIntId_,
                                                              planContext_->tagName_,
                                                              planContext_->tagSchema_,
                                                              false);

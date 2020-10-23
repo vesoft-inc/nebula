@@ -93,12 +93,13 @@ protected:
             RowReader* reader,
             folly::StringPiece key,
             size_t vIdLen,
+            bool isIntId,
             const std::vector<PropContext>* props,
             nebula::List& list) {
         for (const auto& prop : *props) {
             if (prop.returned_) {
                 VLOG(2) << "Collect prop " << prop.name_;
-                auto value = QueryUtils::readEdgeProp(key, vIdLen, reader, prop);
+                auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
                 if (!value.ok()) {
                     return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
                 }

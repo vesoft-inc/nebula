@@ -296,27 +296,43 @@ void appendLogs(int start,
     LOG(INFO) << "<===== Finish appending logs from index " << start << " to " << end;
 }
 
-void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
+bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
-    // Sleep a while to make sure the last log has been committed on followers
-    sleep(FLAGS_raft_heartbeat_interval_secs);
+    int32_t count = 0;
+    for (; count < 3; count++) {
+        bool concensus = true;
+        // Sleep a while to make sure the last log has been committed on followers
+        sleep(FLAGS_raft_heartbeat_interval_secs);
 
-    // Check every copy
-    for (auto& c : copies) {
-        if (c != nullptr && c->isRunning()) {
-            ASSERT_EQ(msgs.size(), c->getNumLogs());
-        }
-    }
-    for (size_t i = start; i <= end; i++) {
+        // Check every copy
         for (auto& c : copies) {
             if (c != nullptr && c->isRunning()) {
-                folly::StringPiece msg;
-                ASSERT_TRUE(c->getLogMsg(i, msg));
-                ASSERT_EQ(msgs[i], msg.toString());
+                if (msgs.size() != c->getNumLogs() || !checkLog(c, start, end, msgs)) {
+                    concensus = false;
+                    break;
+                }
             }
         }
+        if (concensus == true) {
+            return true;
+        }
     }
+    // Failed after retry 3 times
+    EXPECT_LT(count, 3);
+    return false;
+}
+
+bool checkLog(std::shared_ptr<test::TestShard>& copy,
+              size_t start, size_t end,
+              std::vector<std::string>& msgs) {
+    for (size_t i = start; i <= end; i++) {
+        folly::StringPiece msg;
+        if (!copy->getLogMsg(i, msg) || msgs[i] != msg.toString()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,

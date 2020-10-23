@@ -62,6 +62,7 @@ public:
 
     static StatusOr<nebula::Value> readEdgeProp(folly::StringPiece key,
                                                 size_t vIdLen,
+                                                bool isIntId,
                                                 RowReader* reader,
                                                 const PropContext& prop) {
         switch (prop.propInKeyType_) {
@@ -71,7 +72,7 @@ public:
             }
             case PropContext::PropInKeyType::SRC: {
                 auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
-                return srcId.subpiece(0, srcId.find_first_of('\0'));
+                return isIntId ? srcId : srcId.subpiece(0, srcId.find_first_of('\0'));
             }
             case PropContext::PropInKeyType::TYPE: {
                 auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
@@ -83,7 +84,7 @@ public:
             }
             case PropContext::PropInKeyType::DST: {
                 auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
-                return dstId.subpiece(0, dstId.find_first_of('\0'));
+                return isIntId ? dstId : dstId.subpiece(0, dstId.find_first_of('\0'));
             }
         }
         return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));

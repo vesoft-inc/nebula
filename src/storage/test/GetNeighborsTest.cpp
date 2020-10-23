@@ -1292,6 +1292,47 @@ TEST(GetNeighborsTest, FilterTest) {
         ASSERT_EQ(expected, resp.vertices);
     }
     {
+        std::vector<VertexID> vertices = {"Tracy McGrady"};
+        std::vector<EdgeType> over = {serve};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+        edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+        {
+            // where serve._dst == Rockets
+            RelationalExpression exp(
+                Expression::Kind::kRelEQ,
+                new EdgeDstIdExpression(new std::string(folly::to<std::string>(serve))),
+                new ConstantExpression(Value("Rockets")));
+            req.traverse_spec.set_filter(Expression::encode(exp));
+        }
+
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        // vId, stat, player, serve, expr
+        nebula::DataSet expected;
+        expected.colNames = {kVid,
+                             "_stats",
+                             "_tag:1:name:age:avgScore",
+                             "_edge:+101:teamName:startYear:endYear",
+                             "_expr"};
+        auto serveEdges = nebula::List();
+        serveEdges.values.emplace_back(nebula::List({"Rockets", 2004, 2010}));
+        nebula::Row row({"Tracy McGrady",
+                         Value(),
+                         nebula::List({"Tracy McGrady", 41, 19.6}),
+                         serveEdges,
+                         Value()});
+        expected.rows.emplace_back(std::move(row));
+        ASSERT_EQ(expected, resp.vertices);
+    }
+    {
         LOG(INFO) << "Tag + Edge exp";
         std::vector<VertexID> vertices = {"Tracy McGrady"};
         std::vector<EdgeType> over = {serve};

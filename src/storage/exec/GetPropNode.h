@@ -93,9 +93,11 @@ public:
 
     GetEdgePropNode(std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
                     size_t vIdLen,
+                    bool isIntId,
                     nebula::DataSet* resultDataSet)
         : edgeNodes_(std::move(edgeNodes))
         , vIdLen_(vIdLen)
+        , isIntId_(isIntId)
         , resultDataSet_(resultDataSet) {}
 
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
@@ -125,6 +127,7 @@ public:
                     auto code = collectEdgeProps(reader,
                                                  key,
                                                  vIdLen_,
+                                                 isIntId_,
                                                  props,
                                                  list);
                     if (code != kvstore::ResultCode::SUCCEEDED) {
@@ -146,6 +149,7 @@ public:
 private:
     std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes_;
     size_t vIdLen_;
+    bool isIntId_;
     nebula::DataSet* resultDataSet_;
 };
 

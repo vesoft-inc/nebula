@@ -98,6 +98,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
     PartitionID partId = (hash(vId) % totalParts) + 1;
     EdgeType edgeType = 101;
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
+    bool isIntId = false;
 
     std::vector<PropContext> props;
     {
@@ -136,7 +137,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             ASSERT_TRUE(schema != nullptr);
             auto wrapper = std::make_unique<RowReaderWrapper>();
             ASSERT_TRUE(wrapper->reset(schema.get(), val, readerVer));
-            auto code = node.collectEdgeProps(wrapper.get(), key, vIdLen, &props, list);
+            auto code = node.collectEdgeProps(wrapper.get(), key, vIdLen, isIntId, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
         }
@@ -162,7 +163,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_, spaceId,
                                                          std::abs(edgeType), val);
             ASSERT_TRUE(reader.get() != nullptr);
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, &props, list);
+            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
         }
@@ -188,7 +189,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_, spaceId,
                                                          std::abs(edgeType), val);
             ASSERT_TRUE(reader.get() != nullptr);
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, &props, list);
+            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
         }
@@ -226,7 +227,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             } else {
                 ASSERT_TRUE(reader->reset(schemas, val));
             }
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, &props, list);
+            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             result.mutableList().values.emplace_back(std::move(list));
         }

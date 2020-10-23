@@ -132,7 +132,8 @@ private:
             if (prop.hasStat_) {
                 for (const auto statIndex : prop.statIndex_) {
                     VLOG(2) << "Collect stat prop " << prop.name_;
-                    auto value = QueryUtils::readEdgeProp(key, planContext_->vIdLen_, reader, prop);
+                    auto value = QueryUtils::readEdgeProp(
+                        key, planContext_->vIdLen_, planContext_->isIntId_, reader, prop);
                     if (!value.ok()) {
                         return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
                     }

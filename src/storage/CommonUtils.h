@@ -68,14 +68,13 @@ struct PropContext;
 // PlanContext stores some information during the process
 class PlanContext {
 public:
-    PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen)
-        : env_(env)
-        , spaceId_(spaceId)
-        , vIdLen_(vIdLen) {}
+    PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId)
+        : env_(env), spaceId_(spaceId), vIdLen_(vIdLen) , isIntId_(isIntId) {}
 
     StorageEnv*         env_;
     GraphSpaceID        spaceId_;
     size_t              vIdLen_;
+    bool                isIntId_;
 
     TagID                               tagId_ = 0;
     std::string                         tagName_ = "";

@@ -85,9 +85,13 @@ void appendLogs(int start,
                 std::vector<std::string>& msgs,
                 bool waitLastLog = false);
 
-void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
+bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs);
+
+bool checkLog(std::shared_ptr<test::TestShard>& copy,
+              size_t start, size_t end,
+              std::vector<std::string>& msgs);
 
 void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                  std::vector<std::shared_ptr<test::TestShard>>& copies,

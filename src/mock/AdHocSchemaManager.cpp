@@ -252,6 +252,10 @@ StatusOr<int32_t> AdHocSchemaManager::getSpaceVidLen(GraphSpaceID space) {
     return 32;
 }
 
+StatusOr<meta::cpp2::PropertyType> AdHocSchemaManager::getSpaceVidType(GraphSpaceID) {
+    return meta::cpp2::PropertyType::FIXED_STRING;
+}
+
 StatusOr<TagSchemas> AdHocSchemaManager::getAllVerTagSchema(GraphSpaceID space) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto iter = tagSchemasInVector_.find(space);
