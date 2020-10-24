@@ -29,6 +29,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:common_process_obj>
+    $<TARGET_OBJECTS:common_time_utils_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:graph_auth_obj>

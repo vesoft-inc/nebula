@@ -31,6 +31,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:common_agg_function_obj>
     $<TARGET_OBJECTS:common_encryption_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
+    $<TARGET_OBJECTS:common_time_utils_obj>
     $<TARGET_OBJECTS:session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>

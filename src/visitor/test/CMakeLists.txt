@@ -46,6 +46,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_http_client_obj>
         $<TARGET_OBJECTS:common_process_obj>
+        $<TARGET_OBJECTS:common_time_utils_obj>
     LIBRARIES
         gtest
         gtest_main

@@ -26,6 +26,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_process_obj>
+    $<TARGET_OBJECTS:common_time_utils_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>

@@ -50,6 +50,7 @@ set(GRAPH_TEST_LIB
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_encryption_obj>
     $<TARGET_OBJECTS:common_agg_function_obj>
+    $<TARGET_OBJECTS:common_time_utils_obj>
 )
 
 nebula_add_test(
