@@ -42,6 +42,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
         if (req.get_if_not_exists()) {
+            resp_.set_id(to(ret.value(), EntryType::INDEX));
             handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
             handleErrorCode(cpp2::ErrorCode::E_EXISTED);
