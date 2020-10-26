@@ -105,8 +105,10 @@ std::unique_ptr<cpp2::PlanNodeDescription> GetEdges::explain() const {
 IndexScan* IndexScan::clone(QueryContext* qctx) const {
     auto ctx = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
     auto returnCols = std::make_unique<std::vector<std::string>>(*returnColumns());
-    return IndexScan::make(
+    auto *scan = IndexScan::make(
         qctx, nullptr, space(), std::move(ctx), std::move(returnCols), isEdge(), schemaId());
+    scan->setOutputVar(this->outputVar());
+    return scan;
 }
 
 std::unique_ptr<cpp2::PlanNodeDescription> IndexScan::explain() const {

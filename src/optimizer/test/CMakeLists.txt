@@ -41,6 +41,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
 )
+
 nebula_add_test(
     NAME
         index_bound_value_test

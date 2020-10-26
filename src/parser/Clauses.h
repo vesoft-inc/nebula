@@ -303,6 +303,14 @@ public:
         return result;
     }
 
+    size_t size() const {
+        return columns_.size();
+    }
+
+    bool empty() const {
+        return columns_.empty();
+    }
+
     std::string toString() const;
 
 private:

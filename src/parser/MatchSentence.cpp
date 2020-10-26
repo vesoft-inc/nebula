@@ -24,14 +24,14 @@ std::string MatchEdge::toString() const {
         end = "-";
     }
 
-    if (alias_ != nullptr || edge_ != nullptr || props_ != nullptr) {
+    if (alias_ != nullptr || type_ != nullptr || props_ != nullptr) {
         buf += '[';
         if (alias_ != nullptr) {
             buf += *alias_;
         }
-        if (edge_ != nullptr) {
+        if (type_ != nullptr) {
             buf += ':';
-            buf += *edge_;
+            buf += *type_;
         }
         if (props_ != nullptr) {
             buf += props_->toString();
@@ -69,10 +69,10 @@ std::string MatchPath::toString() const {
     std::string buf;
     buf.reserve(256);
 
-    buf += head_->toString();
-    for (auto i = 0u; i < steps_.size(); i++) {
-        buf += steps_[i].first->toString();
-        buf += steps_[i].second->toString();
+    buf += node(0)->toString();
+    for (auto i = 0u; i < edges_.size(); i++) {
+        buf += edge(i)->toString();
+        buf += node(i + 1)->toString();
     }
 
     return buf;
@@ -98,9 +98,9 @@ std::string MatchSentence::toString() const {
 
     buf += "MATCH ";
     buf += path_->toString();
-    if (filter_ != nullptr) {
+    if (where_ != nullptr) {
         buf += ' ';
-        buf += filter_->toString();
+        buf += where_->toString();
     }
     if (return_ != nullptr) {
         buf += ' ';

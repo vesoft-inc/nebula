@@ -17,19 +17,19 @@ namespace nebula {
 
 class MatchEdgeProp final {
 public:
-    MatchEdgeProp(std::string *alias, std::string *edge, Expression *props = nullptr) {
+    MatchEdgeProp(std::string *alias, std::string *type, Expression *props = nullptr) {
         alias_.reset(alias);
-        edge_.reset(edge);
+        type_.reset(type);
         props_.reset(static_cast<MapExpression*>(props));
     }
 
     auto get() && {
-        return std::make_tuple(std::move(alias_), std::move(edge_), std::move(props_));
+        return std::make_tuple(std::move(alias_), std::move(type_), std::move(props_));
     }
 
 private:
     std::unique_ptr<std::string>                        alias_;
-    std::unique_ptr<std::string>                        edge_;
+    std::unique_ptr<std::string>                        type_;
     std::unique_ptr<MapExpression>                      props_;
 };
 
@@ -41,7 +41,7 @@ public:
         if (prop != nullptr) {
             auto tuple = std::move(*prop).get();
             alias_ = std::move(std::get<0>(tuple));
-            edge_ = std::move(std::get<1>(tuple));
+            type_ = std::move(std::get<1>(tuple));
             props_ = std::move(std::get<2>(tuple));
             delete prop;
         }
@@ -56,8 +56,8 @@ public:
         return alias_.get();
     }
 
-    const std::string* edge() const {
-        return edge_.get();
+    const std::string* type() const {
+        return type_.get();
     }
 
     const MapExpression* props() const {
@@ -69,7 +69,7 @@ public:
 private:
     Direction                                       direction_;
     std::unique_ptr<std::string>                    alias_;
-    std::unique_ptr<std::string>                    edge_;
+    std::unique_ptr<std::string>                    type_;
     std::unique_ptr<MapExpression>                  props_;
 };
 
@@ -107,34 +107,40 @@ private:
 
 class MatchPath final {
 public:
-    explicit MatchPath(MatchNode *head) {
-        head_.reset(head);
+    explicit MatchPath(MatchNode *node) {
+        nodes_.emplace_back(node);
     }
 
     void add(MatchEdge *edge, MatchNode *node) {
-        steps_.emplace_back(edge, node);
+        edges_.emplace_back(edge);
+        nodes_.emplace_back(node);
     }
 
-    const MatchNode* head() const {
-        return head_.get();
+    const auto& nodes() const {
+        return nodes_;
     }
 
-    using RawStep = std::pair<const MatchEdge*, const MatchNode*>;
-    std::vector<RawStep> steps() const {
-        std::vector<RawStep> result;
-        result.reserve(steps_.size());
-        for (auto &step : steps_) {
-            result.emplace_back(step.first.get(), step.second.get());
-        }
-        return result;
+    const auto& edges() const {
+        return edges_;
+    }
+
+    size_t steps() const {
+        return edges_.size();
+    }
+
+    const MatchNode* node(size_t i) const {
+        return nodes_[i].get();
+    }
+
+    const MatchEdge* edge(size_t i) const {
+        return edges_[i].get();
     }
 
     std::string toString() const;
 
 private:
-    using Step = std::pair<std::unique_ptr<MatchEdge>, std::unique_ptr<MatchNode>>;
-    std::unique_ptr<MatchNode>                      head_;
-    std::vector<Step>                               steps_;
+    std::vector<std::unique_ptr<MatchNode>>         nodes_;
+    std::vector<std::unique_ptr<MatchEdge>>         edges_;
 };
 
 
@@ -152,6 +158,10 @@ public:
         return columns_.get();
     }
 
+    void setColumns(YieldColumns *columns) {
+        columns_.reset(columns);
+    }
+
     bool isAll() const {
         return isAll_;
     }
@@ -166,10 +176,10 @@ private:
 
 class MatchSentence final : public Sentence {
 public:
-    MatchSentence(MatchPath *path, WhereClause *filter, MatchReturn *ret)
+    MatchSentence(MatchPath *path, WhereClause *where, MatchReturn *ret)
         : Sentence(Kind::kMatch) {
         path_.reset(path);
-        filter_.reset(filter);
+        where_.reset(where);
         return_.reset(ret);
     }
 
@@ -177,11 +187,23 @@ public:
         return path_.get();
     }
 
-    const WhereClause* filter() const {
-        return filter_.get();
+    MatchPath* path() {
+        return path_.get();
+    }
+
+    const WhereClause* where() const {
+        return where_.get();
+    }
+
+    WhereClause* where() {
+        return where_.get();
     }
 
     const MatchReturn* ret() const {
+        return return_.get();
+    }
+
+    MatchReturn* ret() {
         return return_.get();
     }
 
@@ -189,7 +211,7 @@ public:
 
 private:
     std::unique_ptr<MatchPath>                  path_;
-    std::unique_ptr<WhereClause>                filter_;
+    std::unique_ptr<WhereClause>                where_;
     std::unique_ptr<MatchReturn>                return_;
 };
 

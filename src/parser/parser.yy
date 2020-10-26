@@ -989,6 +989,9 @@ match_node
     | L_PAREN match_alias COLON name_label map_expression R_PAREN {
         $$ = new MatchNode($2, $4, $5);
     }
+    | L_PAREN match_alias map_expression R_PAREN {
+        $$ = new MatchNode($2, nullptr, $3);
+    }
     ;
 
 match_alias

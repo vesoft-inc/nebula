@@ -35,6 +35,8 @@
 #include "validator/YieldValidator.h"
 #include "visitor/DeducePropsVisitor.h"
 #include "visitor/DeduceTypeVisitor.h"
+#include "validator/GroupByValidator.h"
+#include "validator/MatchValidator.h"
 #include "visitor/EvaluableExprVisitor.h"
 #include "validator/IndexScanValidator.h"
 
@@ -165,6 +167,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<ShowConfigsValidator>(sentence, context);
         case Sentence::Kind::kFindPath:
             return std::make_unique<FindPathValidator>(sentence, context);
+        case Sentence::Kind::kMatch:
+            return std::make_unique<MatchValidator>(sentence, context);
         case Sentence::Kind::kCreateTagIndex:
             return std::make_unique<CreateTagIndexValidator>(sentence, context);
         case Sentence::Kind::kShowCreateTagIndex:
@@ -191,7 +195,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<DropEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kLookup:
             return std::make_unique<IndexScanValidator>(sentence, context);
-        case Sentence::Kind::kMatch:
         case Sentence::Kind::kUnknown:
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:

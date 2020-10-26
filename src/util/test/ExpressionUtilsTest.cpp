@@ -203,5 +203,149 @@ TEST_F(ExpressionUtilsTest, CheckComponent) {
     }
 }
 
+TEST_F(ExpressionUtilsTest, PullAnds) {
+    using Kind = Expression::Kind;
+    // true AND false
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        LogicalExpression expr(Kind::kLogicalAnd, first, second);
+        auto ands = ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(2UL, ands.size());
+        ASSERT_EQ(first, ands[0]);
+        ASSERT_EQ(second, ands[1]);
+    }
+    // true AND false AND true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalAnd, first, second), third);
+        auto ands = ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(3UL, ands.size());
+        ASSERT_EQ(first, ands[0]);
+        ASSERT_EQ(second, ands[1]);
+        ASSERT_EQ(third, ands[2]);
+    }
+    // true AND (false AND true)
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalAnd,
+                first,
+                new LogicalExpression(Kind::kLogicalAnd, second, third));
+        auto ands = ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(3UL, ands.size());
+        ASSERT_EQ(first, ands[0]);
+        ASSERT_EQ(second, ands[1]);
+        ASSERT_EQ(third, ands[2]);
+    }
+    // (true OR false) AND (true OR false)
+    {
+        auto *first = new LogicalExpression(Kind::kLogicalOr,
+                new ConstantExpression(true),
+                new ConstantExpression(false));
+        auto *second = new LogicalExpression(Kind::kLogicalOr,
+                new ConstantExpression(true),
+                new ConstantExpression(false));
+        LogicalExpression expr(Kind::kLogicalAnd, first, second);
+        auto ands = ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(2UL, ands.size());
+        ASSERT_EQ(first, ands[0]);
+        ASSERT_EQ(second, ands[1]);
+    }
+    // true AND ((false AND true) OR false) AND true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new LogicalExpression(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalAnd,
+                    new ConstantExpression(false),
+                    new ConstantExpression(true)),
+                new ConstantExpression(false));
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalAnd, first, second), third);
+        auto ands = ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(3UL, ands.size());
+        ASSERT_EQ(first, ands[0]);
+        ASSERT_EQ(second, ands[1]);
+        ASSERT_EQ(third, ands[2]);
+    }
+}
+
+TEST_F(ExpressionUtilsTest, PullOrs) {
+    using Kind = Expression::Kind;
+    // true OR false
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        LogicalExpression expr(Kind::kLogicalOr, first, second);
+        auto ors = ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(2UL, ors.size());
+        ASSERT_EQ(first, ors[0]);
+        ASSERT_EQ(second, ors[1]);
+    }
+    // true OR false OR true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalOr, first, second), third);
+        auto ors = ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(3UL, ors.size());
+        ASSERT_EQ(first, ors[0]);
+        ASSERT_EQ(second, ors[1]);
+        ASSERT_EQ(third, ors[2]);
+    }
+    // true OR (false OR true)
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalOr,
+                first,
+                new LogicalExpression(Kind::kLogicalOr, second, third));
+        auto ors = ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(3UL, ors.size());
+        ASSERT_EQ(first, ors[0]);
+        ASSERT_EQ(second, ors[1]);
+        ASSERT_EQ(third, ors[2]);
+    }
+    // (true AND false) OR (true AND false)
+    {
+        auto *first = new LogicalExpression(Kind::kLogicalAnd,
+                new ConstantExpression(true),
+                new ConstantExpression(false));
+        auto *second = new LogicalExpression(Kind::kLogicalAnd,
+                new ConstantExpression(true),
+                new ConstantExpression(false));
+        LogicalExpression expr(Kind::kLogicalOr, first, second);
+        auto ors = ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(2UL, ors.size());
+        ASSERT_EQ(first, ors[0]);
+        ASSERT_EQ(second, ors[1]);
+    }
+    // true OR ((false OR true) AND false) OR true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new LogicalExpression(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalOr,
+                    new ConstantExpression(false),
+                    new ConstantExpression(true)),
+                new ConstantExpression(false));
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalOr, first, second), third);
+        auto ors = ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(3UL, ors.size());
+        ASSERT_EQ(first, ors[0]);
+        ASSERT_EQ(second, ors[1]);
+        ASSERT_EQ(third, ors[2]);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
