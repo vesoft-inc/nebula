@@ -123,7 +123,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
@@ -140,7 +140,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
-%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
@@ -1523,13 +1523,25 @@ describe_edge_index_sentence
 
 rebuild_tag_index_sentence
     : KW_REBUILD KW_TAG KW_INDEX name_label {
-        $$ = new RebuildTagIndexSentence($4, false);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD);
+        sentence->addPara("rebuild");
+        sentence->addPara("tag");
+        sentence->addPara("index");
+        sentence->addPara(*$4);
+        delete $4;
+        $$ = sentence;
     }
     ;
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label {
-        $$ = new RebuildEdgeIndexSentence($4, false);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD);
+        sentence->addPara("rebuild");
+        sentence->addPara("edge");
+        sentence->addPara("index");
+        sentence->addPara(*$4);
+        delete $4;
+        $$ = sentence;
     }
     ;
 
@@ -1869,8 +1881,10 @@ admin_job_sentence
     ;
 
 admin_job_operation
-    : KW_COMPACT { $$ = new std::string("compact"); }
-    | KW_FLUSH   { $$ = new std::string("flush"); }
+    : KW_COMPACT         { $$ = new std::string("compact"); }
+    | KW_FLUSH           { $$ = new std::string("flush"); }
+    | KW_REBUILD KW_TAG  { $$ = new std::string("rebuild tag"); }
+    | KW_REBUILD KW_EDGE { $$ = new std::string("rebuild edge"); }
     | admin_job_operation admin_job_para {
         $$ = new std::string(*$1 + " " + *$2);
     }

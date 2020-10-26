@@ -266,12 +266,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kDescEdgeIndex: {
             return pool->add(new DescEdgeIndexExecutor(node, qctx));
         }
-        case PlanNode::Kind::kRebuildTagIndex: {
-            return pool->add(new RebuildTagIndexExecutor(node, qctx));
-        }
-        case PlanNode::Kind::kRebuildEdgeIndex: {
-            return pool->add(new RebuildEdgeIndexExecutor(node, qctx));
-        }
         case PlanNode::Kind::kInsertVertices: {
             return pool->add(new InsertVerticesExecutor(node, qctx));
         }

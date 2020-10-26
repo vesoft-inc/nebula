@@ -593,29 +593,6 @@ protected:
     std::string            indexName_;
 };
 
-class RebuildTagIndex final : public RebuildIndexNode {
-public:
-    static RebuildTagIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
-        return qctx->objPool()->add(new RebuildTagIndex(qctx, input, std::move(indexName)));
-    }
-
-private:
-    RebuildTagIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
-        : RebuildIndexNode(qctx, Kind::kRebuildTagIndex, input, std::move(indexName)) {}
-};
-
-class RebuildEdgeIndex final : public RebuildIndexNode {
-public:
-    static RebuildEdgeIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
-        return qctx->objPool()->add(
-            new RebuildEdgeIndex(qctx, input, std::move(indexName)));
-    }
-
-private:
-    RebuildEdgeIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
-        : RebuildIndexNode(qctx, Kind::kRebuildEdgeIndex, input, std::move(indexName)) {}
-};
-
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_MAINTAIN_H_

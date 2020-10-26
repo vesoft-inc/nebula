@@ -91,8 +91,6 @@ Status PermissionCheck::permissionCheck(Session *session,
              */
             return Status::OK();
         }
-        case Sentence::Kind::kRebuildTagIndex :
-        case Sentence::Kind::kRebuildEdgeIndex :
         case Sentence::Kind::kInsertVertices :
         case Sentence::Kind::kUpdateVertex :
         case Sentence::Kind::kInsertEdges :

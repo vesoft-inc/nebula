@@ -71,8 +71,6 @@ public:
         kDropEdgeIndex,
         kDescTagIndex,
         kDescEdgeIndex,
-        kRebuildTagIndex,
-        kRebuildEdgeIndex,
         kInsertVertices,
         kInsertEdges,
         kBalanceLeaders,

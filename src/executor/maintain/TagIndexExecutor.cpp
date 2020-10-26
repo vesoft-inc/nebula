@@ -37,9 +37,5 @@ folly::Future<Status> DescTagIndexExecutor::execute() {
     return Status::OK();
 }
 
-folly::Future<Status> RebuildTagIndexExecutor::execute() {
-    return Status::OK();
-}
-
 }   // namespace graph
 }   // namespace nebula

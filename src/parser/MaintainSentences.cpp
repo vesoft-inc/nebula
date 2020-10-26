@@ -282,15 +282,6 @@ std::string DropEdgeIndexSentence::toString() const {
 }
 
 
-std::string RebuildTagIndexSentence::toString() const {
-    return folly::stringPrintf("BUILD TAG INDEX %s", indexName_.get()->c_str());
-}
-
-
-std::string RebuildEdgeIndexSentence::toString() const {
-    return folly::stringPrintf("BUILD EDGE INDEX %s", indexName_.get()->c_str());
-}
-
 std::string ShowTagsSentence::toString() const {
     return folly::stringPrintf("SHOW TAGS");
 }

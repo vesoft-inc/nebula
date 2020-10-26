@@ -114,6 +114,8 @@ TEST_F(AdminJobTest, Base) {
         }));
         ASSERT_TRUE(verifyDataSetWithoutOrder(resp, expected));
     }
+    // TODO current not support should move it into show
+    /*
     {
         // show one
         cpp2::ExecutionResponse resp;
@@ -167,6 +169,7 @@ TEST_F(AdminJobTest, Base) {
         }));
         ASSERT_TRUE(verifyDataSetWithoutOrder(resp, expected));
     }
+    */
 }
 
 }   // namespace graph

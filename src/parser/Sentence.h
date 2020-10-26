@@ -48,8 +48,6 @@ public:
         kDropEdgeIndex,
         kDescribeTagIndex,
         kDescribeEdgeIndex,
-        kRebuildTagIndex,
-        kRebuildEdgeIndex,
         kDropTag,
         kDropEdge,
         kInsertVertices,

@@ -36,14 +36,6 @@ public:
     folly::Future<Status> execute() override;
 };
 
-class RebuildTagIndexExecutor final : public Executor {
-public:
-    RebuildTagIndexExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("RebuildTagIndexExecutor", node, qctx) {}
-
-    folly::Future<Status> execute() override;
-};
-
 }   // namespace graph
 }   // namespace nebula
 

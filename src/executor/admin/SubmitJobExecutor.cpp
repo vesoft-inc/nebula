@@ -18,20 +18,35 @@ folly::Future<Status> SubmitJobExecutor::execute() {
 
     auto *sjNode = asNode<SubmitJob>(node());
     auto jobOp = sjNode->jobOp();
-    meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::COMPACT;
+    std::vector<std::string> jobArguments;
+    auto spaceName = qctx()->rctx()->session()->space().name;
+    jobArguments.emplace_back(std::move(spaceName));
+
+    meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN;
     if (jobOp == meta::cpp2::AdminJobOp::ADD) {
-        std::vector<std::string> params;
-        folly::split(" ", sjNode->params().front(), params, true);
-        if (params.front() == "compact") {
+        auto& params = sjNode->params();
+        if (params[0] == "compact") {
             cmd = meta::cpp2::AdminCmd::COMPACT;
-        } else if (params.front() == "flush") {
+        } else if (params[0] == "flush") {
             cmd = meta::cpp2::AdminCmd::FLUSH;
+        } else if (params[0] == "rebuild") {
+            if (params[1] == "tag") {
+                cmd = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+                jobArguments.emplace_back(params[3]);
+            } else if (params[1] == "edge") {
+                cmd = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+                jobArguments.emplace_back(params[3]);
+            } else {
+                LOG(ERROR) << "Unknown job command rebuild " << params[1];
+                return Status::Error("Unknown job command rebuild %s", params[1].c_str());
+            }
         } else {
-            DLOG(FATAL) << "Unknown job command " << params.front();
-            return Status::Error("Unknown job command %s", params.front().c_str());
+            LOG(ERROR) << "Unknown job command " << params[0].c_str();
+            return Status::Error("Unknown job command %s", params[0].c_str());
         }
     }
-    return qctx()->getMetaClient()->submitJob(jobOp, cmd, sjNode->params())
+
+    return qctx()->getMetaClient()->submitJob(jobOp, cmd, jobArguments)
         .via(runner())
         .then([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
             SCOPED_TIMER(&execTime_);

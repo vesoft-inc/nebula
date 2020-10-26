@@ -633,53 +633,6 @@ private:
 };
 
 
-class RebuildTagIndexSentence final : public Sentence {
-public:
-    explicit RebuildTagIndexSentence(std::string *indexName, bool isOffline) {
-        indexName_.reset(indexName);
-        isOffline_ = isOffline;
-        kind_ = Kind::kRebuildTagIndex;
-    }
-
-    std::string toString() const override;
-
-    const std::string* indexName() const {
-        return indexName_.get();
-    }
-
-    bool isOffline() {
-        return isOffline_;
-    }
-
-private:
-    std::unique_ptr<std::string>                indexName_;
-    bool                                        isOffline_;
-};
-
-
-class RebuildEdgeIndexSentence final : public Sentence {
-public:
-    explicit RebuildEdgeIndexSentence(std::string *indexName, bool isOffline) {
-        indexName_.reset(indexName);
-        isOffline_ = isOffline;
-        kind_ = Kind::kRebuildEdgeIndex;
-    }
-
-    std::string toString() const override;
-
-    const std::string* indexName() const {
-        return indexName_.get();
-    }
-
-    bool isOffline() {
-        return isOffline_;
-    }
-
-private:
-    std::unique_ptr<std::string>                indexName_;
-    bool                                        isOffline_;
-};
-
 class ShowTagsSentence : public Sentence {
 public:
     ShowTagsSentence() {

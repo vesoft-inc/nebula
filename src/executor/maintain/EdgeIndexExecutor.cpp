@@ -41,10 +41,5 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
     return Status::OK();
 }
 
-folly::Future<Status> RebuildEdgeIndexExecutor::execute() {
-    // auto spaceId = qctx()->rctx()->session()->space();
-    return Status::OK();
-}
-
 }   // namespace graph
 }   // namespace nebula

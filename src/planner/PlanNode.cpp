@@ -94,10 +94,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "DescTagIndex";
         case Kind::kDescEdgeIndex:
             return "DescEdgeIndex";
-        case Kind::kRebuildTagIndex:
-            return "RebuildTagIndex";
-        case Kind::kRebuildEdgeIndex:
-            return "RebuildEdgeIndex";
         case Kind::kInsertVertices:
             return "InsertVertices";
         case Kind::kInsertEdges:
