@@ -272,6 +272,26 @@ class TestFetchEdges(NebulaTestSuite):
         self.check_column_names(resp, expect_columns_name)
         self.check_out_of_order_result(resp, expect_result)
 
+        query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs"'
+        resp = self.execute_query(query)
+        expect_columns_name = ['serve._src',
+                               'serve._dst',
+                               'serve._rank',
+                               'serve.start_year',
+                               'serve.end_year']
+        expect_result = []
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_columns_name)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON serve "Zion Williamson"->"Spurs", "Boris Diaw"->"Hawks"'
+        resp = self.execute_query(query)
+        expect_result = [["Boris Diaw", "Hawks", 0, 2003, 2005]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_columns_name)
+        self.check_out_of_order_result(resp, expect_result)
+
+
     def test_fetch_edges_not_duplicate_column(self):
         query = 'FETCH PROP ON serve "Boris Diaw"->"Hawks" YIELD serve.start_year, serve.start_year'
         resp = self.execute_query(query)

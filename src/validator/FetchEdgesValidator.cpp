@@ -51,6 +51,7 @@ Status FetchEdgesValidator::toPlan() {
     // filter when the edge key is empty which means not exists edge in fact
     auto *notExistEdgeFilter = Filter::make(qctx_, current, emptyEdgeKeyFilter());
     notExistEdgeFilter->setInputVar(current->outputVar());
+    notExistEdgeFilter->setColNames(geColNames_);
     current = notExistEdgeFilter;
 
     if (withProject_) {
