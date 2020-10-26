@@ -135,6 +135,7 @@ void FoldConstantExprVisitor::visit(MapExpression *expr) {
     for (size_t i = 0; i < items.size(); ++i) {
         auto &pair = items[i];
         auto item = const_cast<Expression *>(pair.second.get());
+        item->accept(this);
         if (!canBeFolded_) {
             canBeFolded = false;
             continue;
