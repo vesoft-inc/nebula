@@ -842,6 +842,7 @@ public:
         kRowBasedMove,
         kMToN,
         kBFSShortest,
+        kAllPaths,
     };
 
     static DataCollect* make(QueryContext* qctx,

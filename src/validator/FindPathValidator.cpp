@@ -25,13 +25,16 @@ Status FindPathValidator::validateImpl() {
 
 Status FindPathValidator::toPlan() {
     // TODO: Implement the path plan.
-    if (from_.vids.size() == 1 && to_.vids.size() == 1) {
+    if (isShortest_ && from_.vids.size() == 1 && to_.vids.size() == 1) {
         return singlePairPlan();
-    } else {
+    } else if (isShortest_) {
         auto* passThrough = PassThroughNode::make(qctx_, nullptr);
         tail_ = passThrough;
         root_ = tail_;
+    } else {
+        return allPairPaths();
     }
+
     return Status::OK();
 }
 
@@ -46,7 +49,7 @@ Status FindPathValidator::singlePairPlan() {
     VLOG(1) << "backward: " << backward->outputVar();
 
     auto* conjunct =
-        ConjunctPath::make(qctx_, forward, backward, ConjunctPath::PathKind::kBiBFS);
+        ConjunctPath::make(qctx_, forward, backward, ConjunctPath::PathKind::kBiBFS, steps_.steps);
     conjunct->setLeftVar(forward->outputVar());
     conjunct->setRightVar(backward->outputVar());
     conjunct->setColNames({"_path"});
@@ -141,6 +144,83 @@ GetNeighbors::EdgeProps FindPathValidator::buildEdgeKey(bool reverse) {
                     return ep;
                 });
     return edgeProps;
+}
+
+Status FindPathValidator::allPairPaths() {
+    auto* bodyStart = StartNode::make(qctx_);
+    auto* passThrough = PassThroughNode::make(qctx_, bodyStart);
+
+    auto* forward = allPaths(passThrough, from_, false);
+    VLOG(1) << "forward: " << forward->outputVar();
+
+    auto* backward = allPaths(passThrough, to_, true);
+    VLOG(1) << "backward: " << backward->outputVar();
+
+    auto* conjunct = ConjunctPath::make(
+        qctx_, forward, backward, ConjunctPath::PathKind::kAllPaths, steps_.steps);
+    conjunct->setLeftVar(forward->outputVar());
+    conjunct->setRightVar(backward->outputVar());
+    conjunct->setColNames({"_path"});
+
+    auto* loop = Loop::make(
+        qctx_, nullptr, conjunct, buildAllPathsLoopCondition(steps_.steps));
+
+    auto* dataCollect = DataCollect::make(
+        qctx_, loop, DataCollect::CollectKind::kAllPaths, {conjunct->outputVar()});
+    dataCollect->setColNames({"_path"});
+
+    root_ = dataCollect;
+    tail_ = loop;
+    return Status::OK();
+}
+
+PlanNode* FindPathValidator::allPaths(PlanNode* dep, const Starts& starts, bool reverse) {
+    std::string startVidsVar;
+    Expression* vids = nullptr;
+    buildConstantInput(starts, startVidsVar, vids);
+
+    DCHECK(!!vids);
+    auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
+    gn->setSrc(vids);
+    gn->setEdgeProps(buildEdgeKey(reverse));
+    gn->setInputVar(startVidsVar);
+
+    auto* allPaths = ProduceAllPaths::make(qctx_, gn);
+    allPaths->setInputVar(gn->outputVar());
+    allPaths->setColNames({kVid, "path"});
+    allPaths->setOutputVar(startVidsVar);
+
+    DataSet ds;
+    ds.colNames = {kVid, "path"};
+    for (auto& vid : starts.vids) {
+        Row row;
+        row.values.emplace_back(vid);
+
+        List paths;
+        Path path;
+        path.src = Vertex(vid.getStr(), {});
+        paths.values.emplace_back(std::move(path));
+        row.values.emplace_back(std::move(paths));
+        ds.rows.emplace_back(std::move(row));
+    }
+    qctx_->ectx()->setResult(startVidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
+
+    return allPaths;
+}
+
+Expression* FindPathValidator::buildAllPathsLoopCondition(uint32_t steps) {
+    // ++loopSteps{0} <= (steps/2+steps%2) && size(pathVar) == 0
+    auto loopSteps = vctx_->anonVarGen()->getVar();
+    qctx_->ectx()->setValue(loopSteps, 0);
+
+    auto* nSteps = new RelationalExpression(
+        Expression::Kind::kRelLE,
+        new UnaryExpression(
+            Expression::Kind::kUnaryIncr,
+            new VersionedVariableExpression(new std::string(loopSteps), new ConstantExpression(0))),
+        new ConstantExpression(static_cast<int32_t>(steps / 2 + steps % 2)));
+
+    return qctx_->objPool()->add(nSteps);
 }
 }  // namespace graph
 }  // namespace nebula

@@ -209,6 +209,10 @@ std::unique_ptr<cpp2::PlanNodeDescription> DataCollect::explain() const {
             addDescription("kind", "BFS SHORTEST", desc.get());
             break;
         }
+        case CollectKind::kAllPaths: {
+            addDescription("kind", "ALL PATHS", desc.get());
+            break;
+        }
     }
     return desc;
 }

@@ -37,6 +37,7 @@
 #include "executor/algo/BFSShortestPathExecutor.h"
 #include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
+#include "executor/algo/ProduceAllPathsExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
@@ -370,6 +371,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kConjunctPath: {
             return pool->add(new ConjunctPathExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kProduceAllPaths: {
+            return pool->add(new ProduceAllPathsExecutor(node, qctx));
         }
         case PlanNode::Kind::kUnknown: {
             break;

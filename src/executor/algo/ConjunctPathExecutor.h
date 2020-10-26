@@ -21,6 +21,8 @@ public:
 private:
     folly::Future<Status> bfsShortestPath();
 
+    folly::Future<Status> allPaths();
+
     std::vector<Row> findBfsShortestPath(Iterator* iter,
                                          bool isLatest,
                                          std::multimap<Value, const Edge*>& table);
@@ -33,8 +35,13 @@ private:
 
     bool findPath(Iterator* iter, std::multimap<Value, const Path*>& table, DataSet& ds);
 
+    bool findAllPaths(Iterator* backwardPathsIter,
+                      std::unordered_map<Value, const List&>& forwardPathsTable,
+                      DataSet& ds);
+
     std::vector<std::multimap<Value, const Edge*>>  forward_;
     std::vector<std::multimap<Value, const Edge*>>  backward_;
+    size_t                                          count_{0};
 };
 }  // namespace graph
 }  // namespace nebula

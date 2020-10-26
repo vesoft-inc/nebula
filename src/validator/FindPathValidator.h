@@ -36,6 +36,12 @@ private:
 
     GetNeighbors::EdgeProps buildEdgeKey(bool reverse);
 
+    Status allPairPaths();
+
+    PlanNode* allPaths(PlanNode* dep, const Starts& starts, bool reverse);
+
+    Expression* buildAllPathsLoopCondition(uint32_t steps);
+
 private:
     bool            isShortest_{false};
     Starts          to_;

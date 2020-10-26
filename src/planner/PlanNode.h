@@ -107,6 +107,7 @@ public:
         kBFSShortest,
         kProduceSemiShortestPath,
         kConjunctPath,
+        kProduceAllPaths,
     };
 
     PlanNode(QueryContext* qctx, Kind kind);

@@ -41,6 +41,10 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
             NG_RETURN_IF_ERROR(collectBFSShortest(vars));
             break;
         }
+        case DataCollect::CollectKind::kAllPaths: {
+            NG_RETURN_IF_ERROR(collectAllPaths(vars));
+            break;
+        }
         default:
             LOG(FATAL) << "Unknown data collect type: " << static_cast<int64_t>(dc->collectKind());
     }
@@ -154,6 +158,30 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
 Status DataCollectExecutor::collectBFSShortest(const std::vector<std::string>& vars) {
     // Will rewrite this method once we implement returning the props for the path.
     return rowBasedMove(vars);
+}
+
+Status DataCollectExecutor::collectAllPaths(const std::vector<std::string>& vars) {
+    DataSet ds;
+    ds.colNames = std::move(colNames_);
+    DCHECK(!ds.colNames.empty());
+    for (auto& var : vars) {
+        auto& hist = ectx_->getHistory(var);
+        for (auto& result : hist) {
+            auto iter = result.iter();
+            if (iter->isSequentialIter()) {
+                auto* seqIter = static_cast<SequentialIter*>(iter.get());
+                for (; seqIter->valid(); seqIter->next()) {
+                    ds.rows.emplace_back(seqIter->moveRow());
+                }
+            } else {
+                std::stringstream msg;
+                msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
+                return Status::Error(msg.str());
+            }
+        }
+    }
+    result_.setDataSet(std::move(ds));
+    return Status::OK();
 }
 }  // namespace graph
 }  // namespace nebula
