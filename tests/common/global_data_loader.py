@@ -21,6 +21,7 @@ class GlobalDataLoader(object):
         self.port = port
         self.user = user
         self.password = password
+        self.has_load_data = False
 
     def __enter__(self):
         self.client_pool = ConnectionPool(ip=self.ip, port=self.port, network_timeout=0)
@@ -29,6 +30,8 @@ class GlobalDataLoader(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if self.has_load_data:
+            self.drop_data()
         self.client.sign_out()
         self.client_pool.close()
 
@@ -37,6 +40,7 @@ class GlobalDataLoader(object):
             assert False, 'Connect to {}:{}'.format(self.ip, self.port)
         self.load_nba()
         self.load_student()
+        self.has_load_data = True
 
     # The whole test will load once, for the only read tests
     def load_nba(self):
