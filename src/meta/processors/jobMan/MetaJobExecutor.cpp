@@ -17,6 +17,7 @@
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/processors/jobMan/RebuildTagJobExecutor.h"
 #include "meta/processors/jobMan/RebuildEdgeJobExecutor.h"
+#include "utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -140,7 +141,9 @@ ExecuteRet MetaJobExecutor::execute() {
     std::vector<folly::SemiFuture<Status>> futures;
     auto addresses = nebula::value(addressesRet);
     for (auto& address : addresses) {
-        auto future = executeInternal(std::move(address.first), std::move(address.second));
+        // transform to the admin host
+        auto future = executeInternal(Utils::getAdminAddrFromStoreAddr(address.first),
+                                      std::move(address.second));
         futures.emplace_back(std::move(future));
     }
 
