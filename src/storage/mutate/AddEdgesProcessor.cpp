@@ -88,27 +88,49 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         newEdges[key] = std::move(prop);
     });
     for (auto& e : newEdges) {
-        std::string val;
+        RowReader reader = RowReader::getEmptyRowReader();
         RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
+        bool hasIndex = std::any_of(indexes_.begin(),
+                                    indexes_.end(),
+                                    [edgeType] (const auto& index) {
+            return edgeType == index->get_schema_id().get_edge_type();
+        });
+        if (!ignoreExistedIndex_ && hasIndex) {
+            // If there is any index on this edge type, get the reader of existed data
+            auto val = findObsoleteIndex(partId, e.first);
+            if (!val.empty()) {
+                reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                      val,
+                                                      spaceId_,
+                                                      edgeType);
+                if (reader == nullptr) {
+                    LOG(WARNING) << "Bad format row, key: " << e.first
+                                 << ", value: " << folly::hexDump(val.data(), val.size());
+                    return "";
+                }
+            }
+        }
+        if (hasIndex) {
+            // Get the reader of new data
+            nReader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                   e.second,
+                                                   spaceId_,
+                                                   edgeType);
+            if (nReader == nullptr) {
+                LOG(WARNING) << "Bad format row, key: " << e.first
+                                << ", value: " << folly::hexDump(e.second.data(), e.second.size());
+                return "";
+            }
+        }
+
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
                 if (!ignoreExistedIndex_) {
-                    if (val.empty()) {
-                        val = findObsoleteIndex(partId, e.first);
-                    }
-                    if (!val.empty()) {
-                        auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                                val,
-                                                                spaceId_,
-                                                                edgeType);
-                        if (reader == nullptr) {
-                            LOG(WARNING) << "Bad format row";
-                            return "";
-                        }
+                    if (reader != nullptr) {
                         auto oi = indexKey(partId, reader.get(), e.first, index);
                         if (!oi.empty()) {
                             batchHolder->remove(std::move(oi));
@@ -118,16 +140,6 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                 /*
                  * step 2 , Insert new edge index
                  */
-                if (nReader == nullptr) {
-                    nReader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                           e.second,
-                                                           spaceId_,
-                                                           edgeType);
-                    if (nReader == nullptr) {
-                        LOG(WARNING) << "Bad format row";
-                        return "";
-                    }
-                }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 if (!ni.empty()) {
                     batchHolder->put(std::move(ni), "");

@@ -102,28 +102,50 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
                                                        std::vector<kvstore::KV>&& data) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& v : data) {
-        std::string val;
+        RowReader reader = RowReader::getEmptyRowReader();
         RowReader nReader = RowReader::getEmptyRowReader();
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
+        bool hasIndex = std::any_of(indexes_.begin(),
+                                    indexes_.end(),
+                                    [tagId] (const auto& index) {
+            return tagId == index->get_schema_id().get_tag_id();
+        });
+        if (!ignoreExistedIndex_ && hasIndex) {
+            // If there is any index on this tag, get the reader of existed data
+            auto val = findObsoleteIndex(partId, vId, tagId);
+            if (!val.empty()) {
+                reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                     val,
+                                                     spaceId_,
+                                                     tagId);
+                if (reader == nullptr) {
+                    LOG(WARNING) << "Bad format row, key: " << v.first
+                                 << ", value: " << folly::hexDump(val.data(), val.size());
+                    return "";
+                }
+            }
+        }
+        if (hasIndex) {
+            // Get the reader of new data
+            nReader = RowReader::getTagPropReader(this->schemaMan_,
+                                                  v.second,
+                                                  spaceId_,
+                                                  tagId);
+            if (nReader == nullptr) {
+                LOG(WARNING) << "Bad format row, key: " << v.first
+                                << ", value: " << folly::hexDump(v.second.data(), v.second.size());
+                return "";
+            }
+        }
+
         for (auto& index : indexes_) {
             if (tagId == index->get_schema_id().get_tag_id()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
                 if (!ignoreExistedIndex_) {
-                    if (val.empty()) {
-                        val = findObsoleteIndex(partId, vId, tagId);
-                    }
-                    if (!val.empty()) {
-                        auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                                val,
-                                                                spaceId_,
-                                                                tagId);
-                        if (reader == nullptr) {
-                            LOG(WARNING) << "Bad format row";
-                            return "";
-                        }
+                    if (reader != nullptr) {
                         auto oi = indexKey(partId, vId, reader.get(), index);
                         if (!oi.empty()) {
                             batchHolder->remove(std::move(oi));
@@ -133,16 +155,6 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
                 /*
                  * step 2 , Insert new vertex index
                  */
-                if (nReader == nullptr) {
-                    nReader = RowReader::getTagPropReader(this->schemaMan_,
-                                                          v.second,
-                                                          spaceId_,
-                                                          tagId);
-                    if (nReader == nullptr) {
-                        LOG(WARNING) << "Bad format row";
-                        return "";
-                    }
-                }
                 auto ni = indexKey(partId, vId, nReader.get(), index);
                 if (!ni.empty()) {
                     batchHolder->put(std::move(ni), "");
