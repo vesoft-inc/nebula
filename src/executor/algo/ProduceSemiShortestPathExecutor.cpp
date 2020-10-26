@@ -236,6 +236,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
     for (auto& dstPath : currentCostPathMap) {
         auto& dst = dstPath.first;
         for (auto& srcPath : dstPath.second) {
+            auto& src = srcPath.first;
             auto cost = srcPath.second.cost_;
             List paths;
             paths.values.reserve(srcPath.second.paths_.size());
@@ -244,6 +245,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
             }
             Row row;
             row.values.emplace_back(std::move(dst));
+            row.values.emplace_back(std::move(src));
             row.values.emplace_back(std::move(cost));
             row.values.emplace_back(std::move(paths));
             ds.rows.emplace_back(std::move(row));

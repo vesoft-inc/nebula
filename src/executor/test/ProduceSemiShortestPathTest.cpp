@@ -16,15 +16,18 @@ namespace graph {
 class ProduceSemiShortestPathTest : public testing::Test {
 protected:
     static bool compareShortestPath(Row& row1, Row& row2) {
-        // row : dst | cost | {paths}
+        // row : dst | src | cost | {paths}
         if (row1.values[0] != row2.values[0]) {
             return row1.values[0] < row2.values[0];
         }
         if (row1.values[1] != row2.values[1]) {
             return row1.values[1] < row2.values[1];
         }
-        auto& pathList1 = row1.values[2].getList();
-        auto& pathList2 = row2.values[2].getList();
+        if (row1.values[2] != row2.values[2]) {
+            return row1.values[2] < row2.values[2];
+        }
+        auto& pathList1 = row1.values[3].getList();
+        auto& pathList2 = row2.values[3].getList();
         if (pathList1.size() != pathList2.size()) {
             return pathList1.size() < pathList2.size();
         }
@@ -221,7 +224,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
 
     auto* pssp = ProduceSemiShortestPath::make(qctx_.get(), nullptr);
     pssp->setInputVar("input");
-    pssp->setColNames({"_dst", "_cost", "_paths"});
+    pssp->setColNames({"_dst", "_src", "cost", "paths"});
 
     auto psspExe = std::make_unique<ProduceSemiShortestPathExecutor>(pssp, qctx_.get());
     // Step 1
@@ -238,7 +241,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
         auto& result = qctx_->ectx()->getResult(pssp->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_dst", "_cost", "_paths"};
+        expected.colNames = {"_dst", "_src", "cost", "paths"};
         auto cost = 1;
         {
             // 0->1
@@ -250,6 +253,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("1");
+            row.values.emplace_back("0");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -264,6 +268,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("5");
+            row.values.emplace_back("1");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -278,6 +283,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("6");
+            row.values.emplace_back("1");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -292,6 +298,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("6");
+            row.values.emplace_back("2");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -306,6 +313,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("4");
+            row.values.emplace_back("3");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -332,7 +340,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
         auto& result = qctx_->ectx()->getResult(pssp->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_dst", "_cost", "_paths"};
+        expected.colNames = {"_dst", "_src", "cost", "paths"};
         auto cost = 2;
         {
             // 0->1->5
@@ -345,6 +353,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("5");
+            row.values.emplace_back("0");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -360,6 +369,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("6");
+            row.values.emplace_back("0");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -375,6 +385,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("7");
+            row.values.emplace_back("2");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -390,6 +401,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             List paths;
             paths.values.emplace_back(std::move(path));
             row.values.emplace_back("7");
+            row.values.emplace_back("3");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -413,6 +425,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             }
             Row row;
             row.values.emplace_back("7");
+            row.values.emplace_back("1");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -439,7 +452,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
         auto& result = qctx_->ectx()->getResult(pssp->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_dst", "_cost", "_paths"};
+        expected.colNames = {"_dst", "_src", "cost", "paths"};
         auto cost = 3;
         {
             // 0->1->5->7, 0->1->6->7
@@ -462,6 +475,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
             }
             Row row;
             row.values.emplace_back("7");
+            row.values.emplace_back("0");
             row.values.emplace_back(cost);
             row.values.emplace_back(std::move(paths));
             expected.rows.emplace_back(std::move(row));
@@ -478,7 +492,7 @@ TEST_F(ProduceSemiShortestPathTest, ShortestPath) {
 TEST_F(ProduceSemiShortestPathTest, EmptyInput) {
     auto* pssp = ProduceSemiShortestPath::make(qctx_.get(), nullptr);
     pssp->setInputVar("empty_get_neighbors");
-    pssp->setColNames({"_dst", "_cost", "_paths"});
+    pssp->setColNames({"_dst", "_src", "cost", "paths"});
 
     auto psspExe = std::make_unique<ProduceSemiShortestPathExecutor>(pssp, qctx_.get());
     auto future = psspExe->execute();
@@ -487,7 +501,7 @@ TEST_F(ProduceSemiShortestPathTest, EmptyInput) {
     auto& result = qctx_->ectx()->getResult(pssp->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_dst", "_cost", "_paths"};
+    expected.colNames = {"_dst", "_src", "cost", "paths"};
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
