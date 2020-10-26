@@ -60,6 +60,21 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                     cacheData.emplace_back(v.get_id(), tag.get_tag_id(), tag.get_props());
                 }
+                auto tagId = tag.get_tag_id();
+                if (ignoreExistedIndex_ && hasRelatedIndex(tagId)) {
+                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                              tag.get_props(),
+                                                              spaceId_,
+                                                              tagId);
+                    for (auto& index : indexes_) {
+                        if (tagId == index->get_schema_id().get_tag_id()) {
+                            auto ni = indexKey(partId, v.get_id(), reader.get(), index);
+                            if (!ni.empty()) {
+                                data.emplace_back(std::move(ni), "");
+                            }
+                        }
+                    }
+                }
                 data.emplace_back(std::move(key), std::move(tag.get_props()));
                 uniqueIDs.emplace(uniqueKey);
             });
@@ -79,7 +94,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
             }
             handleAsync(spaceId_, partId, code);
         };
-        if (indexes_.empty()) {
+        if (ignoreExistedIndex_ || indexes_.empty()) {
             this->kvstore_->asyncMultiPut(spaceId_,
                                           partId,
                                           std::move(data),
@@ -107,12 +122,8 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
         RowReader nReader = RowReader::getEmptyRowReader();
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
-        bool hasIndex = std::any_of(indexes_.begin(),
-                                    indexes_.end(),
-                                    [tagId] (const auto& index) {
-            return tagId == index->get_schema_id().get_tag_id();
-        });
-        if (!ignoreExistedIndex_ && hasIndex) {
+        bool hasIndex = hasRelatedIndex(tagId);
+        if (hasIndex) {
             // If there is any index on this tag, get the reader of existed data
             oldVal = findObsoleteIndex(partId, vId, tagId);
             if (!oldVal.empty()) {
@@ -126,8 +137,6 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
                     return "";
                 }
             }
-        }
-        if (hasIndex) {
             // Get the reader of new data
             nReader = RowReader::getTagPropReader(this->schemaMan_,
                                                   v.second,
@@ -198,6 +207,12 @@ std::string AddVerticesProcessor::indexKey(PartitionID partId,
     return NebulaKeyUtils::vertexIndexKey(partId,
                                           index->get_index_id(),
                                           vId, values.value());
+}
+
+bool AddVerticesProcessor::hasRelatedIndex(TagID tagId) {
+    return std::any_of(indexes_.begin(), indexes_.end(), [tagId] (const auto& index) {
+        return tagId == index->get_schema_id().get_tag_id();
+    });
 }
 
 }  // namespace storage

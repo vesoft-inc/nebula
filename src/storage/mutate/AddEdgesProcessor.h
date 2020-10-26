@@ -45,6 +45,8 @@ private:
                          const folly::StringPiece& rawKey,
                          std::shared_ptr<nebula::cpp2::IndexItem> index);
 
+    bool hasRelatedIndex(EdgeType edgeType);
+
 private:
     GraphSpaceID                                          spaceId_;
     meta::IndexManager*                                   indexMan_{nullptr};

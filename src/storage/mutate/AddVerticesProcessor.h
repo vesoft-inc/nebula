@@ -51,6 +51,8 @@ private:
                          RowReader* reader,
                          std::shared_ptr<nebula::cpp2::IndexItem> index);
 
+    bool hasRelatedIndex(TagID tagId);
+
 private:
     GraphSpaceID                                          spaceId_;
     meta::IndexManager*                                   indexMan_{nullptr};

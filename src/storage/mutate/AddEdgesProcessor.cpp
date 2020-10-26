@@ -27,7 +27,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     ignoreExistedIndex_ = req.get_ignore_existed_index();
 
     CHECK_NOTNULL(kvstore_);
-    if (indexes_.empty()) {
+    if (ignoreExistedIndex_ || indexes_.empty()) {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
             auto partId = partEdges.first;
             std::vector<kvstore::KV> data;
@@ -38,6 +38,21 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                         << edge.key.dst << ", EdgeVersion: " << version;
                 auto key = NebulaKeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
                                                    edge.key.ranking, edge.key.dst, version);
+                auto edgeType = edge.key.edge_type;
+                if (hasRelatedIndex(edgeType)) {
+                    auto reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                               edge.get_props(),
+                                                               spaceId_,
+                                                               edgeType);
+                    for (auto& index : indexes_) {
+                        if (edgeType == index->get_schema_id().get_edge_type()) {
+                            auto ni = indexKey(partId, reader.get(), key, index);
+                            if (!ni.empty()) {
+                                data.emplace_back(std::move(ni), "");
+                            }
+                        }
+                    }
+                }
                 data.emplace_back(std::move(key), std::move(edge.get_props()));
             });
             doPut(spaceId_, partId, std::move(data));
@@ -92,12 +107,8 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         RowReader reader = RowReader::getEmptyRowReader();
         RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
-        bool hasIndex = std::any_of(indexes_.begin(),
-                                    indexes_.end(),
-                                    [edgeType] (const auto& index) {
-            return edgeType == index->get_schema_id().get_edge_type();
-        });
-        if (!ignoreExistedIndex_ && hasIndex) {
+        bool hasIndex = hasRelatedIndex(edgeType);
+        if (hasIndex) {
             // If there is any index on this edge type, get the reader of existed data
             oldVal = findObsoleteIndex(partId, e.first);
             if (!oldVal.empty()) {
@@ -111,8 +122,6 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                     return "";
                 }
             }
-        }
-        if (hasIndex) {
             // Get the reader of new data
             nReader = RowReader::getEdgePropReader(this->schemaMan_,
                                                    e.second,
@@ -192,6 +201,12 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
                                         values.value());
+}
+
+bool AddEdgesProcessor::hasRelatedIndex(EdgeType edgeType) {
+    return std::any_of(indexes_.begin(), indexes_.end(), [edgeType] (const auto& index) {
+        return edgeType == index->get_schema_id().get_edge_type();
+    });
 }
 
 }  // namespace storage
