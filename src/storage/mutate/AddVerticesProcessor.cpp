@@ -28,6 +28,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
     }
+    ignoreExistedIndex_ = req.get_ignore_existed_index();
 
     CHECK_NOTNULL(kvstore_);
     std::unordered_set<std::pair<VertexID, TagID>> uniqueIDs;
@@ -110,21 +111,23 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty()) {
-                    val = findObsoleteIndex(partId, vId, tagId);
-                }
-                if (!val.empty()) {
-                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                              val,
-                                                              spaceId_,
-                                                              tagId);
-                    if (reader == nullptr) {
-                        LOG(WARNING) << "Bad format row";
-                        return "";
+                if (!ignoreExistedIndex_) {
+                    if (val.empty()) {
+                        val = findObsoleteIndex(partId, vId, tagId);
                     }
-                    auto oi = indexKey(partId, vId, reader.get(), index);
-                    if (!oi.empty()) {
-                        batchHolder->remove(std::move(oi));
+                    if (!val.empty()) {
+                        auto reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                                val,
+                                                                spaceId_,
+                                                                tagId);
+                        if (reader == nullptr) {
+                            LOG(WARNING) << "Bad format row";
+                            return "";
+                        }
+                        auto oi = indexKey(partId, vId, reader.get(), index);
+                        if (!oi.empty()) {
+                            batchHolder->remove(std::move(oi));
+                        }
                     }
                 }
                 /*

@@ -49,6 +49,7 @@ private:
     GraphSpaceID                                          spaceId_;
     meta::IndexManager*                                   indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+    bool                                                  ignoreExistedIndex_{false};
 };
 
 }  // namespace storage

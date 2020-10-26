@@ -998,6 +998,142 @@ TEST_F(IndexTest, AlterSchemaTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
 }
 
+TEST_F(IndexTest, IgnoreExistedIndexTest) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE ingore_space(partition_num=1, replica_factor=1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE ingore_space";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG person(id int)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE TAG INDEX id_index ON person(id)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        // insert some data
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(id) VALUES 100:(1), 200:(1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // lookup id == 1, both 100 and 200 satisfy
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person WHERE person.id == 1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{100}, {200}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // overwrite tag of 100
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(id) VALUES 100:(1)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // overwrite tag of 200 with ignore_existed_index. Old index of 200 will not be deleted
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX IGNORE_EXISTED_INDEX person(id) VALUES 200:(2)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // lookup id == 1, both 100 and 200 satisfy.
+        // the old index of 200 still exists
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person WHERE person.id == 1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{100}, {200}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // lookup id == 2, 200 satisfy.
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON person WHERE person.id == 2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID>> expected = {{200}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "CREATE EDGE like(grade int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "CREATE EDGE INDEX grade_index ON like(grade)";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        // insert some data
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE like(grade) VALUES 100 -> 200:(666), 300 -> 400:(666);";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // lookup grade == 666, both edge satisfy
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON like WHERE like.grade == 666";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected =
+            {{300, 400, 0}, {100, 200, 0}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // overwrite edge of 100 -> 200
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE like(grade) VALUES 100 -> 200:(666)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // overwrite edge of 300 -> 400 with ignore_existed_index
+        // old index of the edge will not be deleted
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE IGNORE_EXISTED_INDEX like(grade) VALUES 300 -> 400:(888)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // lookup grade == 666, both edge satisfy
+        // the old index of 300 -> 400 still exists
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON like WHERE like.grade == 666";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {
+            {300, 400, 0}, {100, 200, 0}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // lookup grade == 888, 300 -> 400 satisfy.
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON like WHERE like.grade == 888";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking>> expected = {{300, 400, 0}};
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
 

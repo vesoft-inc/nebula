@@ -160,15 +160,21 @@ class InsertVertexSentence final : public Sentence {
 public:
     InsertVertexSentence(VertexTagList *tagList,
                          VertexRowList *rows,
-                         bool overwritable = true) {
+                         bool overwritable = true,
+                         bool ignoreExistedIndex = false) {
         tagList_.reset(tagList);
         rows_.reset(rows);
         overwritable_ = overwritable;
+        ignoreExistedIndex_ = ignoreExistedIndex;
         kind_ = Kind::kInsertVertex;
     }
 
     bool overwritable() const {
         return overwritable_;
+    }
+
+    bool ignoreExistedIndex() const {
+        return ignoreExistedIndex_;
     }
 
     auto tagItems() const {
@@ -183,6 +189,7 @@ public:
 
 private:
     bool                                        overwritable_{true};
+    bool                                        ignoreExistedIndex_{false};
     std::unique_ptr<VertexTagList>              tagList_;
     std::unique_ptr<VertexRowList>              rows_;
 };
@@ -252,28 +259,29 @@ private:
 
 class InsertEdgeSentence final : public Sentence {
 public:
-    InsertEdgeSentence() {
-        kind_ = Kind::kInsertEdge;
-    }
-
-    void setOverwrite(bool overwritable) {
+    InsertEdgeSentence(std::string *edge,
+                       PropertyList *props,
+                       EdgeRowList *rows,
+                       bool overwritable = true,
+                       bool ignoreExistedIndex = false) {
+        edge_.reset(edge);
+        properties_.reset(props);
+        rows_.reset(rows);
         overwritable_ = overwritable;
+        ignoreExistedIndex_ = ignoreExistedIndex;
+        kind_ = Kind::kInsertEdge;
     }
 
     bool overwritable() const {
         return overwritable_;
     }
 
-    void setEdge(std::string *edge) {
-        edge_.reset(edge);
+    bool ignoreExistedIndex() const {
+        return ignoreExistedIndex_;
     }
 
     const std::string* edge() const {
         return edge_.get();
-    }
-
-    void setProps(PropertyList *props) {
-        properties_.reset(props);
     }
 
     std::vector<std::string*> properties() const {
@@ -281,10 +289,6 @@ public:
             return {};
         }
         return properties_->properties();
-    }
-
-    void setRows(EdgeRowList *rows) {
-        rows_.reset(rows);
     }
 
     std::vector<EdgeRowItem*> rows() const {
@@ -295,6 +299,7 @@ public:
 
 private:
     bool                                        overwritable_{true};
+    bool                                        ignoreExistedIndex_{false};
     std::unique_ptr<std::string>                edge_;
     std::unique_ptr<PropertyList>               properties_;
     std::unique_ptr<EdgeRowList>                rows_;

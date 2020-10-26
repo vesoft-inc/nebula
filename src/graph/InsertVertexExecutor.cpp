@@ -41,6 +41,7 @@ Status InsertVertexExecutor::check() {
 
     auto tagItems = sentence_->tagItems();
     overwritable_ = sentence_->overwritable();
+    ignoreExistedIndex_ = sentence_->ignoreExistedIndex();
     spaceId_ = ectx()->rctx()->session()->space();
 
     tagIds_.reserve(tagItems.size());
@@ -237,7 +238,8 @@ void InsertVertexExecutor::execute() {
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
                                                           std::move(result).value(),
-                                                          overwritable_);
+                                                          overwritable_,
+                                                          ignoreExistedIndex_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

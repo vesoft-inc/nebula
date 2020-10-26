@@ -72,6 +72,7 @@ INTERSECT                   ([Ii][Nn][Tt][Ee][Rr][Ss][Ee][Cc][Tt])
 MINUS                       ([Mm][Ii][Nn][Uu][Ss])
 NO                          ([Nn][Oo])
 OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
+IGNORE_EXISTED_INDEX        ([Ii][Gg][Nn][Oo][Rr][Ee][_][Ee][Xx][Ii][Ss][Tt][Ee][Dd][_][Ii][Nn][Dd][Ee][Xx])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
@@ -215,6 +216,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {MINUS}                     { return TokenType::KW_MINUS; }
 {NO}                        { return TokenType::KW_NO; }
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
+{IGNORE_EXISTED_INDEX}      { return TokenType::KW_IGNORE_EXISTED_INDEX; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }

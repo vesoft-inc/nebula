@@ -35,6 +35,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         GraphSpaceID space,
         std::vector<cpp2::Vertex> vertices,
         bool overwritable,
+        bool ignoreExistedIndex,
         folly::EventBase* evb) {
     auto status =
         clusterIdsToHosts(space, vertices, [](const cpp2::Vertex& v) { return v.get_id(); });
@@ -51,6 +52,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_overwritable(overwritable);
+        req.set_ignore_existed_index(ignoreExistedIndex);
         req.set_parts(std::move(c.second));
     }
 
@@ -70,6 +72,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
+        bool ignoreExistedIndex,
         folly::EventBase* evb) {
     auto status =
         clusterIdsToHosts(space, edges, [](const cpp2::Edge& e) { return e.get_key().get_src(); });
@@ -86,6 +89,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_overwritable(overwritable);
+        req.set_ignore_existed_index(ignoreExistedIndex);
         req.set_parts(std::move(c.second));
     }
 

@@ -35,6 +35,7 @@ private:
     InsertEdgeSentence                               *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                expCtx_;
     bool                                              overwritable_{true};
+    bool                                              ignoreExistedIndex_{false};
     EdgeType                                          edgeType_{0};
     EdgeSchema                                        schema_;
     std::vector<std::string*>                         props_;

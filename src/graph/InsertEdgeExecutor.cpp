@@ -37,6 +37,7 @@ Status InsertEdgeExecutor::check() {
 
     spaceId_ = ectx()->rctx()->session()->space();
     overwritable_ = sentence_->overwritable();
+    ignoreExistedIndex_ = sentence_->ignoreExistedIndex();
     auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
     if (!edgeStatus.ok()) {
         status = edgeStatus.status();
@@ -247,7 +248,8 @@ void InsertEdgeExecutor::execute() {
 
     auto future = ectx()->getStorageClient()->addEdges(spaceId_,
                                                        std::move(result).value(),
-                                                       overwritable_);
+                                                       overwritable_,
+                                                       ignoreExistedIndex_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

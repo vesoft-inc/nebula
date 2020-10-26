@@ -35,6 +35,7 @@ private:
     InsertVertexSentence                                  *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                     expCtx_;
     bool                                                   overwritable_{true};
+    bool                                                   ignoreExistedIndex_{false};
     std::vector<VertexRowItem*>                            rows_;
     std::vector<TagID>                                     tagIds_;
     std::vector<TagSchema>                                 schemas_;

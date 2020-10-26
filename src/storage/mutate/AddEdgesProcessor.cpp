@@ -24,6 +24,8 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     if (iRet.ok()) {
         indexes_ = std::move(iRet).value();
     }
+    ignoreExistedIndex_ = req.get_ignore_existed_index();
+
     CHECK_NOTNULL(kvstore_);
     if (indexes_.empty()) {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges) {
@@ -94,21 +96,23 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                if (val.empty()) {
-                    val = findObsoleteIndex(partId, e.first);
-                }
-                if (!val.empty()) {
-                    auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                               val,
-                                                               spaceId_,
-                                                               edgeType);
-                    if (reader == nullptr) {
-                        LOG(WARNING) << "Bad format row";
-                        return "";
+                if (!ignoreExistedIndex_) {
+                    if (val.empty()) {
+                        val = findObsoleteIndex(partId, e.first);
                     }
-                    auto oi = indexKey(partId, reader.get(), e.first, index);
-                    if (!oi.empty()) {
-                        batchHolder->remove(std::move(oi));
+                    if (!val.empty()) {
+                        auto reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                                val,
+                                                                spaceId_,
+                                                                edgeType);
+                        if (reader == nullptr) {
+                            LOG(WARNING) << "Bad format row";
+                            return "";
+                        }
+                        auto oi = indexKey(partId, reader.get(), e.first, index);
+                        if (!oi.empty()) {
+                            batchHolder->remove(std::move(oi));
+                        }
                     }
                 }
                 /*

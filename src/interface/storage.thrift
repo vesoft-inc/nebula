@@ -207,6 +207,8 @@ struct AddVerticesRequest {
     2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
+    // If true, existed index won't be removed
+    4: bool ignore_existed_index = false,
 }
 
 struct AddEdgesRequest {
@@ -215,6 +217,8 @@ struct AddEdgesRequest {
     2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
+    // If true, existed index won't be removed
+    4: bool ignore_existed_index = false,
 }
 
 struct DeleteVerticesRequest {

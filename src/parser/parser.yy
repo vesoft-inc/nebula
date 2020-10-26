@@ -125,7 +125,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_CONTAINS
+%token KW_CONTAINS KW_IGNORE_EXISTED_INDEX
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -1332,6 +1332,12 @@ insert_vertex_sentence
     | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
     }
+    | KW_INSERT KW_VERTEX KW_IGNORE_EXISTED_INDEX vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($4, $6, true, true);
+    }
+    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE KW_IGNORE_EXISTED_INDEX vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($6, $8, false, true);
+    }
     ;
 
 vertex_tag_list
@@ -1404,34 +1410,28 @@ value_list
 
 insert_edge_sentence
     : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setEdge($3);
-        sentence->setProps(new PropertyList());
-        sentence->setRows($7);
-        $$ = sentence;
+        $$ = new InsertEdgeSentence($3, new PropertyList(), $7);
     }
     | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setEdge($3);
-        sentence->setProps($5);
-        sentence->setRows($8);
-        $$ = sentence;
+        $$ = new InsertEdgeSentence($3, $5, $8);
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps(new PropertyList());
-        sentence->setRows($9);
-        $$ = sentence;
+        $$ = new InsertEdgeSentence($5, new PropertyList(), $9, false);
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps($7);
-        sentence->setRows($10);
-        $$ = sentence;
+        $$ = new InsertEdgeSentence($5, $7, $10, false);
+    }
+    | KW_INSERT KW_EDGE KW_IGNORE_EXISTED_INDEX name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        $$ = new InsertEdgeSentence($4, new PropertyList(), $8, true, true);
+    }
+    | KW_INSERT KW_EDGE KW_IGNORE_EXISTED_INDEX name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+        $$ = new InsertEdgeSentence($4, $6, $9, true, true);
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE KW_IGNORE_EXISTED_INDEX name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        $$ = new InsertEdgeSentence($6, new PropertyList(), $10, false, true);
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE KW_IGNORE_EXISTED_INDEX name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+        $$ = new InsertEdgeSentence($6, $8, $11, false, true);
     }
     ;
 

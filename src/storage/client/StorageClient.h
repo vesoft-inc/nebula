@@ -113,12 +113,14 @@ public:
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
         bool overwritable,
+        bool ignoreExistedIndex = false,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addEdges(
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
+        bool ignoreExistedIndex = false,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
