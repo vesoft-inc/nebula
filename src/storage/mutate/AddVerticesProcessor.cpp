@@ -102,6 +102,7 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
                                                        std::vector<kvstore::KV>&& data) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& v : data) {
+        std::string oldVal;
         RowReader reader = RowReader::getEmptyRowReader();
         RowReader nReader = RowReader::getEmptyRowReader();
         auto tagId = NebulaKeyUtils::getTagId(v.first);
@@ -113,15 +114,15 @@ std::string AddVerticesProcessor::addVerticesWithIndex(PartitionID partId,
         });
         if (!ignoreExistedIndex_ && hasIndex) {
             // If there is any index on this tag, get the reader of existed data
-            auto val = findObsoleteIndex(partId, vId, tagId);
-            if (!val.empty()) {
+            oldVal = findObsoleteIndex(partId, vId, tagId);
+            if (!oldVal.empty()) {
                 reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                     val,
+                                                     oldVal,
                                                      spaceId_,
                                                      tagId);
                 if (reader == nullptr) {
                     LOG(WARNING) << "Bad format row, key: " << v.first
-                                 << ", value: " << folly::hexDump(val.data(), val.size());
+                                 << ", value: " << folly::hexDump(oldVal.data(), oldVal.size());
                     return "";
                 }
             }

@@ -88,6 +88,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         newEdges[key] = std::move(prop);
     });
     for (auto& e : newEdges) {
+        std::string oldVal;
         RowReader reader = RowReader::getEmptyRowReader();
         RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
@@ -98,15 +99,15 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         });
         if (!ignoreExistedIndex_ && hasIndex) {
             // If there is any index on this edge type, get the reader of existed data
-            auto val = findObsoleteIndex(partId, e.first);
-            if (!val.empty()) {
+            oldVal = findObsoleteIndex(partId, e.first);
+            if (!oldVal.empty()) {
                 reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                      val,
+                                                      oldVal,
                                                       spaceId_,
                                                       edgeType);
                 if (reader == nullptr) {
                     LOG(WARNING) << "Bad format row, key: " << e.first
-                                 << ", value: " << folly::hexDump(val.data(), val.size());
+                                 << ", value: " << folly::hexDump(oldVal.data(), oldVal.size());
                     return "";
                 }
             }
