@@ -17,6 +17,7 @@
 #include "service/GraphService.h"
 #include "service/GraphFlags.h"
 #include "common/webservice/WebService.h"
+#include "common/time/TimeUtils.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -91,6 +92,14 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         localIP = std::move(result).value();
+    }
+
+    // Initialize the global timezone, it's only used for datetime type compute
+    // won't affect the process timezone.
+    status = nebula::time::TimeUtils::initializeGlobalTimezone();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
