@@ -85,52 +85,52 @@ class TestYield(NebulaTestSuite):
         # self.check_result(resp, expect_result)
 
     def test_logic(self):
-        query = 'YIELD NOT FALSE || FALSE AND FALSE XOR FALSE'
+        query = 'YIELD NOT FALSE OR FALSE AND FALSE XOR FALSE'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(false)||(false&&false)) XOR false)"]
+        columns = ["((!(false) OR (false AND false)) XOR false)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD !false OR false && false XOR true'
+        query = 'YIELD !false OR false AND false XOR true'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(false)||(false&&false)) XOR true)"]
+        columns = ["((!(false) OR (false AND false)) XOR true)"]
         self.check_column_names(resp, columns)
         expect_result = [[False]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD (NOT false || false) AND false XOR true'
+        query = 'YIELD (NOT false OR false) AND false XOR true'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["(((!(false)||false)&&false) XOR true)"]
+        columns = ["(((!(false) OR false) AND false) XOR true)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
 
     @pytest.mark.skip(reason="")
     def test_logic_2(self):
-        query = 'YIELD NOT 0 || 0 AND 0 XOR 0'
+        query = 'YIELD NOT 0 OR 0 AND 0 XOR 0'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(0)||(0&&0)) XOR 0)"]
+        columns = ["((!(0) OR (0 AND 0)) XOR 0)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD !0 OR 0 && 0 XOR 1'
+        query = 'YIELD !0 OR 0 AND 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["((!(0)||(0&&0)) XOR 1)"]
+        columns = ["((!(0) OR (0 AND 0)) XOR 1)"]
         self.check_column_names(resp, columns)
         expect_result = [[False]]
         self.check_result(resp, expect_result)
 
-        query = 'YIELD (NOT 0 || 0) AND 0 XOR 1'
+        query = 'YIELD (NOT 0 OR 0) AND 0 XOR 1'
         resp = self.execute_query(query)
         self.check_resp_succeeded(resp)
-        columns = ["(((!(0)||0)&&0) XOR 1)"]
+        columns = ["(((!(0) OR 0) AND 0) XOR 1)"]
         self.check_column_names(resp, columns)
         expect_result = [[True]]
         self.check_result(resp, expect_result)

@@ -179,7 +179,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expect_result)
 
         # go 2 step over * YIELD with filter
-        cmd = 'GO 2 STEPS FROM "1016" over * WHERE $$.student.grade > 4 && $$.person.age > 10 \
+        cmd = 'GO 2 STEPS FROM "1016" over * WHERE $$.student.grade > 4 AND $$.person.age > 10 \
                 YIELD $$.person.name as name, $$.person.age as age, $$.student.grade as grade;'
         resp = self.execute_query(cmd)
         expect_result = [['Sonya', 11, 6], ['Sonya', 11, 6], ['XiaMei', 11, 6]]

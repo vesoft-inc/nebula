@@ -98,19 +98,19 @@ class TestUpdateVertex(NebulaTestSuite):
         # filter out
         resp = self.execute('UPDATE VERTEX "101" '
                             'SET course.credits = $^.course.credits + 1 '
-                            'WHEN $^.course.name == "English" && $^.course.credits > 2')
+                            'WHEN $^.course.name == "English" AND $^.course.credits > 2')
         self.check_resp_succeeded(resp)
 
         # set filter
         resp = self.execute('UPDATE VERTEX "101" '
                             'SET course.credits = $^.course.credits + 1 '
-                            'WHEN $^.course.name == "Math" && $^.course.credits > 2')
+                            'WHEN $^.course.name == "Math" AND $^.course.credits > 2')
         self.check_resp_succeeded(resp)
 
         # update with uuid
         # resp = self.execute('UPDATE VERTEX ON course uuid("Math") '
         #                     'SET credits = $^.course.credits + 1 '
-        #                     'WHEN $^.course.name == "Math" && $^.course.credits > 2')
+        #                     'WHEN $^.course.name == "Math" AND $^.course.credits > 2')
         # self.check_resp_succeeded(resp)
 
         # set yield
@@ -132,7 +132,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter and yield
         resp = self.execute_query('UPDATE VERTEX "101" '
                                   'SET course.credits = $^.course.credits + 1 '
-                                  'WHEN $^.course.name == "Math" && $^.course.credits > 2 '
+                                  'WHEN $^.course.name == "Math" AND $^.course.credits > 2 '
                                   'YIELD $^.course.name AS Name, $^.course.credits AS Credits')
         self.check_resp_succeeded(resp)
         expected_result = [["Math", 7]]
@@ -141,7 +141,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter and yield with uuid
         # resp = self.execute_query('UPDATE VERTEX ON course uuid("Math") '
         #                           'SET credits = $^.course.credits + 1 '
-        #                           'WHEN $^.course.name == "Math" && $^.course.credits > 2 '
+        #                           'WHEN $^.course.name == "Math" AND $^.course.credits > 2 '
         #                           'YIELD $^.course.name AS Name, $^.course.credits AS Credits')
         # self.check_resp_succeeded(resp)
         # expected_result = [["Math", 7]]
@@ -150,7 +150,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter out and yield
         resp = self.execute_query('UPDATE VERTEX "101" '
                                   'SET course.credits = $^.course.credits + 1 '
-                                  'WHEN $^.course.name == "notexist" && $^.course.credits > 2'
+                                  'WHEN $^.course.name == "notexist" AND $^.course.credits > 2'
                                   'YIELD $^.course.name AS Name, $^.course.credits AS Credits')
         self.check_resp_succeeded(resp)
         expected_result = [["Math", 7]]
@@ -159,7 +159,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter out and yield with uuid
         # resp = self.execute_query('UPDATE VERTEX ON course uuid("Math") '
         #                           'SET credits = $^.course.credits + 1 '
-        #                           'WHEN $^.course.name == "notexist" && $^.course.credits > 2'
+        #                           'WHEN $^.course.name == "notexist" AND $^.course.credits > 2'
         #                           'YIELD $^.course.name AS Name, $^.course.credits AS Credits')
         # self.check_resp_succeeded(resp)
         # expected_result = [["Math", 7]]
@@ -198,7 +198,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # filter out, 2.0 storage not support update edge can use vertex
         resp = self.execute('UPDATE EDGE "200" -> "101"@0 OF select '
                             'SET grade = select.grade + 1, year = 2000 '
-                            'WHEN select.grade > 1024 && $^.student.age > 15;')
+                            'WHEN select.grade > 1024 AND $^.student.age > 15;')
         self.check_resp_failed(resp)
 
         # 2.0 test, filter out
@@ -210,7 +210,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter, 2.0 storage not support update edge can use vertex
         resp = self.execute('UPDATE EDGE "200" -> "101"@0 OF select '
                             'SET grade = select.grade + 1, year = 2000 '
-                            'WHEN select.grade > 4 && $^.student.age > 15;')
+                            'WHEN select.grade > 4 AND $^.student.age > 15;')
         self.check_resp_failed(resp)
 
         # set filter
@@ -223,7 +223,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter
         # resp = self.execute('UPDATE EDGE ON select uuid("Monica") -> uuid("Math")@0 '
         #                     'SET grade = select.grade + 1, year = 2000'
-        #                     'WHEN select.grade > 4 && $^.student.age > 15;')
+        #                     'WHEN select.grade > 4 AND $^.student.age > 15;')
         self.check_resp_succeeded(resp)
 
         # set yield, 2.0 storage not support update edge can use vertex
@@ -252,7 +252,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter and yield, 2.0 storage not support update edge can use vertex
         resp = self.execute_query('UPDATE EDGE "200" -> "101"@0 OF select '
                             'SET grade = select.grade + 1, year = 2019 '
-                            'WHEN select.grade > 4 && $^.student.age > 15 '
+                            'WHEN select.grade > 4 AND $^.student.age > 15 '
                             'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         self.check_resp_failed(resp)
 
@@ -267,7 +267,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter and yield with uuid
         # resp = self.execute('UPDATE EDGE ON select uuid("Monica") -> uuid("Math"@0 '
         #                     'SET grade = select.grade + 1, year = 2018 '
-        #                     'WHEN select.grade > 4 && $^.student.age > 15 '
+        #                     'WHEN select.grade > 4 AND $^.student.age > 15 '
         #                     'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         # self.check_resp_succeeded(resp)
         # expected_result = [["Monica", 9, 2019]]
@@ -277,7 +277,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter out and yield, 2.0 storage not support update edge can use vertex
         resp = self.execute_query('UPDATE EDGE "200" -> "101"@0 OF select '
                             'SET grade = select.grade + 1, year = 2019 '
-                            'WHEN select.grade > 233333333333 && $^.student.age > 15 '
+                            'WHEN select.grade > 233333333333 AND $^.student.age > 15 '
                             'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         self.check_resp_failed(resp)
 
@@ -293,7 +293,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # set filter out and yield
         # resp = self.execute('UPDATE EDGE ON select uuid("Monica") -> uuid("Math"@0 '
         #                     'SET grade = select.grade + 1, year = 2018 '
-        #                     'WHEN select.grade > 233333333333 && $^.student.age > 15 '
+        #                     'WHEN select.grade > 233333333333 AND $^.student.age > 15 '
         #                     'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         # self.check_resp_succeeded(resp)
         # expected_result = [["Monica", 9, 2019]]
@@ -308,7 +308,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # the $$.TagName.PropName expressions are not allowed in any update sentence
         resp = self.execute_query('UPDATE VERTEX "101" '
                                   'SET course.credits = $$.course.credits + 1 '
-                                  'WHEN $$.course.name == "Math" && $^.course.credits > $$.course.credits + 1 '
+                                  'WHEN $$.course.name == "Math" AND $^.course.credits > $$.course.credits + 1 '
                                   'YIELD $^.course.name AS Name, $^.course.credits AS Credits, $$.building.name')
         self.check_resp_failed(resp)
 
@@ -326,7 +326,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # make sure EdgeName and PropertyName must exist in all clauses
         resp = self.execute_query('UPDATE EDGE "200" -> "101"@0 OF select '
                                   'SET nonexistentProperty = select.grade + 1, year = 2019 '
-                                  'WHEN nonexistentEdgeName.grade > 4 && $^.student.nonexistentProperty > 15 '
+                                  'WHEN nonexistentEdgeName.grade > 4 AND $^.student.nonexistentProperty > 15 '
                                   'YIELD $^.nonexistentTag.name AS Name, select.nonexistentProperty AS Grade')
         self.check_resp_failed(resp)
 
@@ -351,7 +351,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # update: vertex 103 ("CS", 5) --> ("CS", 6), TODO: storage not ready
         # resp = self.execute_query('UPDATE VERTEX "103" '
         #                           'SET course.credits = $^.course.credits + 1 '
-        #                           'WHEN $^.course.name == "CS" && $^.course.credits > 2 '
+        #                           'WHEN $^.course.name == "CS" AND $^.course.credits > 2 '
         #                           "YIELD $^.course.name AS Name, $^.course.credits AS Credits")
         # self.check_resp_succeeded(resp)
         # expected_result = [["CS", 6]]
@@ -360,7 +360,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # when tag on vertex not exists, update failed
         resp = self.execute_query('UPDATE VERTEX "104" '
                                   'SET course.credits = $^.course.credits + 1  '
-                                  'WHEN $^.course.name == "CS" && $^.course.credits > 2 '
+                                  'WHEN $^.course.name == "CS" AND $^.course.credits > 2 '
                                   "YIELD $^.course.name AS Name, $^.course.credits AS Credits")
         self.check_resp_failed(resp)
 
@@ -407,7 +407,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # when tag on vertex not exists, update failed
         resp = self.execute_query('UPDATE VERTEX "104" '
                                   'SET course.credits = $^.course.credits + 1 '
-                                  'WHEN $^.course.name == \"CS\" && $^.course.credits > 2 '
+                                  'WHEN $^.course.name == \"CS\" AND $^.course.credits > 2 '
                                   'YIELD $^.course.name AS Name, $^.course.credits AS Credits')
         self.check_resp_failed(resp)
 
@@ -460,7 +460,7 @@ class TestUpdateVertex(NebulaTestSuite):
         # Insertable, upsert when edge exists, 2.0 storage not support update edge with vertex prop
         resp = self.execute_query('UPSERT EDGE ON select "201" -> "101"@0'
                                   'SET grade = 3, year = 2019 '
-                                  'WHEN $^.student.age > 15 && $^.student.gender == "male" '
+                                  'WHEN $^.student.age > 15 AND $^.student.gender == "male" '
                                   'YIELD select.grade AS Grade, select.year AS Year')
         self.check_resp_failed(resp)
 
@@ -538,21 +538,21 @@ class TestUpdateVertex(NebulaTestSuite):
         # make sure the vertex must not exist
         resp = self.execute_query('UPDATE VERTEX "1010000" '
                                   'SET course.credits = $^.course.credits + 1, name = "No9" '
-                                  'WHEN $^.course.name == "Math" && $^.course.credits > 2 '
+                                  'WHEN $^.course.name == "Math" AND $^.course.credits > 2 '
                                   'YIELD select_default.grade AS Grade, select_default.year AS Year')
         self.check_resp_failed(resp)
 
         # make sure the edge(src, dst) must not exist
         resp = self.execute_query('UPDATE EDGE ON select "200" -> "101000000000000"@0  '
                                   'SET grade = select.grade + 1, year = 2019 '
-                                  'WHEN select.grade > 4 && $^.student.age > 15 '
+                                  'WHEN select.grade > 4 AND $^.student.age > 15 '
                                   'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         self.check_resp_failed(resp)
 
         # make sure the edge(src, ranking, dst) must not exist
         resp = self.execute_query('UPDATE EDGE ON select "200" -> "101"@123456789  '
                                   'SET grade = select.grade + 1, year = 2019 '
-                                  'WHEN select.grade > 4 && $^.student.age > 15 '
+                                  'WHEN select.grade > 4 AND $^.student.age > 15 '
                                   'YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year')
         self.check_resp_failed(resp)
         self.check_resp_failed(resp)

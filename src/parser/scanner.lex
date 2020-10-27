@@ -376,9 +376,8 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 ">="                        { return TokenType::GE; }
 "=="                        { return TokenType::EQ; }
 "!="                        { return TokenType::NE; }
+"<>"                        { return TokenType::NE; }
 
-"||"                        { return TokenType::OR; }
-"&&"                        { return TokenType::AND; }
 "|"                         { return TokenType::PIPE; }
 
 "="                         { return TokenType::ASSIGN; }

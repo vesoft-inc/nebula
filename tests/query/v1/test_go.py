@@ -74,7 +74,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
-            serve.start_year >= 2013 && serve.end_year <= 2018 YIELD \
+            serve.start_year >= 2013 AND serve.end_year <= 2018 YIELD \
             $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
@@ -760,7 +760,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id \
-            | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123) && 1 == 1'''
+            | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123) AND 1 == 1'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {

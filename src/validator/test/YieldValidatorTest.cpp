@@ -66,20 +66,20 @@ TEST_F(YieldValidatorTest, HashCall) {
 
 TEST_F(YieldValidatorTest, Logic) {
     {
-        std::string query = "YIELD NOT TRUE || !FALSE";
+        std::string query = "YIELD NOT TRUE OR !FALSE";
         EXPECT_TRUE(checkResult(query, expected_));
     }
 #if 0
     {
-        std::string query = "YIELD NOT 0 || 0 AND 0 XOR 0";
+        std::string query = "YIELD NOT 0 OR 0 AND 0 XOR 0";
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {
-        std::string query = "YIELD !0 OR 0 && 0 XOR 1";
+        std::string query = "YIELD !0 OR 0 AND 0 XOR 1";
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {
-        std::string query = "YIELD (NOT 0 || 0) AND 0 XOR 1";
+        std::string query = "YIELD (NOT 0 OR 0) AND 0 XOR 1";
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {

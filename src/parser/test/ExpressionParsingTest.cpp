@@ -271,7 +271,7 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
-    add("a && b && c", ast);
+    add("a AND b AND c", ast);
 
     ast = make<LogicalExpression>(Kind::kLogicalAnd,
                                   make<LogicalExpression>(Kind::kLogicalAnd,
@@ -285,7 +285,7 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
-    add("a || b || c", ast);
+    add("a OR b OR c", ast);
 
     ast = make<LogicalExpression>(Kind::kLogicalOr,
                                   make<LogicalExpression>(Kind::kLogicalOr,
@@ -381,7 +381,30 @@ TEST_F(ExpressionParsingTest, Precedence) {
                                       make<RelationalExpression>(Kind::kRelEQ,
                                           make<ConstantExpression>(3),
                                           make<ConstantExpression>(4))));
-    add("+1 || 1 != 2 - 1 AND 3 == 4", ast);
+    add("+1 OR 1 != 2 - 1 AND 3 == 4", ast);
+
+    ast = make<UnaryExpression>(Kind::kUnaryNot,
+            make<RelationalExpression>(Kind::kRelLT,
+                make<ArithmeticExpression>(Kind::kAdd,
+                    make<ConstantExpression>(1),
+                    make<ConstantExpression>(2)),
+                make<ConstantExpression>(3)));
+    add("NOT 1 + 2 < 3", ast);
+
+    ast = make<LogicalExpression>(Kind::kLogicalAnd,
+            make<UnaryExpression>(Kind::kUnaryNot,
+                make<RelationalExpression>(Kind::kRelLT,
+                    make<ArithmeticExpression>(Kind::kAdd,
+                        make<ConstantExpression>(1),
+                        make<ConstantExpression>(2)),
+                    make<ConstantExpression>(3))),
+            make<UnaryExpression>(Kind::kUnaryNot,
+                make<RelationalExpression>(Kind::kRelLT,
+                    make<ArithmeticExpression>(Kind::kAdd,
+                        make<ConstantExpression>(1),
+                        make<ConstantExpression>(2)),
+                    make<ConstantExpression>(3))));
+    add("NOT 1 + 2 < 3 AND NOT 1 + 2 < 3", ast);
 
     ast = make<ArithmeticExpression>(Kind::kMinus,
                                      make<ArithmeticExpression>(Kind::kMultiply,
@@ -405,13 +428,13 @@ TEST_F(ExpressionParsingTest, Precedence) {
     add("$var[0]['1'].m", ast);
 
     ast = make<LogicalExpression>(Kind::kLogicalXor,
-                                  make<ArithmeticExpression>(Kind::kMultiply,
-                                      make<UnaryExpression>(Kind::kUnaryNot,
+                                  make<UnaryExpression>(Kind::kUnaryNot,
+                                      make<ArithmeticExpression>(Kind::kMultiply,
                                           make<AttributeExpression>(
                                               make<LabelAttributeExpression>(
                                                   make<LabelExpression>("a"),
                                                   make<LabelExpression>("b")),
-                                              make<LabelExpression>("c"))),
+                                              make<LabelExpression>("c")),
                                       make<SubscriptExpression>(
                                           make<SubscriptExpression>(
                                               make<AttributeExpression>(
@@ -420,7 +443,7 @@ TEST_F(ExpressionParsingTest, Precedence) {
                                                       new std::string("p")),
                                                   make<LabelExpression>("q")),
                                               make<LabelExpression>("r")),
-                                          make<LabelExpression>("s"))),
+                                          make<LabelExpression>("s")))),
                                   make<RelationalExpression>(Kind::kRelIn,
                                       make<InputPropertyExpression>(
                                           new std::string("m")),

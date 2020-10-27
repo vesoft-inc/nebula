@@ -137,7 +137,7 @@ TEST_F(FoldConstantExprVisitorTest, TestRelationExpr) {
 }
 
 TEST_F(FoldConstantExprVisitorTest, TestLogicalExpr) {
-    // false && (false || (3 > (1 + 1))) => false && true
+    // false AND (false || (3 > (1 + 1))) => false AND true
     auto expr = pool.add(
         andExpr(constantExpr(false),
                 orExpr(constantExpr(false),
@@ -148,7 +148,7 @@ TEST_F(FoldConstantExprVisitorTest, TestLogicalExpr) {
     ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
     ASSERT(visitor.canBeFolded());
 
-    // false && true => false
+    // false AND true => false
     auto root = pool.add(visitor.fold(expr));
     auto rootExpected = pool.add(constantExpr(false));
     ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();

@@ -360,14 +360,14 @@ class TestSchema(NebulaTestSuite):
             '(id int DEFAULT 3/2*4-5, '  # arithmetic
             'male bool DEFAULT 3 > 2, '  # relation
             'height double DEFAULT abs(-176.0), '  # built-in function
-            'adult bool DEFAULT true && false)')  # logic
+            'adult bool DEFAULT true AND false)')  # logic
         self.check_resp_succeeded(resp)
         # Edge
         resp = self.execute('CREATE EDGE default_edge_expr'
             '(id int DEFAULT 3/2*4-5, '  # arithmetic
             'male bool DEFAULT 3 > 2, '  # relation
             'height double DEFAULT abs(-176.0), '  # built-in function
-            'adult bool DEFAULT true && false)')  # logic
+            'adult bool DEFAULT true AND false)')  # logic
         self.check_resp_succeeded(resp)
 
     @classmethod

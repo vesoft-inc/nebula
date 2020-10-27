@@ -193,7 +193,7 @@ class TestSchema(NebulaTestSuite):
                                    '(id int64 DEFAULT 3/2*4-5, '
                                    'male bool DEFAULT 3 > 2, '
                                    'height double DEFAULT abs(-176.0), '
-                                   'adult bool DEFAULT true && false)')
+                                   'adult bool DEFAULT true AND false)')
         self.check_resp_succeeded(resp)
 
     def test_drop_tag(self):
@@ -358,7 +358,7 @@ class TestSchema(NebulaTestSuite):
                                    '(id int DEFAULT 3/2*4-5, '
                                    'male bool DEFAULT 3 > 2, '
                                    'height double DEFAULT abs(-176.0), '
-                                   'adult bool DEFAULT true && false)')
+                                   'adult bool DEFAULT true AND false)')
         self.check_resp_succeeded(resp)
 
     def test_drop_edge(self):

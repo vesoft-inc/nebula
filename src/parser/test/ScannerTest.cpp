@@ -151,9 +151,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE(">=", TokenType::GE),
         CHECK_SEMANTIC_TYPE("==", TokenType::EQ),
         CHECK_SEMANTIC_TYPE("!=", TokenType::NE),
+        CHECK_SEMANTIC_TYPE("<>", TokenType::NE),
 
-        CHECK_SEMANTIC_TYPE("||", TokenType::OR),
-        CHECK_SEMANTIC_TYPE("&&", TokenType::AND),
         CHECK_SEMANTIC_TYPE("|", TokenType::PIPE),
         CHECK_SEMANTIC_TYPE("=", TokenType::ASSIGN),
         CHECK_SEMANTIC_TYPE("(", TokenType::L_PAREN),
