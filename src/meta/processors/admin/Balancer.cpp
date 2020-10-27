@@ -173,7 +173,7 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel)
             std::lock_guard<std::mutex> lg(lock_);
             if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
                     kvstore::ResultCode::SUCCEEDED) {
-                LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+                LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
             }
             finish();
         }
@@ -284,9 +284,9 @@ void Balancer::balanceParts(BalanceID balanceId,
                             std::inserter(diff, diff.begin()));
         bool noAction = true;
         for (auto& partId : diff) {
-            if (partsFrom.size() <= partsTo.size() + 1
-                    || partsFrom.size() <= (size_t)minLoad
-                    || partsTo.size() >= (size_t)maxLoad) {
+            if (partsFrom.size() <= partsTo.size() + 1 ||
+                partsFrom.size() <= (size_t)minLoad ||
+                partsTo.size() >= (size_t)maxLoad) {
                 VLOG(1) << "No need to move any parts from "
                         << maxPartsHost.first << " to " << minPartsHost.first;
                 break;
@@ -469,9 +469,9 @@ cpp2::ErrorCode Balancer::leaderBalance() {
                 }
             }
         }).wait();
-        LOG(INFO) << failed << " partiton failed to transfer leader";
+        LOG(ERROR) << failed << " partiton failed to transfer leader";
         inLeaderBalance_ = false;
-        return cpp2::ErrorCode::SUCCEEDED;
+        return cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
     return cpp2::ErrorCode::E_BALANCER_RUNNING;
 }
@@ -637,10 +637,10 @@ int32_t Balancer::giveupLeaders(
                 peerLeaders.emplace_back(partId);
                 plan.emplace_back(spaceId, partId, host, peer);
                 LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host "
-                    << host.host << ":"
-                    << host.port << " peer "
-                    << peer.host
-                    << ":" << peer.port;
+                          << host.host << ":"
+                          << host.port << " peer "
+                          << peer.host
+                          << ":" << peer.port;
                 ++taskCount;
                 transfered = true;
                 break;
@@ -675,4 +675,3 @@ void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan
 
 }  // namespace meta
 }  // namespace nebula
-

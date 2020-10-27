@@ -85,6 +85,16 @@ nebula_add_library(
     processors/jobMan/RebuildJobExecutor.cpp
     processors/jobMan/RebuildTagJobExecutor.cpp
     processors/jobMan/RebuildEdgeJobExecutor.cpp
+    processors/zoneMan/AddZoneProcessor.cpp
+    processors/zoneMan/DropZoneProcessor.cpp
+    processors/zoneMan/GetZoneProcessor.cpp
+    processors/zoneMan/ListZonesProcessor.cpp
+    processors/zoneMan/UpdateZoneProcessor.cpp
+    processors/zoneMan/AddGroupProcessor.cpp
+    processors/zoneMan/DropGroupProcessor.cpp
+    processors/zoneMan/GetGroupProcessor.cpp
+    processors/zoneMan/ListGroupsProcessor.cpp
+    processors/zoneMan/UpdateGroupProcessor.cpp
 )
 
 nebula_add_library(

@@ -28,16 +28,19 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
         return;
     }
     auto properties = MetaServiceUtils::parseSpace(ret.value());
-    VLOG(3) << "Get Space SpaceName: " << req.get_space_name() << ", Name "
-            << properties.get_space_name() << ", Partition Num "
-            << properties.get_partition_num() << ", Replica Factor "
-            << properties.get_replica_factor();
+    VLOG(3) << "Get Space SpaceName: " << req.get_space_name()
+            << ", Partition Num " << properties.get_partition_num()
+            << ", Replica Factor " << properties.get_replica_factor();
+    if (properties.__isset.group_name) {
+        LOG(INFO) << "Space " << req.get_space_name()
+                  << " is bind to the group " << *properties.get_group_name();
+    }
 
     cpp2::SpaceItem item;
     item.set_space_id(spaceId);
-    item.set_properties(properties);
+    item.set_properties(std::move(properties));
+    resp_.set_item(std::move(item));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_item(item);
     onFinished();
 }
 

@@ -1298,7 +1298,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
 
     Balancer balancer(kv.get(), std::move(client));
     auto ret = balancer.leaderBalance();
-    ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(cpp2::ErrorCode::E_BALANCER_FAILURE, ret);
 }
 
 }  // namespace meta

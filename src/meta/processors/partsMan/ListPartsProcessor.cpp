@@ -62,6 +62,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         LOG(ERROR) << "Maybe lost some partitions!";
     }
     getLeaderDist(partItems);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_parts(std::move(partItems));
     onFinished();
 }

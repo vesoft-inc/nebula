@@ -94,6 +94,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, version),
                       MetaServiceUtils::schemaVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 

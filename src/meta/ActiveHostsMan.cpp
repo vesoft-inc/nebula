@@ -30,7 +30,7 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     folly::Baton<true, std::atomic> baton;
     kvstore::ResultCode ret;
     kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                            [&] (kvstore::ResultCode code) {
+                      [&] (kvstore::ResultCode code) {
         ret = code;
         baton.post();
     });
@@ -54,11 +54,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info = HostInfo::decode(iter->val());
-        if (info.role_ != role) {
-            iter->next();
-            continue;
-        }
-        if (now - info.lastHBTimeInMilliSec_ < threshold) {
+        if ((info.role_ == role) && (now - info.lastHBTimeInMilliSec_ < threshold)) {
             hosts.emplace_back(host.host, host.port);
         }
         iter->next();
@@ -66,6 +62,35 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
     return hosts;
 }
 
+std::vector<HostAddr> ActiveHostsMan::getActiveHostsInZone(kvstore::KVStore* kv,
+                                                           const std::string& zoneName,
+                                                           int32_t expiredTTL) {
+    std::vector<HostAddr> activeHosts;
+    std::string zoneValue;
+    auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+    auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get zone " << zoneName << " failed";
+        return activeHosts;
+    }
+
+    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+    auto now = time::WallClock::fastNowInMilliSec();
+    int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
+    for (auto& host : hosts) {
+        auto infoRet = getHostInfo(kv, host);
+        if (!infoRet.ok()) {
+            activeHosts.clear();
+            return activeHosts;
+        }
+
+        auto info = infoRet.value();
+        if (now - info.lastHBTimeInMilliSec_ < threshold) {
+            activeHosts.emplace_back(host.host, host.port);
+        }
+    }
+    return activeHosts;
+}
 std::vector<HostAddr> ActiveHostsMan::getActiveAdminHosts(kvstore::KVStore* kv,
                                                           int32_t expiredTTL,
                                                           cpp2::HostRole role) {
@@ -80,6 +105,17 @@ std::vector<HostAddr> ActiveHostsMan::getActiveAdminHosts(kvstore::KVStore* kv,
 bool ActiveHostsMan::isLived(kvstore::KVStore* kv, const HostAddr& host) {
     auto activeHosts = getActiveHosts(kv);
     return std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
+}
+
+StatusOr<HostInfo> ActiveHostsMan::getHostInfo(kvstore::KVStore* kv, const HostAddr& host) {
+    auto hostKey = MetaServiceUtils::hostKey(host.host, host.port);
+    std::string hostValue;
+    auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, hostKey, &hostValue);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get host info " << host << " failed";
+        return Status::Error("Get host info failed");
+    }
+    return HostInfo::decode(hostValue);
 }
 
 kvstore::ResultCode LastUpdateTimeMan::update(kvstore::KVStore* kv, const int64_t timeInMilliSec) {

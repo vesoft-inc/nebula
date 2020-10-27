@@ -22,7 +22,7 @@ public:
 
 private:
     explicit DropTagProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     StatusOr<std::vector<std::string>> getTagKeys(GraphSpaceID id, TagID tagId);
 };

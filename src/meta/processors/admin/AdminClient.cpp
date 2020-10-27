@@ -358,14 +358,13 @@ folly::Future<Status> AdminClient::getResponse(
 }
 
 template<typename Request, typename RemoteFunc>
-void AdminClient::getResponse(
-                         std::vector<HostAddr> hosts,
-                         int32_t index,
-                         Request req,
-                         RemoteFunc remoteFunc,
-                         int32_t retry,
-                         folly::Promise<Status> pro,
-                         int32_t retryLimit) {
+void AdminClient::getResponse(std::vector<HostAddr> hosts,
+                              int32_t index,
+                              Request req,
+                              RemoteFunc remoteFunc,
+                              int32_t retry,
+                              folly::Promise<Status> pro,
+                              int32_t retryLimit) {
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());

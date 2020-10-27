@@ -22,7 +22,7 @@ public:
 
 private:
     explicit GetEdgeProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetEdgeResp>(kvstore) {}
+        : BaseProcessor<cpp2::GetEdgeResp>(kvstore) {}
 };
 
 }  // namespace meta

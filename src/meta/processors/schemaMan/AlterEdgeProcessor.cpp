@@ -93,6 +93,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
                       MetaServiceUtils::schemaVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 

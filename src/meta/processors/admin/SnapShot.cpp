@@ -63,10 +63,10 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     auto spacesHosts = retSpacesHosts.value();
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
-        auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
-        if (!status.ok()) {
-            LOG(ERROR) << " Send blocking sign error on host : " << host;
-        }
+            auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
+            if (!status.ok()) {
+                LOG(ERROR) << " Send blocking sign error on host : " << host;
+            }
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;

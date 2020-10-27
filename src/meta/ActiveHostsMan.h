@@ -116,11 +116,17 @@ public:
                                                 int32_t expiredTTL = 0,
                                                 cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
+    static std::vector<HostAddr> getActiveHostsInZone(kvstore::KVStore* kv,
+                                                      const std::string& zoneName,
+                                                      int32_t expiredTTL = 0);
+
     static std::vector<HostAddr> getActiveAdminHosts(kvstore::KVStore* kv,
                                                      int32_t expiredTTL = 0,
                                                      cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
     static bool isLived(kvstore::KVStore* kv, const HostAddr& host);
+
+    static StatusOr<HostInfo> getHostInfo(kvstore::KVStore* kv, const HostAddr& host);
 
 protected:
     ActiveHostsMan() = default;

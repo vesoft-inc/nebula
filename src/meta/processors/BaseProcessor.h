@@ -102,10 +102,12 @@ protected:
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
-        case EntryType::CONFIG:
-            break;
         case EntryType::INDEX:
             thriftID.set_index_id(static_cast<IndexID>(id));
+            break;
+        case EntryType::CONFIG:
+        case EntryType::GROUP:
+        case EntryType::ZONE:
             break;
         }
         return thriftID;
@@ -230,6 +232,10 @@ protected:
 
     bool checkIndexExist(const std::vector<std::string>& fields,
                          const cpp2::IndexItem& item);
+
+    StatusOr<GroupID> getGroupId(const std::string& groupName);
+
+    StatusOr<ZoneID> getZoneId(const std::string& zoneName);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

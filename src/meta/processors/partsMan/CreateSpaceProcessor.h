@@ -21,9 +21,12 @@ public:
     void process(const cpp2::CreateSpaceReq& req);
 
 protected:
-    std::vector<HostAddr> pickHosts(
-                                            PartitionID partId,
-                                            const std::vector<HostAddr>& hosts,
+    std::vector<HostAddr> pickHosts(PartitionID partId,
+                                    const std::vector<HostAddr>& hosts,
+                                    int32_t replicaFactor);
+
+    std::vector<HostAddr> pickHostsWithZone(PartitionID partId,
+                                            const std::vector<std::string>& zones,
                                             int32_t replicaFactor);
 
 private:

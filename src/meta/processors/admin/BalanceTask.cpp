@@ -49,7 +49,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::CHANGE_LEADER;
@@ -66,7 +66,7 @@ void BalanceTask::invoke() {
             if (srcLived) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
-                        LOG(INFO) << taskIdStr_ << "Transfer leader failed, status " << resp;
+                        LOG(ERROR) << taskIdStr_ << "Transfer leader failed, status " << resp;
                         if (resp == nebula::Status::PartNotFound()) {
                             ret_ = Result::INVALID;
                         } else {
@@ -89,7 +89,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Open part failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Open part failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::ADD_LEARNER;
@@ -103,7 +103,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Add learner failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Add learner failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::CATCH_UP_DATA;
@@ -117,7 +117,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Catchup data failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Catchup data failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::MEMBER_CHANGE_ADD;
@@ -132,7 +132,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Add peer failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Add peer failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::MEMBER_CHANGE_REMOVE;
@@ -148,7 +148,7 @@ void BalanceTask::invoke() {
             client_->memberChange(spaceId_, partId_, src_, false).thenValue(
                     [this] (auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Remove peer failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Remove peer failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::UPDATE_PART_META;
@@ -182,7 +182,7 @@ void BalanceTask::invoke() {
             if (srcLived) {
                 client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
-                        LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
+                        LOG(ERROR) << taskIdStr_ << "Remove part failed, status " << resp;
                         ret_ = Result::FAILED;
                     } else {
                         status_ = Status::CHECK;
@@ -201,7 +201,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
                 if (!resp.ok()) {
-                    LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
+                    LOG(ERROR) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::END;
@@ -243,7 +243,7 @@ bool BalanceTask::saveInStore() {
             if (kvstore::ResultCode::SUCCEEDED == code) {
                 ret = true;
             } else {
-                LOG(INFO) << taskIdStr_ << "Can't persist task!";
+                LOG(ERROR) << taskIdStr_ << "Can't persist task!";
             }
             baton.post();
         });

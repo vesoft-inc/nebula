@@ -106,16 +106,16 @@ public:
         bool ret = true;
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode code) {
-                               if (code != kvstore::ResultCode::SUCCEEDED) {
-                                   LOG(ERROR) << "Put failed, error "
-                                              << static_cast<int32_t>(code);
-                                    ret = false;
-                               } else {
-                                   LOG(INFO) << "Put key " << key
-                                             << ", val " << clusterId;
-                               }
-                               baton.post();
-                           });
+                          if (code != kvstore::ResultCode::SUCCEEDED) {
+                              LOG(ERROR) << "Put failed, error "
+                                         << static_cast<int32_t>(code);
+                              ret = false;
+                          } else {
+                              LOG(INFO) << "Put key " << key
+                                        << ", val " << clusterId;
+                          }
+                          baton.post();
+        });
         baton.wait();
         return ret;
     }

@@ -29,6 +29,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
         parts.emplace(partId, std::move(partHosts));
         iter->next();
     }
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_parts(std::move(parts));
     onFinished();
 }

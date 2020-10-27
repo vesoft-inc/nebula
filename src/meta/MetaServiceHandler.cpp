@@ -51,6 +51,16 @@
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
+#include "meta/processors/zoneMan/AddZoneProcessor.h"
+#include "meta/processors/zoneMan/DropZoneProcessor.h"
+#include "meta/processors/zoneMan/GetZoneProcessor.h"
+#include "meta/processors/zoneMan/ListZonesProcessor.h"
+#include "meta/processors/zoneMan/UpdateZoneProcessor.h"
+#include "meta/processors/zoneMan/AddGroupProcessor.h"
+#include "meta/processors/zoneMan/DropGroupProcessor.h"
+#include "meta/processors/zoneMan/GetGroupProcessor.h"
+#include "meta/processors/zoneMan/ListGroupsProcessor.h"
+#include "meta/processors/zoneMan/UpdateGroupProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -375,6 +385,78 @@ MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
 folly::Future<cpp2::ListSnapshotsResp>
 MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     auto* processor = ListSnapshotsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addZone(const cpp2::AddZoneReq &req) {
+    auto* processor = AddZoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropZone(const cpp2::DropZoneReq &req) {
+    auto* processor = DropZoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetZoneResp>
+MetaServiceHandler::future_getZone(const cpp2::GetZoneReq &req) {
+    auto* processor = GetZoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListZonesResp>
+MetaServiceHandler::future_listZones(const cpp2::ListZonesReq &req) {
+    auto* processor = ListZonesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addHostIntoZone(const cpp2::AddHostIntoZoneReq &req) {
+    auto* processor = AddHostIntoZoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropHostFromZone(const cpp2::DropHostFromZoneReq &req) {
+    auto* processor = DropHostFromZoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addGroup(const cpp2::AddGroupReq &req) {
+    auto* processor = AddGroupProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropGroup(const cpp2::DropGroupReq &req) {
+    auto* processor = DropGroupProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetGroupResp>
+MetaServiceHandler::future_getGroup(const cpp2::GetGroupReq &req) {
+    auto* processor = GetGroupProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListGroupsResp>
+MetaServiceHandler::future_listGroups(const cpp2::ListGroupsReq &req) {
+    auto* processor = ListGroupsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addZoneIntoGroup(const cpp2::AddZoneIntoGroupReq &req) {
+    auto* processor = AddZoneIntoGroupProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropZoneFromGroup(const cpp2::DropZoneFromGroupReq &req) {
+    auto* processor = DropZoneFromGroupProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

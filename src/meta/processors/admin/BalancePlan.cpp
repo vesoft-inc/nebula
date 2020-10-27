@@ -199,8 +199,8 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
 std::string BalancePlan::planKey() const {
     std::string str;
     str.reserve(48);
-    str.append(reinterpret_cast<const char*>(kBalancePlanTable.data()), kBalancePlanTable.size());
-    str.append(reinterpret_cast<const char*>(&id_), sizeof(id_));
+    str.append(reinterpret_cast<const char*>(kBalancePlanTable.data()), kBalancePlanTable.size())
+       .append(reinterpret_cast<const char*>(&id_), sizeof(id_));
     return str;
 }
 

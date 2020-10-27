@@ -84,6 +84,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     }
     auto ret = Balancer::instance(kvstore_)->balance(std::move(hostDel));
     if (!ok(ret)) {
+        LOG(ERROR) << "Balance Failed: " << static_cast<int32_t>(ret.left());
         handleErrorCode(error(ret));
         onFinished();
         return;

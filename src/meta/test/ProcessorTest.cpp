@@ -3,10 +3,9 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
+#include <gtest/gtest.h>
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include <gtest/gtest.h>
 #include "meta/test/TestUtils.h"
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/processors/partsMan/ListSpacesProcessor.h"
@@ -39,6 +38,10 @@
 #include "meta/processors/customKV/RemoveProcessor.h"
 #include "meta/processors/customKV/RemoveRangeProcessor.h"
 #include "meta/processors/customKV/ScanProcessor.h"
+#include "meta/processors/zoneMan/AddGroupProcessor.h"
+#include "meta/processors/zoneMan/ListGroupsProcessor.h"
+#include "meta/processors/zoneMan/AddZoneProcessor.h"
+#include "meta/processors/zoneMan/ListZonesProcessor.h"
 
 DECLARE_int32(expired_threshold_sec);
 
@@ -94,9 +97,9 @@ TEST(ProcessorTest, ListSpecficHostsTest) {
     std::vector<cpp2::HostRole> roleVec{cpp2::HostRole::GRAPH,
                                         cpp2::HostRole::META,
                                         cpp2::HostRole::STORAGE};
-    std::vector<std::string>    gitInfoShaVec{"fakeGraphInfoSHA",
-                                              "fakeMetaInfoSHA",
-                                              "fakeStorageInfoSHA"};
+    std::vector<std::string> gitInfoShaVec{"fakeGraphInfoSHA",
+                                           "fakeMetaInfoSHA",
+                                           "fakeStorageInfoSHA"};
     FLAGS_expired_threshold_sec = 1;
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> graphHosts;
@@ -416,6 +419,94 @@ TEST(ProcessorTest, SpaceTest) {
         dprocessor->process(dreq);
         auto dresp = std::move(df).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.code);
+    }
+}
+
+TEST(ProcessorTest, SpaceWithGroupTest) {
+    fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+
+    // Add Zones
+    {
+        {
+            std::vector<HostAddr> nodes;
+            for (int32_t i = 0; i < 3; i++) {
+                nodes.emplace_back(std::to_string(i), i);
+            }
+            cpp2::AddZoneReq req;
+            req.set_zone_name("zone_0");
+            req.set_nodes(std::move(nodes));
+            auto* processor = AddZoneProcessor::instance(kv.get());
+            auto f = processor->getFuture();
+            processor->process(req);
+            auto resp = std::move(f).get();
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        }
+        {
+            std::vector<HostAddr> nodes;
+            for (int32_t i = 3; i < 6; i++) {
+                nodes.emplace_back(std::to_string(i), i);
+            }
+            cpp2::AddZoneReq req;
+            req.set_zone_name("zone_1");
+            req.set_nodes(std::move(nodes));
+            auto* processor = AddZoneProcessor::instance(kv.get());
+            auto f = processor->getFuture();
+            processor->process(req);
+            auto resp = std::move(f).get();
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        }
+        {
+            std::vector<HostAddr> nodes;
+            for (int32_t i = 6; i < 9; i++) {
+                nodes.emplace_back(std::to_string(i), i);
+            }
+            cpp2::AddZoneReq req;
+            req.set_zone_name("zone_2");
+            req.set_nodes(std::move(nodes));
+            auto* processor = AddZoneProcessor::instance(kv.get());
+            auto f = processor->getFuture();
+            processor->process(req);
+            auto resp = std::move(f).get();
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        }
+    }
+    // List Zones
+    {
+        cpp2::ListZonesReq req;
+        auto* processor = ListZonesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.zones.size());
+        ASSERT_EQ("zone_0", resp.zones[0].zone_name);
+        ASSERT_EQ("zone_1", resp.zones[1].zone_name);
+        ASSERT_EQ("zone_2", resp.zones[2].zone_name);
+    }
+
+    // Add Group
+    {
+        cpp2::AddGroupReq req;
+        req.set_group_name("group_0");
+        std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+        req.set_zone_names(std::move(zones));
+        auto* processor = AddGroupProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    // List Groups
+    {
+        cpp2::ListGroupsReq req;
+        auto* processor = ListGroupsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.groups.size());
+        ASSERT_EQ("group_0", resp.groups[0].group_name);
     }
 }
 

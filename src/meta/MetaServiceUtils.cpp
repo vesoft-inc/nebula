@@ -27,6 +27,8 @@ const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 const std::string kLeadersTable        = "__leaders__";          // NOLINT
+const std::string kGroupsTable         = "__groups__";           // NOLINT
+const std::string kZonesTable          = "__zones__";           // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -106,8 +108,8 @@ std::string MetaServiceUtils::partVal(const std::vector<HostAddr>& hosts) {
 std::string MetaServiceUtils::partValV2(const std::vector<HostAddr>& hosts) {
     std::string encodedVal;
     int dataVersion = 2;
-    encodedVal.append(reinterpret_cast<const char*>(&dataVersion), sizeof(int));
-    encodedVal.append(network::NetworkUtils::toHostsStr(hosts));
+    encodedVal.append(reinterpret_cast<const char*>(&dataVersion), sizeof(int))
+              .append(network::NetworkUtils::toHostsStr(hosts));
     return encodedVal;
 }
 
@@ -222,8 +224,8 @@ std::string MetaServiceUtils::leaderKeyV2(std::string addr, Port port) {
     HostAddr h(addr, port);
 
     key.reserve(kLeadersTable.size() + kMaxIpAddrLen + sizeof(Port));
-    key.append(kLeadersTable.data(), kLeadersTable.size());
-    key.append(MetaServiceUtils::serializeHostAddr(h));
+    key.append(kLeadersTable.data(), kLeadersTable.size())
+       .append(MetaServiceUtils::serializeHostAddr(h));
     return key;
 }
 
@@ -442,7 +444,7 @@ std::string MetaServiceUtils::rebuildIndexStatusPrefix() {
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     EntryType type = EntryType::SPACE;
     std::string key;
-    key.reserve(128);
+    key.reserve(64);
     key.append(kIndexTable.data(), kIndexTable.size())
        .append(reinterpret_cast<const char*>(&type), sizeof(type))
        .append(name);
@@ -475,13 +477,33 @@ std::string MetaServiceUtils::indexEdgeKey(GraphSpaceID spaceId,
 
 std::string MetaServiceUtils::indexIndexKey(GraphSpaceID spaceID,
                                             const std::string& indexName) {
+    EntryType type = EntryType::INDEX;
     std::string key;
     key.reserve(128);
-    key.append(kIndexTable.data(), kIndexTable.size());
-    EntryType type = EntryType::INDEX;
-    key.append(reinterpret_cast<const char*>(&type), sizeof(type))
+    key.append(kIndexTable.data(), kIndexTable.size())
+       .append(reinterpret_cast<const char*>(&type), sizeof(type))
        .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
        .append(indexName);
+    return key;
+}
+
+std::string MetaServiceUtils::indexGroupKey(const std::string& name) {
+    EntryType type = EntryType::GROUP;
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size())
+       .append(reinterpret_cast<const char*>(&type), sizeof(type))
+       .append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexZoneKey(const std::string& name) {
+    EntryType type = EntryType::ZONE;
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size())
+       .append(reinterpret_cast<const char*>(&type), sizeof(type))
+       .append(name);
     return key;
 }
 
@@ -922,6 +944,69 @@ HostAddr MetaServiceUtils::deserializeHostAddr(folly::StringPiece raw) {
     offset += len;
     addr.port = *reinterpret_cast<const Port*>(raw.begin() + offset);
     return addr;
+}
+
+std::string MetaServiceUtils::groupKey(const std::string& group) {
+    std::string key;
+    key.reserve(kGroupsTable.size() + group.size());
+    key.append(kGroupsTable.data(), kGroupsTable.size())
+       .append(group);
+    return key;
+}
+
+std::string MetaServiceUtils::groupVal(const std::vector<std::string>& zones) {
+    return folly::join(",", zones);
+}
+
+const std::string& MetaServiceUtils::groupPrefix() {
+    return kGroupsTable;
+}
+
+std::string MetaServiceUtils::parseGroupName(folly::StringPiece rawData) {
+    return rawData.subpiece(kGroupsTable.size(), rawData.size()).toString();
+}
+
+std::vector<std::string> MetaServiceUtils::parseZoneNames(folly::StringPiece rawData) {
+    std::vector<std::string> zones;
+    folly::split(',', rawData.str(), zones);
+    return zones;
+}
+
+std::string MetaServiceUtils::zoneKey(const std::string& zone) {
+    std::string key;
+    key.reserve(kZonesTable.size() + zone.size());
+    key.append(kZonesTable.data(), kZonesTable.size())
+       .append(zone);
+    return key;
+}
+
+std::string MetaServiceUtils::zoneVal(const std::vector<HostAddr>& hosts) {
+    std::string value;
+    value.append(network::NetworkUtils::toHostsStr(hosts));
+    return value;
+}
+
+const std::string& MetaServiceUtils::zonePrefix() {
+    return kZonesTable;
+}
+
+std::string MetaServiceUtils::parseZoneName(folly::StringPiece rawData) {
+    return rawData.subpiece(kZonesTable.size(), rawData.size()).toString();
+}
+
+std::vector<HostAddr> MetaServiceUtils::parseZoneHosts(folly::StringPiece rawData) {
+    std::vector<HostAddr> addresses;
+    auto hostsOrErr = network::NetworkUtils::toHosts(rawData.str());
+    if (hostsOrErr.ok()) {
+        addresses = std::move(hostsOrErr.value());
+    } else {
+        LOG(ERROR) << "invalid input for parseZoneHosts()";
+    }
+    return addresses;
+}
+
+bool MetaServiceUtils::zoneDefined() {
+    return false;
 }
 
 }  // namespace meta

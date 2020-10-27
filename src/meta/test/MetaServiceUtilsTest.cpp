@@ -93,7 +93,7 @@ TEST(MetaServiceUtilsTest, storeStrIpCodecTest) {
 }
 
 std::string hostKeyV1(uint32_t ip, Port port) {
-    const std::string kHostsTable          = "__hosts__";          // NOLINT
+    const std::string kHostsTable = "__hosts__";
     std::string key;
     key.reserve(kHostsTable.size() + sizeof(ip) + sizeof(Port));
     key.append(kHostsTable.data(), kHostsTable.size())
@@ -103,7 +103,7 @@ std::string hostKeyV1(uint32_t ip, Port port) {
 }
 
 std::string leaderKeyV1(uint32_t ip, Port port) {
-    const std::string kLeadersTable        = "__leaders__";          // NOLINT
+    const std::string kLeadersTable = "__leaders__";
     std::string key;
     key.reserve(kLeadersTable.size() + sizeof(ip) + sizeof(Port));
     key.append(kLeadersTable.data(), kLeadersTable.size())
@@ -177,6 +177,24 @@ TEST(MetaServiceUtilsTest, TagTest) {
     auto val = MetaServiceUtils::schemaVal("test_tag", schema);
     auto parsedSchema = MetaServiceUtils::parseSchema(val);
     ASSERT_EQ(parsedSchema, schema);
+}
+
+TEST(MetaServiceUtilsTest, GroupTest) {
+    auto groupKey = MetaServiceUtils::groupKey("test_group");
+    ASSERT_EQ("test_group", MetaServiceUtils::parseGroupName(groupKey));
+
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+    auto groupValue = MetaServiceUtils::groupVal(zones);
+    ASSERT_EQ(zones, MetaServiceUtils::parseZoneNames(groupValue));
+}
+
+TEST(MetaServiceUtilsTest, ZoneTest) {
+    auto zoneKey = MetaServiceUtils::zoneKey("test_zone");
+    ASSERT_EQ("test_zone", MetaServiceUtils::parseZoneName(zoneKey));
+
+    std::vector<HostAddr> nodes = {{"0", 0}, {"1", 1}, {"2", 2}};
+    auto zoneValue = MetaServiceUtils::zoneVal(nodes);
+    ASSERT_EQ(nodes, MetaServiceUtils::parseZoneHosts(zoneValue));
 }
 
 }  // namespace meta

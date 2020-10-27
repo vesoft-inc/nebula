@@ -30,6 +30,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
                                   : fillLeaderAndPartInfoPerHost();
     }
     if (status.ok()) {
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_hosts(std::move(hostItems_));
     }
     onFinished();

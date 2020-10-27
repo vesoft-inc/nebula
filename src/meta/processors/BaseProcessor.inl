@@ -200,7 +200,7 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 template<typename RESP>
 Status BaseProcessor<RESP>::userExist(const std::string& account) {
     auto userKey = MetaServiceUtils::userKey(account);
-    auto ret = doGet(userKey);
+    auto ret = doGet(std::move(userKey));
     if (ret.ok()) {
         return Status::OK();
     }
@@ -232,7 +232,7 @@ template<typename RESP>
 StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
     auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
     std::string val;
-    auto ret = doGet(indexKey);
+    auto ret = doGet(std::move(indexKey));
     if (ret.ok()) {
         return *reinterpret_cast<const TagID*>(ret.value().c_str());
     }
@@ -243,7 +243,7 @@ template<typename RESP>
 StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
                                                     const std::string& name) {
     auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
-    auto ret = doGet(indexKey);
+    auto ret = doGet(std::move(indexKey));
     if (ret.ok()) {
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
     }
@@ -443,6 +443,26 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<std::string>& fields
         }
     }
     return false;
+}
+
+template<typename RESP>
+StatusOr<GroupID> BaseProcessor<RESP>::getGroupId(const std::string& groupName) {
+    auto indexKey = MetaServiceUtils::indexGroupKey(groupName);
+    auto ret = doGet(std::move(indexKey));
+    if (ret.ok()) {
+        return *reinterpret_cast<const GroupID*>(ret.value().c_str());
+    }
+    return Status::GroupNotFound(folly::stringPrintf("Group %s not found", groupName.c_str()));
+}
+
+template<typename RESP>
+StatusOr<ZoneID> BaseProcessor<RESP>::getZoneId(const std::string& zoneName) {
+    auto indexKey = MetaServiceUtils::indexZoneKey(zoneName);
+    auto ret = doGet(std::move(indexKey));
+    if (ret.ok()) {
+        return *reinterpret_cast<const ZoneID*>(ret.value().c_str());
+    }
+    return Status::ZoneNotFound(folly::stringPrintf("Zone %s not found", zoneName.c_str()));
 }
 
 }  // namespace meta
