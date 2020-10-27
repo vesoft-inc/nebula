@@ -112,6 +112,8 @@ if __name__ == "__main__":
             error_code = executor.run_tests(args)
     except Exception as x:
         print('\033[31m' + str(x) + '\033[0m')
+        import traceback
+        print(traceback.format_exc())
 
     finally:
         if stop_nebula and configs.stop_nebula.lower() == 'true':

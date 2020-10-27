@@ -118,7 +118,7 @@ class NebulaTestSuite(object):
 
     @classmethod
     def create_nebula_clients(self):
-        self.client_pool = ConnectionPool(ip=self.host,
+        self.client_pool = ConnectionPool(host=self.host,
                                           port=self.port,
                                           socket_num=16,
                                           network_timeout=0)

@@ -15,16 +15,16 @@ from tests.common.configs import get_delay_time
 
 
 class GlobalDataLoader(object):
-    def __init__(self, data_dir, ip, port, user, password):
+    def __init__(self, data_dir, host, port, user, password):
         self.data_dir = data_dir
-        self.ip = ip
+        self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.has_load_data = False
 
     def __enter__(self):
-        self.client_pool = ConnectionPool(ip=self.ip, port=self.port, network_timeout=0)
+        self.client_pool = ConnectionPool(host=self.host, port=self.port, network_timeout=0)
         self.client = GraphClient(self.client_pool)
         self.client.authenticate(self.user, self.password)
         return self
@@ -37,7 +37,7 @@ class GlobalDataLoader(object):
 
     def load_all_test_data(self):
         if self.client is None:
-            assert False, 'Connect to {}:{}'.format(self.ip, self.port)
+            assert False, 'Connect to {}:{}'.format(self.host, self.port)
         self.load_nba()
         self.load_student()
         self.has_load_data = True
