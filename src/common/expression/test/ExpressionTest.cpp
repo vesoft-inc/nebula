@@ -51,9 +51,9 @@ static void InsertSpace(std::string &str) {
 static std::vector<std::string> InfixToSuffix(const std::vector<std::string> &expr) {
     std::vector<std::string> values;
     std::stack<std::string> operators;
-    std::unordered_map<std::string, int8_t> priority = {{"||", 1},
-                                                        {"&&", 2},
-                                                        {"^", 3},
+    std::unordered_map<std::string, int8_t> priority = {{"OR", 1},
+                                                        {"AND", 2},
+                                                        {"XOR", 3},
                                                         {"==", 4},
                                                         {"!=", 4},
                                                         {">=", 5},
@@ -111,7 +111,7 @@ private:
 protected:
     Expression *ExpressionCalu(const std::vector<std::string> &expr) {
         std::vector<std::string> relationOp = {">", ">=", "<", "<=", "==", "!="};
-        std::vector<std::string> logicalOp = {"&&", "||", "^"};
+        std::vector<std::string> logicalOp = {"AND", "OR", "XOR"};
         std::vector<std::string> arithmeticOp = {"+", "-", "*", "/", "%"};
 
         std::vector<std::string> symbol = InfixToSuffix(expr);
@@ -203,9 +203,9 @@ std::unordered_map<std::string, Expression::Kind> ExpressionTest::op_ = {
     {"*", Expression::Kind::kMultiply},
     {"/", Expression::Kind::kDivision},
     {"%", Expression::Kind::kMod},
-    {"||", Expression::Kind::kLogicalOr},
-    {"&&", Expression::Kind::kLogicalAnd},
-    {"^", Expression::Kind::kLogicalXor},
+    {"OR", Expression::Kind::kLogicalOr},
+    {"AND", Expression::Kind::kLogicalAnd},
+    {"XOR", Expression::Kind::kLogicalXor},
     {">", Expression::Kind::kRelGT},
     {"<", Expression::Kind::kRelLT},
     {">=", Expression::Kind::kRelGE},
@@ -428,76 +428,76 @@ TEST_F(ExpressionTest, LogicalCalculation) {
         TEST_EXPR(false, false);
     }
     {
-        TEST_EXPR(true ^ true, false);
-        TEST_EXPR(true ^ false, true);
-        TEST_EXPR(false ^ false, false);
-        TEST_EXPR(false ^ true, true);
+        TEST_EXPR(true XOR true, false);
+        TEST_EXPR(true XOR false, true);
+        TEST_EXPR(false XOR false, false);
+        TEST_EXPR(false XOR true, true);
     }
     {
-        TEST_EXPR(true && true && true, true);
-        TEST_EXPR(true && true || false, true);
-        TEST_EXPR(true && true && false, false);
-        TEST_EXPR(true || false && true || false, true);
-        TEST_EXPR(true ^ true ^ false, false);
+        TEST_EXPR(true AND true AND true, true);
+        TEST_EXPR(true AND true OR false, true);
+        TEST_EXPR(true AND true AND false, false);
+        TEST_EXPR(true OR false AND true OR false, true);
+        TEST_EXPR(true XOR true XOR false, false);
     }
     {
         // AND
-        TEST_EXPR(true && true, true);
-        TEST_EXPR(true && false, false);
-        TEST_EXPR(false && true, false);
-        TEST_EXPR(false && false, false);
+        TEST_EXPR(true AND true, true);
+        TEST_EXPR(true AND false, false);
+        TEST_EXPR(false AND true, false);
+        TEST_EXPR(false AND false, false);
 
         // AND AND  ===  (AND) AND
-        TEST_EXPR(true && true && true, true);
-        TEST_EXPR(true && true && false, false);
-        TEST_EXPR(true && false && true, false);
-        TEST_EXPR(true && false && false, false);
-        TEST_EXPR(false && true && true, false);
-        TEST_EXPR(false && true && false, false);
-        TEST_EXPR(false && false && true, false);
-        TEST_EXPR(false && false && false, false);
+        TEST_EXPR(true AND true AND true, true);
+        TEST_EXPR(true AND true AND false, false);
+        TEST_EXPR(true AND false AND true, false);
+        TEST_EXPR(true AND false AND false, false);
+        TEST_EXPR(false AND true AND true, false);
+        TEST_EXPR(false AND true AND false, false);
+        TEST_EXPR(false AND false AND true, false);
+        TEST_EXPR(false AND false AND false, false);
 
         // OR
-        TEST_EXPR(true || true, true);
-        TEST_EXPR(true || false, true);
-        TEST_EXPR(false || true, true);
-        TEST_EXPR(false || false, false);
+        TEST_EXPR(true OR true, true);
+        TEST_EXPR(true OR false, true);
+        TEST_EXPR(false OR true, true);
+        TEST_EXPR(false OR false, false);
 
         // OR OR  ===  (OR) OR
-        TEST_EXPR(true || true || true, true);
-        TEST_EXPR(true || true || false, true);
-        TEST_EXPR(true || false || true, true);
-        TEST_EXPR(true || false || false, true);
-        TEST_EXPR(false || true || true, true);
-        TEST_EXPR(false || true || false, true);
-        TEST_EXPR(false || false || true, true);
-        TEST_EXPR(false || false || false, false);
+        TEST_EXPR(true OR true OR true, true);
+        TEST_EXPR(true OR true OR false, true);
+        TEST_EXPR(true OR false OR true, true);
+        TEST_EXPR(true OR false OR false, true);
+        TEST_EXPR(false OR true OR true, true);
+        TEST_EXPR(false OR true OR false, true);
+        TEST_EXPR(false OR false OR true, true);
+        TEST_EXPR(false OR false OR false, false);
 
         // AND OR  ===  (AND) OR
-        TEST_EXPR(true && true || true, true);
-        TEST_EXPR(true && true || false, true);
-        TEST_EXPR(true && false || true, true);
-        TEST_EXPR(true && false || false, false);
-        TEST_EXPR(false && true || true, true);
-        TEST_EXPR(false && true || false, false);
-        TEST_EXPR(false && false || true, true);
-        TEST_EXPR(false && false || false, false);
+        TEST_EXPR(true AND true OR true, true);
+        TEST_EXPR(true AND true OR false, true);
+        TEST_EXPR(true AND false OR true, true);
+        TEST_EXPR(true AND false OR false, false);
+        TEST_EXPR(false AND true OR true, true);
+        TEST_EXPR(false AND true OR false, false);
+        TEST_EXPR(false AND false OR true, true);
+        TEST_EXPR(false AND false OR false, false);
 
         // OR AND  === OR (AND)
-        TEST_EXPR(true || true && true, true);
-        TEST_EXPR(true || true && false, true);
-        TEST_EXPR(true || false && true, true);
-        TEST_EXPR(true || false && false, true);
-        TEST_EXPR(false || true && true, true);
-        TEST_EXPR(false || true && false, false);
-        TEST_EXPR(false || false && true, false);
-        TEST_EXPR(false || false && false, false);
+        TEST_EXPR(true OR true AND true, true);
+        TEST_EXPR(true OR true AND false, true);
+        TEST_EXPR(true OR false AND true, true);
+        TEST_EXPR(true OR false AND false, true);
+        TEST_EXPR(false OR true AND true, true);
+        TEST_EXPR(false OR true AND false, false);
+        TEST_EXPR(false OR false AND true, false);
+        TEST_EXPR(false OR false AND false, false);
     }
     {
-        TEST_EXPR(2 > 1 && 3 > 2, true);
-        TEST_EXPR(2 <= 1 && 3 > 2, false);
-        TEST_EXPR(2 > 1 && 3 < 2, false);
-        TEST_EXPR(2 < 1 && 3 < 2, false);
+        TEST_EXPR(2 > 1 AND 3 > 2, true);
+        TEST_EXPR(2 <= 1 AND 3 > 2, false);
+        TEST_EXPR(2 > 1 AND 3 < 2, false);
+        TEST_EXPR(2 < 1 AND 3 < 2, false);
     }
 }
 
@@ -1014,10 +1014,10 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         TEST_TOSTRING(2 + 2 - 3, "((2+2)-3)");
-        TEST_TOSTRING(true || true, "(true||true)");
-        TEST_TOSTRING(true && false || false, "((true&&false)||false)");
+        TEST_TOSTRING(true OR true, "(true OR true)");
+        TEST_TOSTRING(true AND false OR false, "((true AND false) OR false)");
         TEST_TOSTRING(true == 2, "(true==2)");
-        TEST_TOSTRING(2 > 1 && 3 > 2, "((2>1)&&(3>2))");
+        TEST_TOSTRING(2 > 1 AND 3 > 2, "((2>1) AND (3>2))");
         TEST_TOSTRING((3 + 5) * 3 / (6 - 2), "(((3+5)*3)/(6-2))");
         TEST_TOSTRING(76 - 100 / 20 * 4, "(76-((100/20)*4))");
         TEST_TOSTRING(8 % 2 + 1 == 1, "(((8%2)+1)==1)");

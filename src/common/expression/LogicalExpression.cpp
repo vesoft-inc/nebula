@@ -32,10 +32,10 @@ std::string LogicalExpression::toString() const {
     std::string op;
     switch (kind_) {
         case Kind::kLogicalAnd:
-            op = "&&";
+            op = " AND ";
             break;
         case Kind::kLogicalOr:
-            op = "||";
+            op = " OR ";
             break;
         case Kind::kLogicalXor:
             op = " XOR ";
