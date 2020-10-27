@@ -843,6 +843,7 @@ public:
         kMToN,
         kBFSShortest,
         kAllPaths,
+        kMultiplePairShortest,
     };
 
     static DataCollect* make(QueryContext* qctx,

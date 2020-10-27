@@ -58,7 +58,12 @@ void ProduceSemiShortestPathExecutor::dstInCurrent(const Edge& edge,
             if (historyCostPathMap_.find(dst) != historyCostPathMap_.end()) {
                 if (historyCostPathMap_[dst].find(srcPath.first) !=
                     historyCostPathMap_[dst].end()) {
-                    removeSamePath(newPaths, historyCostPathMap_[dst][srcPath.first].paths_);
+                    auto historyCost = historyCostPathMap_[dst][srcPath.first].cost_;
+                    if (newCost > historyCost) {
+                        continue;
+                    } else {
+                        removeSamePath(newPaths, historyCostPathMap_[dst][srcPath.first].paths_);
+                    }
                 }
             }
             if (!newPaths.empty()) {

@@ -213,6 +213,10 @@ std::unique_ptr<cpp2::PlanNodeDescription> DataCollect::explain() const {
             addDescription("kind", "ALL PATHS", desc.get());
             break;
         }
+        case CollectKind::kMultiplePairShortest: {
+            addDescription("kind", "Multiple Pair Shortest", desc.get());
+            break;
+        }
     }
     return desc;
 }
