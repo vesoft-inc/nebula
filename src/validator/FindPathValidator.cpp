@@ -232,6 +232,7 @@ Status FindPathValidator::multiPairPlan() {
 
     auto* conjunct =
         ConjunctPath::make(qctx_, forward, backward, ConjunctPath::PathKind::kFloyd, steps_.steps);
+
     conjunct->setLeftVar(forward->outputVar());
     conjunct->setRightVar(backward->outputVar());
     conjunct->setColNames({"_path", "cost"});
