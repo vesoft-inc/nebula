@@ -12,6 +12,16 @@ CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);
 CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);
 
 --END
+
+--DDL
+CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name);
+
+CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
+
+CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name);
+
+--END
+
 --DML
 INSERT
         VERTEX player(name, age)

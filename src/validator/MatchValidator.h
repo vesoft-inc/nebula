@@ -39,7 +39,8 @@ private:
 
     Status ananyzeFilterForIndexing();
 
-    Expression* makeSubFilter(const std::string &alias, const MapExpression *map) const;
+    StatusOr<Expression*> makeSubFilter(const std::string &alias,
+                                        const MapExpression *map) const;
 
     Expression* makeIndexFilter(const std::string &label,
                                 const MapExpression *map) const;

@@ -66,7 +66,9 @@ Status MatchValidator::validatePath(const MatchPath *path) {
         }
         Expression *filter = nullptr;
         if (props != nullptr) {
-            filter = makeSubFilter(*alias, props);
+            auto result = makeSubFilter(*alias, props);
+            NG_RETURN_IF_ERROR(result);
+            filter = result.value();
         }
         nodeInfos_[i].anonymous = anonymous;
         nodeInfos_[i].label = label;
@@ -101,7 +103,9 @@ Status MatchValidator::validatePath(const MatchPath *path) {
         }
         Expression *filter = nullptr;
         if (props != nullptr) {
-            filter = makeSubFilter(*alias, props);
+            auto result = makeSubFilter(*alias, props);
+            NG_RETURN_IF_ERROR(result);
+            filter = result.value();
         }
         edgeInfos_[i].anonymous = anonymous;
         edgeInfos_[i].direction = direction;
@@ -329,18 +333,29 @@ MatchValidator::makeIndexFilter(const std::string &label,
 }
 
 
-Expression* MatchValidator::makeSubFilter(const std::string &alias,
-        const MapExpression *map) const {
+StatusOr<Expression*>
+MatchValidator::makeSubFilter(const std::string &alias,
+                              const MapExpression *map) const {
     DCHECK(map != nullptr);
     auto &items = map->items();
     DCHECK(!items.empty());
     Expression *root = nullptr;
+
+    // TODO(dutor) Check if evaluable and evaluate
+    if (items[0].second->kind() != Expression::Kind::kConstant) {
+        return Status::SemanticError("Props must be constant: `%s'",
+                items[0].second->toString().c_str());
+    }
     root = new RelationalExpression(Expression::Kind::kRelEQ,
             new LabelAttributeExpression(
                 new LabelExpression(alias),
                 new LabelExpression(*items[0].first)),
             items[0].second->clone().release());
     for (auto i = 1u; i < items.size(); i++) {
+        if (items[i].second->kind() != Expression::Kind::kConstant) {
+            return Status::SemanticError("Props must be constant: `%s'",
+                    items[i].second->toString().c_str());
+        }
         auto *left = root;
         auto *right = new RelationalExpression(Expression::Kind::kRelEQ,
             new LabelAttributeExpression(
@@ -498,10 +513,24 @@ Status MatchValidator::buildGetTailVertices() {
     auto *project = Project::make(qctx_, gv, yields);
     project->setInputVar(gv->outputVar());
     project->setColNames({*nodeInfo.alias});
+    root_ = project;
 
-    auto *dedup = Dedup::make(qctx_, project);
-    dedup->setInputVar(project->outputVar());
-    dedup->setColNames(project->colNames());
+    if (nodeInfo.filter != nullptr) {
+        auto newFilter = nodeInfo.filter->clone();
+        RewriteMatchLabelVisitor visitor([this](auto *expr) {
+                DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
+                return rewrite(static_cast<const LabelAttributeExpression*>(expr));
+            });
+        newFilter->accept(&visitor);
+        auto *filter = Filter::make(qctx_, root_, saveObject(newFilter.release()));
+        filter->setInputVar(root_->outputVar());
+        filter->setColNames(root_->colNames());
+        root_ = filter;
+    }
+
+    auto *dedup = Dedup::make(qctx_, root_);
+    dedup->setInputVar(root_->outputVar());
+    dedup->setColNames(root_->colNames());
     root_ = dedup;
 
     return Status::OK();
