@@ -1,0 +1,93 @@
+name: release
+
+on:
+  release:
+    types:
+      - published
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - ubuntu2004
+          - centos6
+          - centos7
+          - centos8
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - uses: ./.github/actions/tagname-action
+        id: tag
+      - name: package
+        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }}
+      - name: Get package name
+        id: pkg
+        run: |
+          echo "::set-output name=filepath::$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))"
+      - uses: ./.github/actions/upload-assets-action
+        with:
+          file-path: ${{ steps.pkg.outputs.filepath }}
+          tag: ${{ steps.tag.outputs.tag  }}
+
+  docker_build_graph:
+    name: docker-graph
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/tagname-action
+        id: tagname
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: vesoft/nebula-graphd:${{ steps.tagname.outputs.tag }}
+          push: true
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+
+  docker_build_storage:
+    name: docker-storage
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - metad
+          - storaged
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/tagname-action
+        id: tagname
+      - uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository_owner }}/nebula-storage
+          path: modules/nebula-storage
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v2
+        with:
+          context: modules/nebula-storage
+          file: ./modules/nebula-storage/docker/Dockerfile.${{ matrix.service }}
+          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+          push: true
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}

@@ -7,7 +7,7 @@
 #   -n: Package to one or multi packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
 #
 
 set -e
@@ -15,14 +15,15 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
+branch="master"
 
-while getopts v:n:s:d: opt;
+while getopts v:n:s:b:d: opt;
 do
     case $opt in
         v)
@@ -33,6 +34,9 @@ do
             ;;
         s)
             strip_enable=$OPTARG
+            ;;
+        b)
+            branch=$OPTARG
             ;;
         d)
             enablesanitizer="ON"
@@ -73,6 +77,7 @@ function build {
     san=$2
     ssan=$3
     build_type=$4
+    branch=$5
     modules_dir=${project_dir}/modules
     if [[ -d $build_dir ]]; then
         rm -rf ${build_dir}/*
@@ -95,6 +100,8 @@ function build {
           -DENABLE_STATIC_ASAN=${ssan} \
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
+          -DNEBULA_COMMON_REPO_TAG=${branch} \
+          -DNEBULA_STORAGE_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
           -DENABLE_BUILD_STORAGE=ON \
           -DENABLE_PACK_ONE=${package_one} \
@@ -168,5 +175,5 @@ function package {
 
 
 # The main
-build $version $enablesanitizer $static_sanitizer $build_type
+build $version $enablesanitizer $static_sanitizer $build_type $branch
 package $strip_enable

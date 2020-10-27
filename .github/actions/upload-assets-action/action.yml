@@ -1,0 +1,27 @@
+name: 'Upload release assets'
+description: 'Upload file to release assets'
+inputs:
+  tag:
+    description: 'git tag'
+    required: true
+    default: ${{ github.ref }}
+  file-path:
+    description: 'file path to be uploaded'
+    required: true
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        GH_RELEASE="https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}"
+        upload_url=$(curl -s --request GET --url $GH_RELEASE | grep -oP '(?<="upload_url": ")[^"]*' | cut -d'{' -f1)
+        content_type=$(file -b --mime-type ${{ inputs.file-path }})
+        filename=$(basename "${{ inputs.file-path }}")
+        echo "Uploading asset... "
+        curl --silent \
+            --request POST \
+            --url "$upload_url?name=$filename" \
+            --header "authorization: Bearer ${{ github.token }}" \
+            --header "content-type: $content_type" \
+            --data-binary @"${{ inputs.file-path }}"
+      shell: bash

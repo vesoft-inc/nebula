@@ -1,0 +1,14 @@
+name: 'Extract tag name'
+description: 'Extract tag name'
+outputs:
+  tag:
+    description: 'tag name'
+    value: ${{ steps.tag.outputs.tag }}
+runs:
+  using: "composite"
+  steps:
+    - id: tag
+      run: |
+        tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
+        echo "::set-output name=tag::$tag"
+      shell: bash

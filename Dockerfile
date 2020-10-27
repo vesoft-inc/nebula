@@ -2,8 +2,10 @@ FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
 
+ARG BRANCH=master
+
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF
+  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
 
 FROM centos:7
 
