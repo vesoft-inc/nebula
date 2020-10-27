@@ -1123,5 +1123,41 @@ TEST_F(LookupTest, StringFieldTest) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(LookupTest, ConditionTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "create tag identity (BIRTHDAY int, NATION string, BIRTHPLACE_CITY string)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX idx_identity_cname_birth_gender_nation_city "
+                    "ON identity(BIRTHDAY, NATION, BIRTHPLACE_CITY)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "INSERT VERTEX identity "
+                    "(BIRTHDAY, NATION, BIRTHPLACE_CITY)"
+                    "VALUES 1 : (19860413, \"汉族\", \"aaa\")";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "lookup on identity where "
+                     "identity.NATION == \"汉族\" && "
+                     "identity.BIRTHDAY > 19620101 && "
+                     "identity.BIRTHDAY < 20021231 && "
+                     "identity.BIRTHPLACE_CITY == \"bbb\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(!resp.__isset.rows || resp.get_rows()->size() == 0);
+    }
+}
 }   // namespace graph
 }   // namespace nebula

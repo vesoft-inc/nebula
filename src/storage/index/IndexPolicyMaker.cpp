@@ -74,8 +74,12 @@ bool IndexPolicyMaker::buildPolicy() {
          * Field c2 is missing from the operatorList_,
          * So we just need using c1 to range scan and filter c3.
          */
-        auto exist = scanItems_.find(col.get_name());
-        if (exist == scanItems_.end()) {
+        auto it = scanItems_.find(col.get_name());
+        if (it == scanItems_.end()) {
+            break;
+        } else if (it->second.beginBound_.rel_ != RelationType::kEQRel){
+            // Stop build policy when last operator is range scan,
+            // And other fields will use expression filtering.
             break;
         }
     }
