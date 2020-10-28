@@ -366,5 +366,14 @@ StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type typ
     }
 }
 
+Status Validator::toPlan() {
+    auto subPlanStatus = Planner::toPlan(getAstContext());
+    NG_RETURN_IF_ERROR(subPlanStatus);
+    auto subPlan = std::move(subPlanStatus).value();
+    root_ = subPlan.root;
+    tail_ = subPlan.tail;
+    VLOG(1) << "root: " << root_->kind() << " tail: " << tail_->kind();
+    return Status::OK();
+}
 }   // namespace graph
 }   // namespace nebula

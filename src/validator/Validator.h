@@ -8,11 +8,13 @@
 #define VALIDATOR_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "service/PermissionCheck.h"
-#include "planner/ExecutionPlan.h"
-#include "parser/Sentence.h"
-#include "context/ValidateContext.h"
+#include "context/AstContext.h"
 #include "context/QueryContext.h"
+#include "context/ValidateContext.h"
+#include "parser/Sentence.h"
+#include "planner/ExecutionPlan.h"
+#include "planner/Planner.h"
+#include "service/PermissionCheck.h"
 #include "visitor/DeducePropsVisitor.h"
 
 namespace nebula {
@@ -28,6 +30,8 @@ public:
     static std::unique_ptr<Validator> makeValidator(Sentence* sentence,
                                                     QueryContext* context);
 
+    // validate will call `spaceChosen` -> `validateImpl` -> `checkPermission` -> `toPlan`
+    // in order
     static Status validate(Sentence* sentence, QueryContext* qctx);
 
     Status validate();
@@ -40,6 +44,10 @@ public:
 
     void setInputCols(ColsDef&& inputs) {
         inputs_ = std::move(inputs);
+    }
+
+    QueryContext* qctx() {
+        return qctx_;
     }
 
     PlanNode* root() const {
@@ -62,11 +70,12 @@ public:
         noSpaceRequired_ = true;
     }
 
+    const Sentence* sentence() const {
+        return sentence_;
+    }
+
 protected:
     Validator(Sentence* sentence, QueryContext* qctx);
-
-    // So the validate call `spaceChosen` -> `validateImpl` -> `checkPermission` -> `toPlan`
-    // in order
 
     /**
      * Check if a space is chosen for this sentence.
@@ -87,7 +96,11 @@ protected:
     /**
      * Convert an ast to plan.
      */
-    virtual Status toPlan() = 0;
+    virtual Status toPlan();
+
+    virtual AstContext* getAstContext() {
+        return nullptr;
+    }
 
     std::vector<std::string> deduceColNames(const YieldColumns* cols) const;
 
@@ -123,9 +136,6 @@ protected:
     Sentence*                       sentence_{nullptr};
     QueryContext*                   qctx_{nullptr};
     ValidateContext*                vctx_{nullptr};
-    // root and tail of a subplan.
-    PlanNode*                       root_{nullptr};
-    PlanNode*                       tail_{nullptr};
     // The input columns and output columns of a sentence.
     ColsDef                         outputs_;
     ColsDef                         inputs_;
@@ -133,6 +143,10 @@ protected:
     std::string                     inputVarName_;
     // Admin sentences do not requires a space to be chosen.
     bool                            noSpaceRequired_{false};
+
+    // root and tail of a subplan.
+    PlanNode*                       root_{nullptr};
+    PlanNode*                       tail_{nullptr};
 };
 
 }  // namespace graph

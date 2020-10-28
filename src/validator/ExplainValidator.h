@@ -20,10 +20,11 @@ class ExplainValidator final : public Validator {
 public:
     ExplainValidator(Sentence* sentence, QueryContext* context);
 
+private:
     Status validateImpl() override;
+
     Status toPlan() override;
 
-private:
     std::unique_ptr<SequentialValidator> validator_;
 };
 

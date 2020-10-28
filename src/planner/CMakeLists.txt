@@ -12,4 +12,6 @@ nebula_add_library(
     Query.cpp
     Mutate.cpp
     Maintain.cpp
+    Planner.cpp
+    planners/SequentialPlanner.cpp
 )

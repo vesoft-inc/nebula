@@ -15,7 +15,7 @@ class ACLValidatorTest : public ValidatorTestBase {
 protected:
     const PlanNode *getPlanRoot(const std::string query) {
         auto qctxStatus = validate(query);
-        EXPECT_TRUE(qctxStatus);
+        EXPECT_TRUE(qctxStatus.ok()) << qctxStatus.status();
         auto qctx = std::move(qctxStatus).value();
         return qctx->plan()->root();
     }

@@ -66,9 +66,12 @@ Status ExplainValidator::validateImpl() {
 }
 
 Status ExplainValidator::toPlan() {
-    NG_RETURN_IF_ERROR(validator_->toPlan());
-    root_ = validator_->root();
-    tail_ = validator_->tail();
+    auto subPlanStatus = Planner::toPlan(validator_->getAstContext());
+    NG_RETURN_IF_ERROR(subPlanStatus);
+    auto subPlan = std::move(subPlanStatus).value();
+    root_ = subPlan.root;
+    tail_ = subPlan.tail;
+    VLOG(1) << "root: " << root_->kind() << " tail: " << tail_->kind();
     return Status::OK();
 }
 
