@@ -28,7 +28,9 @@ const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 const std::string kLeadersTable        = "__leaders__";          // NOLINT
 const std::string kGroupsTable         = "__groups__";           // NOLINT
-const std::string kZonesTable          = "__zones__";           // NOLINT
+const std::string kZonesTable          = "__zones__";            // NOLINT
+const std::string kListenerTable       = "__listener__";         // NOLINT
+
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -1007,6 +1009,52 @@ std::vector<HostAddr> MetaServiceUtils::parseZoneHosts(folly::StringPiece rawDat
 
 bool MetaServiceUtils::zoneDefined() {
     return false;
+}
+
+std::string MetaServiceUtils::listenerKey(GraphSpaceID spaceId,
+                                          PartitionID partId,
+                                          cpp2::ListenerType type) {
+    std::string key;
+    key.reserve(kListenerTable.size() + sizeof(GraphSpaceID) +
+                sizeof(cpp2::ListenerType) + sizeof(PartitionID));
+    key.append(kListenerTable.data(), kListenerTable.size())
+       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
+       .append(reinterpret_cast<const char*>(&type), sizeof(cpp2::ListenerType))
+       .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+    return key;
+}
+
+std::string MetaServiceUtils::listenerPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kListenerTable.size() + sizeof(GraphSpaceID));
+    key.append(kListenerTable.data(), kListenerTable.size())
+       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+std::string MetaServiceUtils::listenerPrefix(GraphSpaceID spaceId,
+                                             cpp2::ListenerType type) {
+    std::string key;
+    key.reserve(kListenerTable.size() + sizeof(GraphSpaceID) + sizeof(cpp2::ListenerType));
+    key.append(kListenerTable.data(), kListenerTable.size())
+       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
+       .append(reinterpret_cast<const char*>(&type), sizeof(cpp2::ListenerType));
+    return key;
+}
+
+cpp2::ListenerType MetaServiceUtils::parseListenerType(folly::StringPiece rawData) {
+    auto offset = kListenerTable.size() + sizeof(GraphSpaceID);
+    return *reinterpret_cast<const cpp2::ListenerType*>(rawData.data() + offset);
+}
+
+GraphSpaceID MetaServiceUtils::parseListenerSpace(folly::StringPiece rawData) {
+    auto offset = kListenerTable.size();
+    return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+}
+
+PartitionID MetaServiceUtils::parseListenerPart(folly::StringPiece rawData) {
+    auto offset = kListenerTable.size() + sizeof(cpp2::ListenerType) + sizeof(GraphSpaceID);
+    return *reinterpret_cast<const PartitionID*>(rawData.data() + offset);
 }
 
 }  // namespace meta

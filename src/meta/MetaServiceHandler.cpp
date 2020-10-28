@@ -61,6 +61,7 @@
 #include "meta/processors/zoneMan/GetGroupProcessor.h"
 #include "meta/processors/zoneMan/ListGroupsProcessor.h"
 #include "meta/processors/zoneMan/UpdateGroupProcessor.h"
+#include "meta/processors/listenerMan/ListenerProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -460,5 +461,22 @@ MetaServiceHandler::future_dropZoneFromGroup(const cpp2::DropZoneFromGroupReq &r
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addListener(const cpp2::AddListenerReq& req) {
+    auto* processor = AddListenerProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeListener(const cpp2::RemoveListenerReq& req) {
+    auto* processor = RemoveListenerProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListListenerResp>
+MetaServiceHandler::future_listListener(const cpp2::ListListenerReq& req) {
+    auto* processor = ListListenerProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
 }  // namespace meta
 }  // namespace nebula

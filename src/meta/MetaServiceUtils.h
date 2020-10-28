@@ -259,6 +259,21 @@ public:
     static std::vector<HostAddr> parseZoneHosts(folly::StringPiece rawData);
 
     static bool zoneDefined();  //  check whether the zone have defined
+
+    static std::string listenerKey(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   cpp2::ListenerType type);
+
+    static std::string listenerPrefix(GraphSpaceID spaceId);
+
+    static std::string listenerPrefix(GraphSpaceID spaceId,
+                                      cpp2::ListenerType type);
+
+    static cpp2::ListenerType parseListenerType(folly::StringPiece rawData);
+
+    static GraphSpaceID parseListenerSpace(folly::StringPiece rawData);
+
+    static PartitionID parseListenerPart(folly::StringPiece rawData);
 };
 
 }  // namespace meta

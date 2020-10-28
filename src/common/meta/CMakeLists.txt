@@ -95,6 +95,7 @@ nebula_add_library(
     processors/zoneMan/GetGroupProcessor.cpp
     processors/zoneMan/ListGroupsProcessor.cpp
     processors/zoneMan/UpdateGroupProcessor.cpp
+    processors/listenerMan/ListenerProcessor.cpp
 )
 
 nebula_add_library(

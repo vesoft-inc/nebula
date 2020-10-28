@@ -465,5 +465,18 @@ StatusOr<ZoneID> BaseProcessor<RESP>::getZoneId(const std::string& zoneName) {
     return Status::ZoneNotFound(folly::stringPrintf("Zone %s not found", zoneName.c_str()));
 }
 
+template<typename RESP>
+Status BaseProcessor<RESP>::listenerExist(GraphSpaceID space, cpp2::ListenerType type) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
+    auto prefix = MetaServiceUtils::listenerPrefix(space, type);
+    auto iterRet = doPrefix(prefix);
+    if (!iterRet.ok()) {
+        return iterRet.status();
+    }
+    if (!iterRet.value().get()->valid()) {
+        return Status::ListenerNotFound();
+    }
+    return Status::OK();
+}
 }  // namespace meta
 }  // namespace nebula

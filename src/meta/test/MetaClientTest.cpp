@@ -1510,6 +1510,61 @@ TEST(MetaClientTest, Config) {
     sleep(FLAGS_heartbeat_interval_secs * 5);
 }
 
+TEST(MetaClientTest, ListenerTest) {
+    FLAGS_heartbeat_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientListenerTest.XXXXXX");
+
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    uint32_t localMetaPort = cluster.metaServer_->port_;
+    auto* kv = cluster.metaKV_.get();
+    auto localIp = cluster.localIP();
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    client->waitForMetadReady();
+
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv, hosts);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default");
+    spaceDesc.set_partition_num(9);
+    spaceDesc.set_replica_factor(3);
+    auto ret = client->createSpace(spaceDesc).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    GraphSpaceID space = ret.value();
+    {
+       auto addRet = client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, hosts).get();
+       ASSERT_TRUE(addRet.ok()) << addRet.status();
+    }
+    {
+        auto listRet = client->listListener(space).get();
+        ASSERT_TRUE(listRet.ok()) << listRet.status();
+        auto listeners = listRet.value();
+        ASSERT_EQ(9, listeners.size());
+        std::vector<cpp2::ListenerInfo> expected;
+        for (size_t i = 0; i < 9; i++) {
+            cpp2::ListenerInfo l;
+            l.set_type(cpp2::ListenerType::ELASTICSEARCH);
+            l.set_host(hosts[i%4]);
+            l.set_part_id(i+1);
+            expected.emplace_back(std::move(l));
+        }
+        ASSERT_EQ(expected, listeners);
+    }
+    {
+       auto removeRet = client->removeListener(space, cpp2::ListenerType::ELASTICSEARCH).get();
+       ASSERT_TRUE(removeRet.ok()) << removeRet.status();
+    }
+    {
+        auto listRet = client->listListener(space).get();
+        ASSERT_TRUE(listRet.ok()) << listRet.status();
+        auto listeners = listRet.value();
+        ASSERT_EQ(0, listeners.size());
+    }
+}
+
 TEST(MetaClientTest, RocksdbOptionsTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");

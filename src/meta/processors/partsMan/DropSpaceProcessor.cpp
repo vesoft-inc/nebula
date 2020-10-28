@@ -60,6 +60,21 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         roleIter->next();
     }
 
+    // delete listener meta data
+
+    auto lstPrefix = MetaServiceUtils::listenerPrefix(spaceId);
+    std::unique_ptr<kvstore::KVIterator> lstIter;
+    auto listenerRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, lstPrefix, &lstIter);
+    if (listenerRet != kvstore::ResultCode::SUCCEEDED) {
+        handleErrorCode(MetaCommon::to(listenerRet));
+        onFinished();
+        return;
+    }
+    while (lstIter->valid()) {
+        deleteKeys.emplace_back(lstIter->key());
+        lstIter->next();
+    }
+
     // TODO(YT) delete Tag/Edge under the space
     // TODO(YT) delete part files of the space
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));

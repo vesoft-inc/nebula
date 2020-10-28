@@ -237,6 +237,8 @@ protected:
 
     StatusOr<ZoneID> getZoneId(const std::string& zoneName);
 
+    Status listenerExist(GraphSpaceID space, cpp2::ListenerType type);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
