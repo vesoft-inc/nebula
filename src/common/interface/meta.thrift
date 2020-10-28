@@ -921,6 +921,37 @@ struct ListGroupsResp {
     3: list<Group>      groups,
 }
 
+enum ListenerType {
+    ELASTICSEARCH = 0x00,
+} (cpp.enum_strict)
+
+struct AddListenerReq {
+    1: common.GraphSpaceID     space_id,
+    2: ListenerType            type,
+    3: list<common.HostAddr>   hosts,
+}
+
+struct RemoveListenerReq {
+    1: common.GraphSpaceID     space_id,
+    2: ListenerType            type,
+}
+
+struct ListListenerReq {
+    1: common.GraphSpaceID     space_id,
+}
+
+struct ListenerInfo {
+    1: ListenerType            type,
+    2: common.HostAddr         host,
+    3: common.PartitionID      part_id,
+}
+
+struct ListListenerResp {
+    1: ErrorCode               code,
+    2: common.HostAddr         leader,
+    3: list<ListenerInfo>      listeners,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -1003,4 +1034,8 @@ service MetaService {
     ExecResp       dropZoneFromGroup(1: DropZoneFromGroupReq req);
     GetGroupResp   getGroup(1: GetGroupReq req);
     ListGroupsResp listGroups(1: ListGroupsReq req);
+
+    ExecResp       addListener(1: AddListenerReq req);
+    ExecResp       removeListener(1: RemoveListenerReq req);
+    ListListenerResp listListener(1: ListListenerReq req);
 }

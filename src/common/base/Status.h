@@ -140,6 +140,7 @@ public:
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
+    STATUS_GENERATOR(ListenerNotFound);
 
     // User or permission errors
     STATUS_GENERATOR(PermissionError);
@@ -179,6 +180,7 @@ public:
         kPartNotFound           = 412,
         kGroupNotFound          = 413,
         kZoneNotFound           = 414,
+        kListenerNotFound       = 415,
         // 5xx for user or permission error
         kPermissionError        = 501,
     };

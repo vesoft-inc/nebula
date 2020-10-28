@@ -94,6 +94,8 @@ const char *Status::toString(Code code) {
             return "PartNotFound: ";
         case kPermissionError:
             return "PermissionError: ";
+        case kListenerNotFound:
+            return "ListenerNotFound";
     }
     DLOG(FATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
     return "";
