@@ -158,15 +158,10 @@ std::string AddVerticesProcessor::findObsoleteIndex(PartitionID partId,
                                                     VertexID vId,
                                                     TagID tagId) {
     auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
-                   << ", spaceId " << this->spaceId_;
-        return "";
-    }
-    if (iter && iter->valid()) {
-        return iter->val().str();
+    std::string value;
+    auto ret = doGetFirstRecord(spaceId_, partId, prefix, &value);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return value;
     }
     return "";
 }
