@@ -119,13 +119,13 @@ public:
     }
 
     virtual void subTaskFinish(cpp2::ErrorCode rc) {
-        static cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
+        cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
         rc_.compare_exchange_strong(suc, rc);
     }
 
     virtual void cancel() {
         FLOG_INFO("task(%d, %d) cancelled", ctx_.jobId_, ctx_.taskId_);
-        static cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
+        cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
         rc_.compare_exchange_strong(suc, cpp2::ErrorCode::E_USER_CANCEL);
     }
 

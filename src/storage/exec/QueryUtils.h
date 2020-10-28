@@ -90,6 +90,22 @@ public:
         return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
     }
 
+    static Status collectPropsInValue(RowReader* reader,
+                                      const std::vector<PropContext>* props,
+                                      nebula::List& list) {
+        for (const auto& prop : *props) {
+            if (prop.returned_ && prop.propInKeyType_ == PropContext::PropInKeyType::NONE) {
+                VLOG(2) << "Collect prop " << prop.name_;
+                auto value = QueryUtils::readValue(reader, prop.name_, prop.field_);
+                if (!value.ok()) {
+                    return value.status();
+                }
+                list.emplace_back(std::move(value).value());
+            }
+        }
+        return Status::OK();
+    }
+
     // return none if no valid ttl, else return the ttl property name and time
     static folly::Optional<std::pair<std::string, int64_t>>
     getEdgeTTLInfo(EdgeContext* edgeContext, EdgeType edgeType) {

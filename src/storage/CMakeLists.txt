@@ -34,6 +34,8 @@ nebula_add_library(
     mutate/UpdateEdgeProcessor.cpp
     query/GetNeighborsProcessor.cpp
     query/GetPropProcessor.cpp
+    query/ScanVertexProcessor.cpp
+    query/ScanEdgeProcessor.cpp
     index/LookupProcessor.cpp
 )
 

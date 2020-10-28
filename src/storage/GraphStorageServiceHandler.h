@@ -47,6 +47,8 @@ public:
         updateEdgeQpsStat_ = stats::Stats("storage", "update_edge");
         getNeighborsQpsStat_ = stats::Stats("storage", "get_neighbors");
         getPropQpsStat_ = stats::Stats("storage", "get_prop");
+        scanVertexQpsStat_ = stats::Stats("storage", "scan_vertex");
+        scanEdgeQpsStat_ = stats::Stats("storage", "scan_edge");
     }
 
     // Vertice section
@@ -78,6 +80,12 @@ public:
     folly::Future<cpp2::LookupIndexResp>
     future_lookupIndex(const cpp2::LookupIndexRequest& req) override;
 
+    folly::Future<cpp2::ScanVertexResponse>
+    future_scanVertex(const cpp2::ScanVertexRequest& req) override;
+
+    folly::Future<cpp2::ScanEdgeResponse>
+    future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
+
 private:
     StorageEnv*                                     env_{nullptr};
     VertexCache                                     vertexCache_;
@@ -92,6 +100,8 @@ private:
     stats::Stats                                    getNeighborsQpsStat_;
     stats::Stats                                    getPropQpsStat_;
     stats::Stats                                    lookupQpsStat_;
+    stats::Stats                                    scanVertexQpsStat_;
+    stats::Stats                                    scanEdgeQpsStat_;
 };
 
 }  // namespace storage

@@ -403,6 +403,9 @@ public:
         ASSERT_EQ(0, colNames[colNames.size() - 1].find("_expr"));
 
         for (size_t i = 0; i < tags.size(); i++) {
+            if (tags[i].second.empty()) {
+                continue;
+            }
             auto expected = "_tag:" + folly::to<std::string>(tags[i].first);
             for (const auto& prop : tags[i].second) {
                 expected += ":" + prop;
@@ -410,6 +413,9 @@ public:
             ASSERT_EQ(expected, colNames[i + 2]);
         }
         for (size_t i = 0; i < edges.size(); i++) {
+            if (edges[i].second.empty()) {
+                continue;
+            }
             std::string expected = "_edge:";
             expected.append(edges[i].first > 0 ? "+" : "-")
                     .append(folly::to<std::string>(std::abs(edges[i].first)));

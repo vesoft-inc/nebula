@@ -1,44 +1,41 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.:
+/* Copyright (c) 2020 vesoft inc. All rights reserved.:
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_SCANEDGEPROCESSOR_H_
-#define STORAGE_SCANEDGEPROCESSOR_H_
+#ifndef STORAGE_QUERY_SCANEDGEPROCESSOR_H_
+#define STORAGE_QUERY_SCANEDGEPROCESSOR_H_
 
 #include "common/base/Base.h"
-#include "storage/BaseProcessor.h"
+#include "storage/query/QueryBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
 
 class ScanEdgeProcessor
-    : public BaseProcessor<cpp2::ScanEdgeResponse> {
+    : public QueryBaseProcessor<cpp2::ScanEdgeRequest, cpp2::ScanEdgeResponse> {
 public:
-    static ScanEdgeProcessor* instance(kvstore::KVStore* kvstore,
-                                       meta::SchemaManager* schemaMan,
+    static ScanEdgeProcessor* instance(StorageEnv* env,
                                        stats::Stats* stats) {
-        return new ScanEdgeProcessor(kvstore, schemaMan, stats);
+        return new ScanEdgeProcessor(env, stats);
     }
 
-    void process(const cpp2::ScanEdgeRequest& req);
+    void process(const cpp2::ScanEdgeRequest& req) override;
 
 private:
-    explicit ScanEdgeProcessor(kvstore::KVStore* kvstore,
-                               meta::SchemaManager* schemaMan,
-                               stats::Stats* stats)
-            : BaseProcessor<cpp2::ScanEdgeResponse>(kvstore, schemaMan, stats) {}
+    ScanEdgeProcessor(StorageEnv* env, stats::Stats* stats)
+        : QueryBaseProcessor<cpp2::ScanEdgeRequest, cpp2::ScanEdgeResponse>(env, stats) {
+    }
 
-    cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanEdgeRequest& req);
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanEdgeRequest& req) override;
 
-    std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
-    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchema_;
-    bool returnAllColumns_{false};
-    GraphSpaceID spaceId_;
+    void onProcessFinished() override;
+
+    bool returnNoProps_{false};
     PartitionID partId_;
 };
 
 }  // namespace storage
 }  // namespace nebula
-#endif  // STORAGE_SCANEDGEPROCESSOR_H_
+#endif  // STORAGE_QUERY_SCANEDGEPROCESSOR_H_

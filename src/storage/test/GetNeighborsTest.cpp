@@ -127,6 +127,25 @@ TEST(GetNeighborsTest, PropertyTest) {
         QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 6);
     }
     {
+        LOG(INFO) << "OneOutEdgeMultiProperty";
+        std::vector<VertexID> vertices = {"Tim Duncan"};
+        std::vector<EdgeType> over = {serve};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+        tags.emplace_back(player, std::vector<std::string>{});
+        edges.emplace_back(serve, std::vector<std::string>{});
+        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+
+        auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, resp.result.failed_parts.size());
+        // vId, stat, player, serve, expr
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+    }
+    {
         LOG(INFO) << "OutEdgeReturnAllProperty";
         std::vector<VertexID> vertices = {"Tim Duncan"};
         std::vector<EdgeType> over = {};
