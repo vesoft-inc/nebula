@@ -5,18 +5,16 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_NULL, T_EMPTY
 import pytest
+
+from tests.common.nebula_test_suite import NebulaTestSuite
+
 
 @pytest.mark.usefixtures('set_vertices_and_edges')
 class TestMatch(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.use_nba()
-
-    def cleanup():
-        pass
 
     def test_single_node(self):
         VERTICES = self.VERTEXS
@@ -93,10 +91,7 @@ class TestMatch(NebulaTestSuite):
         self.check_column_names(resp, expected['column_names'])
         self.check_out_of_order_result(resp, expected['rows'])
 
-
     def test_one_step(self):
-        VERTICES = self.VERTEXS
-
         stmt = 'MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.name AS Name'
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
@@ -164,8 +159,6 @@ class TestMatch(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
     def test_two_steps(self):
-        VERTICES = self.VERTEXS
-
         stmt = '''
                   MATCH (v1:player{age: 28}) -[:like]-> (v2) -[:like]-> (v3)
                   RETURN v1.name AS Player, v2.name AS Friend, v3.name AS FoF

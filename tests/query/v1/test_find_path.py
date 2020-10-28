@@ -5,12 +5,9 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import pytest
-
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
-@pytest.mark.usefixtures('set_vertices_and_edges')
 class TestFindPath(NebulaTestSuite):
     @classmethod
     def prepare(self):

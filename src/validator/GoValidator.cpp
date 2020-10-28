@@ -749,10 +749,7 @@ void GoValidator::extractPropExprs(const Expression* expr) {
 std::unique_ptr<Expression> GoValidator::rewriteToInputProp(Expression* expr) {
     RewriteInputPropVisitor visitor(propExprColMap_);
     const_cast<Expression*>(expr)->accept(&visitor);
-    if (visitor.ok()) {
-        return std::move(visitor).result();
-    }
-    return nullptr;
+    return std::move(visitor).result();
 }
 
 Status GoValidator::buildColumns() {

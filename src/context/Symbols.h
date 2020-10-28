@@ -9,6 +9,8 @@
 
 #include "util/ObjectPool.h"
 
+#include "common/datatypes/Value.h"
+
 namespace nebula {
 namespace graph {
 
@@ -118,6 +120,7 @@ private:
     // var name -> variable
     std::unordered_map<std::string, Variable*>                              vars_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif
