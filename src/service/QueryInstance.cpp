@@ -149,6 +149,7 @@ void QueryInstance::onError(Status status) {
         case Status::Code::kSpaceNotFound:
         case Status::Code::kTagNotFound:
         case Status::Code::kUserNotFound:
+        case Status::Code::kListenerNotFound:
             rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
             break;
     }
