@@ -196,8 +196,8 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      name_;
-    std::string                      index_;
+    std::string                      tagName_;
+    std::string                      indexName_;
     std::vector<std::string>         fields_;
     bool                             ifNotExist_;
 };
@@ -213,8 +213,8 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      name_;
-    std::string                      index_;
+    std::string                      edgeName_;
+    std::string                      indexName_;
     std::vector<std::string>         fields_;
     bool                             ifNotExist_;
 };
@@ -230,7 +230,8 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      index_;
+    std::string                      indexName_;
+    bool                             ifExist_;
 };
 
 class DropEdgeIndexValidator final : public Validator {
@@ -244,7 +245,8 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      index_;
+    std::string                      indexName_;
+    bool                             ifExist_;
 };
 
 class DescribeTagIndexValidator final : public Validator {
@@ -258,7 +260,7 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      index_;
+    std::string                      indexName_;
 };
 
 class DescribeEdgeIndexValidator final : public Validator {
@@ -272,7 +274,7 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      index_;
+    std::string                      indexName_;
 };
 
 class ShowCreateTagIndexValidator final : public Validator {
@@ -286,7 +288,22 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      index_;
+    std::string                      indexName_;
+};
+
+
+class ShowCreateEdgeIndexValidator final : public Validator {
+public:
+    ShowCreateEdgeIndexValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+private:
+    std::string                      indexName_;
 };
 
 class ShowTagIndexesValidator final : public Validator {
@@ -298,47 +315,11 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
-
-private:
-    std::string                      index_;
-};
-
-class ShowCreateEdgeIndexValidator final : public Validator {
-public:
-    ShowCreateEdgeIndexValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
-
-private:
-    Status validateImpl() override;
-
-    Status toPlan() override;
 };
 
 class ShowEdgeIndexesValidator final : public Validator {
 public:
     ShowEdgeIndexesValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
-
-private:
-    Status validateImpl() override;
-
-    Status toPlan() override;
-};
-
-class RebuildTagIndexValidator final : public Validator {
-public:
-    RebuildTagIndexValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
-
-private:
-    Status validateImpl() override;
-
-    Status toPlan() override;
-};
-
-class RebuildEdgeIndexValidator final : public Validator {
-public:
-    RebuildEdgeIndexValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {}
 
 private:

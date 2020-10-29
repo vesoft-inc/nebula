@@ -219,7 +219,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
                                                  const meta::cpp2::Schema &schema) {
     DataSet dataSet;
     std::string createStr;
-    createStr.resize(1024);
+    createStr.reserve(1024);
     if (isTag) {
         dataSet.colNames = {"Tag", "Create Tag"};
         createStr = "CREATE TAG `" + name + "` (\n";

@@ -22,6 +22,47 @@ Status IndexUtil::validateColumns(const std::vector<std::string>& fields) {
     return Status::OK();
 }
 
+StatusOr<DataSet> IndexUtil::toDescIndex(const meta::cpp2::IndexItem &indexItem) {
+    DataSet dataSet({"Field", "Type"});
+    for (auto &col : indexItem.get_fields()) {
+        Row row;
+        row.values.emplace_back(Value(col.get_name()));
+        row.values.emplace_back(SchemaUtil::typeToString(col));
+        dataSet.emplace_back(std::move(row));
+    }
+    return dataSet;
+}
+
+StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
+                                               const std::string &indexName,
+                                               const meta::cpp2::IndexItem &indexItem) {
+    DataSet dataSet;
+    std::string createStr;
+    createStr.reserve(1024);
+    std::string schemaName = indexItem.get_schema_name();
+    if (isTagIndex) {
+        dataSet.colNames = {"Tag Index Name", "Create Tag Index"};
+        createStr = "CREATE TAG INDEX `" + indexName +  "` ON `" + schemaName + "` (\n";
+    } else {
+        dataSet.colNames = {"Edge Index Name", "Create Edge Index"};
+        createStr = "CREATE EDGE INDEX `" + indexName + "` ON `" + schemaName + "` (\n";
+    }
+    Row row;
+    row.emplace_back(indexName);
+    for (auto &col : indexItem.get_fields()) {
+        createStr += " `" + col.get_name() + "`";
+        createStr += ",\n";
+    }
+    if (!indexItem.fields.empty()) {
+        createStr.resize(createStr.size() -2);
+        createStr += "\n";
+    }
+    createStr += ")";
+    row.emplace_back(std::move(createStr));
+    dataSet.rows.emplace_back(std::move(row));
+    return dataSet;
+}
+
 }  // namespace graph
 }  // namespace nebula
 

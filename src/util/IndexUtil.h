@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "parser/MaintainSentences.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {
@@ -19,6 +20,12 @@ public:
     IndexUtil() = delete;
 
     static Status validateColumns(const std::vector<std::string>& fields);
+
+    static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);
+
+    static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
+                                               const std::string &indexName,
+                                               const meta::cpp2::IndexItem &indexItem);
 };
 
 }  // namespace graph

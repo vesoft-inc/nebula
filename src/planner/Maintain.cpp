@@ -66,11 +66,5 @@ std::unique_ptr<cpp2::PlanNodeDescription> DropIndexNode::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> RebuildIndexNode::explain() const {
-    auto desc = SingleInputNode::explain();
-    addDescription("indexName", indexName_, desc.get());
-    return desc;
-}
-
 }   // namespace graph
 }   // namespace nebula

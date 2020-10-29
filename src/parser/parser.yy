@@ -2103,12 +2103,6 @@ show_sentence
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowCreateEdgeIndexSentence($5);
     }
-    | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
-        $$ = new ShowTagIndexesSentence();
-    }
-    | KW_SHOW KW_EDGE KW_INDEX KW_STATUS {
-        $$ = new ShowEdgeIndexesSentence();
-    }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSnapshotsSentence();
     }

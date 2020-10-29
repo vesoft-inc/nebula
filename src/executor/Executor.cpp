@@ -267,6 +267,18 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kDescEdgeIndex: {
             return pool->add(new DescEdgeIndexExecutor(node, qctx));
         }
+        case PlanNode::Kind::kShowCreateTagIndex: {
+            return pool->add(new ShowCreateTagIndexExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowCreateEdgeIndex: {
+            return pool->add(new ShowCreateEdgeIndexExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowTagIndexes: {
+            return pool->add(new ShowTagIndexesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowEdgeIndexes: {
+            return pool->add(new ShowEdgeIndexesExecutor(node, qctx));
+        }
         case PlanNode::Kind::kInsertVertices: {
             return pool->add(new InsertVerticesExecutor(node, qctx));
         }

@@ -125,6 +125,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowCreateTag";
         case Kind::kShowCreateEdge:
             return "ShowCreateEdge";
+        case Kind::kShowCreateTagIndex:
+            return "ShowCreateTagIndex";
+        case Kind::kShowCreateEdgeIndex:
+            return "ShowCreateEdgeIndex";
         case Kind::kDropSpace:
             return "DropSpace";
         case Kind::kDropTag:
@@ -137,6 +141,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowTags";
         case Kind::kShowEdges:
             return "ShowEdges";
+        case Kind::kShowTagIndexes:
+            return "kShowTagIndexes";
+        case Kind::kShowEdgeIndexes:
+            return "kShowEdgeIndexes";
         case Kind::kCreateSnapshot:
             return "CreateSnapshot";
         case Kind::kDropSnapshot:

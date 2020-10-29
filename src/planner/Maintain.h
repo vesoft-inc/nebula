@@ -7,9 +7,9 @@
 #ifndef PLANNER_MAINTAIN_H_
 #define PLANNER_MAINTAIN_H_
 
-#include "planner/Query.h"
-#include "common/interface/gen-cpp2/meta_types.h"
 #include "common/clients/meta/MetaClient.h"
+#include "common/interface/gen-cpp2/meta_types.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -23,10 +23,10 @@ protected:
                      std::string name,
                      meta::cpp2::Schema schema,
                      bool ifNotExists)
-        : SingleInputNode(qctx, kind, input)
-        , name_(std::move(name))
-        , schema_(std::move(schema))
-        , ifNotExists_(ifNotExists) {}
+        : SingleInputNode(qctx, kind, input),
+          name_(std::move(name)),
+          schema_(std::move(schema)),
+          ifNotExists_(ifNotExists) {}
 
 public:
     const std::string& getName() const {
@@ -44,9 +44,9 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string            name_;
-    meta::cpp2::Schema     schema_;
-    bool                   ifNotExists_;
+    std::string name_;
+    meta::cpp2::Schema schema_;
+    bool ifNotExists_;
 };
 
 class CreateTag final : public CreateSchemaNode {
@@ -56,11 +56,8 @@ public:
                            std::string tagName,
                            meta::cpp2::Schema schema,
                            bool ifNotExists) {
-        return qctx->objPool()->add(new CreateTag(qctx,
-                                                  input,
-                                                  std::move(tagName),
-                                                  std::move(schema),
-                                                  ifNotExists));
+        return qctx->objPool()->add(
+            new CreateTag(qctx, input, std::move(tagName), std::move(schema), ifNotExists));
     }
 
 private:
@@ -74,8 +71,7 @@ private:
                            Kind::kCreateTag,
                            std::move(tagName),
                            std::move(schema),
-                           ifNotExists) {
-        }
+                           ifNotExists) {}
 };
 
 class CreateEdge final : public CreateSchemaNode {
@@ -85,11 +81,8 @@ public:
                             std::string edgeName,
                             meta::cpp2::Schema schema,
                             bool ifNotExists) {
-        return qctx->objPool()->add(new CreateEdge(qctx,
-                                                   input,
-                                                   std::move(edgeName),
-                                                   std::move(schema),
-                                                   ifNotExists));
+        return qctx->objPool()->add(
+            new CreateEdge(qctx, input, std::move(edgeName), std::move(schema), ifNotExists));
     }
 
 private:
@@ -103,8 +96,7 @@ private:
                            Kind::kCreateEdge,
                            std::move(edgeName),
                            std::move(schema),
-                           ifNotExists) {
-        }
+                           ifNotExists) {}
 };
 
 class AlterSchemaNode : public SingleInputNode {
@@ -116,11 +108,11 @@ protected:
                     std::string name,
                     std::vector<meta::cpp2::AlterSchemaItem> items,
                     meta::cpp2::SchemaProp schemaProp)
-        : SingleInputNode(qctx, kind, input)
-        , space_(space)
-        , name_(std::move(name))
-        , schemaItems_(std::move(items))
-        , schemaProp_(std::move(schemaProp)) {}
+        : SingleInputNode(qctx, kind, input),
+          space_(space),
+          name_(std::move(name)),
+          schemaItems_(std::move(items)),
+          schemaProp_(std::move(schemaProp)) {}
 
 public:
     const std::string& getName() const {
@@ -142,10 +134,10 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    GraphSpaceID                               space_;
-    std::string                                name_;
-    std::vector<meta::cpp2::AlterSchemaItem>   schemaItems_;
-    meta::cpp2::SchemaProp                     schemaProp_;
+    GraphSpaceID space_;
+    std::string name_;
+    std::vector<meta::cpp2::AlterSchemaItem> schemaItems_;
+    meta::cpp2::SchemaProp schemaProp_;
 };
 
 class AlterTag final : public AlterSchemaNode {
@@ -156,12 +148,8 @@ public:
                           std::string name,
                           std::vector<meta::cpp2::AlterSchemaItem> items,
                           meta::cpp2::SchemaProp schemaProp) {
-        return qctx->objPool()->add(new AlterTag(qctx,
-                                                 input,
-                                                 space,
-                                                 std::move(name),
-                                                 std::move(items),
-                                                 std::move(schemaProp)));
+        return qctx->objPool()->add(new AlterTag(
+            qctx, input, space, std::move(name), std::move(items), std::move(schemaProp)));
     }
 
 private:
@@ -177,8 +165,7 @@ private:
                           space,
                           std::move(name),
                           std::move(items),
-                          std::move(schemaProp)) {
-    }
+                          std::move(schemaProp)) {}
 };
 
 class AlterEdge final : public AlterSchemaNode {
@@ -206,8 +193,7 @@ private:
                           space,
                           std::move(name),
                           std::move(items),
-                          std::move(schemaProp)) {
-    }
+                          std::move(schemaProp)) {}
 };
 
 class DescSchemaNode : public SingleInputNode {
@@ -223,14 +209,12 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string            name_;
+    std::string name_;
 };
 
 class DescTag final : public DescSchemaNode {
 public:
-    static DescTag* make(QueryContext* qctx,
-                         PlanNode* input,
-                         std::string tagName) {
+    static DescTag* make(QueryContext* qctx, PlanNode* input, std::string tagName) {
         return qctx->objPool()->add(new DescTag(qctx, input, std::move(tagName)));
     }
 
@@ -241,78 +225,56 @@ private:
 
 class DescEdge final : public DescSchemaNode {
 public:
-    static DescEdge* make(QueryContext* qctx,
-                          PlanNode* input,
-                          std::string edgeName) {
+    static DescEdge* make(QueryContext* qctx, PlanNode* input, std::string edgeName) {
         return qctx->objPool()->add(new DescEdge(qctx, input, std::move(edgeName)));
     }
 
 private:
-    DescEdge(QueryContext* qctx,
-             PlanNode* input,
-             std::string edgeName)
-        : DescSchemaNode(qctx, input, Kind::kDescEdge, std::move(edgeName)) {
-    }
+    DescEdge(QueryContext* qctx, PlanNode* input, std::string edgeName)
+        : DescSchemaNode(qctx, input, Kind::kDescEdge, std::move(edgeName)) {}
 };
 
 class ShowCreateTag final : public DescSchemaNode {
 public:
-    static ShowCreateTag* make(QueryContext* qctx,
-                               PlanNode* input,
-                               std::string name) {
+    static ShowCreateTag* make(QueryContext* qctx, PlanNode* input, std::string name) {
         return qctx->objPool()->add(new ShowCreateTag(qctx, input, std::move(name)));
     }
 
 private:
-    ShowCreateTag(QueryContext* qctx,
-                  PlanNode* input,
-                  std::string name)
-        : DescSchemaNode(qctx, input, Kind::kShowCreateTag, std::move(name)) {
-    }
+    ShowCreateTag(QueryContext* qctx, PlanNode* input, std::string name)
+        : DescSchemaNode(qctx, input, Kind::kShowCreateTag, std::move(name)) {}
 };
 
 class ShowCreateEdge final : public DescSchemaNode {
 public:
-    static ShowCreateEdge* make(QueryContext* qctx,
-                                PlanNode* input,
-                                std::string name) {
+    static ShowCreateEdge* make(QueryContext* qctx, PlanNode* input, std::string name) {
         return qctx->objPool()->add(new ShowCreateEdge(qctx, input, std::move(name)));
     }
 
 private:
-    ShowCreateEdge(QueryContext* qctx,
-                   PlanNode* input,
-                   std::string name)
-        : DescSchemaNode(qctx, input, Kind::kShowCreateEdge, std::move(name)) {
-    }
+    ShowCreateEdge(QueryContext* qctx, PlanNode* input, std::string name)
+        : DescSchemaNode(qctx, input, Kind::kShowCreateEdge, std::move(name)) {}
 };
 
 class ShowTags final : public SingleInputNode {
 public:
-    static ShowTags* make(QueryContext* qctx,
-                          PlanNode* input) {
+    static ShowTags* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowTags(qctx, input));
     }
 
 private:
-    ShowTags(QueryContext* qctx,
-             PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowTags, input) {
-    }
+    ShowTags(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kShowTags, input) {}
 };
 
 class ShowEdges final : public SingleInputNode {
 public:
-    static ShowEdges* make(QueryContext* qctx,
-                           PlanNode* input) {
+    static ShowEdges* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowEdges(qctx, input));
     }
 
 private:
-    ShowEdges(QueryContext* qctx,
-              PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowEdges, input) {
-    }
+    ShowEdges(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowEdges, input) {}
 };
 
 class DropSchemaNode : public SingleInputNode {
@@ -332,42 +294,29 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string            name_;
-    bool                   ifExists_;
+    std::string name_;
+    bool ifExists_;
 };
 
 class DropTag final : public DropSchemaNode {
 public:
-    static DropTag* make(QueryContext* qctx,
-                         PlanNode* input,
-                         std::string name,
-                         bool ifExists) {
+    static DropTag* make(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists) {
         return qctx->objPool()->add(new DropTag(qctx, input, std::move(name), ifExists));
     }
 
 private:
-    DropTag(QueryContext* qctx,
-            PlanNode* input,
-            std::string name,
-            bool ifExists)
-        : DropSchemaNode(qctx, Kind::kDropTag, input, std::move(name), ifExists) {
-    }
+    DropTag(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists)
+        : DropSchemaNode(qctx, Kind::kDropTag, input, std::move(name), ifExists) {}
 };
 
 class DropEdge final : public DropSchemaNode {
 public:
-    static DropEdge* make(QueryContext* qctx,
-                          PlanNode* input,
-                          std::string name,
-                          bool ifExists) {
+    static DropEdge* make(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists) {
         return qctx->objPool()->add(new DropEdge(qctx, input, std::move(name), ifExists));
     }
 
 private:
-    DropEdge(QueryContext* qctx,
-             PlanNode* input,
-             std::string name,
-             bool ifExists)
+    DropEdge(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists)
         : DropSchemaNode(qctx, Kind::kDropEdge, input, std::move(name), ifExists) {}
 };
 
@@ -380,11 +329,11 @@ protected:
                     std::string indexName,
                     std::vector<std::string> fields,
                     bool ifNotExists)
-        : SingleInputNode(qctx, kind, input)
-        , schemaName_(std::move(schemaName))
-        , indexName_(std::move(indexName))
-        , fields_(std::move(fields))
-        , ifNotExists_(ifNotExists) {}
+        : SingleInputNode(qctx, kind, input),
+          schemaName_(std::move(schemaName)),
+          indexName_(std::move(indexName)),
+          fields_(std::move(fields)),
+          ifNotExists_(ifNotExists) {}
 
 public:
     const std::string& getSchemaName() const {
@@ -406,10 +355,10 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string               schemaName_;
-    std::string               indexName_;
-    std::vector<std::string>  fields_;
-    bool                      ifNotExists_;
+    std::string schemaName_;
+    std::string indexName_;
+    std::vector<std::string> fields_;
+    bool ifNotExists_;
 };
 
 class CreateTagIndex final : public CreateIndexNode {
@@ -420,11 +369,8 @@ public:
                                 std::string indexName,
                                 std::vector<std::string> fields,
                                 bool ifNotExists) {
-        return qctx->objPool()->add(new CreateTagIndex(qctx, input,
-                                                       std::move(tagName),
-                                                       std::move(indexName),
-                                                       std::move(fields),
-                                                       ifNotExists));
+        return qctx->objPool()->add(new CreateTagIndex(
+            qctx, input, std::move(tagName), std::move(indexName), std::move(fields), ifNotExists));
     }
 
 private:
@@ -434,7 +380,8 @@ private:
                    std::string indexName,
                    std::vector<std::string> fields,
                    bool ifNotExists)
-        : CreateIndexNode(qctx, input,
+        : CreateIndexNode(qctx,
+                          input,
                           Kind::kCreateTagIndex,
                           std::move(tagName),
                           std::move(indexName),
@@ -450,7 +397,8 @@ public:
                                  std::string indexName,
                                  std::vector<std::string> fields,
                                  bool ifNotExists) {
-        return qctx->objPool()->add(new CreateEdgeIndex(qctx, input,
+        return qctx->objPool()->add(new CreateEdgeIndex(qctx,
+                                                        input,
                                                         std::move(edgeName),
                                                         std::move(indexName),
                                                         std::move(fields),
@@ -464,7 +412,8 @@ private:
                     std::string indexName,
                     std::vector<std::string> fields,
                     bool ifNotExists)
-        : CreateIndexNode(qctx, input,
+        : CreateIndexNode(qctx,
+                          input,
                           Kind::kCreateEdgeIndex,
                           std::move(edgeName),
                           std::move(indexName),
@@ -474,12 +423,8 @@ private:
 
 class DescIndexNode : public SingleInputNode {
 protected:
-    DescIndexNode(QueryContext* qctx,
-                  PlanNode* input,
-                  Kind kind,
-                  std::string indexName)
-        : SingleInputNode(qctx, kind, input)
-        , indexName_(std::move(indexName)) {}
+    DescIndexNode(QueryContext* qctx, PlanNode* input, Kind kind, std::string indexName)
+        : SingleInputNode(qctx, kind, input), indexName_(std::move(indexName)) {}
 
 public:
     const std::string& getIndexName() const {
@@ -489,7 +434,7 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string            indexName_;
+    std::string indexName_;
 };
 
 class DescTagIndex final : public DescIndexNode {
@@ -499,9 +444,7 @@ public:
     }
 
 private:
-    DescTagIndex(QueryContext* qctx,
-                 PlanNode* input,
-                 std::string indexName)
+    DescTagIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
         : DescIndexNode(qctx, input, Kind::kDescTagIndex, std::move(indexName)) {}
 };
 
@@ -512,9 +455,7 @@ public:
     }
 
 private:
-    DescEdgeIndex(QueryContext* qctx,
-                  PlanNode* input,
-                  std::string indexName)
+    DescEdgeIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
         : DescIndexNode(qctx, input, Kind::kDescEdgeIndex, std::move(indexName)) {}
 };
 
@@ -525,9 +466,9 @@ protected:
                   PlanNode* input,
                   std::string indexName,
                   bool ifExists)
-        : SingleInputNode(qctx, kind, input)
-        , indexName_(std::move(indexName))
-        , ifExists_(ifExists) {}
+        : SingleInputNode(qctx, kind, input),
+          indexName_(std::move(indexName)),
+          ifExists_(ifExists) {}
 
 public:
     const std::string& getIndexName() const {
@@ -541,8 +482,8 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string            indexName_;
-    bool                   ifExists_;
+    std::string indexName_;
+    bool ifExists_;
 };
 
 class DropTagIndex final : public DropIndexNode {
@@ -573,26 +514,50 @@ private:
         : DropIndexNode(qctx, Kind::kDropEdgeIndex, input, std::move(indexName), ifExists) {}
 };
 
-class RebuildIndexNode : public SingleInputNode {
-protected:
-    RebuildIndexNode(QueryContext* qctx,
-                     Kind kind,
-                     PlanNode* input,
-                     std::string indexName)
-        : SingleInputNode(qctx, kind, input)
-        , indexName_(std::move(indexName)) {}
-
+class ShowCreateTagIndex final : public DescIndexNode {
 public:
-    const std::string& getIndexName() const {
-        return indexName_;
+    static ShowCreateTagIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+        return qctx->objPool()->add(new ShowCreateTagIndex(qctx, input, std::move(indexName)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
-
-protected:
-    std::string            indexName_;
+private:
+    ShowCreateTagIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+        : DescIndexNode(qctx, input, Kind::kShowCreateTagIndex, std::move(indexName)) {}
 };
 
-}  // namespace graph
-}  // namespace nebula
-#endif  // PLANNER_MAINTAIN_H_
+class ShowCreateEdgeIndex final : public DescIndexNode {
+public:
+    static ShowCreateEdgeIndex* make(QueryContext* qctx, PlanNode* input, std::string indexName) {
+        return qctx->objPool()->add(new ShowCreateEdgeIndex(qctx, input, std::move(indexName)));
+    }
+
+private:
+    ShowCreateEdgeIndex(QueryContext* qctx, PlanNode* input, std::string indexName)
+        : DescIndexNode(qctx, input, Kind::kShowCreateEdgeIndex, std::move(indexName)) {}
+};
+
+class ShowTagIndexes final : public SingleInputNode {
+public:
+    static ShowTagIndexes* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowTagIndexes(qctx, input));
+    }
+
+private:
+    ShowTagIndexes(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowTagIndexes, input) {}
+};
+
+class ShowEdgeIndexes final : public SingleInputNode {
+public:
+    static ShowEdgeIndexes* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowEdgeIndexes(qctx, input));
+    }
+
+private:
+    ShowEdgeIndexes(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowEdgeIndexes, input) {}
+};
+
+}   // namespace graph
+}   // namespace nebula
+#endif   // PLANNER_MAINTAIN_H_
