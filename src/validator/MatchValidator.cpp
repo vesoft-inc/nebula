@@ -12,15 +12,23 @@ namespace nebula {
 namespace graph {
 
 Status MatchValidator::toPlan() {
-    NG_RETURN_IF_ERROR(buildScanNode());
-    if (!edgeInfos_.empty()) {
-        NG_RETURN_IF_ERROR(buildSteps());
+    switch (entry_) {
+        case QueryEntry::kId:
+            NG_RETURN_IF_ERROR(buildQueryById());
+            NG_RETURN_IF_ERROR(buildProjectVertices());
+            break;
+        case QueryEntry::kIndex:
+            NG_RETURN_IF_ERROR(buildScanNode());
+            if (!edgeInfos_.empty()) {
+                NG_RETURN_IF_ERROR(buildSteps());
+            }
+            NG_RETURN_IF_ERROR(buildGetTailVertices());
+            if (!edgeInfos_.empty()) {
+                NG_RETURN_IF_ERROR(buildTailJoin());
+            }
+            NG_RETURN_IF_ERROR(buildFilter());
+            break;
     }
-    NG_RETURN_IF_ERROR(buildGetTailVertices());
-    if (!edgeInfos_.empty()) {
-        NG_RETURN_IF_ERROR(buildTailJoin());
-    }
-    NG_RETURN_IF_ERROR(buildFilter());
     NG_RETURN_IF_ERROR(buildReturn());
 
     return Status::OK();
@@ -244,7 +252,16 @@ Status MatchValidator::analyzeStartPoint() {
     auto &head = nodeInfos_[0];
 
     if (head.label == nullptr) {
-        return Status::SemanticError("Head node must have a label");
+        if (filter_ == nullptr) {
+            return Status::SemanticError("Query nodes without limit is not supported.");
+        } else {
+            if (!edgeInfos_.empty()) {
+                return Status::SemanticError("Query by id not support extension.");
+            }
+            // query from id instead of index
+            entry_ = QueryEntry::kId;
+            return Status::OK();
+        }
     }
 
     Expression *filter = nullptr;
@@ -264,6 +281,7 @@ Status MatchValidator::analyzeStartPoint() {
     scanInfo_.filter = filter;
     scanInfo_.schemaId = head.tid;
 
+    entry_ = QueryEntry::kIndex;  // query from index
     return Status::OK();
 }
 
@@ -729,6 +747,87 @@ Expression *MatchValidator::rewrite(const LabelAttributeExpression *la) const {
                 new std::string(*la->left()->name())),
             new LabelExpression(*la->right()->name()));
     return expr;
+}
+
+Status MatchValidator::buildQueryById() {
+    auto vidsResult = extractVids(filter_.get());
+    NG_RETURN_IF_ERROR(vidsResult);
+    auto *ge = GetVertices::make(qctx_, nullptr, space_.id, vidsResult.value().second, {}, {});
+    ge->setInputVar(vidsResult.value().first);
+    root_ = ge;
+    tail_ = ge;
+    return Status::OK();
+}
+
+Status MatchValidator::buildProjectVertices() {
+    auto &srcNodeInfo = nodeInfos_.front();
+    auto *columns = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    columns->addColumn(new YieldColumn(new VertexExpression()));
+    auto *project = Project::make(qctx_, root_, columns);
+    project->setInputVar(root_->outputVar());
+    project->setColNames({*srcNodeInfo.alias});
+    root_ = project;
+    return Status::OK();
+}
+
+StatusOr<std::pair<std::string, Expression*>>
+MatchValidator::extractVids(const Expression *filter) const {
+    QueryExpressionContext dummy;
+    if (filter->kind() == Expression::Kind::kRelIn) {
+        const auto *inExpr = static_cast<const RelationalExpression*>(filter);
+        if (inExpr->left()->kind() != Expression::Kind::kFunctionCall ||
+            inExpr->right()->kind() != Expression::Kind::kConstant) {
+            return Status::SemanticError("Not supported expression.");
+        }
+        const auto *fCallExpr = static_cast<const FunctionCallExpression*>(inExpr->left());
+        if (*fCallExpr->name() != "id") {
+            return Status::SemanticError("Require id limit.");
+        }
+        auto *constExpr = const_cast<Expression*>(inExpr->right());
+        return listToAnnoVarVid(constExpr->eval(dummy).getList());
+    } else if (filter->kind() == Expression::Kind::kRelEQ) {
+        const auto *eqExpr = static_cast<const RelationalExpression*>(filter);
+        if (eqExpr->left()->kind() != Expression::Kind::kFunctionCall ||
+            eqExpr->right()->kind() != Expression::Kind::kConstant) {
+            return Status::SemanticError("Not supported expression.");
+        }
+        const auto *fCallExpr = static_cast<const FunctionCallExpression*>(eqExpr->left());
+        if (*fCallExpr->name() != "id") {
+            return Status::SemanticError("Require id limit.");
+        }
+        auto *constExpr = const_cast<Expression*>(eqExpr->right());
+        return constToAnnoVarVid(constExpr->eval(dummy));
+    } else {
+        return Status::SemanticError("Not supported expression.");
+    }
+}
+
+std::pair<std::string, Expression*> MatchValidator::listToAnnoVarVid(const List &list) const {
+    auto input = vctx_->anonVarGen()->getVar();
+    DataSet vids({kVid});
+    QueryExpressionContext dummy;
+    for (auto &v : list.values) {
+        vids.emplace_back(Row({std::move(v)}));
+    }
+
+    qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
+
+    auto *src = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                                         new std::string(kVid));
+    return std::pair<std::string, Expression*>(input, src);
+}
+
+std::pair<std::string, Expression*> MatchValidator::constToAnnoVarVid(const Value &v) const {
+    auto input = vctx_->anonVarGen()->getVar();
+    DataSet vids({kVid});
+    QueryExpressionContext dummy;
+    vids.emplace_back(Row({v}));
+
+    qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
+
+    auto *src = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(new std::string(input),
+                                                                         new std::string(kVid));
+    return std::pair<std::string, Expression*>(input, src);
 }
 
 }   // namespace graph
