@@ -8,6 +8,74 @@
 
 namespace nebula {
 
+std::string MatchClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    if (isOptional()) {
+        buf += "OPTIONAL ";
+    }
+
+    buf += "MATCH ";
+    buf += path_->toString();
+    if (where_ != nullptr) {
+        buf += " ";
+        buf += where_->toString();
+    }
+    return buf;
+}
+
+
+std::string UnwindClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    buf += "UNWIND ";
+    buf += expr_->toString();
+    buf += " AS ";
+    buf += *alias_;
+
+    return buf;
+}
+
+
+std::string WithClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    buf += "WITH ";
+
+    if (isDistinct()) {
+        buf += "DISTINCT ";
+    }
+
+    buf += columns_->toString();
+
+    if (orderFactors_ != nullptr) {
+        buf += " ";
+        buf += "ORDER BY ";
+        buf += orderFactors_->toString();
+    }
+
+    if (skip_ != nullptr) {
+        buf += " ";
+        buf += skip_->toString();
+    }
+
+    if (limit_ != nullptr) {
+        buf += " ";
+        buf += limit_->toString();
+    }
+
+    if (where_ != nullptr) {
+        buf += " ";
+        buf += where_->toString();
+    }
+
+    return buf;
+}
+
+
 std::string MatchEdge::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -24,14 +92,35 @@ std::string MatchEdge::toString() const {
         end = "-";
     }
 
-    if (alias_ != nullptr || type_ != nullptr || props_ != nullptr) {
+    if (alias_ != nullptr || !types_.empty() || range_ != nullptr || props_ != nullptr) {
         buf += '[';
         if (alias_ != nullptr) {
             buf += *alias_;
         }
-        if (type_ != nullptr) {
+        if (!types_.empty()) {
             buf += ':';
-            buf += *type_;
+            buf += *types_[0];
+            for (auto i = 1u; i < types_.size(); i++) {
+                buf += "|";
+                buf += *types_[i];
+            }
+        }
+        if (range_ != nullptr) {
+            buf += "*";
+            if (range_->min() == range_->max()) {
+                buf += folly::to<std::string>(range_->min());
+            } else if (range_->max() == std::numeric_limits<int64_t>::max()) {
+                if (range_->min() != 1) {
+                    buf += folly::to<std::string>(range_->min());
+                    buf += "..";
+                }
+            } else {
+                if (range_->min() != 1) {
+                    buf += folly::to<std::string>(range_->min());
+                }
+                buf += "..";
+                buf += folly::to<std::string>(range_->max());
+            }
         }
         if (props_ != nullptr) {
             buf += props_->toString();
@@ -69,6 +158,11 @@ std::string MatchPath::toString() const {
     std::string buf;
     buf.reserve(256);
 
+    if (alias_ != nullptr) {
+        buf += *alias_;
+        buf += " = ";
+    }
+
     buf += node(0)->toString();
     for (auto i = 0u; i < edges_.size(); i++) {
         buf += edge(i)->toString();
@@ -83,10 +177,31 @@ std::string MatchReturn::toString() const {
     buf.reserve(64);
 
     buf += "RETURN ";
+
+    if (isDistinct()) {
+        buf += "DISTINCT ";
+    }
+
     if (isAll()) {
         buf += '*';
     } else {
         buf += columns_->toString();
+    }
+
+    if (orderFactors_ != nullptr) {
+        buf += " ";
+        buf += "ORDER BY";
+        buf += orderFactors_->toString();
+    }
+
+    if (skip_ != nullptr) {
+        buf += " ";
+        buf += skip_->toString();
+    }
+
+    if (limit_ != nullptr) {
+        buf += " ";
+        buf += limit_->toString();
     }
 
     return buf;
@@ -96,16 +211,12 @@ std::string MatchSentence::toString() const {
     std::string buf;
     buf.reserve(256);
 
-    buf += "MATCH ";
-    buf += path_->toString();
-    if (where_ != nullptr) {
-        buf += ' ';
-        buf += where_->toString();
+    for (auto &clause : clauses_) {
+        buf += clause->toString();
+        buf += " ";
     }
-    if (return_ != nullptr) {
-        buf += ' ';
-        buf += return_->toString();
-    }
+
+    buf += return_->toString();
 
     return buf;
 }

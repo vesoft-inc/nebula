@@ -239,6 +239,10 @@ public:
         return expr_.get();
     }
 
+    void setExpr(Expression *expr) {
+        expr_.reset(expr);
+    }
+
     OrderType orderType() {
         return orderType_;
     }

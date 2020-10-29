@@ -176,6 +176,9 @@ NOT_STARTS_WITH             ({NOT}{blanks}{STARTS}{blanks}{WITH})
 ENDS                        ([Ee][Nn][Dd][Ss])
 ENDS_WITH                   ({ENDS}{blanks}{WITH})
 NOT_ENDS_WITH               ({NOT}{blanks}{ENDS}{blanks}{WITH})
+UNWIND                      ([Uu][Nn][Ww][Ii][Nn][Dd])
+SKIP                        ([Ss][Kk][Ii][Pp])
+OPTIONAL                    ([Oo][Pp][Tt][Ii][Oo][Nn][Aa][Ll])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -352,6 +355,9 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {ENDS}                      { return TokenType::KW_ENDS;}
 {ENDS_WITH}                 { return TokenType::KW_ENDS_WITH;}
 {NOT_ENDS_WITH}             { return TokenType::KW_NOT_ENDS_WITH;}
+{UNWIND}                    { return TokenType::KW_UNWIND;}
+{SKIP}                      { return TokenType::KW_SKIP;}
+{OPTIONAL}                  { return TokenType::KW_OPTIONAL;}
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
@@ -485,16 +491,7 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
                                 }
                                 return TokenType::INTEGER;
                             }
-{DEC}+\.{DEC}*              {
-                                try {
-                                    folly::StringPiece text(yytext, yyleng);
-                                    yylval->doubleval = folly::to<double>(text);
-                                } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                return TokenType::DOUBLE;
-                            }
-{DEC}*\.{DEC}+              {
+{DEC}+\.{DEC}+              {
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
                                     yylval->doubleval = folly::to<double>(text);

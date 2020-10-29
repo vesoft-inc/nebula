@@ -7,6 +7,7 @@
 #include "validator/OrderByValidator.h"
 #include "parser/TraverseSentences.h"
 #include "planner/Query.h"
+#include "common/expression/LabelExpression.h"
 
 namespace nebula {
 namespace graph {
@@ -15,6 +16,11 @@ Status OrderByValidator::validateImpl() {
     outputs_ = inputCols();
     auto factors = sentence->factors();
     for (auto &factor : factors) {
+        if (factor->expr()->kind() == Expression::Kind::kLabel) {
+            auto *label = static_cast<const LabelExpression*>(factor->expr());
+            auto *expr = new InputPropertyExpression(new std::string(*label->name()));
+            factor->setExpr(expr);
+        }
         if (factor->expr()->kind() != Expression::Kind::kInputProperty) {
             return Status::SemanticError("Order by with invalid expression `%s'",
                                           factor->expr()->toString().c_str());

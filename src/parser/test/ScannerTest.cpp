@@ -440,6 +440,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("STORAGE", TokenType::KW_STORAGE),
         CHECK_SEMANTIC_TYPE("Storage", TokenType::KW_STORAGE),
         CHECK_SEMANTIC_TYPE("storage", TokenType::KW_STORAGE),
+        CHECK_SEMANTIC_TYPE("UNWIND", TokenType::KW_UNWIND),
+        CHECK_SEMANTIC_TYPE("unwind", TokenType::KW_UNWIND),
+        CHECK_SEMANTIC_TYPE("SKIP", TokenType::KW_SKIP),
+        CHECK_SEMANTIC_TYPE("skip", TokenType::KW_SKIP),
+        CHECK_SEMANTIC_TYPE("OPTIONAL", TokenType::KW_OPTIONAL),
+        CHECK_SEMANTIC_TYPE("optional", TokenType::KW_OPTIONAL),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -462,8 +468,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
-        CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
-        CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
 
         CHECK_SEMANTIC_VALUE("0x7FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x7FFFFFFFFFFFFFFFL),

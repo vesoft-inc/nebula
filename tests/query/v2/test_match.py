@@ -108,6 +108,22 @@ class TestMatch(NebulaTestSuite):
         self.check_column_names(resp, expected['column_names'])
         self.check_out_of_order_result(resp, expected['rows'])
 
+        stmt = 'MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2) RETURN type(r) AS Type, v2.name AS Name'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected = {
+            'column_names': ['Type', 'Name'],
+            'rows': [
+                ['like', 'Ray Allen'],
+                ['serve', 'Cavaliers'],
+                ['serve', 'Heat'],
+                ['serve', 'Cavaliers'],
+                ['serve', 'Lakers'],
+            ]
+        }
+        self.check_column_names(resp, expected['column_names'])
+        self.check_out_of_order_result(resp, expected['rows'])
+
         stmt = '''
                   MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2)
                   RETURN type(r) AS Type, v2.name AS Name

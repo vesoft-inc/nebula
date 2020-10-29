@@ -136,10 +136,6 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         EXPECT_TRUE(checkResult(query, expected_));
     }
     {
-        std::string query = "YIELD (INT).123";
-        EXPECT_TRUE(checkResult(query, expected_));
-    }
-    {
         std::string query = "YIELD (INT)123";
         EXPECT_TRUE(checkResult(query, expected_));
     }

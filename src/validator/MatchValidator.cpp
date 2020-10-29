@@ -29,9 +29,25 @@ Status MatchValidator::toPlan() {
 
 Status MatchValidator::validateImpl() {
     auto *sentence = static_cast<MatchSentence*>(sentence_);
-    NG_RETURN_IF_ERROR(validatePath(sentence->path()));
-    if (sentence->where() != nullptr) {
-        NG_RETURN_IF_ERROR(validateFilter(sentence->where()->filter()));
+    auto &clauses = sentence->clauses();
+
+    if (clauses.size() > 1) {
+        return Status::SemanticError("Multi clause MATCH not supported");
+    }
+
+    if (!clauses[0]->isMatch()) {
+        return Status::SemanticError("First clause must be a MATCH");
+    }
+
+    auto *matchClause = static_cast<MatchClause*>(clauses[0].get());
+
+    if (matchClause->isOptional()) {
+        return Status::SemanticError("OPTIONAL MATCH not supported");
+    }
+
+    NG_RETURN_IF_ERROR(validatePath(matchClause->path()));
+    if (matchClause->where() != nullptr) {
+        NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter()));
     }
     NG_RETURN_IF_ERROR(validateReturn(sentence->ret()));
     return analyzeStartPoint();
@@ -79,20 +95,27 @@ Status MatchValidator::validatePath(const MatchPath *path) {
 
     for (auto i = 0u; i < steps; i++) {
         auto *edge = path->edge(i);
-        auto *type = edge->type();
+        auto &types = edge->types();
         auto *alias = edge->alias();
         auto *props = edge->props();
         auto direction = edge->direction();
         auto anonymous = false;
-        if (direction != Direction::OUT_EDGE) {
-            return Status::SemanticError("Only outbound traversal supported");
-        }
-        if (type != nullptr) {
-            auto etype = sm->toEdgeType(space_.id, *type);
-            if (!etype.ok()) {
-                return Status::SemanticError("`%s': Unknown edge type", type->c_str());
+        if (!types.empty()) {
+            for (auto &type : types) {
+                auto etype = sm->toEdgeType(space_.id, *type);
+                if (!etype.ok()) {
+                    return Status::SemanticError("`%s': Unknown edge type", type->c_str());
+                }
+                edgeInfos_[i].edgeTypes.emplace_back(etype.value());
+                edgeInfos_[i].types.emplace_back(*type);
             }
-            edgeInfos_[i].edgeType = etype.value();
+        }
+        auto *stepRange = edge->range();
+        if (stepRange != nullptr) {
+            if (stepRange->min() != stepRange->max() ||
+                    stepRange->min() != 1) {
+                return Status::SemanticError("Variable steps not supported");
+            }
         }
         if (alias == nullptr) {
             anonymous = true;
@@ -109,7 +132,6 @@ Status MatchValidator::validatePath(const MatchPath *path) {
         }
         edgeInfos_[i].anonymous = anonymous;
         edgeInfos_[i].direction = direction;
-        edgeInfos_[i].type = type;
         edgeInfos_[i].alias = alias;
         edgeInfos_[i].props = props;
         edgeInfos_[i].filter = filter;
@@ -129,6 +151,18 @@ Status MatchValidator::validateFilter(const Expression *filter) {
 
 Status MatchValidator::validateReturn(MatchReturn *ret) {
     // `RETURN *': return all named nodes or edges
+    if (ret->isDistinct()) {
+        return Status::SemanticError("DISTINCT not supported");
+    }
+    if (ret->orderFactors() != nullptr) {
+        return Status::SemanticError("ORDER BY not supported");
+    }
+    if (ret->skip() != nullptr) {
+        return Status::SemanticError("SKIP not supported");
+    }
+    if (ret->limit() != nullptr) {
+        return Status::SemanticError("LIMIT not supported");
+    }
     if (ret->isAll()) {
         auto makeColumn = [] (const std::string &name) {
             auto *expr = new LabelExpression(name);
@@ -427,10 +461,12 @@ Status MatchValidator::buildStep() {
     }
     gn->setVertexProps(std::move(vertexProps));
     auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
-    if (edgeInfo.type != nullptr) {
-        EdgeProp edgeProp;
-        edgeProp.set_type(edgeInfo.edgeType);
-        edgeProps->emplace_back(std::move(edgeProp));
+    if (!edgeInfo.edgeTypes.empty()) {
+        for (auto edgeType : edgeInfo.edgeTypes) {
+            EdgeProp edgeProp;
+            edgeProp.set_type(edgeType);
+            edgeProps->emplace_back(std::move(edgeProp));
+        }
     }
     gn->setEdgeProps(std::move(edgeProps));
     gn->setEdgeDirection(edgeInfo.direction);
@@ -601,7 +637,7 @@ Status MatchValidator::buildTailJoin() {
 
 Status MatchValidator::buildFilter() {
     auto *sentence = static_cast<MatchSentence*>(sentence_);
-    auto *clause = sentence->where();
+    auto *clause = static_cast<MatchClause*>(sentence->clauses()[0].get())->where();
     if (clause == nullptr) {
         return Status::OK();
     }

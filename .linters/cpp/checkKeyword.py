@@ -97,16 +97,13 @@ reserved_key_words = [
     'KW_PROP',
     'KW_BALANCE',
     'KW_STOP',
-    'KW_LIMIT',
-    'KW_OFFSET',
     'KW_GROUP',
     'KW_IS',
     'KW_NULL',
     'KW_FORCE',
     'KW_RECOVER',
     'KW_EXPLAIN',
-    'KW_PROFILE',
-    'KW_FORMAT'
+    'KW_UNWIND',
 ]
 
 

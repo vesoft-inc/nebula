@@ -88,9 +88,9 @@ private:
 
     struct EdgeInfo {
         bool                                    anonymous{false};
-        EdgeType                                edgeType{0};
+        std::vector<EdgeType>                   edgeTypes;
         MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
-        const std::string                      *type{nullptr};
+        std::vector<std::string>                types;
         const std::string                      *alias{nullptr};
         const MapExpression                    *props{nullptr};
         Expression                             *filter{nullptr};
