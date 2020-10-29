@@ -506,9 +506,6 @@ public:
     listZones();
 
     folly::Future<StatusOr<bool>>
-    drainZone(std::string zoneName);
-
-    folly::Future<StatusOr<bool>>
     addGroup(std::string groupName, std::vector<std::string> zoneNames);
 
     folly::Future<StatusOr<bool>>

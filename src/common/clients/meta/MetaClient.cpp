@@ -2914,25 +2914,6 @@ MetaClient::dropHostFromZone(HostAddr node, std::string zoneName) {
     return future;
 }
 
-folly::Future<StatusOr<bool>>
-MetaClient::drainZone(std::string zoneName) {
-    cpp2::DrainZoneReq req;
-    req.set_zone_name(std::move(zoneName));
-
-    folly::Promise<StatusOr<bool>> promise;
-    auto future = promise.getFuture();
-    getResponse(std::move(req),
-                [] (auto client, auto request) {
-                    return client->future_drainZone(request);
-                },
-                [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                },
-                std::move(promise),
-                true);
-    return future;
-}
-
 folly::Future<StatusOr<std::vector<HostAddr>>>
 MetaClient::getZone(std::string zoneName) {
     cpp2::GetZoneReq req;

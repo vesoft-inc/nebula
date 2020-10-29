@@ -874,10 +874,6 @@ struct ListZonesResp {
     3: list<Zone>       zones,
 }
 
-struct DrainZoneReq {
-    1: binary        zone_name,
-}
-
 struct AddGroupReq {
     1: binary        group_name,
     2: list<binary>  zone_names,
@@ -1026,7 +1022,6 @@ service MetaService {
     ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
-    ExecResp       drainZone(1: DrainZoneReq req);
 
     ExecResp       addGroup(1: AddGroupReq req);
     ExecResp       dropGroup(1: DropGroupReq req);
