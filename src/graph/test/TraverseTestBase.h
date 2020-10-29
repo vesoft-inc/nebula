@@ -62,16 +62,19 @@ public:
 
         auto rows = buildPathString(*resp.get_rows());
 
-        if (expected.size() != rows.size()) {
-            return TestError() << "Rows' count not match: "
-                               << rows.size() << " vs. " << expected.size();
-        }
-
         std::sort(rows.begin(), rows.end());
         std::sort(expected.begin(), expected.end());
 
+        std::string joinedRowString;
         for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
             VLOG(2) << rows[i];
+            joinedRowString += rows[i] + "\n";
+        }
+
+        if (expected.size() != rows.size()) {
+            return TestError() << "Rows' count not match: "
+                               << rows.size() << " vs. " << expected.size() << "\n"
+                               << joinedRowString;
         }
 
         for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
@@ -816,6 +819,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `players' failed: "
@@ -841,6 +845,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `players' failed: "
@@ -865,6 +870,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `players' failed: "
@@ -890,6 +896,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `players' failed: "
@@ -912,6 +919,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teams' failed: "
@@ -935,6 +943,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teams' failed: "
@@ -958,6 +967,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teams' failed: "
@@ -990,6 +1000,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `serve' failed: "
@@ -1022,6 +1033,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `serve' failed: "
@@ -1054,6 +1066,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `serve' failed: "
@@ -1080,6 +1093,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `like' failed: "
@@ -1107,6 +1121,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `like' failed: "
@@ -1134,6 +1149,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `like' failed: "
@@ -1158,6 +1174,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);
@@ -1185,6 +1202,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);
@@ -1212,6 +1230,7 @@ AssertionResult TraverseTestBase::insertData() {
             }
         }
         query.resize(query.size() - 3);
+        LOG(INFO) << query;
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);

@@ -50,6 +50,8 @@ public:
 
     static std::string buildPathString(const Path &path);
 
+    const std::string NEGATIVE_STR = "-";
+
     cpp2::RowValue buildPathRow(const Path &path);
 
 private:
@@ -78,7 +80,7 @@ private:
 
     inline void meetEvenPath(VertexID intersectId);
 
-    inline void updatePath(
+    inline bool updatePath(
             VertexID &src,
             std::multimap<VertexID, Path> &pathToSrc,
             Neighbor &neighbor,
@@ -108,6 +110,7 @@ private:
     Clause::Over                                    over_;
     Clause::Step                                    step_;
     Clause::Where                                   where_;
+    OverClause::Direction                           direction_{OverClause::Direction::kForward};
     bool                                            shortest_{false};
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                                 srcTagProps_;

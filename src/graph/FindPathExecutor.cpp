@@ -41,6 +41,7 @@ Status FindPathExecutor::prepareClauses() {
             }
         }
         if (sentence_->over() != nullptr) {
+            direction_ = sentence_->over()->direction();
             status = sentence_->over()->prepare(over_);
             if (!status.ok()) {
                 break;
@@ -244,8 +245,10 @@ void FindPathExecutor::findPath() {
             }
 
             // update the path to frontiers
-            updatePath(frontier.first, pathFrom_, neighbor, pathF, VisitedBy::FROM);
-            visitedFrom_.emplace(dstId);
+            // only emplace dstId when at least one path was updated
+            if (updatePath(frontier.first, pathFrom_, neighbor, pathF, VisitedBy::FROM)) {
+                visitedFrom_.emplace(dstId);
+            }
         }  // for `neighbor'
     }  // for `frontier'
     pathFrom_ = std::move(pathF);
@@ -260,8 +263,10 @@ void FindPathExecutor::findPath() {
         for (auto &neighbor : frontier.second) {
             auto dstId = std::get<0>(neighbor);
             // update the path to frontiers
-            updatePath(frontier.first, pathTo_, neighbor, pathT, VisitedBy::TO);
-            visitedTo_.emplace(dstId);
+            // only emplace dstId when at least one path was updated
+            if (updatePath(frontier.first, pathTo_, neighbor, pathT, VisitedBy::TO)) {
+                visitedTo_.emplace(dstId);
+            }
         }  // for `neighbor'
     }  // for `frontier'
     pathTo_ = std::move(pathT);
@@ -394,7 +399,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
     }
 }
 
-inline void FindPathExecutor::updatePath(
+inline bool FindPathExecutor::updatePath(
             VertexID &src,
             std::multimap<VertexID, Path> &pathToSrc,
             Neighbor &neighbor,
@@ -402,6 +407,7 @@ inline void FindPathExecutor::updatePath(
             VisitedBy visitedBy) {
     VLOG(2) << "Update Path.";
     auto range = pathToSrc.equal_range(src);
+    bool atLeastOnePathUpdated = false;
     for (auto i = range.first; i != range.second; ++i) {
         // Build path:
         // i->second + (src,type,ranking)
@@ -410,6 +416,18 @@ inline void FindPathExecutor::updatePath(
         VLOG(2) << "Interim path length before:" << path.size();
         auto s = std::make_unique<StepOut>(neighbor);
         std::get<0>(*s) = src;
+        // avoid one-step loop when BIDIRECT
+        if (path.size() > 0) {
+            auto lastId = std::get<0>(*path.back());
+            auto lastEdge = std::get<1>(*path.back());
+            auto lastRank = std::get<2>(*path.back());
+            auto thisId = std::get<0>(neighbor);
+            auto thisEdge = std::get<1>(neighbor);
+            auto thisRank = std::get<2>(neighbor);
+            if (lastId == thisId && lastEdge == -thisEdge && lastRank == thisRank) {
+                continue;
+            }
+        }
         if (visitedBy == VisitedBy::FROM) {
             path.emplace_back(s.get());
         } else {
@@ -420,7 +438,9 @@ inline void FindPathExecutor::updatePath(
         VLOG(2) << "Interim path length:" << path.size();
         stepOutHolder_.emplace(std::move(s));
         pathToNeighbor.emplace(std::get<0>(neighbor), std::move(path));
+        atLeastOnePathUpdated = true;
     }  // for `i'
+    return atLeastOnePathUpdated;
 }
 
 Status FindPathExecutor::setupVids() {
@@ -616,10 +636,38 @@ Status FindPathExecutor::doFilter(
 
 StatusOr<std::vector<storage::cpp2::PropDef>>
 FindPathExecutor::getStepOutProps(bool reversely) {
-    auto *edges = &over_.edgeTypes_;
-    if (reversely) {
-        edges = &over_.oppositeTypes_;
+    std::vector<nebula::EdgeType> outEdges;
+    switch (direction_) {
+        case OverClause::Direction::kForward: {
+            if (reversely) {
+                outEdges.insert(outEdges.end(),
+                                over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            } else {
+                outEdges.insert(outEdges.end(),
+                                over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            }
+            break;
+        }
+        case OverClause::Direction::kBackward: {
+            if (reversely) {
+                outEdges.insert(outEdges.end(),
+                                over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            } else {
+                outEdges.insert(outEdges.end(),
+                                over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            }
+            break;
+        }
+        case OverClause::Direction::kBidirect: {
+            outEdges.insert(outEdges.end(),
+                            over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            outEdges.insert(outEdges.end(),
+                            over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            break;
+        }
     }
+    auto *edges = &outEdges;
+
     std::vector<storage::cpp2::PropDef> props;
     for (auto &e : *edges) {
         {
@@ -649,24 +697,8 @@ std::string FindPathExecutor::buildPathString(const Path &path) {
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
-        if (type < 0) {
-            pathStr += folly::to<std::string>(id);
-            ++iter;
-            break;
-        }
-
         pathStr += folly::stringPrintf("%ld<%d,%ld>", id, type, ranking);
     }
-
-    for (; iter != path.end(); ++iter) {
-        auto *step = *iter;
-        auto id = std::get<0>(*step);
-        auto type = std::get<1>(*step);
-        auto ranking = std::get<2>(*step);
-
-        pathStr += folly::stringPrintf("<%d,%ld>%ld", -type, ranking, id);
-    }
-
     return pathStr;
 }
 
@@ -676,29 +708,27 @@ cpp2::RowValue FindPathExecutor::buildPathRow(const Path &path) {
     cpp2::Path pathValue;
     auto entryList = pathValue.get_entry_list();
     auto iter = path.begin();
+    auto turningPointIndex = path.size() / 2 + path.size() % 2;
+    uint64_t iterIndex = 0;
     for (; iter != path.end(); ++iter) {
         auto *step = *iter;
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
-        if (type < 0) {
-            entryList.emplace_back();
-            cpp2::Vertex vertex;
-            vertex.set_id(id);
-            entryList.back().set_vertex(std::move(vertex));
-            ++iter;
-            break;
-        }
         entryList.emplace_back();
         cpp2::Vertex vertex;
         vertex.set_id(id);
         entryList.back().set_vertex(std::move(vertex));
+        if (++iterIndex == turningPointIndex) {
+            ++iter;
+            break;
+        }
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypeNameMap_.find(type);
+        auto typeName = edgeTypeNameMap_.find(type >= 0 ? type : -type);
         DCHECK(typeName != edgeTypeNameMap_.end()) << type;
-        edge.set_type(typeName->second);
+        edge.set_type(type >= 0 ? typeName->second : (NEGATIVE_STR + typeName->second));
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));
     }
@@ -708,12 +738,13 @@ cpp2::RowValue FindPathExecutor::buildPathRow(const Path &path) {
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
+        type = -type;
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypeNameMap_.find(-type);
+        auto typeName = edgeTypeNameMap_.find(type >= 0 ? type : -type);
         DCHECK(typeName != edgeTypeNameMap_.end()) << type;
-        edge.set_type(typeName->second);
+        edge.set_type(type >= 0 ? typeName->second : (NEGATIVE_STR + typeName->second));
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));
 
