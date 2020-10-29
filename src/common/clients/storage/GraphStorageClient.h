@@ -112,10 +112,10 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> lookupIndex(
         GraphSpaceID space,
-        std::vector<storage::cpp2::IndexQueryContext> contexts,
+        const std::vector<storage::cpp2::IndexQueryContext>& contexts,
         bool isEdge,
         int32_t tagOrEdge,
-        std::vector<std::string> returnCols,
+        const std::vector<std::string>& returnCols,
         folly::EventBase *evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> lookupAndTraverse(
