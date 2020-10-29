@@ -302,7 +302,8 @@ TEST(AdminClientTest, SnapshotTest) {
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     auto now = time::WallClock::fastNowInMilliSec();
     HostAddr host(localIp, rpcServer->port_);
-    ActiveHostsMan::updateHostInfo(kv.get(), host,
+    HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
+    ActiveHostsMan::updateHostInfo(kv.get(), storageHost,
                                    HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
@@ -310,23 +311,23 @@ TEST(AdminClientTest, SnapshotTest) {
     {
         LOG(INFO) << "Test Blocking Writes On...";
         auto status = client->blockingWrites(
-            1, storage::cpp2::EngineSignType::BLOCK_ON, host).get();
+            1, storage::cpp2::EngineSignType::BLOCK_ON, storageHost).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Create Snapshot...";
-        auto status = client->createSnapshot(1, "test_snapshot", host).get();
+        auto status = client->createSnapshot(1, "test_snapshot", storageHost).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Drop Snapshot...";
-        auto status = client->dropSnapshot(1, "test_snapshot", host).get();
+        auto status = client->dropSnapshot(1, "test_snapshot", storageHost).get();
         ASSERT_TRUE(status.ok());
     }
     {
         LOG(INFO) << "Test Blocking Writes Off...";
         auto status = client->blockingWrites(
-            1, storage::cpp2::EngineSignType::BLOCK_OFF, host).get();
+            1, storage::cpp2::EngineSignType::BLOCK_OFF, storageHost).get();
         ASSERT_TRUE(status.ok());
     }
 }
