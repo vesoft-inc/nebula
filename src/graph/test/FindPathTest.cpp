@@ -163,6 +163,120 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
     }
 }
 
+TEST_F(FindPathTest, SingleEdgeShortestReversely) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like REVERSELY UPTO 5 STEPS";
+        auto &tony = players_["Tony Parker"];
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                tony.vid(), tim.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like REVERSELY UPTO 5 STEPS";
+        auto &tony = players_["Tony Parker"];
+        auto &al = players_["LaMarcus Aldridge"];
+        auto &rudy = players_["Rudy Gay"];
+        auto query = folly::stringPrintf(fmt, tony.vid(), rudy.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld<-like,0>%ld",
+                                tony.vid(), al.vid(), rudy.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        // we only find the shortest path to the dest
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld,%ld OVER like REVERSELY UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto &manu = players_["Manu Ginobili"];
+        auto &yao = players_["Yao Ming"];
+        auto &oneal = players_["Shaquile O'Neal"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), manu.vid(), yao.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                tim.vid(), manu.vid()),
+            folly::stringPrintf("%ld<-like,0>%ld<-like,0>%ld",
+                                tim.vid(), oneal.vid(), yao.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeShortestBidirect) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like BIDIRECT UPTO 5 STEPS";
+        auto &tony = players_["Tony Parker"];
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                tony.vid(), tim.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                tony.vid(), tim.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like BIDIRECT UPTO 5 STEPS";
+        auto &tony = players_["Tony Parker"];
+        auto &al = players_["LaMarcus Aldridge"];
+        auto &rudy = players_["Rudy Gay"];
+        auto query = folly::stringPrintf(fmt, tony.vid(), rudy.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld<-like,0>%ld",
+                                tony.vid(), al.vid(), rudy.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                tony.vid(), al.vid(), rudy.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        // we only find the shortest path to the dest
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld,%ld,%ld OVER like BIDIRECT UPTO 5 STEPS";
+        auto &tiago = players_["Tiago Splitter"];
+        auto &tony = players_["Tony Parker"];
+        auto &manu = players_["Manu Ginobili"];
+        auto &al = players_["LaMarcus Aldridge"];
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tiago.vid(),
+                                         tony.vid(), manu.vid(), al.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                tiago.vid(), manu.vid(), tony.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                tiago.vid(), tim.vid(), tony.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                tiago.vid(), tim.vid(), tony.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                tiago.vid(), tim.vid(), al.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                tiago.vid(), manu.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
 TEST_F(FindPathTest, SingleEdgeAll) {
     /*
      * TODO: There might exist loops when find all path,
