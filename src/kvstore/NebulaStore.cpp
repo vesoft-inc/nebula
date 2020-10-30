@@ -77,7 +77,7 @@ bool NebulaStore::init() {
                             // TODO We might want to have a second thought here.
                             // Removing the data directly feels a little strong
                             LOG(INFO) << "Space " << spaceId
-                                    << " does not exist any more, remove the data!";
+                                      << " does not exist any more, remove the data!";
                             auto dataPath = folly::stringPrintf("%s/%s",
                                                                 rootPath.c_str(),
                                                                 dir.c_str());
