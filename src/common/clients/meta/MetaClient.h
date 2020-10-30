@@ -212,11 +212,11 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    dropTagSchema(int32_t spaceId, std::string name, bool ifExists = false);
+    dropTagSchema(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     // Return the latest schema when ver = -1
     folly::Future<StatusOr<cpp2::Schema>>
-    getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
+    getTagSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
     folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
                                                        std::string name,
@@ -526,6 +526,9 @@ public:
     Status refreshCache();
 
     StatusOr<LeaderMap> loadLeader();
+
+    folly::Future<StatusOr<cpp2::StatisItem>>
+    getStatis(GraphSpaceID spaceId);
 
 protected:
     // Return true if load succeeded.
