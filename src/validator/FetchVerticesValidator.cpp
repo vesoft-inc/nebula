@@ -144,7 +144,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 
     dedup_ = yield->isDistinct();
     ExpressionProps exprProps;
-    DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps);
+    DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
     for (auto col : yield->columns()) {
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
             auto laExpr = static_cast<LabelAttributeExpression *>(col->expr());

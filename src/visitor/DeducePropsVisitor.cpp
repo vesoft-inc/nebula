@@ -111,10 +111,15 @@ void ExpressionProps::unionProps(ExpressionProps exprProps) {
 // visitor
 DeducePropsVisitor::DeducePropsVisitor(QueryContext *qctx,
                                        GraphSpaceID space,
-                                       ExpressionProps *exprProps)
-    : qctx_(qctx), space_(space), exprProps_(exprProps) {
+                                       ExpressionProps *exprProps,
+                                       std::set<std::string> *userDefinedVarNameList)
+    : qctx_(qctx),
+      space_(space),
+      exprProps_(exprProps),
+      userDefinedVarNameList_(userDefinedVarNameList) {
     DCHECK(qctx != nullptr);
     DCHECK(exprProps != nullptr);
+    DCHECK(userDefinedVarNameList != nullptr);
 }
 
 void DeducePropsVisitor::visit(EdgePropertyExpression *expr) {
@@ -137,6 +142,7 @@ void DeducePropsVisitor::visit(InputPropertyExpression *expr) {
 
 void DeducePropsVisitor::visit(VariablePropertyExpression *expr) {
     exprProps_->insertVarProp(*expr->sym(), *expr->prop());
+    userDefinedVarNameList_->emplace(*expr->sym());
 }
 
 void DeducePropsVisitor::visit(DestPropertyExpression *expr) {

@@ -37,13 +37,13 @@ class TestSubGraph(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_failed(resp)
 
-        # stmt = 'GO FROM "Tim Duncan" OVER like YIELD $$._dst AS id, $^._src AS id | GET SUBGRAPH FROM $-.id'
-        # resp = self.execute_query(stmt)
-        # self.check_resp_failed(resp)
+        stmt = 'GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH FROM $-.id'
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
 
-        # stmt = '$a = GO FROM "Tim Duncan" OVER like YIELD $$._dst AS id, $^._src AS id; GET SUBGRAPH FROM $a.id'
-        # resp = self.execute_query(stmt)
-        # self.check_resp_failed(resp)
+        stmt = '$a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH FROM $a.id'
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
 
     def test_zero_step(self):
         VERTEXS = self.VERTEXS

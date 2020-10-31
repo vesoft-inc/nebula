@@ -29,10 +29,6 @@ private:
 
     Status validateYield(const YieldClause *yieldClause);
 
-    Status checkInputProps() const;
-
-    Status checkVarProps() const;
-
 private:
     std::vector<YieldColumn*>                         groupCols_;
     std::vector<YieldColumn*>                         yieldCols_;
@@ -41,8 +37,6 @@ private:
     std::unordered_map<std::string, YieldColumn*>     aliases_;
 
     std::vector<std::string>                          outputColumnNames_;
-
-    ExpressionProps                                   exprProps_;
 
     std::vector<Expression*>                          groupKeys_;
     std::vector<Aggregate::GroupItem>                 groupItems_;

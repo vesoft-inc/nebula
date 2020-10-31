@@ -140,7 +140,7 @@ class TestFetchQuery(NebulaTestSuite):
                    | FETCH PROP ON player "11" YIELD $-.id'''
         resp = self.execute(query)
         self.check_resp_failed(resp)
-    
+
     def test_fetch_vertex_not_exist_tag(self):
         query = 'FETCH PROP ON not_exist_tag "Boris Diaw"';
         resp = self.execute(query)
@@ -366,11 +366,10 @@ class TestFetchQuery(NebulaTestSuite):
         self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expect_result)
 
-        # TODO(shylock) GO validator error ?
-        # query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id, like._dst as id
-            # | FETCH PROP ON player $-.id YIELD player.name, player.age'''
-        # resp = self.execute(query)
-        # self.check_resp_failed(resp)
+        query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id, like._dst as id
+            | FETCH PROP ON player $-.id YIELD player.name, player.age'''
+        resp = self.execute(query)
+        self.check_resp_failed(resp)
 
 
     def test_fetch_vertex_not_exist_prop(self):

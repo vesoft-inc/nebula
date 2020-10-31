@@ -38,10 +38,6 @@ Status YieldValidator::validateImpl() {
         return Status::SemanticError("Only one variable allowed to use.");
     }
 
-    // TODO(yee): following check maybe not make sense
-    NG_RETURN_IF_ERROR(checkInputProps());
-    NG_RETURN_IF_ERROR(checkVarProps());
-
     if (hasAggFun_) {
         NG_RETURN_IF_ERROR(checkAggFunAndBuildGroupItems(yield->yield()));
     }
@@ -67,34 +63,6 @@ Status YieldValidator::checkAggFunAndBuildGroupItems(const YieldClause *clause) 
         }
 
         groupItems_.emplace_back(Aggregate::GroupItem{expr, AggFun::nameIdMap_[fun], false});
-    }
-    return Status::OK();
-}
-
-Status YieldValidator::checkInputProps() const {
-    auto &inputProps = const_cast<ExpressionProps *>(&exprProps_)->inputProps();
-    if (inputs_.empty() && !inputProps.empty()) {
-        return Status::SemanticError("no inputs for yield columns.");
-    }
-    for (auto &prop : inputProps) {
-        DCHECK_NE(prop, "*");
-        NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(inputs_, prop, "Yield sentence"));
-    }
-    return Status::OK();
-}
-
-Status YieldValidator::checkVarProps() const {
-    auto &varProps = const_cast<ExpressionProps *>(&exprProps_)->varProps();
-    for (auto &pair : varProps) {
-        auto &var = pair.first;
-        if (!vctx_->existVar(var)) {
-            return Status::SemanticError("variable `%s' not exist.", var.c_str());
-        }
-        auto &props = vctx_->getVar(var);
-        for (auto &prop : pair.second) {
-            DCHECK_NE(prop, "*");
-            NG_RETURN_IF_ERROR(checkPropNonexistOrDuplicate(props, prop, "Yield sentence"));
-        }
     }
     return Status::OK();
 }

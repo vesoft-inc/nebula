@@ -150,6 +150,69 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     }
 }
 
+TEST_F(GroupByValidatorTest, VariableTest) {
+    {
+        std::string query =
+            "$a = GO FROM \"1\" OVER like YIELD like._dst AS id, $^.person.age AS age; "
+            "GROUP BY $a.age YIELD COUNT($a.id)";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kAggregate, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        // group has fun col
+        std::string query = "$a = GO FROM \"1\" OVER like "
+                            "YIELD $$.person.name as name, "
+                            "like._dst AS id, "
+                            "like.start AS start_year, "
+                            "like.end AS end_year;"
+                            "GROUP BY $a.name, $a.id "
+                            "YIELD $a.name AS name, "
+                            "SUM(1.5) AS sum, "
+                            "COUNT(*) AS count, "
+                            "1+1 AS cal";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kAggregate,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        // group has fun col
+        std::string query = "$a = GO FROM \"1\" OVER like "
+                            "YIELD $$.person.name as name, "
+                            "like._dst AS id, "
+                            "like.start AS start_year, "
+                            "like.end AS end_year;"
+                            "GROUP BY $a.name, abs(5) "
+                            "YIELD $a.name AS name, "
+                            "SUM(1.5) AS sum, "
+                            "COUNT(*) AS count, "
+                            "1+1 AS cal";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kAggregate,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kStart
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 
 TEST_F(GroupByValidatorTest, InvalidTest) {
     {
@@ -236,7 +299,7 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
             "| GROUP BY $-.age YIELD $-.age, 1+1";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: GroupBy sentence: duplicate prop `age'");
+                  "SemanticError: Duplicate Column Name : `age'");
     }
     {
         // duplicate col
@@ -245,7 +308,7 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
                             "| GROUP BY $-.id YIELD $-.id, COUNT($-.age)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: GroupBy sentence: duplicate prop `age'");
+                  "SemanticError: Duplicate Column Name : `age'");
     }
 
     // {

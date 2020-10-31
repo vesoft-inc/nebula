@@ -1327,7 +1327,6 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-    @pytest.mark.skip(reason = 'not check duplicate column yet')
     def test_duplicate_column_name(self):
         stmt = "GO FROM 'Tim Duncan' OVER serve YIELD serve._dst, serve._dst"
         resp = self.execute_query(stmt)
@@ -1341,8 +1340,20 @@ class TestGoQuery(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id, like.likeness AS id \
-            | GO FROM $-.id OVER serve'''
+        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id, like.likeness AS id
+                  | GO FROM $-.id OVER serve'''
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
+
+        stmt = '''GO FROM 'Tim Duncan' OVER like, serve
+                  YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id
+                  | GO FROM $-.id OVER *'''
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
+
+        stmt = '''$a = GO FROM 'Tim Duncan' OVER *
+                  YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id;
+                  | GO FROM $-.id OVER serve'''
         resp = self.execute_query(stmt)
         self.check_resp_failed(resp)
 

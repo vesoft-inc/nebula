@@ -128,7 +128,6 @@ Status GoValidator::validateYield(YieldClause* yield) {
         }
         yields_ = yield->yields();
     }
-
     return Status::OK();
 }
 

@@ -26,10 +26,12 @@ Status OrderByValidator::validateImpl() {
                                           factor->expr()->toString().c_str());
         }
         auto expr = static_cast<InputPropertyExpression*>(factor->expr());
-        auto *name = expr->prop();
-        auto colIdx = checkPropNonexistOrDuplicate(outputs_, *name, "Order by");
-        NG_RETURN_IF_ERROR(colIdx);
-        colOrderTypes_.emplace_back(std::make_pair(colIdx.value(), factor->orderType()));
+        NG_RETURN_IF_ERROR(deduceExprType(expr));
+        auto* name = expr->prop();
+        auto eq = [&](const ColDef& col) { return col.name == *name; };
+        auto iter = std::find_if(outputs_.cbegin(), outputs_.cend(), eq);
+        size_t colIdx = std::distance(outputs_.cbegin(), iter);
+        colOrderTypes_.emplace_back(std::make_pair(colIdx, factor->orderType()));
     }
 
     return Status::OK();

@@ -26,6 +26,13 @@ Status GetSubgraphValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));
     NG_RETURN_IF_ERROR(validateBothInOutBound(gsSentence->both()));
 
+    if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty()) {
+        return Status::SemanticError("Only support input and variable in Subgraph sentence.");
+    }
+    if (!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) {
+        return Status::SemanticError("Not support both input and variable in Subgraph sentence.");
+    }
+
     return Status::OK();
 }
 

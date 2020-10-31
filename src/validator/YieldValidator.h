@@ -37,8 +37,6 @@ public:
 private:
     Status validateYieldAndBuildOutputs(const YieldClause *clause);
     Status validateWhere(const WhereClause *clause);
-    Status checkVarProps() const;
-    Status checkInputProps() const;
     Status checkAggFunAndBuildGroupItems(const YieldClause *clause);
     Status makeOutputColumn(YieldColumn *column);
     void genConstantExprValues();
@@ -48,7 +46,6 @@ private:
     YieldColumns *columns_{nullptr};
     std::vector<std::string> outputColumnNames_;
     std::vector<Aggregate::GroupItem> groupItems_;
-    ExpressionProps exprProps_;
     std::string constantExprVar_;
     Expression *filterCondition_{nullptr};
 };
