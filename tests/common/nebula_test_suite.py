@@ -121,7 +121,7 @@ class NebulaTestSuite(object):
         self.client_pool = ConnectionPool(host=self.host,
                                           port=self.port,
                                           socket_num=16,
-                                          network_timeout=0)
+                                          network_timeout=60000)
         self.client = GraphClient(self.client_pool)
         self.client.authenticate(self.user, self.password)
 

@@ -19,11 +19,11 @@ folly::Future<Status> SubmitJobExecutor::execute() {
     auto *sjNode = asNode<SubmitJob>(node());
     auto jobOp = sjNode->jobOp();
     std::vector<std::string> jobArguments;
-    auto spaceName = qctx()->rctx()->session()->space().name;
-    jobArguments.emplace_back(std::move(spaceName));
 
     meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN;
     if (jobOp == meta::cpp2::AdminJobOp::ADD) {
+        auto spaceName = qctx()->rctx()->session()->space().name;
+        jobArguments.emplace_back(std::move(spaceName));
         auto& params = sjNode->params();
         if (params[0] == "compact") {
             cmd = meta::cpp2::AdminCmd::COMPACT;
@@ -44,6 +44,10 @@ folly::Future<Status> SubmitJobExecutor::execute() {
             LOG(ERROR) << "Unknown job command " << params[0].c_str();
             return Status::Error("Unknown job command %s", params[0].c_str());
         }
+    } else if (jobOp == meta::cpp2::AdminJobOp::SHOW || jobOp == meta::cpp2::AdminJobOp::STOP) {
+        auto& params = sjNode->params();
+        DCHECK_GT(params.size(), 0UL);
+        jobArguments.emplace_back(params[0]);
     }
 
     return qctx()->getMetaClient()->submitJob(jobOp, cmd, jobArguments)
