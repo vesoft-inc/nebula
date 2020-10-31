@@ -351,7 +351,11 @@ StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type typ
 }
 
 Status Validator::toPlan() {
-    auto subPlanStatus = Planner::toPlan(getAstContext());
+    auto* astCtx = getAstContext();
+    if (astCtx != nullptr) {
+        astCtx->space = space_;
+    }
+    auto subPlanStatus = Planner::toPlan(astCtx);
     NG_RETURN_IF_ERROR(subPlanStatus);
     auto subPlan = std::move(subPlanStatus).value();
     root_ = subPlan.root;

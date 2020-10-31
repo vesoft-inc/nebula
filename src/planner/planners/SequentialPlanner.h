@@ -7,8 +7,8 @@
 #ifndef PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 #define PLANNER_PLANNERS_SEQUENTIALPLANNER_H_
 
-#include "planner/Planner.h"
 #include "context/QueryContext.h"
+#include "planner/Planner.h"
 
 namespace nebula {
 namespace graph {
@@ -30,16 +30,6 @@ public:
 
 private:
     SequentialPlanner() = default;
-};
-
-class SequentialPlannerRegister final {
-private:
-    SequentialPlannerRegister() {
-        auto& planners = Planner::plannersMap()[Sentence::Kind::kSequential];
-        planners.emplace_back(&SequentialPlanner::match, &SequentialPlanner::make);
-    }
-
-    static SequentialPlannerRegister instance_;
 };
 }  // namespace graph
 }  // namespace nebula

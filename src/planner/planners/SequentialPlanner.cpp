@@ -13,8 +13,6 @@
 
 namespace nebula {
 namespace graph {
-SequentialPlannerRegister SequentialPlannerRegister::instance_;
-
 bool SequentialPlanner::match(AstContext* astCtx) {
     if (astCtx->sentence->kind() == Sentence::Kind::kSequential) {
         return true;

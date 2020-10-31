@@ -7,8 +7,6 @@
 #ifndef _VALIDATOR_TEST_VALIDATOR_TEST_BASE_H_
 #define _VALIDATOR_TEST_VALIDATOR_TEST_BASE_H_
 
-#include "common/base/Base.h"
-
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
@@ -18,6 +16,7 @@
 #include "planner/ExecutionPlan.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
+#include "planner/PlannersRegister.h"
 #include "planner/Query.h"
 #include "util/ObjectPool.h"
 #include "validator/Validator.h"
@@ -37,6 +36,7 @@ protected:
         session_->setSpace(std::move(spaceInfo));
         schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
         pool_ = std::make_unique<ObjectPool>();
+        PlannersRegister::registPlanners();
     }
 
     StatusOr<QueryContext*> validate(const std::string& query) {

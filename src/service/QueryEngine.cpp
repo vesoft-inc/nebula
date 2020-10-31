@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "context/QueryContext.h"
 #include "optimizer/OptRule.h"
+#include "planner/PlannersRegister.h"
 #include "service/QueryInstance.h"
 
 DECLARE_bool(local_config);
@@ -46,6 +47,8 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
     storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor,
                                                              metaClient_.get());
     charsetInfo_ = CharsetInfo::instance();
+
+    PlannersRegister::registPlanners();
 
     std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
     if (FLAGS_enable_optimizer) {

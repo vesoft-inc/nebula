@@ -13,5 +13,10 @@ nebula_add_library(
     Mutate.cpp
     Maintain.cpp
     Planner.cpp
+    PlannersRegister.cpp
     planners/SequentialPlanner.cpp
+    planners/MatchSolver.cpp
+    planners/MatchVertexIdSeekPlanner.cpp
+    planners/MatchVertexIndexSeekPlanner.cpp
+    planners/MatchTagScanPlanner.cpp
 )
