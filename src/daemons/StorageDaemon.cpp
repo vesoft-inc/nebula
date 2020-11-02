@@ -8,6 +8,7 @@
 #include "common/base/SignalHandler.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
+#include "common/time/TimeUtils.h"
 #include "storage/StorageServer.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -95,6 +96,14 @@ int main(int argc, char *argv[]) {
 
     // Setup the signal handlers
     status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    // Initialize the global timezone, it's only used for datetime type compute
+    // won't affect the process timezone.
+    status = nebula::time::TimeUtils::initializeGlobalTimezone();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
