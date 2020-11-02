@@ -328,6 +328,9 @@ legal_integer
     }
     ;
 
+/**
+ * TODO(dutor) Tweak the scanner to keep the original text along the unreserved keywords
+ */
 unreserved_keyword
     : KW_SPACE              { $$ = new std::string("space"); }
     | KW_VALUES             { $$ = new std::string("values"); }
@@ -392,6 +395,9 @@ unreserved_keyword
     | KW_OFFSET             { $$ = new std::string("offset"); }
     | KW_FORMAT             { $$ = new std::string("format"); }
     | KW_PROFILE            { $$ = new std::string("profile"); }
+    | KW_BOTH               { $$ = new std::string("both"); }
+    | KW_OUT                { $$ = new std::string("out"); }
+    | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
     ;
 
 agg_function

@@ -3,6 +3,7 @@
 %option nodefault noyywrap
 %option never-interactive
 %option yylineno
+%option case-insensitive
 
 %{
 #include "parser/GQLParser.h"
@@ -22,161 +23,15 @@ static constexpr size_t MAX_STRING = 4096;
 %x COMMENT
 
 blanks                      ([ \t\n]+)
-GO                          ([Gg][Oo])
-AS                          ([Aa][Ss])
-TO                          ([Tt][Oo])
-OR                          ([Oo][Rr])
-AND                         ([Aa][Nn][Dd])
-XOR                         ([Xx][Oo][Rr])
-USE                         ([Uu][Ss][Ee])
-SET                         ([Ss][Ee][Tt])
-FROM                        ([Ff][Rr][Oo][Mm])
-WHERE                       ([Ww][Hh][Ee][Rr][Ee])
-MATCH                       ([Mm][Aa][Tt][Cc][Hh])
-INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
-VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss]?)
-YIELD                       ([Yy][Ii][Ee][Ll][Dd])
-RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
-CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
-DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
-DESC                        ([Dd][Ee][Ss][Cc])
-VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
-EDGE                        ([Ee][Dd][Gg][Ee])
-EDGES                       ([Ee][Dd][Gg][Ee][Ss])
-UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
-UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
-WHEN                        ([Ww][Hh][Ee][Nn])
-DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
-FIND                        ([Ff][Ii][Nn][Dd])
-LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
-ALTER                       ([Aa][Ll][Tt][Ee][Rr])
-STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
-OVER                        ([Oo][Vv][Ee][Rr])
-UPTO                        ([Uu][Pp][Tt][Oo])
-REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
-SPACE                       ([Ss][Pp][Aa][Cc][Ee])
-SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
-INDEX                       ([Ii][Nn][Dd][Ee][Xx])
-INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
-REBUILD                     ([Rr][Ee][Bb][Uu][Ii][Ll][Dd])
-STATUS                      ([Ss][Tt][Aa][Tt][Uu][Ss])
-BOOL                        ([Bb][Oo][Oo][Ll])
-INT8                        ([Ii][Nn][Tt][8])
-INT16                       ([Ii][Nn][Tt][1][6])
-INT32                       ([Ii][Nn][Tt][3][2])
-INT64                       ([Ii][Nn][Tt][6][4])
-INT                         ([Ii][Nn][Tt])
-FLOAT                       ([Ff][Ll][Oo][Aa][Tt])
-DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
-STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
-FIXED_STRING                ([Ff][Ii][Xx][Ee][Dd][_][Ss][Tt][Rr][Ii][Nn][Gg])
-TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
-DATE                        ([Dd][Aa][Tt][Ee])
-DATETIME                    ([Dd][Aa][Tt][Ee][Tt][Ii][Mm][Ee])
-TAG                         ([Tt][Aa][Gg])
-TAGS                        ([Tt][Aa][Gg][Ss])
-UNION                       ([Uu][Nn][Ii][Oo][Nn])
-INTERSECT                   ([Ii][Nn][Tt][Ee][Rr][Ss][Ee][Cc][Tt])
-MINUS                       ([Mm][Ii][Nn][Uu][Ss])
-NO                          ([Nn][Oo])
-OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
-TRUE                        ([Tt][Rr][Uu][Ee])
-FALSE                       ([Ff][Aa][Ll][Ss][Ee])
-SHOW                        ([Ss][Hh][Oo][Ww])
-ADD                         ([Aa][Dd][Dd])
-HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
-PART                        ([Pp][Aa][Rr][Tt])
-PARTS                       ([Pp][Aa][Rr][Tt][Ss])
-PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
-REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
-VID_TYPE                    ([Vv][Ii][Dd][_][Tt][Yy][Pp][Ee])
-CHARSET                     ([Cc][Hh][Aa][Rr][Ss][Ee][Tt])
-COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
-COLLATION                   ([Cc][Oo][Ll][Ll][Aa][Tt][Ii][Oo][Nn])
-DROP                        ([Dd][Rr][Oo][Pp])
-REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
-IF                          ([Ii][Ff])
-NOT                         ([Nn][Oo][Tt])
-EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
-WITH                        ([Ww][Ii][Tt][Hh])
-USER                        ([Uu][Ss][Ee][Rr])
-USERS                       ([Uu][Ss][Ee][Rr][Ss])
-PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
-CHANGE                      ([Cc][Hh][Aa][Nn][Gg][Ee])
-ROLE                        ([Rr][Oo][Ll][Ee])
-GOD                         ([Gg][Oo][Dd])
-ADMIN                       ([Aa][Dd][Mm][Ii][Nn])
-GUEST                       ([Gg][Uu][Ee][Ss][Tt])
-GRANT                       ([Gg][Rr][Aa][Nn][Tt])
-REVOKE                      ([Rr][Ee][Vv][Oo][Kk][Ee])
-ON                          ([Oo][Nn])
-ROLES                       ([Rr][Oo][Ll][Ee][Ss])
-BY                          ([Bb][Yy])
-IN                          ([Ii][Nn])
-NOT_IN                      ({NOT}{blanks}{IN})
-TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
-TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
-DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
-HDFS                        ([Hh][Dd][Ff][Ss])
-ORDER                       ([Oo][Rr][Dd][Ee][Rr])
-INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
-SUBMIT                      ([Ss][Uu][Bb][Mm][Ii][Tt])
-COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
-FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
-ASC                         ([Aa][Ss][Cc])
-DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
-DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
-CONFIGS                     ([Cc][Oo][Nn][Ff][Ii][Gg][Ss])
-GET                         ([Gg][Ee][Tt])
-GRAPH                       ([Gg][Rr][Aa][Pp][Hh])
-META                        ([Mm][Ee][Tt][Aa])
-STORAGE                     ([Ss][Tt][Oo][Rr][Aa][Gg][Ee])
-FETCH                       ([Ff][Ee][Tt][Cc][Hh])
-PROP                        ([Pp][Rr][Oo][Pp])
-ALL                         ([Aa][Ll][Ll])
-BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
-LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
-UUID                        ([Uu][Uu][Ii][Dd])
-OF                          ([Oo][Ff])
-DATA                        ([Dd][Aa][Tt][Aa])
-STOP                        ([Ss][Tt][Oo][Pp])
-SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
-PATH                        ([Pp][Aa][Tt][Hh])
-LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
-OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
-GROUP                       ([Gg][Rr][Oo][Uu][Pp])
-COUNT                       ([Cc][Oo][Uu][Nn][Tt])
-COUNT_DISTINCT              ([Cc][Oo][Uu][Nn][Tt][_][Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
-SUM                         ([Ss][Uu][Mm])
-AVG                         ([Aa][Vv][Gg])
-MIN                         ([Mm][Ii][Nn])
-MAX                         ([Mm][Aa][Xx])
-STD                         ([Ss][Tt][Dd])
-BIT_AND                     ([Bb][Ii][Tt][_][Aa][Nn][Dd])
-BIT_OR                      ([Bb][Ii][Tt][_][Oo][Rr])
-BIT_XOR                     ([Bb][Ii][Tt][_][Xx][Oo][Rr])
-IS                          ([Ii][Ss])
-NULL                        ([Nn][Uu][Ll][Ll])
-SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
-SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
-FORCE                       ([Ff][Oo][Rr][Cc][Ee])
-BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
-ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
-DBA                         ([Dd][Bb][Aa])
-OUT                         ([Oo][Uu][Tt])
-BOTH                        ([Bb][Oo][Tt][Hh])
-SUBGRAPH                    ([Ss][Uu][Bb][Gg][Rr][Aa][Pp][Hh])
-CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
-NOT_CONTAINS                ({NOT}{blanks}{CONTAINS})
-STARTS                      ([Ss][Tt][Aa][Rr][Tt][Ss])
-STARTS_WITH                 ({STARTS}{blanks}{WITH})
-NOT_STARTS_WITH             ({NOT}{blanks}{STARTS}{blanks}{WITH})
-ENDS                        ([Ee][Nn][Dd][Ss])
-ENDS_WITH                   ({ENDS}{blanks}{WITH})
-NOT_ENDS_WITH               ({NOT}{blanks}{ENDS}{blanks}{WITH})
-UNWIND                      ([Uu][Nn][Ww][Ii][Nn][Dd])
-SKIP                        ([Ss][Kk][Ii][Pp])
-OPTIONAL                    ([Oo][Pp][Tt][Ii][Oo][Nn][Aa][Ll])
+
+NOT_IN                      (NOT{blanks}IN)
+
+NOT_CONTAINS                (NOT{blanks}CONTAINS)
+
+STARTS_WITH                 (STARTS{blanks}WITH)
+NOT_STARTS_WITH             (NOT{blanks}STARTS{blanks}WITH)
+ENDS_WITH                   (ENDS{blanks}WITH)
+NOT_ENDS_WITH               (NOT{blanks}ENDS{blanks}WITH)
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -184,182 +39,183 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
-JOBS                        ([Jj][Oo][Bb][Ss])
-JOB                         ([Jj][Oo][Bb])
-RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
-
-EXPLAIN                     ([Ee][Xx][Pp][Ll][Aa][Ii][Nn])
-PROFILE                     ([Pp][Rr][Oo][Ff][Ii][Ll][Ee])
-FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
-
 %%
 
  /* Reserved keyword */
-{GO}                        { return TokenType::KW_GO; }
-{AS}                        { return TokenType::KW_AS; }
-{TO}                        { return TokenType::KW_TO; }
-{OR}                        { return TokenType::KW_OR; }
-{AND}                       { return TokenType::KW_AND; }
-{XOR}                       { return TokenType::KW_XOR; }
-{USE}                       { return TokenType::KW_USE; }
-{SET}                       { return TokenType::KW_SET; }
-{FROM}                      { return TokenType::KW_FROM; }
-{WHERE}                     { return TokenType::KW_WHERE; }
-{MATCH}                     { return TokenType::KW_MATCH; }
-{INSERT}                    { return TokenType::KW_INSERT; }
-{YIELD}                     { return TokenType::KW_YIELD; }
-{RETURN}                    { return TokenType::KW_RETURN; }
-{DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
-{DESC}                      { return TokenType::KW_DESC; }
-{VERTEX}                    { return TokenType::KW_VERTEX; }
-{EDGE}                      { return TokenType::KW_EDGE; }
-{EDGES}                     { return TokenType::KW_EDGES; }
-{UPDATE}                    { return TokenType::KW_UPDATE; }
-{UPSERT}                    { return TokenType::KW_UPSERT; }
-{WHEN}                      { return TokenType::KW_WHEN; }
-{DELETE}                    { return TokenType::KW_DELETE; }
-{FIND}                      { return TokenType::KW_FIND; }
-{LOOKUP}                    { return TokenType::KW_LOOKUP; }
-{ALTER}                     { return TokenType::KW_ALTER; }
-{STEPS}                     { return TokenType::KW_STEPS; }
-{OVER}                      { return TokenType::KW_OVER; }
-{UPTO}                      { return TokenType::KW_UPTO; }
-{REVERSELY}                 { return TokenType::KW_REVERSELY; }
-{INDEX}                     { return TokenType::KW_INDEX; }
-{INDEXES}                   { return TokenType::KW_INDEXES; }
-{REBUILD}                   { return TokenType::KW_REBUILD; }
-{BOOL}                      { return TokenType::KW_BOOL; }
-{INT8}                      { return TokenType::KW_INT8; }
-{INT16}                     { return TokenType::KW_INT16; }
-{INT32}                     { return TokenType::KW_INT32; }
-{INT64}                     { return TokenType::KW_INT64; }
-{INT}                       { return TokenType::KW_INT; }
-{FLOAT}                     { return TokenType::KW_FLOAT; }
-{DOUBLE}                    { return TokenType::KW_DOUBLE; }
-{STRING}                    { return TokenType::KW_STRING; }
-{FIXED_STRING}              { return TokenType::KW_FIXED_STRING; }
-{TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
-{DATE}                      { return TokenType::KW_DATE; }
-{DATETIME}                  { return TokenType::KW_DATETIME; }
-{TAG}                       { return TokenType::KW_TAG; }
-{TAGS}                      { return TokenType::KW_TAGS; }
-{UNION}                     { return TokenType::KW_UNION; }
-{INTERSECT}                 { return TokenType::KW_INTERSECT; }
-{MINUS}                     { return TokenType::KW_MINUS; }
-{NO}                        { return TokenType::KW_NO; }
-{OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
-{SHOW}                      { return TokenType::KW_SHOW; }
-{ADD}                       { return TokenType::KW_ADD; }
-{CREATE}                    { return TokenType::KW_CREATE;}
-{DROP}                      { return TokenType::KW_DROP; }
-{REMOVE}                    { return TokenType::KW_REMOVE; }
-{IF}                        { return TokenType::KW_IF; }
-{NOT}                       { return TokenType::KW_NOT; }
-{EXISTS}                    { return TokenType::KW_EXISTS; }
-{WITH}                      { return TokenType::KW_WITH; }
-{CHANGE}                    { return TokenType::KW_CHANGE; }
-{GRANT}                     { return TokenType::KW_GRANT; }
-{REVOKE}                    { return TokenType::KW_REVOKE; }
-{ON}                        { return TokenType::KW_ON; }
-{BY}                        { return TokenType::KW_BY; }
-{IN}                        { return TokenType::KW_IN; }
+"GO"                        { return TokenType::KW_GO; }
+"AS"                        { return TokenType::KW_AS; }
+"TO"                        { return TokenType::KW_TO; }
+"OR"                        { return TokenType::KW_OR; }
+"AND"                       { return TokenType::KW_AND; }
+"XOR"                       { return TokenType::KW_XOR; }
+"USE"                       { return TokenType::KW_USE; }
+"SET"                       { return TokenType::KW_SET; }
+"FROM"                      { return TokenType::KW_FROM; }
+"WHERE"                     { return TokenType::KW_WHERE; }
+"MATCH"                     { return TokenType::KW_MATCH; }
+"INSERT"                    { return TokenType::KW_INSERT; }
+"YIELD"                     { return TokenType::KW_YIELD; }
+"RETURN"                    { return TokenType::KW_RETURN; }
+"DESCRIBE"                  { return TokenType::KW_DESCRIBE; }
+"DESC"                      { return TokenType::KW_DESC; }
+"VERTEX"                    { return TokenType::KW_VERTEX; }
+"EDGE"                      { return TokenType::KW_EDGE; }
+"EDGES"                     { return TokenType::KW_EDGES; }
+"UPDATE"                    { return TokenType::KW_UPDATE; }
+"UPSERT"                    { return TokenType::KW_UPSERT; }
+"WHEN"                      { return TokenType::KW_WHEN; }
+"DELETE"                    { return TokenType::KW_DELETE; }
+"FIND"                      { return TokenType::KW_FIND; }
+"LOOKUP"                    { return TokenType::KW_LOOKUP; }
+"ALTER"                     { return TokenType::KW_ALTER; }
+"STEPS"                     { return TokenType::KW_STEPS; }
+"STEP"                     { return TokenType::KW_STEPS; }
+"OVER"                      { return TokenType::KW_OVER; }
+"UPTO"                      { return TokenType::KW_UPTO; }
+"REVERSELY"                 { return TokenType::KW_REVERSELY; }
+"INDEX"                     { return TokenType::KW_INDEX; }
+"INDEXES"                   { return TokenType::KW_INDEXES; }
+"REBUILD"                   { return TokenType::KW_REBUILD; }
+"BOOL"                      { return TokenType::KW_BOOL; }
+"INT8"                      { return TokenType::KW_INT8; }
+"INT16"                     { return TokenType::KW_INT16; }
+"INT32"                     { return TokenType::KW_INT32; }
+"INT64"                     { return TokenType::KW_INT64; }
+"INT"                       { return TokenType::KW_INT; }
+"FLOAT"                     { return TokenType::KW_FLOAT; }
+"DOUBLE"                    { return TokenType::KW_DOUBLE; }
+"STRING"                    { return TokenType::KW_STRING; }
+"FIXED_STRING"              { return TokenType::KW_FIXED_STRING; }
+"TIMESTAMP"                 { return TokenType::KW_TIMESTAMP; }
+"DATE"                      { return TokenType::KW_DATE; }
+"DATETIME"                  { return TokenType::KW_DATETIME; }
+"TAG"                       { return TokenType::KW_TAG; }
+"TAGS"                      { return TokenType::KW_TAGS; }
+"UNION"                     { return TokenType::KW_UNION; }
+"INTERSECT"                 { return TokenType::KW_INTERSECT; }
+"MINUS"                     { return TokenType::KW_MINUS; }
+"NO"                        { return TokenType::KW_NO; }
+"OVERWRITE"                 { return TokenType::KW_OVERWRITE; }
+"SHOW"                      { return TokenType::KW_SHOW; }
+"ADD"                       { return TokenType::KW_ADD; }
+"CREATE"                    { return TokenType::KW_CREATE;}
+"DROP"                      { return TokenType::KW_DROP; }
+"REMOVE"                    { return TokenType::KW_REMOVE; }
+"IF"                        { return TokenType::KW_IF; }
+"NOT"                       { return TokenType::KW_NOT; }
+"EXISTS"                    { return TokenType::KW_EXISTS; }
+"WITH"                      { return TokenType::KW_WITH; }
+"CHANGE"                    { return TokenType::KW_CHANGE; }
+"GRANT"                     { return TokenType::KW_GRANT; }
+"REVOKE"                    { return TokenType::KW_REVOKE; }
+"ON"                        { return TokenType::KW_ON; }
+"BY"                        { return TokenType::KW_BY; }
+"IN"                        { return TokenType::KW_IN; }
 {NOT_IN}                    { return TokenType::KW_NOT_IN; }
-{DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
-{GET}                       { return TokenType::KW_GET; }
-{OF}                        { return TokenType::KW_OF; }
-{ORDER}                     { return TokenType::KW_ORDER; }
-{INGEST}                    { return TokenType::KW_INGEST; }
-{COMPACT}                   { return TokenType::KW_COMPACT; }
-{FLUSH}                     { return TokenType::KW_FLUSH; }
-{SUBMIT}                    { return TokenType::KW_SUBMIT; }
-{ASC}                       { return TokenType::KW_ASC; }
-{DISTINCT}                  { return TokenType::KW_DISTINCT; }
-{FETCH}                     { return TokenType::KW_FETCH; }
-{PROP}                      { return TokenType::KW_PROP; }
-{BALANCE}                   { return TokenType::KW_BALANCE; }
-{STOP}                      { return TokenType::KW_STOP; }
-{LIMIT}                     { return TokenType::KW_LIMIT; }
-{OFFSET}                    { return TokenType::KW_OFFSET; }
-{IS}                        { return TokenType::KW_IS; }
-{NULL}                      { return TokenType::KW_NULL; }
-{RECOVER}                   { return TokenType::KW_RECOVER; }
-{EXPLAIN}                   { return TokenType::KW_EXPLAIN; }
-{PROFILE}                   { return TokenType::KW_PROFILE; }
-{FORMAT}                    { return TokenType::KW_FORMAT; }
+"DOWNLOAD"                  { return TokenType::KW_DOWNLOAD; }
+"GET"                       { return TokenType::KW_GET; }
+"OF"                        { return TokenType::KW_OF; }
+"ORDER"                     { return TokenType::KW_ORDER; }
+"INGEST"                    { return TokenType::KW_INGEST; }
+"COMPACT"                   { return TokenType::KW_COMPACT; }
+"FLUSH"                     { return TokenType::KW_FLUSH; }
+"SUBMIT"                    { return TokenType::KW_SUBMIT; }
+"ASC"                       { return TokenType::KW_ASC; }
+"DISTINCT"                  { return TokenType::KW_DISTINCT; }
+"FETCH"                     { return TokenType::KW_FETCH; }
+"PROP"                      { return TokenType::KW_PROP; }
+"BALANCE"                   { return TokenType::KW_BALANCE; }
+"STOP"                      { return TokenType::KW_STOP; }
+"LIMIT"                     { return TokenType::KW_LIMIT; }
+"OFFSET"                    { return TokenType::KW_OFFSET; }
+"IS"                        { return TokenType::KW_IS; }
+"NULL"                      { return TokenType::KW_NULL; }
+"RECOVER"                   { return TokenType::KW_RECOVER; }
+"EXPLAIN"                   { return TokenType::KW_EXPLAIN; }
+"PROFILE"                   { return TokenType::KW_PROFILE; }
+"FORMAT"                    { return TokenType::KW_FORMAT; }
 
+
+ /**
+  * TODO(dutor) Manage the dynamic allocated objects with an object pool,
+  *     so that we ease the operations such as expression rewriting, associating
+  *     the original text for an unreserved keywords, etc.
+  *
+  */
  /* Unreserved keyword */
-{HOSTS}                     { return TokenType::KW_HOSTS; }
-{SPACE}                     { return TokenType::KW_SPACE; }
-{SPACES}                    { return TokenType::KW_SPACES; }
-{VALUES}                    { return TokenType::KW_VALUES; }
-{USER}                      { return TokenType::KW_USER; }
-{USERS}                     { return TokenType::KW_USERS; }
-{PASSWORD}                  { return TokenType::KW_PASSWORD; }
-{ROLE}                      { return TokenType::KW_ROLE; }
-{ROLES}                     { return TokenType::KW_ROLES; }
-{GOD}                       { return TokenType::KW_GOD; }
-{ADMIN}                     { return TokenType::KW_ADMIN; }
-{DBA}                       { return TokenType::KW_DBA; }
-{GUEST}                     { return TokenType::KW_GUEST; }
-{GROUP}                     { return TokenType::KW_GROUP; }
-{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
-{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
-{VID_TYPE}                  { return TokenType::KW_VID_TYPE; }
-{CHARSET}                   { return TokenType::KW_CHARSET; }
-{COLLATE}                   { return TokenType::KW_COLLATE; }
-{COLLATION}                 { return TokenType::KW_COLLATION; }
-{ALL}                       { return TokenType::KW_ALL; }
-{LEADER}                    { return TokenType::KW_LEADER; }
-{UUID}                      { return TokenType::KW_UUID; }
-{DATA}                      { return TokenType::KW_DATA; }
-{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
-{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
-{ACCOUNT}                   { return TokenType::KW_ACCOUNT; }
-{JOBS}                      { return TokenType::KW_JOBS; }
-{JOB}                       { return TokenType::KW_JOB; }
-{COUNT}                     { return TokenType::KW_COUNT; }
-{COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
-{SUM}                       { return TokenType::KW_SUM; }
-{AVG}                       { return TokenType::KW_AVG; }
-{MAX}                       { return TokenType::KW_MAX; }
-{MIN}                       { return TokenType::KW_MIN; }
-{STD}                       { return TokenType::KW_STD; }
-{BIT_AND}                   { return TokenType::KW_BIT_AND; }
-{BIT_OR}                    { return TokenType::KW_BIT_OR; }
-{BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
-{PATH}                      { return TokenType::KW_PATH; }
-{BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
-{STATUS}                    { return TokenType::KW_STATUS; }
-{FORCE}                     { return TokenType::KW_FORCE; }
-{PART}                      { return TokenType::KW_PART; }
-{PARTS}                     { return TokenType::KW_PARTS; }
-{DEFAULT}                   { return TokenType::KW_DEFAULT; }
-{HDFS}                      { return TokenType::KW_HDFS; }
-{CONFIGS}                   { return TokenType::KW_CONFIGS; }
-{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
-{TTL_COL}                   { return TokenType::KW_TTL_COL; }
-{GRAPH}                     { return TokenType::KW_GRAPH; }
-{META}                      { return TokenType::KW_META; }
-{STORAGE}                   { return TokenType::KW_STORAGE; }
-{SHORTEST}                  { return TokenType::KW_SHORTEST; }
-{OUT}                       { return TokenType::KW_OUT; }
-{BOTH}                      { return TokenType::KW_BOTH; }
-{SUBGRAPH}                  { return TokenType::KW_SUBGRAPH; }
-{CONTAINS}                  { return TokenType::KW_CONTAINS; }
+"HOSTS"                     { return TokenType::KW_HOSTS; }
+"SPACE"                     { return TokenType::KW_SPACE; }
+"SPACES"                    { return TokenType::KW_SPACES; }
+"VALUE"                     { return TokenType::KW_VALUES; }
+"VALUES"                    { return TokenType::KW_VALUES; }
+"USER"                      { return TokenType::KW_USER; }
+"USERS"                     { return TokenType::KW_USERS; }
+"PASSWORD"                  { return TokenType::KW_PASSWORD; }
+"ROLE"                      { return TokenType::KW_ROLE; }
+"ROLES"                     { return TokenType::KW_ROLES; }
+"GOD"                       { return TokenType::KW_GOD; }
+"ADMIN"                     { return TokenType::KW_ADMIN; }
+"DBA"                       { return TokenType::KW_DBA; }
+"GUEST"                     { return TokenType::KW_GUEST; }
+"GROUP"                     { return TokenType::KW_GROUP; }
+"PARTITION_NUM"             { return TokenType::KW_PARTITION_NUM; }
+"REPLICA_FACTOR"            { return TokenType::KW_REPLICA_FACTOR; }
+"VID_TYPE"                  { return TokenType::KW_VID_TYPE; }
+"CHARSET"                   { return TokenType::KW_CHARSET; }
+"COLLATE"                   { return TokenType::KW_COLLATE; }
+"COLLATION"                 { return TokenType::KW_COLLATION; }
+"ALL"                       { return TokenType::KW_ALL; }
+"LEADER"                    { return TokenType::KW_LEADER; }
+"UUID"                      { return TokenType::KW_UUID; }
+"DATA"                      { return TokenType::KW_DATA; }
+"SNAPSHOT"                  { return TokenType::KW_SNAPSHOT; }
+"SNAPSHOTS"                 { return TokenType::KW_SNAPSHOTS; }
+"ACCOUNT"                   { return TokenType::KW_ACCOUNT; }
+"JOBS"                      { return TokenType::KW_JOBS; }
+"JOB"                       { return TokenType::KW_JOB; }
+"COUNT"                     { return TokenType::KW_COUNT; }
+"COUNT_DISTINCT"            { return TokenType::KW_COUNT_DISTINCT; }
+"SUM"                       { return TokenType::KW_SUM; }
+"AVG"                       { return TokenType::KW_AVG; }
+"MAX"                       { return TokenType::KW_MAX; }
+"MIN"                       { return TokenType::KW_MIN; }
+"STD"                       { return TokenType::KW_STD; }
+"BIT_AND"                   { return TokenType::KW_BIT_AND; }
+"BIT_OR"                    { return TokenType::KW_BIT_OR; }
+"BIT_XOR"                   { return TokenType::KW_BIT_XOR; }
+"PATH"                      { return TokenType::KW_PATH; }
+"BIDIRECT"                  { return TokenType::KW_BIDIRECT; }
+"STATUS"                    { return TokenType::KW_STATUS; }
+"FORCE"                     { return TokenType::KW_FORCE; }
+"PART"                      { return TokenType::KW_PART; }
+"PARTS"                     { return TokenType::KW_PARTS; }
+"DEFAULT"                   { return TokenType::KW_DEFAULT; }
+"HDFS"                      { return TokenType::KW_HDFS; }
+"CONFIGS"                   { return TokenType::KW_CONFIGS; }
+"TTL_DURATION"              { return TokenType::KW_TTL_DURATION; }
+"TTL_COL"                   { return TokenType::KW_TTL_COL; }
+"GRAPH"                     { return TokenType::KW_GRAPH; }
+"META"                      { return TokenType::KW_META; }
+"STORAGE"                   { return TokenType::KW_STORAGE; }
+"SHORTEST"                  { return TokenType::KW_SHORTEST; }
+"OUT"                       { return TokenType::KW_OUT; }
+"BOTH"                      { return TokenType::KW_BOTH; }
+"SUBGRAPH"                  { return TokenType::KW_SUBGRAPH; }
+"CONTAINS"                  { return TokenType::KW_CONTAINS; }
 {NOT_CONTAINS}              { return TokenType::KW_NOT_CONTAINS; }
-{STARTS}                    { return TokenType::KW_STARTS;}
+"STARTS"                    { return TokenType::KW_STARTS;}
 {STARTS_WITH}               { return TokenType::KW_STARTS_WITH;}
 {NOT_STARTS_WITH}           { return TokenType::KW_NOT_STARTS_WITH;}
-{ENDS}                      { return TokenType::KW_ENDS;}
+"ENDS"                      { return TokenType::KW_ENDS;}
 {ENDS_WITH}                 { return TokenType::KW_ENDS_WITH;}
 {NOT_ENDS_WITH}             { return TokenType::KW_NOT_ENDS_WITH;}
-{UNWIND}                    { return TokenType::KW_UNWIND;}
-{SKIP}                      { return TokenType::KW_SKIP;}
-{OPTIONAL}                  { return TokenType::KW_OPTIONAL;}
+"UNWIND"                    { return TokenType::KW_UNWIND;}
+"SKIP"                      { return TokenType::KW_SKIP;}
+"OPTIONAL"                  { return TokenType::KW_OPTIONAL;}
 
 
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+"TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
+"FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
 ".."                        { return TokenType::DOT_DOT; }

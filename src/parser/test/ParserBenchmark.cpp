@@ -11,8 +11,8 @@
 using nebula::GQLParser;
 
 auto simpleQuery =  "USE myspace";
-auto complexQuery =  "GO UPTO 2 STEPS FROM 123456789 OVER myedge "
-                     "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 && "
+auto complexQuery =  "GO 2 STEPS FROM 123456789 OVER myedge "
+                     "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 AND "
                      "alias.prop5 == alias.prop6 YIELD 1 AS first, 2 AS second";
 
 
