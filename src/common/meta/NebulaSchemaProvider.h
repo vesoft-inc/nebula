@@ -107,6 +107,8 @@ public:
                   bool nullable = false,
                   Expression* defaultValue = nullptr);
 
+    static std::size_t fieldSize(cpp2::PropertyType type, std::size_t fixedStrLimit);
+
     void setProp(cpp2::SchemaProp schemaProp);
 
     const cpp2::SchemaProp getProp() const;
