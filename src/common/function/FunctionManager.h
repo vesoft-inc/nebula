@@ -38,6 +38,8 @@ public:
      */
     static StatusOr<Function> get(const std::string &func, size_t arity);
 
+    static StatusOr<bool> getIsPure(const std::string &func, size_t arity);
+
     /**
      * To load a set of functions from a shared object dynamically.
      */
@@ -55,6 +57,14 @@ public:
                                                const std::vector<Value::Type> &argsType);
 
 private:
+    struct FunctionAttributes final {
+        size_t minArity_{0};
+        size_t maxArity_{0};
+        // pure means same input same result
+        bool     isPure_{true};
+        Function body_;
+    };
+
     /**
      * FunctionManager functions as a singleton, since the dynamic loading is process-wide.
      */
@@ -62,19 +72,14 @@ private:
 
     static FunctionManager &instance();
 
-    StatusOr<Function> getInternal(const std::string &func, size_t arity) const;
+    StatusOr<const FunctionAttributes>
+    getInternal(const std::string &func, size_t arity) const;
 
     Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);
 
     Status unloadInternal(const std::string &soname, const std::vector<std::string> &funcs);
 
     static std::unordered_map<std::string, std::vector<TypeSignature>> typeSignature_;
-
-    struct FunctionAttributes final {
-        size_t minArity_{0};
-        size_t maxArity_{0};
-        Function body_;
-    };
 
     mutable folly::RWSpinLock lock_;
     std::unordered_map<std::string, FunctionAttributes> functions_;
