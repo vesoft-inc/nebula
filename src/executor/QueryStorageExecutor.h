@@ -34,50 +34,60 @@ protected:
                            << it->first;
             }
             if (completeness == 0 || isCompleteRequire) {
-                LOG(ERROR) << "Request to storage failed in executor `" << name_ << "'";
-                return Status::Error("Request to storage failed in executor.");
+                return handleErrorCode(failedCodes.begin()->second,
+                                       failedCodes.begin()->first);
             }
             return Result::State::kPartialSuccess;
         }
         return Result::State::kSuccess;
     }
 
-    Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) {
+    Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) const {
         switch (code) {
             case storage::cpp2::ErrorCode::E_INVALID_VID:
-                return Status::Error("Invalid vid.");
+                return Status::Error("Storage Error: Invalid vid.");
             case storage::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
-                std::string error = "Invalid field value: may be the filed is not NULL "
-                             "or without default value or wrong schema.";
+                std::string error = "Storage Error: Invalid field value: "
+                                    "may be the filed is not NULL "
+                                    "or without default value or wrong schema.";
                 return Status::Error(std::move(error));
             }
+            case storage::cpp2::ErrorCode::E_LEADER_CHANGED:
+                return Status::Error("Storage Error: Leader changed.");
             case storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                return Status::Error("Invalid filter.");
+                return Status::Error("Storage Error: Invalid filter.");
             case storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                return Status::Error("Invalid Update col or yield col.");
+                return Status::Error("Storage Error: Invalid Update col or yield col.");
+            case storage::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN:
+                return Status::Error("Storage Error: Invalid space vid len.");
+            case storage::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
+                return Status::Error("Storage Error: Space not found.");
             case storage::cpp2::ErrorCode::E_TAG_NOT_FOUND:
-                return Status::Error("Tag not found.");
+                return Status::Error("Storage Error: Tag not found.");
             case storage::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
-                return Status::Error("Tag prop not found.");
+                return Status::Error("Storage Error: Tag prop not found.");
             case storage::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
-                return Status::Error("Edge not found.");
+                return Status::Error("Storage Error: Edge not found.");
             case storage::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
-                return Status::Error("Edge prop not found.");
+                return Status::Error("Storage Error: Edge prop not found.");
+            case storage::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
+                return Status::Error("Storage Error: Index not found.");
             case storage::cpp2::ErrorCode::E_INVALID_DATA:
-                return Status::Error("Invalid data, may be wrong value type.");
+                return Status::Error("Storage Error: Invalid data, may be wrong value type.");
             case storage::cpp2::ErrorCode::E_NOT_NULLABLE:
-                return Status::Error("The not null field cannot be null.");
+                return Status::Error("Storage Error: The not null field cannot be null.");
             case storage::cpp2::ErrorCode::E_FIELD_UNSET:
-                return Status::Error("The not null field doesn't have a default value.");
+                return Status::Error("Storage Error: "
+                                     "The not null field doesn't have a default value.");
             case storage::cpp2::ErrorCode::E_OUT_OF_RANGE:
-                return Status::Error("Out of range value.");
+                return Status::Error("Storage Error: Out of range value.");
             case storage::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
-                return Status::Error("Atomic operation failed.");
+                return Status::Error("Storage Error: Atomic operation failed.");
             case storage::cpp2::ErrorCode::E_FILTER_OUT:
                 return Status::OK();
             default:
-                auto status = Status::Error("Unknown error, part: %d, error code: %d.",
-                                            partId, static_cast<int32_t>(code));
+                auto status = Status::Error("Storage Error: part: %d, error code: %d.",
+                                             partId, static_cast<int32_t>(code));
                 LOG(ERROR) << status;
                 return status;
         }
