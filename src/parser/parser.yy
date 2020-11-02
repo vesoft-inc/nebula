@@ -158,7 +158,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE ASSIGN
-%token DOT COLON SEMICOLON L_ARROW R_ARROW AT
+%token DOT DOT_DOT COLON SEMICOLON L_ARROW R_ARROW AT
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
@@ -1145,14 +1145,14 @@ match_step_range
     | STAR legal_integer {
         $$ = new MatchStepRange($2, $2);
     }
-    | STAR DOT DOT legal_integer {
-        $$ = new MatchStepRange(1, $4);
+    | STAR DOT_DOT legal_integer {
+        $$ = new MatchStepRange(1, $3);
     }
-    | STAR legal_integer DOT DOT {
+    | STAR legal_integer DOT_DOT {
         $$ = new MatchStepRange($2);
     }
-    | STAR legal_integer DOT DOT legal_integer {
-        $$ = new MatchStepRange($2, $5);
+    | STAR legal_integer DOT_DOT legal_integer {
+        $$ = new MatchStepRange($2, $4);
     }
     ;
 

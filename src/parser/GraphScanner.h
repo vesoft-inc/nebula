@@ -88,6 +88,79 @@ protected:
         return sbuf_.get();
     }
 
+    using TokenType = nebula::GraphParser::token;
+    auto parseDecimal() const {
+        try {
+            folly::StringPiece text(yytext, yyleng);
+            uint64_t val = folly::to<uint64_t>(text);
+            if (val > MAX_ABS_INTEGER) {
+                throw GraphParser::syntax_error(*yylloc, "Out of range:");
+            }
+            if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
+                throw GraphParser::syntax_error(*yylloc, "Out of range:");
+            }
+            yylval->intval = val;
+        } catch (...) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        return TokenType::INTEGER;
+    }
+
+    auto parseDouble() const {
+        try {
+            folly::StringPiece text(yytext, yyleng);
+            yylval->doubleval = folly::to<double>(text);
+        } catch (...) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        return TokenType::DOUBLE;
+    }
+
+    auto parseHex() const {
+        if (yyleng > 18) {
+            auto i = 2;
+            while (i < yyleng && yytext[i] == '0') {
+                i++;
+            }
+            if (yyleng - i > 16) {
+                throw GraphParser::syntax_error(*yylloc, "Out of range:");
+            }
+        }
+        uint64_t val = 0;
+        sscanf(yytext, "%lx", &val);
+        if (val > MAX_ABS_INTEGER) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        yylval->intval = static_cast<int64_t>(val);
+        return TokenType::INTEGER;
+    }
+
+    auto parseOct() const {
+        if (yyleng > 22) {
+            auto i = 1;
+            while (i < yyleng && yytext[i] == '0') {
+                i++;
+            }
+            if (yyleng - i > 22 ||
+                    (yyleng - i == 22 && yytext[i] != '1')) {
+                throw GraphParser::syntax_error(*yylloc, "Out of range:");
+            }
+        }
+        uint64_t val = 0;
+        sscanf(yytext, "%lo", &val);
+        if (val > MAX_ABS_INTEGER) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
+            throw GraphParser::syntax_error(*yylloc, "Out of range:");
+        }
+        yylval->intval = static_cast<int64_t>(val);
+        return TokenType::INTEGER;
+    }
+
 private:
     friend class Scanner_Basic_Test;
     int yylex() override;

@@ -13,8 +13,6 @@
     yylloc->step();                     \
     yylloc->columns(yyleng);
 
-using TokenType = nebula::GraphParser::token;
-
 static constexpr size_t MAX_STRING = 4096;
 
 %}
@@ -364,6 +362,7 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
+".."                        { return TokenType::DOT_DOT; }
 ","                         { return TokenType::COMMA; }
 ":"                         { return TokenType::COLON; }
 ";"                         { return TokenType::SEMICOLON; }
@@ -433,75 +432,29 @@ FORMAT                      ([Ff][Oo][Rr][Mm][Aa][Tt])
                                 return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {
-                                if (yyleng > 18) {
-                                    auto i = 2;
-                                    while (i < yyleng && yytext[i] == '0') {
-                                        i++;
-                                    }
-                                    if (yyleng - i > 16) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                    }
-                                }
-                                uint64_t val = 0;
-                                sscanf(yytext, "%lx", &val);
-                                if (val > MAX_ABS_INTEGER) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                yylval->intval = static_cast<int64_t>(val);
-                                return TokenType::INTEGER;
+                                return parseHex();
                             }
 0{OCT}+                     {
-                                if (yyleng > 22) {
-                                    auto i = 1;
-                                    while (i < yyleng && yytext[i] == '0') {
-                                        i++;
-                                    }
-                                    if (yyleng - i > 22 ||
-                                            (yyleng - i == 22 && yytext[i] != '1')) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                    }
-                                }
-                                uint64_t val = 0;
-                                sscanf(yytext, "%lo", &val);
-                                if (val > MAX_ABS_INTEGER) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                yylval->intval = static_cast<int64_t>(val);
-                                return TokenType::INTEGER;
-                            }
-{DEC}+                      {
-                                try {
-                                    folly::StringPiece text(yytext, yyleng);
-                                    uint64_t val = folly::to<uint64_t>(text);
-                                    if (val > MAX_ABS_INTEGER) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                    }
-                                    if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
-                                        throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                    }
-                                    yylval->intval = val;
-                                } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                return TokenType::INTEGER;
-                            }
-{DEC}+\.{DEC}+              {
-                                try {
-                                    folly::StringPiece text(yytext, yyleng);
-                                    yylval->doubleval = folly::to<double>(text);
-                                } catch (...) {
-                                    throw GraphParser::syntax_error(*yylloc, "Out of range:");
-                                }
-                                return TokenType::DOUBLE;
+                                return parseOct();
                             }
 
-\${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
+{DEC}+\.\.                  {
+                                yyless(yyleng - 2);
+                                return parseDecimal();
+                            }
+{DEC}+                      {
+                                return parseDecimal();
+                            }
+
+{DEC}*\.{DEC}+              |
+{DEC}+\.{DEC}*              {
+                                return parseDouble();
+                            }
+
+\${LABEL}                   {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 1);
+                                return TokenType::VARIABLE;
+                            }
 
 
 \"                          { BEGIN(DQ_STR); sbufPos_ = 0; }

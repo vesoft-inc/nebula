@@ -134,6 +134,7 @@ TEST(Scanner, Basic) {
 
     std::vector<Validator> validators = {
         CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
+        CHECK_SEMANTIC_TYPE("..", TokenType::DOT_DOT),
         CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
         CHECK_SEMANTIC_TYPE(":", TokenType::COLON),
         CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
@@ -468,6 +469,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
+        CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
+        CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
 
         CHECK_SEMANTIC_VALUE("0x7FFFFFFFFFFFFFFF", TokenType::INTEGER, 0x7FFFFFFFFFFFFFFFL),
