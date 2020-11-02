@@ -428,7 +428,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 yieldColsHolder_.addColumn(column);
                 yields_.emplace_back(column);
                 colNames_.emplace_back(expr->toString());
-                colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+                colTypes_.emplace_back(iter->getType().type);
             }
         }
     }
