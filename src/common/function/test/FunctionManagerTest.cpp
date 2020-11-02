@@ -1124,5 +1124,15 @@ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+
+    auto result = nebula::time::TimeUtils::initializeGlobalTimezone();
+    if (!result.ok()) {
+        LOG(FATAL) << result;
+    }
+
+    DLOG(INFO) << "Timezone: " << nebula::time::TimeUtils::getGlobalTimezone().stdZoneName();
+    DLOG(INFO) << "Timezone offset: " <<
+        nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
+
     return RUN_ALL_TESTS();
 }

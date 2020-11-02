@@ -30,6 +30,17 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        timezone_info_test
+    SOURCES
+        TimezoneInfoTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+)
+
+nebula_add_test(
+    NAME
         time_utils_test
     SOURCES
         TimeUtilsTest.cpp

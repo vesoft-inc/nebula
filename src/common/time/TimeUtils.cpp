@@ -11,50 +11,37 @@
 
 // If it's invalid timezone the service initialize will failed.
 // Empty for system default configuration
-DEFINE_string(timezone_name, "", "The name of timezone used in current system");
+DEFINE_string(timezone_name,
+              "UTC+00:00:00",
+              "The timezone used in current system, "
+              "only used in nebula datetime compute won't "
+              "affect process time (such as log time etc.).");
 
 namespace nebula {
 namespace time {
 
 const DateTime TimeUtils::kEpoch(1970, 1, 1, 0, 0, 0, 0);
-
-constexpr char TimeUtils::kTZdir[];
+/*static*/ Timezone TimeUtils::globalTimezone;
 
 /*static*/ Status TimeUtils::initializeGlobalTimezone() {
-    if (!FLAGS_timezone_name.empty()) {
-        if (FLAGS_timezone_name.front() == ':') {
-            // means timezone information from file
-            std::vector<std::string> parts;
-            folly::split('/', FLAGS_timezone_name, parts, true);
-            std::stringstream fss;
-            switch (parts.size()) {
-                case 1: {
-                    fss << kTZdir << "/" << parts[0].c_str() + 1;
-                }
-                // fallthrough
-                case 2: {
-                    fss << "/" << parts[1];
-                    break;
-                }
-                default: {
-                    return Status::Error("Invalid timezone format `%s'.",
-                                         FLAGS_timezone_name.c_str());
-                }
-            }
-            auto file = fss.str();
-            if (fs::FileUtils::fileType(file.c_str()) != fs::FileType::REGULAR) {
-                return Status::Error("Not exists timezone file `%s'.", file.c_str());
-            }
-        } else {
-            // TODO(shylock) support the other format
-            return Status::Error("Invalid timezone format.");
-        }
-        if (::setenv("TZ", FLAGS_timezone_name.c_str(), true) != 0) {
-            return Status::Error("Set timezone failed: %s", ::strerror(errno));
+    // use system timezone configuration if not set.
+    if (FLAGS_timezone_name.empty()) {
+        auto *tz = ::getenv("TZ");
+        if (tz != nullptr) {
+            FLAGS_timezone_name.append(tz);
         }
     }
-    ::tzset();
-    return Status::OK();
+    if (!FLAGS_timezone_name.empty()) {
+        if (FLAGS_timezone_name.front() == ':') {
+            NG_RETURN_IF_ERROR(Timezone::init());
+            return globalTimezone.loadFromDb(
+                std::string(FLAGS_timezone_name.begin() + 1, FLAGS_timezone_name.end()));
+        } else {
+            return globalTimezone.parsePosixTimezone(FLAGS_timezone_name);
+        }
+    } else {
+        return Status::Error("Don't allowed empty timezone.");
+    }
 }
 
 /*static*/ StatusOr<DateTime> TimeUtils::dateTimeFromMap(const Map &m) {

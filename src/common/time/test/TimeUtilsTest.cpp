@@ -105,9 +105,9 @@ int main(int argc, char **argv) {
         LOG(FATAL) << result;
     }
 
-    DLOG(INFO) << "Timezone: " << tzname[0];
-    DLOG(INFO) << "Timezone: " << tzname[1];
-    DLOG(INFO) << "Timezone offset: " << timezone;
+    DLOG(INFO) << "Timezone: " << nebula::time::TimeUtils::getGlobalTimezone().stdZoneName();
+    DLOG(INFO) << "Timezone offset: "
+               << nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
 
     return RUN_ALL_TESTS();
 }
