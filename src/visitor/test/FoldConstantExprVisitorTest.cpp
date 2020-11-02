@@ -215,6 +215,29 @@ TEST_F(FoldConstantExprVisitorTest, TestMapExpr) {
     ASSERT(visitor.canBeFolded());
 }
 
+TEST_F(FoldConstantExprVisitorTest, TestFoldFunction) {
+    // pure function
+    // abs(-1) + 1 => 1 + 1
+    {
+        auto expr = pool.add(addExpr(fnExpr("abs", {constantExpr(-1)}), constantExpr(1)));
+        auto expected = pool.add(addExpr(constantExpr(1), constantExpr(1)));
+        FoldConstantExprVisitor visitor;
+        expr->accept(&visitor);
+        ASSERT_TRUE(visitor.canBeFolded());
+        ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
+    }
+    // not pure function
+    // rand32(4) + 1 => rand32(4) + 1
+    {
+        auto expr = pool.add(addExpr(fnExpr("rand32", {constantExpr(4)}), constantExpr(1)));
+        auto expected = pool.add(addExpr(fnExpr("rand32", {constantExpr(4)}), constantExpr(1)));
+        FoldConstantExprVisitor visitor;
+        expr->accept(&visitor);
+        ASSERT_FALSE(visitor.canBeFolded());
+        ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
+    }
+}
+
 TEST_F(FoldConstantExprVisitorTest, TestFoldFailed) {
     // function call
     {

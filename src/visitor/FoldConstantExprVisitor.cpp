@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/function/FunctionManager.h"
+
 #include "visitor/FoldConstantExprVisitor.h"
 
 #include "context/QueryExpressionContext.h"
@@ -74,6 +76,14 @@ void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
                 canBeFolded = false;
             }
         }
+    }
+    auto result = FunctionManager::getIsPure(*expr->name(), expr->args()->args().size());
+    if (!result.ok()) {
+        canBeFolded = false;
+    }
+    if (!result.value()) {
+        // stateful so can't fold
+        canBeFolded = false;
     }
     canBeFolded_ = canBeFolded;
 }
