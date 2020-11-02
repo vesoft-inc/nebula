@@ -73,11 +73,11 @@ void SysInfoHandler::onError(ProxygenError error) noexcept {
 
 folly::dynamic SysInfoHandler::getSysInfo() {
     folly::dynamic json = folly::dynamic::object();
-    for (long unsigned int i = 0; i < dataPaths_.size(); i++) {
+    for (int64 i = 0; i < dataPaths_.size(); i++) {
         auto res = fs::FileUtils::detectFilesystemUsage(dataPaths_[i]);
         json["data_path_" + dataPaths_[i]] = folly::dynamic::object();
-        json["data_path_" + dataPaths_[i]]["disk_total"] = std::get<0>(res);
-        json["data_path_" + dataPaths_[i]]["disk_avail"] = std::get<1>(res);
+        json["data_path_" + dataPaths_[i]]["disk_total"] = res.first;
+        json["data_path_" + dataPaths_[i]]["disk_avail"] = res.second;
     }
 
     auto memUsage = ProcessUtils::getMemUsage();

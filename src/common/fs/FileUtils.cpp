@@ -135,16 +135,16 @@ std::string FileUtils::basename(const char *path) {
     return result[3].str();
 }
 
-std::tuple<double, double> FileUtils::detectFilesystemUsage(const std::string& data_path) {
+std::pair<double, double> FileUtils::detectFilesystemUsage(const std::string& data_path) {
     struct statvfs buffer;
     int ret = statvfs(data_path.c_str(), &buffer);
 
     if (!ret) {
         double total = static_cast<double>(buffer.f_blocks * buffer.f_frsize);
         double available = static_cast<double>(buffer.f_bfree * buffer.f_frsize);
-        return std::tuple<double, double>(total, available);
+        return std::make_pair(total, available);
     }
-    return std::tuple<double, double>(0, 0);
+    return std::make_pair(0, 0);
 }
 
 const char* FileUtils::getFileTypeName(FileType type) {
