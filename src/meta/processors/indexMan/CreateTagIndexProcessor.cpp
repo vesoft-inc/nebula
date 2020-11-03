@@ -15,12 +15,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     const auto &indexName = req.get_index_name();
     auto &tagName = req.get_tag_name();
     auto &fieldNames = req.get_fields();
-    if (fieldNames.empty()) {
-        LOG(ERROR) << "The index field of an tag should not be empty.";
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
-    }
+
     std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
     if (fieldNames.size() != columnSet.size()) {
         LOG(ERROR) << "Conflict field in the tag index.";
@@ -40,7 +35,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto ret = getIndexID(space, indexName);
     if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
+        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " has existed";
         if (req.get_if_not_exists()) {
             resp_.set_id(to(ret.value(), EntryType::INDEX));
             handleErrorCode(cpp2::ErrorCode::SUCCEEDED);

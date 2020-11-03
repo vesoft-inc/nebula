@@ -295,8 +295,12 @@ std::unordered_map<std::string, std::vector<Serve>> MockData::playerServes_ = pl
 std::unordered_map<std::string, std::vector<Serve>> MockData::teamServes_ = teamServes();
 
 // Mock schema
-std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(SchemaVer ver) {
+std::shared_ptr<meta::NebulaSchemaProvider>
+MockData::mockPlayerTagSchema(SchemaVer ver, bool hasProp) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+    if (!hasProp) {
+        return schema;
+    }
     schema->addField("name",
                      meta::cpp2::PropertyType::STRING,
                      0,
@@ -371,14 +375,22 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockPlayerTagSchema(Schema
     return schema;
 }
 
-std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeamTagSchema(SchemaVer ver) {
+std::shared_ptr<meta::NebulaSchemaProvider>
+MockData::mockTeamTagSchema(SchemaVer ver, bool hasProp) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+    if (!hasProp) {
+        return schema;
+    }
     schema->addField("name", meta::cpp2::PropertyType::STRING);
     return schema;
 }
 
-std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeEdgeSchema(SchemaVer ver) {
+std::shared_ptr<meta::NebulaSchemaProvider>
+MockData::mockServeEdgeSchema(SchemaVer ver, bool hasProp) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+    if (!hasProp) {
+        return schema;
+    }
     schema->addField("playerName",
                      meta::cpp2::PropertyType::STRING,
                      0,
@@ -443,8 +455,12 @@ std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockServeEdgeSchema(Schema
     return schema;
 }
 
-std::shared_ptr<meta::NebulaSchemaProvider> MockData::mockTeammateEdgeSchema(SchemaVer ver) {
+std::shared_ptr<meta::NebulaSchemaProvider>
+MockData::mockTeammateEdgeSchema(SchemaVer ver, bool hasProp) {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(ver));
+    if (!hasProp) {
+        return schema;
+    }
     schema->addField("player1",   meta::cpp2::PropertyType::STRING);
     schema->addField("player2",   meta::cpp2::PropertyType::STRING);
     schema->addField("teamName",  meta::cpp2::PropertyType::STRING);
@@ -809,6 +825,16 @@ std::vector<VertexID> MockData::mockVerticeIds() {
     for (auto& team : teams_) {
         VertexID data;
         data = team;
+        ret.push_back(data);
+    }
+    return ret;
+}
+
+std::vector<VertexID> MockData::mockPlayerVerticeIds() {
+    std::vector<VertexID> ret;
+    for (auto& player : players_) {
+        VertexID data;
+        data = player.name_;
         ret.push_back(data);
     }
     return ret;

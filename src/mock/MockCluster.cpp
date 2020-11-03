@@ -105,7 +105,8 @@ void MockCluster::startMeta(int32_t port,
 
 void MockCluster::initStorageKV(const char* dataPath,
                                 HostAddr addr,
-                                SchemaVer schemaVerCount) {
+                                SchemaVer schemaVerCount,
+                                bool hasProp) {
     const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
     totalParts_ = 6;  // don't not delete this...
     kvstore::KVOptions options;
@@ -132,8 +133,8 @@ void MockCluster::initStorageKV(const char* dataPath,
     } else {
         LOG(INFO) << "Use meta in memory!";
         options.partMan_ = memPartMan(1, parts);;
-        schemaMan_ = memSchemaMan(schemaVerCount);
-        indexMan_ = memIndexMan();
+        schemaMan_ = memSchemaMan(schemaVerCount, 1, hasProp);
+        indexMan_ = memIndexMan(1, hasProp);
     }
     std::vector<std::string> paths;
     paths.emplace_back(folly::stringPrintf("%s/disk1", dataPath));
@@ -177,21 +178,21 @@ void MockCluster::startStorage(HostAddr addr,
 }
 
 std::unique_ptr<meta::SchemaManager>
-MockCluster::memSchemaMan(SchemaVer schemaVerCount, GraphSpaceID spaceId) {
+MockCluster::memSchemaMan(SchemaVer schemaVerCount, GraphSpaceID spaceId, bool hasProp) {
     auto schemaMan = std::make_unique<AdHocSchemaManager>();
     // if have multi version schema, need to add from oldest to newest
     for (SchemaVer ver = 0; ver < schemaVerCount; ver++) {
         // Vertex has two tags: players and teams
         // When tagId is 1, use players data
-        schemaMan->addTagSchema(spaceId, 1, MockData::mockPlayerTagSchema(ver));
+        schemaMan->addTagSchema(spaceId, 1, MockData::mockPlayerTagSchema(ver, hasProp));
         // When tagId is 2, use teams data
-        schemaMan->addTagSchema(spaceId, 2, MockData::mockTeamTagSchema(ver));
+        schemaMan->addTagSchema(spaceId, 2, MockData::mockTeamTagSchema(ver, hasProp));
 
         // Edge has two type: serve and teammate
         // When edgeType is 101, use serve data
-        schemaMan->addEdgeSchema(spaceId, 101, MockData::mockServeEdgeSchema(ver));
+        schemaMan->addEdgeSchema(spaceId, 101, MockData::mockServeEdgeSchema(ver, hasProp));
         // When edgeType is 102, use teammate data
-        schemaMan->addEdgeSchema(spaceId, 102, MockData::mockTeammateEdgeSchema(ver));
+        schemaMan->addEdgeSchema(spaceId, 102, MockData::mockTeammateEdgeSchema(ver, hasProp));
     }
 
     schemaMan->addTagSchema(spaceId, 3, MockData::mockGeneralTagSchemaV1());
@@ -202,13 +203,20 @@ MockCluster::memSchemaMan(SchemaVer schemaVerCount, GraphSpaceID spaceId) {
 }
 
 std::unique_ptr<meta::IndexManager>
-MockCluster::memIndexMan(GraphSpaceID spaceId) {
+MockCluster::memIndexMan(GraphSpaceID spaceId, bool hasProp) {
     auto indexMan = std::make_unique<AdHocIndexManager>();
-    indexMan->addTagIndex(spaceId, 1, 1, MockData::mockPlayerTagIndexColumns());
-    indexMan->addTagIndex(spaceId, 2, 2, MockData::mockTeamTagIndexColumns());
-    indexMan->addTagIndex(spaceId, 3, 3, MockData::mockGeneralTagIndexColumns());
-    indexMan->addEdgeIndex(spaceId, 101, 101, MockData::mockServeEdgeIndexColumns());
-    indexMan->addEdgeIndex(spaceId, 102, 102, MockData::mockTeammateEdgeIndexColumns());
+    if (hasProp) {
+        indexMan->addTagIndex(spaceId, 1, 1, MockData::mockPlayerTagIndexColumns());
+        indexMan->addTagIndex(spaceId, 2, 2, MockData::mockTeamTagIndexColumns());
+        indexMan->addTagIndex(spaceId, 3, 3, MockData::mockGeneralTagIndexColumns());
+        indexMan->addEdgeIndex(spaceId, 101, 101, MockData::mockServeEdgeIndexColumns());
+        indexMan->addEdgeIndex(spaceId, 102, 102, MockData::mockTeammateEdgeIndexColumns());
+    }
+
+    indexMan->addTagIndex(spaceId, 1, 4, {});
+    indexMan->addTagIndex(spaceId, 2, 5, {});
+    indexMan->addEdgeIndex(spaceId, 101, 103, {});
+    indexMan->addEdgeIndex(spaceId, 102, 104, {});
     return indexMan;
 }
 

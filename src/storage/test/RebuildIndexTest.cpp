@@ -126,8 +126,8 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
             iter->next();
         }
     }
-    // The number of vertices index is 81, the count of players_ and teams_
-    EXPECT_EQ(81, indexDataNum);
+    // The number of vertices index is 162, the count of players_ and teams_
+    EXPECT_EQ(162, indexDataNum);
 
     RebuildIndexTest::env_->rebuildIndexGuard_->clear();
     sleep(1);
@@ -213,8 +213,8 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
             iter->next();
         }
     }
-    // The number of edges index is 167, only positive side count of serves_
-    EXPECT_EQ(167, indexDataNum);
+    // The number of edges index is 334, only positive side count of serves_
+    EXPECT_EQ(334, indexDataNum);
 
     RebuildIndexTest::env_->rebuildIndexGuard_->clear();
     sleep(1);

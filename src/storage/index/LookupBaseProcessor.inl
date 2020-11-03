@@ -33,17 +33,41 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
 
     // setup yield columns.
     if (req.__isset.return_columns) {
-        const auto& retcols = *req.get_return_columns();
-        yieldCols_ = retcols;
+        yieldCols_ = *req.get_return_columns();
+    }
+
+    for (const auto& ctx : contexts_) {
+        const auto& indexId = ctx.get_index_id();
+        auto needFilter = ctx.__isset.filter && !ctx.get_filter().empty();
+
+        auto index = planContext_->isEdge_
+            ? this->env_->indexMan_->getEdgeIndex(spaceId_, indexId)
+            : this->env_->indexMan_->getTagIndex(spaceId_, indexId);
+        if (!index.ok()) {
+            return cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+        }
+
+        auto fields = index.value()->get_fields();
+
+        // If no filed in fields, only _vid can be returned for tag.
+        // For edge, only _src, _ranking, _dst can be returned
+        if (fields.size() == 0) {
+            //
+            if (contexts_.size() != 1 || yieldCols_.size() != 0 ||
+                needFilter || ctx.get_column_hints().size() != 0) {
+                return cpp2::ErrorCode::E_INVALID_OPERATION;
+            }
+            noProp_ = true;
+        }
     }
 
     // setup result set columns.
     if (planContext_->isEdge_) {
-        resultDataSet_.colNames.emplace_back("_src");
+        resultDataSet_.colNames.emplace_back(kSrc);
         resultDataSet_.colNames.emplace_back("_ranking");
-        resultDataSet_.colNames.emplace_back("_dst");
+        resultDataSet_.colNames.emplace_back(kDst);
     } else {
-        resultDataSet_.colNames.emplace_back("_vid");
+        resultDataSet_.colNames.emplace_back(kVid);
     }
 
     for (const auto& col : yieldCols_) {
@@ -93,11 +117,11 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
         case Expression::Kind::kTagProperty:
         case Expression::Kind::kEdgeProperty: {
             auto* sExpr = static_cast<PropertyExpression*>(filter);
-            const auto* prop = sExpr->prop();
-            auto it = std::find_if(fields.begin(), fields.end(), [&prop] (const auto& f) {
-                return f.get_name() == prop;
+            auto propName = *(sExpr->prop());
+            auto it = std::find_if(fields.begin(), fields.end(), [&propName] (const auto& f) {
+                return f.get_name() == propName;
             });
-            return it != fields.end();
+            return it == fields.end();
         }
         default: {
             return false;
@@ -126,92 +150,108 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
     StoragePlan<IndexID> plan;
     auto IndexAggr = std::make_unique<AggregateNode<IndexID>>(&resultDataSet_);
     int32_t filterId = 0;
-    for (const auto& ctx : contexts_) {
-        const auto& indexId = ctx.get_index_id();
-        auto needFilter = ctx.__isset.filter && !ctx.get_filter().empty();
+    std::unique_ptr<IndexOutputNode<IndexID>> out;
+    std::vector<std::pair<std::string, Value::Type>> indexCols;
 
-        // Check whether a data node is required.
-        // If a non-indexed column appears in the WHERE clause or YIELD clause,
-        // That means need to query the corresponding data.
-        bool needData = false;
-        auto index = planContext_->isEdge_
-            ? this->env_->indexMan_->getEdgeIndex(spaceId_, indexId)
-            : this->env_->indexMan_->getTagIndex(spaceId_, indexId);
-        if (!index.ok()) {
-            return Status::IndexNotFound();
-        }
-
-        // check nullable column
-        bool hasNullableCol = false;
-        int32_t vColNum = 0;
-        std::vector<std::pair<std::string, Value::Type>> indexCols;
-        for (const auto& col : index.value()->get_fields()) {
-            auto& colType = col.get_type();
-            indexCols.emplace_back(col.get_name(), IndexKeyUtils::toValueType(colType.get_type()));
-            if (IndexKeyUtils::toValueType(colType.get_type()) == Value::Type::STRING) {
-                vColNum++;
-            }
-            if (!hasNullableCol && col.get_nullable()) {
-                hasNullableCol = true;
-            }
-        }
-
-        for (const auto& yieldCol : yieldCols_) {
-            auto it = std::find_if(index.value()->get_fields().begin(),
-                                   index.value()->get_fields().end(),
-                                   [&yieldCol] (const auto& columnDef) {
-                                       return yieldCol == columnDef.get_name();
-                                   });
-            if (it == index.value()->get_fields().end()) {
-                needData = true;
-                break;
-            }
-        }
-        auto colHints = ctx.get_column_hints();
-
-        // Check WHERE clause contains columns that ware not indexed
-        if (ctx.__isset.filter && !ctx.get_filter().empty()) {
-            auto filter = Expression::decode(ctx.get_filter());
-            auto isFieldsOutsideIndex = isOutsideIndex(filter.get(), index.value().get());
-            if (isFieldsOutsideIndex) {
-                needData = needFilter = true;
-            }
-        }
-
-        std::unique_ptr<IndexOutputNode<IndexID>> out;
-        if (!needData && !needFilter) {
-            out = buildPlanBasic(ctx, plan, indexCols, vColNum, hasNullableCol);
-        } else if (needData && !needFilter) {
-            out = buildPlanWithData(ctx, plan);
-        } else if (!needData && needFilter) {
-            auto expr = Expression::decode(ctx.get_filter());
-            auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
-                                                                      planContext_->isIntId_,
-                                                                      vColNum,
-                                                                      hasNullableCol,
-                                                                      indexCols);
-            filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
-            out = buildPlanWithFilter(ctx,
-                                      plan,
-                                      filterItems_[filterId].first.get(),
-                                      filterItems_[filterId].second.get());
-            filterId++;
-        } else {
-            auto expr = Expression::decode(ctx.get_filter());
-            auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
-                                                                      planContext_->isIntId_);
-            filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
-            out = buildPlanWithDataAndFilter(ctx,
-                                             plan,
-                                             filterItems_[filterId].first.get(),
-                                             filterItems_[filterId].second.get());
-            filterId++;
-        }
-        if (out == nullptr) {
+    if (noProp_) {
+        out = buildPlanBasic(contexts_[0], plan, indexCols, indexCols.size(), false);
+         if (out == nullptr) {
             return Status::Error("Index scan plan error");
         }
         IndexAggr->addDependency(out.get());
         plan.addNode(std::move(out));
+    } else {
+        for (const auto& ctx : contexts_) {
+            indexCols.clear();
+            const auto& indexId = ctx.get_index_id();
+            auto needFilter = ctx.__isset.filter && !ctx.get_filter().empty();
+
+            // Check whether a data node is required.
+            // If a non-indexed column appears in the WHERE clause or YIELD clause,
+            // That means need to query the corresponding data.
+            bool needData = false;
+            auto index = planContext_->isEdge_
+                ? this->env_->indexMan_->getEdgeIndex(spaceId_, indexId)
+                : this->env_->indexMan_->getTagIndex(spaceId_, indexId);
+            if (!index.ok()) {
+                return Status::IndexNotFound();
+            }
+
+            // check nullable column
+            bool hasNullableCol = false;
+            int32_t vColNum = 0;
+
+            auto* indexItem = index.value().get();
+            auto fields = indexItem->get_fields();
+
+            for (const auto& col : fields) {
+                const auto& colType = col.get_type().get_type();
+                const auto& vType = IndexKeyUtils::toValueType(colType);
+                indexCols.emplace_back(col.get_name(), vType);
+                if (vType == Value::Type::STRING) {
+                    vColNum++;
+                }
+                if (!hasNullableCol && col.get_nullable()) {
+                    hasNullableCol = true;
+                }
+            }
+
+            for (const auto& yieldCol : yieldCols_) {
+                auto it = std::find_if(fields.begin(),
+                                       fields.end(),
+                                       [&yieldCol] (const auto& columnDef) {
+                                           return yieldCol == columnDef.get_name();
+                                       });
+                if (it == fields.end()) {
+                    needData = true;
+                    break;
+                }
+            }
+            auto colHints = ctx.get_column_hints();
+
+            // Check WHERE clause contains columns that ware not indexed
+            if (ctx.__isset.filter && !ctx.get_filter().empty()) {
+                auto filter = Expression::decode(ctx.get_filter());
+                auto isFieldsOutsideIndex = isOutsideIndex(filter.get(), indexItem);
+                if (isFieldsOutsideIndex) {
+                    needData = needFilter = true;
+                }
+            }
+
+            if (!needData && !needFilter) {
+                out = buildPlanBasic(ctx, plan, indexCols, vColNum, hasNullableCol);
+            } else if (needData && !needFilter) {
+                out = buildPlanWithData(ctx, plan);
+            } else if (!needData && needFilter) {
+                auto expr = Expression::decode(ctx.get_filter());
+                auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
+                                                                          planContext_->isIntId_,
+                                                                          vColNum,
+                                                                          hasNullableCol,
+                                                                          indexCols);
+                filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
+                out = buildPlanWithFilter(ctx,
+                                          plan,
+                                          filterItems_[filterId].first.get(),
+                                          filterItems_[filterId].second.get());
+                filterId++;
+            } else {
+                auto expr = Expression::decode(ctx.get_filter());
+                auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
+                                                                          planContext_->isIntId_);
+                filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
+                out = buildPlanWithDataAndFilter(ctx,
+                                                 plan,
+                                                 filterItems_[filterId].first.get(),
+                                                 filterItems_[filterId].second.get());
+                filterId++;
+            }
+            if (out == nullptr) {
+                return Status::Error("Index scan plan error");
+            }
+            IndexAggr->addDependency(out.get());
+            plan.addNode(std::move(out));
+        }
     }
     plan.addNode(std::move(IndexAggr));
     return plan;

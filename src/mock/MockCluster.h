@@ -68,9 +68,11 @@ public:
     storage::GeneralStorageClient* initGeneralStorageClient();
 
     std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1,
-                                                      GraphSpaceID spaceId = 1);
+                                                      GraphSpaceID spaceId = 1,
+                                                      bool hasProp = true);
 
-    std::unique_ptr<meta::IndexManager> memIndexMan(GraphSpaceID spaceId = 1);
+    std::unique_ptr<meta::IndexManager> memIndexMan(GraphSpaceID spaceId = 1,
+                                                    bool hasProp = true);
 
     static void waitUntilAllElected(kvstore::NebulaStore* kvstore,
                                     GraphSpaceID spaceId,
@@ -87,7 +89,8 @@ public:
 
     void initStorageKV(const char* dataPath,
                        HostAddr localHost = HostAddr("", 0),
-                       SchemaVer schemaVerCount = 1);
+                       SchemaVer schemaVerCount = 1,
+                       bool hasProp = true);
 
     static std::string localIP();
 

@@ -75,6 +75,8 @@ protected:
     std::vector<cpp2::IndexQueryContext>        contexts_{};
     std::vector<std::string>                    yieldCols_{};
     IndexFilterItem                             filterItems_;
+    // Used to identify no fields in the index
+    bool                                        noProp_{false};
 };
 }  // namespace storage
 }  // namespace nebula

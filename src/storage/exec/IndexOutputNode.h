@@ -245,7 +245,7 @@ private:
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
             }
-            // skip column src_ , edgeType, ranking, dst_
+            // skip column src_, ranking, dst_
             for (size_t i = 3; i < returnCols.size(); i++) {
                 auto v = reader->getValueByName(returnCols[i]);
                 row.emplace_back(std::move(v));

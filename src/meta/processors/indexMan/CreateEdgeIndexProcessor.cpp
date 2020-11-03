@@ -15,12 +15,6 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     const auto &indexName = req.get_index_name();
     auto &edgeName = req.get_edge_name();
     auto &fieldNames = req.get_fields();
-    if (fieldNames.empty()) {
-        LOG(ERROR) << "The index field of an edge type should not be empty.";
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
-    }
 
     std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
     if (fieldNames.size() != columnSet.size()) {
@@ -41,7 +35,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto ret = getIndexID(space, indexName);
     if (ret.ok()) {
-        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
+        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " has existed";
         if (req.get_if_not_exists()) {
             resp_.set_id(to(ret.value(), EntryType::INDEX));
             handleErrorCode(cpp2::ErrorCode::SUCCEEDED);

@@ -385,9 +385,9 @@ cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
 
 std::string MetaServiceUtils::indexKey(GraphSpaceID spaceID, IndexID indexID) {
     std::string key;
-    key.reserve(sizeof(GraphSpaceID) + sizeof(IndexID));
-    key.append(kIndexesTable.data(), kIndexesTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
+    key.reserve(kIndexesTable.size() + sizeof(GraphSpaceID) + sizeof(IndexID));
+    key.append(kIndexesTable.data(), kIndexesTable.size())
+       .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&indexID), sizeof(IndexID));
     return key;
 }
