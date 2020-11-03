@@ -151,20 +151,7 @@ Status MatchValidator::validateFilter(const Expression *filter) {
 
 Status MatchValidator::validateReturn(MatchReturn *ret) {
     // `RETURN *': return all named nodes or edges
-    if (ret->isDistinct()) {
-        return Status::SemanticError("DISTINCT not supported");
-    }
-    if (ret->orderFactors() != nullptr) {
-        return Status::SemanticError("ORDER BY not supported");
-    }
-    if (ret->skip() != nullptr) {
-        return Status::SemanticError("SKIP not supported");
-    }
-    if (ret->limit() != nullptr) {
-        return Status::SemanticError("LIMIT not supported");
-    }
-
-    YieldColumns* columns = nullptr;
+    YieldColumns *columns = nullptr;
     if (ret->isAll()) {
         auto makeColumn = [] (const std::string &name) {
             auto *expr = new LabelExpression(name);
@@ -206,6 +193,74 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
         exprs.push_back(col->expr());
     }
     NG_RETURN_IF_ERROR(validateAliases(exprs));
+
+    auto *skipExpr = ret->skip();
+    auto *limitExpr = ret->limit();
+    int64_t skip = 0;
+    int64_t limit = std::numeric_limits<int64_t>::max();
+    if (skipExpr != nullptr) {
+        if (!evaluableExpr(skipExpr)) {
+            return Status::SemanticError("SKIP should be instantly evaluable");
+        }
+        QueryExpressionContext ctx;
+        auto value = const_cast<Expression*>(skipExpr)->eval(ctx);
+        if (!value.isInt()) {
+            return Status::SemanticError("SKIP should be of type integer");
+        }
+        if (value.getInt() < 0) {
+            return Status::SemanticError("SKIP should not be negative");
+        }
+        skip = value.getInt();
+    }
+
+    if (limitExpr != nullptr) {
+        if (!evaluableExpr(limitExpr)) {
+            return Status::SemanticError("SKIP should be instantly evaluable");
+        }
+        QueryExpressionContext ctx;
+        auto value = const_cast<Expression*>(limitExpr)->eval(ctx);
+        if (!value.isInt()) {
+            return Status::SemanticError("LIMIT should be of type integer");
+        }
+        if (value.getInt() < 0) {
+            return Status::SemanticError("LIMIT should not be negative");
+        }
+        limit = value.getInt();
+    }
+    matchCtx_->skip = skip;
+    matchCtx_->limit = limit;
+
+    if (ret->orderFactors() != nullptr) {
+        std::vector<std::string> inputColList;
+        inputColList.reserve(matchCtx_->yieldColumns->columns().size());
+        for (auto *col : matchCtx_->yieldColumns->columns()) {
+            if (col->alias() != nullptr) {
+                inputColList.emplace_back(*col->alias());
+            } else {
+                inputColList.emplace_back(col->expr()->toString());
+            }
+        }
+        std::unordered_map<std::string, size_t> inputColIndices;
+        for (auto i = 0u; i < inputColList.size(); i++) {
+            if (!inputColIndices.emplace(inputColList[i], i).second) {
+                return Status::SemanticError("Duplicated columns not allowed: %s",
+                        inputColList[i].c_str());
+            }
+        }
+
+        auto *factors = ret->orderFactors();
+        for (auto &factor : factors->factors()) {
+            if (factor->expr()->kind() != Expression::Kind::kLabel) {
+                return Status::SemanticError("Only column name can be used as sort item");
+            }
+            auto *name = static_cast<const LabelExpression*>(factor->expr())->name();
+            auto iter = inputColIndices.find(*name);
+            if (iter == inputColIndices.end()) {
+                return Status::SemanticError("Column `%s' not found", name->c_str());
+            }
+            matchCtx_->indexedOrderFactors.emplace_back(iter->second, factor->orderType());
+        }
+    }
 
     return Status::OK();
 }

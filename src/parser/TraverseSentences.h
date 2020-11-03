@@ -260,12 +260,12 @@ public:
         factors_.emplace_back(factor);
     }
 
-    std::vector<OrderFactor*> factors() {
-        std::vector<OrderFactor*> result;
-        result.resize(factors_.size());
-        auto get = [] (auto &factor) { return factor.get(); };
-        std::transform(factors_.begin(), factors_.end(), result.begin(), get);
-        return result;
+    auto& factors() {
+        return factors_;
+    }
+
+    const auto& factors() const {
+        return factors_;
     }
 
     std::string toString() const;
@@ -281,7 +281,11 @@ public:
         kind_ = Kind::kOrderBy;
     }
 
-    std::vector<OrderFactor*> factors() {
+    auto& factors() {
+        return orderFactors_->factors();
+    }
+
+    const auto& factors() const {
         return orderFactors_->factors();
     }
 

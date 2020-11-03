@@ -250,6 +250,10 @@ public:
         return limit_.get();
     }
 
+    OrderFactors* orderFactors() {
+        return orderFactors_.get();
+    }
+
     const OrderFactors* orderFactors() const {
         return orderFactors_.get();
     }

@@ -14,7 +14,7 @@ namespace graph {
 Status OrderByValidator::validateImpl() {
     auto sentence = static_cast<OrderBySentence*>(sentence_);
     outputs_ = inputCols();
-    auto factors = sentence->factors();
+    auto &factors = sentence->factors();
     for (auto &factor : factors) {
         if (factor->expr()->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression*>(factor->expr());

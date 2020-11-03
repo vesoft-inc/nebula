@@ -206,7 +206,7 @@ public:
         exprs_ = std::move(exprs);
     }
 
-    void setRandom(bool random = true) {
+    void setRandom(bool random = false) {
         random_ = random;
     }
 
@@ -222,7 +222,7 @@ private:
     EdgeProps                                    edgeProps_;
     StatProps                                    statProps_;
     Exprs                                        exprs_;
-    bool                                         random_;
+    bool                                         random_{false};
 };
 
 /**

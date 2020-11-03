@@ -90,6 +90,9 @@ struct MatchAstContext final : AstContext {
     const YieldColumns                                         *yieldColumns;
     MatchValidator::ScanInfo                                    scanInfo;
     const Expression                                           *ids;
+    std::vector<std::pair<size_t, OrderFactor::OrderType>>      indexedOrderFactors;
+    int64_t                                                     skip;
+    int64_t                                                     limit;
 };
 }   // namespace graph
 }   // namespace nebula

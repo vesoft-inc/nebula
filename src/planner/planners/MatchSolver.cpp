@@ -11,11 +11,13 @@
 namespace nebula {
 namespace graph {
 
-Status MatchSolver::buildReturn(MatchAstContext* matchCtx, SubPlan& subPlan) {
+Status MatchSolver::buildReturn(MatchAstContext* mctx, SubPlan& subPlan) {
     auto *yields = new YieldColumns();
     std::vector<std::string> colNames;
+    auto *sentence = static_cast<MatchSentence*>(mctx->sentence);
+    PlanNode *current = subPlan.root;
 
-    for (auto *col : matchCtx->yieldColumns->columns()) {
+    for (auto *col : mctx->yieldColumns->columns()) {
         auto kind = col->expr()->kind();
         YieldColumn *newColumn = nullptr;
         if (kind == Expression::Kind::kLabel) {
@@ -45,10 +47,33 @@ Status MatchSolver::buildReturn(MatchAstContext* matchCtx, SubPlan& subPlan) {
         }
     }
 
-    auto *project = Project::make(matchCtx->qctx, subPlan.root, yields);
-    project->setInputVar(subPlan.root->outputVar());
+    auto *project = Project::make(mctx->qctx, current, yields);
+    project->setInputVar(current->outputVar());
     project->setColNames(std::move(colNames));
-    subPlan.root = project;
+    current = project;
+
+    if (sentence->ret()->isDistinct()) {
+        auto *dedup = Dedup::make(mctx->qctx, current);
+        dedup->setInputVar(current->outputVar());
+        dedup->setColNames(current->colNames());
+        current = dedup;
+    }
+
+    if (!mctx->indexedOrderFactors.empty()) {
+        auto *sort = Sort::make(mctx->qctx, current, std::move(mctx->indexedOrderFactors));
+        sort->setInputVar(current->outputVar());
+        sort->setColNames(current->colNames());
+        current = sort;
+    }
+
+    if (mctx->skip != 0 || mctx->limit != std::numeric_limits<int64_t>::max()) {
+        auto *limit = Limit::make(mctx->qctx, current, mctx->skip, mctx->limit);
+        limit->setInputVar(current->outputVar());
+        limit->setColNames(current->colNames());
+        current = limit;
+    }
+
+    subPlan.root = current;
 
     return Status::OK();
 }
