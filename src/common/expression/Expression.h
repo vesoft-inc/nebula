@@ -81,6 +81,8 @@ public:
         kMap,
 
         kLabel,
+
+        kCase,
     };
 
     explicit Expression(Kind kind) : kind_(kind) {}

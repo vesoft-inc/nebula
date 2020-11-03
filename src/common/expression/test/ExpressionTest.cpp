@@ -29,6 +29,7 @@
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
+#include "common/expression/CaseExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
@@ -2354,6 +2355,231 @@ TEST_F(ExpressionTest, LabelEvaluate) {
     ASSERT_EQ("name", value.getStr());
 }
 
+TEST_F(ExpressionTest, CaseExprToString) {
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(24), new ConstantExpression(1));
+        CaseExpression expr(cases);
+        expr.setCondition(new ConstantExpression(23));
+        ASSERT_EQ("CASE 23 WHEN 24 THEN 1 END", expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(24), new ConstantExpression(1));
+        CaseExpression expr(cases);
+        expr.setCondition(new ConstantExpression(23));
+        expr.setDefault(new ConstantExpression(2));
+        ASSERT_EQ("CASE 23 WHEN 24 THEN 1 ELSE 2 END", expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(1));
+        cases->add(new ConstantExpression(true), new ConstantExpression(2));
+        CaseExpression expr(cases);
+        expr.setCondition(new RelationalExpression(Expression::Kind::kStartsWith,
+                                                   new ConstantExpression("nebula"),
+                                                   new ConstantExpression("nebu")));
+        expr.setDefault(new ConstantExpression(3));
+        ASSERT_EQ(
+            "CASE (nebula STARTS WITH nebu) WHEN false THEN 1 WHEN true THEN 2 ELSE 3 END",
+            expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(7), new ConstantExpression(1));
+        cases->add(new ConstantExpression(8), new ConstantExpression(2));
+        cases->add(new ConstantExpression(8), new ConstantExpression("jack"));
+        CaseExpression expr(cases);
+        expr.setCondition(new ArithmeticExpression(
+            Expression::Kind::kAdd, new ConstantExpression(3), new ConstantExpression(5)));
+        expr.setDefault(new ConstantExpression(false));
+        ASSERT_EQ("CASE (3+5) WHEN 7 THEN 1 WHEN 8 THEN 2 WHEN 8 THEN jack ELSE false END",
+                  expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(18));
+        CaseExpression expr(cases);
+        ASSERT_EQ("CASE WHEN false THEN 18 END", expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(18));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression("ok"));
+        ASSERT_EQ("CASE WHEN false THEN 18 ELSE ok END", expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new RelationalExpression(Expression::Kind::kStartsWith,
+                                            new ConstantExpression("nebula"),
+                                            new ConstantExpression("nebu")),
+                   new ConstantExpression("yes"));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression(false));
+        ASSERT_EQ("CASE WHEN (nebula STARTS WITH nebu) THEN yes ELSE false END",
+                  expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelLT, new ConstantExpression(23), new ConstantExpression(17)),
+            new ConstantExpression(1));
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelEQ, new ConstantExpression(37), new ConstantExpression(37)),
+            new ConstantExpression(2));
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelNE, new ConstantExpression(45), new ConstantExpression(99)),
+            new ConstantExpression(3));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression(4));
+        ASSERT_EQ("CASE WHEN (23<17) THEN 1 WHEN (37==37) THEN 2 WHEN (45!=99) THEN 3 ELSE 4 END",
+                  expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelLT, new ConstantExpression(23), new ConstantExpression(17)),
+            new ConstantExpression(1));
+        CaseExpression expr(cases, false);
+        expr.setDefault(new ConstantExpression(2));
+        ASSERT_EQ("((23<17) ? 1 : 2)", expr.toString());
+    }
+    {
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(1));
+        CaseExpression expr(cases, false);
+        expr.setDefault(new ConstantExpression("ok"));
+        ASSERT_EQ("(false ? 1 : ok)", expr.toString());
+    }
+}
+
+TEST_F(ExpressionTest, CaseEvaluate) {
+    {
+        // CASE 23 WHEN 24 THEN 1 END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(24), new ConstantExpression(1));
+        CaseExpression expr(cases);
+        expr.setCondition(new ConstantExpression(23));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_EQ(value, Value::kNullValue);
+    }
+    {
+        // CASE 23 WHEN 24 THEN 1 ELSE false END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(24), new ConstantExpression(1));
+        CaseExpression expr(cases);
+        expr.setCondition(new ConstantExpression(23));
+        expr.setDefault(new ConstantExpression(false));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isBool());
+        ASSERT_EQ(value.getBool(), false);
+    }
+    {
+        // CASE ("nebula" STARTS WITH "nebu") WHEN false THEN 1 WHEN true THEN 2 ELSE 3 END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(1));
+        cases->add(new ConstantExpression(true), new ConstantExpression(2));
+        CaseExpression expr(cases);
+        expr.setCondition(new RelationalExpression(Expression::Kind::kStartsWith,
+                                                   new ConstantExpression("nebula"),
+                                                   new ConstantExpression("nebu")));
+        expr.setDefault(new ConstantExpression(3));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(2, value.getInt());
+    }
+    {
+        // CASE (3+5) WHEN 7 THEN 1 WHEN 8 THEN 2 WHEN 8 THEN "jack" ELSE "no" END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(7), new ConstantExpression(1));
+        cases->add(new ConstantExpression(8), new ConstantExpression(2));
+        cases->add(new ConstantExpression(8), new ConstantExpression("jack"));
+        CaseExpression expr(cases);
+        expr.setCondition(new ArithmeticExpression(
+            Expression::Kind::kAdd, new ConstantExpression(3), new ConstantExpression(5)));
+        expr.setDefault(new ConstantExpression("no"));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(2, value.getInt());
+    }
+    {
+        // CASE WHEN false THEN 18 END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(18));
+        CaseExpression expr(cases);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_EQ(value, Value::kNullValue);
+    }
+    {
+        // CASE WHEN false THEN 18 ELSE ok END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(18));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression("ok"));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("ok", value.getStr());
+    }
+    {
+        // CASE WHEN "invalid when" THEN "no" ELSE 3 END
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression("invalid when"), new ConstantExpression("no"));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression(3));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_EQ(value, Value::kNullBadType);
+    }
+    {
+        // CASE WHEN (23<17) THEN 1 WHEN (37==37) THEN 2 WHEN (45!=99) THEN 3 ELSE 4 END
+        auto *cases = new CaseList();
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelLT, new ConstantExpression(23), new ConstantExpression(17)),
+            new ConstantExpression(1));
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelEQ, new ConstantExpression(37), new ConstantExpression(37)),
+            new ConstantExpression(2));
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelNE, new ConstantExpression(45), new ConstantExpression(99)),
+            new ConstantExpression(3));
+        CaseExpression expr(cases);
+        expr.setDefault(new ConstantExpression(4));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(2, value.getInt());
+    }
+    {
+        // ((23<17) ? 1 : 2)
+        auto *cases = new CaseList();
+        cases->add(
+            new RelationalExpression(
+                Expression::Kind::kRelLT, new ConstantExpression(23), new ConstantExpression(17)),
+            new ConstantExpression(1));
+        CaseExpression expr(cases, false);
+        expr.setDefault(new ConstantExpression(2));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(2, value.getInt());
+    }
+    {
+        // (false ? 1 : "ok")
+        auto *cases = new CaseList();
+        cases->add(new ConstantExpression(false), new ConstantExpression(1));
+        CaseExpression expr(cases, false);
+        expr.setDefault(new ConstantExpression("ok"));
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("ok", value.getStr());
+    }
+}
+
 TEST_F(ExpressionTest, TestExprClone) {
     ConstantExpression expr(1);
     auto clone = expr.clone();
@@ -2438,6 +2664,13 @@ TEST_F(ExpressionTest, TestExprClone) {
 
     VersionedVariableExpression verVarExpr(new std::string("VARNAME"), new ConstantExpression(0));
     ASSERT_EQ(*verVarExpr.clone(), verVarExpr);
+
+    auto *cases = new CaseList();
+    cases->add(new ConstantExpression(3), new ConstantExpression(9));
+    CaseExpression caseExpr(cases);
+    caseExpr.setCondition(new ConstantExpression(2));
+    caseExpr.setDefault(new ConstantExpression(8));
+    ASSERT_EQ(caseExpr, *caseExpr.clone());
 }
 
 }  // namespace nebula

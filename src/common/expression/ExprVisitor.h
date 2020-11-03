@@ -24,6 +24,7 @@
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
+#include "common/expression/CaseExpression.h"
 
 namespace nebula {
 
@@ -66,6 +67,8 @@ public:
     // vertex/edge expression
     virtual void visit(VertexExpression *expr) = 0;
     virtual void visit(EdgeExpression *expr) = 0;
+    // case expression
+    virtual void visit(CaseExpression *expr) = 0;
 };
 
 }   // namespace nebula
