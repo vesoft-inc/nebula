@@ -20,6 +20,7 @@
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/ContainerExpression.h"
+#include "common/expression/CaseExpression.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {
