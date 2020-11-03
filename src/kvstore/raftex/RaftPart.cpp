@@ -1563,6 +1563,15 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
+        // TODO(doodle): This is a potential bug which would cause data not in consensus. In most
+        // case, we would hit this path when leader append logs to follower and timeout (leader
+        // would set lastLogIdSent_ = logIdToSend_ - 1 in Host). **But follower actually received
+        // it successfully**. Which will explain when leader retry to append these logs, the LOG
+        // belows is printed, and lastLogId_ == req.get_last_log_id_sent() + 1 in the LOG.
+        //
+        // In fact we should always rollback to req.get_last_log_id_sent(), and append the logs from
+        // leader (we can't make promise that the logs in range [req.get_last_log_id_sent() + 1,
+        // lastLogId_] is same with follower). However, this makes no difference in the above case.
         LOG(INFO) << idStr_ << "Stale log! Local lastLogId " << lastLogId_
                   << ", lastLogTerm " << lastLogTerm_
                   << ", lastLogIdSent " << req.get_last_log_id_sent()
