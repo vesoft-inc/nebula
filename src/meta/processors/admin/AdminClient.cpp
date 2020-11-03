@@ -599,14 +599,10 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId,
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
 
-    /**
-     * Don't need retry.
-     * Because existing checkpoint directories leads to fail again.
-     **/
     getResponse({Utils::getAdminAddrFromStoreAddr(host)}, 0, std::move(req),
             [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
-    }, 0, std::move(pro), 0);
+    }, 0, std::move(pro), 3 /*The snapshot operation need to retry 3 times*/);
     return f;
 }
 
@@ -626,7 +622,7 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
     getResponse({Utils::getAdminAddrFromStoreAddr(host)}, 0, std::move(req),
             [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
-    }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
+    }, 0, std::move(pro), 3 /*The snapshot operation need to retry 3 times*/);
     return f;
 }
 
@@ -641,7 +637,7 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     getResponse({Utils::getAdminAddrFromStoreAddr(host)}, 0, std::move(req),
             [] (auto client, auto request) {
         return client->future_blockingWrites(request);
-    }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
+    }, 0, std::move(pro), 32 /*The blocking need to retry 32 times*/);
     return f;
 }
 

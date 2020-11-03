@@ -556,8 +556,11 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp op) {
-    if (blocking_ && (logType == LogType::NORMAL || logType == LogType::ATOMIC_OP)) {
-        return AppendLogResult::E_WRITE_BLOCKING;
+    if (blocking_) {
+        // No need to block heartbeats and empty log.
+         if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
+             return AppendLogResult::E_WRITE_BLOCKING;
+         }
     }
 
     LogCache swappedOutLogs;

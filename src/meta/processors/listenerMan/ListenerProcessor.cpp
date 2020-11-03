@@ -82,7 +82,7 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
     std::string prefix = MetaServiceUtils::listenerPrefix(space);
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any users.";
+        LOG(ERROR) << "Can't find any listener.";
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;

@@ -13,7 +13,6 @@ namespace nebula {
 namespace meta {
 
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     // check the index rebuild. not allowed to create snapshot when index rebuilding.
     auto prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
