@@ -55,6 +55,25 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doGetFirstRecord(GraphSpaceID spaceId,
+                                                          PartitionID partId,
+                                                          std::string& key,
+                                                          std::string* value) {
+    if (!FLAGS_enable_multi_versions) {
+        int64_t version = folly::Endian::big(0L);
+        key.append(reinterpret_cast<const char*>(&version), sizeof(int64_t));
+        return kvstore_->get(spaceId, partId, key, value);
+    } else {
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(spaceId, partId, key, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
+            *value = iter->val().str();
+        }
+        return ret;
+    }
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV> data) {
