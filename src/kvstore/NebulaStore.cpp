@@ -391,13 +391,14 @@ void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
 ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
                             const std::string& key,
-                            std::string* value) {
+                            std::string* value,
+                            bool canReadFromFollower) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!checkLeader(part)) {
+    if (!checkLeader(part, canReadFromFollower)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->get(key, value);
@@ -408,14 +409,15 @@ std::pair<ResultCode, std::vector<Status>> NebulaStore::multiGet(
         GraphSpaceID spaceId,
         PartitionID partId,
         const std::vector<std::string>& keys,
-        std::vector<std::string>* values) {
+        std::vector<std::string>* values,
+        bool canReadFromFollower) {
     std::vector<Status> status;
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return {error(ret), status};
     }
     auto part = nebula::value(ret);
-    if (!checkLeader(part)) {
+    if (!checkLeader(part, canReadFromFollower)) {
         return {ResultCode::ERR_LEADER_CHANGED, status};
     }
     status = part->engine()->multiGet(keys, values);
@@ -435,13 +437,14 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& start,
                               const std::string& end,
-                              std::unique_ptr<KVIterator>* iter) {
+                              std::unique_ptr<KVIterator>* iter,
+                              bool canReadFromFollower) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!checkLeader(part)) {
+    if (!checkLeader(part, canReadFromFollower)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->range(start, end, iter);
@@ -451,13 +454,14 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
 ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
                                PartitionID partId,
                                const std::string& prefix,
-                               std::unique_ptr<KVIterator>* iter) {
+                               std::unique_ptr<KVIterator>* iter,
+                               bool canReadFromFollower) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!checkLeader(part)) {
+    if (!checkLeader(part, canReadFromFollower)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->prefix(prefix, iter);
@@ -468,13 +472,14 @@ ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
                                         PartitionID  partId,
                                         const std::string& start,
                                         const std::string& prefix,
-                                        std::unique_ptr<KVIterator>* iter) {
+                                        std::unique_ptr<KVIterator>* iter,
+                                        bool canReadFromFollower) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!checkLeader(part)) {
+    if (!checkLeader(part, canReadFromFollower)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->rangeWithPrefix(start, prefix, iter);
@@ -845,8 +850,8 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
     return count;
 }
 
-bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
+bool NebulaStore::checkLeader(std::shared_ptr<Part> part, bool canReadFromFollower) const {
+    return !FLAGS_check_leader || canReadFromFollower || (part->isLeader() && part->leaseValid());
 }
 
 void NebulaStore::cleanWAL() {

@@ -104,52 +104,61 @@ public:
     ResultCode get(GraphSpaceID spaceId,
                    PartitionID  partId,
                    const std::string& key,
-                   std::string* value) override;
+                   std::string* value,
+                   bool canReadFromFollower = false) override;
 
     std::pair<ResultCode, std::vector<Status>>
     multiGet(GraphSpaceID spaceId,
              PartitionID partId,
              const std::vector<std::string>& keys,
-             std::vector<std::string>* values) override;
+             std::vector<std::string>* values,
+             bool canReadFromFollower = false) override;
 
     // Get all results in range [start, end)
     ResultCode range(GraphSpaceID spaceId,
                      PartitionID  partId,
                      const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<KVIterator>* iter) override;
+                     std::unique_ptr<KVIterator>* iter,
+                     bool canReadFromFollower = false) override;
+
     // Delete the overloading with a rvalue `start' and `end'
     ResultCode range(GraphSpaceID spaceId,
                      PartitionID  partId,
                      std::string&& start,
                      std::string&& end,
-                     std::unique_ptr<KVIterator>* iter) override = delete;
+                     std::unique_ptr<KVIterator>* iter,
+                     bool canReadFromFollower = false) override = delete;
 
     // Get all results with prefix.
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       const std::string& prefix,
-                      std::unique_ptr<KVIterator>* iter) override;
+                      std::unique_ptr<KVIterator>* iter,
+                      bool canReadFromFollower = false) override;
 
     // Delete the overloading with a rvalue `prefix'
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       std::string&& prefix,
-                      std::unique_ptr<KVIterator>* iter) override = delete;
+                      std::unique_ptr<KVIterator>* iter,
+                      bool canReadFromFollower = false) override = delete;
 
     // Get all results with prefix starting from start
     ResultCode rangeWithPrefix(GraphSpaceID spaceId,
                                PartitionID  partId,
                                const std::string& start,
                                const std::string& prefix,
-                               std::unique_ptr<KVIterator>* iter) override;
+                               std::unique_ptr<KVIterator>* iter,
+                               bool canReadFromFollower = false) override;
 
     // Delete the overloading with a rvalue `prefix'
     ResultCode rangeWithPrefix(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::string&& start,
                                std::string&& prefix,
-                               std::unique_ptr<KVIterator>* iter) override = delete;
+                               std::unique_ptr<KVIterator>* iter,
+                               bool canReadFromFollower = false) override = delete;
 
     ResultCode sync(GraphSpaceID spaceId,
                     PartitionID partId) override;
@@ -240,7 +249,7 @@ private:
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
-    bool checkLeader(std::shared_ptr<Part> part) const;
+    bool checkLeader(std::shared_ptr<Part> part, bool canReadFromFollower = false) const;
 
     void cleanWAL();
 

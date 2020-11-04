@@ -78,7 +78,8 @@ public:
     virtual ResultCode get(GraphSpaceID spaceId,
                            PartitionID  partId,
                            const std::string& key,
-                           std::string* value) = 0;
+                           std::string* value,
+                           bool canReadFromFollower = false) = 0;
 
     // Read multiple keys, if error occurs a ResultCode is returned,
     // If key[i] does not exist, the i-th value in return value would be Status::KeyNotFound
@@ -86,14 +87,16 @@ public:
     multiGet(GraphSpaceID spaceId,
              PartitionID partId,
              const std::vector<std::string>& keys,
-             std::vector<std::string>* values) = 0;
+             std::vector<std::string>* values,
+             bool canReadFromFollower = false) = 0;
 
     // Get all results in range [start, end)
     virtual ResultCode range(GraphSpaceID spaceId,
                              PartitionID  partId,
                              const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<KVIterator>* iter) = 0;
+                             std::unique_ptr<KVIterator>* iter,
+                             bool canReadFromFollower = false) = 0;
 
     // Since the `range' interface will hold references to its 3rd & 4th parameter, in `iter',
     // thus the arguments must outlive `iter'.
@@ -102,33 +105,38 @@ public:
                              PartitionID  partId,
                              std::string&& start,
                              std::string&& end,
-                             std::unique_ptr<KVIterator>* iter) = delete;
+                             std::unique_ptr<KVIterator>* iter,
+                             bool canReadFromFollower = false) = delete;
 
     // Get all results with prefix.
     virtual ResultCode prefix(GraphSpaceID spaceId,
                               PartitionID  partId,
                               const std::string& prefix,
-                              std::unique_ptr<KVIterator>* iter) = 0;
+                              std::unique_ptr<KVIterator>* iter,
+                              bool canReadFromFollower = false) = 0;
 
     // To forbid to pass rvalue via the `prefix' parameter.
     virtual ResultCode prefix(GraphSpaceID spaceId,
                               PartitionID  partId,
                               std::string&& prefix,
-                              std::unique_ptr<KVIterator>* iter) = delete;
+                              std::unique_ptr<KVIterator>* iter,
+                              bool canReadFromFollower = false) = delete;
 
     // Get all results with prefix starting from start
     virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
                                        PartitionID  partId,
                                        const std::string& start,
                                        const std::string& prefix,
-                                       std::unique_ptr<KVIterator>* iter) = 0;
+                                       std::unique_ptr<KVIterator>* iter,
+                                       bool canReadFromFollower = false) = 0;
 
     // To forbid to pass rvalue via the `rangeWithPrefix' parameter.
     virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
                                        PartitionID  partId,
                                        std::string&& start,
                                        std::string&& prefix,
-                                       std::unique_ptr<KVIterator>* iter) = delete;
+                                       std::unique_ptr<KVIterator>* iter,
+                                       bool canReadFromFollower = false) = delete;
 
     virtual ResultCode sync(GraphSpaceID spaceId,
                             PartitionID partId) = 0;

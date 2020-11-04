@@ -203,8 +203,10 @@ ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
                                        PartitionID  partId,
                                        const std::string& start,
                                        const std::string& prefix,
-                                       std::unique_ptr<KVIterator>* storageIter) {
+                                       std::unique_ptr<KVIterator>* storageIter,
+                                       bool canReadFromFollower) {
     UNUSED(partId);
+    UNUSED(canReadFromFollower);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::string startRowKey, endRowKey;
     startRowKey = this->getRowKey(start);
@@ -245,8 +247,10 @@ ResultCode HBaseStore::multiRemove(GraphSpaceID spaceId,
 ResultCode HBaseStore::get(GraphSpaceID spaceId,
                            PartitionID partId,
                            const std::string& key,
-                           std::string* value) {
+                           std::string* value,
+                           bool canReadFromFollower) {
     UNUSED(partId);
+    UNUSED(canReadFromFollower);
     auto tableName = this->spaceIdToTableName(spaceId);
     auto rowKey = this->getRowKey(key);
     KVMap data;
@@ -266,8 +270,10 @@ std::pair<ResultCode, std::vector<Status>> HBaseStore::multiGet(
         GraphSpaceID spaceId,
         PartitionID partId,
         const std::vector<std::string>& keys,
-        std::vector<std::string>* values) {
+        std::vector<std::string>* values,
+        bool canReadFromFollower) {
     UNUSED(partId);
+    UNUSED(canReadFromFollower);
     auto tableName = this->spaceIdToTableName(spaceId);
     std::vector<std::string> rowKeys;
     for (auto& key : keys) {
@@ -292,8 +298,10 @@ ResultCode HBaseStore::range(GraphSpaceID spaceId,
                              PartitionID partId,
                              const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<KVIterator>* iter) {
+                             std::unique_ptr<KVIterator>* iter,
+                             bool canReadFromFollower) {
     UNUSED(partId);
+    UNUSED(canReadFromFollower);
     return this->range(spaceId, start, end, iter);
 }
 
@@ -301,8 +309,10 @@ ResultCode HBaseStore::range(GraphSpaceID spaceId,
 ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& prefix,
-                              std::unique_ptr<KVIterator>* iter) {
+                              std::unique_ptr<KVIterator>* iter,
+                              bool canReadFromFollower) {
     UNUSED(partId);
+    UNUSED(canReadFromFollower);
     return this->prefix(spaceId, prefix, iter);
 }
 
