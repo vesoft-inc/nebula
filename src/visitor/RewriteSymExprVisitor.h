@@ -64,8 +64,8 @@ public:
     // vertex/edge expression
     void visit(VertexExpression *expr) override;
     void visit(EdgeExpression *expr) override;
-    // TODO : CaseExpression
-    void visit(CaseExpression*) override {};
+    // case expression
+    void visit(CaseExpression *expr) override;
 
 private:
     void visitBinaryExpr(BinaryExpression *expr);

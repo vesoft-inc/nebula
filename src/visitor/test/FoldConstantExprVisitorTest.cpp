@@ -100,6 +100,16 @@ public:
         return new VariableExpression(new std::string(name));
     }
 
+    static CaseExpression *caseExpr(Expression *cond, Expression *defaltResult,
+                                    Expression *when, Expression *then) {
+        auto caseList = new CaseList;
+        caseList->add(when, then);
+        auto expr = new CaseExpression(caseList);
+        expr->setCondition(cond);
+        expr->setDefault(defaltResult);
+        return expr;
+    }
+
 protected:
     ObjectPool pool;
 };
@@ -213,6 +223,26 @@ TEST_F(FoldConstantExprVisitorTest, TestMapExpr) {
     expr->accept(&visitor);
     ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
     ASSERT(visitor.canBeFolded());
+}
+
+TEST_F(FoldConstantExprVisitorTest, TestCaseExpr) {
+    // CASE pow(2, (2+1)) WHEN (2+3) THEN (5-1) ELSE (7+8)
+    auto expr = pool.add(caseExpr(fnExpr("pow", {constantExpr(2),
+                                  addExpr(constantExpr(2), constantExpr(1))}),
+                                  addExpr(constantExpr(7), constantExpr(8)),
+                                  addExpr(constantExpr(2), constantExpr(3)),
+                                  minusExpr(constantExpr(5), constantExpr(1))));
+    auto expected = pool.add(caseExpr(constantExpr(8), constantExpr(15),
+                                      constantExpr(5), constantExpr(4)));
+    FoldConstantExprVisitor visitor;
+    expr->accept(&visitor);
+    ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
+    ASSERT(visitor.canBeFolded());
+
+    // CASE 8 WHEN 5 THEN 4 ELSE 15 => 15
+    auto root = pool.add(visitor.fold(expr));
+    auto rootExpected = pool.add(constantExpr(15));
+    ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
 }
 
 TEST_F(FoldConstantExprVisitorTest, TestFoldFunction) {

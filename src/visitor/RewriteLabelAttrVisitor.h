@@ -32,6 +32,7 @@ private:
     void visit(ListExpression *expr) override;
     void visit(SetExpression *expr) override;
     void visit(MapExpression *expr) override;
+    void visit(CaseExpression *) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression *) override {}
     void visit(UUIDExpression *) override {}
@@ -50,8 +51,6 @@ private:
     void visit(EdgeDstIdExpression *) override {}
     void visit(VertexExpression *) override {}
     void visit(EdgeExpression *) override {}
-    // TODO : CaseExpression
-    void visit(CaseExpression *) override {}
 
     void visitBinaryExpr(BinaryExpression *expr) override;
 

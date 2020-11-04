@@ -55,8 +55,7 @@ private:
     void visit(AttributeExpression* expr) override;
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
-    // TODO : CaseExpression
-    void visit(CaseExpression *) override {};
+    void visit(CaseExpression* expr) override;
 
     void visitBinaryExpr(BinaryExpression* expr) override;
     void collectExpr(const Expression* expr);

@@ -127,6 +127,20 @@ void CollectAllExprsVisitor::visit(EdgeExpression *expr) {
     collectExpr(expr);
 }
 
+void CollectAllExprsVisitor::visit(CaseExpression *expr) {
+    collectExpr(expr);
+    if (expr->hasCondition()) {
+        expr->condition()->accept(this);
+    }
+    if (expr->hasDefault()) {
+        expr->defaultResult()->accept(this);
+    }
+    for (const auto &whenThen : expr->cases()) {
+        whenThen.when->accept(this);
+        whenThen.then->accept(this);
+    }
+}
+
 void CollectAllExprsVisitor::visitBinaryExpr(BinaryExpression *expr) {
     collectExpr(expr);
     expr->left()->accept(this);

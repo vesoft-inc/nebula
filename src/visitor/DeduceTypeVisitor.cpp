@@ -377,6 +377,32 @@ void DeduceTypeVisitor::visit(EdgeExpression *) {
     type_ = Value::Type::EDGE;
 }
 
+void DeduceTypeVisitor::visit(CaseExpression *expr) {
+    if (expr->hasCondition()) {
+        expr->condition()->accept(this);
+        if (!ok()) return;
+    }
+    if (expr->hasDefault()) {
+        expr->defaultResult()->accept(this);
+        if (!ok()) return;
+    }
+
+    for (const auto &whenThen : expr->cases()) {
+        whenThen.when->accept(this);
+        if (!ok()) return;
+        if (!expr->hasCondition() && type_ != Value::Type::BOOL) {
+            status_ = Status::SemanticError(
+                "`%s': Invalid expression type, expecting expression of type BOOL",
+                expr->toString().c_str());
+            return;
+        }
+        whenThen.then->accept(this);
+        if (!ok()) return;
+    }
+    // NOTE: we are not able to deduce the return type of case expression currently
+    type_ = Value::Type::__EMPTY__;
+}
+
 void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
     auto *tag = expr->sym();
     auto tagId = qctx_->schemaMng()->toTagID(space_, *tag);

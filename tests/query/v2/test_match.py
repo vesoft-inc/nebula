@@ -161,12 +161,12 @@ class TestMatch(NebulaTestSuite):
         stmt = '''
                   MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
                   WHERE r.start_year <= 2005 AND r.end_year >= 2005
-                  RETURN r.start_year AS Start, r.end_year AS End
+                  RETURN r.start_year AS Start_Year, r.end_year AS Start_Year
                '''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected = {
-            'column_names': ['Start', 'End'],
+            'column_names': ['Start_Year', 'Start_Year'],
             'rows': [
                 [2003, 2010],
             ]

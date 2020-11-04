@@ -60,8 +60,6 @@ private:
     void visit(EdgeExpression *) override;
     // binary expression
     void visit(SubscriptExpression *) override;
-    // TODO : CaseExpression
-    void visit(CaseExpression *) override {};
 
     void visitVertexEdgePropExpr(PropertyExpression *);
     void visitPropertyExpr(PropertyExpression *);

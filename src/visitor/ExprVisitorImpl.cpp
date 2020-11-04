@@ -90,6 +90,33 @@ void ExprVisitorImpl::visit(MapExpression *expr) {
     }
 }
 
+// case expression
+void ExprVisitorImpl::visit(CaseExpression *expr) {
+    DCHECK(ok());
+    if (expr->hasCondition()) {
+        expr->condition()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
+    if (expr->hasDefault()) {
+        expr->defaultResult()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
+    for (const auto &whenThen : expr->cases()) {
+        whenThen.when->accept(this);
+        if (!ok()) {
+            break;
+        }
+        whenThen.then->accept(this);
+        if (!ok()) {
+            break;
+        }
+    }
+}
+
 void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
     DCHECK(ok());
     expr->left()->accept(this);

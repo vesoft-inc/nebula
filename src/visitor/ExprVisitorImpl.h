@@ -29,6 +29,8 @@ public:
     void visit(ListExpression *expr) override;
     void visit(SetExpression *expr) override;
     void visit(MapExpression *expr) override;
+    // case expression
+    void visit(CaseExpression *expr) override;
 
 protected:
     using ExprVisitor::visit;

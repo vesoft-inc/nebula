@@ -18,6 +18,10 @@ public:
         return canBeFolded_;
     }
 
+    bool isConstant(Expression *expr) const {
+        return expr->kind() == Expression::Kind::kConstant;
+    }
+
     void visit(ConstantExpression *expr) override;
     void visit(UnaryExpression *expr) override;
     void visit(TypeCastingExpression *expr) override;
@@ -53,8 +57,8 @@ public:
     // vertex/edge expression
     void visit(VertexExpression *expr) override;
     void visit(EdgeExpression *expr) override;
-    // TODO : CaseExpression
-    void visit(CaseExpression*) override {};
+    // case expression
+    void visit(CaseExpression *expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
     Expression *fold(Expression *expr) const;

@@ -89,6 +89,37 @@ void RewriteMatchLabelVisitor::visit(MapExpression *expr) {
     expr->setItems(std::move(newItems));
 }
 
+void RewriteMatchLabelVisitor::visit(CaseExpression *expr) {
+    if (expr->hasCondition()) {
+        if (isLabel(expr->condition())) {
+            expr->setCondition(rewriter_(expr));
+        } else {
+            expr->condition()->accept(this);
+        }
+    }
+    if (expr->hasDefault()) {
+        if (isLabel(expr->defaultResult())) {
+            expr->setDefault(rewriter_(expr));
+        } else {
+            expr->defaultResult()->accept(this);
+        }
+    }
+    auto &cases = expr->cases();
+    for (size_t i = 0; i < cases.size(); ++i) {
+        auto when = cases[i].when.get();
+        auto then = cases[i].then.get();
+        if (isLabel(when)) {
+            expr->setWhen(i, rewriter_(when));
+        } else {
+            when->accept(this);
+        }
+        if (isLabel(then)) {
+            expr->setThen(i, rewriter_(then));
+        } else {
+            then->accept(this);
+        }
+    }
+}
 
 void RewriteMatchLabelVisitor::visitBinaryExpr(BinaryExpression *expr) {
     if (isLabel(expr->left())) {

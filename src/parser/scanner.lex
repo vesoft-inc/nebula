@@ -69,7 +69,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "LOOKUP"                    { return TokenType::KW_LOOKUP; }
 "ALTER"                     { return TokenType::KW_ALTER; }
 "STEPS"                     { return TokenType::KW_STEPS; }
-"STEP"                     { return TokenType::KW_STEPS; }
+"STEP"                      { return TokenType::KW_STEPS; }
 "OVER"                      { return TokenType::KW_OVER; }
 "UPTO"                      { return TokenType::KW_UPTO; }
 "REVERSELY"                 { return TokenType::KW_REVERSELY; }
@@ -134,6 +134,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "EXPLAIN"                   { return TokenType::KW_EXPLAIN; }
 "PROFILE"                   { return TokenType::KW_PROFILE; }
 "FORMAT"                    { return TokenType::KW_FORMAT; }
+"CASE"                      { return TokenType::KW_CASE; }
 
 
  /**
@@ -212,6 +213,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "UNWIND"                    { return TokenType::KW_UNWIND;}
 "SKIP"                      { return TokenType::KW_SKIP;}
 "OPTIONAL"                  { return TokenType::KW_OPTIONAL;}
+"THEN"                      { return TokenType::KW_THEN; }
+"ELSE"                      { return TokenType::KW_ELSE; }
+"END"                       { return TokenType::KW_END; }
 
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
@@ -223,6 +227,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 ":"                         { return TokenType::COLON; }
 ";"                         { return TokenType::SEMICOLON; }
 "@"                         { return TokenType::AT; }
+"?"                         { return TokenType::QM; }
 
 "+"                         { return TokenType::PLUS; }
 "-"                         { return TokenType::MINUS; }

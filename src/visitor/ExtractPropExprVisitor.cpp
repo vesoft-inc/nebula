@@ -192,7 +192,7 @@ void ExtractPropExprVisitor::visit(DestPropertyExpression* expr) {
     }
 }
 
-void ExtractPropExprVisitor::reportError(const Expression *expr) {
+void ExtractPropExprVisitor::reportError(const Expression* expr) {
     std::stringstream ss;
     ss << "Not supported expression `" << expr->toString() << "' for ExtractPropsExpression.";
     status_ = Status::SemanticError(ss.str());

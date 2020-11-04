@@ -62,6 +62,25 @@ void FindAnyExprVisitor::visit(MapExpression *expr) {
     }
 }
 
+void FindAnyExprVisitor::visit(CaseExpression *expr) {
+    findExpr(expr);
+    if (found_) return;
+    if (expr->hasCondition()) {
+        expr->condition()->accept(this);
+        if (found_) return;
+    }
+    if (expr->hasDefault()) {
+        expr->defaultResult()->accept(this);
+        if (found_) return;
+    }
+    for (const auto &whenThen : expr->cases()) {
+        whenThen.when->accept(this);
+        if (found_) return;
+        whenThen.then->accept(this);
+        if (found_) return;
+    }
+}
+
 void FindAnyExprVisitor::visit(ConstantExpression *expr) {
     findExpr(expr);
 }

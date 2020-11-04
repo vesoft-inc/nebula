@@ -311,6 +311,18 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                     make<ConstantExpression>(false)));
     add("!!false", ast);
 
+    auto cases = new CaseList();
+    cases->add(make<ConstantExpression>(3), make<ConstantExpression>(4));
+    ast = make<CaseExpression>(cases);
+    static_cast<CaseExpression*>(ast)->setCondition(make<LabelExpression>("a"));
+    auto cases2 = new CaseList();
+    cases2->add(make<ConstantExpression>(5), make<ConstantExpression>(6));
+    auto ast2 = make<CaseExpression>(cases2);
+    ast2->setCondition(make<LabelExpression>("b"));
+    ast2->setDefault(make<ConstantExpression>(7));
+    static_cast<CaseExpression*>(ast)->setDefault(ast2);
+    add("CASE a WHEN 3 THEN 4 ELSE CASE b WHEN 5 THEN 6 ELSE 7 END END", ast);
+
     run();
 }
 

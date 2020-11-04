@@ -84,6 +84,42 @@ void RewriteLabelAttrVisitor::visit(MapExpression* expr) {
     expr->setItems(std::move(newItems));
 }
 
+void RewriteLabelAttrVisitor::visit(CaseExpression* expr) {
+    if (expr->hasCondition()) {
+        if (isLabelAttrExpr(expr->condition())) {
+            auto newExpr = static_cast<LabelAttributeExpression*>(expr->condition());
+            expr->setCondition(createExpr(newExpr));
+        } else {
+            expr->condition()->accept(this);
+        }
+    }
+    if (expr->hasDefault()) {
+        if (isLabelAttrExpr(expr->defaultResult())) {
+            auto newExpr = static_cast<LabelAttributeExpression*>(expr->defaultResult());
+            expr->setDefault(createExpr(newExpr));
+        } else {
+            expr->defaultResult()->accept(this);
+        }
+    }
+    auto& cases = expr->cases();
+    for (size_t i = 0; i < cases.size(); ++i) {
+        auto when = cases[i].when.get();
+        auto then = cases[i].then.get();
+        if (isLabelAttrExpr(when)) {
+            auto newExpr = static_cast<LabelAttributeExpression*>(when);
+            expr->setWhen(i, createExpr(newExpr));
+        } else {
+            when->accept(this);
+        }
+        if (isLabelAttrExpr(then)) {
+            auto newExpr = static_cast<LabelAttributeExpression*>(then);
+            expr->setThen(i, createExpr(newExpr));
+        } else {
+            then->accept(this);
+        }
+    }
+}
+
 void RewriteLabelAttrVisitor::visitBinaryExpr(BinaryExpression* expr) {
     if (isLabelAttrExpr(expr->left())) {
         auto left = static_cast<const LabelAttributeExpression*>(expr->left());
