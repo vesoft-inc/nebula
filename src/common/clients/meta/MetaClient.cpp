@@ -1476,7 +1476,7 @@ folly::Future<StatusOr<IndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID,
                            std::string indexName,
                            std::string tagName,
-                           std::vector<std::string> fields,
+                           std::vector<cpp2::IndexFieldDef> fields,
                            bool ifNotExists) {
     cpp2::CreateTagIndexReq req;
     req.set_space_id(spaceID);
@@ -1606,7 +1606,7 @@ folly::Future<StatusOr<IndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::string indexName,
                             std::string edgeName,
-                            std::vector<std::string> fields,
+                            std::vector<cpp2::IndexFieldDef> fields,
                             bool ifNotExists) {
     cpp2::CreateEdgeIndexReq req;
     req.set_space_id(spaceID);

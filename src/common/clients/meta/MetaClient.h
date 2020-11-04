@@ -244,7 +244,7 @@ public:
     createTagIndex(GraphSpaceID spaceID,
                    std::string indexName,
                    std::string tagName,
-                   std::vector<std::string> fields,
+                   std::vector<cpp2::IndexFieldDef> fields,
                    bool ifNotExists = false);
 
     // Remove the define of tag index
@@ -267,7 +267,7 @@ public:
     createEdgeIndex(GraphSpaceID spaceID,
                     std::string indexName,
                     std::string edgeName,
-                    std::vector<std::string> fields,
+                    std::vector<cpp2::IndexFieldDef> fields,
                     bool ifNotExists = false);
 
     // Remove the definition of edge index

@@ -594,11 +594,17 @@ struct HBReq {
     5: binary     git_info_sha
 }
 
+struct IndexFieldDef {
+    1: required binary       name,
+    // type_length is required if the field type is STRING.
+    2: optional i16          type_length,
+}
+
 struct CreateTagIndexReq {
     1: common.GraphSpaceID  space_id,
     2: binary               index_name,
     3: binary               tag_name,
-    4: list<binary>			fields,
+    4: list<IndexFieldDef>  fields,
     5: bool                 if_not_exists,
 }
 
@@ -633,7 +639,7 @@ struct CreateEdgeIndexReq {
     1: common.GraphSpaceID 	space_id,
     2: binary              	index_name,
     3: binary              	edge_name,
-    4: list<binary>			fields,
+    4: list<IndexFieldDef>	fields,
     5: bool                	if_not_exists,
 }
 
