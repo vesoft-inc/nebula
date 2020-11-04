@@ -103,6 +103,7 @@ public:
 
     static std::vector<nebula::meta::cpp2::ColumnDef> mockTypicaIndexColumns();
 
+    static std::string encodeFixedStr(const std::string& v, size_t len);
     /*
      * Mock data
      */

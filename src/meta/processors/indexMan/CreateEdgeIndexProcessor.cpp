@@ -14,10 +14,13 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
     auto &edgeName = req.get_edge_name();
-    auto &fieldNames = req.get_fields();
+    const auto &fields = req.get_fields();
 
-    std::set<std::string> columnSet(fieldNames.begin(), fieldNames.end());
-    if (fieldNames.size() != columnSet.size()) {
+    std::set<std::string> columnSet;
+    for (const auto& field : fields) {
+        columnSet.emplace(field.get_name());
+    }
+    if (fields.size() != columnSet.size()) {
         LOG(ERROR) << "Conflict field in the edge index.";
         handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
@@ -68,13 +71,13 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         auto val = checkIter->val();
         auto item = MetaServiceUtils::parseIndex(val);
         if (item.get_schema_id().getType() != cpp2::SchemaID::Type::edge_type ||
-            fieldNames.size() > item.get_fields().size() ||
+            fields.size() > item.get_fields().size() ||
             edgeType != item.get_schema_id().get_edge_type()) {
             checkIter->next();
             continue;
         }
 
-        if (checkIndexExist(fieldNames, item)) {
+        if (checkIndexExist(fields, item)) {
             resp_.set_code(cpp2::ErrorCode::E_EXISTED);
             onFinished();
             return;
@@ -99,18 +102,35 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
 
     const auto& schemaCols = latestEdgeSchema.get_columns();
     std::vector<cpp2::ColumnDef> columns;
-    for (auto &field : fieldNames) {
+    for (auto &field : fields) {
         auto iter = std::find_if(schemaCols.begin(), schemaCols.end(),
-                                 [field](const auto& col) { return field == col.get_name(); });
+                                 [field](const auto& col) {
+                                     return field.get_name() == col.get_name();
+                                 });
 
         if (iter == schemaCols.end()) {
-            LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
+            LOG(ERROR) << "Field " << field.get_name() << " not found in Edge " << edgeName;
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
-        } else {
-            columns.emplace_back(*iter);
         }
+        cpp2::ColumnDef col = *iter;
+        if (col.type.get_type() == meta::cpp2::PropertyType::STRING) {
+            if (!field.__isset.type_length) {
+                LOG(ERROR) << "No type length set : " << field.get_name();
+                handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                onFinished();
+                return;
+            }
+            col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+            col.type.set_type_length(*field.get_type_length());
+        } else if (field.__isset.type_length) {
+            LOG(ERROR) << "No need to set type length : " << field.get_name();
+            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+            onFinished();
+            return;
+        }
+        columns.emplace_back(col);
     }
 
     std::vector<kvstore::KV> data;

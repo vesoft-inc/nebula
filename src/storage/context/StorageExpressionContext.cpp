@@ -108,8 +108,14 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
 }
 
 Value StorageExpressionContext::getIndexValue(const std::string& prop, bool isEdge) const {
-    return IndexKeyUtils::getValueFromIndexKey(vIdLen_, vColNum_, key_, prop,
-                                               indexCols_, isEdge, hasNullableCol_);
+    // TODO (sky) : Handle string type values.
+    //              when field type is FIXED_STRING type,
+    //              actual length of the value is called "len"
+    //              FIXED_STRING.type.len is called "fixed_len"
+    //              if (len > fixed_len) : v = value.substr(0, fixed_len)
+    //              if (len < fixed_len) : v.append(fixed_len - len, '\0')
+    return IndexKeyUtils::getValueFromIndexKey(vIdLen_, key_, prop,
+                                               fields_, isEdge, hasNullableCol_);
 }
 
 }  // namespace storage

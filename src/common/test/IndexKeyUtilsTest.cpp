@@ -58,9 +58,9 @@ bool evalBool(bool val) {
     return val == res.getBool();
 }
 
-bool evalString(std::string val) {
+bool evalString(std::string val, size_t len) {
     Value v(val);
-    auto str = IndexKeyUtils::encodeValue(v);
+    auto str = IndexKeyUtils::encodeValue(v, len);
     auto res = IndexKeyUtils::decodeValue(str, Value::Type::STRING);
     EXPECT_EQ(Value::Type::STRING, res.type());
     EXPECT_EQ(v, res);
@@ -107,7 +107,7 @@ TEST(IndexKeyUtilsTest, encodeValue) {
     EXPECT_TRUE(evalDouble(-(0.000000001 - std::numeric_limits<double>::min())));
     EXPECT_TRUE(evalBool(true));
     EXPECT_TRUE(evalBool(false));
-    EXPECT_TRUE(evalString("test"));
+    EXPECT_TRUE(evalString("test", 4));
 
     nebula::Time t;
     t.hour = 12;
@@ -197,7 +197,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         u_short s = 0xfc00; /* the binary is '11111100 00000000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-        auto result = raw.substr(raw.size() - sizeof(int32_t) - sizeof(u_short), sizeof(u_short));
+        auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
         ASSERT_EQ(expected, result);
     }
     {
@@ -240,8 +240,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         u_short s = 0xfff0; /* the binary is '11111111 11110000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-        auto result = raw.substr(raw.size() - sizeof(int32_t) * 2 - sizeof(u_short),
-                                 sizeof(u_short));
+        auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
         ASSERT_EQ(expected, result);
     }
     {
@@ -275,8 +274,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         u_short s = 0xaaa0; /* the binary is '10101010 10100000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-        auto result = raw.substr(raw.size() - sizeof(int32_t) * 2 - sizeof(u_short),
-                                 sizeof(u_short));
+        auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
         ASSERT_EQ(expected, result);
     }
     {
@@ -301,21 +299,21 @@ void verifyDecodeIndexKey(bool isEdge,
                           size_t vIdLen,
                           const std::vector<std::pair<VertexID, std::vector<Value>>>& data,
                           const std::vector<std::string>& indexKeys,
-                          std::vector<std::pair<std::string, Value::Type>> cols) {
+                          const std::vector<meta::cpp2::ColumnDef>& cols) {
     for (size_t j = 0; j < data.size(); j++) {
         std::vector<Value> actual;
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_bool", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_bool", cols, isEdge, nullable));
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_int", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_int", cols, isEdge, nullable));
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_float", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_float", cols, isEdge, nullable));
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_string", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_string", cols, isEdge, nullable));
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_date", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_date", cols, isEdge, nullable));
         actual.emplace_back(IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, 1, indexKeys[j], "col_datetime", cols, isEdge, nullable));
+            vIdLen, indexKeys[j], "col_datetime", cols, isEdge, nullable));
 
         ASSERT_EQ(data[j].second, actual);
     }
@@ -337,15 +335,44 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
         Value::Type::DATETIME
     };
 
-    std::vector<std::pair<std::string, Value::Type>> cols = {
-        {"col_bool", Value::Type::BOOL},
-        {"col_int", Value::Type::INT},
-        {"col_float", Value::Type::FLOAT},
-        {"col_string", Value::Type::STRING},
-        {"col_date", Value::Type::DATE},
-        {"col_datetime", Value::Type::DATETIME}
-    };
-
+    std::vector<meta::cpp2::ColumnDef> cols;
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_bool");
+        col.type.set_type(meta::cpp2::PropertyType::BOOL);
+        cols.emplace_back(col);
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_int");
+        col.type.set_type(meta::cpp2::PropertyType::INT64);
+        cols.emplace_back(col);
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_float");
+        col.type.set_type(meta::cpp2::PropertyType::FLOAT);
+        cols.emplace_back(col);
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_string");
+        col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        col.type.set_type_length(4);
+        cols.emplace_back(col);
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_date");
+        col.type.set_type(meta::cpp2::PropertyType::DATE);
+        cols.emplace_back(col);
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_datetime");
+        col.type.set_type(meta::cpp2::PropertyType::DATETIME);
+        cols.emplace_back(col);
+    }
     // vertices test with nullable
     {
         std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
@@ -362,8 +389,9 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
         std::vector<std::string> indexKeys;
 
         for (const auto& row : vertices) {
-            indexKeys.emplace_back(IndexKeyUtils::vertexIndexKey(
-                vIdLen, partId, indexId, row.first, row.second, valueTypes));
+            auto key = IndexKeyUtils::vertexIndexKey(
+                vIdLen, partId, indexId, row.first, row.second, valueTypes);
+            indexKeys.emplace_back(key);
         }
         verifyDecodeIndexKey(false, true, vIdLen, vertices, indexKeys, cols);
     }

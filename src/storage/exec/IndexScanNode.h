@@ -43,7 +43,11 @@ public:
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
-        scanPair_ = scanStr(partId);
+        auto scanRet = scanStr(partId);
+        if (!scanRet.ok()) {
+            return kvstore::ResultCode::ERR_INVALID_FIELD_VALUE;
+        }
+        scanPair_ = scanRet.value();
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = isRangeScan_
               ? planContext_->env_->kvstore_->range(planContext_->spaceId_, partId,
@@ -75,37 +79,70 @@ public:
     }
 
 private:
-    std::pair<std::string, std::string> scanStr(PartitionID partId) {
+    StatusOr<std::pair<std::string, std::string>> scanStr(PartitionID partId) {
+        auto iRet = planContext_->isEdge_
+                    ? planContext_->env_->indexMan_->getEdgeIndex(planContext_->spaceId_, indexId_)
+                    : planContext_->env_->indexMan_->getTagIndex(planContext_->spaceId_, indexId_);
+        if (!iRet.ok()) {
+            return Status::IndexNotFound();
+        }
         if (isRangeScan_) {
-            return getRangeStr(partId);
+            return getRangeStr(partId, iRet.value()->get_fields());
         } else {
-            return getPrefixStr(partId);
+            return getPrefixStr(partId, iRet.value()->get_fields());
         }
     }
 
-    std::pair<std::string, std::string> getPrefixStr(PartitionID partId) {
+    StatusOr<std::pair<std::string, std::string>> getPrefixStr(
+        PartitionID partId, const std::vector< ::nebula::meta::cpp2::ColumnDef>& fields) {
         std::string prefix;
         prefix.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         for (auto& col : columnHints_) {
-            prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
+            auto iter = std::find_if(fields.begin(), fields.end(),
+                                 [col](const auto& field) {
+                                     return col.get_column_name() == field.get_name();
+                                 });
+            if (iter == fields.end()) {
+                VLOG(3) << "Field " << col.get_column_name() << " not found ";
+                return Status::Error("Field not found");
+            }
+            auto type = iter->get_type().get_type();
+            if (IndexKeyUtils::toValueType(type) == Value::Type::STRING) {
+                auto len = *iter->get_type().get_type_length();
+                prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
+            } else {
+                prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
+            }
         }
-        return {prefix, ""};
+        return std::make_pair(prefix, "");
     }
 
-    std::pair<std::string, std::string>  getRangeStr(PartitionID partId) {
+    StatusOr<std::pair<std::string, std::string>>  getRangeStr(
+        PartitionID partId, const std::vector< ::nebula::meta::cpp2::ColumnDef>& fields) {
         std::string start, end;
         start.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         end.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         for (auto& col : columnHints_) {
+            auto iter = std::find_if(fields.begin(), fields.end(),
+                                 [col](const auto& field) {
+                                     return col.get_column_name() == field.get_name();
+                                 });
+            if (iter == fields.end()) {
+                VLOG(3) << "Field " << col.get_column_name() << " not found ";
+                return Status::Error("Field not found");
+            }
+            auto type = iter->get_type().get_type();
+            int16_t len = IndexKeyUtils::toValueType(type) == Value::Type::STRING
+                          ? *iter->get_type().get_type_length() : 0;
             if (col.get_scan_type() == cpp2::ScanType::PREFIX) {
-                start.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
-                end.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
+                start.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
+                end.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
             } else {
-                start.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
-                end.append(IndexKeyUtils::encodeValue(col.get_end_value()));
+                start.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
+                end.append(IndexKeyUtils::encodeValue(col.get_end_value(), len));
             }
         }
-        return {start, end};
+        return std::make_pair(start, end);
     }
 
 private:

@@ -319,7 +319,7 @@ TEST(IndexTest, VerticesValueTest) {
         values.emplace_back(Value(5.5f));
         colsType.emplace_back(Value::Type::FLOAT);
         // col_str
-        values.emplace_back(Value("string"));
+        values.emplace_back(IndexKeyUtils::encodeValue(Value("string"), 20));
         colsType.emplace_back(Value::Type::STRING);
         // col_str_null
         values.emplace_back(nullValue);
@@ -454,7 +454,7 @@ TEST(IndexTest, AlterTagIndexTest) {
             props.emplace_back(Value(1L));
             props.emplace_back(Value(1.1f));
             props.emplace_back(Value(1.1f));
-            props.emplace_back(Value("string"));
+            props.emplace_back(IndexKeyUtils::encodeValue(Value("string"), 20));
             props.emplace_back(Value(1L));
             props.emplace_back(Value(1L));
             props.emplace_back(Value(1L));

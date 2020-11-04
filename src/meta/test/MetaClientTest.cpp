@@ -582,7 +582,8 @@ TEST(MetaClientTest, TagIndexTest) {
 
             cpp2::ColumnDef column1;
             column1.set_name(folly::stringPrintf("tag_%d_col_1", i));
-            column1.type.set_type(PropertyType::STRING);
+            column1.type.set_type(PropertyType::FIXED_STRING);
+            column1.type.set_type_length(50);
             columns.emplace_back(std::move(column1));
 
             cpp2::Schema schema;
@@ -593,16 +594,22 @@ TEST(MetaClientTest, TagIndexTest) {
         }
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0"};
+        cpp2::IndexFieldDef field;
+        field.set_name("tag_0_col_0");
         auto result = client->createTagIndex(space,
                                              "tag_single_field_index",
                                              "tag_0",
-                                             std::move(fields)).get();
+                                             {field}).get();
         ASSERT_TRUE(result.ok());
         singleFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("tag_0_col_0");
+        field2.set_name("tag_0_col_1");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
         auto result = client->createTagIndex(space,
                                              "tag_multi_field_index",
                                              "tag_0",
@@ -611,7 +618,13 @@ TEST(MetaClientTest, TagIndexTest) {
         multiFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "not_exist_field"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("tag_0_col_0");
+        field2.set_name("not_exist_field");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
+
         auto result = client->createTagIndex(space,
                                              "tag_field_not_exist_index",
                                              "tag_0",
@@ -620,7 +633,13 @@ TEST(MetaClientTest, TagIndexTest) {
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("tag_0_col_0");
+        field2.set_name("tag_0_col_1");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
+
         auto result = client->createTagIndex(space,
                                              "tag_not_exist_index",
                                              "tag_not_exist",
@@ -629,7 +648,13 @@ TEST(MetaClientTest, TagIndexTest) {
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_0"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("tag_0_col_0");
+        field2.set_name("tag_0_col_0");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
+
         auto result = client->createTagIndex(space,
                                              "tag_conflict_index",
                                              "tag_0",
@@ -661,7 +686,8 @@ TEST(MetaClientTest, TagIndexTest) {
 
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("tag_0_col_1");
-            stringColumn.type.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::FIXED_STRING);
+            stringColumn.type.set_type_length(50);
             columns.emplace_back(std::move(stringColumn));
 
             auto multiFieldResult = values[1].get_fields();
@@ -744,7 +770,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
 
             cpp2::ColumnDef column1;
             column1.set_name(folly::stringPrintf("edge_%d_col_1", i));
-            column1.type.set_type(PropertyType::STRING);
+            column1.type.set_type(PropertyType::FIXED_STRING);
+            column1.type.set_type_length(50);
             columns.emplace_back(std::move(column1));
 
             cpp2::Schema schema;
@@ -756,16 +783,22 @@ TEST(MetaClientTest, EdgeIndexTest) {
         }
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0"};
+        cpp2::IndexFieldDef field;
+        field.set_name("edge_0_col_0");
         auto result = client->createEdgeIndex(space,
                                               "edge_single_field_index",
                                               "edge_0",
-                                              std::move(fields)).get();
+                                              {field}).get();
         ASSERT_TRUE(result.ok());
         singleFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("edge_0_col_0");
+        field2.set_name("edge_0_col_1");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
         auto result = client->createEdgeIndex(space,
                                               "edge_multi_field_index",
                                               "edge_0",
@@ -774,7 +807,12 @@ TEST(MetaClientTest, EdgeIndexTest) {
         multiFieldIndexID = result.value();
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("edge_0_col_0");
+        field2.set_name("edge_0_col_1");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
         auto result = client->createEdgeIndex(space,
                                               "edge_not_exist_index",
                                               "edge_not_exist",
@@ -783,7 +821,12 @@ TEST(MetaClientTest, EdgeIndexTest) {
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_0"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("edge_0_col_0");
+        field2.set_name("edge_0_col_0");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
         auto result = client->createEdgeIndex(space,
                                               "edge_conflict_index",
                                               "edge_0",
@@ -792,7 +835,12 @@ TEST(MetaClientTest, EdgeIndexTest) {
         ASSERT_EQ(Status::Error("conflict"), result.status());
     }
     {
-        std::vector<std::string>&& fields {"edge_0_col_0",  "not_exist_field"};
+        std::vector<cpp2::IndexFieldDef> fields;
+        cpp2::IndexFieldDef field1, field2;
+        field1.set_name("edge_0_col_0");
+        field2.set_name("not_exist_field");
+        fields.emplace_back(std::move(field1));
+        fields.emplace_back(std::move(field2));
         auto result = client->createEdgeIndex(space,
                                               "edge_field_not_exist_index",
                                               "edge_0",
@@ -824,7 +872,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
             columns.emplace_back(std::move(intColumn));
             cpp2::ColumnDef stringColumn;
             stringColumn.set_name("edge_0_col_1");
-            stringColumn.type.set_type(PropertyType::STRING);
+            stringColumn.type.set_type(PropertyType::FIXED_STRING);
+            stringColumn.type.set_type_length(50);
             columns.emplace_back(std::move(stringColumn));
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));

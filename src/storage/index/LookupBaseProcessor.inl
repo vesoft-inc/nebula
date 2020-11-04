@@ -151,10 +151,9 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
     auto IndexAggr = std::make_unique<AggregateNode<IndexID>>(&resultDataSet_);
     int32_t filterId = 0;
     std::unique_ptr<IndexOutputNode<IndexID>> out;
-    std::vector<std::pair<std::string, Value::Type>> indexCols;
 
     if (noProp_) {
-        out = buildPlanBasic(contexts_[0], plan, indexCols, indexCols.size(), false);
+        out = buildPlanBasic(contexts_[0], plan, false, {});
          if (out == nullptr) {
             return Status::Error("Index scan plan error");
         }
@@ -162,7 +161,6 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
         plan.addNode(std::move(out));
     } else {
         for (const auto& ctx : contexts_) {
-            indexCols.clear();
             const auto& indexId = ctx.get_index_id();
             auto needFilter = ctx.__isset.filter && !ctx.get_filter().empty();
 
@@ -179,20 +177,14 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
 
             // check nullable column
             bool hasNullableCol = false;
-            int32_t vColNum = 0;
 
             auto* indexItem = index.value().get();
             auto fields = indexItem->get_fields();
 
             for (const auto& col : fields) {
-                const auto& colType = col.get_type().get_type();
-                const auto& vType = IndexKeyUtils::toValueType(colType);
-                indexCols.emplace_back(col.get_name(), vType);
-                if (vType == Value::Type::STRING) {
-                    vColNum++;
-                }
                 if (!hasNullableCol && col.get_nullable()) {
                     hasNullableCol = true;
+                    break;
                 }
             }
 
@@ -219,16 +211,15 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
             }
 
             if (!needData && !needFilter) {
-                out = buildPlanBasic(ctx, plan, indexCols, vColNum, hasNullableCol);
+                out = buildPlanBasic(ctx, plan, hasNullableCol, fields);
             } else if (needData && !needFilter) {
                 out = buildPlanWithData(ctx, plan);
             } else if (!needData && needFilter) {
                 auto expr = Expression::decode(ctx.get_filter());
                 auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
                                                                           planContext_->isIntId_,
-                                                                          vColNum,
                                                                           hasNullableCol,
-                                                                          indexCols);
+                                                                          fields);
                 filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
                 out = buildPlanWithFilter(ctx,
                                           plan,
@@ -277,9 +268,8 @@ std::unique_ptr<IndexOutputNode<IndexID>>
 LookupBaseProcessor<REQ, RESP>::buildPlanBasic(
     const cpp2::IndexQueryContext& ctx,
     StoragePlan<IndexID>& plan,
-    std::vector<std::pair<std::string, Value::Type>>& cols,
-    int32_t vColNum,
-    bool hasNullableCol) {
+    bool hasNullableCol,
+    const std::vector<meta::cpp2::ColumnDef>& fields) {
     auto indexId = ctx.get_index_id();
     auto colHints = ctx.get_column_hints();
     auto indexScan = std::make_unique<IndexScanNode<IndexID>>(planContext_.get(),
@@ -289,9 +279,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanBasic(
     auto output = std::make_unique<IndexOutputNode<IndexID>>(&resultDataSet_,
                                                              planContext_.get(),
                                                              indexScan.get(),
-                                                             cols,
-                                                             vColNum,
-                                                             hasNullableCol);
+                                                             hasNullableCol,
+                                                             fields);
     output->addDependency(indexScan.get());
     plan.addNode(std::move(indexScan));
     return output;

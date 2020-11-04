@@ -264,7 +264,11 @@ public:
         std::vector<Value> row;
         for (auto i = 0; i < count; i++) {
             auto v = values[i];
-            row.emplace_back(std::move(v));
+            if (v.type() == Value::Type::STRING) {
+                row.emplace_back(Value(IndexKeyUtils::encodeValue(v, 20)));
+            } else {
+                row.emplace_back(std::move(v));
+            }
         }
         auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen,
                                                    partId,
@@ -288,7 +292,11 @@ public:
         std::vector<Value> row;
         for (auto i = 0; i < count; i++) {
             auto v = values[i];
-            row.emplace_back(std::move(v));
+            if (v.type() == Value::Type::STRING) {
+                row.emplace_back(Value(IndexKeyUtils::encodeValue(v, 20)));
+            } else {
+                row.emplace_back(std::move(v));
+            }
         }
         auto index = IndexKeyUtils::edgeIndexKey(spaceVidLen,
                                                  partId,

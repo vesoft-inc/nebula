@@ -230,7 +230,7 @@ protected:
     StatusOr<std::vector<cpp2::IndexItem>>
     getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
-    bool checkIndexExist(const std::vector<std::string>& fields,
+    bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                          const cpp2::IndexItem& item);
 
     StatusOr<GroupID> getGroupId(const std::string& groupName);

@@ -10,15 +10,8 @@ namespace nebula {
 
 // static
 void IndexKeyUtils::encodeValues(const std::vector<Value>& values, std::string& raw) {
-    std::vector<int32_t> colsLen;
     for (auto& value : values) {
-        if (value.type() == Value::Type::STRING) {
-            colsLen.emplace_back(value.getStr().size());
-        }
         raw.append(encodeValue(value));
-    }
-    for (auto len : colsLen) {
-        raw.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
     }
 }
 
@@ -26,7 +19,6 @@ void IndexKeyUtils::encodeValues(const std::vector<Value>& values, std::string& 
 void IndexKeyUtils::encodeValuesWithNull(const std::vector<Value>& values,
                                          const std::vector<Value::Type>& colsType,
                                          std::string& raw) {
-    std::vector<int32_t> colsLen;
     // An index has a maximum of 16 columns. 2 byte (16 bit) is enough.
     u_short nullableBitset = 0;
 
@@ -41,18 +33,10 @@ void IndexKeyUtils::encodeValuesWithNull(const std::vector<Value>& values,
         } else {
             val = encodeValue(values[i]);
         }
-
-        if (colsType[i] == Value::Type::STRING) {
-            colsLen.emplace_back(val.size());
-        }
         raw.append(val);
     }
 
     raw.append(reinterpret_cast<const char*>(&nullableBitset), sizeof(u_short));
-
-    for (auto len : colsLen) {
-        raw.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
-    }
 }
 
 // static
@@ -144,7 +128,18 @@ IndexKeyUtils::collectIndexValues(RowReader* reader,
                        << ". status : " << ret;
             return ret;
         }
-        values.emplace_back(std::move(v));
+        if (col.type.get_type() == meta::cpp2::PropertyType::FIXED_STRING && !v.isNull()) {
+            std::string fs = v.getStr();
+            auto len = static_cast<size_t>(*col.type.get_type_length());
+            if (len > v.getStr().size()) {
+                fs.append(len - v.getStr().size(), '\0');
+            } else {
+                fs = fs.substr(0, len);
+            }
+            values.emplace_back(Value(fs));
+        } else {
+            values.emplace_back(std::move(v));
+        }
     }
     if (!haveNullCol) {
         colsType.clear();

@@ -430,7 +430,7 @@ BaseProcessor<RESP>::indexCheck(const std::vector<cpp2::IndexItem>& items,
 }
 
 template<typename RESP>
-bool BaseProcessor<RESP>::checkIndexExist(const std::vector<std::string>& fields,
+bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                                           const cpp2::IndexItem& item) {
     if (fields.size() == 0) {
         LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
@@ -438,7 +438,7 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<std::string>& fields
     }
 
     for (size_t i = 0; i < fields.size(); i++) {
-        if (fields[i] != item.get_fields()[i].get_name()) {
+        if (fields[i].get_name() != item.get_fields()[i].get_name()) {
             break;
         }
 

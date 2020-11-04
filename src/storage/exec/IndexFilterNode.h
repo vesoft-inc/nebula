@@ -96,15 +96,11 @@ public:
                        : indexVertexNode_->getSchema();
     }
 
-     int32_t vColNum() const {
-        return exprCtx_->vColNum();
-    }
-
      bool hasNullableCol() const {
         return exprCtx_->hasNullableCol();
     }
 
-    const std::vector<std::pair<std::string, Value::Type>>& indexCols() const {
+    const std::vector<meta::cpp2::ColumnDef>& indexCols() const {
         return exprCtx_->indexCols();
     }
 

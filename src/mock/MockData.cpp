@@ -490,7 +490,8 @@ MockData::mockGeneralTagIndexColumns() {
     cols.emplace_back(std::move(col));
 
     col.name = "col_str";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
     return cols;
 }
@@ -500,7 +501,8 @@ MockData::mockPlayerTagIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "name";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
 
     col.name = "age";
@@ -518,7 +520,8 @@ MockData::mockTeamTagIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "name";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
     return cols;
 }
@@ -538,11 +541,13 @@ MockData::mockServeEdgeIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "playerName";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
 
     col.name = "teamName";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
 
     col.name = "startYear";
@@ -556,15 +561,18 @@ MockData::mockTeammateEdgeIndexColumns() {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "player1";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
 
     col.name = "player2";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
 
     col.name = "teamName";
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type_length(20);
     cols.emplace_back(std::move(col));
     return cols;
 }
@@ -695,12 +703,14 @@ MockData::mockTypicaIndexColumns() {
 
     meta::cpp2::ColumnDef col_str;
     col_str.name = "col_str";
-    col_str.type.set_type(meta::cpp2::PropertyType::STRING);
+    col_str.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col_str.type.set_type_length(20);
     cols.emplace_back(std::move(col_str));
 
     meta::cpp2::ColumnDef col_str_null;
     col_str_null.name = "col_str_null";
-    col_str_null.type.set_type(meta::cpp2::PropertyType::STRING);
+    col_str_null.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col_str_null.type.set_type_length(20);
     col_str_null.set_nullable(true);
     cols.emplace_back(std::move(col_str_null));
 
@@ -790,7 +800,7 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockPlayerIndexKeys(b
         }
         auto part = std::hash<std::string>()(name) % 6 + 1;
         std::vector<Value> values;
-        values.emplace_back(name);
+        values.emplace_back(encodeFixedStr(name, 20));
         values.emplace_back(player.age_);
         values.emplace_back(player.playing_);
         std::vector<Value::Type> colsType;
@@ -894,8 +904,8 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockServeIndexKeys() 
     for (auto& serve : serves_) {
         auto part = std::hash<std::string>()(serve.playerName_) % 6 + 1;
         std::vector<Value> values;
-        values.emplace_back(serve.playerName_);
-        values.emplace_back(serve.teamName_);
+        values.emplace_back(encodeFixedStr(serve.playerName_, 20));
+        values.emplace_back(encodeFixedStr(serve.teamName_, 20));
         values.emplace_back(serve.startYear_);
         std::vector<Value::Type> colsType;
         auto key = IndexKeyUtils::edgeIndexKey(32, part, 101,
@@ -1282,6 +1292,16 @@ MockData::mockKVRemove() {
     }
     req.set_parts(std::move(data));
     return req;
+}
+
+std::string MockData::encodeFixedStr(const std::string& v, size_t len) {
+    std::string fs = v;
+    if (len > fs.size()) {
+        fs.append(len - fs.size(), '\0');
+    } else {
+        fs = fs.substr(0, len);
+    }
+    return fs;
 }
 
 }  // namespace mock

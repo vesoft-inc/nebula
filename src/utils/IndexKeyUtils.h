@@ -95,6 +95,20 @@ public:
         return raw;
     }
 
+    static std::string encodeValue(const Value& v, int16_t len) {
+        if (v.type() == Value::Type::STRING) {
+            std::string fs = v.getStr();
+            if (static_cast<size_t>(len) > v.getStr().size()) {
+                fs.append(len - v.getStr().size(), '\0');
+            } else {
+                fs = fs.substr(0, len);
+            }
+            return fs;
+        } else {
+            return encodeValue(v);
+        }
+    }
+
     static std::string encodeValue(const Value& v) {
         switch (v.type()) {
             case Value::Type::INT:
@@ -302,7 +316,7 @@ public:
                 break;
             }
             case Value::Type::STRING: {
-                v.setStr(raw.str());
+                v.setStr(raw.subpiece(0, raw.find_first_of('\0')));
                 break;
             }
             case Value::Type::TIME: {
@@ -324,14 +338,12 @@ public:
     }
 
     static Value getValueFromIndexKey(size_t vIdLen,
-                                      int32_t vColNum,
                                       const std::string& key,
                                       const std::string& prop,
-                                      const std::vector<std::pair<std::string, Value::Type>>& cols,
+                                      const std::vector<meta::cpp2::ColumnDef>& cols,
                                       bool isEdgeIndex = false,
                                       bool hasNullableCol = false) {
         size_t len = 0;
-        int32_t vCount = vColNum;
         std::bitset<16> nullableBit;
         int8_t nullableColPosit = 15;
         size_t offset = sizeof(PartitionID) + sizeof(IndexID);
@@ -339,24 +351,24 @@ public:
 
         auto it = std::find_if(cols.begin(), cols.end(),
                                [&prop] (const auto& col) {
-                                   return prop == col.first;
+                                   return prop == col.get_name();
                                });
         if (it == cols.end()) {
             return Value(NullType::BAD_DATA);
         }
-        auto type = it->second;
+        auto type = IndexKeyUtils::toValueType(it->get_type().get_type());
 
         if (hasNullableCol) {
-            auto bitOffset = key.size() - tailLen - sizeof(u_short) - vCount * sizeof(int32_t);
+            auto bitOffset = key.size() - tailLen - sizeof(u_short);
             auto v = *reinterpret_cast<const u_short*>(key.c_str() + bitOffset);
             nullableBit = v;
         }
 
         for (const auto& col : cols) {
-            if (hasNullableCol && col.first == prop && nullableBit.test(nullableColPosit)) {
+            if (hasNullableCol && col.get_name() == prop && nullableBit.test(nullableColPosit)) {
                 return Value(NullType::__NULL__);
             }
-            switch (col.second) {
+            switch (IndexKeyUtils::toValueType(col.type.get_type())) {
                 case Value::Type::BOOL: {
                     len = sizeof(bool);
                     break;
@@ -370,9 +382,8 @@ public:
                     break;
                 }
                 case Value::Type::STRING: {
-                    auto off = key.size() - vCount * sizeof(int32_t) - tailLen;
-                    len = *reinterpret_cast<const int32_t*>(key.c_str() + off);
-                    --vCount;
+                    len = (hasNullableCol && nullableBit.test(nullableColPosit))
+                          ? 1 : *col.type.get_type_length();
                     break;
                 }
                 case Value::Type::TIME: {
@@ -393,7 +404,7 @@ public:
             if (hasNullableCol) {
                 nullableColPosit -= 1;
             }
-            if (col.first == prop) {
+            if (col.get_name() == prop) {
                 break;
             }
             offset += len;
