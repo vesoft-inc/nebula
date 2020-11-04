@@ -196,10 +196,10 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      tagName_;
-    std::string                      indexName_;
-    std::vector<std::string>         fields_;
-    bool                             ifNotExist_;
+    std::string                                    name_;
+    std::string                                    index_;
+    std::vector<meta::cpp2::IndexFieldDef>         fields_;
+    bool                                           ifNotExist_;
 };
 
 class CreateEdgeIndexValidator final : public Validator {
@@ -213,10 +213,10 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                      edgeName_;
-    std::string                      indexName_;
-    std::vector<std::string>         fields_;
-    bool                             ifNotExist_;
+    std::string                                    name_;
+    std::string                                    index_;
+    std::vector<meta::cpp2::IndexFieldDef>         fields_;
+    bool                                           ifNotExist_;
 };
 
 class DropTagIndexValidator final : public Validator {

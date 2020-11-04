@@ -483,16 +483,37 @@ private:
 };
 
 
+class IndexFieldList final {
+public:
+    IndexFieldList() = default;
+
+    void addField(std::unique_ptr<meta::cpp2::IndexFieldDef> field) {
+        fields_.emplace_back(std::move(field));
+    }
+
+    std::vector<meta::cpp2::IndexFieldDef*> fields() const {
+        std::vector<meta::cpp2::IndexFieldDef*> result;
+        result.resize(fields_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(fields_.begin(), fields_.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<meta::cpp2::IndexFieldDef>> fields_;
+};
+
+
 class CreateTagIndexSentence final : public CreateSentence {
 public:
     CreateTagIndexSentence(std::string *indexName,
                            std::string *tagName,
-                           ColumnNameList *columns,
+                           IndexFieldList *fields,
                            bool ifNotExists)
         : CreateSentence(ifNotExists) {
         indexName_.reset(indexName);
         tagName_.reset(tagName);
-        columns_.reset(columns);
+        fields_.reset(fields);
         kind_ = Kind::kCreateTagIndex;
     }
 
@@ -506,19 +527,19 @@ public:
         return tagName_.get();
     }
 
-    std::vector<std::string> columns() const {
-        std::vector<std::string> result;
-        auto columnNames = columns_->columnNames();
-        result.resize(columnNames.size());
+    std::vector<meta::cpp2::IndexFieldDef> fields() const {
+        std::vector<meta::cpp2::IndexFieldDef> result;
+        auto fields = fields_->fields();
+        result.resize(fields.size());
         auto get = [] (auto ptr) { return *ptr; };
-        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        std::transform(fields.begin(), fields.end(), result.begin(), get);
         return result;
     }
 
 private:
     std::unique_ptr<std::string>                indexName_;
     std::unique_ptr<std::string>                tagName_;
-    std::unique_ptr<ColumnNameList>             columns_;
+    std::unique_ptr<IndexFieldList>             fields_;
 };
 
 
@@ -526,12 +547,12 @@ class CreateEdgeIndexSentence final : public CreateSentence {
 public:
     CreateEdgeIndexSentence(std::string *indexName,
                             std::string *edgeName,
-                            ColumnNameList *columns,
+                            IndexFieldList *fields,
                             bool ifNotExists)
         : CreateSentence(ifNotExists) {
         indexName_.reset(indexName);
         edgeName_.reset(edgeName);
-        columns_.reset(columns);
+        fields_.reset(fields);
         kind_ = Kind::kCreateEdgeIndex;
     }
 
@@ -545,19 +566,19 @@ public:
         return edgeName_.get();
     }
 
-    std::vector<std::string> columns() const {
-        std::vector<std::string> result;
-        auto columnNames = columns_->columnNames();
-        result.resize(columnNames.size());
+    std::vector<meta::cpp2::IndexFieldDef> fields() const {
+        std::vector<meta::cpp2::IndexFieldDef> result;
+        auto fields = fields_->fields();
+        result.resize(fields.size());
         auto get = [] (auto ptr) { return *ptr; };
-        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        std::transform(fields.begin(), fields.end(), result.begin(), get);
         return result;
     }
 
 private:
     std::unique_ptr<std::string>                indexName_;
     std::unique_ptr<std::string>                edgeName_;
-    std::unique_ptr<ColumnNameList>             columns_;
+    std::unique_ptr<IndexFieldList>             fields_;
 };
 
 

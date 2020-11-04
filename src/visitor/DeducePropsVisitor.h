@@ -122,6 +122,8 @@ private:
     void visit(ConstantExpression* expr) override;
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
+    // TODO : CaseExpression
+    void visit(CaseExpression*) override {};
 
     void visitEdgePropExpr(PropertyExpression* expr);
     void reportError(const Expression* expr);

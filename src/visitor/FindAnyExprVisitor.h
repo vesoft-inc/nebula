@@ -55,6 +55,8 @@ private:
     void visit(LabelExpression* expr) override;
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
+    // TODO : CaseExpression
+    void visit(CaseExpression*) override {};
 
     void visitBinaryExpr(BinaryExpression* expr) override;
 

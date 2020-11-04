@@ -53,6 +53,8 @@ public:
     // vertex/edge expression
     void visit(VertexExpression *expr) override;
     void visit(EdgeExpression *expr) override;
+    // TODO : CaseExpression
+    void visit(CaseExpression*) override {};
 
     void visitBinaryExpr(BinaryExpression *expr);
     Expression *fold(Expression *expr) const;

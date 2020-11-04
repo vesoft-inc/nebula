@@ -119,7 +119,8 @@ private:
 
     Status appendIQCtx(const IndexItem& index,
                        const FilterItems& items,
-                       IndexQueryCtx &iqctx) const;
+                       IndexQueryCtx &iqctx,
+                       const std::string& filter = "") const;
 
     Status appendColHint(std::vector<IndexColumnHint>& hitns,
                          const FilterItems& items,
@@ -128,6 +129,8 @@ private:
     Status boundValue(const FilterItem& item,
                       const meta::cpp2::ColumnDef& col,
                       Value& begin, Value& end) const;
+
+    size_t hintCount(const FilterItems& items) const noexcept;
 
     bool isEdge(const OptGroupNode *groupNode) const;
 

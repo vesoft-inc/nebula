@@ -73,6 +73,8 @@ private:
     // vertex/edge expression
     void visit(VertexExpression *expr) override;
     void visit(EdgeExpression *expr) override;
+    // TODO : CaseExpression
+    void visit(CaseExpression *) override {};
 
     void visitVertexPropertyExpr(PropertyExpression *expr);
 

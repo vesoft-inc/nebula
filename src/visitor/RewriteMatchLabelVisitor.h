@@ -58,6 +58,8 @@ private:
     void visit(EdgeDstIdExpression*) override {}
     void visit(VertexExpression*) override {}
     void visit(EdgeExpression*) override {}
+    // TODO : CaseExpression
+    void visit(CaseExpression*) override {}
 
     void visitBinaryExpr(BinaryExpression *) override;
 

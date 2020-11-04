@@ -7,7 +7,6 @@
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
-
 #include "parser/MaintainSentences.h"
 #include "planner/Maintain.h"
 #include "planner/Query.h"
@@ -303,61 +302,46 @@ Status DropEdgeValidator::toPlan() {
 }
 
 Status CreateTagIndexValidator::validateImpl() {
-    auto sentence = static_cast<CreateTagIndexSentence *>(sentence_);
-    tagName_ = *sentence->tagName();
-    indexName_ = *sentence->indexName();
-    fields_ = sentence->columns();
+    auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
+    name_ = *sentence->tagName();
+    index_ = *sentence->indexName();
+    fields_ = sentence->fields();
     ifNotExist_ = sentence->isIfNotExist();
-
-    auto status = Status::OK();
-    do {
-        auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, tagName_);
-        NG_RETURN_IF_ERROR(tagStatus);
-
-        auto schema_ = qctx_->schemaMng()->getTagSchema(space_.id, tagStatus.value());
-        if (schema_ == nullptr) {
-            return Status::SemanticError("No schema found for '%s'", tagName_.c_str());
-        }
-
-        status = IndexUtil::validateColumns(fields_);
-        if (!status.ok()) {
-            VLOG(1) << status;
-            break;
-        }
-    } while (false);
     // TODO(darion) Save the index
-    return status;
+    return Status::OK();
 }
 
 Status CreateTagIndexValidator::toPlan() {
-    auto *doNode = CreateTagIndex::make(qctx_, nullptr, tagName_, indexName_, fields_, ifNotExist_);
+    auto sentence = static_cast<CreateTagIndexSentence*>(sentence_);
+    auto *doNode = CreateTagIndex::make(qctx_,
+                                        nullptr,
+                                       *sentence->tagName(),
+                                       *sentence->indexName(),
+                                        sentence->fields(),
+                                        sentence->isIfNotExist());
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status CreateEdgeIndexValidator::validateImpl() {
-    auto sentence = static_cast<CreateEdgeIndexSentence *>(sentence_);
-    edgeName_ = *sentence->edgeName();
-    indexName_ = *sentence->indexName();
-    fields_ = sentence->columns();
+    auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
+    name_ = *sentence->edgeName();
+    index_ = *sentence->indexName();
+    fields_ = sentence->fields();
     ifNotExist_ = sentence->isIfNotExist();
-
-    auto edgeStatus = qctx_->schemaMng()->toEdgeType(space_.id, edgeName_);
-    NG_RETURN_IF_ERROR(edgeStatus);
-    auto schema_ = qctx_->schemaMng()->getEdgeSchema(space_.id, edgeStatus.value());
-    if (schema_ == nullptr) {
-        return Status::SemanticError("No schema found for '%s'", edgeName_.c_str());
-    }
-
-    NG_RETURN_IF_ERROR(IndexUtil::validateColumns(fields_));
     // TODO(darion) Save the index
     return Status::OK();
 }
 
 Status CreateEdgeIndexValidator::toPlan() {
-    auto *doNode =
-        CreateEdgeIndex::make(qctx_, nullptr, edgeName_, indexName_, fields_, ifNotExist_);
+    auto sentence = static_cast<CreateEdgeIndexSentence*>(sentence_);
+    auto *doNode = CreateEdgeIndex::make(qctx_,
+                                         nullptr,
+                                        *sentence->edgeName(),
+                                        *sentence->indexName(),
+                                         sentence->fields(),
+                                         sentence->isIfNotExist());
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

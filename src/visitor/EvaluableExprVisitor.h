@@ -89,6 +89,11 @@ private:
         isEvaluable_ = false;
     }
 
+    // TODO : CaseExpression
+    void visit(CaseExpression *) override {
+        isEvaluable_ = false;
+    }
+
     bool isEvaluable_{true};
 };
 

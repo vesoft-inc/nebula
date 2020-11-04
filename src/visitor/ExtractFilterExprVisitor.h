@@ -46,6 +46,8 @@ private:
     void visit(VertexExpression *) override;
     void visit(EdgeExpression *) override;
     void visit(LogicalExpression *) override;
+    // TODO : CaseExpression
+    void visit(CaseExpression *) override {};
 
     bool canBePushed_{true};
     std::unique_ptr<Expression> remainedExpr_;

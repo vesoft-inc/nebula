@@ -68,6 +68,7 @@ private:
     // vertex/edge expression
     void visit(VertexExpression *) override;
     void visit(EdgeExpression *) override;
+    void visit(CaseExpression*) override {};
 
 
     void visitBinaryExpr(BinaryExpression *expr);

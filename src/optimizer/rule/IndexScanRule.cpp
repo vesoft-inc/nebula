@@ -76,8 +76,9 @@ Status IndexScanRule::createIQCWithLogicAnd(IndexQueryCtx &iqctx,
     if (index == nullptr) {
         return Status::IndexNotFound("No valid index found");
     }
-
-    return appendIQCtx(index, items, iqctx);
+    auto in = static_cast<const IndexScan *>(groupNode->node());
+    const auto& filter = in->queryContext()->begin()->get_filter();
+    return appendIQCtx(index, items, iqctx, filter);
 }
 
 Status IndexScanRule::createIQCWithLogicOR(IndexQueryCtx &iqctx,
@@ -95,9 +96,19 @@ Status IndexScanRule::createIQCWithLogicOR(IndexQueryCtx &iqctx,
     return Status::OK();
 }
 
+size_t IndexScanRule::hintCount(const FilterItems& items) const noexcept {
+    std::unordered_set<std::string> hintCols;
+    for (const auto& i : items.items) {
+        hintCols.emplace(i.col_);
+    }
+    return hintCols.size();
+}
+
 Status IndexScanRule::appendIQCtx(const IndexItem& index,
                                   const FilterItems& items,
-                                  IndexQueryCtx &iqctx) const {
+                                  IndexQueryCtx &iqctx,
+                                  const std::string& filter) const {
+    auto hc = hintCount(items);
     auto fields = index->get_fields();
     IndexQueryContext ctx;
     decltype(ctx.column_hints) hints;
@@ -112,18 +123,26 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
             found = true;
         }
         if (!found) break;
-        // TODO (sky) : rewrite filter expr. NE expr should be add filter expr .
         auto it = std::find_if(filterItems.items.begin(), filterItems.items.end(),
                                [](const auto &ite) {
                                    return ite.relOP_ == RelationalExpression::Kind::kRelNE;
                                });
         if (it != filterItems.items.end()) {
+            // TODO (sky) : rewrite filter expr. NE expr should be add filter expr .
+            ctx.set_filter(filter);
             break;
         }
         NG_RETURN_IF_ERROR(appendColHint(hints, filterItems, field));
+        hc--;
+        if (filterItems.items.begin()->relOP_ != RelationalExpression::Kind::kRelEQ) {
+            break;
+        }
     }
     ctx.set_index_id(index->get_index_id());
-    // TODO (sky) : rewrite expr and set filter
+    if (hc > 0) {
+        // TODO (sky) : rewrite expr and set filter
+        ctx.set_filter(filter);
+    }
     ctx.set_column_hints(std::move(hints));
     iqctx->emplace_back(std::move(ctx));
     return Status::OK();
@@ -131,7 +150,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
 
 #define CHECK_BOUND_VALUE(v, name)                                                                 \
     do {                                                                                           \
-        if (v == Value(NullType::BAD_TYPE)) {                                                      \
+        if (v == Value::kNullBadType) {                                                      \
             LOG(ERROR) << "Get bound value error. field : "  << name;                              \
             return Status::Error("Get bound value error. field : %s", name.c_str());               \
         }                                                                                          \
@@ -151,7 +170,7 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
                 return Status::SemanticError();
             }
             isRangeScan = false;
-            begin = item.value_;
+            begin = OptimizerUtils::normalizeValue(col, item.value_);
             break;
         }
         NG_RETURN_IF_ERROR(boundValue(item, col, begin, end));

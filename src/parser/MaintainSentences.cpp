@@ -238,9 +238,15 @@ std::string CreateTagIndexSentence::toString() const {
     buf += " ON ";
     buf += *tagName_;
     buf += " (";
-    std::string columns;
-    folly::join(", ", this->columns(), columns);
-    buf += columns;
+    std::vector<std::string> fieldDefs;
+    for (const auto& field : this->fields()) {
+        std::string f = field.get_name();
+        if (field.__isset.type_length) f + "(" +field.get_type_length() + ")";
+        fieldDefs.emplace_back(std::move(f));
+    }
+    std::string fields;
+    folly::join(", ", fieldDefs, fields);
+    buf += fields;
     buf += ")";
     return buf;
 }
@@ -254,9 +260,15 @@ std::string CreateEdgeIndexSentence::toString() const {
     buf += " ON ";
     buf += *edgeName_;
     buf += " (";
-    std::string columns;
-    folly::join(", ", this->columns(), columns);
-    buf += columns;
+    std::vector<std::string> fieldDefs;
+    for (const auto& field : this->fields()) {
+        std::string f = field.get_name();
+        if (field.__isset.type_length) f + "(" +field.get_type_length() + ")";
+        fieldDefs.emplace_back(std::move(f));
+    }
+    std::string fields;
+    folly::join(", ", fieldDefs, fields);
+    buf += fields;
     buf += ")";
     return buf;
 }

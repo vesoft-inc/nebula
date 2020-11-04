@@ -327,7 +327,7 @@ protected:
                     Kind kind,
                     std::string schemaName,
                     std::string indexName,
-                    std::vector<std::string> fields,
+                    std::vector<meta::cpp2::IndexFieldDef> fields,
                     bool ifNotExists)
         : SingleInputNode(qctx, kind, input),
           schemaName_(std::move(schemaName)),
@@ -344,7 +344,7 @@ public:
         return indexName_;
     }
 
-    const std::vector<std::string>& getFields() const {
+    const std::vector<meta::cpp2::IndexFieldDef>& getFields() const {
         return fields_;
     }
 
@@ -355,10 +355,10 @@ public:
     std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
 
 protected:
-    std::string schemaName_;
-    std::string indexName_;
-    std::vector<std::string> fields_;
-    bool ifNotExists_;
+    std::string                             schemaName_;
+    std::string                             indexName_;
+    std::vector<meta::cpp2::IndexFieldDef>  fields_;
+    bool                                    ifNotExists_;
 };
 
 class CreateTagIndex final : public CreateIndexNode {
@@ -367,7 +367,7 @@ public:
                                 PlanNode* input,
                                 std::string tagName,
                                 std::string indexName,
-                                std::vector<std::string> fields,
+                                std::vector<meta::cpp2::IndexFieldDef> fields,
                                 bool ifNotExists) {
         return qctx->objPool()->add(new CreateTagIndex(
             qctx, input, std::move(tagName), std::move(indexName), std::move(fields), ifNotExists));
@@ -378,7 +378,7 @@ private:
                    PlanNode* input,
                    std::string tagName,
                    std::string indexName,
-                   std::vector<std::string> fields,
+                   std::vector<meta::cpp2::IndexFieldDef> fields,
                    bool ifNotExists)
         : CreateIndexNode(qctx,
                           input,
@@ -395,7 +395,7 @@ public:
                                  PlanNode* input,
                                  std::string edgeName,
                                  std::string indexName,
-                                 std::vector<std::string> fields,
+                                 std::vector<meta::cpp2::IndexFieldDef> fields,
                                  bool ifNotExists) {
         return qctx->objPool()->add(new CreateEdgeIndex(qctx,
                                                         input,
@@ -410,7 +410,7 @@ private:
                     PlanNode* input,
                     std::string edgeName,
                     std::string indexName,
-                    std::vector<std::string> fields,
+                    std::vector<meta::cpp2::IndexFieldDef> fields,
                     bool ifNotExists)
         : CreateIndexNode(qctx,
                           input,
