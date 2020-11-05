@@ -6,6 +6,9 @@
 
 #include "common/expression/test/ExpressionContextMock.h"
 
+#include "common/datatypes/Edge.h"
+#include "common/datatypes/Vertex.h"
+
 namespace nebula {
 
 std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
@@ -32,7 +35,13 @@ std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
     {"_type", Value(1)},
     {"_rank", Value(1)},
     {"srcProperty", Value(13)},
-    {"dstProperty", Value(3)}
+    {"dstProperty", Value(3)},
+
+    {"path_src", Value("1")},
+    {"path_edge1", Value(Edge("1", "2", 1, "edge", 0, {}))},
+    {"path_v1", Value("2")},
+    {"path_edge2", Value(Edge("2", "3", 1, "edge", 0, {}))},
+    {"path_v2", Value(Vertex("3", {}))}
 };
 
 }   // namespace nebula

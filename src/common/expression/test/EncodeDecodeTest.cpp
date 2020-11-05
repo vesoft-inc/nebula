@@ -4,20 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include <gtest/gtest.h>
-#include "common/expression/PropertyExpression.h"
+#include "common/base/Base.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/expression/ContainerExpression.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/PathBuildExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
-#include "common/expression/ContainerExpression.h"
-#include "common/expression/LabelExpression.h"
 #include "common/expression/CaseExpression.h"
 
 namespace nebula {
@@ -445,6 +446,16 @@ TEST(ExpressionEncodeDecode, CaseExpression) {
         auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
         EXPECT_EQ(*origin, *decoded);
     }
+}
+
+TEST(ExpressionEncodeDecode, PathBuildExpression) {
+    auto origin = std::make_unique<PathBuildExpression>();
+    (*origin)
+        .add(std::make_unique<LabelExpression>(new std::string("path_src")))
+        .add(std::make_unique<LabelExpression>(new std::string("path_edge1")))
+        .add(std::make_unique<LabelExpression>(new std::string("path_v1")));
+    auto decoded = Expression::decode(Expression::encode(*origin));
+    ASSERT_EQ(*origin, *decoded);
 }
 
 }  // namespace nebula

@@ -5,25 +5,28 @@
  */
 
 #include "common/expression/Expression.h"
+
 #include <thrift/lib/cpp2/protocol/Serializer.h>
+
 #include "common/datatypes/ValueOps.h"
-#include "common/expression/PropertyExpression.h"
 #include "common/expression/ArithmeticExpression.h"
+#include "common/expression/AttributeExpression.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/expression/ContainerExpression.h"
+#include "common/expression/EdgeExpression.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/LabelAttributeExpression.h"
+#include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/PathBuildExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
-#include "common/expression/AttributeExpression.h"
-#include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
-#include "common/expression/ContainerExpression.h"
-#include "common/expression/LabelExpression.h"
 #include "common/expression/VertexExpression.h"
-#include "common/expression/EdgeExpression.h"
 #include "common/expression/CaseExpression.h"
 
 namespace nebula {
@@ -458,6 +461,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kPathBuild: {
+            exp = std::make_unique<PathBuildExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         // no default so the compiler will warning when lack
     }
 
@@ -624,6 +632,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kCase:
             os << "Case";
+            break;
+        case Expression::Kind::kPathBuild:
+            os << "PathBuild";
             break;
     }
     return os;

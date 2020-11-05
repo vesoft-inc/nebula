@@ -16,6 +16,7 @@
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/PathBuildExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
@@ -69,6 +70,8 @@ public:
     virtual void visit(EdgeExpression *expr) = 0;
     // case expression
     virtual void visit(CaseExpression *expr) = 0;
+    // path build expression
+    virtual void visit(PathBuildExpression *expr) = 0;
 };
 
 }   // namespace nebula

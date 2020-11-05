@@ -83,6 +83,8 @@ public:
         kLabel,
 
         kCase,
+
+        kPathBuild,
     };
 
     explicit Expression(Kind kind) : kind_(kind) {}

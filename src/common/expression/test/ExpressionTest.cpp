@@ -10,6 +10,7 @@
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
+#include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 #include "common/expression/ArithmeticExpression.h"
@@ -21,6 +22,7 @@
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/PathBuildExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
 #include "common/expression/SubscriptExpression.h"
@@ -2671,6 +2673,86 @@ TEST_F(ExpressionTest, TestExprClone) {
     caseExpr.setCondition(new ConstantExpression(2));
     caseExpr.setDefault(new ConstantExpression(8));
     ASSERT_EQ(caseExpr, *caseExpr.clone());
+
+    PathBuildExpression pathBuild;
+    pathBuild.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                            new std::string("path_src")))
+        .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                            new std::string("path_edge1")))
+        .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_v1")));
+    ASSERT_EQ(pathBuild, *pathBuild.clone());
+}
+
+TEST_F(ExpressionTest, PathBuild) {
+    {
+        PathBuildExpression expr;
+        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_src")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_edge1")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_v1")));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::PATH);
+        Path expected;
+        expected.src = Vertex("1", {});
+        expected.steps.emplace_back(Step(Vertex("2", {}), 1, "edge", 0, {}));
+        EXPECT_EQ(eval.getPath(), expected);
+    }
+    {
+        PathBuildExpression expr;
+        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_src")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_edge1")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_v1")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_edge2")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_v2")));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::PATH);
+        Path expected;
+        expected.src = Vertex("1", {});
+        expected.steps.emplace_back(Step(Vertex("2", {}), 1, "edge", 0, {}));
+        expected.steps.emplace_back(Step(Vertex("3", {}), 1, "edge", 0, {}));
+        EXPECT_EQ(eval.getPath(), expected);
+    }
+    {
+        PathBuildExpression expr;
+        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_src")));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::PATH);
+        Path expected;
+        expected.src = Vertex("1", {});
+        EXPECT_EQ(eval.getPath(), expected);
+    }
+    {
+        PathBuildExpression expr;
+        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_src")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_edge1")));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval, Value::kNullValue);
+    }
+}
+
+TEST_F(ExpressionTest, PathBuildToString) {
+    {
+        PathBuildExpression expr;
+        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_src")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_edge1")))
+            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
+                                                              new std::string("path_v1")));
+        EXPECT_EQ(expr.toString(), "PathBuild[$var1.path_src,$var1.path_edge1,$var1.path_v1]");
+    }
 }
 
 }  // namespace nebula
