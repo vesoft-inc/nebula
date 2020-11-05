@@ -31,6 +31,8 @@ public:
     void visit(MapExpression *expr) override;
     // case expression
     void visit(CaseExpression *expr) override;
+    // path build expression
+    void visit(PathBuildExpression *expr) override;
 
 protected:
     using ExprVisitor::visit;

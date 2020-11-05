@@ -238,5 +238,14 @@ void RewriteSymExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
     }
 }
 
+void RewriteSymExprVisitor::visit(PathBuildExpression *expr) {
+    const auto &items = expr->items();
+    for (size_t i = 0; i < items.size(); ++i) {
+        items[i]->accept(this);
+        if (expr_) {
+            expr->setItem(i, std::move(expr_));
+        }
+    }
+}
 }   // namespace graph
 }   // namespace nebula

@@ -125,5 +125,14 @@ void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
     }
 }
 
+void ExprVisitorImpl::visit(PathBuildExpression *expr) {
+    DCHECK(ok());
+    for (auto &item : expr->items()) {
+        item->accept(this);
+        if (!ok()) {
+            break;
+        }
+    }
+}
 }   // namespace graph
 }   // namespace nebula

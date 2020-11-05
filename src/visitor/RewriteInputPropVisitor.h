@@ -70,6 +70,8 @@ private:
     void visit(EdgeExpression *) override;
     // case expression
     void visit(CaseExpression *) override;
+    // path build expression
+    void visit(PathBuildExpression *expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
     void visitUnaryExpr(UnaryExpression *expr);

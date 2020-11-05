@@ -225,5 +225,14 @@ void RewriteInputPropVisitor::reportError(const Expression* expr) {
     status_ = Status::SemanticError(ss.str());
 }
 
+void RewriteInputPropVisitor::visit(PathBuildExpression* expr) {
+    const auto& items = expr->items();
+    for (size_t i = 0; i < items.size(); ++i) {
+        items[i]->accept(this);
+        if (ok()) {
+            expr->setItem(i, std::move(result_));
+        }
+    }
+}
 }   // namespace graph
 }   // namespace nebula

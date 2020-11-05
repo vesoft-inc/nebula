@@ -426,6 +426,9 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
     type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
+void DeduceTypeVisitor::visit(PathBuildExpression *) {
+    type_ = Value::Type::PATH;
+}
 #undef DETECT_UNARYEXPR_TYPE
 #undef DETECT_BIEXPR_TYPE
 
