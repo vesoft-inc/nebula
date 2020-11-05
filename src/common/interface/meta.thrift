@@ -582,8 +582,7 @@ enum HostRole {
     GRAPH       = 0x00,
     META        = 0x01,
     STORAGE     = 0x02,
-    LISTENER    = 0x03,
-    UNKNOWN     = 0x04
+    UNKNOWN     = 0x03
 } (cpp.enum_strict)
 
 struct HBReq {
@@ -941,8 +940,7 @@ struct ListGroupsResp {
 }
 
 enum ListenerType {
-    UNKNOWN       = 0x00,
-    ELASTICSEARCH = 0x01,
+    ELASTICSEARCH = 0x00,
 } (cpp.enum_strict)
 
 struct AddListenerReq {
@@ -964,7 +962,6 @@ struct ListenerInfo {
     1: ListenerType            type,
     2: common.HostAddr         host,
     3: common.PartitionID      part_id,
-    4: HostStatus              status,
 }
 
 struct ListListenerResp {
