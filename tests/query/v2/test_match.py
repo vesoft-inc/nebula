@@ -493,6 +493,26 @@ class TestMatch(NebulaTestSuite):
         result = []
         self.check_out_of_order_result(resp, result)
 
+        stmt = '''
+                    MATCH (n) WHERE id(n) == 'Tony Parker' RETURN id(n), labels(n)
+               '''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['id(n)', 'labels(n)']
+        self.check_column_names(resp, columns_name)
+        result = [['Tony Parker', ['player']]]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = '''
+                    MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN labels(n)
+               '''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['labels(n)']
+        self.check_column_names(resp, columns_name)
+        result = []
+        self.check_out_of_order_result(resp, result)
+
         # multi nodes
         stmt = '''
                     MATCH (n) WHERE id(n) IN ['not_exist_vertex']
@@ -538,6 +558,18 @@ class TestMatch(NebulaTestSuite):
         self.check_column_names(resp, columns_name)
         result = [['LaMarcus Aldridge'],
                   ['Tony Parker']]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = '''
+                    MATCH (n) WHERE id(n) IN ['LaMarcus Aldridge', 'Tony Parker', 'not_exist_vertex']
+                    RETURN id(n), `tags`(n)
+               '''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['id(n)', 'tags(n)']
+        self.check_column_names(resp, columns_name)
+        result = [['LaMarcus Aldridge', ['player']],
+                  ['Tony Parker', ['player']]]
         self.check_out_of_order_result(resp, result)
 
     def test_failures(self):
