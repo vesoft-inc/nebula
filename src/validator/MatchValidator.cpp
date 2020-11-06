@@ -141,8 +141,19 @@ Status MatchValidator::validatePath(const MatchPath *path) {
 
 
 Status MatchValidator::validateFilter(const Expression *filter) {
-    // TODO: validate filter result type.
     matchCtx_->filter = ExpressionUtils::foldConstantExpr(filter);
+
+    auto typeStatus = deduceExprType(matchCtx_->filter.get());
+    NG_RETURN_IF_ERROR(typeStatus);
+    auto type = typeStatus.value();
+    if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
+        type != Value::Type::__EMPTY__) {
+        std::stringstream ss;
+        ss << "`" << filter->toString() << "', expected Boolean, "
+           << "but was `" << type << "'";
+        return Status::SemanticError(ss.str());
+    }
+
     NG_RETURN_IF_ERROR(validateAliases({matchCtx_->filter.get()}));
 
     return Status::OK();

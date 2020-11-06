@@ -62,9 +62,10 @@ Status GoValidator::validateWhere(WhereClause* where) {
     auto typeStatus = deduceExprType(filter_);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
-    if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE) {
+    if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
+        type != Value::Type::__EMPTY__) {
         std::stringstream ss;
-        ss << "`" << filter_->toString() << "', Filter only accpet bool/null value, "
+        ss << "`" << filter_->toString() << "', expected Boolean, "
            << "but was `" << type << "'";
         return Status::SemanticError(ss.str());
     }
@@ -97,6 +98,8 @@ Status GoValidator::validateYield(YieldClause* yield) {
         yields_ = newCols;
     } else {
         for (auto col : cols) {
+            NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+
             if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
                 auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());
                 col->setExpr(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(

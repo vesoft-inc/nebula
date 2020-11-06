@@ -52,16 +52,15 @@ class TestCaseExpression(NebulaTestSuite):
         ]
         self.check_out_of_order_result(resp, expected_data)
 
-        # # we are not able to deduce the return type of case expression in where_clause
-        # stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
-        #     CASE serve.start_year WHEN 2016 THEN true ELSE false END YIELD \
-        #     $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        # resp = self.execute_query(stmt)
-        # self.check_resp_succeeded(resp)
-        # expected_data = [
-        #     ["Rajon Rondo", 2016, 2017, "Bulls"],
-        # ]
-        # self.check_out_of_order_result(resp, expected_data)
+        stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
+            CASE serve.start_year WHEN 2016 THEN true ELSE false END YIELD \
+            $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = [
+            ["Rajon Rondo", 2016, 2017, "Bulls"],
+        ]
+        self.check_out_of_order_result(resp, expected_data)
 
         stmt = 'YIELD CASE WHEN 4 > 5 THEN 0 WHEN 3+4==7 THEN 1 ELSE 2 END'
         resp = self.execute_query(stmt)
@@ -82,17 +81,17 @@ class TestCaseExpression(NebulaTestSuite):
         expected_data = [['Spurs', 'old']]
         self.check_out_of_order_result(resp, expected_data)
 
-        # # we are not able to deduce the return type of case expression in where_clause
-        # stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
-        #     CASE WHEN serve.start_year > 2016 THEN true ELSE false END YIELD \
-        #     $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        # resp = self.execute_query(stmt)
-        # self.check_resp_succeeded(resp)
-        # expected_data = [
-        #     ["Rajon Rondo", 2018, 2019, "Lakers"],
-        #     ["Rajon Rondo", 2017, 2018, "Pelicans"]
-        # ]
-        # self.check_out_of_order_result(resp, expected_data)
+        # we are not able to deduce the return type of case expression in where_clause
+        stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
+            CASE WHEN serve.start_year > 2016 THEN true ELSE false END YIELD \
+            $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = [
+            ["Rajon Rondo", 2018, 2019, "Lakers"],
+            ["Rajon Rondo", 2017, 2018, "Pelicans"]
+        ]
+        self.check_out_of_order_result(resp, expected_data)
 
     def test_conditional_case_expression(self):
         stmt = 'YIELD 3 > 5 ? 0 : 1'
@@ -114,17 +113,16 @@ class TestCaseExpression(NebulaTestSuite):
         expected_data = [['Spurs', 'old']]
         self.check_out_of_order_result(resp, expected_data)
 
-        # # we are not able to deduce the return type of case expression in where_clause
-        # stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
-        #     serve.start_year > 2016 ? true : false YIELD \
-        #     $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        # resp = self.execute_query(stmt)
-        # self.check_resp_succeeded(resp)
-        # expected_data = [
-        #     ["Rajon Rondo", 2018, 2019, "Lakers"],
-        #     ["Rajon Rondo", 2017, 2018, "Pelicans"]
-        # ]
-        # self.check_out_of_order_result(resp, expected_data)
+        stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
+            serve.start_year > 2016 ? true : false YIELD \
+            $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = [
+            ["Rajon Rondo", 2018, 2019, "Lakers"],
+            ["Rajon Rondo", 2017, 2018, "Pelicans"]
+        ]
+        self.check_out_of_order_result(resp, expected_data)
 
     def test_generic_with_conditional_case_expression(self):
         stmt = '''YIELD CASE 2 + 3 WHEN CASE 1 WHEN 1 \

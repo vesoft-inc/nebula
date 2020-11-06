@@ -38,19 +38,19 @@ class TestLabelExpr(NebulaTestSuite):
     def test_wrong_props(self):
         # fetch vertex with label expr
         resp = self.execute('FETCH PROP ON person "a" YIELD name')
-        self.check_error_msg(resp, "SemanticError: Not supported expression `name' for props deduction.")
+        self.check_error_msg(resp, "SemanticError: Invalid label identifiers: name")
 
         resp = self.execute('FETCH PROP ON person "a" YIELD name + 1')
-        self.check_error_msg(resp, "SemanticError: Not supported expression `name' for props deduction.")
+        self.check_error_msg(resp, "SemanticError: Invalid label identifiers: name")
 
         # fetch edge with label expr
         resp = self.execute('FETCH PROP ON friend "a"->"b" YIELD start')
-        self.check_error_msg(resp, "SemanticError: LabelExpression can not be instantiated.")
+        self.check_error_msg(resp, "SemanticError: Invalid label identifiers: start")
 
         # go with label expr
         resp = self.execute('GO FROM "a" OVER friend YIELD name')
-        self.check_error_msg(resp, "SemanticError: LabelExpression can not be instantiated.")
+        self.check_error_msg(resp, "SemanticError: Invalid label identifiers: name")
 
         # yield sentence with label expr
         resp = self.execute('YIELD name')
-        self.check_error_msg(resp, re.compile(r"SemanticError: Not supported expression `name'.*"))
+        self.check_error_msg(resp, "SemanticError: Invalid label identifiers: name")

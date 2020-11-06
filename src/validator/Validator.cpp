@@ -393,5 +393,20 @@ Status Validator::checkDuplicateColName() {
     return Status::OK();
 }
 
+Status Validator::invalidLabelIdentifiers(const Expression* expr) const {
+    auto labelExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kLabel});
+    if (!labelExprs.empty()) {
+        std::stringstream ss;
+        ss << "Invalid label identifiers: ";
+        for (auto* label : labelExprs) {
+            ss << label->toString() << ",";
+        }
+        auto errMsg = ss.str();
+        errMsg.pop_back();
+        return Status::SemanticError(std::move(errMsg));
+    }
+
+    return Status::OK();
+}
 }   // namespace graph
 }   // namespace nebula

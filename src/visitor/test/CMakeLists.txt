@@ -7,7 +7,9 @@ nebula_add_test(
     NAME
         expr_visitor_test
     SOURCES
+        TestMain.cpp
         FoldConstantExprVisitorTest.cpp
+        DeduceTypeVisitorTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:mock_schema_obj>
         $<TARGET_OBJECTS:util_obj>
@@ -49,7 +51,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_time_utils_obj>
     LIBRARIES
         gtest
-        gtest_main
         ${THRIFT_LIBRARIES}
         wangle
         proxygenhttpserver

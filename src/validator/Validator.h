@@ -134,6 +134,8 @@ protected:
     // Check the output for duplicate column names
     Status checkDuplicateColName();
 
+    Status invalidLabelIdentifiers(const Expression* expr) const;
+
 protected:
     SpaceInfo                       space_;
     Sentence*                       sentence_{nullptr};

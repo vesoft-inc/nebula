@@ -146,6 +146,8 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     ExpressionProps exprProps;
     DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
     for (auto col : yield->columns()) {
+        NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
             auto laExpr = static_cast<LabelAttributeExpression *>(col->expr());
             col->setExpr(ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(laExpr));
