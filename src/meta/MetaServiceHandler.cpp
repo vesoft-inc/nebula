@@ -51,6 +51,7 @@
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
+#include "meta/processors/jobMan/GetStatisProcessor.h"
 #include "meta/processors/zoneMan/AddZoneProcessor.h"
 #include "meta/processors/zoneMan/DropZoneProcessor.h"
 #include "meta/processors/zoneMan/GetZoneProcessor.h"
@@ -478,5 +479,12 @@ MetaServiceHandler::future_listListener(const cpp2::ListListenerReq& req) {
     auto* processor = ListListenerProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
+
+folly::Future<cpp2::GetStatisResp>
+MetaServiceHandler::future_getStatis(const cpp2::GetStatisReq &req) {
+    auto* processor = GetStatisProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 }  // namespace meta
 }  // namespace nebula

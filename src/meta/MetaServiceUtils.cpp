@@ -30,7 +30,10 @@ const std::string kLeadersTable        = "__leaders__";          // NOLINT
 const std::string kGroupsTable         = "__groups__";           // NOLINT
 const std::string kZonesTable          = "__zones__";            // NOLINT
 const std::string kListenerTable       = "__listener__";         // NOLINT
-
+// Used to record the number of vertices and edges in the space
+// The number of vertices of each tag in the space
+// The number of edges of each edgetype in the space
+const std::string kStatisTable         = "__statis__";           // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -1055,6 +1058,30 @@ GraphSpaceID MetaServiceUtils::parseListenerSpace(folly::StringPiece rawData) {
 PartitionID MetaServiceUtils::parseListenerPart(folly::StringPiece rawData) {
     auto offset = kListenerTable.size() + sizeof(cpp2::ListenerType) + sizeof(GraphSpaceID);
     return *reinterpret_cast<const PartitionID*>(rawData.data() + offset);
+}
+
+std::string MetaServiceUtils::statisKey(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kStatisTable.size() + sizeof(GraphSpaceID));
+    key.append(kStatisTable.data(), kStatisTable.size())
+       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+std::string MetaServiceUtils::statisVal(const cpp2::StatisItem& statisItem) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(statisItem, &val);
+    return val;
+}
+
+cpp2::StatisItem MetaServiceUtils::parseStatisVal(folly::StringPiece rawData) {
+    cpp2::StatisItem statisItem;
+    apache::thrift::CompactSerializer::deserialize(rawData, statisItem);
+    return statisItem;
+}
+
+const std::string& MetaServiceUtils::statisKeyPrefix() {
+    return kStatisTable;
 }
 
 }  // namespace meta

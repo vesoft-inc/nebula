@@ -46,6 +46,8 @@ public:
     // Stop the job when the user cancel it.
     virtual cpp2::ErrorCode stop() = 0;
 
+    virtual void finish(bool) {}
+
 protected:
     ErrorOr<cpp2::ErrorCode, GraphSpaceID>
     getSpaceIdFromName(const std::string& spaceName);
@@ -54,8 +56,8 @@ protected:
 
     ErrOrHosts getLeaderHost(GraphSpaceID space);
 
-    virtual folly::Future<Status> executeInternal(HostAddr&& address,
-                                                  std::vector<PartitionID>&& parts) = 0;
+    virtual folly::Future<Status>
+    executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) = 0;
 
 protected:
     JobID                       jobId_{INT_MIN};

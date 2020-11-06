@@ -68,6 +68,20 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        statis_task_test
+    SOURCES
+        StatisTaskTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         add_vertices_test
     SOURCES
         AddVerticesTest.cpp

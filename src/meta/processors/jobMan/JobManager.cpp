@@ -153,6 +153,8 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
         save(task.taskKey(), task.taskVal());
         ++taskId;
     }
+
+    jobExecutor->finish(jobSuccess);
     return jobSuccess;
 }
 

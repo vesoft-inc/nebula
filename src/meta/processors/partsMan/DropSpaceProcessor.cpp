@@ -61,7 +61,6 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     }
 
     // delete listener meta data
-
     auto lstPrefix = MetaServiceUtils::listenerPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> lstIter;
     auto listenerRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, lstPrefix, &lstIter);
@@ -75,8 +74,10 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         lstIter->next();
     }
 
-    // TODO(YT) delete Tag/Edge under the space
-    // TODO(YT) delete part files of the space
+    // Delete statis data if it exists
+    auto statiskey = MetaServiceUtils::statisKey(spaceId);
+    deleteKeys.emplace_back(statiskey);
+
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
     LOG(INFO) << "Drop space " << req.get_space_name() << ", id " << spaceId;
 }

@@ -276,6 +276,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        get_statis_test
+    SOURCES
+        GetStatisTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         group_zone_test
     SOURCES
         GroupZoneTest.cpp

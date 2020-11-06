@@ -274,6 +274,14 @@ public:
     static GraphSpaceID parseListenerSpace(folly::StringPiece rawData);
 
     static PartitionID parseListenerPart(folly::StringPiece rawData);
+
+    static std::string statisKey(GraphSpaceID spaceId);
+
+    static std::string statisVal(const cpp2::StatisItem &statisItem);
+
+    static cpp2::StatisItem parseStatisVal(folly::StringPiece rawData);
+
+    static const std::string& statisKeyPrefix();
 };
 
 }  // namespace meta

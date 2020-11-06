@@ -10,6 +10,7 @@
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/jobMan/RebuildJobExecutor.h"
+#include "utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -51,7 +52,8 @@ meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
     auto& hosts = nebula::value(errOrTargetHost);
     std::vector<folly::Future<Status>> futures;
     for (auto& host : hosts) {
-        auto future = adminClient_->stopTask({host.first}, jobId_, 0);
+        auto future = adminClient_->stopTask({Utils::getAdminAddrFromStoreAddr(host.first)},
+                                             jobId_, 0);
         futures.emplace_back(std::move(future));
     }
 

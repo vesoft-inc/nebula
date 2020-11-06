@@ -17,6 +17,7 @@
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/processors/jobMan/RebuildTagJobExecutor.h"
 #include "meta/processors/jobMan/RebuildEdgeJobExecutor.h"
+#include "meta/processors/jobMan/StatisJobExecutor.h"
 #include "utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -53,6 +54,12 @@ MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,
                                              store,
                                              client,
                                              jd.getParas()));
+        break;
+    case cpp2::AdminCmd::STATIS:
+        ret.reset(new StatisJobExecutor(jd.getJobId(),
+                                        store,
+                                        client,
+                                        jd.getParas()));
         break;
     default:
         break;
@@ -151,7 +158,6 @@ ExecuteRet MetaJobExecutor::execute() {
     nebula::Status errorStatus;
     folly::collectAll(std::move(futures))
         .thenValue([&](const std::vector<folly::Try<Status>>& tries) {
-            Status status;
             for (const auto& t : tries) {
                 if (t.hasException()) {
                     LOG(ERROR) << "Admin Failed: " << t.exception();

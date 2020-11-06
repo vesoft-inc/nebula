@@ -9,6 +9,7 @@
 #include "storage/admin/FlushTask.h"
 #include "storage/admin/RebuildTagIndexTask.h"
 #include "storage/admin/RebuildEdgeIndexTask.h"
+#include "storage/admin/StatisTask.h"
 
 namespace nebula {
 namespace storage {
@@ -29,6 +30,9 @@ AdminTaskFactory::createAdminTask(StorageEnv* env, TaskContext&& ctx) {
         break;
     case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
         ret = std::make_shared<RebuildEdgeIndexTask>(env, std::move(ctx));
+        break;
+    case meta::cpp2::AdminCmd::STATIS:
+        ret = std::make_shared<StatisTask>(env, std::move(ctx));
         break;
     default:
         break;

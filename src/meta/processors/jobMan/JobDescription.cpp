@@ -72,8 +72,8 @@ std::string JobDescription::jobKey() const {
 std::string JobDescription::makeJobKey(JobID iJob) {
     std::string str;
     str.reserve(32);
-    str.append(reinterpret_cast<const char*>(JobUtil::jobPrefix().data()),
-                                             JobUtil::jobPrefix().size())
+    auto& jPrefix = JobUtil::jobPrefix();
+    str.append(jPrefix.data(), jPrefix.size())
        .append(reinterpret_cast<const char*>(&iJob), sizeof(JobID));
     return str;
 }
@@ -152,8 +152,8 @@ cpp2::JobDesc JobDescription::toJobDesc() {
 std::string JobDescription::archiveKey() {
     std::string str;
     str.reserve(32);
-    str.append(reinterpret_cast<const char*>(JobUtil::archivePrefix().data()),
-                                             JobUtil::archivePrefix().size())
+    auto& aPrefix = JobUtil::archivePrefix();
+    str.append(aPrefix.data(), aPrefix.size())
        .append(reinterpret_cast<const char*>(&id_), sizeof(id_));
     return str;
 }

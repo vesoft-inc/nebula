@@ -12,15 +12,17 @@ namespace meta {
 
 const int kNotStarted = 0;
 const int kInProgress = 1;
-const int kDeadEnd = 2;
+const int kStopped = 2;
+const int kDeadEnd = 3;
+
 using Status = cpp2::JobStatus;
 
 int JobStatus::phaseNumber(Status st) {
     if (st == Status::QUEUE) return kNotStarted;
     if (st == Status::RUNNING) return kInProgress;
+    if (st == Status::STOPPED) return kStopped;
     if (st == Status::FINISHED) return kDeadEnd;
     if (st == Status::FAILED) return kDeadEnd;
-    if (st == Status::STOPPED) return kDeadEnd;
     return INT_MIN;
 }
 

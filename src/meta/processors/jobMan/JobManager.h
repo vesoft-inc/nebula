@@ -23,15 +23,18 @@ namespace meta {
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
     using ResultCode = nebula::kvstore::ResultCode;
     friend class JobManagerTest;
+    friend class GetStatisTest;
     FRIEND_TEST(JobManagerTest, reserveJobId);
     FRIEND_TEST(JobManagerTest, buildJobDescription);
     FRIEND_TEST(JobManagerTest, addJob);
+    FRIEND_TEST(JobManagerTest, StatisJob);
     FRIEND_TEST(JobManagerTest, loadJobDescription);
     FRIEND_TEST(JobManagerTest, showJobs);
     FRIEND_TEST(JobManagerTest, showJob);
     FRIEND_TEST(JobManagerTest, recoverJob);
     FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
     FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
+    FRIEND_TEST(GetStatisTest, StatisJob);
 
 public:
     ~JobManager();
@@ -68,9 +71,11 @@ private:
     bool runJobInternal(const JobDescription& jobDesc);
 
     GraphSpaceID getSpaceId(const std::string& name);
+
     kvstore::ResultCode save(const std::string& k, const std::string& v);
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
+
     void removeExpiredJobs(const std::vector<std::string>& jobKeys);
 
 private:

@@ -21,9 +21,8 @@ public:
         : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {}
 
 protected:
-     folly::Future<Status>
-     executeInternal(HostAddr&& address,
-                     std::vector<PartitionID>&& parts) override;
+    folly::Future<Status>
+    executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) override;
 };
 
 }  // namespace meta

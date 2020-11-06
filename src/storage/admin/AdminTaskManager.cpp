@@ -38,14 +38,15 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
 }
 
 cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
-    auto ret = cpp2::ErrorCode::E_KEY_NOT_FOUND;
+    // When the job does not exist on the host,
+    // it should return success instead of failure
+    auto ret = cpp2::ErrorCode::SUCCEEDED;
     auto it = tasks_.begin();
     while (it != tasks_.end()) {
         auto handle = it->first;
         if (handle.first == jobId) {
             it->second->cancel();
             FLOG_INFO("task(%d, %d) cancelled", jobId, handle.second);
-            ret = cpp2::ErrorCode::SUCCEEDED;
         }
         ++it;
     }

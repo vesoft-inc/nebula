@@ -250,6 +250,9 @@ public:
     folly::Future<cpp2::ListListenerResp>
     future_listListener(const cpp2::ListListenerReq& req) override;
 
+    folly::Future<cpp2::GetStatisResp>
+    future_getStatis(const cpp2::GetStatisReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};

@@ -85,6 +85,8 @@ nebula_add_library(
     processors/jobMan/RebuildJobExecutor.cpp
     processors/jobMan/RebuildTagJobExecutor.cpp
     processors/jobMan/RebuildEdgeJobExecutor.cpp
+    processors/jobMan/StatisJobExecutor.cpp
+    processors/jobMan/GetStatisProcessor.cpp
     processors/zoneMan/AddZoneProcessor.cpp
     processors/zoneMan/DropZoneProcessor.cpp
     processors/zoneMan/GetZoneProcessor.cpp

@@ -211,7 +211,7 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
     folly::Promise<ResultCode> pTaskFini;
     auto fTaskFini = pTaskFini.getFuture();
 
-    auto taskCallback = [&](ResultCode ret) {
+    auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         LOG(INFO) << "taskCallback";
         pTaskFini.setValue(ret);
     };
@@ -251,7 +251,7 @@ TEST(TaskManagerTest, run_a_medium_task_before_a_huge_task) {
         folly::Promise<ResultCode> pro;
         folly::Future<ResultCode> fut = pro.getFuture();
 
-        auto taskCallback = [&](ResultCode ret) {
+        auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
             pro.setValue(ret);
         };
         mockTask->setCallback(taskCallback);
@@ -284,7 +284,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -313,7 +313,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -342,7 +342,7 @@ TEST(TaskManagerTest, happy_path) {
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -371,7 +371,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -399,7 +399,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -427,7 +427,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -456,7 +456,7 @@ TEST(TaskManagerTest, happy_path) {
             folly::Promise<ResultCode> pro;
             folly::Future<ResultCode> fut = pro.getFuture();
 
-            auto taskCallback = [&](ResultCode ret) {
+            auto taskCallback = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
             };
             mockTask->setCallback(taskCallback);
@@ -490,7 +490,7 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
         folly::Promise<ResultCode> pro;
         folly::Future<ResultCode> fut = pro.getFuture();
 
-        auto cb = [&](ResultCode ret) {
+        auto cb = [&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
             pro.setValue(ret);
         };
 
@@ -536,7 +536,7 @@ TEST(TaskManagerTest, some_subtask_failed) {
                 return i == totalSubTask / 2 ? suc : errCode;
             });
         }
-        mockTask->setCallback([&](ResultCode ret) {
+        mockTask->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
             pro.setValue(ret);
         });
         taskMgr->addAsyncTask(task);
@@ -575,7 +575,7 @@ TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
         return suc;
     });
 
-    mockTask->setCallback([&](ResultCode ret) {
+    mockTask->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         LOG(INFO) << "task finish()";
         pFinish.setValue(ret);
     });
@@ -625,7 +625,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     task1->addSubTask([&]() {
         return suc;
     });
-    task1->setCallback([&](ResultCode ret) {
+    task1->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         LOG(INFO) << "finish task1()";
         pTask1.setValue(ret);
     });
@@ -637,7 +637,7 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
     task2->addSubTask([&]() {
         return suc;
     });
-    task2->setCallback([&](ResultCode ret) {
+    task2->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         LOG(INFO) << "finish task2()";
         pTask2.setValue(ret);
     });
@@ -687,7 +687,7 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
         return suc;
     });
 
-    task0->setCallback([&](ResultCode ret) {
+    task0->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         pFiniTask0.setValue(ret);
     });
 
@@ -738,7 +738,7 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
         return suc;
     });
 
-    task1->setCallback([&](ResultCode ret) {
+    task1->setCallback([&](ResultCode ret, nebula::meta::cpp2::StatisItem&) {
         task1_p.setValue(ret);
     });
 

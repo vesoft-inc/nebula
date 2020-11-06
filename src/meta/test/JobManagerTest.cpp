@@ -88,6 +88,23 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
     ASSERT_TRUE(result);
 }
 
+TEST_F(JobManagerTest, StatisJob) {
+    std::vector<std::string> paras{"1"};
+    JobDescription job(12, cpp2::AdminCmd::STATIS, paras);
+    auto rc = jobMgr->addJob(job, adminClient_.get());
+    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    auto result = jobMgr->runJobInternal(job);
+    ASSERT_TRUE(result);
+    // Function runJobInternal does not set the finished status of the job
+    job.setStatus(cpp2::JobStatus::FINISHED);
+    jobMgr->save(job.jobKey(), job.jobVal());
+
+    auto job1 = JobDescription::loadJobDescription(job.id_, kv_.get());
+    ASSERT_TRUE(job1);
+    ASSERT_EQ(job.id_, job1.value().id_);
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, job1.value().status_);
+}
+
 TEST_F(JobManagerTest, loadJobDescription) {
     std::vector<std::string> paras{"test_space"};
     JobDescription job1(1, cpp2::AdminCmd::COMPACT, paras);
