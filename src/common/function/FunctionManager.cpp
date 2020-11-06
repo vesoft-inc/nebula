@@ -170,11 +170,22 @@ FunctionManager::getReturnType(const std::string &funName,
     if (iter == typeSignature_.end()) {
         return Status::Error("Function `%s' not defined", funName.c_str());
     }
+
     for (const auto &args : iter->second) {
         if (argsType == args.argsType_) {
             return args.returnType_;
         }
     }
+
+    for (auto &argType : argsType) {
+        // Most functions do not accept NULL or EMPTY
+        // but if the parameters are given by NULL or EMPTY ,
+        // then we will tell that it returns NULL or EMPTY
+        if (argType == Value::Type::__EMPTY__ || argType == Value::Type::NULLVALUE) {
+            return argType;
+        }
+    }
+
     return Status::Error("Parameter's type error");
 }
 
