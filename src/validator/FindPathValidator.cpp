@@ -64,26 +64,23 @@ Status FindPathValidator::singlePairPlan() {
     return Status::OK();
 }
 
-void FindPathValidator::buildStart(const Starts& starts,
+void FindPathValidator::buildStart(Starts& starts,
                                    std::string& startVidsVar,
-                                   PlanNode* dedupStartVid,
-                                   Expression* src) {
-    if (!starts.vids.empty() && starts.srcRef == nullptr) {
-        buildConstantInput(starts, startVidsVar, src);
+                                   PlanNode* dedupStartVid) {
+    if (!starts.vids.empty() && starts.originalSrc == nullptr) {
+        buildConstantInput(starts, startVidsVar);
     } else {
-        dedupStartVid = buildRuntimeInput();
+        dedupStartVid = buildRuntimeInput(from_, projectStartVid_);
         startVidsVar = dedupStartVid->outputVar();
     }
 }
 
-PlanNode* FindPathValidator::bfs(PlanNode* dep, const Starts& starts, bool reverse) {
+PlanNode* FindPathValidator::bfs(PlanNode* dep, Starts& starts, bool reverse) {
     std::string startVidsVar;
-    Expression* vids = nullptr;
-    buildConstantInput(starts, startVidsVar, vids);
+    buildConstantInput(starts, startVidsVar);
 
-    DCHECK(!!vids);
     auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
-    gn->setSrc(vids);
+    gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
     gn->setInputVar(startVidsVar);
 
@@ -172,14 +169,12 @@ Status FindPathValidator::allPairPaths() {
     return Status::OK();
 }
 
-PlanNode* FindPathValidator::allPaths(PlanNode* dep, const Starts& starts, bool reverse) {
+PlanNode* FindPathValidator::allPaths(PlanNode* dep, Starts& starts, bool reverse) {
     std::string startVidsVar;
-    Expression* vids = nullptr;
-    buildConstantInput(starts, startVidsVar, vids);
+    buildConstantInput(starts, startVidsVar);
 
-    DCHECK(!!vids);
     auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
-    gn->setSrc(vids);
+    gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
     gn->setInputVar(startVidsVar);
 
@@ -250,15 +245,13 @@ Status FindPathValidator::multiPairPlan() {
 }
 
 PlanNode* FindPathValidator::multiPairShortestPath(PlanNode* dep,
-                                                   const Starts& starts,
+                                                   Starts& starts,
                                                    bool reverse) {
     std::string startVidsVar;
-    Expression* vids = nullptr;
-    buildConstantInput(starts, startVidsVar, vids);
+    buildConstantInput(starts, startVidsVar);
 
-    DCHECK(!!vids);
     auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
-    gn->setSrc(vids);
+    gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
     gn->setInputVar(startVidsVar);
 

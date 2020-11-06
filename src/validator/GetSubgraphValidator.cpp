@@ -167,7 +167,7 @@ Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& input
     std::vector<storage::cpp2::Expr> exprs;
     std::vector<storage::cpp2::VertexProp> vertexProps;
     auto* getVertex = GetVertices::make(
-        qctx_, depend, space.id, src_, std::move(vertexProps), std::move(exprs), true);
+        qctx_, depend, space.id, from_.src, std::move(vertexProps), std::move(exprs), true);
     getVertex->setInputVar(inputVar);
 
     auto var = vctx_->anonVarGen()->getVar();
@@ -197,10 +197,10 @@ Status GetSubgraphValidator::toPlan() {
 
     std::string startVidsVar;
     SingleInputNode* collectRunTimeStartVids = nullptr;
-    if (!from_.vids.empty() && from_.srcRef == nullptr) {
-        buildConstantInput(from_, startVidsVar, src_);
+    if (!from_.vids.empty() && from_.originalSrc == nullptr) {
+        buildConstantInput(from_, startVidsVar);
     } else {
-        PlanNode* dedupStartVid = buildRuntimeInput();
+        PlanNode* dedupStartVid = buildRuntimeInput(from_, projectStartVid_);
         startVidsVar = dedupStartVid->outputVar();
         // collect runtime startVids
         auto var = vctx_->anonVarGen()->getVar();
@@ -229,7 +229,7 @@ Status GetSubgraphValidator::toPlan() {
 
     auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     auto* gn = GetNeighbors::make(qctx_, bodyStart, space.id);
-    gn->setSrc(src_);
+    gn->setSrc(from_.src);
     gn->setVertexProps(std::move(vertexProps));
     gn->setEdgeProps(buildEdgeProps());
     gn->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
@@ -260,7 +260,7 @@ Status GetSubgraphValidator::toPlan() {
     vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     auto* gn1 = GetNeighbors::make(qctx_, loop, space.id);
-    gn1->setSrc(src_);
+    gn1->setSrc(from_.src);
     gn1->setVertexProps(std::move(vertexProps));
     gn1->setEdgeProps(std::move(edgeProps));
     gn1->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);

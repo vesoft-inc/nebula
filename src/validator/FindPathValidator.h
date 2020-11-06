@@ -25,14 +25,11 @@ private:
 
     Status singlePairPlan();
 
-    void buildStart(const Starts& starts,
-                    std::string& startVidsVar,
-                    PlanNode* dedupStartVid,
-                    Expression* src);
+    void buildStart(Starts& starts, std::string& startVidsVar, PlanNode* dedupStartVid);
 
-    PlanNode* bfs(PlanNode* dep, const Starts& starts, bool reverse);
+    PlanNode* bfs(PlanNode* dep, Starts& starts, bool reverse);
 
-    PlanNode* multiPairShortestPath(PlanNode* dep, const Starts& starts, bool reverse);
+    PlanNode* multiPairShortestPath(PlanNode* dep, Starts& starts, bool reverse);
 
     Status multiPairPlan();
 
@@ -44,7 +41,7 @@ private:
 
     Status allPairPaths();
 
-    PlanNode* allPaths(PlanNode* dep, const Starts& starts, bool reverse);
+    PlanNode* allPaths(PlanNode* dep, Starts& starts, bool reverse);
 
     Expression* buildAllPathsLoopCondition(uint32_t steps);
 

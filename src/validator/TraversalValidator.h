@@ -25,7 +25,8 @@ protected:
 
     struct Starts {
         FromType                fromType{kInstantExpr};
-        Expression*             srcRef{nullptr};
+        Expression*             src{nullptr};
+        Expression*             originalSrc{nullptr};
         std::string             userDefinedVarName;
         std::string             firstBeginningSrcVidColName;
         std::vector<Value>      vids;
@@ -56,9 +57,9 @@ protected:
 
     PlanNode* projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar);
 
-    void buildConstantInput(const Starts& starts, std::string& startVidsVar, Expression*& vids);
+    void buildConstantInput(Starts& starts, std::string& startVidsVar);
 
-    PlanNode* buildRuntimeInput();
+    PlanNode* buildRuntimeInput(Starts& starts, PlanNode*& project);
 
     Expression* buildNStepLoopCondition(uint32_t steps) const;
 
@@ -66,9 +67,7 @@ protected:
     Starts                from_;
     Steps                 steps_;
     std::string           srcVidColName_;
-    Expression*           src_{nullptr};
     PlanNode*             projectStartVid_{nullptr};
-
 
     std::unique_ptr<ExpressionList>  startVidList_;
 };

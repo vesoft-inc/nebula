@@ -36,7 +36,7 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
                 << type.value() << "'";
             return Status::SemanticError(ss.str());
         }
-        starts.srcRef = src;
+        starts.originalSrc = src;
         auto* propExpr = static_cast<PropertyExpression*>(src);
         if (starts.fromType == kVariable) {
             starts.userDefinedVarName = *(propExpr->sym());
@@ -158,9 +158,7 @@ PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::stri
     return dedupDstVids;
 }
 
-void TraversalValidator::buildConstantInput(const Starts& starts,
-                                            std::string& startVidsVar,
-                                            Expression*& vids) {
+void TraversalValidator::buildConstantInput(Starts& starts, std::string& startVidsVar) {
     startVidsVar = vctx_->anonVarGen()->getVar();
     DataSet ds;
     ds.colNames.emplace_back(kVid);
@@ -171,28 +169,30 @@ void TraversalValidator::buildConstantInput(const Starts& starts,
     }
     qctx_->ectx()->setResult(startVidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
 
-    vids = new VariablePropertyExpression(new std::string(startVidsVar), new std::string(kVid));
-    qctx_->objPool()->add(vids);
+    starts.src =
+        new VariablePropertyExpression(new std::string(startVidsVar), new std::string(kVid));
+    qctx_->objPool()->add(starts.src);
 }
 
-PlanNode* TraversalValidator::buildRuntimeInput() {
+PlanNode* TraversalValidator::buildRuntimeInput(Starts& starts, PlanNode*& projectStartVid) {
     auto pool = qctx_->objPool();
     auto* columns = pool->add(new YieldColumns());
-    auto* column = new YieldColumn(from_.srcRef->clone().release(), new std::string(kVid));
+    auto* column = new YieldColumn(starts.originalSrc->clone().release(), new std::string(kVid));
     columns->addColumn(column);
+
     auto* project = Project::make(qctx_, nullptr, columns);
-    if (from_.fromType == kVariable) {
-        project->setInputVar(from_.userDefinedVarName);
+    if (starts.fromType == kVariable) {
+        project->setInputVar(starts.userDefinedVarName);
     }
-    project->setColNames({ kVid });
+    project->setColNames({kVid});
     VLOG(1) << project->outputVar() << " input: " << project->inputVar();
-    src_ = pool->add(new InputPropertyExpression(new std::string(kVid)));
+    starts.src = pool->add(new InputPropertyExpression(new std::string(kVid)));
 
     auto* dedupVids = Dedup::make(qctx_, project);
     dedupVids->setInputVar(project->outputVar());
     dedupVids->setColNames(project->colNames());
 
-    projectStartVid_ = project;
+    projectStartVid = project;
     return dedupVids;
 }
 
