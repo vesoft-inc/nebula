@@ -201,8 +201,7 @@ TEST(ExpressionEncodeDecode, LogicalExpression) {
     LogicalExpression andEx(Expression::Kind::kLogicalAnd,
                             new ConstantExpression(true),
                             new ConstantExpression(false));
-    std::string encoded = Expression::encode(andEx);
-    auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    auto decoded = Expression::decode(Expression::encode(andEx));
     EXPECT_EQ(andEx, *decoded);
 
     auto lhs = new RelationalExpression(
@@ -213,9 +212,8 @@ TEST(ExpressionEncodeDecode, LogicalExpression) {
         Expression::Kind::kRelEQ,
         new ConstantExpression("Hello"),
         new ConstantExpression("World"));
-    RelationalExpression orEx(Expression::Kind::kLogicalOr, lhs, rhs);
-    encoded = Expression::encode(orEx);
-    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    LogicalExpression orEx(Expression::Kind::kLogicalOr, lhs, rhs);
+    decoded = Expression::decode(Expression::encode(orEx));
     EXPECT_EQ(orEx, *decoded);
 
     auto arEx = new ArithmeticExpression(
@@ -230,9 +228,8 @@ TEST(ExpressionEncodeDecode, LogicalExpression) {
         Expression::Kind::kRelEQ,
         new ConstantExpression("Hello"),
         new ConstantExpression("World"));
-    RelationalExpression xorEx(Expression::Kind::kLogicalXor, lhs, rhs);
-    encoded = Expression::encode(xorEx);
-    decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    LogicalExpression xorEx(Expression::Kind::kLogicalXor, lhs, rhs);
+    decoded = Expression::decode(Expression::encode(xorEx));
     EXPECT_EQ(xorEx, *decoded);
 }
 
