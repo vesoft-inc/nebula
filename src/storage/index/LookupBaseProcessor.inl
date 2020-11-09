@@ -83,14 +83,12 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
     switch (filter->kind()) {
         case Expression::Kind::kLogicalOr :
         case Expression::Kind::kLogicalAnd : {
-            auto lExpr = static_cast<LogicalExpression*>(filter);
-            auto ret = isOutsideIndex(lExpr->left(), index);
-            if (ret) {
-                return ret;
-            }
-            ret = isOutsideIndex(lExpr->right(), index);
-            if (ret) {
-                return ret;
+            auto *lExpr = static_cast<LogicalExpression*>(filter);
+            for (auto &expr : lExpr->operands()) {
+                auto ret = isOutsideIndex(expr.get(), index);
+                if (ret) {
+                    return ret;
+                }
             }
             break;
         }

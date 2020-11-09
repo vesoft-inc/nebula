@@ -377,11 +377,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalXor: {
             auto* logExp = static_cast<const LogicalExpression*>(exp);
-            auto ret = checkExp(logExp->left(), returned, filtered, updated);
-            if (ret != cpp2::ErrorCode::SUCCEEDED) {
-                return ret;
+            for (auto &expr : logExp->operands()) {
+                auto ret = checkExp(expr.get(), returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
             }
-            return checkExp(logExp->right(), returned, filtered, updated);
+            return cpp2::ErrorCode::SUCCEEDED;
         }
         case Expression::Kind::kTypeCasting: {
             auto* typExp = static_cast<const TypeCastingExpression*>(exp);
