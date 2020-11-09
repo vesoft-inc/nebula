@@ -24,6 +24,8 @@
 #include "stats/StatsManager.h"
 #include "stats/Stats.h"
 
+DECLARE_bool(enable_multi_versions);
+
 namespace nebula {
 namespace storage {
 
@@ -56,6 +58,11 @@ protected:
         this->promise_.setValue(std::move(this->resp_));
         delete this;
     }
+
+    kvstore::ResultCode doGetFirstRecord(GraphSpaceID spaceId,
+                                         PartitionID partId,
+                                         std::string& key,
+                                         std::string* value);
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
