@@ -7,7 +7,7 @@
 
 import pytest
 
-from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite, PathVal
 
 
 @pytest.mark.usefixtures('set_vertices_and_edges')
@@ -570,6 +570,117 @@ class TestMatch(NebulaTestSuite):
         self.check_column_names(resp, columns_name)
         result = [['LaMarcus Aldridge', ['player']],
                   ['Tony Parker', ['player']]]
+        self.check_out_of_order_result(resp, result)
+
+    def test_return_path(self):
+        VERTICES, EDGES = self.VERTEXS, self.EDGES
+
+        stmt = 'MATCH p = (n:player{name:"Tony Parker"}) return p,n'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp);
+        columns_name = ['p', 'n']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["Tony Parker"]]), VERTICES["Tony Parker"]]
+            ]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]->(m) return p, n.name, m.name'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['p', 'n.name', 'm.name']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["LeBron James"+"Ray Allen"+"like"+"0"], 1),
+                    VERTICES["Ray Allen"]]),
+                "LeBron James", "Ray Allen"]
+            ]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = 'MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m) return p, n.name, m.name'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['p', 'n.name', 'm.name']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Dejounte Murray"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Dejounte Murray"]]),
+                "LeBron James", "Dejounte Murray"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Carmelo Anthony"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Carmelo Anthony"]]),
+                "LeBron James", "Carmelo Anthony"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Kyrie Irving"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Kyrie Irving"]]),
+                "LeBron James", "Kyrie Irving"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Dwyane Wade"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Dwyane Wade"]]),
+                "LeBron James", "Dwyane Wade"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Danny Green"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Danny Green"]]),
+                "LeBron James", "Danny Green"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Chris Paul"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Chris Paul"]]),
+                "LeBron James", "Chris Paul"],
+            ]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]-(m) return p, n.name, m.name'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['p', 'n.name', 'm.name']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["LeBron James"+"Ray Allen"+"like"+"0"], 1),
+                    VERTICES["Ray Allen"]]),
+                "LeBron James", "Ray Allen"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Dejounte Murray"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Dejounte Murray"]]),
+                "LeBron James", "Dejounte Murray"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Carmelo Anthony"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Carmelo Anthony"]]),
+                "LeBron James", "Carmelo Anthony"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Kyrie Irving"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Kyrie Irving"]]),
+                "LeBron James", "Kyrie Irving"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Dwyane Wade"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Dwyane Wade"]]),
+                "LeBron James", "Dwyane Wade"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Danny Green"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Danny Green"]]),
+                "LeBron James", "Danny Green"],
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["Chris Paul"+"LeBron James"+"like"+"0"], -1),
+                    VERTICES["Chris Paul"]]),
+                "LeBron James", "Chris Paul"],
+            ]
+        self.check_out_of_order_result(resp, result)
+
+        stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)-[:like]->(k) return p, n.name, m.name, k.name'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['p', 'n.name', 'm.name', 'k.name']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["LeBron James"+"Ray Allen"+"like"+"0"], 1),
+                    VERTICES["Ray Allen"],
+                    (EDGES["Ray Allen"+"Rajon Rondo"+"like"+"0"], 1),
+                    VERTICES["Rajon Rondo"]]),
+                "LeBron James", "Ray Allen", "Rajon Rondo"]
+            ]
         self.check_out_of_order_result(resp, result)
 
     def test_failures(self):

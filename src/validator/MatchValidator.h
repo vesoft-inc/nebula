@@ -68,8 +68,6 @@ private:
 
     Status validateAliases(const std::vector<const Expression*> &exprs) const;
 
-    Status analyzeStartPoint();
-
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
                                         const MapExpression *map) const;
 
@@ -77,6 +75,12 @@ private:
     T* saveObject(T *obj) const {
         return qctx_->objPool()->add(obj);
     }
+
+    Status buildNodeInfo(const MatchPath *path);
+
+    Status buildEdgeInfo(const MatchPath *path);
+
+    Status buildPathExpr(const MatchPath *path);
 
 private:
     std::unique_ptr<MatchAstContext>            matchCtx_;
@@ -86,6 +90,7 @@ struct MatchAstContext final : AstContext {
     std::vector<MatchValidator::NodeInfo>                       nodeInfos;
     std::vector<MatchValidator::EdgeInfo>                       edgeInfos;
     std::unordered_map<std::string, MatchValidator::AliasType>  aliases;
+    std::unique_ptr<PathBuildExpression>                        pathBuild;
     std::unique_ptr<Expression>                                 filter;
     const YieldColumns                                         *yieldColumns;
     MatchValidator::ScanInfo                                    scanInfo;

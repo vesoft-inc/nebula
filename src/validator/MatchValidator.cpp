@@ -5,8 +5,9 @@
  */
 
 #include "validator/MatchValidator.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
+
 #include "util/ExpressionUtils.h"
+#include "visitor/RewriteMatchLabelVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -46,19 +47,50 @@ Status MatchValidator::validateImpl() {
         NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter()));
     }
     NG_RETURN_IF_ERROR(validateReturn(sentence->ret()));
-    return analyzeStartPoint();
+    return Status::OK();
 }
 
 
 Status MatchValidator::validatePath(const MatchPath *path) {
-    auto *sm = qctx_->schemaMng();
-    auto steps = path->steps();
+    NG_RETURN_IF_ERROR(buildNodeInfo(path));
+    NG_RETURN_IF_ERROR(buildEdgeInfo(path));
+    NG_RETURN_IF_ERROR(buildPathExpr(path));
+    return Status::OK();
+}
+
+
+Status MatchValidator::buildPathExpr(const MatchPath *path) {
+    auto* pathAlias = path->alias();
+    if (pathAlias == nullptr) {
+        return Status::OK();
+    }
+    if (!matchCtx_->aliases.emplace(*pathAlias, kPath).second) {
+        return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
+    }
 
     auto& nodeInfos = matchCtx_->nodeInfos;
     auto& edgeInfos = matchCtx_->edgeInfos;
 
+    auto pathBuild = std::make_unique<PathBuildExpression>();
+    for (size_t i = 0; i < edgeInfos.size(); ++i) {
+        pathBuild->add(std::make_unique<VariablePropertyExpression>(
+            new std::string(), new std::string(*nodeInfos[i].alias)));
+        pathBuild->add(std::make_unique<VariablePropertyExpression>(
+            new std::string(), new std::string(*edgeInfos[i].alias)));
+    }
+    pathBuild->add(std::make_unique<VariablePropertyExpression>(
+        new std::string(), new std::string(*nodeInfos.back().alias)));
+    matchCtx_->pathBuild = std::move(pathBuild);
+    return Status::OK();
+}
+
+
+Status MatchValidator::buildNodeInfo(const MatchPath *path) {
+    auto *sm = qctx_->schemaMng();
+    auto steps = path->steps();
+    auto& nodeInfos = matchCtx_->nodeInfos;
     nodeInfos.resize(steps + 1);
-    edgeInfos.resize(steps);
+
     for (auto i = 0u; i <= steps; i++) {
         auto *node = path->node(i);
         auto *label = node->label();
@@ -68,7 +100,7 @@ Status MatchValidator::validatePath(const MatchPath *path) {
         if (label != nullptr) {
             auto tid = sm->toTagID(space_.id, *label);
             if (!tid.ok()) {
-                return Status::Error("`%s': Unknown tag", label->c_str());
+                return Status::SemanticError("`%s': Unknown tag", label->c_str());
             }
             nodeInfos[i].tid = tid.value();
         }
@@ -77,7 +109,7 @@ Status MatchValidator::validatePath(const MatchPath *path) {
             alias = saveObject(new std::string(vctx_->anonVarGen()->getVar()));
         }
         if (!matchCtx_->aliases.emplace(*alias, kNode).second) {
-            return Status::Error("`%s': Redefined alias", alias->c_str());
+            return Status::SemanticError("`%s': Redefined alias", alias->c_str());
         }
         Expression *filter = nullptr;
         if (props != nullptr) {
@@ -91,6 +123,15 @@ Status MatchValidator::validatePath(const MatchPath *path) {
         nodeInfos[i].props = props;
         nodeInfos[i].filter = filter;
     }
+
+    return Status::OK();
+}
+
+Status MatchValidator::buildEdgeInfo(const MatchPath *path) {
+    auto *sm = qctx_->schemaMng();
+    auto steps = path->steps();
+    auto& edgeInfos = matchCtx_->edgeInfos;
+    edgeInfos.resize(steps);
 
     for (auto i = 0u; i < steps; i++) {
         auto *edge = path->edge(i);
@@ -303,10 +344,6 @@ Status MatchValidator::validateAliases(const std::vector<const Expression*> &exp
             }
         }
     }
-    return Status::OK();
-}
-
-Status MatchValidator::analyzeStartPoint() {
     return Status::OK();
 }
 
