@@ -26,17 +26,18 @@ std::vector<const Expression*> ExpressionUtils::pullAnds(const Expression *expr)
     auto *root = static_cast<const LogicalExpression*>(expr);
     std::vector<const Expression*> operands;
 
-    if (root->left()->kind() != Expression::Kind::kLogicalAnd) {
-        operands.emplace_back(root->left());
+    // TODO(dutor) Deal with n-ary operands
+    if (root->operand(0)->kind() != Expression::Kind::kLogicalAnd) {
+        operands.emplace_back(root->operand(0));
     } else {
-        auto ands = pullAnds(root->left());
+        auto ands = pullAnds(root->operand(0));
         operands.insert(operands.end(), ands.begin(), ands.end());
     }
 
-    if (root->right()->kind() != Expression::Kind::kLogicalAnd) {
-        operands.emplace_back(root->right());
+    if (root->operand(1)->kind() != Expression::Kind::kLogicalAnd) {
+        operands.emplace_back(root->operand(1));
     } else {
-        auto ands = pullAnds(root->right());
+        auto ands = pullAnds(root->operand(1));
         operands.insert(operands.end(), ands.begin(), ands.end());
     }
 
@@ -48,17 +49,18 @@ std::vector<const Expression*> ExpressionUtils::pullOrs(const Expression *expr) 
     auto *root = static_cast<const LogicalExpression*>(expr);
     std::vector<const Expression*> operands;
 
-    if (root->left()->kind() != Expression::Kind::kLogicalOr) {
-        operands.emplace_back(root->left());
+    // TODO(dutor) Deal with n-ary operands
+    if (root->operand(0)->kind() != Expression::Kind::kLogicalOr) {
+        operands.emplace_back(root->operand(0));
     } else {
-        auto ands = pullOrs(root->left());
+        auto ands = pullOrs(root->operand(0));
         operands.insert(operands.end(), ands.begin(), ands.end());
     }
 
-    if (root->right()->kind() != Expression::Kind::kLogicalOr) {
-        operands.emplace_back(root->right());
+    if (root->operand(1)->kind() != Expression::Kind::kLogicalOr) {
+        operands.emplace_back(root->operand(1));
     } else {
-        auto ands = pullOrs(root->right());
+        auto ands = pullOrs(root->operand(1));
         operands.insert(operands.end(), ands.begin(), ands.end());
     }
 

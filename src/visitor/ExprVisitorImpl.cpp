@@ -37,7 +37,12 @@ void ExprVisitorImpl::visit(AttributeExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(LogicalExpression *expr) {
-    visitBinaryExpr(expr);
+    for (auto &operand : expr->operands()) {
+        operand->accept(this);
+        if (!ok()) {
+            break;
+        }
+    }
 }
 
 void ExprVisitorImpl::visit(LabelAttributeExpression *expr) {

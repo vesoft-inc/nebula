@@ -98,10 +98,11 @@ Status IndexScanValidator::checkFilter(Expression* expr, const std::string& from
     switch (expr->kind()) {
         case Expression::Kind::kLogicalOr :
         case Expression::Kind::kLogicalAnd : {
+            // TODO(dutor) Deal with n-ary operands
             auto lExpr = static_cast<LogicalExpression*>(expr);
-            auto ret = checkFilter(lExpr->left(), from);
+            auto ret = checkFilter(lExpr->operand(0), from);
             NG_RETURN_IF_ERROR(ret);
-            ret = checkFilter(lExpr->right(), from);
+            ret = checkFilter(lExpr->operand(1), from);
             NG_RETURN_IF_ERROR(ret);
             break;
         }

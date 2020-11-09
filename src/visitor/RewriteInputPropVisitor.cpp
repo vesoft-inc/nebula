@@ -62,7 +62,13 @@ void RewriteInputPropVisitor::visit(RelationalExpression* expr) {
 }
 
 void RewriteInputPropVisitor::visit(LogicalExpression* expr) {
-    visitBinaryExpr(expr);
+    auto &operands = expr->operands();
+    for (auto i = 0u; i < operands.size(); i++) {
+        operands[i]->accept(this);
+        if (ok()) {
+            expr->setOperand(i, result_.release());
+        }
+    }
 }
 
 void RewriteInputPropVisitor::visit(UnaryExpression* expr) {

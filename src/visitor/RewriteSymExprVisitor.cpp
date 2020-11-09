@@ -71,7 +71,13 @@ void RewriteSymExprVisitor::visit(AttributeExpression *expr) {
 }
 
 void RewriteSymExprVisitor::visit(LogicalExpression *expr) {
-    visitBinaryExpr(expr);
+    auto &operands = expr->operands();
+    for (auto i = 0u; i < operands.size(); i++) {
+        operands[i]->accept(this);
+        if (expr_) {
+            expr->setOperand(i, expr_.release());
+        }
+    }
 }
 
 // function call

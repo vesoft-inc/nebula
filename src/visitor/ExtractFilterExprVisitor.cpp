@@ -78,20 +78,26 @@ void ExtractFilterExprVisitor::visit(EdgeExpression *) {
 }
 
 void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
+    // TODO(dutor) It's buggy when there are multi-level embedded logical expressions
     if (expr->kind() == Expression::Kind::kLogicalAnd) {
-        expr->left()->accept(this);
-        auto canBePushedLeft = canBePushed_;
-        expr->right()->accept(this);
-        auto canBePushedRight = canBePushed_;
-        canBePushed_ = canBePushedLeft || canBePushedRight;
-        if (canBePushed_) {
-            if (!canBePushedLeft) {
-                remainedExpr_ = expr->left()->clone();
-                expr->setLeft(new ConstantExpression(true));
-            } else if (!canBePushedRight) {
-                remainedExpr_ = expr->right()->clone();
-                expr->setRight(new ConstantExpression(true));
+        auto &operands = expr->operands();
+        std::vector<bool> flags(operands.size(), false);
+        auto canBePushed = false;
+        for (auto i = 0u; i < operands.size(); i++) {
+            operands[i]->accept(this);
+            flags[i] = canBePushed_;
+            canBePushed = canBePushed || canBePushed_;
+        }
+        if (canBePushed) {
+            auto remainedExpr = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
+            for (auto i = 0u; i < operands.size(); i++) {
+                if (flags[i]) {
+                    continue;
+                }
+                remainedExpr->addOperand(operands[i]->clone().release());
+                expr->setOperand(i, new ConstantExpression(true));
             }
+            remainedExpr_ = std::move(remainedExpr);
         }
     } else {
         ExprVisitorImpl::visit(expr);

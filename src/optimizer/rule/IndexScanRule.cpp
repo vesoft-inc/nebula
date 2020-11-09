@@ -308,8 +308,9 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
                                                    Expression::encode(*expr).c_str());
                 return Status::NotSupported(errorMsg);
             }
-            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->left(), items, kind, isEdge));
-            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->right(), items, kind, isEdge));
+            // TODO(dutor) Deal with n-ary operands
+            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->operand(0), items, kind, isEdge));
+            NG_RETURN_IF_ERROR(analyzeExpression(lExpr->operand(1), items, kind, isEdge));
             break;
         }
         case Expression::Kind::kRelLE:
