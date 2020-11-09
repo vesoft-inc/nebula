@@ -112,6 +112,7 @@ public:
         kProduceSemiShortestPath,
         kConjunctPath,
         kProduceAllPaths,
+        kCartesianProduct,
     };
 
     PlanNode(QueryContext* qctx, Kind kind);

@@ -18,17 +18,10 @@ public:
     static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ProduceSemiShortestPath(qctx, input));
     }
-    void setStartsVid(std::vector<Value> starts);
-
-    std::vector<Value> getStartsVid() const {
-        return starts_;
-    }
 
 private:
     ProduceSemiShortestPath(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
-
-    std::vector<Value> starts_;
 };
 
 class BFSShortestPath : public SingleInputNode {
@@ -92,6 +85,24 @@ class ProduceAllPaths final : public SingleInputNode {
     ProduceAllPaths(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kProduceAllPaths, input) {}
 };
+
+class CartesianProduct final : public SingleDependencyNode {
+public:
+    static CartesianProduct* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new CartesianProduct(qctx, input));
+    }
+
+    Status addVar(std::string varName);
+
+    std::vector<std::string> inputVars() const;
+
+private:
+    CartesianProduct(QueryContext* qctx, PlanNode* input)
+        : SingleDependencyNode(qctx, Kind::kCartesianProduct, input) {}
+
+    std::vector<std::string> allColNames_;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ALGO_H_

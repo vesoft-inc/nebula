@@ -7,6 +7,7 @@ nebula_add_library(
     planner_obj OBJECT
     PlanNode.cpp
     ExecutionPlan.cpp
+    Algo.cpp
     Admin.cpp
     Logic.cpp
     Query.cpp

@@ -340,15 +340,15 @@ Value GetNeighborsIter::getEdge() const {
 
 void JoinIter::joinIndex(const Iterator* lhs, const Iterator* rhs) {
     size_t nextSeg = 0;
-    if (lhs->isSequentialIter()) {
+    if (lhs != nullptr && lhs->isSequentialIter()) {
         nextSeg = buildIndexFromSeqIter(static_cast<const SequentialIter*>(lhs), 0);
-    } else if (lhs->isJoinIter()) {
+    } else if (lhs != nullptr && lhs->isJoinIter()) {
         nextSeg = buildIndexFromJoinIter(static_cast<const JoinIter*>(lhs), 0);
     }
 
-    if (rhs->isSequentialIter()) {
+    if (rhs != nullptr && rhs->isSequentialIter()) {
         buildIndexFromSeqIter(static_cast<const SequentialIter*>(rhs), nextSeg);
-    } else if (rhs->isJoinIter()) {
+    } else if (rhs != nullptr && rhs->isJoinIter()) {
         buildIndexFromJoinIter(static_cast<const JoinIter*>(rhs), nextSeg);
     }
 }
@@ -367,6 +367,9 @@ size_t JoinIter::buildIndexFromSeqIter(const SequentialIter* iter,
 size_t JoinIter::buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx) {
     auto colIdxStart = colIndices_.size();
     size_t nextSeg = 0;
+    if (iter->getColIndices().empty()) {
+        return nextSeg;
+    }
     for (auto& col : iter->getColIndices()) {
         auto oldSeg = col.second.first;
         size_t newSeg = oldSeg + segIdx;
