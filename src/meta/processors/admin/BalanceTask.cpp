@@ -36,11 +36,6 @@ void BalanceTask::invoke() {
         onError_();
         return;
     }
-    if (ret_ == Result::SUCCEEDED) {
-        CHECK(status_ == Status::END);
-        onFinished_();
-        return;
-    }
     switch (status_) {
         case Status::START: {
             LOG(INFO) << taskIdStr_ << "Start to move part, check the peers firstly!";
