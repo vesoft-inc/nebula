@@ -11,6 +11,8 @@ namespace nebula {
 namespace graph {
 
 void TestBase::SetUp() {
+    time_t curTime = time(0);
+    timezoneOffset_ = timegm(localtime(&curTime)) - curTime;
 }
 
 

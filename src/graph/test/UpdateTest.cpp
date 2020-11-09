@@ -615,7 +615,9 @@ TEST_F(UpsertTest, EdgeNotExists) {
         std::vector <std::tuple<int64_t, int64_t>> expected = {
             {3, 1546308000},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        if (isShangHaiTimezone()) {
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
     }
     // select_default's year is timestamp type, set str type
     {
@@ -628,7 +630,9 @@ TEST_F(UpsertTest, EdgeNotExists) {
         std::vector <std::tuple<int64_t, int64_t>> expected = {
             {3, 1578621600},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        if (isShangHaiTimezone()) {
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
     }
     // select_default's grade without default value
     {

@@ -268,7 +268,12 @@ protected:
     }
 
 
-protected:
+    bool isShangHaiTimezone() {
+        return timezoneOffset_ == 8 * 3600;
+    }
+
+private:
+    int32_t  timezoneOffset_{0};
 };
 
 }   // namespace graph
