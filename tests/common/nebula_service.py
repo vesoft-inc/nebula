@@ -22,8 +22,7 @@ class NebulaService(object):
     def __init__(self, build_dir, src_dir):
         self.build_dir = build_dir
         self.src_dir = src_dir
-        self.work_dir = "/tmp/nebula-" + str(
-            random.randrange(1000000, 100000000))
+        self.work_dir = os.path.join(os.getcwd(), 'build', 'server')
         self.pids = {}
 
     def set_work_dir(self, work_dir):
@@ -84,6 +83,8 @@ class NebulaService(object):
             return result == 0
 
     def install(self):
+        if os.path.exists(self.work_dir):
+            shutil.rmtree(self.work_dir)
         os.mkdir(self.work_dir)
         print("work directory: " + self.work_dir)
         os.chdir(self.work_dir)
