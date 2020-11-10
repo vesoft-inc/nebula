@@ -23,6 +23,14 @@ class QueryResponse;
 
 namespace graph {
 
+struct HashPair {
+    template <class T1, class T2> size_t operator()(const std::pair<T1, T2>& p) const {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ hash2;
+    }
+};
+
 class GoExecutor final : public TraverseExecutor {
 public:
     GoExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -180,20 +188,22 @@ private:
 
     class VertexBackTracker final {
     public:
-        void inject(const std::multimap<VertexID, VertexID> &backTrace) {
+        void inject(const std::unordered_set<std::pair<VertexID, VertexID>, HashPair> &backTrace,
+                uint32_t curStep) {
             // TODO(shylock) c++17 merge directly
             for (const auto iter : backTrace) {
-                mapping_.emplace(iter.first, iter.second);
+                mapping_.emplace(std::pair<uint32_t, VertexID>(curStep, iter.first), iter.second);
             }
         }
 
-        auto get(VertexID id) const {
-            auto range = mapping_.equal_range(id);
+        auto get(uint32_t curStep, VertexID id) const {
+            auto range = mapping_.equal_range(std::pair<uint32_t, VertexID>(curStep, id));
             return range;
         }
 
     private:
-       std::multimap<VertexID, VertexID> mapping_;
+        // Record the path from the dst node of each step to the root node.((curStep,dstID),rootID)
+        std::multimap<std::pair<uint32_t, VertexID>, VertexID> mapping_;
     };
 
     enum FromType {
@@ -212,7 +222,7 @@ private:
             ids.emplace_back(srcId);
             return ids;
         }
-        const auto range = DCHECK_NOTNULL(backTracker_)->get(srcId);
+        const auto range = DCHECK_NOTNULL(backTracker_)->get(record - 1, srcId);
         for (auto i = range.first; i != range.second; ++i) {
             ids.emplace_back(i->second);
         }
