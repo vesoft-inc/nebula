@@ -6,6 +6,8 @@
 
 #include "meta/processors/zoneMan/AddZoneProcessor.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace meta {
 
@@ -14,7 +16,7 @@ void AddZoneProcessor::process(const cpp2::AddZoneReq& req) {
     auto zoneName = req.get_zone_name();
     auto nodes = req.get_nodes();
     if (nodes.empty()) {
-        LOG(ERROR) << "The hosts should not be empty.";
+        LOG(ERROR) << "The hosts should not be empty";
         handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
@@ -22,8 +24,17 @@ void AddZoneProcessor::process(const cpp2::AddZoneReq& req) {
 
     std::set<HostAddr> nodeSet(nodes.begin(), nodes.end());
     if (nodes.size() != nodeSet.size()) {
-        LOG(ERROR) << "Conflict host found in the zone.";
+        LOG(ERROR) << "Conflict host found in the zone";
         handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
+    std::sort(activeHosts.begin(), activeHosts.end());
+    if (!std::includes(activeHosts.begin(), activeHosts.end(), nodeSet.begin(), nodeSet.end())) {
+        LOG(ERROR) << "Host not exist";
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }

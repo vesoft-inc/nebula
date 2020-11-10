@@ -38,18 +38,7 @@ TEST(MetaClientTest, InterfacesTest) {
     auto* client = cluster.metaClient_.get();
 
     GraphSpaceID spaceId = 0;
-    {
-        // Add hosts automatically, then testing listHosts interface.
-        std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-        TestUtils::registerHB(kv, hosts);
-        auto ret = client->listHosts().get();
-        ASSERT_TRUE(ret.ok());
-        for (auto i = 0u; i < hosts.size(); i++) {
-            auto tHost = ret.value()[i].hostAddr;
-            auto hostAddr = HostAddr(tHost.host, tHost.port);
-            ASSERT_EQ(hosts[i], hostAddr);
-        }
-    }
+    TestUtils::createSomeHosts(kv);
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
@@ -337,6 +326,169 @@ TEST(MetaClientTest, InterfacesTest) {
     }
 }
 
+TEST(MetaClientTest, SpaceWithGroupTest) {
+    FLAGS_heartbeat_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");
+
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    cluster.initMetaClient();
+    auto* kv = cluster.metaKV_.get();
+    auto* client = cluster.metaClient_.get();
+
+    // Prepare
+    {
+        {
+            // Add hosts automatically, then testing listHosts interface.
+            std::vector<HostAddr> addresses;
+            for (int32_t i = 0; i < 10; i++) {
+               addresses.emplace_back(std::to_string(i), i);
+            }
+            TestUtils::registerHB(kv, addresses);
+            auto ret = client->listHosts().get();
+            ASSERT_TRUE(ret.ok());
+            for (auto i = 0u; i < addresses.size(); i++) {
+                auto tHost = ret.value()[i].hostAddr;
+                auto hostAddr = HostAddr(tHost.host, tHost.port);
+                ASSERT_EQ(addresses[i], hostAddr);
+            }
+        }
+        // Add Zone
+        {
+            std::vector<HostAddr> nodes = {{"0", 0}, {"1", 1}};
+            auto result = client->addZone("zone_0", nodes).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+            std::vector<HostAddr> nodes = {{"2", 2}, {"3", 3}};
+            auto result = client->addZone("zone_1", nodes).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+            std::vector<HostAddr> nodes = {{"4", 4}, {"5", 5}};
+            auto result = client->addZone("zone_2", nodes).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+            std::vector<HostAddr> nodes = {{"6", 6}, {"7", 7}};
+            auto result = client->addZone("zone_3", nodes).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+            std::vector<HostAddr> nodes = {{"8", 8}, {"9", 9}};
+            auto result = client->addZone("zone_4", nodes).get();
+            ASSERT_TRUE(result.ok());
+        }
+        // List Zones
+        {
+            auto result = client->listZones().get();
+            ASSERT_TRUE(result.ok());
+            ASSERT_EQ(5, result.value().size());
+        }
+        // Add Group
+        {
+            std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+            auto result = client->addGroup("group_0", std::move(zones)).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+            std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
+            auto result = client->addGroup("group_1", std::move(zones)).get();
+            ASSERT_TRUE(result.ok());
+        }
+        {
+           auto result = client->listGroups().get();
+            ASSERT_TRUE(result.ok());
+            ASSERT_EQ(2, result.value().size());
+        }
+    }
+    // Create Space without Group
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("default_space");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(3);
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    // Create Space on group_0, replica factor is equal with zone size
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("space_on_group_0_3");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(3);
+        spaceDesc.set_group_name("group_0");
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    // Drop Group should failed
+    {
+        auto result = client->dropGroup("group_0").get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Create Space on group_0, replica factor is less than zone size
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("space_on_group_0_1");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(1);
+        spaceDesc.set_group_name("group_0");
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    // Create Space on group_0, replica factor is larger than zone size
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("space_on_group_0_4");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(4);
+        spaceDesc.set_group_name("group_0");
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_FALSE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_FALSE(ret.ok()) << ret.status();
+    }
+    {
+        auto result = client->addZoneIntoGroup("zone_3", "group_0").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("space_on_group_0_4");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(4);
+        spaceDesc.set_group_name("group_0");
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    // Create Space on a group which is not exist
+    {
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("space_on_group_not_exist");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(4);
+        spaceDesc.set_group_name("group_not_exist");
+        auto ret = client->createSpace(spaceDesc).get();
+        ASSERT_FALSE(ret.ok()) << ret.status();
+
+        ret = client->createSpace(spaceDesc, true).get();
+        ASSERT_FALSE(ret.ok()) << ret.status();
+    }
+}
+
 TEST(MetaClientTest, TagTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
@@ -347,8 +499,7 @@ TEST(MetaClientTest, TagTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    TestUtils::createSomeHosts(kv);
     meta::cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name("default");
     spaceDesc.set_partition_num(9);
@@ -453,8 +604,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    TestUtils::createSomeHosts(kv);
     meta::cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name("default_space");
     spaceDesc.set_partition_num(9);
@@ -561,8 +711,7 @@ TEST(MetaClientTest, TagIndexTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    TestUtils::createSomeHosts(kv);
     meta::cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name("default_space");
     spaceDesc.set_partition_num(8);
@@ -750,8 +899,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
 
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    TestUtils::createSomeHosts(kv);
     meta::cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name("default_space");
     spaceDesc.set_partition_num(8);
@@ -937,8 +1085,11 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    std::vector<HostAddr> hosts;
+    for (int32_t i = 0; i < 12; i++) {
+        hosts.emplace_back(std::to_string(i), i);
+    }
+    TestUtils::createSomeHosts(kv, std::move(hosts));
 
     // Add Zone
     {
@@ -972,6 +1123,12 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     {
         std::vector<HostAddr> nodes = {{"0", 0}, {"0", 0}};
         auto result = client->addZone("zone_0", nodes).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Add Zone which node not exist
+    {
+        std::vector<HostAddr> nodes = {{"zone_not_exist", 0}};
+        auto result = client->addZone("zone_4", nodes).get();
         ASSERT_FALSE(result.ok());
     }
     // Add Zone already existed
@@ -1011,6 +1168,12 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     // Add host into zone which the node have existed
     {
         HostAddr node("3", 3);
+        auto result = client->addHostIntoZone(node, "zone_0").get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Add host into zone which the node not existed
+    {
+        HostAddr node("99", 99);
         auto result = client->addHostIntoZone(node, "zone_0").get();
         ASSERT_FALSE(result.ok());
     }
@@ -1056,6 +1219,11 @@ TEST(MetaClientTest, GroupAndZoneTest) {
         auto result = client->addGroup("group_0", std::move(zones)).get();
         ASSERT_FALSE(result.ok());
     }
+    {
+        std::vector<std::string> zones = {"zone_1", "zone_2"};
+        auto result = client->addGroup("group_1", std::move(zones)).get();
+        ASSERT_TRUE(result.ok());
+    }
     // Get Group
     {
         auto result = client->getGroup("group_0").get();
@@ -1071,6 +1239,11 @@ TEST(MetaClientTest, GroupAndZoneTest) {
         auto result = client->listGroups().get();
         ASSERT_TRUE(result.ok());
     }
+    {
+        std::vector<HostAddr> nodes = {{"9", 9}, {"10", 10}, {"11", 11}};
+        auto result = client->addZone("zone_3", nodes).get();
+        ASSERT_TRUE(result.ok());
+    }
     // Add zone into group
     {
         auto result = client->addZoneIntoGroup("zone_3", "group_0").get();
@@ -1084,6 +1257,11 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     // Add zone into group which zone already exist
     {
         auto result = client->addZoneIntoGroup("zone_0", "group_0").get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Add zone into group which zone not exist
+    {
+        auto result = client->addZoneIntoGroup("zone_not_exist", "group_0").get();
         ASSERT_FALSE(result.ok());
     }
     // Drop zone from group
@@ -1141,10 +1319,9 @@ public:
         partNum++;
     }
 
-    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+    void onSpaceOptionUpdated(GraphSpaceID,
                               const std::unordered_map<std::string, std::string>& update)
                               override {
-        UNUSED(spaceId);
         for (const auto& kv : update) {
             options[kv.first] = kv.second;
         }
@@ -1161,9 +1338,8 @@ public:
     }
 
     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
-                                            std::vector<PartitionID>>& leaderIds) override {
+                                            std::vector<PartitionID>>&) override {
         LOG(INFO) << "Get leader distribution!";
-        UNUSED(leaderIds);
     }
 
     HostAddr getLocalHost() {
@@ -1178,7 +1354,7 @@ public:
 
 TEST(MetaClientTest, DiffTest) {
     FLAGS_heartbeat_interval_secs = 1;
-    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/MetaClientDiffTest.XXXXXX");
 
     mock::MockCluster cluster;
     cluster.startMeta(0, rootPath.path());
@@ -1239,7 +1415,7 @@ TEST(MetaClientTest, DiffTest) {
 TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
-    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/HeartbeatTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.startMeta(0, rootPath.path());
 
@@ -1574,8 +1750,7 @@ TEST(MetaClientTest, ListenerTest) {
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     client->waitForMetadReady();
 
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    TestUtils::registerHB(kv, hosts);
+    TestUtils::createSomeHosts(kv);
     meta::cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name("default");
     spaceDesc.set_partition_num(9);
@@ -1583,9 +1758,10 @@ TEST(MetaClientTest, ListenerTest) {
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
     {
-       auto addRet = client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, hosts).get();
-       ASSERT_TRUE(addRet.ok()) << addRet.status();
+        auto addRet = client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, hosts).get();
+        ASSERT_TRUE(addRet.ok()) << addRet.status();
     }
     {
         auto listRet = client->listListener(space).get();
@@ -1596,8 +1772,8 @@ TEST(MetaClientTest, ListenerTest) {
         for (size_t i = 0; i < 9; i++) {
             cpp2::ListenerInfo l;
             l.set_type(cpp2::ListenerType::ELASTICSEARCH);
-            l.set_host(hosts[i%4]);
-            l.set_part_id(i+1);
+            l.set_host(hosts[i % 4]);
+            l.set_part_id(i + 1);
             expected.emplace_back(std::move(l));
         }
         ASSERT_EQ(expected, listeners);

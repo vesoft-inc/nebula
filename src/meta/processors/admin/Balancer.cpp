@@ -115,7 +115,7 @@ cpp2::ErrorCode Balancer::recovery() {
                 std::lock_guard<std::mutex> lg(lock_);
                 if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
                         kvstore::ResultCode::SUCCEEDED) {
-                    LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+                    LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
                 }
                 finish();
             }
@@ -154,12 +154,14 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel)
     std::vector<std::pair<GraphSpaceID, int32_t>> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
+        LOG(ERROR) << "Can't get all spaces";
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
     for (auto spaceInfo : spaces) {
         auto taskRet = genTasks(spaceInfo.first, spaceInfo.second, hostDel);
         if (!ok(taskRet)) {
+            LOG(ERROR) << "Generate tasks on space " << spaceInfo.first << " failed";
             return error(taskRet);
         }
         auto tasks = std::move(value(taskRet));

@@ -47,6 +47,7 @@ Status ListHostsProcessor::allMetaHostsStatus() {
     auto* partManager = kvstore_->partManager();
     auto status = partManager->partMeta(kDefaultSpaceId, kDefaultPartId);
     if (!status.ok()) {
+        LOG(ERROR) << "Get parts failed: " << status.status();
         return status.status();
     }
     auto partMeta = status.value();
@@ -107,6 +108,7 @@ Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
 Status ListHostsProcessor::fillLeaderAndPartInfoPerHost() {
     auto status = allHostsWithStatus(cpp2::HostRole::STORAGE);
     if (!status.ok()) {
+        LOG(ERROR) << "Get all host's status failed";
         return status;
     }
 

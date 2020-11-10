@@ -24,8 +24,28 @@ namespace meta {
 
 TEST(GroupAndZoneTest, GroupAndZoneTest) {
     fs::TempDir rootPath("/tmp/GroupZoneTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
 
+    // Prepare
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    std::vector<HostAddr> addresses;
+    for (int32_t i = 0; i < 12; i++) {
+       addresses.emplace_back(std::to_string(i), i);
+    }
+    TestUtils::registerHB(kv.get(), addresses);
+    {
+        cpp2::ListHostsReq req;
+        req.set_role(cpp2::HostRole::STORAGE);
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(12, resp.hosts.size());
+        for (auto i = 0; i < 12; i++) {
+            ASSERT_EQ(std::to_string(i), resp.hosts[i].hostAddr.host);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
+            ASSERT_EQ(cpp2::HostStatus::ONLINE, resp.hosts[i].status);
+        }
+    }
     // Add Zone
     {
         {
@@ -113,6 +133,18 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
+    // Add Zone which node not exist
+    {
+        std::vector<HostAddr> nodes = {{"zone_not_exist", 0}};
+        cpp2::AddZoneReq req;
+        req.set_zone_name("zone_4");
+        req.set_nodes(std::move(nodes));
+        auto* processor = AddZoneProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
+    }
     // Add Zone already existed
     {
         std::vector<HostAddr> nodes;
@@ -199,6 +231,18 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.code);
+    }
+    // Add host into zone which the node not existed
+    {
+        cpp2::AddHostIntoZoneReq req;
+        req.set_zone_name("zone_0");
+        HostAddr node{"99", 99};
+        req.set_node(std::move(node));
+        auto* processor = AddHostIntoZoneProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
     }
     // Drop host from zone
     {
@@ -354,6 +398,20 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         ASSERT_EQ("group_0", resp.groups[0].group_name);
         ASSERT_EQ("group_1", resp.groups[1].group_name);
     }
+    {
+        std::vector<HostAddr> nodes;
+        for (int32_t i = 9; i < 12; i++) {
+            nodes.emplace_back(std::to_string(i), i);
+        }
+        cpp2::AddZoneReq req;
+        req.set_zone_name("zone_3");
+        req.set_nodes(std::move(nodes));
+        auto* processor = AddZoneProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
     // Add zone into group
     {
         cpp2::AddZoneIntoGroupReq req;
@@ -386,6 +444,17 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.code);
+    }
+    // Add zone into group which zone not exist
+    {
+        cpp2::AddZoneIntoGroupReq req;
+        req.set_group_name("group_0");
+        req.set_zone_name("zone_not_exist");
+        auto* processor = AddZoneIntoGroupProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
     }
     // Drop zone from group
     {

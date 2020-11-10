@@ -39,6 +39,31 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
         return;
     }
 
+    auto zonePrefix = MetaServiceUtils::zonePrefix();
+    std::unique_ptr<kvstore::KVIterator> zoneIter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, zonePrefix, &zoneIter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        handleErrorCode(MetaCommon::to(ret));
+        onFinished();
+        return;
+    }
+
+    bool found = false;
+    while (zoneIter->valid()) {
+        auto name = MetaServiceUtils::parseZoneName(zoneIter->key());
+        if (name == zoneName) {
+            found = true;
+        }
+        zoneIter->next();
+    }
+
+    if (!found) {
+        LOG(ERROR) << "Zone " << zoneName << " not found";
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
     zoneNames.emplace_back(zoneName);
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));

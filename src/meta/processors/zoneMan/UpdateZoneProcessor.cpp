@@ -6,6 +6,8 @@
 
 #include "meta/processors/zoneMan/UpdateZoneProcessor.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace meta {
 
@@ -35,6 +37,15 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
     if (iter != hosts.end()) {
         LOG(ERROR) << "Host " << host << " already exist in the zone " << zoneName;
         handleErrorCode(cpp2::ErrorCode::E_EXISTED);
+        onFinished();
+        return;
+    }
+
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
+    auto found = std::find(activeHosts.begin(), activeHosts.end(), host);
+    if (found == activeHosts.end()) {
+        LOG(ERROR) << "Host " << host << " not exist";
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
