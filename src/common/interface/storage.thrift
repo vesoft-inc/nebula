@@ -64,6 +64,7 @@ enum ErrorCode {
     E_TRANSFER_LEADER_FAILED = -46,
     E_INVALID_STAT_TYPE      = -47,
     E_INVALID_VID            = -48,
+    E_NO_TRANSFORMED         = -49,
 
     // meta client failed
     E_LOAD_META_FAILED       = -51,
