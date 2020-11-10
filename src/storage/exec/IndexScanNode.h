@@ -108,6 +108,9 @@ private:
             }
             auto type = iter->get_type().get_type();
             if (IndexKeyUtils::toValueType(type) == Value::Type::STRING) {
+                if (!iter->get_type().__isset.type_length) {
+                    return Status::Error("String property index has not set prefix length.");
+                }
                 auto len = *iter->get_type().get_type_length();
                 prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
             } else {
