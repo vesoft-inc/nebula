@@ -447,6 +447,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("skip", TokenType::KW_SKIP),
         CHECK_SEMANTIC_TYPE("OPTIONAL", TokenType::KW_OPTIONAL),
         CHECK_SEMANTIC_TYPE("optional", TokenType::KW_OPTIONAL),
+        CHECK_SEMANTIC_TYPE("DATE", TokenType::KW_DATE),
+        CHECK_SEMANTIC_TYPE("date", TokenType::KW_DATE),
+        CHECK_SEMANTIC_TYPE("TIME", TokenType::KW_TIME),
+        CHECK_SEMANTIC_TYPE("time", TokenType::KW_TIME),
+        CHECK_SEMANTIC_TYPE("DATETIME", TokenType::KW_DATETIME),
+        CHECK_SEMANTIC_TYPE("datetime", TokenType::KW_DATETIME),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

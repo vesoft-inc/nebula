@@ -84,30 +84,31 @@ StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType
             return Value(timestamp.value());
         }
         case meta::cpp2::PropertyType::DATE: {
-            if (v.type() != Value::Type::INT && v.type() != Value::Type::STRING) {
+            if (v.type() != Value::Type::DATE) {
                 LOG(ERROR) << "ValueType is wrong, input type "
                            << static_cast<int32_t>(type)
                            << ", v type " <<  v.type();
                 return Status::Error("Wrong type");
             }
-            auto date = TimeFunction::toDate(v);
-            if (!date.ok()) {
-                return date.status();
+            return v;
+        }
+        case meta::cpp2::PropertyType::TIME: {
+            if (v.type() != Value::Type::TIME) {
+                LOG(ERROR) << "ValueType is wrong, input type "
+                           << static_cast<int32_t>(type)
+                           << ", v type " <<  v.type();
+                return Status::Error("Wrong type");
             }
-            return Value(date.value());
+            return v;
         }
         case meta::cpp2::PropertyType::DATETIME: {
-            if (v.type() != Value::Type::INT && v.type() != Value::Type::STRING) {
+            if (v.type() != Value::Type::DATETIME) {
                 LOG(ERROR) << "ValueType is wrong, input type "
                            << static_cast<int32_t>(type)
                            << ", v type " <<  v.type();
                 return Status::Error("Wrong type");
             }
-            auto datetime = TimeFunction::toDateTime(v);
-            if (!datetime.ok()) {
-                return datetime.status();
-            }
-            return Value(datetime.value());
+            return v;
         }
         default: {
             return v;

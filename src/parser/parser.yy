@@ -128,7 +128,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 /* keywords */
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
-%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_DATETIME
+%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
@@ -708,6 +708,15 @@ function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
+    | KW_DATE L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("date"), $3);
+    }
+    | KW_TIME L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("time"), $3);
+    }
+    | KW_DATETIME L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("datetime"), $3);
+    }
     ;
 
 uuid_expression
@@ -792,6 +801,10 @@ type_spec
     | KW_DATE {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(meta::cpp2::PropertyType::DATE);
+    }
+    | KW_TIME {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::TIME);
     }
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();

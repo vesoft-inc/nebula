@@ -241,35 +241,35 @@ class TestSchema(NebulaTestSuite):
         self.check_out_of_order_result(resp, expect_result)
 
         # create edge succeeded
-        resp = self.client.execute('CREATE EDGE buy(id int, time string)')
+        resp = self.client.execute('CREATE EDGE buy(id int, time_ string)')
         self.check_resp_succeeded(resp)
 
         # create Edge with duplicate field
-        resp = self.client.execute('CREATE EDGE duplicate_buy(time int, time string)')
+        resp = self.client.execute('CREATE EDGE duplicate_buy(time_ int, time_ string)')
         self.check_resp_failed(resp)
 
         # create Edge with duplicate field
-        resp = self.client.execute('CREATE EDGE duplicate_buy(time int, time int)')
+        resp = self.client.execute('CREATE EDGE duplicate_buy(time_ int, time_ int)')
         self.check_resp_failed(resp)
 
         # create Edge with DEFAULT
         resp = self.client.execute('CREATE EDGE buy_with_default(id int, name string DEFAULT "NULL",'
-                                   'time timestamp DEFAULT 2020)')
+                                   'time_ timestamp DEFAULT 2020)')
         self.check_resp_succeeded(resp)
 
         # DEFAULT value not match type
-        resp = self.client.execute('CREATE EDGE buy_type_mismatch(id int, time string DEFAULT 0)')
+        resp = self.client.execute('CREATE EDGE buy_type_mismatch(id int, time_ string DEFAULT 0)')
         self.check_resp_failed(resp)
 
         # existent edge
-        resp = self.client.execute('CREATE EDGE buy(id int, time string)')
+        resp = self.client.execute('CREATE EDGE buy(id int, time_ string)')
         self.check_resp_failed(resp)
 
         # DESCRIBE edge
         resp = self.client.execute_query('DESCRIBE EDGE buy')
         self.check_resp_succeeded(resp)
         expect_result = [['id', 'int64', 'YES', T_EMPTY],
-                         ['time', 'string', 'YES', T_EMPTY]]
+                         ['time_', 'string', 'YES', T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)
 
         # desc nonexistent edge
@@ -280,7 +280,7 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute_query('DESC EDGE buy')
         self.check_resp_succeeded(resp)
         expect_result = [['id', 'int64', 'YES', T_EMPTY],
-                         ['time', 'string', 'YES', T_EMPTY]]
+                         ['time_', 'string', 'YES', T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)
 
         # show create edge
@@ -289,20 +289,20 @@ class TestSchema(NebulaTestSuite):
         create_edge_str = 'CREATE EDGE `buy_with_default` (\n' \
                           ' `id` int64 NULL,\n' \
                           ' `name` string NULL DEFAULT "NULL",\n' \
-                          ' `time` timestamp NULL DEFAULT 2020\n' \
+                          ' `time_` timestamp NULL DEFAULT 2020\n' \
                           ') ttl_duration = 0, ttl_col = "\"'
         expect_result = [['buy_with_default', create_edge_str]]
         self.check_result(resp, expect_result)
 
         # create edge succeed
-        resp = self.client.execute('CREATE EDGE education(id int, time timestamp, school string)')
+        resp = self.client.execute('CREATE EDGE education(id int, time_ timestamp, school string)')
         self.check_resp_succeeded(resp)
 
         # DESC edge
         resp = self.client.execute_query('DESC EDGE education')
         self.check_resp_succeeded(resp)
         expect_result = [['id', 'int64', 'YES', T_EMPTY],
-                         ['time', 'timestamp', 'YES', T_EMPTY],
+                         ['time_', 'timestamp', 'YES', T_EMPTY],
                          ['school', 'string', 'YES', T_EMPTY]]
         self.check_out_of_order_result(resp, expect_result)
 
@@ -316,11 +316,11 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute('ALTER EDGE education '
                                    'ADD (col1 int, col2 string), '
                                    'CHANGE (school int), '
-                                   'DROP (id, time)')
+                                   'DROP (id, time_)')
         self.check_resp_succeeded(resp)
 
         # drop not exist prop, failed
-        resp = self.client.execute('ALTER EDGE education DROP (id, time)')
+        resp = self.client.execute('ALTER EDGE education DROP (id, time_)')
         self.check_resp_failed(resp)
 
         # check result

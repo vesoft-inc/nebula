@@ -88,6 +88,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "FIXED_STRING"              { return TokenType::KW_FIXED_STRING; }
 "TIMESTAMP"                 { return TokenType::KW_TIMESTAMP; }
 "DATE"                      { return TokenType::KW_DATE; }
+"TIME"                      { return TokenType::KW_TIME; }
 "DATETIME"                  { return TokenType::KW_DATETIME; }
 "TAG"                       { return TokenType::KW_TAG; }
 "TAGS"                      { return TokenType::KW_TAGS; }

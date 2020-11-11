@@ -389,6 +389,12 @@ class NebulaTestSuite(object):
             value.set_fVal(col)
         elif isinstance(col, str):
             value.set_sVal(col.encode('utf-8'))
+        elif isinstance(col, CommonTtypes.Date):
+            value.set_dVal(col)
+        elif isinstance(col, CommonTtypes.Time):
+            value.set_tVal(col)
+        elif isinstance(col, CommonTtypes.DateTime):
+            value.set_dtVal(col)
         elif isinstance(col, dict):
             map_val = CommonTtypes.Map()
             map_val.kvs = dict()

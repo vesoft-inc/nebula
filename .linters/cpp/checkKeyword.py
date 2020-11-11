@@ -58,6 +58,7 @@ reserved_key_words = [
     'KW_FIXED_STRING',
     'KW_TIMESTAMP',
     'KW_DATE',
+    'KW_TIME',
     'KW_DATETIME',
     'KW_VID_SIZE',
     'KW_TAG',
