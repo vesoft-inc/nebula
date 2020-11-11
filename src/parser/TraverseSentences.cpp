@@ -280,6 +280,8 @@ std::string FindPathSentence::toString() const {
     buf += "FIND ";
     if (isShortest_) {
         buf += "SHORTEST PATH ";
+    } else if (isNoLoop_) {
+        buf += "NOLOOP PATH ";
     } else {
         buf += "ALL PATH ";
     }
