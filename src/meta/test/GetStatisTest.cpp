@@ -53,10 +53,11 @@ protected:
 
 TEST_F(GetStatisTest, StatisJob) {
     GraphSpaceID  spaceId = 1;
-    std::vector<std::string> paras{"1"};
+    std::vector<std::string> paras{"test_space"};
     JobDescription statisJob(12, cpp2::AdminCmd::STATIS, paras);
-    auto rc = jobMgr->addJob(statisJob, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    jobMgr->adminClient_ = adminClient_.get();
+    auto rc = jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
+    ASSERT_EQ(rc, nebula::kvstore::SUCCEEDED);
 
     {
         // Job is not executed, job status is QUEUE.
@@ -79,6 +80,11 @@ TEST_F(GetStatisTest, StatisJob) {
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
         ASSERT_NE(kvstore::ResultCode::SUCCEEDED, ret);
+
+        auto res = job1->setStatus(cpp2::JobStatus::RUNNING);
+        ASSERT_TRUE(res);
+        auto retsav = jobMgr->save(job1->jobKey(), job1->jobVal());
+        ASSERT_EQ(retsav, nebula::kvstore::SUCCEEDED);
     }
 
     // Run statis job, job finished.
@@ -127,11 +133,10 @@ TEST_F(GetStatisTest, StatisJob) {
     }
 
     // Execute new statis job in same space.
-    std::vector<std::string> paras1{"1"};
+    std::vector<std::string> paras1{"test_space"};
     JobDescription statisJob2(13, cpp2::AdminCmd::STATIS, paras1);
-    auto rc1 = jobMgr->addJob(statisJob2, adminClient_.get());
-    ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
-
+    auto rc2 = jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
+    ASSERT_EQ(rc2, nebula::kvstore::SUCCEEDED);
     {
         // Job is not executed, job status is QUEUE.
         // Statis data exists, but it is the result of the last statis job execution.
@@ -168,6 +173,11 @@ TEST_F(GetStatisTest, StatisJob) {
         ASSERT_EQ(0, statisItem1.edges.size());
         ASSERT_EQ(0, statisItem1.space_vertices);
         ASSERT_EQ(0, statisItem1.space_edges);
+
+        auto res = job1->setStatus(cpp2::JobStatus::RUNNING);
+        ASSERT_TRUE(res);
+        auto retsav = jobMgr->save(job1->jobKey(), job1->jobVal());
+        ASSERT_EQ(retsav, nebula::kvstore::SUCCEEDED);
     }
 
     // Remove statis data.

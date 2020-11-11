@@ -171,9 +171,9 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Three tags
         ASSERT_EQ(3, statisItem.tag_vertices.size());
         for (auto& e : statisItem.tag_vertices) {
-            if (e.first == 1) {
+            if (e.first == "1") {
                 ASSERT_EQ(51, e.second);
-            } else if (e.first == 2) {
+            } else if (e.first == "2") {
                 ASSERT_EQ(30, e.second);
             } else {
                 ASSERT_EQ(0, e.second);
@@ -242,9 +242,9 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Three tags
         ASSERT_EQ(3, statisItem.tag_vertices.size());
         for (auto& e : statisItem.tag_vertices) {
-            if (e.first == 1) {
+            if (e.first == "1") {
                 ASSERT_EQ(51, e.second);
-            } else if (e.first == 2) {
+            } else if (e.first == "2") {
                 ASSERT_EQ(30, e.second);
             } else {
                 ASSERT_EQ(0, e.second);
@@ -254,7 +254,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Two edgetypes
         ASSERT_EQ(2, statisItem.edges.size());
         for (auto& edge : statisItem.edges) {
-            if (edge.first == 101) {
+            if (edge.first == "101") {
                 // Do not contain reverse edge datas.
                 ASSERT_EQ(167, edge.second);
             } else {

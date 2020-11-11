@@ -89,7 +89,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
 }
 
 TEST_F(JobManagerTest, StatisJob) {
-    std::vector<std::string> paras{"1"};
+    std::vector<std::string> paras{"test_space"};
     JobDescription job(12, cpp2::AdminCmd::STATIS, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
     ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);

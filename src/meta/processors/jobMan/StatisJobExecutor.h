@@ -40,9 +40,7 @@ private:
     // Statis job writes an additional data.
     // The additional data is written when the statis job passes the check function.
     // Update this additional data when job finishes.
-    kvstore::ResultCode save(const std::string& k, const std::string& v);
-
-    cpp2::ErrorCode checkSpaceExist();
+    kvstore::ResultCode save(const std::string& key, const std::string& val);
 
 private:
     // Statis results

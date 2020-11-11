@@ -735,7 +735,7 @@ AdminClient::addTask(cpp2::AdminCmd cmd,
 
     folly::Promise<Status> pro;
     std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
-    [&statisResult] (storage::cpp2::AdminExecResp&& resp) -> void {
+    [statisResult] (storage::cpp2::AdminExecResp&& resp) -> void {
         if (statisResult && resp.__isset.statis) {
             *statisResult = *(resp.get_statis());
         }

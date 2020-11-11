@@ -25,10 +25,24 @@ StatisTask::getSchemas(GraphSpaceID spaceId) {
     }
 
     for (auto tag : tags.value()) {
-        tags_.emplace_back(tag.first);
+        auto tagId = tag.first;
+        auto tagNameRet = env_->schemaMan_->toTagName(spaceId, tagId);
+        if (!tagNameRet.ok()) {
+            VLOG(1) << "Can't find spaceId " << spaceId << " tagId " << tagId;
+            continue;
+        }
+        tags_.emplace(tagId, std::move(tagNameRet.value()));
     }
+
     for (auto edge : edges.value()) {
-        edges_.emplace_back(edge.first);
+        auto edgeType = edge.first;
+        auto edgeNameRet = env_->schemaMan_->toEdgeName(spaceId, std::abs(edgeType));
+        if (!edgeNameRet.ok()) {
+            VLOG(1) << "Can't find spaceId " << spaceId << " edgeType "
+                    << std::abs(edgeType);
+            continue;
+        }
+        edges_.emplace(edgeType, std::move(edgeNameRet.value()));
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
@@ -59,8 +73,8 @@ StatisTask::genSubTasks() {
 kvstore::ResultCode
 StatisTask::genSubTask(GraphSpaceID spaceId,
                        PartitionID part,
-                       std::vector<TagID> tags,
-                       std::vector<EdgeType> edges) {
+                       std::unordered_map<TagID, std::string> tags,
+                       std::unordered_map<EdgeType, std::string> edges) {
     auto vIdLenRet = env_->schemaMan_->getSpaceVidLen(spaceId);
     if (!vIdLenRet.ok()) {
         LOG(ERROR) << "Get space vid length failed";
@@ -95,11 +109,11 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     EdgeRanking                           lastRank = 0;
 
     for (auto tag : tags) {
-        tagsVertices[tag] = 0;
+        tagsVertices[tag.first] = 0;
     }
 
     for (auto edge : edges) {
-        edgetypeEdges[edge] = 0;
+        edgetypeEdges[edge.first] = 0;
     }
 
     // Only statis valid vetex data
@@ -174,8 +188,19 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     }
 
     nebula::meta::cpp2::StatisItem statisItem;
-    statisItem.set_tag_vertices(std::move(tagsVertices));
-    statisItem.set_edges(std::move(edgetypeEdges));
+
+    // convert tagId/edgeType to tagName/edgeName
+    for (auto &tagElem : tagsVertices) {
+        auto tagIter = tags_.find(tagElem.first);
+        CHECK(tagIter != tags_.end());
+        statisItem.tag_vertices.emplace(tagIter->second, tagElem.second);
+    }
+    for (auto &edgeElem : edgetypeEdges) {
+        auto edgeIter = edges_.find(edgeElem.first);
+        CHECK(edgeIter != edges_.end());
+        statisItem.edges.emplace(edgeIter->second, edgeElem.second);
+    }
+
     statisItem.set_space_vertices(spaceVertices);
     statisItem.set_space_edges(spaceEdges);
 

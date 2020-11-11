@@ -13,22 +13,13 @@ namespace nebula {
 namespace meta {
 
 bool StatisJobExecutor::check() {
+    // Only one parameter, the current space name
     return paras_.size() == 1;
 }
 
-cpp2::ErrorCode StatisJobExecutor::checkSpaceExist() {
-    auto key = MetaServiceUtils::spaceKey(space_);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find the space, spaceId : " << space_;
-        return cpp2::ErrorCode::E_NOT_FOUND;
-    }
-    return cpp2::ErrorCode::SUCCEEDED;
-}
-
-kvstore::ResultCode StatisJobExecutor::save(const std::string& k, const std::string& v) {
-    std::vector<kvstore::KV> data{std::make_pair(k, v)};
+kvstore::ResultCode
+StatisJobExecutor::save(const std::string& key, const std::string& val) {
+    std::vector<kvstore::KV> data{std::make_pair(key, val)};
     folly::Baton<true, std::atomic> baton;
     nebula::kvstore::ResultCode rc = nebula::kvstore::SUCCEEDED;
     kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
@@ -41,11 +32,12 @@ kvstore::ResultCode StatisJobExecutor::save(const std::string& k, const std::str
 }
 
 cpp2::ErrorCode StatisJobExecutor::prepare() {
-    space_ = folly::to<GraphSpaceID>(paras_[0]);
-    auto ret = checkSpaceExist();
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
+    auto spaceRet = getSpaceIdFromName(paras_[0]);
+    if (!nebula::ok(spaceRet)) {
+        LOG(ERROR) << "Can't find the space: " << paras_[0];
+        return nebula::error(spaceRet);
     }
+    space_ = nebula::value(spaceRet);
 
     // Set the status of the statis job to running
     cpp2::StatisItem statisItem;
@@ -87,19 +79,19 @@ void StatisJobExecutor::finish(bool ExeSuccessed) {
             statisItem.space_edges += item.space_edges;
 
             for (auto& tag : item.tag_vertices) {
-                auto tagId = tag.first;
-                if (tagVertices.find(tagId) == tagVertices.end()) {
-                    tagVertices[tagId] = tag.second;
+                auto tagName = tag.first;
+                if (tagVertices.find(tagName) == tagVertices.end()) {
+                    tagVertices[tagName] = tag.second;
                 } else {
-                    tagVertices[tagId] += tag.second;
+                    tagVertices[tagName] += tag.second;
                 }
             }
             for (auto& edge : item.edges) {
-                auto edgetype = edge.first;
-                if (edges.find(edgetype) == edges.end()) {
-                    edges[edgetype] = edge.second;
+                auto edgeName = edge.first;
+                if (edges.find(edgeName) == edges.end()) {
+                    edges[edgeName] = edge.second;
                 } else {
-                    edges[edgetype] += edge.second;
+                    edges[edgeName] += edge.second;
                 }
             }
         }
