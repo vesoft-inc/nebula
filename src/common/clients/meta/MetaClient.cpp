@@ -5,6 +5,7 @@
  */
 
 #include "common/base/Base.h"
+#include "common/base/MurmurHash2.h"
 #include <folly/hash/Hash.h>
 #include "common/clients/meta/MetaClient.h"
 #include "common/network/NetworkUtils.h"
@@ -796,7 +797,8 @@ StatusOr<PartitionID> MetaClient::partId(GraphSpaceID spaceId, const VertexID id
     if (id.size() == 8) {
         memcpy(static_cast<void*>(&vid), id.data(), 8);
     } else {
-        vid = folly::hash::fnv64_buf(id.data(), id.size());
+        MurmurHash2 hash;
+        vid = hash(id.data());
     }
     PartitionID pId = vid % numParts + 1;
     CHECK_GT(pId, 0U);
