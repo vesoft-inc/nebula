@@ -3,6 +3,10 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+if (ENABLE_GDB_SCRIPT_SECTION)
+    set(gdb_debug_script GdbDebugScript.cpp)
+endif()
+
 nebula_add_library(
     base_obj OBJECT
     Base.cpp
@@ -12,6 +16,7 @@ nebula_add_library(
     SignalHandler.cpp
     SlowOpTracker.cpp
     StringValue.cpp
+    ${gdb_debug_script}
 )
 
 nebula_add_subdirectory(test)
