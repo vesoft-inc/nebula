@@ -213,6 +213,9 @@ JobManager::showJobs() {
 }
 
 bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
+    if (jobDesc.status == cpp2::JobStatus::QUEUE || jobDesc.status == cpp2::JobStatus::RUNNING) {
+        return false;
+    }
     auto jobStart = jobDesc.get_start_time();
     auto duration = std::difftime(nebula::time::WallClock::fastNowInSec(), jobStart);
     return duration > FLAGS_job_expired_secs;
