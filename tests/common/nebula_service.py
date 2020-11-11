@@ -22,7 +22,7 @@ class NebulaService(object):
     def __init__(self, build_dir, src_dir):
         self.build_dir = build_dir
         self.src_dir = src_dir
-        self.work_dir = os.path.join(os.getcwd(), 'build', 'server')
+        self.work_dir = os.path.join(self.build_dir, 'server_' + time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()))
         self.pids = {}
 
     def set_work_dir(self, work_dir):
