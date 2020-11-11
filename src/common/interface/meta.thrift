@@ -341,11 +341,11 @@ struct AdminJobResp {
 }
 
 struct StatisItem {
-    // The number of vertices of tagId
-    1: map<common.TagID, i64>
+    // The number of vertices of tagName
+    1: map<binary, i64>
         (cpp.template = "std::unordered_map") tag_vertices,
-    // The number of out edges of edgetype
-    2: map<common.EdgeType, i64>
+    // The number of out edges of edgeName
+    2: map<binary, i64>
         (cpp.template = "std::unordered_map") edges,
     // The number of vertices of current space
     3: i64                                    space_vertices,
