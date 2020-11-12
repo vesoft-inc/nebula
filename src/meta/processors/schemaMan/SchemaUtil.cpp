@@ -131,6 +131,13 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                         return false;
                     }
                     break;
+                case cpp2::PropertyType::TIME:
+                    if (value.type() != nebula::Value::Type::TIME) {
+                        LOG(ERROR) << "Invalid default value for ` " << name
+                                   << "', value type is " << value.type();
+                        return false;
+                    }
+                    break;
                 case cpp2::PropertyType::DATETIME:
                     if (value.type() != nebula::Value::Type::DATETIME) {
                         LOG(ERROR) << "Invalid default value for ` " << name

@@ -128,6 +128,9 @@ RowWriterV2::RowWriterV2(RowReader& reader)
             case Value::Type::DATE:
                 set(i, v.moveDate());
                 break;
+            case Value::Type::TIME:
+                set(i, v.moveTime());
+                break;
             case Value::Type::DATETIME:
                 set(i, v.moveDateTime());
                 break;
@@ -828,6 +831,9 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
                         break;
                     case Value::Type::DATE:
                         r = write(i, defVal.getDate());
+                        break;
+                    case Value::Type::TIME:
+                        r = write(i, defVal.getTime());
                         break;
                     case Value::Type::DATETIME:
                         r = write(i, defVal.getDateTime());
