@@ -20,10 +20,10 @@ Value OptimizerUtils::boundValue(const meta::cpp2::ColumnDef& col,
             return boundValueWithLT(col, v);
         }
         case BoundValueOperator::MAX : {
-            return boundValueWithMax(col, v);
+            return boundValueWithMax(col);
         }
         case BoundValueOperator::MIN : {
-            return boundValueWithMin(col, v);
+            return boundValueWithMin(col);
         }
     }
     return Value::kNullBadType;
@@ -51,10 +51,7 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
                     return Value(0.0);
                 }
             }
-            return v.getFloat() + 0.0000000000000001;
-        }
-        case Value::Type::BOOL: {
-            return v;
+            return v.getFloat() + kEpsilon;
         }
         case Value::Type::STRING : {
             if (!col.type.__isset.type_length ||
@@ -162,6 +159,7 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
             return Value(dt);
         }
         case Value::Type::__EMPTY__:
+        case Value::Type::BOOL:
         case Value::Type::NULLVALUE:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
@@ -199,10 +197,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             } else if (v.getFloat() == 0.0) {
                 return Value(-std::numeric_limits<double_t>::min());
             }
-            return v.getFloat() - 0.0000000000000001;
-        }
-        case Value::Type::BOOL: {
-            return v;
+            return v.getFloat() - kEpsilon;
         }
         case Value::Type::STRING : {
             if (!col.type.__isset.type_length || col.get_type().get_type_length() == nullptr) {
@@ -311,6 +306,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             return Value(dt);
         }
         case Value::Type::__EMPTY__:
+        case Value::Type::BOOL:
         case Value::Type::NULLVALUE:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
@@ -328,7 +324,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
     return Value::kNullBadType;
 }
 
-Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const Value& v) {
+Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
     auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
@@ -336,9 +332,6 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
         }
         case Value::Type::FLOAT : {
             return Value(std::numeric_limits<double>::max());
-        }
-        case Value::Type::BOOL: {
-            return v;
         }
         case Value::Type::STRING : {
             if (!col.type.__isset.type_length ||
@@ -374,6 +367,7 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
             return Value(dt);
         }
         case Value::Type::__EMPTY__:
+        case Value::Type::BOOL:
         case Value::Type::NULLVALUE:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
@@ -391,7 +385,7 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col, const 
     return Value::kNullBadType;
 }
 
-Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const Value& v) {
+Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
     auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
     switch (type) {
         case Value::Type::INT : {
@@ -399,9 +393,6 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const 
         }
         case Value::Type::FLOAT : {
             return Value(-std::numeric_limits<double>::max());
-        }
-        case Value::Type::BOOL: {
-            return v;
         }
         case Value::Type::STRING : {
             if (!col.type.__isset.type_length ||
@@ -420,6 +411,7 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col, const 
             return Value(DateTime());
         }
         case Value::Type::__EMPTY__:
+        case Value::Type::BOOL:
         case Value::Type::NULLVALUE:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:

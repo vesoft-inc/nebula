@@ -173,6 +173,10 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
             begin = OptimizerUtils::normalizeValue(col, item.value_);
             break;
         }
+        // because only type for bool is true/false, which can not satisify [start, end)
+        if (col.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+            return Status::SemanticError("Range scan for bool type is illegal");
+        }
         NG_RETURN_IF_ERROR(boundValue(item, col, begin, end));
     }
 

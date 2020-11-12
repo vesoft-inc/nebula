@@ -242,5 +242,264 @@ TEST(IndexScanRuleTest, IQCtxTest) {
     }
 }
 
+TEST(IndexScanRuleTest, BoundValueRangeTest) {
+    auto* inst = std::move(IndexScanRule::kInstance).get();
+    auto* instance = static_cast<IndexScanRule*>(inst);
+
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_int");
+        col.type.set_type(meta::cpp2::PropertyType::INT64);
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int < 2
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelLT, Value(2L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(std::numeric_limits<int64_t>::min(), hint.begin_value);
+            EXPECT_EQ(2, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int <= 2
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelLE, Value(2L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(std::numeric_limits<int64_t>::min(), hint.begin_value);
+            EXPECT_EQ(3, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int > 2
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelGT, Value(2L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(3, hint.begin_value);
+            EXPECT_EQ(std::numeric_limits<int64_t>::max(), hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int >= 2
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelGE, Value(2L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(2, hint.begin_value);
+            EXPECT_EQ(std::numeric_limits<int64_t>::max(), hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int > 2 and col_int < 5
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelGT, Value(2L));
+            items.addItem("col_int", RelationalExpression::Kind::kRelLT, Value(5L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(3, hint.begin_value);
+            EXPECT_EQ(5, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_int >= 2 and col_int <= 5
+            IndexScanRule::FilterItems items;
+            items.addItem("col_int", RelationalExpression::Kind::kRelGE, Value(2L));
+            items.addItem("col_int", RelationalExpression::Kind::kRelLE, Value(5L));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_int", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(2, hint.begin_value);
+            EXPECT_EQ(6, hint.end_value);
+        }
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_bool");
+        col.type.set_type(meta::cpp2::PropertyType::BOOL);
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_bool < true
+            IndexScanRule::FilterItems items;
+            items.addItem("col_bool", RelationalExpression::Kind::kRelLT, Value(true));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_FALSE(status.ok());
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_bool >= false
+            IndexScanRule::FilterItems items;
+            items.addItem("col_bool", RelationalExpression::Kind::kRelGE, Value(false));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_FALSE(status.ok());
+        }
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        col.set_name("col_double");
+        col.type.set_type(meta::cpp2::PropertyType::DOUBLE);
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_double < 1.0
+            IndexScanRule::FilterItems items;
+            items.addItem("col_double", RelationalExpression::Kind::kRelLT, Value(1.0));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_double", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(-std::numeric_limits<double>::max(), hint.begin_value);
+            EXPECT_EQ(1, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_double >= 1.0
+            IndexScanRule::FilterItems items;
+            items.addItem("col_double", RelationalExpression::Kind::kRelGE, Value(1.0));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_double", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(1, hint.begin_value);
+            EXPECT_EQ(std::numeric_limits<double>::max(), hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // 1.0 < col_double <= 5.0
+            IndexScanRule::FilterItems items;
+            items.addItem("col_double", RelationalExpression::Kind::kRelGT, Value(1.0));
+            items.addItem("col_double", RelationalExpression::Kind::kRelLE, Value(5.0));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_double", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(1 + OptimizerUtils::kEpsilon, hint.begin_value);
+            EXPECT_EQ(5 - OptimizerUtils::kEpsilon, hint.end_value);
+        }
+    }
+    {
+        meta::cpp2::ColumnDef col;
+        size_t len = 10;
+        col.set_name("col_str");
+        col.type.set_type(meta::cpp2::PropertyType::STRING);
+        col.type.set_type_length(len);
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_str < "ccc"
+            IndexScanRule::FilterItems items;
+            items.addItem("col_str", RelationalExpression::Kind::kRelLT, Value("ccc"));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_str", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ(std::string(len, '\0'), hint.begin_value);
+            EXPECT_EQ("ccc", hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_str > "ccc"
+            IndexScanRule::FilterItems items;
+            items.addItem("col_str", RelationalExpression::Kind::kRelGT, Value("ccc"));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_str", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            std::string begin = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
+            std::string end = std::string(len, static_cast<char>(0xFF));
+            EXPECT_EQ(begin, hint.begin_value);
+            EXPECT_EQ(end, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // "aaa" < col_str < "ccc"
+            IndexScanRule::FilterItems items;
+            items.addItem("col_str", RelationalExpression::Kind::kRelGT, Value("aaa"));
+            items.addItem("col_str", RelationalExpression::Kind::kRelLT, Value("ccc"));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_str", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            std::string begin = std::string(3, 'a').append(6, 0x00).append(1, 0x01);
+            std::string end = "ccc";
+            EXPECT_EQ(begin, hint.begin_value);
+            EXPECT_EQ(end, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // "aaa" <= col_str <= "ccc"
+            IndexScanRule::FilterItems items;
+            items.addItem("col_str", RelationalExpression::Kind::kRelGE, Value("aaa"));
+            items.addItem("col_str", RelationalExpression::Kind::kRelLE, Value("ccc"));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_str", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            std::string begin = "aaa";
+            std::string end = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
+            EXPECT_EQ(begin, hint.begin_value);
+            EXPECT_EQ(end, hint.end_value);
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
+            // "aaa" <= col_str < "ccc"
+            IndexScanRule::FilterItems items;
+            items.addItem("col_str", RelationalExpression::Kind::kRelGE, Value("aaa"));
+            items.addItem("col_str", RelationalExpression::Kind::kRelLT, Value("ccc"));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_str", hint.column_name);
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ("aaa", hint.begin_value);
+            EXPECT_EQ("ccc", hint.end_value);
+        }
+    }
+}
+
 }   // namespace opt
 }   // namespace nebula
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    folly::init(&argc, &argv, true);
+    google::SetStderrLogging(google::INFO);
+    return RUN_ALL_TESTS();
+}

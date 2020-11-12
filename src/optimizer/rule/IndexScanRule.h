@@ -29,6 +29,7 @@ using IndexQueryCtx = std::unique_ptr<std::vector<IndexQueryContext>>;
 class IndexScanRule final : public OptRule {
     FRIEND_TEST(IndexScanRuleTest, BoundValueTest);
     FRIEND_TEST(IndexScanRuleTest, IQCtxTest);
+    FRIEND_TEST(IndexScanRuleTest, BoundValueRangeTest);
 
 public:
     const Pattern& pattern() const override;
