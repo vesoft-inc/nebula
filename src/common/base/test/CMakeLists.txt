@@ -101,3 +101,9 @@ nebula_add_executable(
     LIBRARIES follybenchmark boost_regex
 )
 target_compile_options(range_vs_transform_bm PRIVATE -O3)
+
+nebula_add_test(
+    NAME object_pool_test
+    SOURCES ObjectPoolTest.cpp
+    LIBRARIES gtest gtest_main
+)
