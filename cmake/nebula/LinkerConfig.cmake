@@ -28,8 +28,9 @@ nebula_add_exe_linker_flag(-rdynamic)
 if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_FORTIFY_SOURCE=2)
 else()
-    if (NOT ${NEBULA_USE_LINKER} STREQUAL "gold")
-        # gold linker is buggy for `--gc-sections', disabled for now
+    if (NOT ${NEBULA_USE_LINKER} STREQUAL "gold" AND NOT ENABLE_GDB_SCRIPT_SECTION)
+        # `gold' linker is buggy for `--gc-sections', disabled for it
+        # `gc-sections' will discard the `.debug_gdb_scripts' section if enabled
         add_compile_options(-ffunction-sections)
         add_compile_options(-fdata-sections)
         nebula_add_exe_linker_flag(-Wl,--gc-sections)
