@@ -18,7 +18,7 @@
 #include "planner/PlanNode.h"
 #include "planner/PlannersRegister.h"
 #include "planner/Query.h"
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 #include "validator/Validator.h"
 #include "validator/test/MockSchemaManager.h"
 

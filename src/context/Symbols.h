@@ -7,7 +7,7 @@
 #ifndef CONTEXT_SYMBOLS_H_
 #define CONTEXT_SYMBOLS_H_
 
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 
 #include "common/datatypes/Value.h"
 

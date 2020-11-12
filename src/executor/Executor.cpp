@@ -72,7 +72,7 @@
 #include "planner/Mutate.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 #include "util/ScopedTimer.h"
 
 using folly::stringPrintf;

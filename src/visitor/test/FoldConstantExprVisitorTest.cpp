@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 
 using Type = nebula::Value::Type;
 

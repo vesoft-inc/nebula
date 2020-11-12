@@ -20,7 +20,7 @@
 #include "parser/SequentialSentences.h"
 #include "service/RequestContext.h"
 #include "util/IdGenerator.h"
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 #include "context/Symbols.h"
 
 namespace nebula {

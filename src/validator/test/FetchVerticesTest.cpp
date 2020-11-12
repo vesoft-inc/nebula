@@ -6,7 +6,7 @@
 
 #include "planner/Logic.h"
 #include "planner/Query.h"
-#include "util/ObjectPool.h"
+#include "common/base/ObjectPool.h"
 #include "validator/FetchVerticesValidator.h"
 #include "validator/test/ValidatorTestBase.h"
 
