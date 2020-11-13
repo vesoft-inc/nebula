@@ -25,9 +25,7 @@ static constexpr size_t MAX_STRING = 4096;
 blanks                      ([ \t\n]+)
 
 NOT_IN                      (NOT{blanks}IN)
-
 NOT_CONTAINS                (NOT{blanks}CONTAINS)
-
 STARTS_WITH                 (STARTS{blanks}WITH)
 NOT_STARTS_WITH             (NOT{blanks}STARTS{blanks}WITH)
 ENDS_WITH                   (ENDS{blanks}WITH)
@@ -137,7 +135,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
 
-
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,
   *     so that we ease the operations such as expression rewriting, associating
@@ -145,6 +142,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
   *
   */
  /* Unreserved keyword */
+"HOST"                      { return TokenType::KW_HOST; }
 "HOSTS"                     { return TokenType::KW_HOSTS; }
 "SPACE"                     { return TokenType::KW_SPACE; }
 "SPACES"                    { return TokenType::KW_SPACES; }
@@ -217,7 +215,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "THEN"                      { return TokenType::KW_THEN; }
 "ELSE"                      { return TokenType::KW_ELSE; }
 "END"                       { return TokenType::KW_END; }
-
+"GROUPS"                    { return TokenType::KW_GROUPS; }
+"ZONE"                      { return TokenType::KW_ZONE; }
+"ZONES"                     { return TokenType::KW_ZONES; }
+"INTO"                      { return TokenType::KW_INTO; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

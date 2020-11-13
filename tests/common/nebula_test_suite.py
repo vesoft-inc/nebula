@@ -47,10 +47,13 @@ class NebulaTestSuite(object):
 
     @classmethod
     def setup_class(self):
-        address = pytest.cmdline.address.split(':')
         self.spaces = []
+        address = pytest.cmdline.address.split(':')
         self.host = address[0]
         self.port = address[1]
+        storage_address = pytest.cmdline.storage.split(':')
+        self.storage_host = storage_address[0]
+        self.storage_port = storage_address[1]
         self.user = pytest.cmdline.user
         self.password = pytest.cmdline.password
         self.replica_factor = pytest.cmdline.replica_factor

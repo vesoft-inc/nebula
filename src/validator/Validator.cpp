@@ -191,6 +191,32 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<DropEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kLookup:
             return std::make_unique<IndexScanValidator>(sentence, context);
+        case Sentence::Kind::kAddGroup:
+            return std::make_unique<AddGroupValidator>(sentence, context);
+        case Sentence::Kind::kDropGroup:
+            return std::make_unique<DropGroupValidator>(sentence, context);
+        case Sentence::Kind::kDescribeGroup:
+            return std::make_unique<DescribeGroupValidator>(sentence, context);
+        case Sentence::Kind::kListGroups:
+            return std::make_unique<ListGroupsValidator>(sentence, context);
+        case Sentence::Kind::kAddZoneIntoGroup:
+            return std::make_unique<AddZoneIntoGroupValidator>(sentence, context);
+        case Sentence::Kind::kDropZoneFromGroup:
+            return std::make_unique<DropZoneFromGroupValidator>(sentence, context);
+        case Sentence::Kind::kAddZone:
+            return std::make_unique<AddZoneValidator>(sentence, context);
+        case Sentence::Kind::kDropZone:
+            return std::make_unique<DropZoneValidator>(sentence, context);
+        case Sentence::Kind::kDescribeZone:
+            return std::make_unique<DescribeZoneValidator>(sentence, context);
+        case Sentence::Kind::kListZones:
+            return std::make_unique<ListZonesValidator>(sentence, context);
+        case Sentence::Kind::kAddHostIntoZone:
+            return std::make_unique<AddHostIntoZoneValidator>(sentence, context);
+        case Sentence::Kind::kDropHostFromZone:
+            return std::make_unique<DropHostFromZoneValidator>(sentence, context);
+        case Sentence::Kind::kShowGroups:
+        case Sentence::Kind::kShowZones:
         case Sentence::Kind::kUnknown:
         case Sentence::Kind::kDownload:
         case Sentence::Kind::kIngest:

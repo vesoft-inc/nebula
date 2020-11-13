@@ -29,7 +29,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
                 LOG(ERROR) << resp.status();
                 return resp.status();
             }
-            auto    value = std::move(resp).value();
+            auto value = std::move(resp).value();
             DataSet v({"Host",
                        "Port",
                        "Status",

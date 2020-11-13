@@ -45,7 +45,7 @@ Status CreateSpaceValidator::validateImpl() {
             case SpaceOptItem::VID_TYPE: {
                 auto typeDef = item->getVidType();
                 if (typeDef.type != meta::cpp2::PropertyType::INT64 &&
-                        typeDef.type != meta::cpp2::PropertyType::FIXED_STRING) {
+                    typeDef.type != meta::cpp2::PropertyType::FIXED_STRING) {
                     std::stringstream ss;
                     ss << "Only support FIXED_STRING or INT64 vid type, but was given "
                        << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(typeDef.type);
@@ -62,7 +62,7 @@ Status CreateSpaceValidator::validateImpl() {
                     }
                     if (*typeDef.get_type_length() <= 0) {
                         return Status::SemanticError("Vid size should be a positive number: %d",
-                                             *typeDef.get_type_length());
+                                                     *typeDef.get_type_length());
                     }
                     spaceDesc_.vid_type.set_type_length(*typeDef.get_type_length());
                 }

@@ -61,6 +61,8 @@ nebula_add_library(
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp
     admin/ConfigExecutor.cpp
+    admin/GroupExecutor.cpp
+    admin/ZoneExecutor.cpp
 )
 
 nebula_add_subdirectory(test)

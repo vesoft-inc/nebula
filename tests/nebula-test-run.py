@@ -89,10 +89,11 @@ if __name__ == "__main__":
         nebula_port = 0
         if len(configs.address) == 0:
             nebula_svc.install()
-            port = nebula_svc.start(configs.debug_log)
-            args.extend(['--address', '127.0.0.1:' + str(port)])
+            storage_port, graph_port = nebula_svc.start(configs.debug_log)
+            args.extend(['--address', '127.0.0.1:' + str(graph_port)])
+            args.extend(['--storage', '127.0.0.1:' + str(storage_port)])
             nebula_ip = '127.0.0.1'
-            nebula_port = port
+            nebula_port = graph_port
         else:
             stop_nebula = False
             addr = configs.address.split(':')

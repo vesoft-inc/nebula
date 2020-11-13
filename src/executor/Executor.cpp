@@ -34,6 +34,8 @@
 #include "executor/admin/SubmitJobExecutor.h"
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
+#include "executor/admin/GroupExecutor.h"
+#include "executor/admin/ZoneExecutor.h"
 #include "executor/algo/BFSShortestPathExecutor.h"
 #include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
@@ -391,11 +393,47 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kCartesianProduct: {
             return pool->add(new CartesianProductExecutor(node, qctx));
         }
+        case PlanNode::Kind::kAddGroup: {
+            return pool->add(new AddGroupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropGroup: {
+            return pool->add(new DropGroupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDescribeGroup: {
+            return pool->add(new DescribeGroupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAddZoneIntoGroup: {
+            return pool->add(new AddZoneIntoGroupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropZoneFromGroup: {
+            return pool->add(new DropZoneFromGroupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowGroups: {
+            return pool->add(new ListGroupsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAddZone: {
+            return pool->add(new AddZoneExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropZone: {
+            return pool->add(new DropZoneExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDescribeZone: {
+            return pool->add(new DescribeZoneExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAddHostIntoZone: {
+            return pool->add(new AddHostIntoZoneExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kDropHostFromZone: {
+            return pool->add(new DropHostFromZoneExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowZones: {
+            return pool->add(new ListZonesExecutor(node, qctx));
+        }
         case PlanNode::Kind::kUnknown: {
+            LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
             break;
         }
     }
-    LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
     return nullptr;
 }
 

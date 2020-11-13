@@ -764,7 +764,7 @@ public:
     }
 
 private:
-    explicit ShowCharset(QueryContext* qctx, PlanNode* input)
+    ShowCharset(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kShowCharset, input) {}
 };
 
@@ -775,9 +775,364 @@ public:
     }
 
 private:
-    explicit ShowCollation(QueryContext* qctx, PlanNode* input)
+    ShowCollation(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kShowCollation, input) {}
 };
+
+class AddGroup final : public SingleInputNode {
+public:
+    static AddGroup* make(QueryContext* qctx,
+                          PlanNode* input,
+                          std::string groupName,
+                          std::vector<std::string> zoneNames) {
+        return qctx->objPool()->add(new AddGroup(qctx,
+                                                 input,
+                                                 std::move(groupName),
+                                                 std::move(zoneNames)));
+    }
+
+    const std::string& groupName() const {
+        return groupName_;
+    }
+
+    const std::vector<std::string>& zoneNames() const {
+        return zoneNames_;
+    }
+
+private:
+    AddGroup(QueryContext* qctx,
+             PlanNode* input,
+             std::string groupName,
+             std::vector<std::string> zoneNames)
+        : SingleInputNode(qctx, Kind::kAddGroup, input) {
+        groupName_ = std::move(groupName);
+        zoneNames_ = std::move(zoneNames);
+    }
+
+private:
+    std::string groupName_;
+    std::vector<std::string> zoneNames_;
+};
+
+class DropGroup final : public SingleInputNode {
+public:
+    static DropGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
+        return qctx->objPool()->add(new DropGroup(qctx, input, std::move(groupName)));
+    }
+
+    const std::string& groupName() const {
+        return groupName_;
+    }
+
+private:
+    DropGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
+        : SingleInputNode(qctx, Kind::kDropGroup, input) {
+        groupName_ = std::move(groupName);
+    }
+
+private:
+    std::string groupName_;
+};
+
+class DescribeGroup final : public SingleInputNode {
+public:
+    static DescribeGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
+        return qctx->objPool()->add(new DescribeGroup(qctx, input, std::move(groupName)));
+    }
+
+    const std::string& groupName() const {
+        return groupName_;
+    }
+
+private:
+    DescribeGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
+        : SingleInputNode(qctx, Kind::kDescribeGroup, input) {
+        groupName_ = std::move(groupName);
+    }
+
+private:
+    std::string groupName_;
+};
+
+class ListGroups final : public SingleInputNode {
+public:
+    static ListGroups* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ListGroups(qctx, input));
+    }
+
+private:
+    ListGroups(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowGroups, input) {}
+};
+
+class AddHostIntoZone final : public SingleInputNode {
+public:
+    static AddHostIntoZone* make(QueryContext* qctx,
+                                 PlanNode* input,
+                                 std::string zoneName,
+                                 HostAddr addresses) {
+        return qctx->objPool()->add(new AddHostIntoZone(qctx,
+                                                        input,
+                                                        std::move(zoneName),
+                                                        std::move(addresses)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+    const HostAddr& address() const {
+        return addresses_;
+    }
+
+private:
+    AddHostIntoZone(QueryContext* qctx,
+                    PlanNode* input,
+                    std::string zoneName,
+                    HostAddr addresses)
+        : SingleInputNode(qctx, Kind::kAddHostIntoZone, input) {
+        zoneName_ = std::move(zoneName);
+        addresses_ = std::move(addresses);
+    }
+
+private:
+    std::string zoneName_;
+    HostAddr    addresses_;
+};
+
+class DropHostFromZone final : public SingleInputNode {
+public:
+    static DropHostFromZone* make(QueryContext* qctx,
+                                  PlanNode* input,
+                                  std::string zoneName,
+                                  HostAddr addresses) {
+        return qctx->objPool()->add(new DropHostFromZone(qctx,
+                                                         input,
+                                                         std::move(zoneName),
+                                                         std::move(addresses)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+    const HostAddr& address() const {
+        return addresses_;
+    }
+
+private:
+    DropHostFromZone(QueryContext* qctx,
+                     PlanNode* input,
+                     std::string zoneName,
+                     HostAddr addresses)
+        : SingleInputNode(qctx, Kind::kDropHostFromZone, input) {
+        zoneName_ = std::move(zoneName);
+        addresses_ = std::move(addresses);
+    }
+
+private:
+    std::string zoneName_;
+    HostAddr    addresses_;
+};
+
+class AddZone final : public SingleInputNode {
+public:
+    static AddZone* make(QueryContext* qctx,
+                         PlanNode* input,
+                         std::string zoneName,
+                         std::vector<HostAddr> addresses) {
+        return qctx->objPool()->add(new AddZone(qctx,
+                                                input,
+                                                std::move(zoneName),
+                                                std::move(addresses)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+    const std::vector<HostAddr>& addresses() const {
+        return addresses_;
+    }
+
+private:
+    AddZone(QueryContext* qctx,
+            PlanNode* input,
+            std::string zoneName,
+            std::vector<HostAddr> addresses)
+        : SingleInputNode(qctx, Kind::kAddZone, input) {
+        zoneName_ = std::move(zoneName);
+        addresses_ = std::move(addresses);
+    }
+
+private:
+    std::string zoneName_;
+    std::vector<HostAddr> addresses_;
+};
+
+class DropZone final : public SingleInputNode {
+public:
+    static DropZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
+        return qctx->objPool()->add(new DropZone(qctx, input, std::move(zoneName)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+private:
+    DropZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
+        : SingleInputNode(qctx, Kind::kDropZone, input) {
+        zoneName_ = std::move(zoneName);
+    }
+
+private:
+    std::string zoneName_;
+};
+
+class DescribeZone final : public SingleInputNode {
+public:
+    static DescribeZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
+        return qctx->objPool()->add(new DescribeZone(qctx, input, std::move(zoneName)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+private:
+    DescribeZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
+        : SingleInputNode(qctx, Kind::kDescribeZone, input) {
+        zoneName_ = std::move(zoneName);
+    }
+
+private:
+    std::string zoneName_;
+};
+
+// class DrainZone final : public SingleInputNode {
+// public:
+//     static DrainZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
+//         return qctx->objPool()->add(new DrainZone(qctx, input, std::move(zoneName)));
+//     }
+
+//     const std::string& zoneName() const {
+//         return zoneName_;
+//     }
+
+// private:
+//     DrainZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
+//         : SingleInputNode(qctx, Kind::kDrainZone, input) {
+//         zoneName_ = std::move(zoneName);
+//     }
+
+// private:
+//     std::string zoneName_;
+// };
+
+class ListZones final : public SingleInputNode {
+public:
+    static ListZones* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ListZones(qctx, input));
+    }
+
+private:
+    ListZones(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowZones, input) {}
+};
+
+class AddZoneIntoGroup final : public SingleInputNode {
+public:
+    static AddZoneIntoGroup* make(QueryContext* qctx,
+                                  PlanNode* input,
+                                  std::string groupName,
+                                  std::string zoneName) {
+        return qctx->objPool()->add(new AddZoneIntoGroup(qctx,
+                                                         input,
+                                                         std::move(zoneName),
+                                                         std::move(groupName)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+    const std::string& groupName() const {
+        return groupName_;
+    }
+
+private:
+    AddZoneIntoGroup(QueryContext* qctx,
+                    PlanNode* input,
+                    std::string zoneName,
+                    std::string groupName)
+        : SingleInputNode(qctx, Kind::kAddZoneIntoGroup, input) {
+        zoneName_ = std::move(zoneName);
+        groupName_ = std::move(groupName);
+    }
+
+private:
+    std::string    zoneName_;
+    std::string    groupName_;
+};
+
+class DropZoneFromGroup final : public SingleInputNode {
+public:
+    static DropZoneFromGroup* make(QueryContext* qctx,
+                                   PlanNode* input,
+                                   std::string groupName,
+                                   std::string zoneName) {
+        return qctx->objPool()->add(new DropZoneFromGroup(qctx,
+                                                          input,
+                                                          std::move(zoneName),
+                                                          std::move(groupName)));
+    }
+
+    const std::string& zoneName() const {
+        return zoneName_;
+    }
+
+    const std::string& groupName() const {
+        return groupName_;
+    }
+
+private:
+    DropZoneFromGroup(QueryContext* qctx,
+                      PlanNode* input,
+                      std::string zoneName,
+                      std::string groupName)
+        : SingleInputNode(qctx, Kind::kDropZoneFromGroup, input) {
+        zoneName_ = std::move(zoneName);
+        groupName_ = std::move(groupName);
+    }
+
+private:
+    std::string    zoneName_;
+    std::string    groupName_;
+};
+
+class ShowGroups final : public SingleInputNode {
+public:
+    static ShowGroups* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowGroups(qctx, input));
+    }
+
+private:
+    ShowGroups(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowGroups, input) {}
+};
+
+class ShowZones final : public SingleInputNode {
+public:
+    static ShowZones* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowZones(qctx, input));
+    }
+
+private:
+    ShowZones(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowZones, input) {}
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_

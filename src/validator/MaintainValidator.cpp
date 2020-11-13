@@ -8,6 +8,8 @@
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
 #include "parser/MaintainSentences.h"
+#include "service/GraphFlags.h"
+#include "planner/Admin.h"
 #include "planner/Maintain.h"
 #include "planner/Query.h"
 #include "service/GraphFlags.h"
@@ -449,5 +451,176 @@ Status ShowEdgeIndexesValidator::toPlan() {
     return Status::OK();
 }
 
-}   // namespace graph
-}   // namespace nebula
+
+Status AddGroupValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status AddGroupValidator::toPlan() {
+    auto sentence = static_cast<AddGroupSentence*>(sentence_);
+    auto *doNode = AddGroup::make(qctx_,
+                                  nullptr,
+                                 *sentence->groupName(),
+                                  sentence->zoneNames()->zoneNames());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropGroupValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropGroupValidator::toPlan() {
+    auto sentence = static_cast<DropGroupSentence*>(sentence_);
+    auto *doNode = DropGroup::make(qctx_,
+                                   nullptr,
+                                  *sentence->groupName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DescribeGroupValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DescribeGroupValidator::toPlan() {
+    auto sentence = static_cast<DescribeGroupSentence*>(sentence_);
+    auto *doNode = DescribeGroup::make(qctx_,
+                                       nullptr,
+                                      *sentence->groupName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ListGroupsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ListGroupsValidator::toPlan() {
+    auto *doNode = ListGroups::make(qctx_,
+                                    nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status AddZoneIntoGroupValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status AddZoneIntoGroupValidator::toPlan() {
+    auto sentence = static_cast<AddZoneIntoGroupSentence*>(sentence_);
+    auto *doNode = AddZoneIntoGroup::make(qctx_,
+                                          nullptr,
+                                         *sentence->groupName(),
+                                         *sentence->zoneName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropZoneFromGroupValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropZoneFromGroupValidator::toPlan() {
+    auto sentence = static_cast<DropZoneFromGroupSentence*>(sentence_);
+    auto *doNode = DropZoneFromGroup::make(qctx_,
+                                           nullptr,
+                                          *sentence->groupName(),
+                                          *sentence->zoneName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status AddZoneValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status AddZoneValidator::toPlan() {
+    auto sentence = static_cast<AddZoneSentence*>(sentence_);
+    auto *doNode = AddZone::make(qctx_,
+                                 nullptr,
+                                *sentence->zoneName(),
+                                 sentence->hosts()->hosts());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropZoneValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropZoneValidator::toPlan() {
+    auto sentence = static_cast<DropZoneSentence*>(sentence_);
+    auto *doNode = DropZone::make(qctx_,
+                                  nullptr,
+                                 *sentence->zoneName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DescribeZoneValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DescribeZoneValidator::toPlan() {
+    auto sentence = static_cast<DescribeZoneSentence*>(sentence_);
+    auto *doNode = DescribeZone::make(qctx_,
+                                      nullptr,
+                                     *sentence->zoneName());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ListZonesValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ListZonesValidator::toPlan() {
+    auto *doNode = ListZones::make(qctx_,
+                                   nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status AddHostIntoZoneValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status AddHostIntoZoneValidator::toPlan() {
+    auto sentence = static_cast<AddHostIntoZoneSentence*>(sentence_);
+    auto *doNode = AddHostIntoZone::make(qctx_,
+                                         nullptr,
+                                         *sentence->zoneName(),
+                                         *sentence->address());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropHostFromZoneValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status DropHostFromZoneValidator::toPlan() {
+    auto sentence = static_cast<DropHostFromZoneSentence*>(sentence_);
+    auto *doNode = DropHostFromZone::make(qctx_,
+                                          nullptr,
+                                          *sentence->zoneName(),
+                                          *sentence->address());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+}  // namespace graph
+}  // namespace nebula

@@ -10,7 +10,6 @@
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
 #include "common/network/NetworkUtils.h"
-#include "common/interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 
@@ -113,6 +112,22 @@ class ShowCollationSentence final : public Sentence {
 public:
     ShowCollationSentence() {
         kind_ = Kind::kShowCollation;
+    }
+    std::string toString() const override;
+};
+
+class ShowGroupsSentence final : public Sentence {
+public:
+    ShowGroupsSentence() {
+        kind_ = Kind::kShowGroups;
+    }
+    std::string toString() const override;
+};
+
+class ShowZonesSentence final : public Sentence {
+public:
+    ShowZonesSentence() {
+        kind_ = Kind::kShowZones;
     }
     std::string toString() const override;
 };
@@ -247,10 +262,9 @@ private:
     std::vector<std::unique_ptr<SpaceOptItem>>    items_;
 };
 
-
 class CreateSpaceSentence final : public CreateSentence {
 public:
-    explicit CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
+    CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
         : CreateSentence(ifNotExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kCreateSpace;
@@ -281,19 +295,28 @@ private:
 
 class DropSpaceSentence final : public DropSentence {
 public:
-    explicit DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
+    DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
+    }
+
+    void setClusterName(std::string* clusterName) {
+        clusterName_.reset(clusterName);
     }
 
     const std::string* spaceName() const {
         return spaceName_.get();
     }
 
+    const std::string* clusterName() const {
+        return clusterName_.get();
+    }
+
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>     spaceName_;
+    std::unique_ptr<std::string>     clusterName_;
 };
 
 
@@ -304,14 +327,23 @@ public:
         kind_ = Kind::kDescribeSpace;
     }
 
+    void setClusterName(std::string* clusterName) {
+        clusterName_.reset(clusterName);
+    }
+
     const std::string* spaceName() const {
         return spaceName_.get();
+    }
+
+    const std::string* clusterName() const {
+        return clusterName_.get();
     }
 
     std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>     spaceName_;
+    std::unique_ptr<std::string>     clusterName_;
 };
 
 class ConfigRowItem {
@@ -399,27 +431,6 @@ public:
         : ConfigBaseSentence(Kind::kGetConfig, item) {}
 
     std::string toString() const override;
-};
-
-class HostList final {
-public:
-    void addHost(HostAddr *addr) {
-        hosts_.emplace_back(addr);
-    }
-
-    std::string toString() const;
-
-    std::vector<HostAddr> hosts() const {
-        std::vector<HostAddr> result;
-        result.reserve(hosts_.size());
-        for (auto &host : hosts_) {
-            result.emplace_back(*host);
-        }
-        return result;
-    }
-
-private:
-    std::vector<std::unique_ptr<HostAddr>>      hosts_;
 };
 
 class BalanceSentence final : public Sentence {
@@ -511,7 +522,6 @@ private:
     meta::cpp2::AdminJobOp   op_;
     std::vector<std::string> paras_;
 };
-
 
 }   // namespace nebula
 
