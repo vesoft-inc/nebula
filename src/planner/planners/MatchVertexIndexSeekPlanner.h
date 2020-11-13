@@ -34,7 +34,7 @@ private:
 
     static Expression* makeIndexFilter(const std::string& label,
                                        const std::string& alias,
-                                       const Expression* filter,
+                                       Expression* filter,
                                        QueryContext* qctx);
 
     MatchVertexIndexSeekPlanner() = default;

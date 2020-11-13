@@ -66,7 +66,7 @@ Expression* MatchVertexIndexSeekPlanner::makeIndexFilter(const std::string &labe
 
 Expression* MatchVertexIndexSeekPlanner::makeIndexFilter(const std::string &label,
                                                          const std::string &alias,
-                                                         const Expression *filter,
+                                                         Expression *filter,
                                                          QueryContext* qctx) {
     static const std::unordered_set<Expression::Kind> kinds = {
         Expression::Kind::kRelEQ,
@@ -81,7 +81,11 @@ Expression* MatchVertexIndexSeekPlanner::makeIndexFilter(const std::string &labe
     if (kinds.count(kind) == 1) {
         ands.emplace_back(filter);
     } else if (kind == Expression::Kind::kLogicalAnd) {
-        ands = ExpressionUtils::pullAnds(filter);
+        auto *logic = static_cast<LogicalExpression*>(filter);
+        ExpressionUtils::pullAnds(logic);
+        for (auto &operand : logic->operands()) {
+            ands.emplace_back(operand.get());
+        }
     } else {
         return nullptr;
     }

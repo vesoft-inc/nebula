@@ -110,9 +110,13 @@ public:
     // Clone and fold constant expression
     static std::unique_ptr<Expression> foldConstantExpr(const Expression* expr);
 
-    static std::vector<const Expression*> pullAnds(const Expression *expr);
+    static Expression* pullAnds(Expression *expr);
+    static void pullAndsImpl(LogicalExpression *expr,
+                             std::vector<std::unique_ptr<Expression>> &operands);
 
-    static std::vector<const Expression*> pullOrs(const Expression *expr);
+    static Expression* pullOrs(Expression *expr);
+    static void pullOrsImpl(LogicalExpression *expr,
+                            std::vector<std::unique_ptr<Expression>> &operands);
 };
 
 }   // namespace graph

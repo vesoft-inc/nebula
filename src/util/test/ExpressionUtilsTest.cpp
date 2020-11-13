@@ -210,10 +210,11 @@ TEST_F(ExpressionUtilsTest, PullAnds) {
         auto *first = new ConstantExpression(true);
         auto *second = new ConstantExpression(false);
         LogicalExpression expr(Kind::kLogicalAnd, first, second);
-        auto ands = ExpressionUtils::pullAnds(&expr);
-        ASSERT_EQ(2UL, ands.size());
-        ASSERT_EQ(first, ands[0]);
-        ASSERT_EQ(second, ands[1]);
+        LogicalExpression expected(Kind::kLogicalAnd,
+                                   first->clone().release(),
+                                   second->clone().release());
+        ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true AND false AND true
     {
@@ -221,12 +222,16 @@ TEST_F(ExpressionUtilsTest, PullAnds) {
         auto *second = new ConstantExpression(false);
         auto *third = new ConstantExpression(true);
         LogicalExpression expr(Kind::kLogicalAnd,
-                new LogicalExpression(Kind::kLogicalAnd, first, second), third);
-        auto ands = ExpressionUtils::pullAnds(&expr);
-        ASSERT_EQ(3UL, ands.size());
-        ASSERT_EQ(first, ands[0]);
-        ASSERT_EQ(second, ands[1]);
-        ASSERT_EQ(third, ands[2]);
+                new LogicalExpression(Kind::kLogicalAnd,
+                    first,
+                    second),
+                third);
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true AND (false AND true)
     {
@@ -235,12 +240,15 @@ TEST_F(ExpressionUtilsTest, PullAnds) {
         auto *third = new ConstantExpression(true);
         LogicalExpression expr(Kind::kLogicalAnd,
                 first,
-                new LogicalExpression(Kind::kLogicalAnd, second, third));
-        auto ands = ExpressionUtils::pullAnds(&expr);
-        ASSERT_EQ(3UL, ands.size());
-        ASSERT_EQ(first, ands[0]);
-        ASSERT_EQ(second, ands[1]);
-        ASSERT_EQ(third, ands[2]);
+                new LogicalExpression(Kind::kLogicalAnd,
+                    second,
+                    third));
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // (true OR false) AND (true OR false)
     {
@@ -251,10 +259,11 @@ TEST_F(ExpressionUtilsTest, PullAnds) {
                 new ConstantExpression(true),
                 new ConstantExpression(false));
         LogicalExpression expr(Kind::kLogicalAnd, first, second);
-        auto ands = ExpressionUtils::pullAnds(&expr);
-        ASSERT_EQ(2UL, ands.size());
-        ASSERT_EQ(first, ands[0]);
-        ASSERT_EQ(second, ands[1]);
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true AND ((false AND true) OR false) AND true
     {
@@ -267,11 +276,12 @@ TEST_F(ExpressionUtilsTest, PullAnds) {
         auto *third = new ConstantExpression(true);
         LogicalExpression expr(Kind::kLogicalAnd,
                 new LogicalExpression(Kind::kLogicalAnd, first, second), third);
-        auto ands = ExpressionUtils::pullAnds(&expr);
-        ASSERT_EQ(3UL, ands.size());
-        ASSERT_EQ(first, ands[0]);
-        ASSERT_EQ(second, ands[1]);
-        ASSERT_EQ(third, ands[2]);
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullAnds(&expr);
+        ASSERT_EQ(expected, expr);
     }
 }
 
@@ -282,10 +292,11 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
         auto *first = new ConstantExpression(true);
         auto *second = new ConstantExpression(false);
         LogicalExpression expr(Kind::kLogicalOr, first, second);
-        auto ors = ExpressionUtils::pullOrs(&expr);
-        ASSERT_EQ(2UL, ors.size());
-        ASSERT_EQ(first, ors[0]);
-        ASSERT_EQ(second, ors[1]);
+        LogicalExpression expected(Kind::kLogicalOr,
+                first->clone().release(),
+                second->clone().release());
+        ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true OR false OR true
     {
@@ -294,11 +305,12 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
         auto *third = new ConstantExpression(true);
         LogicalExpression expr(Kind::kLogicalOr,
                 new LogicalExpression(Kind::kLogicalOr, first, second), third);
-        auto ors = ExpressionUtils::pullOrs(&expr);
-        ASSERT_EQ(3UL, ors.size());
-        ASSERT_EQ(first, ors[0]);
-        ASSERT_EQ(second, ors[1]);
-        ASSERT_EQ(third, ors[2]);
+        LogicalExpression expected(Kind::kLogicalOr);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true OR (false OR true)
     {
@@ -308,11 +320,12 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
         LogicalExpression expr(Kind::kLogicalOr,
                 first,
                 new LogicalExpression(Kind::kLogicalOr, second, third));
-        auto ors = ExpressionUtils::pullOrs(&expr);
-        ASSERT_EQ(3UL, ors.size());
-        ASSERT_EQ(first, ors[0]);
-        ASSERT_EQ(second, ors[1]);
-        ASSERT_EQ(third, ors[2]);
+        LogicalExpression expected(Kind::kLogicalOr);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // (true AND false) OR (true AND false)
     {
@@ -323,10 +336,11 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
                 new ConstantExpression(true),
                 new ConstantExpression(false));
         LogicalExpression expr(Kind::kLogicalOr, first, second);
-        auto ors = ExpressionUtils::pullOrs(&expr);
-        ASSERT_EQ(2UL, ors.size());
-        ASSERT_EQ(first, ors[0]);
-        ASSERT_EQ(second, ors[1]);
+        LogicalExpression expected(Kind::kLogicalOr,
+                first->clone().release(),
+                second->clone().release());
+        ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(expected, expr);
     }
     // true OR ((false OR true) AND false) OR true
     {
@@ -339,11 +353,12 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
         auto *third = new ConstantExpression(true);
         LogicalExpression expr(Kind::kLogicalOr,
                 new LogicalExpression(Kind::kLogicalOr, first, second), third);
-        auto ors = ExpressionUtils::pullOrs(&expr);
-        ASSERT_EQ(3UL, ors.size());
-        ASSERT_EQ(first, ors[0]);
-        ASSERT_EQ(second, ors[1]);
-        ASSERT_EQ(third, ors[2]);
+        LogicalExpression expected(Kind::kLogicalOr);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        ExpressionUtils::pullOrs(&expr);
+        ASSERT_EQ(expected, expr);
     }
 }
 

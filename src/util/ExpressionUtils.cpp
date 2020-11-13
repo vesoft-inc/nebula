@@ -21,50 +21,46 @@ std::unique_ptr<Expression> ExpressionUtils::foldConstantExpr(const Expression *
     return newExpr;
 }
 
-std::vector<const Expression*> ExpressionUtils::pullAnds(const Expression *expr) {
+Expression* ExpressionUtils::pullAnds(Expression *expr) {
     DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
-    auto *root = static_cast<const LogicalExpression*>(expr);
-    std::vector<const Expression*> operands;
-
-    // TODO(dutor) Deal with n-ary operands
-    if (root->operand(0)->kind() != Expression::Kind::kLogicalAnd) {
-        operands.emplace_back(root->operand(0));
-    } else {
-        auto ands = pullAnds(root->operand(0));
-        operands.insert(operands.end(), ands.begin(), ands.end());
-    }
-
-    if (root->operand(1)->kind() != Expression::Kind::kLogicalAnd) {
-        operands.emplace_back(root->operand(1));
-    } else {
-        auto ands = pullAnds(root->operand(1));
-        operands.insert(operands.end(), ands.begin(), ands.end());
-    }
-
-    return operands;
+    auto *logic = static_cast<LogicalExpression*>(expr);
+    std::vector<std::unique_ptr<Expression>> operands;
+    pullAndsImpl(logic, operands);
+    logic->setOperands(std::move(operands));
+    return logic;
 }
 
-std::vector<const Expression*> ExpressionUtils::pullOrs(const Expression *expr) {
+Expression* ExpressionUtils::pullOrs(Expression *expr) {
     DCHECK(expr->kind() == Expression::Kind::kLogicalOr);
-    auto *root = static_cast<const LogicalExpression*>(expr);
-    std::vector<const Expression*> operands;
+    auto *logic = static_cast<LogicalExpression*>(expr);
+    std::vector<std::unique_ptr<Expression>> operands;
+    pullOrsImpl(logic, operands);
+    logic->setOperands(std::move(operands));
+    return logic;
+}
 
-    // TODO(dutor) Deal with n-ary operands
-    if (root->operand(0)->kind() != Expression::Kind::kLogicalOr) {
-        operands.emplace_back(root->operand(0));
-    } else {
-        auto ands = pullOrs(root->operand(0));
-        operands.insert(operands.end(), ands.begin(), ands.end());
+void
+ExpressionUtils::pullAndsImpl(LogicalExpression *expr,
+                              std::vector<std::unique_ptr<Expression>> &operands) {
+    for (auto &operand : expr->operands()) {
+        if (operand->kind() != Expression::Kind::kLogicalAnd) {
+            operands.emplace_back(std::move(operand));
+            continue;
+        }
+        pullAndsImpl(static_cast<LogicalExpression*>(operand.get()), operands);
     }
+}
 
-    if (root->operand(1)->kind() != Expression::Kind::kLogicalOr) {
-        operands.emplace_back(root->operand(1));
-    } else {
-        auto ands = pullOrs(root->operand(1));
-        operands.insert(operands.end(), ands.begin(), ands.end());
+void
+ExpressionUtils::pullOrsImpl(LogicalExpression *expr,
+                             std::vector<std::unique_ptr<Expression>> &operands) {
+    for (auto &operand : expr->operands()) {
+        if (operand->kind() != Expression::Kind::kLogicalOr) {
+            operands.emplace_back(std::move(operand));
+            continue;
+        }
+        pullOrsImpl(static_cast<LogicalExpression*>(operand.get()), operands);
     }
-
-    return operands;
 }
 
 }   // namespace graph
