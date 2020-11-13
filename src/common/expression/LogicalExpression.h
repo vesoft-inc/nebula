@@ -62,6 +62,10 @@ public:
         operands_[i].reset(operand);
     }
 
+    void setOperands(std::vector<std::unique_ptr<Expression>> operands) {
+        operands_ = std::move(operands);
+    }
+
 private:
     void writeTo(Encoder &encoder) const override;
     void resetFrom(Decoder &decoder) override;
