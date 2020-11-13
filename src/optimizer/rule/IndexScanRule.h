@@ -108,6 +108,10 @@ private:
                                graph::QueryContext *qctx,
                                const OptGroupNode *groupNode) const;
 
+    Status createIndexQueryCtx(IndexQueryCtx &iqctx,
+                               graph::QueryContext *qctx,
+                               const OptGroupNode *groupNode) const;
+
     Status createIQCWithLogicAnd(IndexQueryCtx &iqctx,
                                  const FilterItems& items,
                                  graph::QueryContext *qctx,
@@ -122,6 +126,9 @@ private:
                        const FilterItems& items,
                        IndexQueryCtx &iqctx,
                        const std::string& filter = "") const;
+
+    Status appendIQCtx(const IndexItem& index,
+                       IndexQueryCtx &iqctx) const;
 
     Status appendColHint(std::vector<IndexColumnHint>& hitns,
                          const FilterItems& items,
@@ -154,6 +161,9 @@ private:
     IndexItem findOptimalIndex(graph::QueryContext *qctx,
                                const OptGroupNode *groupNode,
                                const FilterItems& items) const;
+
+    IndexItem findLightestIndex(graph::QueryContext *qctx,
+                                const OptGroupNode *groupNode) const;
 
     std::vector<IndexItem>
     allIndexesBySchema(graph::QueryContext *qctx, const OptGroupNode *groupNode) const;

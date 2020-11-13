@@ -42,7 +42,7 @@ private:
 
 private:
     GraphSpaceID               spaceId_{0};
-    IndexScan::IndexQueryCtx   contexts_{};
+    IndexScan::IndexQueryCtx   contexts_{nullptr};
     IndexScan::IndexReturnCols returnCols_{};
     bool                       isEdge_{false};
     int32_t                    schemaId_;
