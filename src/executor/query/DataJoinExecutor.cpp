@@ -26,7 +26,8 @@ folly::Future<Status> DataJoinExecutor::doInnerJoin() {
     SCOPED_TIMER(&execTime_);
 
     auto* dataJoin = asNode<DataJoin>(node());
-
+    auto colNames = dataJoin->colNames();
+    VLOG(1) << "DataJoin ColNames : " << folly::join(",", colNames);
     VLOG(1) << "lhs hist: " << ectx_->getHistory(dataJoin->leftVar().first).size();
     VLOG(1) << "rhs hist: " << ectx_->getHistory(dataJoin->rightVar().first).size();
     auto lhsIter = ectx_
@@ -52,7 +53,7 @@ folly::Future<Status> DataJoinExecutor::doInnerJoin() {
         return error(Status::Error(ss.str()));
     }
 
-    auto resultIter = std::make_unique<JoinIter>();
+    auto resultIter = std::make_unique<JoinIter>(std::move(colNames));
     resultIter->joinIndex(lhsIter.get(), rhsIter.get());
     auto bucketSize =
         lhsIter->size() > rhsIter->size() ? rhsIter->size() : lhsIter->size();

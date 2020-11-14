@@ -92,15 +92,20 @@ public:
         return qctx->objPool()->add(new CartesianProduct(qctx, input));
     }
 
-    Status addVar(std::string varName);
+    Status addVarAndColNames(std::string varName, std::vector<std::string> colNames);
 
     std::vector<std::string> inputVars() const;
+
+    std::vector<std::vector<std::string>> allColNames() const {
+        return allColNames_;
+    }
 
 private:
     CartesianProduct(QueryContext* qctx, PlanNode* input)
         : SingleDependencyNode(qctx, Kind::kCartesianProduct, input) {}
 
-    std::vector<std::string> allColNames_;
+    std::vector<std::vector<std::string>> allColNames_;
+    std::unordered_set<std::string> uniqueNames_;
 };
 
 }  // namespace graph

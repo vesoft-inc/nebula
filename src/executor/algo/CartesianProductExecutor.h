@@ -23,7 +23,7 @@ private:
 
     void doCartesianProduct(Iterator* leftIter, Iterator* rightIter, JoinIter* joinIter);
 
-    std::vector<std::string> colNames_;
+    std::vector<std::vector<std::string>> colNames_;
 };
 
 }   // namespace graph

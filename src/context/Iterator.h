@@ -590,7 +590,8 @@ public:
         const std::unordered_map<size_t, std::pair<size_t, size_t>>* colIdxIndices_;
     };
 
-    JoinIter() : Iterator(nullptr, Kind::kJoin) {}
+    explicit JoinIter(std::vector<std::string> colNames)
+        : Iterator(nullptr, Kind::kJoin), colNames_(std::move(colNames)) {}
 
     void joinIndex(const Iterator* lhs, const Iterator* rhs);
 
@@ -603,6 +604,10 @@ public:
         auto copy = std::make_unique<JoinIter>(*this);
         copy->reset();
         return copy;
+    }
+
+    std::vector<std::string> colNames() const {
+        return colNames_;
     }
 
     bool valid() const override {
@@ -692,6 +697,7 @@ private:
     size_t buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx);
 
 private:
+    std::vector<std::string>                                       colNames_;
     RowsType<JoinLogicalRow>                                       rows_;
     RowsIter<JoinLogicalRow>                                       iter_;
     // colName -> segIdx, currentSegColIdx

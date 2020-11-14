@@ -621,7 +621,7 @@ TEST(IteratorTest, Join) {
     row1.values = {"1", 1, 2, "2"};
     Row row2;
     row2.values = {"3", "4"};
-    JoinIter joinIter;
+    JoinIter joinIter({kVid, "tag_prop", "edge_prop", kDst, "src", "dst"});
     joinIter.joinIndex(&iter1, &iter2);
     EXPECT_EQ(joinIter.getColIdxIndices().size(), 6);
     EXPECT_EQ(joinIter.getColIdxIndices().size(), 6);
@@ -654,7 +654,7 @@ TEST(IteratorTest, Join) {
     {
         // The iterator and executors will not handle the duplicate columns,
         // so the duplicate column will be covered by later one.
-        JoinIter joinIter1;
+        JoinIter joinIter1({"src", "dst", kVid, "tag_prop", "edge_prop", kDst, "src", "dst"});
         joinIter1.joinIndex(&iter2, &joinIter);
         EXPECT_EQ(joinIter.getColIndices().size(), 6);
     }
@@ -668,7 +668,8 @@ TEST(IteratorTest, Join) {
         Row row3;
         row3.values = {"5", "6"};
 
-        JoinIter joinIter2;
+        JoinIter joinIter2(
+            {"tag_prop1", "edge_prop1", kVid, "tag_prop", "edge_prop", kDst, "src", "dst"});
         joinIter2.joinIndex(&iter3, &joinIter);
         EXPECT_EQ(joinIter2.getColIndices().size(), 8);
         EXPECT_EQ(joinIter2.getColIdxIndices().size(), 8);
@@ -711,7 +712,8 @@ TEST(IteratorTest, Join) {
         Row row3;
         row3.values = {"5", "6"};
 
-        JoinIter joinIter2;
+        JoinIter joinIter2(
+            {kVid, "tag_prop", "edge_prop", kDst, "src", "dst", "tag_prop1", "edge_prop1"});
         joinIter2.joinIndex(&joinIter, &iter3);
         EXPECT_EQ(joinIter2.getColIndices().size(), 8);
         EXPECT_EQ(joinIter2.getColIdxIndices().size(), 8);

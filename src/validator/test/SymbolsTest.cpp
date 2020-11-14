@@ -241,7 +241,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_EQ(variable->type, Value::Type::DATASET);
             EXPECT_EQ(variable->colNames,
                       std::vector<std::string>(
-                          {"__UNAMED_COL_0", "_vid", "id", "__UNAMED_COL_1", "like._dst"}));
+                          {"__UNAMED_COL_0", "_vid", "id", "__UNAMED_COL_1", "id"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {20}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {19}));
         }

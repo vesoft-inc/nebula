@@ -15,13 +15,13 @@ folly::Future<Status> CartesianProductExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto* cartesianProduct = asNode<CartesianProduct>(node());
-    colNames_ = cartesianProduct->colNames();
+    colNames_ = cartesianProduct->allColNames();
     auto vars = cartesianProduct->inputVars();
     if (vars.size() < 2) {
         return Status::Error("vars's size : %zu, must be greater than 2", vars.size());
     }
-
-    auto leftIter = std::make_unique<JoinIter>();
+    std::vector<std::string> emptyCol;
+    auto leftIter = std::make_unique<JoinIter>(emptyCol);
     for (size_t i = 0; i < vars.size(); ++i) {
         auto rightIter = ectx_->getResult(vars[i]).iter();
         DCHECK(!!rightIter);
@@ -31,7 +31,12 @@ folly::Future<Status> CartesianProductExecutor::execute() {
             ss << "CartesianProductExecutor does not support" << rightIter->kind();
             return Status::Error(ss.str());
         }
-        auto joinIter = std::make_unique<JoinIter>();
+        std::vector<std::string> colNames = leftIter->colNames();
+        colNames.reserve(colNames.size() + colNames_[i].size());
+        for (auto& name : colNames_[i]) {
+            colNames.emplace_back(name);
+        }
+        auto joinIter = std::make_unique<JoinIter>(std::move(colNames));
         joinIter->joinIndex(leftIter.get(), rightIter.get());
         if (i == 0) {
             initJoinIter(joinIter.get(), rightIter.get());

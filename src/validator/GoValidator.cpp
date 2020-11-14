@@ -476,6 +476,11 @@ PlanNode* GoValidator::buildJoinDstProps(PlanNode* projectSrcDstProps) {
             {joinHashKey}, {probeKey});
     VLOG(1) << joinDst->outputVar() << " hash key: " << joinHashKey->toString()
         << " probe key: " << probeKey->toString();
+    std::vector<std::string> colNames = projectSrcDstProps->colNames();
+    for (auto& col : project->colNames()) {
+        colNames.emplace_back(col);
+    }
+    joinDst->setColNames(std::move(colNames));
 
     return joinDst;
 }
@@ -514,16 +519,19 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
                                        new std::string((steps_.steps > 1 || steps_.mToN != nullptr)
                                                            ? from_.firstBeginningSrcVidColName
                                                            : kVid)));
+    std::string varName = from_.fromType == kPipe ? inputVarName_ : from_.userDefinedVarName;
     auto* joinInput =
         DataJoin::make(qctx_, dependencyForJoinInput,
                         {dependencyForJoinInput->outputVar(),
                         ExecutionContext::kLatestVersion},
-                        {from_.fromType == kPipe ? inputVarName_ : from_.userDefinedVarName,
+                        {varName,
                         ExecutionContext::kLatestVersion},
                         {joinHashKey}, {from_.originalSrc});
     std::vector<std::string> colNames = dependencyForJoinInput->colNames();
-    for (auto& col : outputs_) {
-        colNames.emplace_back(col.name);
+    auto* varPtr = qctx_->symTable()->getVar(varName);
+    DCHECK(varPtr != nullptr);
+    for (auto& col : varPtr->colNames) {
+        colNames.emplace_back(col);
     }
     joinInput->setColNames(std::move(colNames));
     VLOG(1) << joinInput->outputVar();
