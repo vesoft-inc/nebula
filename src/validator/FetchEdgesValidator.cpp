@@ -137,7 +137,7 @@ Status FetchEdgesValidator::prepareEdges() {
                 return Status::NotSupported("dst is not a vertex id");
             }
             edgeKeys_.emplace_back(nebula::Row(
-                {std::move(src).getStr(), edgeType_, ranking, std::move(dst).getStr()}));
+                {std::move(src).getStr(), ranking, std::move(dst).getStr()}));
         }
     }
     return Status::OK();
@@ -275,8 +275,7 @@ std::string FetchEdgesValidator::buildConstantInput() {
 
     src_ =
         pool->makeAndAdd<VariablePropertyExpression>(new std::string(input), new std::string(kSrc));
-    type_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
-                                                         new std::string(kType));
+    type_ = pool->makeAndAdd<ConstantExpression>(edgeType_);
     rank_ = pool->makeAndAdd<VariablePropertyExpression>(new std::string(input),
                                                          new std::string(kRank));
     dst_ =

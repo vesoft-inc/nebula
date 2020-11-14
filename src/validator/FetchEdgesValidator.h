@@ -54,7 +54,7 @@ private:
 
 private:
     GraphSpaceID spaceId_;
-    DataSet edgeKeys_{{kSrc, kType, kRank, kDst}};
+    DataSet edgeKeys_{{kSrc, kRank, kDst}};
     Expression* srcRef_{nullptr};
     Expression* rankRef_{nullptr};
     Expression* dstRef_{nullptr};
