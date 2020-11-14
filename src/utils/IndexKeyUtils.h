@@ -91,7 +91,7 @@ public:
         }
         std::string raw;
         raw.reserve(len);
-        raw.append(len, '\0');
+        raw.append(len, static_cast<char>(0xFF));
         return raw;
     }
 

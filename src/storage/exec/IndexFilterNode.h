@@ -19,6 +19,7 @@ class IndexFilterNode final : public RelNode<T> {
 public:
     using RelNode<T>::execute;
 
+    // evalExprByIndex_ is true, all fileds in filter is in index. No need to read data anymore.
     IndexFilterNode(IndexScanNode<T>* indexScanNode,
                     StorageExpressionContext* exprCtx = nullptr,
                     Expression* exp = nullptr,
@@ -30,6 +31,7 @@ public:
         evalExprByIndex_ = true;
     }
 
+    // evalExprByIndex_ is false, some fileds in filter is out of index, which need to read data.
     IndexFilterNode(IndexEdgeNode<T>* indexEdgeNode,
                     StorageExpressionContext* exprCtx = nullptr,
                     Expression* exp = nullptr)
@@ -40,6 +42,7 @@ public:
         isEdge_ = true;
     }
 
+    // evalExprByIndex_ is false, some fileds in filter is out of index, which need to read data.
     IndexFilterNode(IndexVertexNode<T>* indexVertexNode,
                     StorageExpressionContext* exprCtx = nullptr,
                     Expression* exp = nullptr)

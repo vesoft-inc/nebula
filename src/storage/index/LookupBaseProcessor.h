@@ -76,6 +76,8 @@ protected:
     IndexFilterItem                             filterItems_;
     // Used to identify no fields in the index
     bool                                        noProp_{false};
+    // Save schema when column is out of index, need to read from data
+    std::shared_ptr<const meta::NebulaSchemaProvider> schema_;
 };
 }  // namespace storage
 }  // namespace nebula

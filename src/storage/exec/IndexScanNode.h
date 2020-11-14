@@ -29,10 +29,12 @@ public:
          *                            {scanType = PREFIX|RANGE; beginStr; endStr},...
          * if the scanType is RANGE, means the index scan is range scan.
          * if all scanType are PREFIX, means the index scan is prefix scan.
+         * there should be only one RANGE hnit, and it must be the last one.
          */
-        for (const auto &colHint : columnHints_) {
-            if (colHint.get_scan_type() == cpp2::ScanType::RANGE) {
+        for (size_t i = 0; i < columnHints_.size(); i++) {
+            if (columnHints_[i].get_scan_type() == cpp2::ScanType::RANGE) {
                 isRangeScan_ = true;
+                CHECK_EQ(columnHints_.size() - 1, i);
                 break;
             }
         }

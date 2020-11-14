@@ -22,12 +22,12 @@ public:
                     VertexCache* vertexCache,
                     IndexScanNode<T>* indexScanNode,
                     std::shared_ptr<const meta::NebulaSchemaProvider> schema,
-                    std::string&& schemaName)
+                    const std::string& schemaName)
         : planContext_(planCtx)
         , vertexCache_(vertexCache)
         , indexScanNode_(indexScanNode)
         , schema_(schema)
-        , schemaName_(std::move(schemaName)) {}
+        , schemaName_(schemaName) {}
 
     kvstore::ResultCode execute(PartitionID partId) override {
         auto ret = RelNode<T>::execute(partId);
