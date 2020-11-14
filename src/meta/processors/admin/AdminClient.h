@@ -173,6 +173,8 @@ private:
 
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
 
+    std::vector<HostAddr> getAdminAddrFromPeers(const std::vector<HostAddr> &peers);
+
 private:
     std::unique_ptr<FaultInjector> injector_{nullptr};
     kvstore::KVStore* kv_{nullptr};

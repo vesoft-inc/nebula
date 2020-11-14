@@ -45,8 +45,9 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
             }
         }
     }
-    req.set_new_leader(toThriftHost(target));
-    return getResponse(leader, std::move(req), [] (auto client, auto request) {
+    req.set_new_leader(target);
+    return getResponse(Utils::getAdminAddrFromStoreAddr(leader), std::move(req),
+            [] (auto client, auto request) {
                return client->future_transLeader(request);
            }, [] (auto&& resp) -> Status {
                switch (resp.get_code()) {
@@ -79,14 +80,8 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
     if (!ret.ok()) {
         return ret.status();
     }
-    auto peers = std::move(ret).value();
-    std::vector<HostAddr> thriftPeers;
-    thriftPeers.resize(peers.size());
-    std::transform(peers.begin(), peers.end(), thriftPeers.begin(), [this](const auto& h) {
-        return toThriftHost(h);
-    });
-    req.set_peers(std::move(thriftPeers));
-    return getResponse(host, std::move(req),
+    req.set_peers(std::move(ret).value());
+    return getResponse(Utils::getAdminAddrFromStoreAddr(host), std::move(req),
                        [] (auto client, auto request) {
                            return client->future_addPart(request);
                        },
@@ -109,14 +104,15 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
     storage::cpp2::AddLearnerReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    req.set_learner(toThriftHost(learner));
+    req.set_learner(learner);
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
     }
+    auto peers = std::move(ret).value();
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(ret).value(), 0, std::move(req),
+    getResponse(getAdminAddrFromPeers(peers), 0, std::move(req),
                 [] (auto client, auto request) {
                     return client->future_addLearner(request);
                 },
@@ -133,14 +129,15 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     storage::cpp2::CatchUpDataReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    req.set_target(toThriftHost(target));
+    req.set_target(target);
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
     }
+    auto peers = std::move(ret).value();
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(ret).value(), 0, std::move(req),
+    getResponse(getAdminAddrFromPeers(peers), 0, std::move(req),
                 [] (auto client, auto request) {
                     return client->future_waitingForCatchUpData(request);
                 },
@@ -159,14 +156,15 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
     req.set_space_id(spaceId);
     req.set_part_id(partId);
     req.set_add(added);
-    req.set_peer(toThriftHost(peer));
+    req.set_peer(peer);
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
     }
+    auto peers = std::move(ret).value();
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(std::move(ret).value(), 0, std::move(req),
+    getResponse(getAdminAddrFromPeers(peers), 0, std::move(req),
                 [] (auto client, auto request) {
                     return client->future_memberChange(request);
                 },
@@ -215,11 +213,6 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return Status::Error("dst has been existed in peers");
     }
     peers.emplace_back(dst);
-    std::vector<HostAddr> thriftPeers;
-    thriftPeers.resize(peers.size());
-    std::transform(peers.begin(), peers.end(), thriftPeers.begin(), [this](const auto& h) {
-        return toThriftHost(h);
-    });
 
     auto partRet = kv_->part(kDefaultSpaceId, kDefaultPartId);
     CHECK(ok(partRet));
@@ -229,7 +222,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     auto f = pro.getFuture();
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
-                      MetaServiceUtils::partVal(thriftPeers));
+                      MetaServiceUtils::partVal(peers));
     part->asyncMultiPut(std::move(data), [] (kvstore::ResultCode) {});
     part->sync([this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
         // To avoid dead lock, we call future callback in ioThreadPool_
@@ -253,7 +246,8 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
     storage::cpp2::RemovePartReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    return getResponse(host, std::move(req), [] (auto client, auto request) {
+    return getResponse(Utils::getAdminAddrFromStoreAddr(host), std::move(req),
+            [] (auto client, auto request) {
                return client->future_removePart(request);
            }, [] (auto&& resp) -> Status {
                if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
@@ -277,12 +271,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         return ret.status();
     }
     auto peers = std::move(ret).value();
-    std::vector<HostAddr> thriftPeers;
-    thriftPeers.resize(peers.size());
-    std::transform(peers.begin(), peers.end(), thriftPeers.begin(), [this](const auto& h) {
-        return toThriftHost(h);
-    });
-    req.set_peers(std::move(thriftPeers));
+    req.set_peers(std::move(peers));
     folly::Promise<Status> pro;
     auto fut = pro.getFuture();
     std::vector<folly::Future<Status>> futures;
@@ -291,7 +280,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
             LOG(INFO) << "[" << spaceId << ":" << partId << "], Skip the dead host " << p;
             continue;
         }
-        auto f = getResponse(p, req, [] (auto client, auto request) {
+        auto f = getResponse(Utils::getAdminAddrFromStoreAddr(p), req,
+                [] (auto client, auto request) {
                     return client->future_checkPeers(request);
                  }, [] (auto&& resp) -> Status {
                     if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
@@ -503,10 +493,6 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
     });  // via
 }
 
-HostAddr AdminClient::toThriftHost(const HostAddr& addr) {
-    return addr;
-}
-
 StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, PartitionID partId) {
     CHECK_NOTNULL(kv_);
     auto partKey = MetaServiceUtils::partKey(spaceId, partId);
@@ -529,6 +515,15 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
             break;
     }
     return Status::Error("Get Failed");
+}
+
+std::vector<HostAddr> AdminClient::getAdminAddrFromPeers(const std::vector<HostAddr> &peers) {
+    std::vector<HostAddr> adminHosts;
+    adminHosts.resize(peers.size());
+    std::transform(peers.begin(), peers.end(), adminHosts.begin(), [](const auto& h) {
+        return Utils::getAdminAddrFromStoreAddr(h);
+    });
+    return adminHosts;
 }
 
 void AdminClient::getLeaderDist(const HostAddr& host,
@@ -660,52 +655,6 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
                     return client->future_blockingWrites(request);
                 },
                 0, std::move(pro), 32 /*The blocking need to retry 32 times*/);
-    return f;
-}
-
-folly::Future<Status> AdminClient::rebuildTagIndex(const HostAddr& address,
-                                                   GraphSpaceID spaceId,
-                                                   IndexID indexID,
-                                                   std::vector<PartitionID> parts) {
-    if (injector_) {
-        return injector_->rebuildTagIndex();
-    }
-
-    std::vector<HostAddr> hosts{address};
-    storage::cpp2::RebuildIndexRequest req;
-    req.set_space_id(spaceId);
-    req.set_index_id(indexID);
-    req.set_parts(std::move(parts));
-    folly::Promise<Status> pro;
-    auto f = pro.getFuture();
-    getResponse(std::move(hosts), 0, std::move(req),
-                [] (auto client, auto request) {
-                    return client->future_rebuildTagIndex(request);
-                },
-                0, std::move(pro), 1);
-    return f;
-}
-
-folly::Future<Status> AdminClient::rebuildEdgeIndex(const HostAddr& address,
-                                                    GraphSpaceID spaceId,
-                                                    IndexID indexID,
-                                                    std::vector<PartitionID> parts) {
-    if (injector_) {
-        return injector_->rebuildEdgeIndex();
-    }
-
-    std::vector<HostAddr> hosts{address};
-    storage::cpp2::RebuildIndexRequest req;
-    req.set_space_id(spaceId);
-    req.set_index_id(indexID);
-    req.set_parts(std::move(parts));
-    folly::Promise<Status> pro;
-    auto f = pro.getFuture();
-    getResponse(std::move(hosts), 0, std::move(req),
-                [] (auto client, auto request) {
-                    return client->future_rebuildEdgeIndex(request);
-                },
-                0, std::move(pro), 1);
     return f;
 }
 
