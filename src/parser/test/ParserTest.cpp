@@ -1156,6 +1156,30 @@ TEST(Parser, FetchVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * \"1\", \"2\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield \"1\" as id | FETCH PROP ON * $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield \"1\" as id | FETCH PROP ON * $-.id yield friend.id, person.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, FetchEdge) {
@@ -1192,6 +1216,13 @@ TEST(Parser, FetchEdge) {
         std::string query = "$var = GO FROM \"12345\" OVER transfer "
                             "YIELD transfer._src AS s, edu._dst AS d; "
                             "FETCH PROP ON service $var.s -> $var.d YIELD service.amount";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // this will be denied in Semantic Analysis
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON transfer, another \"12345\" -> \"-54321\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

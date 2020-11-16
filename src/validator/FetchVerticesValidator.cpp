@@ -65,18 +65,20 @@ Status FetchVerticesValidator::check() {
 
     if (!sentence->isAllTagProps()) {
         onStar_ = false;
-        auto tagName = *(sentence->tag());
-        auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, tagName);
-        NG_RETURN_IF_ERROR(tagStatus);
-        auto tagId = tagStatus.value();
+        auto tags = sentence->tags()->labels();
+        for (const auto& tag : tags) {
+            auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, *tag);
+            NG_RETURN_IF_ERROR(tagStatus);
+            auto tagId = tagStatus.value();
 
-        tags_.emplace(tagName, tagId);
-        auto schema = qctx_->schemaMng()->getTagSchema(space_.id, tagId);
-        if (schema == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName;
-            return Status::SemanticError("No schema found for `%s'", tagName.c_str());
+            tags_.emplace(*tag, tagId);
+            auto schema = qctx_->schemaMng()->getTagSchema(space_.id, tagId);
+            if (schema == nullptr) {
+                LOG(ERROR) << "No schema found for " << *tag;
+                return Status::SemanticError("No schema found for `%s'", tag->c_str());
+            }
+            tagsSchema_.emplace(tagId, schema);
         }
-        tagsSchema_.emplace(tagId, schema);
     } else {
         onStar_ = true;
         const auto allTagsResult = qctx_->schemaMng()->getAllVerTagSchema(space_.id);

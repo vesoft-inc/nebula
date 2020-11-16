@@ -418,6 +418,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesPropFailed) {
 
     ASSERT_FALSE(validate("FETCH PROP ON like \"1\"->\"2\" YIELD $^.like.start + 1"));
     ASSERT_FALSE(validate("FETCH PROP ON like \"1\"->\"2\" YIELD $$.like.start + 1"));
+
+    // Fetch on multi-edges
+    ASSERT_FALSE(validate("FETCH PROP ON like, serve \"1\"->\"2\""));
 }
 
 TEST_F(FetchEdgesValidatorTest, FetchEdgesInputFailed) {

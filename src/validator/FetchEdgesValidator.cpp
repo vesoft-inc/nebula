@@ -77,6 +77,9 @@ Status FetchEdgesValidator::toPlan() {
 
 Status FetchEdgesValidator::check() {
     auto *sentence = static_cast<FetchEdgesSentence *>(sentence_);
+    if (sentence->edgeSize() > 1) {
+        return Status::SemanticError("Only allow fetch on one edge.");
+    }
     spaceId_ = vctx_->whichSpace().id;
     edgeTypeName_ = *sentence->edge();
     auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, edgeTypeName_);

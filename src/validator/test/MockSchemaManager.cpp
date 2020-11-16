@@ -22,6 +22,8 @@ void MockSchemaManager::init() {
     edgeIdNames_.emplace(3, "like");
     edgeNameIds_.emplace("serve", 4);
     edgeIdNames_.emplace(4, "serve");
+    tagNameIds_.emplace("book", 5);
+    tagIdNames_.emplace(5, "book");
 
     Tags tagSchemas;
     // person {name : string, age : int8}
@@ -29,6 +31,10 @@ void MockSchemaManager::init() {
     personSchema->addField("name", meta::cpp2::PropertyType::STRING);
     personSchema->addField("age", meta::cpp2::PropertyType::INT8);
     tagSchemas.emplace(2, personSchema);
+    // book {name : string}
+    std::shared_ptr<meta::NebulaSchemaProvider> bookSchema(new meta::NebulaSchemaProvider(0));
+    bookSchema->addField("name", meta::cpp2::PropertyType::STRING);
+    tagSchemas.emplace(5, bookSchema);
 
     tagSchemas_.emplace(1, std::move(tagSchemas));
 

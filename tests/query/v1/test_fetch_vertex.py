@@ -220,22 +220,24 @@ class TestFetchQuery(NebulaTestSuite):
         # multi vertices
         query = 'FETCH PROP ON * "Tim Duncan", "Boris Diaw"'
         resp = self.execute_query(query)
-        expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
         expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"],
                          ['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
         self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expect_result)
 
         # from input
         query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id
             | FETCH PROP ON * $-.id'''
         resp = self.execute_query(query)
-        expect_column_names = ['_vid', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
         expect_result = [
             ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
             ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]
         ]
         self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expect_result)
 
         # from var
@@ -356,6 +358,146 @@ class TestFetchQuery(NebulaTestSuite):
         query = 'FETCH PROP ON * "Tim Duncan", "Boris Diaw" YIELD player.not_exist_prop'
         resp = self.execute_query(query)
         self.check_resp_failed(resp)
+
+    def test_fetch_vertex_on_multi_tags(self):
+        query = 'FETCH PROP ON player, team "Boris Diaw"'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name']
+        expect_result = [['Boris Diaw', 'Boris Diaw', 36, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # multi vertices
+        query = 'FETCH PROP ON player, bachelor "Tim Duncan", "Boris Diaw"'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, "Tim Duncan", "psychology"],
+                         ['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from input
+        query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON player, bachelor $-.id'''
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY],
+            ['Tim Duncan', 'Tim Duncan', 42, "Tim Duncan", "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from var
+        query = '''$a = GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON palyer, bachelor * $a.id'''
+        self.check_resp_succeeded(resp)
+        self.check_out_of_order_result(resp, expect_result)
+
+    def test_fetch_vertex_on_multi_tags_with_yield(self):
+        query = 'FETCH PROP ON team, player, bachelor "Boris Diaw" YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player, team, bachelor "Boris Diaw" YIELD player.age, team.name, bachelor.speciality'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.age', 'team.name', 'bachelor.speciality']
+        expect_result = [['Boris Diaw', 36, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON team, player, bachelor "Tim Duncan" YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player, team, bachelor "Tim Duncan" YIELD player.name, team.name, bachelor.name'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'team.name', 'bachelor.name']
+        expect_result = [['Tim Duncan', 'Tim Duncan', T_EMPTY, "Tim Duncan"]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # multi vertices
+        query = 'FETCH PROP ON bachelor, team, player "Tim Duncan", "Boris Diaw" YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"],
+                         ['Boris Diaw', 'Boris Diaw', 36, T_EMPTY, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player, team, bachelor "Tim Duncan", "Boris Diaw" YIELD player.age, team.name, bachelor.name'
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.age', 'team.name', 'bachelor.name']
+        expect_result = [['Tim Duncan', 42, T_EMPTY, "Tim Duncan"],
+                         ['Boris Diaw', 36, T_EMPTY, T_EMPTY]]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from input
+        query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality'''
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
+            ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = '''GO FROM "Boris Diaw" over like YIELD like._dst as id
+            | FETCH PROP ON player, team, bachelor $-.id YIELD player.age, team.name, bachelor.speciality'''
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.age', 'team.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 36, T_EMPTY, T_EMPTY],
+            ['Tim Duncan',  42, T_EMPTY, "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        # from var
+        query = '''$a = GO FROM "Boris Diaw" over like YIELD like._dst as id;
+            FETCH PROP ON player, team, bachelor $a.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality'''
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.name', 'player.age', 'team.name', 'bachelor.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 'Tony Parker', 36, T_EMPTY, T_EMPTY, T_EMPTY],
+            ['Tim Duncan', 'Tim Duncan', 42, T_EMPTY, "Tim Duncan", "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = '''$a = GO FROM "Boris Diaw" over like YIELD like._dst as id;
+            FETCH PROP ON player, team, bachelor $a.id YIELD player.age, team.name, bachelor.speciality'''
+        resp = self.execute_query(query)
+        expect_column_names = ['VertexID', 'player.age', 'team.name', 'bachelor.speciality']
+        expect_result = [
+            ['Tony Parker', 36, T_EMPTY, T_EMPTY],
+            ['Tim Duncan',  42, T_EMPTY, "psychology"]
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
 
     def test_fetch_vertex_duplicate_column_names(self):
         query = 'FETCH PROP ON player "Boris Diaw" YIELD player.name, player.name'

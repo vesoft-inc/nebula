@@ -128,7 +128,7 @@ std::string FetchVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FETCH PROP ON ";
-    buf += *tag_;
+    buf += tags_->toString();
     buf += " ";
     if (isRef()) {
         buf += vidRef_->toString();
@@ -146,7 +146,7 @@ std::string FetchEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FETCH PROP ON ";
-    buf += *edge_;
+    buf += edge_->toString();
     buf += " ";
     if (isRef()) {
         buf += keyRef_->toString();

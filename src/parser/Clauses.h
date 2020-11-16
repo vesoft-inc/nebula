@@ -387,5 +387,47 @@ using InBoundClause = BoundClause;
 using OutBoundClause = BoundClause;
 using BothInOutClause = BoundClause;
 
+class NameLabelList {
+public:
+    NameLabelList() = default;
+
+    void add(std::string *label) {
+        labels_.emplace_back(label);
+    }
+
+    bool empty() const {
+        return labels_.empty();
+    }
+
+    std::size_t size() const {
+        return labels_.size();
+    }
+
+    const std::string* front() const {
+        return labels_.front().get();
+    }
+
+    std::vector<const std::string*> labels() const {
+        std::vector<const std::string*> labels;
+        labels.reserve(labels_.size());
+        for (const auto& it : labels_) {
+            labels.emplace_back(it.get());
+        }
+        return labels;
+    }
+
+    std::string toString() const {
+        std::stringstream ss;
+        for (std::size_t i = 0; i < labels_.size() - 1; ++i) {
+            ss << *labels_[i].get() << ",";
+        }
+        ss << *labels_.back();
+        return ss.str();
+    }
+
+private:
+    std::vector<std::unique_ptr<std::string>> labels_;
+};
+
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
