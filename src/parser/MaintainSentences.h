@@ -513,7 +513,11 @@ public:
         : CreateSentence(ifNotExists) {
         indexName_.reset(indexName);
         tagName_.reset(tagName);
-        fields_.reset(fields);
+        if (fields == nullptr) {
+            fields_ = std::make_unique<IndexFieldList>();
+        } else {
+            fields_.reset(fields);
+        }
         kind_ = Kind::kCreateTagIndex;
     }
 
@@ -552,7 +556,11 @@ public:
         : CreateSentence(ifNotExists) {
         indexName_.reset(indexName);
         edgeName_.reset(edgeName);
-        fields_.reset(fields);
+        if (fields == nullptr) {
+            fields_ = std::make_unique<IndexFieldList>();
+        } else {
+            fields_.reset(fields);
+        }
         kind_ = Kind::kCreateEdgeIndex;
     }
 

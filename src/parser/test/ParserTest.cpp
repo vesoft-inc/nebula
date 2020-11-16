@@ -476,6 +476,12 @@ TEST(Parser, ColumnSpacesTest) {
 TEST(Parser, IndexOperation) {
     {
         GQLParser parser;
+        std::string query = "CREATE TAG INDEX empty_field_index ON person()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "CREATE TAG INDEX name_index ON person(name)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -489,6 +495,12 @@ TEST(Parser, IndexOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG INDEX IF NOT EXISTS name_index ON person(name, age)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE INDEX IF NOT EXISTS empty_field_index ON service()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
