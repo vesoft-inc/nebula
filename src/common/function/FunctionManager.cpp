@@ -14,6 +14,7 @@
 #include "common/datatypes/DataSet.h"
 #include "common/time/TimeUtils.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Path.h"
 #include "common/datatypes/Vertex.h"
 
 namespace nebula {
@@ -99,7 +100,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::STRING)}},
     {"lower", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
     {"upper", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
-    {"length", {TypeSignature({Value::Type::STRING}, Value::Type::INT)}},
+    {"length", {TypeSignature({Value::Type::STRING}, Value::Type::INT),
+                TypeSignature({Value::Type::PATH}, Value::Type::INT), }},
     {"trim", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
     {"ltrim", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
     {"rtrim", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
@@ -160,6 +162,14 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
              }},
     {"rank", {TypeSignature({Value::Type::EDGE}, Value::Type::INT),
              }},
+    {"startNode", {TypeSignature({Value::Type::EDGE}, Value::Type::VERTEX),
+                   TypeSignature({Value::Type::PATH}, Value::Type::VERTEX), }},
+    {"endNode", {TypeSignature({Value::Type::EDGE}, Value::Type::VERTEX),
+                 TypeSignature({Value::Type::PATH}, Value::Type::VERTEX), }},
+    {"relationships", {TypeSignature({Value::Type::PATH}, Value::Type::LIST), }},
+    {"head", {TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
+    {"last", { TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
+    {"coalesce", { TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
 };
 
 // static
@@ -566,6 +576,10 @@ FunctionManager::FunctionManager() {
             if (args[0].isStr()) {
                 auto value = args[0].getStr();
                 return static_cast<int64_t>(value.length());
+            }
+            if (args[0].isPath()) {
+                auto path = args[0].getPath();
+                return static_cast<int64_t>(path.steps.size());
             }
             return Value::kNullBadType;
         };
@@ -1060,6 +1074,112 @@ FunctionManager::FunctionManager() {
                 return Value::kNullBadType;
             }
             return args[0].getEdge().ranking;
+        };
+    }
+    {
+        auto &attr = functions_["startNode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (args[0].isEdge()) {
+                return Vertex(args[0].getEdge().src, {});
+            }
+            if (args[0].isPath()) {
+                return args[0].getPath().src;
+            }
+            return Value::kNullBadType;
+        };
+    }
+    {
+        auto &attr = functions_["endNode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (args[0].isEdge()) {
+                return Vertex(args[0].getEdge().dst, {});
+            }
+            if (args[0].isPath()) {
+                auto &path = args[0].getPath();
+                if (path.steps.empty()) {
+                    return path.src;
+                }
+                return path.steps.back().dst;
+            }
+            return Value::kNullBadType;
+        };
+    }
+    {
+        auto &attr = functions_["head"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isList()) {
+                return Value::kNullBadType;
+            }
+            return args[0].getList().values.front();
+        };
+    }
+    {
+        auto &attr = functions_["last"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isList()) {
+                return Value::kNullBadType;
+            }
+            return args[0].getList().values.back();
+        };
+    }
+    {
+        auto &attr = functions_["coalesce"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isList()) {
+                return Value::kNullBadType;
+            }
+            auto& list = args[0].getList();
+            if (list.values.empty()) {
+                return Value::kNullValue;
+            }
+            for (auto& i : list.values) {
+                if (i != Value::kNullValue) {
+                    return i;
+                }
+            }
+            return Value::kNullValue;
+        };
+    }
+    {
+        auto &attr = functions_["relationships"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isPath()) {
+                return Value::kNullBadType;
+            }
+            auto& path = args[0].getPath();
+            List result;
+            auto src = path.src.vid;
+            for (size_t i = 0; i < path.steps.size(); ++i) {
+                Edge edge;
+                edge.src = src;
+                edge.dst = path.steps[i].dst.vid;
+                edge.type = path.steps[i].type;
+                edge.name = path.steps[i].name;
+                edge.ranking = path.steps[i].ranking;
+                edge.props = path.steps[i].props;
+
+                src = edge.dst;
+                result.values.emplace_back(std::move(edge));
+            }
+            return result;
         };
     }
 }   // NOLINT

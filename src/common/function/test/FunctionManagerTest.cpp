@@ -14,6 +14,7 @@
 #include "common/time/TimeUtils.h"
 #include "common/datatypes/Vertex.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Path.h"
 
 namespace nebula {
 
@@ -33,7 +34,8 @@ protected:
 };
 
 std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ = {
-    {"null", {}},
+    {"empty", {}},
+    {"nullvalue", {NullType::__NULL__}},
     {"int", {4}},
     {"float", {1.1}},
     {"neg_int", {-1}},
@@ -48,7 +50,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"side", {"abcdefghijklmnopq", 5}},
     {"neg_side", {"abcdefghijklmnopq", -2}},
     {"pad", {"abcdefghijkl", 16, "123"}},
-    {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}}};
+    {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}},
+    {"edge", {Edge("1", "2", -1, "e1", 0, {})}},
+};
 
 #define TEST_FUNCTION(expr, args, expected)                                                        \
     do {                                                                                           \
@@ -107,14 +111,14 @@ TEST_F(FunctionManagerTest, functionCall) {
         result.value()(args_["rand"]);
     }
     {
-        auto result = FunctionManager::get("rand32", args_["null"].size());
+        auto result = FunctionManager::get("rand32", args_["empty"].size());
         ASSERT_TRUE(result.ok());
-        result.value()(args_["null"]);
+        result.value()(args_["empty"]);
     }
     {
-        auto result = FunctionManager::get("now", args_["null"].size());
+        auto result = FunctionManager::get("now", args_["empty"].size());
         ASSERT_TRUE(result.ok());
-        result.value()(args_["null"]);
+        result.value()(args_["empty"]);
     }
     {
         auto result = FunctionManager::get("hash", args_["string"].size());
@@ -780,6 +784,11 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
+        auto result = FunctionManager::getReturnType("length", {Value::Type::PATH});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
         auto result = FunctionManager::getReturnType("length", {});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
@@ -1049,6 +1058,56 @@ TEST_F(FunctionManagerTest, returnType) {
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::INT, result.value());
     }
+    {
+        auto result = FunctionManager::getReturnType("startNode", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::VERTEX, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("startNode", {Value::Type::PATH});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::VERTEX, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("startNode", {Value::Type::NULLVALUE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::NULLVALUE, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("endNode", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::VERTEX, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("endNode", {Value::Type::PATH});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::VERTEX, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("endNode", {Value::Type::NULLVALUE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::NULLVALUE, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("relationships", {Value::Type::PATH});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("head", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::__EMPTY__, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("last", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::__EMPTY__, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("coalesce", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::__EMPTY__, result.value());
+    }
 }
 
 TEST_F(FunctionManagerTest, SchemaReleated) {
@@ -1118,6 +1177,99 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
 #undef TEST_SCHEMA_FUNCTION
 }
 
+TEST_F(FunctionManagerTest, ScalarFunctionTest) {
+    {
+        // startNode(null) 、endNode(null) return null
+        TEST_FUNCTION(startNode, args_["nullvalue"], Value::kNullValue);
+        TEST_FUNCTION(endNode, args_["nullvalue"], Value::kNullValue);
+        // startNode(edge) endNode(edge)
+        auto start = Vertex("1", {});
+        auto end = Vertex("2", {});
+
+        TEST_FUNCTION(startNode, args_["edge"], start);
+        TEST_FUNCTION(endNode, args_["edge"], end);
+        // startNode(path) endNode(path)
+        Path path;
+        path.src = Vertex("0", {});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(startNode, args, Vertex("0", {}));
+        TEST_FUNCTION(endNode, args, Vertex("0", {}));
+
+        path.steps.emplace_back(Step(Vertex("1", {}), 1, "like", 0, {}));
+        args[0] = path;
+        TEST_FUNCTION(startNode, args, Vertex("0", {}));
+        TEST_FUNCTION(endNode, args, Vertex("1", {}));
+
+        path.steps.emplace_back(Step(Vertex("2", {}), 1, "like", 0, {}));
+        args[0] = path;
+        TEST_FUNCTION(startNode, args, Vertex("0", {}));
+        TEST_FUNCTION(endNode, args, Vertex("2", {}));
+    }
+    {
+        // head(null)、 last(null)、coalesce(null) return null
+        TEST_FUNCTION(head, args_["nullvalue"], Value::kNullValue);
+        TEST_FUNCTION(last, args_["nullvalue"], Value::kNullValue);
+        TEST_FUNCTION(coalesce, args_["nullvalue"], Value::kNullValue);
+
+        std::vector<Value> args;
+        List list;
+        list.values.emplace_back(Value::kNullValue);
+        args.push_back(list);
+
+        TEST_FUNCTION(head, args, Value::kNullValue);
+        TEST_FUNCTION(last, args, Value::kNullValue);
+        TEST_FUNCTION(coalesce, args, Value::kNullValue);
+
+        list.values.insert(list.values.begin(), "head");
+        args[0] = list;
+        TEST_FUNCTION(head, args, "head");
+        TEST_FUNCTION(last, args, Value::kNullValue);
+        TEST_FUNCTION(coalesce, args, "head");
+
+        list.values.emplace_back("last");
+        args[0] = list;
+        TEST_FUNCTION(head, args, "head")
+        TEST_FUNCTION(last, args, "last");
+        TEST_FUNCTION(coalesce, args, "head");
+    }
+    {
+        // length(null) return null
+        TEST_FUNCTION(length, args_["nullvalue"], Value::kNullValue);
+
+        Path path;
+        path.src = Vertex("start", {});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(length, args, 0);
+
+        for (auto i = 1; i < 4; ++i) {
+            path.addStep(Step(Vertex(folly::to<std::string>(i), {}), 1, "like", 0, {}));
+        }
+        args[0] = path;
+        TEST_FUNCTION(length, args, 3);
+    }
+    {
+        // relationships(null) return null
+        TEST_FUNCTION(relationships, args_["nullvalue"], Value::kNullValue);
+
+        Path path;
+        path.src = Vertex("0", {});
+        std::vector<Value>args = {path};
+        List expected;
+        TEST_FUNCTION(relationships, args, expected);
+
+        for (auto i = 1; i < 4; ++i) {
+            path.steps.emplace_back(Step(
+                Vertex(folly::to<std::string>(i), {}), 1, "like", 0, {{"likeness", (i + 50)}}));
+        }
+        args[0] = path;
+        for (auto i = 0; i < 3; ++i) {
+            expected.values.emplace_back(
+                Edge(folly::to<std::string>(i), folly::to<std::string>(i + 1), 1, "like", 0,
+                     {{"likeness", (i + 51)}}));
+        }
+        TEST_FUNCTION(relationships, args, expected);
+    }
+}
 }   // namespace nebula
 
 int main(int argc, char **argv) {
