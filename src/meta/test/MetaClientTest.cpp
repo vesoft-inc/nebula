@@ -11,6 +11,7 @@
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/GflagsManager.h"
 #include "common/conf/Configuration.h"
+#include "common/expression/ArithmeticExpression.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "meta/test/TestUtils.h"
@@ -111,11 +112,26 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.name = "tagItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
                 ConstantExpression defaultValue(std::to_string(i));
-                column.default_value = Expression::encode(defaultValue);
+                column.set_default_value(Expression::encode(defaultValue));
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // Create tag schema with default value with wrong null type
+            cpp2::Schema schema;
+            cpp2::ColumnDef column;
+            column.name = "tagItem";
+            column.type.set_type(PropertyType::STRING);
+            column.set_nullable(true);
+            ArithmeticExpression defaultValue(Expression::Kind::kDivision,
+                                              new ConstantExpression(1),
+                                              new ConstantExpression(0));
+            column.set_default_value(Expression::encode(defaultValue));
+            schema.columns.emplace_back(std::move(column));
+            auto ret = client->createTagSchema(spaceId, "tagWithWrongDefault", schema).get();
+            ASSERT_FALSE(ret.ok()) << ret.status();
         }
         {
             // Create edge schema
@@ -139,7 +155,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.name = "edgeItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
                 ConstantExpression defaultValue(std::to_string(i));
-                column.default_value = Expression::encode(defaultValue);
+                column.set_default_value(Expression::encode(defaultValue));
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();

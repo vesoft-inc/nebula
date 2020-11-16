@@ -24,7 +24,12 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
             auto value = Expression::eval(defaultValueExpr.get(), mContext);
             auto nullable = column.__isset.nullable ? *column.get_nullable() : false;
             if (nullable && value.isNull()) {
-                continue;;
+                if (value.getNull() != NullType::__NULL__) {
+                    LOG(ERROR) << "Invalid default value for `" << name
+                               << "', it's the wrong null type: " << value.getNull();
+                    return false;
+                }
+                continue;
             }
             switch (column.get_type().get_type()) {
                 case cpp2::PropertyType::BOOL:
