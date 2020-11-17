@@ -171,58 +171,28 @@ class TestStartsWithAndEndsWith(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])      
 
-    @pytest.mark.skip(reason="query result was auto-deduped")
     def test_starts_with_GO(self):
-        stmt = '''GO FROM 'Tony Parker' OVER like WHERE $^.player.name STARTS WITH 'Tony' YIELD $^.player.name'''
+        stmt = '''GO FROM 'Tony Parker' OVER like WHERE like._dst STARTS WITH 'LaMarcus' YIELD $^.player.name'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
 
         expected_data = {
             "column_names" : ['$^.player.name'],
             "rows" : [
-                ['Tony Parker'],
                 ['Tony Parker']
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-        stmt = '''GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] 
-                AND $$.player.name STARTS WITH 'Adam' YIELD $$.player.name'''
-        resp = self.execute_query(stmt)
-        self.check_resp_succeeded(resp)
-        expected_data = {
-            "column_names" : ['$$.player.name'],
-            "rows" : [
-            ]
-        }
-        self.check_column_names(resp, expected_data["column_names"])
-        self.check_out_of_order_result(resp, expected_data["rows"])
 
-        stmt = '''$A = GO FROM 'Tony Parker' OVER like YIELD like._dst AS ID;
-                  GO FROM $A.ID OVER like WHERE like.likeness NOT IN [95,56,21]
-                  AND $$.player.name STARTS WITH 'TONY' YIELD $^.player.name, $$.player.name, like.likeness'''
+        stmt = '''GO FROM 'Tony Parker' OVER like WHERE like._dst STARTS WITH 'Obama' YIELD $^.player.name'''
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
 
         expected_data = {
-            "column_names" : ['$^.player.name', '$$.player.name', 'like.likeness'],
+            "column_names" : ['$^.player.name'],
             "rows" : [
-            ]
-        }
-        self.check_column_names(resp, expected_data["column_names"])
-        self.check_out_of_order_result(resp, expected_data["rows"])
-
-        stmt = '''$A = GO FROM 'Tony Parker' OVER like YIELD like._dst AS ID;
-                  GO FROM $A.ID OVER like WHERE like.likeness NOT IN [95,56,21]
-                  AND $$.player.name STARTS WITH 'Tony' YIELD $^.player.name, $$.player.name, like.likeness'''
-        resp = self.execute_query(stmt)
-        self.check_resp_succeeded(resp)
-
-        expected_data = {
-            "column_names" : ['$^.player.name', '$$.player.name', 'like.likeness'],
-            "rows" : [
-                ['LaMarcus Aldridge', 'Tony Parker', 75],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -484,7 +454,6 @@ class TestStartsWithAndEndsWith(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-    @pytest.mark.skip(reason="storage issue caused this test fail link: https://github.com/vesoft-inc/nebula-storage/issues/166")
     def test_ends_with_GO(self):
         stmt = '''GO FROM 'Tony Parker' OVER like WHERE like._dst ENDS WITH 'Ginobili' YIELD $^.player.name '''
         resp = self.execute_query(stmt)
@@ -499,7 +468,6 @@ class TestStartsWithAndEndsWith(NebulaTestSuite):
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
 
-    @pytest.mark.skip(reason="storage issue caused this test fail link: https://github.com/vesoft-inc/nebula-storage/issues/166")
     def test_not_ends_with_GO(self):
         stmt = '''GO FROM 'Tony Parker' OVER like WHERE like._dst NOT ENDS WITH 'Ginobili' YIELD $^.player.name '''
         resp = self.execute_query(stmt)
