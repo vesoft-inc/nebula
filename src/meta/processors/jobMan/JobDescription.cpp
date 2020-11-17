@@ -181,7 +181,7 @@ JobDescription::loadJobDescription(JobID iJob, nebula::kvstore::KVStore* kv) {
     auto key = makeJobKey(iJob);
     std::string val;
     auto rc = kv->get(0, 0, key, &val);
-    if (rc != nebula::kvstore::SUCCEEDED) {
+    if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Loading Job Description Failed";
         return folly::none;
     }

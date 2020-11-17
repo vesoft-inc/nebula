@@ -21,7 +21,7 @@ kvstore::ResultCode
 StatisJobExecutor::save(const std::string& key, const std::string& val) {
     std::vector<kvstore::KV> data{std::make_pair(key, val)};
     folly::Baton<true, std::atomic> baton;
-    nebula::kvstore::ResultCode rc = nebula::kvstore::SUCCEEDED;
+    auto rc = nebula::kvstore::ResultCode::SUCCEEDED;
     kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                             [&] (nebula::kvstore::ResultCode code) {
                                 rc = code;

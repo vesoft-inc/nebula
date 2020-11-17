@@ -57,7 +57,7 @@ TEST_F(GetStatisTest, StatisJob) {
     JobDescription statisJob(12, cpp2::AdminCmd::STATIS, paras);
     jobMgr->adminClient_ = adminClient_.get();
     auto rc = jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
-    ASSERT_EQ(rc, nebula::kvstore::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::kvstore::ResultCode::SUCCEEDED);
 
     {
         // Job is not executed, job status is QUEUE.
@@ -84,7 +84,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto res = job1->setStatus(cpp2::JobStatus::RUNNING);
         ASSERT_TRUE(res);
         auto retsav = jobMgr->save(job1->jobKey(), job1->jobVal());
-        ASSERT_EQ(retsav, nebula::kvstore::SUCCEEDED);
+        ASSERT_EQ(retsav, nebula::kvstore::ResultCode::SUCCEEDED);
     }
 
     // Run statis job, job finished.
@@ -136,7 +136,7 @@ TEST_F(GetStatisTest, StatisJob) {
     std::vector<std::string> paras1{"test_space"};
     JobDescription statisJob2(13, cpp2::AdminCmd::STATIS, paras1);
     auto rc2 = jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
-    ASSERT_EQ(rc2, nebula::kvstore::SUCCEEDED);
+    ASSERT_EQ(rc2, nebula::kvstore::ResultCode::SUCCEEDED);
     {
         // Job is not executed, job status is QUEUE.
         // Statis data exists, but it is the result of the last statis job execution.
@@ -177,7 +177,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto res = job1->setStatus(cpp2::JobStatus::RUNNING);
         ASSERT_TRUE(res);
         auto retsav = jobMgr->save(job1->jobKey(), job1->jobVal());
-        ASSERT_EQ(retsav, nebula::kvstore::SUCCEEDED);
+        ASSERT_EQ(retsav, nebula::kvstore::ResultCode::SUCCEEDED);
     }
 
     // Remove statis data.
