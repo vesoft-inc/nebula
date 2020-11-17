@@ -128,8 +128,14 @@ jobs:
       - name: Pytest
         env:
           NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
-        run: ./ci/test.sh test
+        run: ./ci/test.sh test --rm_dir=false
         timeout-minutes: 25
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:	
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  build/server_*/logs/
       - name: Cleanup
         if: ${{ always() }}
-        run: rm -rf build modules
+        run: rm -rf build modules && rm -rf /tmp/nebula-*
