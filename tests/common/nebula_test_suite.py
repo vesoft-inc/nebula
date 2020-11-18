@@ -625,18 +625,18 @@ class NebulaTestSuite(object):
             for col, j in zip(exp, range(len(exp))):
                 if j == 0:
                     src = CommonTtypes.Vertex()
-                    src.vid = col
+                    src.vid = bytes(col, encoding='utf-8')
                     src.tags = []
                     path.src = src
                 else:
                     assert len(col) == 3, \
                         "{} invalid values size in expect result".format(exp.__repr__())
                     step = CommonTtypes.Step()
-                    step.name = col[0]
+                    step.name = bytes(col[0], encoding='utf-8')
                     step.ranking = col[1]
                     step.type = 1
                     dst = CommonTtypes.Vertex()
-                    dst.vid = col[2]
+                    dst.vid = bytes(col[2], encoding='utf-8')
                     dst.tags = []
                     step.dst = dst
                     step.props = {}

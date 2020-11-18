@@ -262,6 +262,9 @@ bool ConjunctPathExecutor::findPath(Iterator* backwardPathIter,
         }
         for (auto& srcPaths : forwardPaths->second) {
             auto& startVid = srcPaths.first;
+            if (startVid == endVid) {
+                continue;
+            }
             auto totalCost = cost + srcPaths.second.cost_;
             if (historyCostMap_.find(startVid) != historyCostMap_.end() &&
                 historyCostMap_[startVid].find(endVid) != historyCostMap_[startVid].end() &&
@@ -345,6 +348,9 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
                 Row row;
                 auto forward = i.getPath();
                 Path backward = path.getPath();
+                if (forward.src == backward.src) {
+                    continue;
+                }
                 VLOG(1) << "Forward path:" << forward;
                 VLOG(1) << "Backward path:" << backward;
                 backward.reverse();

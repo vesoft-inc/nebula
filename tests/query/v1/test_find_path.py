@@ -20,7 +20,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")]
+                ["Tim Duncan", ("like", 0, "Tony Parker")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -32,7 +32,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge")]
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -44,7 +44,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tiago Splitter", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge")]
+                ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -56,7 +56,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tiago Splitter", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"LaMarcus Aldridge")]
+                ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("teammate", 0, "LaMarcus Aldridge")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -68,7 +68,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tiago Splitter", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"LaMarcus Aldridge")]
+                ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("teammate", 0, "LaMarcus Aldridge")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -82,10 +82,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge"), (b"like", 0, b"Tony Parker")]
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -97,14 +97,14 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Manu Ginobili")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")]
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Manu Ginobili")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -116,11 +116,11 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge"), (b"like", 0, b"Tony Parker")]
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -132,17 +132,17 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Manu Ginobili"), (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge"), (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge"), (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"Manu Ginobili"), (b"serve", 0, b"Spurs")]
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Manu Ginobili"), ("serve", 0, "Spurs")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -155,8 +155,8 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"serve", 0, b"Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("serve", 0, "Spurs")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -168,9 +168,9 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"teammate", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"serve", 0, b"Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("teammate", 0, "Tony Parker")],
+                ["Tim Duncan", ("serve", 0, "Spurs")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -182,15 +182,15 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
-                [b"Yao Ming", (b"like", 0, b"Tracy McGrady"), (b"serve", 0, b"Spurs")],
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"serve", 0, b"Lakers")],
-                [b"Tony Parker", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Danny Green"), (b"like", 0, b"LeBron James"), (b"serve", 0, b"Lakers")],
-                [b"Tony Parker", (b"teammate", 0, b"Tim Duncan"), (b"teammate", 0, b"Danny Green"), (b"like", 0, b"LeBron James"), (b"serve", 0, b"Lakers")],
-                [b"Tony Parker", (b"like", 0, b"Manu Ginobili")],
-                [b"Tony Parker", (b"teammate", 0, b"Manu Ginobili")],
-                [b"Tony Parker", (b"serve", 0, b"Spurs")]
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
+                ["Yao Ming", ("like", 0, "Tracy McGrady"), ("serve", 0, "Spurs")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("serve", 0, "Lakers")],
+                ["Tony Parker", ("like", 0, "Tim Duncan"), ("teammate", 0, "Danny Green"), ("like", 0, "LeBron James"), ("serve", 0, "Lakers")],
+                ["Tony Parker", ("teammate", 0, "Tim Duncan"), ("teammate", 0, "Danny Green"), ("like", 0, "LeBron James"), ("serve", 0, "Lakers")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili")],
+                ["Tony Parker", ("teammate", 0, "Manu Ginobili")],
+                ["Tony Parker", ("serve", 0, "Spurs")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -202,13 +202,13 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
-                [b"Yao Ming", (b"like", 0, b"Tracy McGrady"), (b"serve", 0, b"Spurs")],
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"serve", 0, b"Lakers")],
-                [b"Tony Parker", (b"like", 0, b"Manu Ginobili")],
-                [b"Tony Parker", (b"teammate", 0, b"Manu Ginobili")],
-                [b"Tony Parker", (b"serve", 0, b"Spurs")]
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
+                ["Yao Ming", ("like", 0, "Tracy McGrady"), ("serve", 0, "Spurs")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("serve", 0, "Lakers")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili")],
+                ["Tony Parker", ("teammate", 0, "Manu Ginobili")],
+                ["Tony Parker", ("serve", 0, "Spurs")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -220,11 +220,11 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Yao Ming", (b"like", 0, b"Tracy McGrady"), (b"serve", 0, b"Spurs")],
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"serve", 0, b"Lakers")],
-                [b"Marco Belinelli", (b"like", 0, b"Danny Green"), (b"like", 0, b"LeBron James"), (b"serve", 0, b"Lakers")],
-                [b"Marco Belinelli", (b"serve", 0, b"Spurs")],
-                [b"Marco Belinelli", (b"serve", 1, b"Spurs")],
+                ["Yao Ming", ("like", 0, "Tracy McGrady"), ("serve", 0, "Spurs")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("serve", 0, "Lakers")],
+                ["Marco Belinelli", ("like", 0, "Danny Green"), ("like", 0, "LeBron James"), ("serve", 0, "Lakers")],
+                ["Marco Belinelli", ("serve", 0, "Spurs")],
+                ["Marco Belinelli", ("serve", 1, "Spurs")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -236,8 +236,8 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker"), (b"like", 0, b"LaMarcus Aldridge")],
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -249,10 +249,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Tiago Splitter", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Tiago Splitter", (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"serve", 0, b"Spurs")],
-                [b"Tim Duncan", (b"like", 0, b"Tony Parker")],
+                ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Tiago Splitter", ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -264,8 +264,8 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Yao Ming", (b"like", 0, b"Shaquile O'Neal"), (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Tony Parker")],
-                [b"Yao Ming", (b"like", 0, b"Tracy McGrady")],
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+                ["Yao Ming", ("like", 0, "Tracy McGrady")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -277,10 +277,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Shaquile O\'Neal", (b"serve", 0, b"Lakers")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -292,10 +292,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Shaquile O\'Neal", (b"serve", 0, b"Lakers")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -307,7 +307,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -319,10 +319,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Shaquile O\'Neal", (b"serve", 0, b"Lakers")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -334,10 +334,10 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"serve", 0, b"Spurs")],
-                [b"Shaquile O\'Neal", (b"serve", 0, b"Lakers")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"teammate", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -349,7 +349,7 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Shaquile O\'Neal", (b"like", 0, b"Tim Duncan"), (b"like", 0, b"Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -361,9 +361,9 @@ class TestFindPath(NebulaTestSuite):
         expected_data = {
             "column_names": ["_path"],
             "rows": [
-                [b"Marco Belinelli", (b"serve", 0, b"Spurs")],
-                [b"Marco Belinelli", (b"serve", 1, b"Spurs")],
-                [b"Marco Belinelli", (b"like", 0, b"Danny Green"), (b"like", 0, b"LeBron James"), (b"serve", 0, b"Lakers")],
+                ["Marco Belinelli", ("serve", 0, "Spurs")],
+                ["Marco Belinelli", ("serve", 1, "Spurs")],
+                ["Marco Belinelli", ("like", 0, "Danny Green"), ("like", 0, "LeBron James"), ("serve", 0, "Lakers")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -379,3 +379,158 @@ class TestFindPath(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_empty_result(resp)
+
+    def test_run_time_input(self):
+        stmt = '''YIELD "Yao Ming" AS src, "Tony Parker" AS dst
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''YIELD "Shaquile O\'Neal" AS src
+                | FIND SHORTEST PATH FROM $-.src TO "Manu Ginobili" OVER * UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''YIELD "Manu Ginobili" AS dst
+                | FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO $-.dst OVER * UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''GO FROM "Yao Ming" over like YIELD like._dst AS src
+                | FIND SHORTEST PATH FROM $-.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Tracy McGrady", ("like", 0, "Rudy Gay"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''$a = GO FROM "Yao Ming" over like YIELD like._dst AS src;
+                FIND SHORTEST PATH FROM $a.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Tracy McGrady", ("like", 0, "Rudy Gay"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+            ]
+            }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+                FIND SHORTEST PATH FROM $a.src TO $a.dst OVER like UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+            ]
+            }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
+                | FIND ALL PATH FROM $-.src TO $-.dst OVER like UPTO 3 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+            ]
+            }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+                FIND ALL PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+            ]
+            }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+
+        stmt = '''$a = GO FROM "Tim Duncan" over like YIELD like._src AS src;
+                GO FROM "Tony Parker" OVER like YIELD like._src AS src, like._dst AS dst
+                | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS'''
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Tim Duncan", ("like", 0, "Manu Ginobili")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
