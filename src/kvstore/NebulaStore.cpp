@@ -19,7 +19,6 @@ DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600,
              "interval to trigger custom compaction, < 0 means always do default minor compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
-DEFINE_bool(check_leader, true, "Check leader or not");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
 
 DECLARE_bool(rocksdb_disable_wal);
@@ -872,7 +871,7 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
+    return part->isLeader() && part->leaseValid();
 }
 
 void NebulaStore::cleanWAL() {
