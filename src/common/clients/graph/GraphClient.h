@@ -19,12 +19,12 @@ public:
     virtual ~GraphClient();
 
     // Authenticate the user
-    cpp2::ErrorCode connect(const std::string& username,
-                            const std::string& password);
+    nebula::ErrorCode connect(const std::string& username,
+                              const std::string& password);
     void disconnect();
 
-    cpp2::ErrorCode execute(folly::StringPiece stmt,
-                            cpp2::ExecutionResponse& resp);
+    nebula::ErrorCode execute(folly::StringPiece stmt,
+                              nebula::ExecutionResponse& resp);
 
 private:
     std::unique_ptr<cpp2::GraphServiceAsyncClient> client_;

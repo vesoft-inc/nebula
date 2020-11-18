@@ -7,7 +7,6 @@
 #ifndef COMMON_DATATYPES_MAP_H_
 #define COMMON_DATATYPES_MAP_H_
 
-#include "common/base/Base.h"
 #include "common/datatypes/Value.h"
 
 namespace nebula {
@@ -38,18 +37,7 @@ struct Map {
     }
 
     // the configs of rocksdb will use the interface, so the value need modify to string
-    std::string toString() const {
-        std::vector<std::string> value(kvs.size());
-        std::transform(kvs.begin(), kvs.end(), value.begin(), [](const auto &iter) -> std::string {
-            std::stringstream out;
-            out << "\"" << iter.first << "\"" << ":" << iter.second;
-            return out.str();
-        });
-
-        std::stringstream os;
-        os << "{" << folly::join(",", value) << "}";
-        return os.str();
-    }
+    std::string toString() const;
 
     bool operator==(const Map& rhs) const {
         return kvs == rhs.kvs;

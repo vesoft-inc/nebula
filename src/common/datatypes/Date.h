@@ -7,10 +7,6 @@
 #ifndef COMMON_DATATYPES_DATE_H_
 #define COMMON_DATATYPES_DATE_H_
 
-#include "common/base/Base.h"
-#include <folly/hash/Hash.h>
-#include <gtest/gtest_prod.h>
-
 namespace nebula {
 
 // In nebula only store UTC time, and the interpretion of time value based on the
@@ -20,8 +16,6 @@ extern const int64_t kDaysSoFar[];
 extern const int64_t kLeapDaysSoFar[];
 
 struct Date {
-    FRIEND_TEST(Date, DaysConversion);
-
     int16_t year;   // Any integer
     int8_t month;   // 1 - 12
     int8_t day;     // 1 - 31
@@ -203,59 +197,17 @@ namespace std {
 // Inject a customized hash function
 template<>
 struct hash<nebula::Date> {
-    std::size_t operator()(const nebula::Date& h) const noexcept {
-        size_t hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.year),
-                                           sizeof(h.year));
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.month),
-                                    sizeof(h.month),
-                                    hv);
-        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.day),
-                                      sizeof(h.day),
-                                      hv);
-    }
+    std::size_t operator()(const nebula::Date& h) const noexcept;
 };
 
 template<>
 struct hash<nebula::Time> {
-    std::size_t operator()(const nebula::Time& h) const noexcept {
-        std::size_t hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.hour),
-                                                sizeof(h.hour));
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.minute),
-                                    sizeof(h.minute),
-                                    hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.sec),
-                                    sizeof(h.sec),
-                                    hv);
-        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.microsec),
-                                    sizeof(h.microsec),
-                                    hv);
-    }
+    std::size_t operator()(const nebula::Time& h) const noexcept;
 };
 
 template<>
 struct hash<nebula::DateTime> {
-    std::size_t operator()(const nebula::DateTime& h) const noexcept {
-        size_t hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.year),
-                                           sizeof(h.year));
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.month),
-                                    sizeof(h.month),
-                                    hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.day),
-                                    sizeof(h.day),
-                                    hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.hour),
-                                    sizeof(h.hour),
-                                    hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.minute),
-                                    sizeof(h.minute),
-                                    hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.sec),
-                                    sizeof(h.sec),
-                                    hv);
-        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.microsec),
-                                    sizeof(h.microsec),
-                                    hv);
-    }
+    std::size_t operator()(const nebula::DateTime& h) const noexcept;
 };
 
 }  // namespace std

@@ -7,7 +7,6 @@
 #ifndef COMMON_DATATYPES_PATH_H_
 #define COMMON_DATATYPES_PATH_H_
 
-#include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Vertex.h"
@@ -191,29 +190,13 @@ namespace std {
 
 template<>
 struct hash<nebula::Step> {
-    std::size_t operator()(const nebula::Step& h) const noexcept {
-        size_t hv = hash<nebula::Vertex>()(h.dst);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.type),
-                                    sizeof(h.type),
-                                    hv);
-        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.ranking),
-                                      sizeof(h.ranking),
-                                      hv);
-    }
+    std::size_t operator()(const nebula::Step& h) const noexcept;
 };
 
 
 template<>
 struct hash<nebula::Path> {
-    std::size_t operator()(const nebula::Path& h) const noexcept {
-    size_t hv = hash<nebula::Vertex>()(h.src);
-        for (auto& s : h.steps) {
-            hv += (hv << 1) + (hv << 4) + (hv << 5) + (hv << 7) + (hv << 8) + (hv << 40);
-            hv ^= hash<nebula::Step>()(s);
-        }
-
-        return hv;
-    }
+    std::size_t operator()(const nebula::Path& h) const noexcept;
 };
 
 }  // namespace std

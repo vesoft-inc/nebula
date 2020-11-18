@@ -7,10 +7,10 @@
 #ifndef COMMON_DATATYPES_VALUE_H_
 #define COMMON_DATATYPES_VALUE_H_
 
-#include "common/base/Base.h"
+#include <memory>
+
 #include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Date.h"
-#include "common/base/StatusOr.h"
 
 namespace apache {
 namespace thrift {
@@ -101,7 +101,6 @@ struct Value {
     Value(const std::string& v);    // NOLINT
     Value(std::string&& v);         // NOLINT
     Value(const char* v);           // NOLINT
-    Value(folly::StringPiece v);    // NOLINT
     Value(const Date& v);           // NOLINT
     Value(Date&& v);                // NOLINT
     Value(const Time& v);           // NOLINT
@@ -217,7 +216,6 @@ struct Value {
     void setStr(const std::string& v);
     void setStr(std::string&& v);
     void setStr(const char* v);
-    void setStr(folly::StringPiece v);
     void setDate(const Date& v);
     void setDate(Date&& v);
     void setTime(const Time& v);
@@ -307,11 +305,12 @@ struct Value {
 
     std::string toString() const;
 
-    StatusOr<bool> toBool();
+    // The second means is this casting valid, check it before access the value
+    std::pair<bool, bool> toBool();
 
-    StatusOr<double> toFloat();
+    std::pair<double, bool> toFloat();
 
-    StatusOr<int64_t> toInt();
+    std::pair<int64_t, bool> toInt();
 
 private:
     Type type_;
@@ -358,7 +357,6 @@ private:
     void setS(const std::string& v);
     void setS(std::string&& v);
     void setS(const char* v);
-    void setS(folly::StringPiece v);
     // Date value
     void setD(const Date& v);
     void setD(Date&& v);

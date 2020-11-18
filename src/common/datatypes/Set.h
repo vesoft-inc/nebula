@@ -7,7 +7,8 @@
 #ifndef COMMON_DATATYPES_SET_H_
 #define COMMON_DATATYPES_SET_H_
 
-#include "common/base/Base.h"
+#include <unordered_set>
+
 #include "common/datatypes/Value.h"
 
 namespace nebula {
@@ -26,16 +27,7 @@ struct Set {
         values.clear();
     }
 
-    std::string toString() const {
-        std::vector<std::string> value(values.size());
-        std::transform(
-            values.begin(), values.end(), value.begin(), [](const auto& v) -> std::string {
-                return v.toString();
-            });
-        std::stringstream os;
-        os << "{" << folly::join(",", value) << "}";
-        return os.str();
-    }
+    std::string toString() const;
 
     Set& operator=(const Set& rhs) {
         if (this == &rhs) { return *this; }

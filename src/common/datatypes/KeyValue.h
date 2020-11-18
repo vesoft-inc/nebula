@@ -7,8 +7,6 @@
 #ifndef COMMON_DATATYPES_KEYVALUE_H_
 #define COMMON_DATATYPES_KEYVALUE_H_
 
-#include "common/base/Base.h"
-
 namespace nebula {
 
 struct KeyValue {

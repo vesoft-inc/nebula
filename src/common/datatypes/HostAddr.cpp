@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/hash/Hash.h>
+
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 
@@ -25,3 +27,15 @@ bool HostAddr::operator<(const HostAddr& rhs) const {
 }
 
 }  // namespace nebula
+
+namespace std {
+
+// Inject a customized hash function
+std::size_t hash<nebula::HostAddr>::operator()(const nebula::HostAddr& h) const noexcept {
+    int64_t code = folly::hash::fnv32_buf(h.host.data(), h.host.size());
+    code <<= 32;
+    code |= folly::hash::fnv32_buf(&(h.port), sizeof(nebula::Port));
+    return code;
+}
+
+}  // namespace std

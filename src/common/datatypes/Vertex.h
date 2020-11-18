@@ -7,7 +7,10 @@
 #ifndef COMMON_DATATYPES_VERTEX_H_
 #define COMMON_DATATYPES_VERTEX_H_
 
-#include "common/base/Base.h"
+#include <unordered_map>
+#include <vector>
+#include <sstream>
+
 #include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Value.h"
 
@@ -33,19 +36,7 @@ struct Tag {
         props.clear();
     }
 
-    std::string toString() const {
-        std::vector<std::string> value(props.size());
-        std::transform(
-            props.begin(), props.end(), value.begin(), [](const auto& iter) -> std::string {
-                std::stringstream out;
-                out << iter.first << ":" << iter.second;
-                return out.str();
-            });
-
-        std::stringstream os;
-        os << "Tag: " << name << ", " << folly::join(",", value);
-        return os.str();
-    }
+    std::string toString() const;
 
     Tag& operator=(Tag&& rhs) noexcept {
         if (&rhs != this) {
@@ -149,23 +140,13 @@ namespace std {
 // Inject a customized hash function
 template<>
 struct hash<nebula::Tag> {
-    std::size_t operator()(const nebula::Tag& h) const noexcept {
-        return folly::hash::fnv64(h.name);
-    }
+    std::size_t operator()(const nebula::Tag& h) const noexcept;
 };
 
 
 template<>
 struct hash<nebula::Vertex> {
-    std::size_t operator()(const nebula::Vertex& h) const noexcept {
-        size_t hv = folly::hash::fnv64(h.vid);
-        for (auto& t : h.tags) {
-            hv += (hv << 1) + (hv << 4) + (hv << 5) + (hv << 7) + (hv << 8) + (hv << 40);
-            hv ^= hash<nebula::Tag>()(t);
-        }
-
-        return hv;
-    }
+    std::size_t operator()(const nebula::Vertex& h) const noexcept;
 };
 
 }  // namespace std

@@ -8,7 +8,6 @@
 #define COMMON_DATATYPES_HOSTADDR_H_
 
 #include "common/base/Base.h"
-#include <folly/hash/Hash.h>
 #include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
@@ -57,13 +56,9 @@ namespace std {
 // Inject a customized hash function
 template<>
 struct hash<nebula::HostAddr> {
-    std::size_t operator()(const nebula::HostAddr& h) const noexcept {
-        int64_t code = folly::hash::fnv32_buf(h.host.data(), h.host.size());
-        code <<= 32;
-        code |= folly::hash::fnv32_buf(&(h.port), sizeof(nebula::Port));
-        return code;
-    }
+    std::size_t operator()(const nebula::HostAddr& h) const noexcept;
 };
 
 }  // namespace std
+
 #endif  // COMMON_DATATYPES_HOSTADDR_H_

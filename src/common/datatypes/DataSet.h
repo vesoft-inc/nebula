@@ -7,7 +7,9 @@
 #ifndef COMMON_DATATYPES_DATASET_H_
 #define COMMON_DATATYPES_DATASET_H_
 
-#include "common/base/Base.h"
+#include <iostream>
+#include <sstream>
+
 #include "common/datatypes/Value.h"
 #include "common/datatypes/List.h"
 

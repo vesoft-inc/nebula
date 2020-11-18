@@ -7,8 +7,8 @@
 #ifndef COMMON_DATATYPES_EDGE_H_
 #define COMMON_DATATYPES_EDGE_H_
 
-#include "common/base/Base.h"
-#include <folly/hash/Hash.h>
+#include <unordered_map>
+
 #include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Value.h"
 
@@ -59,24 +59,7 @@ struct Edge {
         props.clear();
     }
 
-    std::string toString() const {
-        std::stringstream os;
-        os << "(" << src << ")"
-            << "-" << "[" << name << "(" << type << ")]" << "->"
-            << "(" << dst << ")"
-            << "@" << ranking;
-        if (!props.empty()) {
-            std::vector<std::string> value(props.size());
-            std::transform(
-                props.begin(), props.end(), value.begin(), [](const auto& iter) -> std::string {
-                    std::stringstream out;
-                    out << iter.first << ":" << iter.second;
-                    return out.str();
-                });
-            os << " " << folly::join(",", value);
-        }
-        return os.str();
-    }
+    std::string toString() const;
 
     bool operator==(const Edge& rhs) const {
         return src == rhs.src &&
@@ -131,16 +114,7 @@ namespace std {
 // Inject a customized hash function
 template<>
 struct hash<nebula::Edge> {
-    std::size_t operator()(const nebula::Edge& h) const noexcept {
-        size_t hv = folly::hash::fnv64(h.src);
-        hv = folly::hash::fnv64(h.dst, hv);
-        hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.type),
-                                    sizeof(h.type),
-                                    hv);
-        return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.ranking),
-                                      sizeof(h.ranking),
-                                      hv);
-    }
+    std::size_t operator()(const nebula::Edge& h) const noexcept;
 };
 
 }  // namespace std
