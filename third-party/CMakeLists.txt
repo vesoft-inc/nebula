@@ -49,7 +49,7 @@ set(BUILD_INFO_DIR ${CMAKE_CURRENT_BINARY_DIR}/build-info)
 set(BUILDING_PATH "${CMAKE_INSTALL_PREFIX}/bin:${CMAKE_INSTALL_PREFIX}/sbin:$ENV{PATH}")
 set(ACLOCAL_PATH "${CMAKE_INSTALL_PREFIX}/share/aclocal:${CMAKE_INSTALL_PREFIX}/share/aclocal-1.15")
 
-set(extra_link_libs "-static-libstdc++ -static-libgcc")
+set(extra_link_libs "-static-libstdc++ -static-libgcc -pthread -ldl")
 if (${DISABLE_CXX11_ABI})
     set(extra_cpp_flags "-D_GLIBCXX_USE_CXX11_ABI=0")
 else()
