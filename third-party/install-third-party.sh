@@ -24,7 +24,7 @@ url_base=https://oss-cdn.nebula-graph.com.cn/third-party
 this_dir=$(dirname $(readlink -f $0))
 cxx_cmd=${CXX:-g++}
 
-libc_preset_versions=( 2.30 2.27 2.23 2.17 2.12 )
+libc_preset_versions=( 2.32 2.30 2.27 2.23 2.17 2.12 )
 gcc_preset_versions=( 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
 
 selected_libc_version=
