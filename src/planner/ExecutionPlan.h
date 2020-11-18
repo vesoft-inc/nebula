@@ -10,11 +10,10 @@
 #include <cstdint>
 
 namespace nebula {
-namespace graph {
 
-namespace cpp2 {
-class PlanDescription;
-}   // namespace cpp2
+struct PlanDescription;
+
+namespace graph {
 
 class PlanNode;
 
@@ -35,7 +34,7 @@ public:
         return root_;
     }
 
-    void fillPlanDescription(cpp2::PlanDescription* planDesc) const;
+    void fillPlanDescription(PlanDescription* planDesc) const;
 
 private:
     int64_t id_{-1};

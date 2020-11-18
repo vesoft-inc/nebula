@@ -27,19 +27,19 @@ public:
 
     Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
-    folly::Future<cpp2::AuthResponse> future_authenticate(
+    folly::Future<AuthResponse> future_authenticate(
         const std::string& username,
         const std::string& password) override;
 
     void signout(int64_t /*sessionId*/) override;
 
-    folly::Future<cpp2::ExecutionResponse>
+    folly::Future<ExecutionResponse>
     future_execute(int64_t sessionId, const std::string& stmt) override;
 
-    const char* getErrorStr(cpp2::ErrorCode result);
+    const char* getErrorStr(ErrorCode result);
 
 private:
-    void onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code);
+    void onHandle(RequestContext<AuthResponse>& ctx, ErrorCode code);
 
     bool auth(const std::string& username, const std::string& password);
 

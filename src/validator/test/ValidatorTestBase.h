@@ -52,7 +52,7 @@ protected:
     }
 
     QueryContext* buildContext() {
-        auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
+        auto rctx = std::make_unique<RequestContext<ExecutionResponse>>();
         rctx->setSession(session_);
         auto qctx = pool_->add(new QueryContext());
         qctx->setRCtx(std::move(rctx));

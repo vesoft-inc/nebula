@@ -41,7 +41,7 @@ public:
         return ifNotExists_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string name_;
@@ -131,7 +131,7 @@ public:
         return space_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     GraphSpaceID space_;
@@ -206,7 +206,7 @@ public:
         return name_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string name_;
@@ -291,7 +291,7 @@ public:
         return ifExists_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string name_;
@@ -352,7 +352,7 @@ public:
         return ifNotExists_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string                             schemaName_;
@@ -431,7 +431,7 @@ public:
         return indexName_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string indexName_;
@@ -479,7 +479,7 @@ public:
         return ifExists_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     std::string indexName_;

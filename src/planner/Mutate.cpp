@@ -6,14 +6,13 @@
 
 #include "planner/Mutate.h"
 
-#include "common/interface/gen-cpp2/graph_types.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "util/ToJson.h"
 
 namespace nebula {
 namespace graph {
 
-std::unique_ptr<cpp2::PlanNodeDescription> InsertVertices::explain() const {
+std::unique_ptr<PlanNodeDescription> InsertVertices::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("overwritable", util::toJson(overwritable_), desc.get());
@@ -30,7 +29,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> InsertVertices::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> InsertEdges::explain() const {
+std::unique_ptr<PlanNodeDescription> InsertEdges::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("overwritable", folly::to<std::string>(overwritable_), desc.get());
@@ -39,7 +38,7 @@ std::unique_ptr<cpp2::PlanNodeDescription> InsertEdges::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> Update::explain() const {
+std::unique_ptr<PlanNodeDescription> Update::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("schemaName", schemaName_, desc.get());
@@ -51,14 +50,14 @@ std::unique_ptr<cpp2::PlanNodeDescription> Update::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> UpdateVertex::explain() const {
+std::unique_ptr<PlanNodeDescription> UpdateVertex::explain() const {
     auto desc = Update::explain();
     addDescription("vid", folly::to<std::string>(vId_), desc.get());
     addDescription("tagId", folly::to<std::string>(tagId_), desc.get());
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> UpdateEdge::explain() const {
+std::unique_ptr<PlanNodeDescription> UpdateEdge::explain() const {
     auto desc = Update::explain();
     addDescription("srcId", srcId_, desc.get());
     addDescription("dstId", dstId_, desc.get());
@@ -67,14 +66,14 @@ std::unique_ptr<cpp2::PlanNodeDescription> UpdateEdge::explain() const {
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> DeleteVertices::explain() const {
+std::unique_ptr<PlanNodeDescription> DeleteVertices::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("space", folly::to<std::string>(space_), desc.get());
     addDescription("vidRef", vidRef_ ? vidRef_->toString() : "", desc.get());
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> DeleteEdges::explain() const {
+std::unique_ptr<PlanNodeDescription> DeleteEdges::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("space", folly::to<std::string>(space_), desc.get());
     addDescription("edgeKeyRefs", folly::toJson(util::toJson(edgeKeyRefs_)), desc.get());

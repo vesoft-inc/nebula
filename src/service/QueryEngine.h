@@ -37,7 +37,7 @@ public:
 
     Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
-    using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
+    using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
     void execute(RequestContextPtr rctx);
 
     const meta::MetaClient* metaClient() const {

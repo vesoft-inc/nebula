@@ -6,7 +6,7 @@
 
 #include "planner/ExecutionPlan.h"
 
-#include "common/interface/gen-cpp2/graph_types.h"
+#include "common/graph/Response.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -19,16 +19,16 @@ ExecutionPlan::ExecutionPlan(PlanNode* root) : id_(EPIdGenerator::instance().id(
 
 ExecutionPlan::~ExecutionPlan() {}
 
-static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* planDesc) {
-    auto found = planDesc->node_index_map.find(node->id());
-    if (found != planDesc->node_index_map.end()) {
+static size_t makePlanNodeDesc(const PlanNode* node, PlanDescription* planDesc) {
+    auto found = planDesc->nodeIndexMap.find(node->id());
+    if (found != planDesc->nodeIndexMap.end()) {
         return found->second;
     }
 
-    size_t planNodeDescPos = planDesc->plan_node_descs.size();
-    planDesc->node_index_map.emplace(node->id(), planNodeDescPos);
-    planDesc->plan_node_descs.emplace_back(std::move(*node->explain()));
-    auto& planNodeDesc = planDesc->plan_node_descs.back();
+    size_t planNodeDescPos = planDesc->planNodeDescs.size();
+    planDesc->nodeIndexMap.emplace(node->id(), planNodeDescPos);
+    planDesc->planNodeDescs.emplace_back(std::move(*node->explain()));
+    auto& planNodeDesc = planDesc->planNodeDescs.back();
 
     switch (node->kind()) {
         case PlanNode::Kind::kStart: {
@@ -45,28 +45,31 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
         }
         case PlanNode::Kind::kSelect: {
             auto select = static_cast<const Select*>(node);
-            planNodeDesc.set_dependencies({select->dep()->id()});
+            planNodeDesc.dependencies.reset(new std::vector<int64_t>{select->dep()->id()});
             auto thenPos = makePlanNodeDesc(select->then(), planDesc);
-            cpp2::PlanNodeBranchInfo thenInfo;
-            thenInfo.set_is_do_branch(true);
-            thenInfo.set_condition_node_id(select->id());
-            planDesc->plan_node_descs[thenPos].set_branch_info(std::move(thenInfo));
+            PlanNodeBranchInfo thenInfo;
+            thenInfo.isDoBranch = true;
+            thenInfo.conditionNodeId = select->id();
+            planDesc->planNodeDescs[thenPos].branchInfo =
+                std::make_unique<PlanNodeBranchInfo>(std::move(thenInfo));
             auto otherwisePos = makePlanNodeDesc(select->otherwise(), planDesc);
-            cpp2::PlanNodeBranchInfo elseInfo;
-            elseInfo.set_is_do_branch(false);
-            elseInfo.set_condition_node_id(select->id());
-            planDesc->plan_node_descs[otherwisePos].set_branch_info(std::move(elseInfo));
+            PlanNodeBranchInfo elseInfo;
+            elseInfo.isDoBranch = false;
+            elseInfo.conditionNodeId = select->id();
+            planDesc->planNodeDescs[otherwisePos].branchInfo =
+                std::make_unique<PlanNodeBranchInfo>(std::move(elseInfo));
             makePlanNodeDesc(select->dep(), planDesc);
             break;
         }
         case PlanNode::Kind::kLoop: {
             auto loop = static_cast<const Loop*>(node);
-            planNodeDesc.set_dependencies({loop->dep()->id()});
+            planNodeDesc.dependencies.reset(new std::vector<int64_t>{loop->dep()->id()});
             auto bodyPos = makePlanNodeDesc(loop->body(), planDesc);
-            cpp2::PlanNodeBranchInfo info;
-            info.set_is_do_branch(true);
-            info.set_condition_node_id(loop->id());
-            planDesc->plan_node_descs[bodyPos].set_branch_info(std::move(info));
+            PlanNodeBranchInfo info;
+            info.isDoBranch = true;
+            info.conditionNodeId = loop->id();
+            planDesc->planNodeDescs[bodyPos].branchInfo =
+                std::make_unique<PlanNodeBranchInfo>(std::move(info));
             makePlanNodeDesc(loop->dep(), planDesc);
             break;
         }
@@ -81,7 +84,7 @@ static size_t makePlanNodeDesc(const PlanNode* node, cpp2::PlanDescription* plan
     return planNodeDescPos;
 }
 
-void ExecutionPlan::fillPlanDescription(cpp2::PlanDescription* planDesc) const {
+void ExecutionPlan::fillPlanDescription(PlanDescription* planDesc) const {
     DCHECK(planDesc != nullptr);
     makePlanNodeDesc(root_, planDesc);
 }

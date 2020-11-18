@@ -8,6 +8,7 @@
 #define VISITOR_REWRITEINPUTPROPVISITOR_H_
 
 #include "common/expression/ExprVisitor.h"
+#include "common/base/Status.h"
 #include "parser/Clauses.h"
 
 namespace nebula {

@@ -5,8 +5,10 @@
  */
 
 #include "planner/PlanNode.h"
+#include <memory>
+#include <vector>
 
-#include "common/interface/gen-cpp2/graph_types.h"
+#include "common/graph/Response.h"
 #include "context/QueryContext.h"
 #include "util/ToJson.h"
 
@@ -226,25 +228,22 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
 }
 
 // static
-void PlanNode::addDescription(std::string key, std::string value, cpp2::PlanNodeDescription* desc) {
-    if (!desc->__isset.description) {
-        desc->set_description({});
+void PlanNode::addDescription(std::string key, std::string value, PlanNodeDescription* desc) {
+    if (desc->description == nullptr) {
+        desc->description = std::make_unique<std::vector<Pair>>();
     }
-    cpp2::Pair kv;
-    kv.set_key(std::move(key));
-    kv.set_value(std::move(value));
-    desc->get_description()->emplace_back(std::move(kv));
+    desc->description->emplace_back(Pair{std::move(key), std::move(value)});
 }
 
 void PlanNode::calcCost() {
     VLOG(1) << "unimplemented cost calculation.";
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> PlanNode::explain() const {
-    auto desc = std::make_unique<cpp2::PlanNodeDescription>();
-    desc->set_id(id_);
-    desc->set_name(toString(kind_));
-    desc->set_output_var(folly::toJson(util::toJson(outputVars_)));
+std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
+    auto desc = std::make_unique<PlanNodeDescription>();
+    desc->id = id_;
+    desc->name = toString(kind_);
+    desc->outputVar = folly::toJson(util::toJson(outputVars_));
     return desc;
 }
 
@@ -253,23 +252,23 @@ std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
     return os;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> SingleDependencyNode::explain() const {
+std::unique_ptr<PlanNodeDescription> SingleDependencyNode::explain() const {
     auto desc = PlanNode::explain();
-    DCHECK(!desc->__isset.dependencies);
-    desc->set_dependencies({dep()->id()});
+    DCHECK(desc->dependencies == nullptr);
+    desc->dependencies.reset(new std::vector<int64_t>{dep()->id()});
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> SingleInputNode::explain() const {
+std::unique_ptr<PlanNodeDescription> SingleInputNode::explain() const {
     auto desc = SingleDependencyNode::explain();
     addDescription("inputVar", inputVar(), desc.get());
     return desc;
 }
 
-std::unique_ptr<cpp2::PlanNodeDescription> BiInputNode::explain() const {
+std::unique_ptr<PlanNodeDescription> BiInputNode::explain() const {
     auto desc = PlanNode::explain();
-    DCHECK(!desc->__isset.dependencies);
-    desc->set_dependencies({left()->id(), right()->id()});
+    DCHECK(desc->dependencies == nullptr);
+    desc->dependencies.reset(new std::vector<int64_t>{left()->id(), right()->id()});
     addDescription("leftVar", leftInputVar(), desc.get());
     addDescription("rightVar", rightInputVar(), desc.get());
     return desc;

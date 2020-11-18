@@ -83,26 +83,28 @@ void QueryInstance::onFinish() {
     VLOG(1) << "Finish query: " << rctx->query();
     auto ectx = qctx()->ectx();
     auto latency = rctx->duration().elapsedInUSec();
-    rctx->resp().set_latency_in_us(latency);
+    rctx->resp().latencyInUs = latency;
     auto &spaceName = rctx->session()->space().name;
-    rctx->resp().set_space_name(spaceName);
+    rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
     auto name = qctx()->plan()->root()->outputVar();
     if (ectx->exist(name)) {
         auto &&value = ectx->moveValue(name);
         if (value.type() == Value::Type::DATASET) {
             auto result = value.moveDataSet();
             if (!result.colNames.empty()) {
-                rctx->resp().set_data(std::move(result));
+                rctx->resp().data = std::make_unique<DataSet>(std::move(result));
             } else {
                 LOG(ERROR) << "Empty column name list";
-                rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
-                rctx->resp().set_error_msg("Internal error: empty column name list");
+                rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
+                rctx->resp().errorMsg = std::make_unique<std::string>(
+                    "Internal error: empty column name list");
             }
         }
     }
 
     if (qctx()->planDescription() != nullptr) {
-        rctx->resp().set_plan_desc(std::move(*qctx()->planDescription()));
+        rctx->resp().planDesc = std::make_unique<PlanDescription>(
+            std::move(*qctx()->planDescription()));
     }
 
     rctx->finish();
@@ -119,19 +121,19 @@ void QueryInstance::onError(Status status) {
     auto *rctx = qctx()->rctx();
     switch (status.code()) {
         case Status::Code::kOk:
-            rctx->resp().set_error_code(cpp2::ErrorCode::SUCCEEDED);
+            rctx->resp().errorCode = ErrorCode::SUCCEEDED;
             break;
         case Status::Code::kSyntaxError:
-            rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
+            rctx->resp().errorCode = ErrorCode::E_SYNTAX_ERROR;
             break;
         case Status::Code::kStatementEmpty:
-            rctx->resp().set_error_code(cpp2::ErrorCode::E_STATEMENT_EMTPY);
+            rctx->resp().errorCode = ErrorCode::E_STATEMENT_EMTPY;
             break;
         case Status::Code::kSemanticError:
-            rctx->resp().set_error_code(cpp2::ErrorCode::E_SEMANTIC_ERROR);
+            rctx->resp().errorCode = ErrorCode::E_SEMANTIC_ERROR;
             break;
         case Status::Code::kPermissionError:
-            rctx->resp().set_error_code(cpp2::ErrorCode::E_BAD_PERMISSION);
+            rctx->resp().errorCode = ErrorCode::E_BAD_PERMISSION;
             break;
         case Status::Code::kBalanced:
         case Status::Code::kEdgeNotFound:
@@ -150,14 +152,14 @@ void QueryInstance::onError(Status status) {
         case Status::Code::kTagNotFound:
         case Status::Code::kUserNotFound:
         case Status::Code::kListenerNotFound:
-            rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
+            rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
             break;
     }
     auto &spaceName = rctx->session()->space().name;
-    rctx->resp().set_space_name(spaceName);
-    rctx->resp().set_error_msg(status.toString());
+    rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
+    rctx->resp().errorMsg = std::make_unique<std::string>(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
-    rctx->resp().set_latency_in_us(latency);
+    rctx->resp().latencyInUs = latency;
     rctx->finish();
     delete this;
 }

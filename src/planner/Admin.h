@@ -30,7 +30,7 @@ protected:
                bool ifNotExist)
         : SingleDependencyNode(qctx, kind, input), ifNotExist_(ifNotExist) {}
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 public:
     bool ifNotExist() const {
@@ -46,7 +46,7 @@ protected:
     DropNode(QueryContext* qctx, Kind kind, PlanNode* input, bool ifExist)
         : SingleDependencyNode(qctx, kind, input), ifExist_(ifExist) {}
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 public:
     bool ifExist() const {
@@ -79,7 +79,7 @@ public:
             new CreateSpace(qctx, input, std::move(spaceDesc), ifNotExists));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 public:
     const meta::cpp2::SpaceDesc& getSpaceDesc() const {
@@ -115,7 +115,7 @@ public:
             qctx, input, std::move(spaceName), ifExists));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getSpaceName() const {
         return spaceName_;
@@ -146,7 +146,7 @@ public:
         return qctx->objPool()->add(new DescSpace(qctx, input, std::move(spaceName)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getSpaceName() const {
         return spaceName_;
@@ -181,7 +181,7 @@ public:
         return qctx->objPool()->add(new ShowConfigs(qctx, input, module));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     meta::cpp2::ConfigModule getModule() const {
         return module_;
@@ -209,7 +209,7 @@ public:
             new SetConfig(qctx, input, module, std::move(name), std::move(value)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     meta::cpp2::ConfigModule getModule() const {
         return module_;
@@ -250,7 +250,7 @@ public:
             new GetConfig(qctx, input, module, std::move(name)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     meta::cpp2::ConfigModule getModule() const {
         return module_;
@@ -281,7 +281,7 @@ public:
             new ShowCreateSpace(qctx, input, std::move(spaceName)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getSpaceName() const {
         return spaceName_;
@@ -315,7 +315,7 @@ public:
             new DropSnapshot(qctx, input, std::move(snapshotName)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getShapshotName() const {
         return snapshotName_;
@@ -363,7 +363,7 @@ public:
         return qctx->objPool()->add(new CreateUser(qctx, dep, username, password, ifNotExists));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -397,7 +397,7 @@ public:
         return qctx->objPool()->add(new DropUser(qctx, dep, username, ifNotExists));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -423,7 +423,7 @@ public:
         return qctx->objPool()->add(new UpdateUser(qctx, dep, username, password));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -457,7 +457,7 @@ public:
         return qctx->objPool()->add(new GrantRole(qctx, dep, username, spaceName, role));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -499,7 +499,7 @@ public:
             new RevokeRole(qctx, dep, username, spaceName, role));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -540,7 +540,7 @@ public:
         return qctx->objPool()->add(new ChangePassword(qctx, dep, username, password, newPassword));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -577,7 +577,7 @@ public:
         return qctx->objPool()->add(new ListUserRoles(qctx, dep, username));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string* username() const {
         return username_;
@@ -609,7 +609,7 @@ public:
         return qctx->objPool()->add(new ListRoles(qctx, dep, space));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     GraphSpaceID space() const {
         return space_;
@@ -631,7 +631,7 @@ public:
         return qctx->objPool()->add(new ShowParts(qctx, input, spaceId, std::move(partIds)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     GraphSpaceID getSpaceId() const {
         return spaceId_;
@@ -665,7 +665,7 @@ public:
         return qctx->objPool()->add(new SubmitJob(qctx, dep, op, params));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 public:
     meta::cpp2::AdminJobOp jobOp() const {
@@ -713,7 +713,7 @@ public:
         return qctx->objPool()->add(new Balance(qctx, dep, std::move(deleteHosts)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::vector<HostAddr> &deleteHosts() const {
         return deleteHosts_;
@@ -744,7 +744,7 @@ public:
         return qctx->objPool()->add(new ShowBalance(qctx, dep, jobId));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     int64_t jobId() const {
         return jobId_;

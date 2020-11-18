@@ -33,7 +33,7 @@ public:
                                                        overwritable));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::vector<storage::cpp2::NewVertex>& getVertices() const {
         return vertices_;
@@ -87,7 +87,7 @@ public:
                                                     overwritable));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::vector<std::string>& getPropNames() const {
         return propNames_;
@@ -155,7 +155,7 @@ public:
         return schemaName_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     Update(QueryContext* qctx,
@@ -213,7 +213,7 @@ public:
                                                      std::move(yieldNames)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getVId() const {
         return vId_;
@@ -283,7 +283,7 @@ public:
                                                    std::move(yieldNames)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     const std::string& getSrcId() const {
         return srcId_;
@@ -351,7 +351,7 @@ public:
             new DeleteVertices(qctx, input, spaceId, vidRef_));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     GraphSpaceID getSpace() const {
         return space_;
@@ -384,7 +384,7 @@ public:
         return qctx->objPool()->add(new DeleteEdges(qctx, input, spaceId, std::move(edgeKeyRefs)));
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
     GraphSpaceID getSpace() const {
         return space_;

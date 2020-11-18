@@ -460,10 +460,10 @@ Status Executor::open() {
 }
 
 Status Executor::close() {
-    cpp2::ProfilingStats stats;
-    stats.set_total_duration_in_us(totalDuration_.elapsedInUSec());
-    stats.set_rows(numRows_);
-    stats.set_exec_duration_in_us(execTime_);
+    ProfilingStats stats;
+    stats.totalDurationInUs = totalDuration_.elapsedInUSec();
+    stats.rows = numRows_;
+    stats.execDurationInUs = execTime_;
     qctx()->addProfilingData(node_->id(), std::move(stats));
     return Status::OK();
 }

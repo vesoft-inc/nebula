@@ -25,27 +25,27 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
 }
 
 
-folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
+folly::Future<AuthResponse> GraphService::future_authenticate(
         const std::string& username,
         const std::string& password) {
     auto *peer = getConnectionContext()->getPeerAddress();
     LOG(INFO) << "Authenticating user " << username << " from " <<  peer->describe();
 
-    RequestContext<cpp2::AuthResponse> ctx;
+    RequestContext<AuthResponse> ctx;
     auto session = sessionManager_->createSession();
     session->setAccount(username);
     ctx.setSession(std::move(session));
 
     if (!FLAGS_enable_authorize) {
-        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
+        onHandle(ctx, ErrorCode::SUCCEEDED);
     } else if (auth(username, password)) {
         auto roles = queryEngine_->metaClient()->getRolesByUserFromCache(username);
         for (const auto& role : roles) {
             ctx.session()->setRole(role.get_space_id(), role.get_role_type());
         }
-        onHandle(ctx, cpp2::ErrorCode::SUCCEEDED);
+        onHandle(ctx, ErrorCode::SUCCEEDED);
     } else {
-        onHandle(ctx, cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
+        onHandle(ctx, ErrorCode::E_BAD_USERNAME_PASSWORD);
     }
 
     ctx.finish();
@@ -59,9 +59,9 @@ void GraphService::signout(int64_t sessionId) {
 }
 
 
-folly::Future<cpp2::ExecutionResponse>
+folly::Future<ExecutionResponse>
 GraphService::future_execute(int64_t sessionId, const std::string& query) {
-    auto ctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
+    auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());
     auto future = ctx->future();
@@ -69,7 +69,7 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
         auto result = sessionManager_->findSession(sessionId);
         if (!result.ok()) {
             FLOG_ERROR("Session not found, id[%ld]", sessionId);
-            ctx->resp().set_error_code(cpp2::ErrorCode::E_SESSION_INVALID);
+            ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
             // ctx->resp().set_error_msg(result.status().toString());
             ctx->finish();
             return future;
@@ -82,37 +82,37 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
 }
 
 
-const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
+const char* GraphService::getErrorStr(ErrorCode result) {
     switch (result) {
-    case cpp2::ErrorCode::SUCCEEDED:
+    case ErrorCode::SUCCEEDED:
         return "Succeeded";
     /**********************
      * Server side errors
      **********************/
-    case cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD:
+    case ErrorCode::E_BAD_USERNAME_PASSWORD:
         return "Bad username/password";
-    case cpp2::ErrorCode::E_SESSION_INVALID:
+    case ErrorCode::E_SESSION_INVALID:
         return "The session is invalid";
-    case cpp2::ErrorCode::E_SESSION_TIMEOUT:
+    case ErrorCode::E_SESSION_TIMEOUT:
         return "The session timed out";
-    case cpp2::ErrorCode::E_SYNTAX_ERROR:
+    case ErrorCode::E_SYNTAX_ERROR:
         return "Syntax error";
-    case cpp2::ErrorCode::E_SEMANTIC_ERROR:
+    case ErrorCode::E_SEMANTIC_ERROR:
         return "Semantic error";
     // TODO(shylock) fix the typo
-    case cpp2::ErrorCode::E_STATEMENT_EMTPY:
+    case ErrorCode::E_STATEMENT_EMTPY:
         return "Statement emtpy";
-    case cpp2::ErrorCode::E_EXECUTION_ERROR:
+    case ErrorCode::E_EXECUTION_ERROR:
         return "Execution error";
-    case cpp2::ErrorCode::E_RPC_FAILURE:
+    case ErrorCode::E_RPC_FAILURE:
         return "RPC failure";
-    case cpp2::ErrorCode::E_DISCONNECTED:
+    case ErrorCode::E_DISCONNECTED:
         return "Disconnected";
-    case cpp2::ErrorCode::E_FAIL_TO_CONNECT:
+    case ErrorCode::E_FAIL_TO_CONNECT:
         return "Fail to connect";
-    case cpp2::ErrorCode::E_BAD_PERMISSION:
+    case ErrorCode::E_BAD_PERMISSION:
         return "Bad permission";
-    case cpp2::ErrorCode::E_USER_NOT_FOUND:
+    case ErrorCode::E_USER_NOT_FOUND:
         return "User not found";
     }
     /**********************
@@ -121,13 +121,13 @@ const char* GraphService::getErrorStr(cpp2::ErrorCode result) {
     return "Unknown error";
 }
 
-void GraphService::onHandle(RequestContext<cpp2::AuthResponse>& ctx, cpp2::ErrorCode code) {
-    ctx.resp().set_error_code(code);
-    if (code != cpp2::ErrorCode::SUCCEEDED) {
+void GraphService::onHandle(RequestContext<AuthResponse>& ctx, ErrorCode code) {
+    ctx.resp().errorCode = code;
+    if (code != ErrorCode::SUCCEEDED) {
         sessionManager_->removeSession(ctx.session()->id());
-        ctx.resp().set_error_msg(getErrorStr(code));
+        ctx.resp().errorMsg.reset(new std::string(getErrorStr(code)));
     } else {
-        ctx.resp().set_session_id(ctx.session()->id());
+        ctx.resp().sessionId.reset(new int64_t(ctx.session()->id()));
     }
 }
 

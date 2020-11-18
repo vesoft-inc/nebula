@@ -30,7 +30,7 @@ public:
         return condition_;
     }
 
-    std::unique_ptr<cpp2::PlanNodeDescription> explain() const override;
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
     BinarySelect(QueryContext* qctx,

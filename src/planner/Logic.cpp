@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 
-std::unique_ptr<cpp2::PlanNodeDescription> BinarySelect::explain() const {
+std::unique_ptr<PlanNodeDescription> BinarySelect::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
     return desc;

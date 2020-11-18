@@ -37,7 +37,7 @@ protected:
         spaceInfo.id = 1;
         spaceInfo.spaceDesc.space_name = "test_space";
         session->setSpace(std::move(spaceInfo));
-        auto rctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
+        auto rctx = std::make_unique<RequestContext<ExecutionResponse>>();
         rctx->setSession(std::move(session));
         qctx_->setRCtx(std::move(rctx));
     }

@@ -46,7 +46,7 @@ class PlanDescription;
  **************************************************************************/
 class QueryContext {
 public:
-    using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
+    using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
 
     QueryContext();
     QueryContext(RequestContextPtr rctx,
@@ -82,7 +82,7 @@ public:
         charsetInfo_ = charsetInfo;
     }
 
-    RequestContext<cpp2::ExecutionResponse>* rctx() const {
+    RequestContext<ExecutionResponse>* rctx() const {
         return rctx_.get();
     }
 
@@ -130,13 +130,13 @@ public:
         return idGen_->id();
     }
 
-    void addProfilingData(int64_t planNodeId, cpp2::ProfilingStats&& profilingStats);
+    void addProfilingData(int64_t planNodeId, ProfilingStats&& profilingStats);
 
-    cpp2::PlanDescription* planDescription() const {
+    PlanDescription* planDescription() const {
         return planDescription_.get();
     }
 
-    void setPlanDescription(std::unique_ptr<cpp2::PlanDescription> planDescription) {
+    void setPlanDescription(std::unique_ptr<PlanDescription> planDescription) {
         planDescription_ = std::move(planDescription);
     }
 
@@ -164,7 +164,7 @@ private:
     std::unique_ptr<ObjectPool>                             objPool_;
 
     // plan description for explain and profile query
-    std::unique_ptr<cpp2::PlanDescription>                  planDescription_;
+    std::unique_ptr<PlanDescription>                        planDescription_;
     std::unique_ptr<IdGenerator>                            idGen_;
     std::unique_ptr<SymbolTable>                            symTable_;
 };
