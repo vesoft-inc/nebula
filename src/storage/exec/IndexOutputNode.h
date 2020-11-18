@@ -164,9 +164,9 @@ private:
             Row row;
             auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
             if (planContext_->isIntId_) {
-                row.emplace_back(vId);
+                row.emplace_back(vId.toString());
             } else {
-                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')));
+                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
             }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
@@ -189,9 +189,9 @@ private:
             Row row;
             auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, val.first);
             if (planContext_->isIntId_) {
-                row.emplace_back(vId);
+                row.emplace_back(vId.toString());
             } else {
-                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')));
+                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
             }
 
             // skip vertexID
@@ -223,13 +223,13 @@ private:
             auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, val.first);
             auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, val.first);
             if (planContext_->isIntId_) {
-                row.emplace_back(src);
+                row.emplace_back(src.toString());
                 row.emplace_back(rank);
-                row.emplace_back(dst);
+                row.emplace_back(dst.toString());
             } else {
-                row.emplace_back(src.subpiece(0, src.find_first_of('\0')));
+                row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
                 row.emplace_back(rank);
-                row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')));
+                row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
             }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
@@ -254,9 +254,9 @@ private:
             auto rank = IndexKeyUtils::getIndexRank(planContext_->vIdLen_, val.first);
             auto dst = IndexKeyUtils::getIndexDstId(planContext_->vIdLen_, val.first);
 
-            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0'))));
+            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0')).toString()));
             row.emplace_back(Value(std::move(rank)));
-            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0'))));
+            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0')).toString()));
 
             // skip column src_ , ranking, dst_
             for (size_t i = 3; i < returnCols.size(); i++) {

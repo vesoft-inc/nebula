@@ -46,7 +46,7 @@ Value StorageExpressionContext::getTagProp(const std::string& tagName,
         }
         if (prop == kVid) {
             auto vId = NebulaKeyUtils::getVertexId(vIdLen_, key_);
-            return isIntId_ ? vId : vId.subpiece(0, vId.find_first_of('\0'));
+            return isIntId_ ? vId.toString() : vId.subpiece(0, vId.find_first_of('\0')).toString();
         } else {
             return readValue(prop);
         }
@@ -70,10 +70,14 @@ Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
         }
         if (prop == kSrc) {
             auto srcId = NebulaKeyUtils::getSrcId(vIdLen_, key_);
-            return isIntId_ ? srcId : srcId.subpiece(0, srcId.find_first_of('\0'));
+            return isIntId_ ?
+                srcId.toString() :
+                srcId.subpiece(0, srcId.find_first_of('\0')).toString();
         } else if (prop == kDst) {
             auto dstId = NebulaKeyUtils::getDstId(vIdLen_, key_);
-            return isIntId_ ? dstId : dstId.subpiece(0, dstId.find_first_of('\0'));
+            return isIntId_ ?
+                dstId.toString() :
+                dstId.subpiece(0, dstId.find_first_of('\0')).toString();
         } else if (prop == kRank) {
             return NebulaKeyUtils::getRank(vIdLen_, key_);
         } else if (prop == kType) {

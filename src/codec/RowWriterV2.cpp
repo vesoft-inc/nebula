@@ -700,7 +700,7 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
         }
         case meta::cpp2::PropertyType::TIMESTAMP: {
             // 64-bit timestamp has way broader time range
-            auto ret = TimeFunction::toTimestamp(v);
+            auto ret = TimeFunction::toTimestamp(v.toString());
             if (!ret.ok()) {
                 return WriteResult::INCORRECT_VALUE;
             }

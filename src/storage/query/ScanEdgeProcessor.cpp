@@ -90,10 +90,10 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         auto dstId = NebulaKeyUtils::getDstId(spaceVidLen_, key);
         auto src = srcId.subpiece(0, srcId.find_first_of('\0'));
         auto dst = dstId.subpiece(0, dstId.find_first_of('\0'));
-        list.emplace_back(std::move(src));
+        list.emplace_back(src.toString());
         list.emplace_back(edgeType);
         list.emplace_back(rank);
-        list.emplace_back(std::move(dst));
+        list.emplace_back(dst.toString());
 
         if (!returnNoProps_) {
             auto idx = edgeIter->second;

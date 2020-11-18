@@ -87,7 +87,7 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         nebula::List list;
         auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
         auto id = vId.subpiece(0, vId.find_first_of('\0'));
-        list.emplace_back(std::move(id));
+        list.emplace_back(id.toString());
         list.emplace_back(tagId);
 
         if (!returnNoProps_) {

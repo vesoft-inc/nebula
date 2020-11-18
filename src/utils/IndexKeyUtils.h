@@ -316,7 +316,7 @@ public:
                 break;
             }
             case Value::Type::STRING: {
-                v.setStr(raw.subpiece(0, raw.find_first_of('\0')));
+                v.setStr(raw.subpiece(0, raw.find_first_of('\0')).toString());
                 break;
             }
             case Value::Type::TIME: {
