@@ -30,17 +30,26 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     switch (req.get_op()) {
         case nebula::meta::cpp2::AdminJobOp::ADD:
         {
-            auto jobId = autoIncrementId();
-            if (!nebula::ok(jobId)) {
-                errorCode = nebula::error(jobId);
-                break;
-            }
-
             auto cmd = req.get_cmd();
             auto paras = req.get_paras();
             if (paras.empty()) {
                 LOG(ERROR) << "Parameter should be not empty";
                 errorCode = cpp2::ErrorCode::E_INVALID_PARM;
+                break;
+            }
+
+            JobID jId = 0;
+            auto jobExist = jobMgr->checkJobExist(cmd, paras, jId);
+            if (jobExist) {
+                LOG(INFO) << "Job has already exists: " << jId;
+                result.set_job_id(jId);
+                break;
+            }
+
+            // Job not exists
+            auto jobId = autoIncrementId();
+            if (!nebula::ok(jobId)) {
+                errorCode = nebula::error(jobId);
                 break;
             }
 

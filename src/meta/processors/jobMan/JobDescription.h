@@ -134,6 +134,16 @@ public:
      * */
     static bool isJobKey(const folly::StringPiece& rawKey);
 
+    bool operator==(const JobDescription& that) const {
+        return this->cmd_ == that.cmd_ &&
+               this->paras_ == that.paras_ &&
+               this->status_ == that.status_;
+    }
+
+    bool operator!=(const JobDescription& that) const {
+        return !(*this == that);
+    }
+
 private:
     static bool isSupportedValue(const folly::StringPiece& val);
     /*

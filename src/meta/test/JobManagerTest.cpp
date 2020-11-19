@@ -105,6 +105,83 @@ TEST_F(JobManagerTest, StatisJob) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job1.value().status_);
 }
 
+TEST_F(JobManagerTest, JobPriority) {
+    ASSERT_EQ(0, jobMgr->jobSize());
+
+    std::vector<std::string> paras{"test"};
+    JobDescription job1(13, cpp2::AdminCmd::COMPACT, paras);
+    auto rc1 = jobMgr->addJob(job1, adminClient_.get());
+    ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
+
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription job2(14, cpp2::AdminCmd::STATIS, paras1);
+    auto rc2 = jobMgr->addJob(job2, adminClient_.get());
+    ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
+
+    ASSERT_EQ(2, jobMgr->jobSize());
+
+    JobID jobId = 0;
+    auto result = jobMgr->try_dequeue(jobId);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(14, jobId);
+    ASSERT_EQ(1, jobMgr->jobSize());
+
+    result = jobMgr->try_dequeue(jobId);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(13, jobId);
+    ASSERT_EQ(0, jobMgr->jobSize());
+
+    result = jobMgr->try_dequeue(jobId);
+    ASSERT_FALSE(result);
+}
+
+TEST_F(JobManagerTest, JobDeduplication) {
+    ASSERT_EQ(0, jobMgr->jobSize());
+
+    std::vector<std::string> paras{"test"};
+    JobDescription job1(15, cpp2::AdminCmd::COMPACT, paras);
+    auto rc1 = jobMgr->addJob(job1, adminClient_.get());
+    ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
+
+    std::vector<std::string> paras1{"test_space"};
+    JobDescription job2(16, cpp2::AdminCmd::STATIS, paras1);
+    auto rc2 = jobMgr->addJob(job2, adminClient_.get());
+    ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
+
+    ASSERT_EQ(2, jobMgr->jobSize());
+
+    JobDescription job3(17, cpp2::AdminCmd::STATIS, paras1);
+    JobID jId3 = 0;
+    auto jobExist = jobMgr->checkJobExist(job3.getCmd(), job3.getParas(), jId3);
+    if (!jobExist) {
+        auto rc3 = jobMgr->addJob(job3, adminClient_.get());
+        ASSERT_EQ(rc3, cpp2::ErrorCode::SUCCEEDED);
+    }
+
+    JobDescription job4(18, cpp2::AdminCmd::COMPACT, paras);
+    JobID jId4 = 0;
+    jobExist = jobMgr->checkJobExist(job4.getCmd(), job4.getParas(), jId4);
+    if (!jobExist) {
+        auto rc4 = jobMgr->addJob(job4, adminClient_.get());
+        ASSERT_NE(rc4, cpp2::ErrorCode::SUCCEEDED);
+    }
+
+    ASSERT_EQ(2, jobMgr->jobSize());
+    JobID jobId = 0;
+    auto result = jobMgr->try_dequeue(jobId);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(16, jobId);
+    ASSERT_EQ(1, jobMgr->jobSize());
+
+    result = jobMgr->try_dequeue(jobId);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(15, jobId);
+    ASSERT_EQ(0, jobMgr->jobSize());
+
+    result = jobMgr->try_dequeue(jobId);
+    ASSERT_FALSE(result);
+}
+
 TEST_F(JobManagerTest, loadJobDescription) {
     std::vector<std::string> paras{"test_space"};
     JobDescription job1(1, cpp2::AdminCmd::COMPACT, paras);
@@ -232,7 +309,7 @@ TEST_F(JobManagerTest, recoverJob) {
     }
 
     auto nJobRecovered = jobMgr->recoverJob();
-    ASSERT_EQ(nebula::value(nJobRecovered), nJob);
+    ASSERT_EQ(nebula::value(nJobRecovered), 1);
 }
 
 TEST(JobDescriptionTest, ctor) {
