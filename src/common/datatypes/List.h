@@ -33,7 +33,8 @@ struct List {
         values.reserve(n);
     }
 
-    template <typename T, typename = std::enable_if_t<std::is_convertible<T, Value>::value>>
+    template <typename T,
+              typename = typename std::enable_if<std::is_convertible<T, Value>::value>::type>
     void emplace_back(T &&v) {
         values.emplace_back(std::forward<T>(v));
     }

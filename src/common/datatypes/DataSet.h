@@ -46,7 +46,8 @@ struct DataSet {
         return *this;
     }
 
-    template <typename T, typename = std::enable_if_t<std::is_convertible<T, Row>::value, T>>
+    template <typename T,
+              typename = typename std::enable_if<std::is_convertible<T, Row>::value, T>::type>
     bool emplace_back(T&& row) {
         if (row.size() != colNames.size()) {
             return false;
