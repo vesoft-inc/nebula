@@ -30,7 +30,7 @@ class TestInsert2(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_insert_out_of_range_id_size(self):
-        resp = self.execute('INSERT VERTEX student(name, age) VALUES "12345678901":("Tom", "2")')
+        resp = self.execute('INSERT VERTEX student(name, age) VALUES "12345678901":("Tom", 2)')
         self.check_resp_failed(resp)
         self.check_error_msg(resp, 'Storage Error: Invalid vid.')
 
@@ -52,4 +52,14 @@ class TestInsert2(NebulaTestSuite):
         resp = self.execute_query('FETCH PROP ON course "English"')
         self.check_resp_succeeded(resp)
         expect_result = [['English', 'Engli', T_NULL]]
+        self.check_out_of_order_result(resp, expect_result)
+
+    def test_insert_with_empty_str_vid(self):
+        resp = self.execute('INSERT VERTEX student(name, age) VALUES "":("Tom", 12)')
+        self.check_resp_succeeded(resp)
+
+        # check
+        resp = self.execute_query('FETCH PROP ON student ""')
+        self.check_resp_succeeded(resp)
+        expect_result = [['', 'Tom', 12]]
         self.check_out_of_order_result(resp, expect_result)

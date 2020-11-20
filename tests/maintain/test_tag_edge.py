@@ -627,3 +627,44 @@ class TestSchema(NebulaTestSuite):
         resp = self.client.execute('INSERT EDGE relation (intimacy) VALUES '
                                    '"person.Tom" -> "person.Marry"@0:(3)')
         self.check_resp_succeeded(resp)
+
+    def test_create_tag_with_null_default_value(self):
+        resp = self.client.execute('CREATE TAG tag_null_default1(name string NULL DEFAULT "N/A")')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC TAG tag_null_default1;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'YES', 'N/A']]
+        self.check_result(resp, expect_result)
+
+        resp = self.client.execute('CREATE TAG tag_null_default2(name string DEFAULT "N/A" NULL)')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC TAG tag_null_default2;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'YES', 'N/A']]
+        self.check_result(resp, expect_result)
+
+    def test_create_tag_with_not_null_default_value(self):
+        resp = self.client.execute('CREATE TAG tag_not_null_default1(name string NOT NULL DEFAULT "N/A")')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC TAG tag_not_null_default1;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'NO', 'N/A']]
+        self.check_result(resp, expect_result)
+
+        resp = self.client.execute('CREATE TAG tag_not_null_default2(name string DEFAULT "N/A" NOT NULL)')
+        self.check_resp_succeeded(resp)
+
+        resp = self.client.execute_query('DESC TAG tag_not_null_default2;')
+        self.check_resp_succeeded(resp)
+        expect_result = [['name', 'string', 'NO', 'N/A']]
+        self.check_result(resp, expect_result)
+
+    def test_with_bad_null_default_value(self):
+        # failed
+        resp = self.execute('CREATE TAG bad_null_default_value(name string DEFAULT "N/A", age int DEFAULT 1%0)')
+        self.check_resp_failed(resp)
+        self.check_error_msg(resp, 'invalid parm!')
+

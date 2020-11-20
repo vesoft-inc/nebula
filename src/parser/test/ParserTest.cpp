@@ -50,6 +50,32 @@ TEST(Parser, TestSchemaCreation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Default value AND NOT NULL
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession string DEFAULT \"HELLO\" NOT NULL)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession string NOT NULL DEFAULT \"HELLO\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Default value AND NULL
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession string DEFAULT \"HELLO\" NULL)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(profession string NULL DEFAULT \"HELLO\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, Go) {

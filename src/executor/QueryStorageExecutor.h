@@ -34,8 +34,11 @@ protected:
                            << it->first;
             }
             if (completeness == 0 || isCompleteRequire) {
-                return handleErrorCode(failedCodes.begin()->second,
-                                       failedCodes.begin()->first);
+                if (failedCodes.size() > 0) {
+                    return handleErrorCode(failedCodes.begin()->second,
+                                           failedCodes.begin()->first);
+                }
+                return Status::Error("Request to storage failed, without failedCodes.");
             }
             return Result::State::kPartialSuccess;
         }
