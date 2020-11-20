@@ -15,6 +15,7 @@
 #include "service/GraphFlags.h"
 #include "util/IndexUtil.h"
 #include "util/SchemaUtil.h"
+#include "util/ExpressionUtils.h"
 #include "validator/MaintainValidator.h"
 
 namespace nebula {
@@ -47,19 +48,9 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
                 return Status::SemanticError("Wrong default value experssion `%s'",
                                              spec->getDefaultValue()->toString().c_str());
             }
-            QueryExpressionContext ctx;
             auto defaultValueExpr = spec->getDefaultValue();
-            auto &value = defaultValueExpr->eval(ctx(nullptr));
-            auto valStatus = SchemaUtil::toSchemaValue(type, value);
-            NG_RETURN_IF_ERROR(valStatus);
-            // When the timestamp value is string, need to save the int value,
-            // TODO: if support timestamp value is an expression, need to remove the code
-            if (type == meta::cpp2::PropertyType::TIMESTAMP && value.isStr()) {
-                ConstantExpression newExpr(std::move(valStatus).value());
-                column.set_default_value(newExpr.encode());
-            } else {
-                column.set_default_value(defaultValueExpr->encode());
-            }
+            // some expression is evaluable but not pure so only fold instead of eval here
+            column.set_default_value(ExpressionUtils::foldConstantExpr(defaultValueExpr)->encode());
         }
         schema.columns.emplace_back(std::move(column));
     }
