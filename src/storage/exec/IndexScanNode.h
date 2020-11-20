@@ -100,54 +100,60 @@ private:
         std::string prefix;
         prefix.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         for (auto& col : columnHints_) {
-            auto iter = std::find_if(fields.begin(), fields.end(),
-                                 [col](const auto& field) {
-                                     return col.get_column_name() == field.get_name();
-                                 });
+            auto iter = std::find_if(fields.begin(), fields.end(), [col](const auto& field) {
+                return col.get_column_name() == field.get_name();
+            });
             if (iter == fields.end()) {
                 VLOG(3) << "Field " << col.get_column_name() << " not found ";
                 return Status::Error("Field not found");
             }
-            auto type = iter->get_type().get_type();
-            if (IndexKeyUtils::toValueType(type) == Value::Type::STRING) {
-                if (!iter->get_type().__isset.type_length) {
-                    return Status::Error("String property index has not set prefix length.");
-                }
-                auto len = *iter->get_type().get_type_length();
-                prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
-            } else {
-                prefix.append(IndexKeyUtils::encodeValue(col.get_begin_value()));
+            auto type = IndexKeyUtils::toValueType(iter->type.type);
+            if (type == Value::Type::STRING && !iter->type.__isset.type_length) {
+                return Status::Error("String property index has not set prefix length.");
             }
+            prefix.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
         }
         return std::make_pair(prefix, "");
     }
 
-    StatusOr<std::pair<std::string, std::string>>  getRangeStr(
+    StatusOr<std::pair<std::string, std::string>> getRangeStr(
         PartitionID partId, const std::vector< ::nebula::meta::cpp2::ColumnDef>& fields) {
         std::string start, end;
         start.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         end.append(IndexKeyUtils::indexPrefix(partId, indexId_));
         for (auto& col : columnHints_) {
-            auto iter = std::find_if(fields.begin(), fields.end(),
-                                 [col](const auto& field) {
-                                     return col.get_column_name() == field.get_name();
-                                 });
+            auto iter = std::find_if(fields.begin(), fields.end(), [col](const auto& field) {
+                return col.get_column_name() == field.get_name();
+            });
             if (iter == fields.end()) {
                 VLOG(3) << "Field " << col.get_column_name() << " not found ";
                 return Status::Error("Field not found");
             }
-            auto type = iter->get_type().get_type();
-            int16_t len = IndexKeyUtils::toValueType(type) == Value::Type::STRING
-                          ? *iter->get_type().get_type_length() : 0;
+            auto type = IndexKeyUtils::toValueType(iter->get_type().get_type());
+            if (type == Value::Type::STRING && !iter->get_type().__isset.type_length) {
+                return Status::Error("String property index has not set prefix length.");
+            }
             if (col.get_scan_type() == cpp2::ScanType::PREFIX) {
-                start.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
-                end.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
+                start.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
+                end.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
             } else {
-                start.append(IndexKeyUtils::encodeValue(col.get_begin_value(), len));
-                end.append(IndexKeyUtils::encodeValue(col.get_end_value(), len));
+                start.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
+                end.append(encodeValue(col.end_value, type, iter->type.get_type_length()));
             }
         }
         return std::make_pair(start, end);
+    }
+
+    // precondition: if type is STRING, strLen must be valid
+    std::string encodeValue(const Value& val, Value::Type type, const int16_t* strLen) {
+        if (val.isNull()) {
+            return IndexKeyUtils::encodeNullValue(type, strLen);
+        }
+        if (type == Value::Type::STRING) {
+            return IndexKeyUtils::encodeValue(val, *strLen);
+        } else {
+            return IndexKeyUtils::encodeValue(val);
+        }
     }
 
 private:

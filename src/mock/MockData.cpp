@@ -799,12 +799,11 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockPlayerIndexKeys(b
             name = player.name_;
         }
         auto part = std::hash<std::string>()(name) % 6 + 1;
-        std::vector<Value> values;
-        values.emplace_back(encodeFixedStr(name, 20));
-        values.emplace_back(player.age_);
-        values.emplace_back(player.playing_);
-        std::vector<Value::Type> colsType;
-        auto key = IndexKeyUtils::vertexIndexKey(32, part, 1, name, values, colsType);
+        std::string values;
+        values.append(encodeFixedStr(name, 20));
+        values.append(IndexKeyUtils::encodeValue(player.age_));
+        values.append(IndexKeyUtils::encodeValue(player.playing_));
+        auto key = IndexKeyUtils::vertexIndexKey(32, part, 1, name, std::move(values));
         auto pair = std::make_pair(part, std::move(key));
         keys.emplace_back(std::move(pair));
     }
@@ -903,17 +902,15 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockServeIndexKeys() 
     std::vector<std::pair<PartitionID, std::string>> keys;
     for (auto& serve : serves_) {
         auto part = std::hash<std::string>()(serve.playerName_) % 6 + 1;
-        std::vector<Value> values;
-        values.emplace_back(encodeFixedStr(serve.playerName_, 20));
-        values.emplace_back(encodeFixedStr(serve.teamName_, 20));
-        values.emplace_back(serve.startYear_);
-        std::vector<Value::Type> colsType;
+        std::string values;
+        values.append(encodeFixedStr(serve.playerName_, 20));
+        values.append(encodeFixedStr(serve.teamName_, 20));
+        values.append(IndexKeyUtils::encodeValue(serve.startYear_));
         auto key = IndexKeyUtils::edgeIndexKey(32, part, 101,
                                                serve.playerName_,
                                                serve.startYear_,
                                                serve.teamName_,
-                                               values,
-                                               colsType);
+                                               std::move(values));
         auto pair = std::make_pair(part, std::move(key));
         keys.emplace_back(std::move(pair));
     }

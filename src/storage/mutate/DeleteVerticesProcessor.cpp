@@ -156,19 +156,16 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                 return folly::none;
                             }
                         }
-                        std::vector<Value::Type> colsType;
                         const auto& cols = index->get_fields();
                         auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                                           cols,
-                                                                           colsType);
+                                                                           cols);
                         if (!valuesRet.ok()) {
                             continue;
                         }
                         auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
                                                                       indexId,
                                                                       vertex.getStr(),
-                                                                      valuesRet.value(),
-                                                                      colsType);
+                                                                      std::move(valuesRet).value());
 
                         // Check the index is building for the specified partition or not
                         if (env_->checkRebuilding(spaceId_, partId, indexId)) {

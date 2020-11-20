@@ -71,17 +71,18 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
 
         // setup index key
 
-        std::vector<Value> values;
-        values.emplace_back(Value(true));
-        values.emplace_back(Value(1L));
-        values.emplace_back(Value(1.1F));
-        values.emplace_back(Value(1.1F));
-        values.emplace_back(Value("row1"));
+        std::string indexVal1;
+        indexVal1.append(IndexKeyUtils::encodeValue(true));
+        indexVal1.append(IndexKeyUtils::encodeValue(1L));
+        indexVal1.append(IndexKeyUtils::encodeValue(1.1F));
+        indexVal1.append(IndexKeyUtils::encodeValue(1.1F));
+        indexVal1.append(IndexKeyUtils::encodeValue("row1"));
+        std::string indexVal2 = indexVal1;
 
-        key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId1, values);
+        key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId1, std::move(indexVal1));
         keyValues.emplace_back(std::move(key), "");
 
-        key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId2, values);
+        key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId2, std::move(indexVal2));
         keyValues.emplace_back(std::move(key), "");
 
         folly::Baton<true, std::atomic> baton;
@@ -1639,7 +1640,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         ASSERT_EQ(expected, *(resp.get_data()));
     }
     {
-        // col3 and col4 is out of index
+        // col3 and col4 is out of index, need to pass as filter
         LOG(INFO) << "lookup on tag where tag.col1 == 3 and tag.col2 == \"ccc\" and col3 > 1";
         std::vector<cpp2::IndexColumnHint> columnHints;
         {
@@ -1656,16 +1657,16 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             columnHint.set_begin_value("ccc");
             columnHints.emplace_back(std::move(columnHint));
         }
-        {
-            cpp2::IndexColumnHint columnHint;
-            columnHint.set_column_name("col3");
-            columnHint.set_scan_type(cpp2::ScanType::RANGE);
-            columnHint.set_begin_value(1);
-            columnHint.set_end_value(std::numeric_limits<int64_t>::max());
-        }
+
+        RelationalExpression expr(
+            Expression::Kind::kRelGT,
+            new TagPropertyExpression(
+                new std::string("111"),
+                new std::string("col3")),
+            new ConstantExpression(Value(1)));
 
         cpp2::IndexQueryContext context;
-        context.set_filter("");
+        context.set_filter(expr.encode());
         context.set_index_id(222);
         context.set_column_hints(columnHints);
 
@@ -1682,9 +1683,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         EXPECT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected({"_vid"});
         // Because col3 is out of index, so col3 > 1 will be used as filter
-        // Since null is bigger than any thing, so 3_c_null_null will satisfy too
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
-        expected.rows.emplace_back(nebula::Row({"3_c_null_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
     {
@@ -2351,6 +2350,252 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         EXPECT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected({"_vid"});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"null_2_2.0_b"}));
+        expected.rows.emplace_back(nebula::Row({"all_null"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int == null";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"all_null"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int == null and "
+                     "tag.col_double == null";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_double", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"all_null"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int == null and "
+                     "tag.col_double == null and tag.col_str == null";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_double", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_str", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"all_null"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == true and tag.col_int == 4 and "
+                     "tag.col_double == null and tag.col_str == ddd";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(true), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(4), Value()));
+        columnHints.emplace_back(
+            columnHint("col_double", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_str", cpp2::ScanType::PREFIX, Value("ddd"), Value()));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"true_4_null_d"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == false and tag.col_int == null and "
+                     "tag.col_double == 3.0 and tag.col_str < \"d\"";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(false), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_double", cpp2::ScanType::PREFIX, Value(3.0), Value()));
+        columnHints.emplace_back(columnHint(
+            "col_str", cpp2::ScanType::RANGE, Value(std::string(strColLen, '\0')), Value("d")));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"false_null_3.0_c"}));
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int == null and "
+                     "tag.col_double >= 0.0";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(columnHint("col_double",
+                                            cpp2::ScanType::RANGE,
+                                            Value(0.0),
+                                            Value(std::numeric_limits<double>::max())));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        ASSERT_EQ(expected, *(resp.get_data()));
+    }
+    {
+        LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int >= 0 and "
+                     "tag.col_int < 10";
+        std::vector<cpp2::IndexColumnHint> columnHints;
+        columnHints.emplace_back(
+            columnHint("col_bool", cpp2::ScanType::PREFIX, Value(NullType::__NULL__), Value()));
+        columnHints.emplace_back(
+            columnHint("col_int", cpp2::ScanType::RANGE, Value(0), Value(10)));
+
+        cpp2::IndexQueryContext context;
+        context.set_filter("");
+        context.set_index_id(222);
+        context.set_column_hints(std::move(columnHints));
+
+        cpp2::IndexSpec indices;
+        indices.set_tag_or_edge_id(111);
+        indices.set_is_edge(false);
+        indices.set_contexts({context});
+        req.set_indices(std::move(indices));
+
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_parts.size());
+        nebula::DataSet expected({"_vid"});
+        expected.rows.emplace_back(nebula::Row({"null_2_2.0_b"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
 }

@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <gtest/gtest.h>
 #include "common/base/Base.h"
 #include "utils/IndexKeyUtils.h"
-#include <gtest/gtest.h>
 
 namespace nebula {
 
@@ -16,17 +16,17 @@ VertexID getStringId(int64_t vId) {
     return id;
 }
 
-std::vector<Value> getIndexValues() {
-    std::vector<Value> values;
-    values.emplace_back(Value("str"));
-    values.emplace_back(Value(true));
-    values.emplace_back(Value(12L));
-    values.emplace_back(Value(12.12f));
+std::string getIndexValues() {
+    std::string values;
+    values.append(IndexKeyUtils::encodeValue(Value("str")));
+    values.append(IndexKeyUtils::encodeValue(Value(true)));
+    values.append(IndexKeyUtils::encodeValue(Value(12L)));
+    values.append(IndexKeyUtils::encodeValue(Value(12.12f)));
     Date d = {2020, 1, 20};
-    values.emplace_back(Value(std::move(d)));
+    values.append(IndexKeyUtils::encodeValue(Value(std::move(d))));
 
     DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
-    values.emplace_back(std::move(dt));
+    values.append(IndexKeyUtils::encodeValue(std::move(dt)));
     return values;
 }
 
@@ -144,7 +144,7 @@ TEST(IndexKeyUtilsTest, encodeDouble) {
 
 TEST(IndexKeyUtilsTest, vertexIndexKeyV1) {
     auto values = getIndexValues();
-    auto key = IndexKeyUtils::vertexIndexKey(8, 1, 1, getStringId(1), values);
+    auto key = IndexKeyUtils::vertexIndexKey(8, 1, 1, getStringId(1), std::move(values));
     ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
     ASSERT_EQ(getStringId(1), IndexKeyUtils::getIndexVertexID(8, key));
     ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
@@ -152,7 +152,7 @@ TEST(IndexKeyUtilsTest, vertexIndexKeyV1) {
 
 TEST(IndexKeyUtilsTest, vertexIndexKeyV2) {
     auto values = getIndexValues();
-    auto key = IndexKeyUtils::vertexIndexKey(100, 1, 1, "vertex_1_1_1_1", values);
+    auto key = IndexKeyUtils::vertexIndexKey(100, 1, 1, "vertex_1_1_1_1", std::move(values));
     ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
 
     VertexID vid = "vertex_1_1_1_1";
@@ -163,7 +163,8 @@ TEST(IndexKeyUtilsTest, vertexIndexKeyV2) {
 
 TEST(IndexKeyUtilsTest, edgeIndexKeyV1) {
     auto values = getIndexValues();
-    auto key = IndexKeyUtils::edgeIndexKey(8, 1, 1, getStringId(1), 1, getStringId(2), values);
+    auto key =
+        IndexKeyUtils::edgeIndexKey(8, 1, 1, getStringId(1), 1, getStringId(2), std::move(values));
     ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
     ASSERT_EQ(getStringId(1), IndexKeyUtils::getIndexSrcId(8, key));
     ASSERT_EQ(1, IndexKeyUtils::getIndexRank(8, key));
@@ -174,7 +175,7 @@ TEST(IndexKeyUtilsTest, edgeIndexKeyV1) {
 TEST(IndexKeyUtilsTest, edgeIndexKeyV2) {
     VertexID vid = "vertex_1_1_1_1";
     auto values = getIndexValues();
-    auto key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 1, vid, values);
+    auto key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 1, vid, std::move(values));
     ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
     vid.append(100 - vid.size(), '\0');
     ASSERT_EQ(vid, IndexKeyUtils::getIndexSrcId(100, key));
@@ -184,16 +185,25 @@ TEST(IndexKeyUtilsTest, edgeIndexKeyV2) {
 }
 
 TEST(IndexKeyUtilsTest, nullableValue) {
-    {
-        std::string raw;
-        std::vector<Value> values;
-        std::vector<Value::Type> colsType;
-        for (int64_t j = 1; j <= 6; j++) {
-            auto type = Value::Type(1UL << j);
-            values.emplace_back(Value(NullType::__NULL__));
-            colsType.emplace_back(type);
+    auto nullCol = [](const std::string& name, const meta::cpp2::PropertyType type) {
+        meta::cpp2::ColumnDef col;
+        col.name = name;
+        col.type.set_type(type);
+        col.set_nullable(true);
+        if (type == meta::cpp2::PropertyType::FIXED_STRING) {
+            col.type.set_type_length(10);
         }
-        IndexKeyUtils::encodeValuesWithNull(std::move(values), std::move(colsType), raw);
+        return col;
+    };
+    {
+        std::vector<Value> values;
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
+        for (int64_t j = 1; j <= 6; j++) {
+            values.emplace_back(Value(NullType::__NULL__));
+            cols.emplace_back(
+                nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+        }
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
         u_short s = 0xfc00; /* the binary is '11111100 00000000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -201,15 +211,15 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         ASSERT_EQ(expected, result);
     }
     {
-        std::string raw;
         std::vector<Value> values;
-        std::vector<Value::Type> colsType;
-        auto type = Value::Type::BOOL;
         values.emplace_back(Value(true));
-        colsType.emplace_back(type);
         values.emplace_back(Value(NullType::__NULL__));
-        colsType.emplace_back(type);
-        IndexKeyUtils::encodeValuesWithNull(std::move(values), std::move(colsType), raw);
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
+        for (int64_t j = 1; j <= 2; j++) {
+            cols.emplace_back(
+                nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+        }
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
         u_short s = 0x4000; /* the binary is '01000000 00000000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -217,26 +227,31 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         ASSERT_EQ(expected, result);
     }
     {
-        std::string raw;
         std::vector<Value> values;
         values.emplace_back(Value(true));
         values.emplace_back(Value(false));
-        IndexKeyUtils::encodeValues(std::move(values), raw);
-        ASSERT_EQ(2, raw.size());
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
+        for (int64_t j = 1; j <= 2; j++) {
+            cols.emplace_back(
+                nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+        }
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+        u_short s = 0x0000; /* the binary is '01000000 00000000'*/
+        std::string expected;
+        expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
+        auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+        ASSERT_EQ(expected, result);
     }
     {
-        std::string raw;
         std::vector<Value> values;
-        std::vector<Value::Type> colsType;
-        for (int64_t i = 0; i <2; i++) {
-            for (int64_t j = 1; j <= 6; j++) {
-                auto type = Value::Type(1UL << j);
-                values.emplace_back(Value(NullType::__NULL__));
-                colsType.emplace_back(type);
-            }
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
+        for (int64_t i = 0; i < 12; i++) {
+            values.emplace_back(Value(NullType::__NULL__));
+            cols.emplace_back(
+                nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::INT64));
         }
 
-        IndexKeyUtils::encodeValuesWithNull(std::move(values), std::move(colsType), raw);
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
         u_short s = 0xfff0; /* the binary is '11111111 11110000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -244,8 +259,16 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         ASSERT_EQ(expected, result);
     }
     {
-        std::string raw;
+        std::vector<meta::cpp2::PropertyType> types;
+        types.emplace_back(meta::cpp2::PropertyType::BOOL);
+        types.emplace_back(meta::cpp2::PropertyType::INT64);
+        types.emplace_back(meta::cpp2::PropertyType::FLOAT);
+        types.emplace_back(meta::cpp2::PropertyType::STRING);
+        types.emplace_back(meta::cpp2::PropertyType::DATE);
+        types.emplace_back(meta::cpp2::PropertyType::DATETIME);
+
         std::vector<Value> values;
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
         std::unordered_map<Value::Type, Value> mockValues;
         {
             mockValues[Value::Type::BOOL] = Value(true);
@@ -257,20 +280,16 @@ TEST(IndexKeyUtilsTest, nullableValue) {
             DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
             mockValues[Value::Type::DATETIME] = Value(dt);
         }
-        std::vector<Value::Type> colsType;
-        for (int64_t i = 0; i <2; i++) {
-            for (int64_t j = 1; j <= 6; j++) {
-                auto type = Value::Type(1UL << j);
-                if (j%2 == 1) {
-                    values.emplace_back(Value(NullType::__NULL__));
-                } else {
-                    values.emplace_back(mockValues[type]);
-                }
-                colsType.emplace_back(type);
+        for (const auto& entry : mockValues) {
+            values.emplace_back(Value(NullType::__NULL__));
+            values.emplace_back(entry.second);
+        }
+        for (int64_t i = 0; i < 2; i++) {
+            for (int64_t j = 0; j < 6; j++) {
+                cols.emplace_back(nullCol(folly::stringPrintf("col_%ld_%ld", i, j), types[j]));
             }
         }
-
-        IndexKeyUtils::encodeValuesWithNull(std::move(values), std::move(colsType), raw);
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), cols);
         u_short s = 0xaaa0; /* the binary is '10101010 10100000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -278,14 +297,14 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         ASSERT_EQ(expected, result);
     }
     {
-        std::string raw;
         std::vector<Value> values;
-        std::vector<Value::Type> colsType;
-        for (int64_t i = 0; i <9; i++) {
+        std::vector<nebula::meta::cpp2::ColumnDef> cols;
+        for (int64_t i = 0; i < 9; i++) {
             values.emplace_back(Value(NullType::__NULL__));
-            colsType.emplace_back(Value::Type::BOOL);
+            cols.emplace_back(
+                nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::BOOL));
         }
-        IndexKeyUtils::encodeValuesWithNull(std::move(values), std::move(colsType), raw);
+        auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
         u_short s = 0xff80; /* the binary is '11111111 10000000'*/
         std::string expected;
         expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -326,33 +345,29 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     Date d = {2020, 1, 20};
     DateTime dt = {2020, 4, 11, 12, 30, 22, 1111};
     auto null = Value(NullType::__NULL__);
-    std::vector<Value::Type> valueTypes = {
-        Value::Type::BOOL,
-        Value::Type::INT,
-        Value::Type::FLOAT,
-        Value::Type::STRING,
-        Value::Type::DATE,
-        Value::Type::DATETIME
-    };
 
     std::vector<meta::cpp2::ColumnDef> cols;
+    size_t indexValueSize = 0;
     {
         meta::cpp2::ColumnDef col;
         col.set_name("col_bool");
         col.type.set_type(meta::cpp2::PropertyType::BOOL);
         cols.emplace_back(col);
+        indexValueSize += sizeof(bool);
     }
     {
         meta::cpp2::ColumnDef col;
         col.set_name("col_int");
         col.type.set_type(meta::cpp2::PropertyType::INT64);
         cols.emplace_back(col);
+        indexValueSize += sizeof(int64_t);
     }
     {
         meta::cpp2::ColumnDef col;
         col.set_name("col_float");
         col.type.set_type(meta::cpp2::PropertyType::FLOAT);
         cols.emplace_back(col);
+        indexValueSize += sizeof(double);
     }
     {
         meta::cpp2::ColumnDef col;
@@ -360,19 +375,67 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
         col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
         col.type.set_type_length(4);
         cols.emplace_back(col);
+        indexValueSize += 4;
     }
     {
         meta::cpp2::ColumnDef col;
         col.set_name("col_date");
         col.type.set_type(meta::cpp2::PropertyType::DATE);
         cols.emplace_back(col);
+        indexValueSize += sizeof(int8_t) * 2 + sizeof(int16_t);
     }
     {
         meta::cpp2::ColumnDef col;
         col.set_name("col_datetime");
         col.type.set_type(meta::cpp2::PropertyType::DATETIME);
         cols.emplace_back(col);
+        indexValueSize += sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
     }
+
+    // vertices test without nullable column
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+        };
+        auto expected = vertices;
+
+        std::vector<std::string> indexKeys;
+        for (auto& row : vertices) {
+            auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+            ASSERT_EQ(indexValueSize, values.size());
+            indexKeys.emplace_back(IndexKeyUtils::vertexIndexKey(
+                vIdLen, partId, indexId, row.first, std::move(values)));
+        }
+
+        verifyDecodeIndexKey(false, false, vIdLen, expected, indexKeys, cols);
+    }
+
+    // edges test without nullable column
+    {
+        std::vector<std::pair<VertexID, std::vector<Value>>> edges = {
+            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
+            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
+        };
+        auto expected = edges;
+
+        std::vector<std::string> indexKeys;
+        for (auto& row : edges) {
+            auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+            ASSERT_EQ(indexValueSize, values.size());
+            indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
+                vIdLen, partId, indexId, row.first, 0, row.first, std::move(values)));
+        }
+
+        verifyDecodeIndexKey(true, false, vIdLen, expected, indexKeys, cols);
+    }
+
+    for (auto& col : cols) {
+        col.set_nullable(true);
+    }
+    // since there are nullable columns, there will be two extra bytes to save nullBitSet
+    indexValueSize += sizeof(ushort);
+
     // vertices test with nullable
     {
         std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
@@ -384,32 +447,18 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
             {"6", {Value(true), Value(6L), Value(6.1f), null, Value(d), Value(dt)}},
             {"7", {Value(false), Value(7L), Value(7.1f), Value("row7"), null, Value(dt)}},
             {"8", {Value(true), Value(8L), Value(8.1f), Value("row8"), Value(d), null}},
-            {"9", {null, null, null, null, null, null}}
-        };
-        std::vector<std::string> indexKeys;
+            {"9", {null, null, null, null, null, null}}};
+        auto expected = vertices;
 
-        for (const auto& row : vertices) {
+        std::vector<std::string> indexKeys;
+        for (auto& row : vertices) {
+            auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+            ASSERT_EQ(indexValueSize, values.size());
             auto key = IndexKeyUtils::vertexIndexKey(
-                vIdLen, partId, indexId, row.first, row.second, valueTypes);
+                vIdLen, partId, indexId, row.first, std::move(values));
             indexKeys.emplace_back(key);
         }
-        verifyDecodeIndexKey(false, true, vIdLen, vertices, indexKeys, cols);
-    }
-
-    // vertices test without nullable column
-    {
-        std::vector<std::pair<VertexID, std::vector<Value>>> vertices = {
-            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
-            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
-        };
-
-        std::vector<std::string> indexKeys;
-        for (const auto& row : vertices) {
-            indexKeys.emplace_back(IndexKeyUtils::vertexIndexKey(
-                vIdLen, partId, indexId, row.first, row.second, valueTypes));
-        }
-
-        verifyDecodeIndexKey(false, false, vIdLen, vertices, indexKeys, cols);
+        verifyDecodeIndexKey(false, true, vIdLen, expected, indexKeys, cols);
     }
 
     // edges test with nullable
@@ -425,34 +474,21 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
             {"8", {Value(true), Value(8L), Value(8.1f), Value("row8"), Value(d), null}},
             {"9", {null, null, null, null, null, null}}
         };
-        std::vector<std::string> indexKeys;
+        auto expected = edges;
 
-        for (const auto& row : edges) {
+        std::vector<std::string> indexKeys;
+        for (auto& row : edges) {
+            auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+            ASSERT_EQ(indexValueSize, values.size());
             indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
-                vIdLen, partId, indexId, row.first, 0, row.first, row.second, valueTypes));
+                vIdLen, partId, indexId, row.first, 0, row.first, std::move(values)));
         }
 
-        verifyDecodeIndexKey(true, true, vIdLen, edges, indexKeys, cols);
-    }
-
-    // edges test without nullable column
-    {
-        std::vector<std::pair<VertexID, std::vector<Value>>> edges = {
-            {"1", {Value(false), Value(1L), Value(1.1f), Value("row1"), Value(d), Value(dt)}},
-            {"2", {Value(true), Value(2L), Value(2.1f), Value("row2"), Value(d), Value(dt)}},
-        };
-        std::vector<std::string> indexKeys;
-
-        for (const auto& row : edges) {
-            indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
-                vIdLen, partId, indexId, row.first, 0, row.first, row.second, valueTypes));
-        }
-
-        verifyDecodeIndexKey(true, false, vIdLen, edges, indexKeys, cols);
+        verifyDecodeIndexKey(true, true, vIdLen, expected, indexKeys, cols);
     }
 }
-}  // namespace nebula
 
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -63,7 +63,6 @@ public:
 
             if (enableIndex) {
                 if (tagId == 1 || tagId == 2) {
-                    std::vector<Value::Type> colsType({});
                     int32_t colNum = 0;
                     IndexID indexID = 0;
 
@@ -84,7 +83,6 @@ public:
                                    indexID,
                                    values,
                                    colNum,
-                                   colsType,
                                    data);
                 }
             }
@@ -144,7 +142,6 @@ public:
 
                 if (enableIndex) {
                     if (edge.type_ == 102 || edge.type_ == 101) {
-                        std::vector<Value::Type> colsType({});
                         int32_t colNum = 0;
                         IndexID indexID = 0;
 
@@ -167,7 +164,6 @@ public:
                                         indexID,
                                         values,
                                         colNum,
-                                        colsType,
                                         data);
                     }
                 }
@@ -259,23 +255,21 @@ public:
                                IndexID indexId,
                                const std::vector<Value>& values,
                                int32_t count,
-                               const std::vector<Value::Type>& colsType,
                                std::vector<kvstore::KV>& data) {
-        std::vector<Value> row;
+        std::string row;
         for (auto i = 0; i < count; i++) {
             auto v = values[i];
             if (v.type() == Value::Type::STRING) {
-                row.emplace_back(Value(IndexKeyUtils::encodeValue(v, 20)));
+                row.append(IndexKeyUtils::encodeValue(v, 20));
             } else {
-                row.emplace_back(std::move(v));
+                row.append(IndexKeyUtils::encodeValue(v));
             }
         }
         auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen,
                                                    partId,
                                                    indexId,
                                                    vId,
-                                                   row,
-                                                   colsType);
+                                                   std::move(row));
         data.emplace_back(std::move(index), "");
     }
 
@@ -287,15 +281,14 @@ public:
                                IndexID indexId,
                                const std::vector<Value>& values,
                                int32_t count,
-                               const std::vector<Value::Type>& colsType,
                                std::vector<kvstore::KV>& data) {
-        std::vector<Value> row;
+        std::string row;
         for (auto i = 0; i < count; i++) {
             auto v = values[i];
             if (v.type() == Value::Type::STRING) {
-                row.emplace_back(Value(IndexKeyUtils::encodeValue(v, 20)));
+                row.append(IndexKeyUtils::encodeValue(v, 20));
             } else {
-                row.emplace_back(std::move(v));
+                row.append(IndexKeyUtils::encodeValue(v));
             }
         }
         auto index = IndexKeyUtils::edgeIndexKey(spaceVidLen,
@@ -304,8 +297,7 @@ public:
                                                  srcId,
                                                  rank,
                                                  dstId,
-                                                 row,
-                                                 colsType);
+                                                 std::move(row));
         data.emplace_back(std::move(index), "");
     }
 

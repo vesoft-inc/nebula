@@ -93,16 +93,18 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        std::vector<Value::Type> colsType;
         auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                           item->get_fields(),
-                                                           colsType);
+                                                           item->get_fields());
+        if (!valuesRet.ok()) {
+            LOG(WARNING) << "Collect index value failed";
+            iter->next();
+            continue;
+        }
         auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
                                                       part,
                                                       item->get_index_id(),
                                                       vertex.data(),
-                                                      valuesRet.value(),
-                                                      std::move(colsType));
+                                                      std::move(valuesRet).value());
         data.emplace_back(std::move(indexKey), "");
         iter->next();
     }

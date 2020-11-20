@@ -15,6 +15,7 @@
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
+#include "storage/index/LookupProcessor.h"
 #include "common/fs/TempDir.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
@@ -299,44 +300,35 @@ TEST(IndexTest, VerticesValueTest) {
         Value nullValue = Value(NullType::__NULL__);
         // col_bool
         values.emplace_back(Value(true));
-        colsType.emplace_back(Value::Type::BOOL);
         // col_bool_null
         values.emplace_back(nullValue);
-        colsType.emplace_back(Value::Type::BOOL);
         // col_bool_default
         values.emplace_back(Value(true));
-        colsType.emplace_back(Value::Type::BOOL);
         // col_int
         values.emplace_back(Value(1L));
-        colsType.emplace_back(Value::Type::INT);
         // col_int_null
         values.emplace_back(nullValue);
-        colsType.emplace_back(Value::Type::INT);
         // col_float
         values.emplace_back(Value(1.1f));
-        colsType.emplace_back(Value::Type::FLOAT);
         // col_float_null
         values.emplace_back(Value(5.5f));
-        colsType.emplace_back(Value::Type::FLOAT);
         // col_str
         values.emplace_back(IndexKeyUtils::encodeValue(Value("string"), 20));
-        colsType.emplace_back(Value::Type::STRING);
         // col_str_null
         values.emplace_back(nullValue);
-        colsType.emplace_back(Value::Type::STRING);
         // col_date
         const Date date = {2020, 1, 20};
         values.emplace_back(Value(date));
-        colsType.emplace_back(Value::Type::DATE);
         // col_date_null
         values.emplace_back(nullValue);
-        colsType.emplace_back(Value::Type::DATE);
+        auto index = IndexKeyUtils::encodeValues(std::move(values),
+                                                 mock::MockData::mockTypicaIndexColumns());
 
         for (auto partId = 1; partId <= 6; partId++) {
             auto prefix = IndexKeyUtils::indexPrefix(partId, indexId);
             auto indexKey = IndexKeyUtils::vertexIndexKey(vIdLen, partId, indexId,
                                                           convertVertexId(vIdLen, partId),
-                                                          values, colsType);
+                                                          std::move(index));
             std::unique_ptr<kvstore::KVIterator> iter;
             auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
@@ -498,6 +490,7 @@ TEST(IndexTest, AlterTagIndexTest) {
     }
     FLAGS_enable_multi_versions = false;
 }
+
 }  // namespace storage
 }  // namespace nebula
 
@@ -507,5 +500,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

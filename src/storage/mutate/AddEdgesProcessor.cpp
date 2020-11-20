@@ -248,8 +248,7 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         RowReader* reader,
                                         const folly::StringPiece& rawKey,
                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    std::vector<Value::Type> colsType;
-    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields(), colsType);
+    auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
     if (!values.ok()) {
         return "";
     }
@@ -258,7 +257,7 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                        NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),
                                        NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
                                        NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str(),
-                                       values.value(), colsType);
+                                       std::move(values).value());
 }
 
 }  // namespace storage
