@@ -19,7 +19,7 @@ class Handler {
 public:
     virtual ~Handler() = default;
 
-    virtual void addSpace(GraphSpaceID spaceId) = 0;
+    virtual void addSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
 
     virtual void addPart(GraphSpaceID spaceId,
                          PartitionID partId,
@@ -30,12 +30,25 @@ public:
                                    const std::unordered_map<std::string, std::string>& options,
                                    bool isDbOption) = 0;
 
-    virtual void removeSpace(GraphSpaceID spaceId) = 0;
+    virtual void removeSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
 
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 
     virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
                                                  std::vector<PartitionID>>& leaderIds) = 0;
+
+    virtual void addListener(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             meta::cpp2::ListenerType type,
+                             const std::vector<HostAddr>& peers) = 0;
+
+    virtual void removeListener(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                meta::cpp2::ListenerType type) = 0;
+
+    virtual void checkRemoteListeners(GraphSpaceID spaceId,
+                                      PartitionID partId,
+                                      const std::vector<HostAddr>& remoteListeners) = 0;
 };
 
 
@@ -68,6 +81,11 @@ public:
      * */
     virtual Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
 
+    virtual meta::ListenersMap listeners(const HostAddr& host) = 0;
+
+    virtual StatusOr<std::vector<meta::RemoteListenerInfo>>
+    listenerPeerExist(GraphSpaceID spaceId, PartitionID partId) = 0;
+
     /**
      * Register Handler
      * */
@@ -91,6 +109,7 @@ class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, CheckpointTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
     FRIEND_TEST(NebulaStoreTest, AtomicOpBatchTest);
+    friend class ListenerBasicTest;
 
 public:
     MemPartManager() = default;
@@ -116,7 +135,7 @@ public:
         if (noPart && handler_) {
             handler_->addPart(spaceId, partId, false, {});
         }
-     }
+    }
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) {
         auto it = partsMap_.find(spaceId);
@@ -146,60 +165,71 @@ public:
         return partsMap_;
     }
 
+    meta::ListenersMap listeners(const HostAddr& host) override;
+
+    StatusOr<std::vector<meta::RemoteListenerInfo>>
+    listenerPeerExist(GraphSpaceID spaceId, PartitionID partId) override;
+
 private:
     meta::PartsMap partsMap_;
+    meta::ListenersMap listenersMap_;
+    meta::RemoteListeners remoteListeners_;
 };
 
 
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
 public:
-     explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
+    explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
 
-     ~MetaServerBasedPartManager();
+    ~MetaServerBasedPartManager();
 
-     meta::PartsMap parts(const HostAddr& host) override;
+    meta::PartsMap parts(const HostAddr& host) override;
 
-     StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+    StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-     Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+    Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
-     Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
+    Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
 
-     /**
-      * Implement the interfaces in MetaChangedListener
-      * */
-     void onSpaceAdded(GraphSpaceID spaceId) override;
+    meta::ListenersMap listeners(const HostAddr& host) override;
 
-     void onSpaceRemoved(GraphSpaceID spaceId) override;
+    StatusOr<std::vector<meta::RemoteListenerInfo>>
+    listenerPeerExist(GraphSpaceID spaceId, PartitionID partId) override;
 
-     void onSpaceOptionUpdated(GraphSpaceID spaceId,
-                               const std::unordered_map<std::string, std::string>& options)
-                               override;
+    /**
+     * Implement the interfaces in MetaChangedListener
+     * */
+    void onSpaceAdded(GraphSpaceID spaceId, bool isListener) override;
 
-     void onPartAdded(const meta::PartHosts& partMeta) override;
+    void onSpaceRemoved(GraphSpaceID spaceId, bool isListener) override;
 
-     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
+    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                              const std::unordered_map<std::string, std::string>& options)
+                              override;
 
-     void onPartUpdated(const meta::PartHosts& partMeta) override;
+    void onPartAdded(const meta::PartHosts& partMeta) override;
 
-     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
-                                             std::vector<PartitionID>>& leaderParts) override;
+    void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
 
-     HostAddr getLocalHost() {
-        return localHost_;
-     }
+    void onPartUpdated(const meta::PartHosts& partMeta) override;
 
-     /**
-      * for UTs, because the port is chosen by system,
-      * we should update port after thrift setup
-      * */
-     void setLocalHost(HostAddr localHost) {
-        localHost_ = std::move(localHost);
-     }
+    void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                            std::vector<PartitionID>>& leaderParts) override;
+
+    void onListenerAdded(GraphSpaceID spaceId,
+                         PartitionID partId,
+                         const meta::ListenerHosts& listenerHosts) override;
+
+    void onListenerRemoved(GraphSpaceID spaceId,
+                           PartitionID partId,
+                           meta::cpp2::ListenerType type) override;
+
+    void onCheckRemoteListeners(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::vector<HostAddr>& remoteListeners) override;
 
 private:
-     meta::MetaClient *client_{nullptr};
-     HostAddr localHost_;
+    meta::MetaClient *client_{nullptr};
 };
 
 }  // namespace kvstore

@@ -36,8 +36,12 @@ namespace storage {
 
 StorageServer::StorageServer(HostAddr localHost,
                              std::vector<HostAddr> metaAddrs,
-                             std::vector<std::string> dataPaths)
-    : localHost_(localHost), metaAddrs_(std::move(metaAddrs)), dataPaths_(std::move(dataPaths)) {}
+                             std::vector<std::string> dataPaths,
+                             std::string listenerPath)
+    : localHost_(localHost)
+    , metaAddrs_(std::move(metaAddrs))
+    , dataPaths_(std::move(dataPaths))
+    , listenerPath_(std::move(listenerPath)) {}
 
 StorageServer::~StorageServer() {
     stop();
@@ -46,11 +50,13 @@ StorageServer::~StorageServer() {
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     kvstore::KVOptions options;
     options.dataPaths_ = dataPaths_;
+    options.listenerPath_ = listenerPath_;
     options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                                 localHost_,
                                                 metaClient_.get());
     options.cffBuilder_ = std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(),
                                                                                   indexMan_.get());
+    options.schemaMan_ = schemaMan_.get();
     if (FLAGS_store_type == "nebula") {
         auto nbStore = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                               ioThreadPool_,
@@ -112,6 +118,10 @@ bool StorageServer::start() {
     options.serviceName_ = "";
     options.skipConfig_ = FLAGS_local_config;
     options.role_ = nebula::meta::cpp2::HostRole::STORAGE;
+    // If listener path is specified, it will start as a listener
+    if (!listenerPath_.empty()) {
+        options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
+    }
     options.gitInfoSHA_ = NEBULA_STRINGIFY(GIT_INFO_SHA);
 
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,

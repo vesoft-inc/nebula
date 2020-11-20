@@ -5,6 +5,9 @@
  */
 
 #include "meta/processors/listenerMan/ListenerProcessor.h"
+#include "meta/ActiveHostsMan.h"
+
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -87,12 +90,20 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
         onFinished();
         return;
     }
+
+    auto activeHosts = ActiveHostsMan::getActiveHosts(
+        kvstore_, FLAGS_heartbeat_interval_secs * 2, cpp2::HostRole::LISTENER);
     decltype(resp_.listeners) listeners;
     while (iter->valid()) {
         cpp2::ListenerInfo listener;
         listener.set_type(MetaServiceUtils::parseListenerType(iter->key()));
         listener.set_host(MetaServiceUtils::deserializeHostAddr(iter->val()));
         listener.set_part_id(MetaServiceUtils::parseListenerPart(iter->key()));
+        if (std::find(activeHosts.begin(), activeHosts.end(), listener.host) != activeHosts.end()) {
+            listener.set_status(cpp2::HostStatus::ONLINE);
+        } else {
+            listener.set_status(cpp2::HostStatus::OFFLINE);
+        }
         listeners.emplace_back(std::move(listener));
         iter->next();
     }

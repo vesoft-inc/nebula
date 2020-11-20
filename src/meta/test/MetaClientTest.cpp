@@ -1320,14 +1320,22 @@ TEST(MetaClientTest, GroupAndZoneTest) {
 class TestListener : public MetaChangedListener {
 public:
     virtual ~TestListener() = default;
-    void onSpaceAdded(GraphSpaceID spaceId) override {
+    void onSpaceAdded(GraphSpaceID spaceId, bool isListener) override {
         LOG(INFO) << "Space " << spaceId << " added";
-        spaceNum++;
+        if (!isListener) {
+            spaceNum++;
+        } else {
+            listenerSpaceNum++;
+        }
     }
 
-    void onSpaceRemoved(GraphSpaceID spaceId) override {
+    void onSpaceRemoved(GraphSpaceID spaceId, bool isListener) override {
         LOG(INFO) << "Space " << spaceId << " removed";
-        spaceNum--;
+        if (!isListener) {
+            spaceNum--;
+        } else {
+            listenerSpaceNum--;
+        }
     }
 
     void onPartAdded(const PartHosts& partMeta) override {
@@ -1358,14 +1366,32 @@ public:
         LOG(INFO) << "Get leader distribution!";
     }
 
-    HostAddr getLocalHost() {
-        return HostAddr("0", 0);
+    void onListenerAdded(GraphSpaceID spaceId,
+                         PartitionID partId,
+                         const ListenerHosts& listenerHosts) override {
+        UNUSED(spaceId); UNUSED(partId); UNUSED(listenerHosts);
+        listenerPartNum++;
+    }
+
+    void onListenerRemoved(GraphSpaceID spaceId,
+                           PartitionID partId,
+                           cpp2::ListenerType type) override {
+        UNUSED(spaceId); UNUSED(partId); UNUSED(type);
+        listenerPartNum--;
+    }
+
+    void onCheckRemoteListeners(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::vector<HostAddr>& remoteListeners) override {
+        UNUSED(spaceId); UNUSED(partId); UNUSED(remoteListeners);
     }
 
     int32_t spaceNum = 0;
     int32_t partNum = 0;
     int32_t partChanged = 0;
     std::unordered_map<std::string, std::string> options;
+    int32_t listenerSpaceNum = 0;
+    int32_t listenerPartNum = 0;
 };
 
 TEST(MetaClientTest, DiffTest) {
@@ -1425,6 +1451,107 @@ TEST(MetaClientTest, DiffTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
+}
+
+TEST(MetaClientTest, ListenerDiffTest) {
+    FLAGS_heartbeat_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    meta::MetaClientOptions options;
+    options.localHost_ = {"", 0};
+    options.role_ = meta::cpp2::HostRole::STORAGE;
+    cluster.initMetaClient(options);
+    auto* kv = cluster.metaKV_.get();
+    auto* console = cluster.metaClient_.get();
+    auto testListener = std::make_unique<TestListener>();
+    console->registerListener(testListener.get());
+
+    // create another meta client for listener host
+    HostAddr listenerHost("listener", 0);
+    options.localHost_ = listenerHost;
+    options.role_ = meta::cpp2::HostRole::UNKNOWN;
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto metaAddrs = {HostAddr(cluster.localIP(), cluster.metaServer_->port_)};
+    auto client = std::make_unique<meta::MetaClient>(threadPool, metaAddrs, options);
+    client->waitForMetadReady();
+
+    auto listener = std::make_unique<TestListener>();
+    client->registerListener(listener.get());
+
+    // register HB for storage
+    std::vector<HostAddr> hosts = {{"", 0}};
+    TestUtils::registerHB(kv, hosts);
+    {
+        // create two space
+        meta::cpp2::SpaceDesc spaceDesc;
+        spaceDesc.set_space_name("listener_space");
+        spaceDesc.set_partition_num(9);
+        spaceDesc.set_replica_factor(1);
+        auto ret = console->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        auto spaceId = ret.value();
+
+        spaceDesc.set_space_name("no_listener_space");
+        ret = console->createSpace(spaceDesc).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(0, listener->listenerSpaceNum);
+        ASSERT_EQ(0, listener->listenerPartNum);
+
+        // add listener hosts to space and check num
+        auto addRet = console->addListener(spaceId,
+                                           cpp2::ListenerType::ELASTICSEARCH,
+                                           {listenerHost}).get();
+        ASSERT_TRUE(addRet.ok()) << addRet.status();
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(1, listener->listenerSpaceNum);
+        ASSERT_EQ(9, listener->listenerPartNum);
+
+        // drop other space should not effect listener space
+        auto dropRet = console->dropSpace("no_listener_space").get();
+        ASSERT_TRUE(dropRet.ok()) << dropRet.status();
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(1, listener->listenerSpaceNum);
+        ASSERT_EQ(9, listener->listenerPartNum);
+
+        // remove listener hosts from space
+        auto removeRet = console->removeListener(spaceId, cpp2::ListenerType::ELASTICSEARCH).get();
+        ASSERT_TRUE(removeRet.ok()) << removeRet.status();
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(0, listener->listenerSpaceNum);
+        ASSERT_EQ(0, listener->listenerPartNum);
+
+        // add listener again
+        addRet = console->addListener(spaceId,
+                                      cpp2::ListenerType::ELASTICSEARCH,
+                                      {listenerHost}).get();
+        ASSERT_TRUE(addRet.ok()) << addRet.status();
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(1, listener->listenerSpaceNum);
+        ASSERT_EQ(9, listener->listenerPartNum);
+
+        // drop listener space
+        dropRet = console->dropSpace("listener_space").get();
+        ASSERT_TRUE(dropRet.ok()) << dropRet.status();
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+        ASSERT_EQ(0, listener->spaceNum);
+        ASSERT_EQ(0, listener->partNum);
+        ASSERT_EQ(0, listener->listenerSpaceNum);
+        ASSERT_EQ(0, listener->listenerPartNum);
+    }
     client->unRegisterListener();
 }
 
@@ -1774,9 +1901,12 @@ TEST(MetaClientTest, ListenerTest) {
     auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    std::vector<HostAddr> listenerHosts = {{"1", 0}, {"1", 1}, {"1", 2}, {"1", 3}};
     {
-        auto addRet = client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, hosts).get();
+        TestUtils::setupHB(
+            kv, listenerHosts, cpp2::HostRole::LISTENER, NEBULA_STRINGIFY(GIT_INFO_SHA));
+        auto addRet =
+            client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, listenerHosts).get();
         ASSERT_TRUE(addRet.ok()) << addRet.status();
     }
     {
@@ -1788,8 +1918,9 @@ TEST(MetaClientTest, ListenerTest) {
         for (size_t i = 0; i < 9; i++) {
             cpp2::ListenerInfo l;
             l.set_type(cpp2::ListenerType::ELASTICSEARCH);
-            l.set_host(hosts[i % 4]);
+            l.set_host(listenerHosts[i % 4]);
             l.set_part_id(i + 1);
+            l.set_status(cpp2::HostStatus::ONLINE);
             expected.emplace_back(std::move(l));
         }
         ASSERT_EQ(expected, listeners);

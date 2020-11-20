@@ -27,12 +27,13 @@ DEFINE_uint64(raft_snapshot_timeout, 60 * 5, "Max seconds between two snapshot r
 
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
-DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
-DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
-DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
-DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
-DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
+
+DECLARE_int32(wal_ttl);
+DECLARE_int64(wal_file_size);
+DECLARE_int32(wal_buffer_size);
+DECLARE_int32(wal_buffer_num);
+DECLARE_bool(wal_sync);
 
 namespace nebula {
 namespace raftex {
@@ -224,7 +225,6 @@ RaftPart::RaftPart(
         , clientMan_(clientMan)
         , weight_(1) {
     FileBasedWalPolicy policy;
-    policy.ttl = FLAGS_wal_ttl;
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.numBuffers = FLAGS_wal_buffer_num;
@@ -308,6 +308,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
         LOG(INFO) << idStr_ << "Add peer " << addr;
         auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
         hosts_.emplace_back(hostPtr);
+        peers_.emplace(addr);
     }
 
     // Change the status
@@ -378,10 +379,11 @@ void RaftPart::addLearner(const HostAddr& addr) {
         return;
     }
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
-                return h->address() == addr;
-            });
+        return h->address() == addr;
+    });
     if (it == hosts_.end()) {
         hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
+        peers_.emplace(addr);
         LOG(INFO) << idStr_ << "Add learner " << addr;
     } else {
         LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
@@ -473,10 +475,11 @@ void RaftPart::addPeer(const HostAddr& peer) {
         return;
     }
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                return h->address() == peer;
-            });
+        return h->address() == peer;
+    });
     if (it == hosts_.end()) {
         hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
+        peers_.emplace(peer);
         updateQuorum();
         LOG(INFO) << idStr_ << "Add peer " << peer;
     } else {
@@ -499,19 +502,58 @@ void RaftPart::removePeer(const HostAddr& peer) {
         return;
     }
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
-                  return h->address() == peer;
-              });
+        return h->address() == peer;
+    });
     if (it == hosts_.end()) {
         LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
     } else {
         if ((*it)->isLearner()) {
             LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
             hosts_.erase(it);
+            peers_.erase(peer);
             return;
         }
         hosts_.erase(it);
+        peers_.erase(peer);
         updateQuorum();
         LOG(INFO) << idStr_ << "Remove peer " << peer;
+    }
+}
+
+void RaftPart::addListenerPeer(const HostAddr& listener) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    if (listener == addr_) {
+        LOG(INFO) << idStr_ << "I am already in the raft group";
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&listener] (const auto& h) {
+        return h->address() == listener;
+    });
+    if (it == hosts_.end()) {
+        // Add listener as a raft learner
+        hosts_.emplace_back(std::make_shared<Host>(listener, shared_from_this(), true));
+        listeners_.emplace(listener);
+        LOG(INFO) << idStr_ << "Add listener " << listener;
+    } else {
+        LOG(INFO) << idStr_ << "The listener " << listener << " has joined raft group before";
+    }
+}
+
+void RaftPart::removeListenerPeer(const HostAddr& listener) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    if (listener == addr_) {
+        LOG(INFO) << idStr_ << "Remove myself from the raft group";
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&listener] (const auto& h) {
+        return h->address() == listener;
+    });
+    if (it == hosts_.end()) {
+        LOG(INFO) << idStr_ << "The listener " << listener << " not found";
+    } else {
+        hosts_.erase(it);
+        listeners_.erase(listener);
+        LOG(INFO) << idStr_ << "Remove listener " << listener;
     }
 }
 
@@ -1401,9 +1443,9 @@ void RaftPart::processAskForVoteRequest(
     }
 
     auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
-                return h->address() == candidate;
-            });
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
+        return h->address() == candidate;
+    });
     if (it == hosts.end()) {
         LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
         resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
@@ -1582,6 +1624,15 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
+        // TODO(doodle): This is a potential bug which would cause data not in consensus. In most
+        // case, we would hit this path when leader append logs to follower and timeout (leader
+        // would set lastLogIdSent_ = logIdToSend_ - 1 in Host). **But follower actually received
+        // it successfully**. Which will explain when leader retry to append these logs, the LOG
+        // belows is printed, and lastLogId_ == req.get_last_log_id_sent() + 1 in the LOG.
+        //
+        // In fact we should always rollback to req.get_last_log_id_sent(), and append the logs from
+        // leader (we can't make promise that the logs in range [req.get_last_log_id_sent() + 1,
+        // lastLogId_] is same with follower). However, this makes no difference in the above case.
         LOG(INFO) << idStr_ << "Stale log! Local lastLogId " << lastLogId_
                   << ", lastLogTerm " << lastLogTerm_
                   << ", lastLogIdSent " << req.get_last_log_id_sent()
@@ -1642,9 +1693,9 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     CHECK(!raftLock_.try_lock());
     auto candidate = HostAddr(req.get_leader_addr(), req.get_leader_port());
     auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
-                return h->address() == candidate;
-            });
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
+        return h->address() == candidate;
+    });
     if (it == hosts.end()) {
         LOG(INFO) << idStr_ << "The candidate leader " << candidate << " is not my peers";
         return cpp2::ErrorCode::E_WRONG_LEADER;
@@ -1813,6 +1864,16 @@ std::vector<std::shared_ptr<Host>> RaftPart::followers() const {
     return hosts;
 }
 
+std::set<HostAddr> RaftPart::peers() const {
+    std::lock_guard<std::mutex> lck(raftLock_);
+    return peers_;
+}
+
+std::set<HostAddr> RaftPart::listeners() const {
+    std::lock_guard<std::mutex> lck(raftLock_);
+    return listeners_;
+}
+
 bool RaftPart::checkAppendLogResult(AppendLogResult res) {
     if (res != AppendLogResult::SUCCEEDED) {
         {
@@ -1887,6 +1948,24 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
     for (auto& p : peers) {
         LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
         addPeer(p);
+    }
+}
+
+void RaftPart::checkRemoteListeners(const std::set<HostAddr>& expected) {
+    auto actual = listeners();
+    for (const auto& host : actual) {
+        auto it = std::find(expected.begin(), expected.end(), host);
+        if (it == expected.end()) {
+            LOG(INFO) << idStr_ << "The listener " << host << " should not exist in my peers";
+            removeListenerPeer(host);
+        }
+    }
+    for (const auto& host : expected) {
+        auto it = std::find(actual.begin(), actual.end(), host);
+        if (it == actual.end()) {
+            LOG(INFO) << idStr_ << "Add listener " << host << " to my peers";
+            addListenerPeer(host);
+        }
     }
 }
 

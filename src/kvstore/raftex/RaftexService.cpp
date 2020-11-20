@@ -156,6 +156,8 @@ void RaftexService::waitUntilStop() {
 
 
 void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
+    // todo(doodle): If we need to start both listener and normal replica on same hosts,
+    // this class need to be aware of type.
     folly::RWSpinLock::WriteHolder wh(partsLock_);
     parts_.emplace(std::make_pair(part->spaceId(), part->partitionId()),
                    part);

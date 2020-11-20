@@ -142,6 +142,10 @@ public:
 
     void commitRemovePeer(const HostAddr& peer);
 
+    void addListenerPeer(const HostAddr& peer);
+
+    void removeListenerPeer(const HostAddr& peer);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
@@ -190,6 +194,11 @@ public:
      */
     void checkAndResetPeers(const std::vector<HostAddr>& peers);
 
+    /**
+     * Add listener into peers or remove from peers
+     */
+    void checkRemoteListeners(const std::set<HostAddr>& listeners);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -214,6 +223,10 @@ public:
 
     bool needToCleanWal();
 
+    std::set<HostAddr> peers() const;
+
+    std::set<HostAddr> listeners() const;
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(
@@ -227,6 +240,21 @@ protected:
          std::shared_ptr<folly::Executor> executor,
          std::shared_ptr<SnapshotManager> snapshotMan,
          std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan);
+
+    enum class Status {
+        STARTING = 0,   // The part is starting, not ready for service
+        RUNNING,        // The part is running
+        STOPPED,        // The part has been stopped
+        WAITING_SNAPSHOT  // Waiting for the snapshot.
+    };
+
+    enum class Role {
+        LEADER = 1,     // the leader
+        FOLLOWER,       // following a leader
+        CANDIDATE,      // Has sent AskForVote request
+        LEARNER         // It is the same with FOLLOWER,
+                        // except it does not participate in leader election
+    };
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -275,21 +303,6 @@ protected:
     void removePeer(const HostAddr& peer);
 
 private:
-    enum class Status {
-        STARTING = 0,   // The part is starting, not ready for service
-        RUNNING,        // The part is running
-        STOPPED,        // The part has been stopped
-        WAITING_SNAPSHOT  // Waiting for the snapshot.
-    };
-
-    enum class Role {
-        LEADER = 1,     // the leader
-        FOLLOWER,       // following a leader
-        CANDIDATE,      // Has sent AskForVote request
-        LEARNER         // It is the same with FOLLOWER,
-                        // except it does not participate in leader election
-    };
-
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
@@ -384,6 +397,7 @@ private:
         LogID prevLogId,
         std::vector<std::shared_ptr<Host>> hosts);
 
+    // followers return Host of which could vote, in other words, learner is not counted in
     std::vector<std::shared_ptr<Host>> followers() const;
 
     bool checkAppendLogResult(AppendLogResult res);
@@ -474,8 +488,14 @@ protected:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
+    // hosts_ contains all connection, hosts_ = peers_ + listeners_
     std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
+
+    // peers_ contanis all peers which could vote and learner, peers_ = follower + learner
+    std::set<HostAddr> peers_;
+    // all listener's role is learner (cannot promote to follower), but they are not in peers_
+    std::set<HostAddr> listeners_;
 
     // The lock is used to protect logs_ and cachingPromise_
     mutable std::mutex logsLock_;

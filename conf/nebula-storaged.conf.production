@@ -42,6 +42,9 @@
 # Root data path. split by comma. e.g. --data_path=/disk1/path1/,/disk2/path2/
 # One path per Rocksdb instance.
 --data_path=data/storage
+# Wal path for listener. Conflicts with data_path, if listener_path is specified, the storaged will
+# start as listener (only wal is saved, no storage engine).
+# --listener_path=data/listener
 
 # The default reserved bytes for one batch operation
 --rocksdb_batch_size=4096
@@ -98,7 +101,3 @@
 ############### misc ####################
 --max_handlers_per_req=1
 --heartbeat_interval_secs=10
-
-############# edge samplings ##############
-# --enable_reservoir_sampling=false
-# --max_edge_returned_per_vertex=2147483647

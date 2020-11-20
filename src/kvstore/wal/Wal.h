@@ -50,7 +50,11 @@ public:
     // This method is *NOT* thread safe
     virtual bool reset() = 0;
 
-    virtual void cleanWAL(int32_t ttl = 0) = 0;
+    // clean time expired wal of wal_ttl
+    virtual void cleanWAL() = 0;
+
+    // clean the wal before given log id
+    virtual void cleanWAL(LogID id) = 0;
 
     // Scan [firstLogId, lastLogId]
     virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,

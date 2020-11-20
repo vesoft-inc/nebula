@@ -8,9 +8,21 @@
 namespace nebula {
 namespace kvstore {
 
-meta::PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
-    UNUSED(hostAddr);
+meta::PartsMap MemPartManager::parts(const HostAddr&) {
     return partsMap_;
+}
+
+meta::ListenersMap MemPartManager::listeners(const HostAddr&) {
+    return listenersMap_;
+}
+
+StatusOr<std::vector<meta::RemoteListenerInfo>>
+MemPartManager::listenerPeerExist(GraphSpaceID spaceId, PartitionID partId) {
+    auto listeners = remoteListeners_[spaceId][partId];
+    if (listeners.empty()) {
+        return Status::ListenerNotFound();
+    }
+    return listeners;
 }
 
 StatusOr<meta::PartHosts> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
@@ -39,8 +51,8 @@ Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, Partitio
     return Status::SpaceNotFound();
 }
 
-MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
-    : localHost_(std::move(host)) {
+MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client) {
+    UNUSED(host);
     client_ = client;
     CHECK_NOTNULL(client_);
     client_->registerListener(this);
@@ -74,17 +86,17 @@ Status MetaServerBasedPartManager::spaceExist(const HostAddr& host,
     return client_->checkSpaceExistInCache(host, spaceId);
 }
 
-void MetaServerBasedPartManager::onSpaceAdded(GraphSpaceID spaceId) {
+void MetaServerBasedPartManager::onSpaceAdded(GraphSpaceID spaceId, bool isListener) {
     if (handler_ != nullptr) {
-        handler_->addSpace(spaceId);
+        handler_->addSpace(spaceId, isListener);
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }
 }
 
-void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId) {
+void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId, bool isListener) {
     if (handler_ != nullptr) {
-        handler_->removeSpace(spaceId);
+        handler_->removeSpace(spaceId, isListener);
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }
@@ -183,6 +195,50 @@ void MetaServerBasedPartManager::fetchLeaderInfo(
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) {
     if (handler_ != nullptr) {
         handler_->allLeader(leaderIds);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
+}
+
+meta::ListenersMap MetaServerBasedPartManager::listeners(const HostAddr& host) {
+    auto ret = client_->getListenersByHostFromCache(host);
+    if (ret.ok()) {
+        return ret.value();
+    }
+    return meta::ListenersMap();
+}
+
+StatusOr<std::vector<meta::RemoteListenerInfo>>
+MetaServerBasedPartManager::listenerPeerExist(GraphSpaceID spaceId, PartitionID partId) {
+    return client_->getListenerHostTypeBySpacePartType(spaceId, partId);
+}
+
+void MetaServerBasedPartManager::onListenerAdded(GraphSpaceID spaceId,
+                                                 PartitionID partId,
+                                                 const meta::ListenerHosts& listenerHost) {
+    if (handler_ != nullptr) {
+        handler_->addListener(spaceId, partId, listenerHost.type_, listenerHost.peers_);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
+}
+
+void MetaServerBasedPartManager::onListenerRemoved(GraphSpaceID spaceId,
+                                                   PartitionID partId,
+                                                   meta::cpp2::ListenerType type) {
+    if (handler_ != nullptr) {
+        handler_->removeListener(spaceId, partId, type);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
+}
+
+void MetaServerBasedPartManager::onCheckRemoteListeners(
+        GraphSpaceID spaceId,
+        PartitionID partId,
+        const std::vector<HostAddr>& remoteListeners) {
+    if (handler_ != nullptr) {
+        handler_->checkRemoteListeners(spaceId, partId, remoteListeners);
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }

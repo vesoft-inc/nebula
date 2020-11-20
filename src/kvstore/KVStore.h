@@ -27,14 +27,17 @@ struct KVOptions {
     HostAddr hbaseServer_;
 
     // SchemaManager instance, help the hbasestore to encode/decode data.
-    std::unique_ptr<meta::SchemaManager> schemaMan_{nullptr};
+    meta::SchemaManager* schemaMan_{nullptr};
 
     // Paths for data. It would be used by rocksdb engine.
     // Be careful! We should ensure each "paths" has only one instance,
     // otherwise it would mix up the data on disk.
     std::vector<std::string> dataPaths_;
 
-    //  PartManager instance for kvstore.
+    // Path for listener, only wal is stored, the structure would be spaceId/partId/wal
+    std::string listenerPath_;
+
+    // PartManager instance for kvstore.
     std::unique_ptr<PartManager> partMan_{nullptr};
 
     // Custom MergeOperator used in rocksdb.merge method.

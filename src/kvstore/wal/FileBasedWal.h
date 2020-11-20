@@ -19,10 +19,6 @@ namespace nebula {
 namespace wal {
 
 struct FileBasedWalPolicy {
-    // The life span of the log messages (number of seconds)
-    // This is only a hint, the FileBasedWal will try to keep all messages
-    // newer than ttl, but not guarantee to remove old messages right away
-    int32_t ttl = 86400;
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
     size_t fileSize = 16 * 1024L * 1024L;
@@ -46,6 +42,7 @@ class FileBasedWal final : public Wal
     FRIEND_TEST(FileBasedWal, TTLTest);
     FRIEND_TEST(FileBasedWal, CheckLastWalTest);
     FRIEND_TEST(FileBasedWal, LinkTest);
+    FRIEND_TEST(FileBasedWal, CleanWalBeforeIdTest);
     FRIEND_TEST(WalFileIter, MultiFilesReadTest);
     friend class FileBasedWalIterator;
     friend class WalFileIterator;
@@ -106,7 +103,9 @@ public:
     // This method is *NOT* thread safe
     bool reset() override;
 
-    void cleanWAL(int32_t ttl = 0) override;
+    void cleanWAL() override;
+
+    void cleanWAL(LogID id) override;
 
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe

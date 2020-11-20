@@ -64,6 +64,19 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        nebula_listener_test
+    SOURCES
+        NebulaListenerTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        gtest
+)
+
+nebula_add_test(
+    NAME
         rocks_engine_config_test
     SOURCES
         RocksEngineConfigTest.cpp

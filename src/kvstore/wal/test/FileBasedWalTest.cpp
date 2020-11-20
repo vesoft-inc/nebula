@@ -9,6 +9,8 @@
 #include <gtest/gtest.h>
 #include "kvstore/wal/FileBasedWal.h"
 
+DECLARE_int32(wal_ttl);
+
 namespace nebula {
 namespace wal {
 
@@ -351,9 +353,9 @@ TEST(FileBasedWal, BackAndForth) {
 
 
 TEST(FileBasedWal, TTLTest) {
+    FLAGS_wal_ttl = 3;
     TempDir walDir("/tmp/testWal.XXXXXX");
     FileBasedWalPolicy policy;
-    policy.ttl = 3;
     policy.bufferSize = 128;
     policy.fileSize = 1024;
     policy.numBuffers = 30;
@@ -373,7 +375,7 @@ TEST(FileBasedWal, TTLTest) {
     auto startIdAfterGC
         = static_cast<FileBasedWal*>(wal.get())->walFiles_.rbegin()->second->firstId();
     auto expiredFilesNum = static_cast<FileBasedWal*>(wal.get())->walFiles_.size() - 1;
-    sleep(policy.ttl + 1);
+    sleep(FLAGS_wal_ttl + 1);
     for (int i = 101; i <= 200; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
@@ -576,6 +578,41 @@ TEST(FileBasedWal, LinkTest) {
             wal->appendLog(1001 /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf(kLongMsg, 1001)));
     EXPECT_EQ(num + 1, wal->walFiles_.size());
+}
+
+TEST(FileBasedWal, CleanWalBeforeIdTest) {
+    TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024 * 10;
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    for (LogID i = 1; i <= 1000; i++) {
+        EXPECT_TRUE(wal->appendLog(i, 1, 0, folly::stringPrintf(kLongMsg, i)));
+    }
+
+    // try to clean not existed log
+    wal->cleanWAL(1001L);
+    CHECK_EQ(1, wal->firstLogId());
+    CHECK_EQ(1000, wal->lastLogId());
+
+    LogID logToKeep = 1;
+    while (logToKeep < 1000) {
+        wal->cleanWAL(logToKeep);
+        CHECK_LE(wal->firstLogId(), logToKeep);
+        CHECK(!wal->walFiles_.empty());
+        CHECK_LE(wal->walFiles_.begin()->second->firstId(), logToKeep);
+        CHECK_GE(wal->walFiles_.begin()->second->lastId(), logToKeep);
+        logToKeep += folly::Random::rand64(10);
+    }
+    CHECK_EQ(1000, wal->lastLogId());
+
+    // try to clean not existed log
+    wal->cleanWAL(1L);
+    CHECK_EQ(1000, wal->lastLogId());
 }
 
 }  // namespace wal

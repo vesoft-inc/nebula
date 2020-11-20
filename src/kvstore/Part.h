@@ -132,8 +132,10 @@ protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
     std::string walPath_;
-    KVEngine* engine_ = nullptr;
     NewLeaderCallback newLeaderCb_ = nullptr;
+
+private:
+    KVEngine* engine_ = nullptr;
 };
 
 }  // namespace kvstore

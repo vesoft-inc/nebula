@@ -25,7 +25,7 @@ TEST(HBaseStoreTest, SimpleTest) {
     auto sm = schemaMan.get();
     CHECK_NOTNULL(sm);
     options.hbaseServer_ = HostAddr(0, 9096);
-    options.schemaMan_ = std::move(schemaMan);
+    options.schemaMan_ = schemaMan.get();
     auto hbaseStore = std::make_unique<HBaseStore>(std::move(options));
     hbaseStore->init();
 
