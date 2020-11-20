@@ -39,8 +39,11 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
             for (const auto &host : value) {
                 nebula::Row r({host.get_hostAddr().host,
                                host.get_hostAddr().port,
-                               meta::cpp2::_HostStatus_VALUES_TO_NAMES.at(host.get_status()),
-                               static_cast<int64_t>(host.get_leader_parts().size())});
+                               meta::cpp2::_HostStatus_VALUES_TO_NAMES.at(host.get_status())});
+                int64_t leaderCount = 0;
+                for (const auto& spaceEntry : host.get_leader_parts()) {
+                    leaderCount += spaceEntry.second.size();
+                }
                 std::stringstream leaders;
                 std::stringstream parts;
                 std::size_t i = 0;
@@ -65,6 +68,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
                 if (host.get_all_parts().empty()) {
                     parts << kNoPartition;
                 }
+                r.emplace_back(leaderCount);
                 r.emplace_back(leaders.str());
                 r.emplace_back(parts.str());
                 v.emplace_back(std::move(r));
