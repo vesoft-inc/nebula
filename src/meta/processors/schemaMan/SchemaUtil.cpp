@@ -123,7 +123,8 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     break;
                 }
                 case cpp2::PropertyType::TIMESTAMP:
-                    if (value.type() != nebula::Value::Type::INT) {
+                    if (value.type() != nebula::Value::Type::INT &&
+                        value.type() != nebula::Value::Type::STRING) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
