@@ -7,11 +7,9 @@
 #include "common/time/WallClock.h"
 #include "utils/NebulaKeyUtils.h"
 #include "utils/IndexKeyUtils.h"
+#include "utils/OperationKeyUtils.h"
 #include <algorithm>
 #include "codec/RowWriterV2.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/OperationKeyUtils.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 
 namespace nebula {
@@ -39,7 +37,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     }
 
     spaceVidLen_ = ret.value();
-    callingNum_ = req.parts.size();
+    callingNum_ = partEdges.size();
 
     CHECK_NOTNULL(env_->indexMan_);
     auto iRet = env_->indexMan_->getEdgeIndexes(spaceId_);
@@ -72,17 +70,17 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             }
 
             auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
-                                                partId,
-                                                edgeKey.src.getStr(),
-                                                edgeKey.edge_type,
-                                                edgeKey.ranking,
-                                                edgeKey.dst.getStr(),
-                                                version);
+                                               partId,
+                                               edgeKey.src.getStr(),
+                                               edgeKey.edge_type,
+                                               edgeKey.ranking,
+                                               edgeKey.dst.getStr(),
+                                               version);
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
                                                           std::abs(edgeKey.edge_type));
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
-                            << edgeKey.edge_type << " invalid";
+                           << edgeKey.edge_type << " invalid";
                 pushResultCode(cpp2::ErrorCode::E_EDGE_NOT_FOUND, partId);
                 onFinished();
                 return;
@@ -123,7 +121,7 @@ AddEdgesProcessor::addEdges(PartitionID partId,
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
 
     /*
-     * Define the map newIndexes to avoid inserting duplicate edge.
+     * Define the map newEdges to avoid inserting duplicate edge.
      * This map means :
      * map<edge_unique_key, prop_value> ,
      * -- edge_unique_key is only used as the unique key , for example:
@@ -135,13 +133,15 @@ AddEdgesProcessor::addEdges(PartitionID partId,
      *
      * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
      */
-    std::map<std::string, std::string> newEdges;
+    std::unordered_map<std::string, std::string> newEdges;
     std::for_each(edges.begin(), edges.end(),
-                 [&newEdges](const std::map<std::string, std::string>::value_type& e)
-                 { newEdges[e.first] = e.second; });
+                  [&newEdges](const auto& e) {
+                      newEdges[e.first] = e.second;
+                  });
 
     for (auto& e : newEdges) {
         std::string val;
+        RowReaderWrapper oReader;
         RowReaderWrapper nReader;
         auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, e.first);
         for (auto& index : indexes_) {
@@ -152,29 +152,32 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                  * step 1 , Delete old version index if exists.
                  */
                 if (val.empty()) {
-                    auto obsIdx = findObsoleteIndex(partId, e.first);
+                    auto obsIdx = findOldValue(partId, e.first);
                     if (obsIdx == folly::none) {
                         return folly::none;
                     }
                     val = std::move(obsIdx).value();
-                }
-
-                if (!val.empty()) {
-                    auto reader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
+                    if (!val.empty()) {
+                        oReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
                                                                       spaceId_,
                                                                       edgeType,
                                                                       val);
-                    if (reader == nullptr) {
-                        LOG(ERROR) << "Bad format row";
-                        return folly::none;
+                        if (oReader == nullptr) {
+                            LOG(ERROR) << "Bad format row";
+                            return folly::none;
+                        }
                     }
-                    auto oi = indexKey(partId, reader.get(), e.first, index);
+                }
+
+                if (!val.empty()) {
+                    auto oi = indexKey(partId, oReader.get(), e.first, index);
                     if (!oi.empty()) {
                         // Check the index is building for the specified partition or not.
-                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        } else if (env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                             return folly::none;
                         } else {
@@ -200,11 +203,12 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 if (!ni.empty()) {
                     // Check the index is building for the specified partition or not.
-                    if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                    auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                    if (env_->checkRebuilding(indexState)) {
                         auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId,
                                                                                  std::move(ni));
                         batchHolder->put(std::move(modifyOpKey), "");
-                    } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                    } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                         return folly::none;
                     } else {
@@ -224,7 +228,7 @@ AddEdgesProcessor::addEdges(PartitionID partId,
 }
 
 folly::Optional<std::string>
-AddEdgesProcessor::findObsoleteIndex(PartitionID partId, const folly::StringPiece& rawKey) {
+AddEdgesProcessor::findOldValue(PartitionID partId, const folly::StringPiece& rawKey) {
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_,
                                              partId,
                                              NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),

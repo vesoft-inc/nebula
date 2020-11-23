@@ -44,16 +44,21 @@ public:
     std::atomic<int32_t>                            onFlyingRequest_{0};
     std::unique_ptr<IndexGuard>                     rebuildIndexGuard_{nullptr};
 
-    bool checkRebuilding(GraphSpaceID space, PartitionID part, IndexID indexID) {
+    IndexState getIndexState(GraphSpaceID space, PartitionID part, IndexID indexID) {
         auto key = std::make_tuple(space, indexID, part);
         auto iter = rebuildIndexGuard_->find(key);
-        return iter != rebuildIndexGuard_->cend() && iter->second == IndexState::BUILDING;
+        if (iter != rebuildIndexGuard_->cend()) {
+            return iter->second;
+        }
+        return IndexState::FINISHED;
     }
 
-    bool checkIndexLocked(GraphSpaceID space, PartitionID part, IndexID indexID) {
-        auto key = std::make_tuple(space, indexID, part);
-        auto iter = rebuildIndexGuard_->find(key);
-        return iter != rebuildIndexGuard_->cend() && iter->second == IndexState::LOCKED;
+    bool checkRebuilding(IndexState indexState) {
+        return indexState == IndexState::BUILDING;
+    }
+
+    bool checkIndexLocked(IndexState indexState) {
+        return indexState == IndexState::LOCKED;
     }
 };
 

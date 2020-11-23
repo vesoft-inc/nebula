@@ -106,6 +106,9 @@ TEST_F(JobManagerTest, StatisJob) {
 }
 
 TEST_F(JobManagerTest, JobPriority) {
+    // For preventting job schedule in JobManager
+    jobMgr->status_ = JobManager::Status::STOPPED;
+
     ASSERT_EQ(0, jobMgr->jobSize());
 
     std::vector<std::string> paras{"test"};
@@ -133,9 +136,14 @@ TEST_F(JobManagerTest, JobPriority) {
 
     result = jobMgr->try_dequeue(jobId);
     ASSERT_FALSE(result);
+
+    jobMgr->status_ = JobManager::Status::RUNNING;
 }
 
 TEST_F(JobManagerTest, JobDeduplication) {
+    // For preventting job schedule in JobManager
+    jobMgr->status_ = JobManager::Status::STOPPED;
+
     ASSERT_EQ(0, jobMgr->jobSize());
 
     std::vector<std::string> paras{"test"};
@@ -180,6 +188,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
 
     result = jobMgr->try_dequeue(jobId);
     ASSERT_FALSE(result);
+    jobMgr->status_ = JobManager::Status::RUNNING;
 }
 
 TEST_F(JobManagerTest, loadJobDescription) {

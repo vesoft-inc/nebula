@@ -83,7 +83,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             doRemove(spaceId_, partId, keys);
         }
     } else {
-        std::for_each(req.parts.begin(), req.parts.end(), [this](auto &pv) {
+        std::for_each(partVertices.begin(), partVertices.end(), [this](auto &pv) {
             auto partId = pv.first;
             auto atomic = [partId, v = std::move(pv.second),
                            this]() -> folly::Optional<std::string> {
@@ -114,21 +114,25 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                     << ", spaceId " << spaceId_;
             return folly::none;
         }
-        TagID latestVVId = -1;
+
+        TagID latestTagId = -1;
         while (iter->valid()) {
             auto key = iter->key();
+            if (!NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
+                iter->next();
+                continue;
+            }
+
             auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
-                    VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
-                    vertexCache_->evict(std::make_pair(vertex.getStr(), tagId));
-                }
+                VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
+                vertexCache_->evict(std::make_pair(vertex.getStr(), tagId));
             }
 
             /**
-            * example ,the prefix result as below :
-            *     V1_tag1_version3
-            *     V1_tag1_version2
+             * example ,the prefix result as below :
+             *     V1_tag1_version3
+             *     V1_tag1_version2
              *     V1_tag1_version1
              *     V1_tag2_version3
              *     V1_tag2_version2
@@ -138,9 +142,9 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
              *     V1_tag3_version1
              * Because index depends on latest version of tag.
              * So only V1_tag1_version3, V1_tag2_version3 and V1_tag3_version3 are needed,
-             * Using newlyVertexId to identify if it is the latest version
-             */
-            if (latestVVId != tagId) {
+             * Using latestTagId to identify if it is the latest version
+            */
+            if (latestTagId != tagId) {
                 RowReaderWrapper reader;
                 for (auto& index : indexes_) {
                     if (index->get_schema_id().get_tag_id() == tagId) {
@@ -162,16 +166,18 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         if (!valuesRet.ok()) {
                             continue;
                         }
-                        auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_, partId,
+                        auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_,
+                                                                      partId,
                                                                       indexId,
                                                                       vertex.getStr(),
                                                                       std::move(valuesRet).value());
 
                         // Check the index is building for the specified partition or not
-                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
-                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        } else if (env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                             return folly::none;
                         } else {
@@ -179,7 +185,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         }
                     }
                 }
-                latestVVId = tagId;
+                latestTagId = tagId;
             }
             batchHolder->remove(key.str());
             iter->next();

@@ -55,10 +55,10 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::vector<kvstore::KV> data;
         data.reserve(32);
         for (auto& vertex : vertices) {
-            auto vid = vertex.get_id();
+            auto vid = vertex.get_id().getStr();
             const auto& newTags = vertex.get_tags();
 
-            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
+            if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
                 LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                            << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
                 pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
@@ -71,8 +71,6 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid
                         << ", TagID: " << tagId << ", TagVersion: " << version;
 
-                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr(),
-                                                     tagId, version);
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
@@ -80,6 +78,9 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                     onFinished();
                     return;
                 }
+
+                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid,
+                                                     tagId, version);
 
                 auto props = newTag.get_props();
                 auto iter = propNamesMap.find(tagId);
@@ -99,7 +100,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
 
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                    vertexCache_->evict(std::make_pair(vid.getStr(), tagId));
+                    vertexCache_->evict(std::make_pair(vid, tagId));
                     VLOG(3) << "Evict cache for vId " << vid
                             << ", tagId " << tagId;
                 }
@@ -127,7 +128,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
     env_->onFlyingRequest_.fetch_add(1);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     /*
-     * Define the map newIndexes to avoid inserting duplicate vertex.
+     * Define the map newVertices to avoid inserting duplicate vertex.
      * This map means :
      * map<vertex_unique_key, prop_value> ,
      * -- vertex_unique_key is only used as the unique key , for example:
@@ -139,16 +140,19 @@ AddVerticesProcessor::addVertices(PartitionID partId,
      *
      * Ultimately, kv(part1_vid1_tag1 , v4) . It's just what I need.
      */
-    std::map<std::string, std::string> newVertices;
+    std::unordered_map<std::string, std::string> newVertices;
     std::for_each(vertices.begin(), vertices.end(),
-                 [&newVertices](const std::map<std::string, std::string>::value_type& v)
-                 { newVertices[v.first] = v.second; });
+                  [&newVertices](const auto& v) {
+                      newVertices[v.first] = v.second;
+                  });
 
     for (auto& v : newVertices) {
         std::string val;
+        RowReaderWrapper oReader;
         RowReaderWrapper nReader;
         auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, v.first);
-        auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, v.first);
+        auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, v.first).str();
+
         for (auto& index : indexes_) {
             if (tagId == index->get_schema_id().get_tag_id()) {
                 auto indexId = index->get_index_id();
@@ -157,29 +161,33 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                  * step 1 , Delete old version index if exists.
                  */
                 if (val.empty()) {
-                    auto obsIdx = findObsoleteIndex(partId, vId.str(), tagId);
+                    auto obsIdx = findOldValue(partId, vId, tagId);
                     if (obsIdx == folly::none) {
                         return folly::none;
                     }
                     val = std::move(obsIdx).value();
-                }
 
-                if (!val.empty()) {
-                    auto reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                    if (!val.empty()) {
+                        oReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
                                                                      spaceId_,
                                                                      tagId,
                                                                      val);
-                    if (reader == nullptr) {
-                        LOG(ERROR) << "Bad format row";
-                        return folly::none;
+                        if (oReader == nullptr) {
+                            LOG(ERROR) << "Bad format row";
+                            return folly::none;
+                        }
                     }
-                    auto oi = indexKey(partId, vId.str(), reader.get(), index);
+                }
+
+                if (!val.empty()) {
+                    auto oi = indexKey(partId, vId, oReader.get(), index);
                     if (!oi.empty()) {
                         // Check the index is building for the specified partition or not.
-                        if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                        } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                        } else if (env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                             return folly::none;
                         } else {
@@ -187,6 +195,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                         }
                     }
                 }
+
                 /*
                  * step 2 , Insert new vertex index
                  */
@@ -200,13 +209,14 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                         return folly::none;
                     }
                 }
-                auto ni = indexKey(partId, vId.str(), nReader.get(), index);
+                auto ni = indexKey(partId, vId, nReader.get(), index);
                 if (!ni.empty()) {
                     // Check the index is building for the specified partition or not.
-                    if (env_->checkRebuilding(spaceId_, partId, indexId)) {
+                    auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                    if (env_->checkRebuilding(indexState)) {
                         auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, ni);
                         batchHolder->put(std::move(modifyOpKey), "");
-                    } else if (env_->checkIndexLocked(spaceId_, partId, indexId)) {
+                    } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                         return folly::none;
                     } else {
@@ -227,7 +237,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
 }
 
 folly::Optional<std::string>
-AddVerticesProcessor::findObsoleteIndex(PartitionID partId, VertexID vId, TagID tagId) {
+AddVerticesProcessor::findOldValue(PartitionID partId, VertexID vId, TagID tagId) {
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
