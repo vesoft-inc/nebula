@@ -308,7 +308,6 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
         LOG(INFO) << idStr_ << "Add peer " << addr;
         auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
         hosts_.emplace_back(hostPtr);
-        peers_.emplace(addr);
     }
 
     // Change the status
@@ -383,7 +382,6 @@ void RaftPart::addLearner(const HostAddr& addr) {
     });
     if (it == hosts_.end()) {
         hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this(), true));
-        peers_.emplace(addr);
         LOG(INFO) << idStr_ << "Add learner " << addr;
     } else {
         LOG(INFO) << idStr_ << "The host " << addr << " has been existed as "
@@ -479,7 +477,6 @@ void RaftPart::addPeer(const HostAddr& peer) {
     });
     if (it == hosts_.end()) {
         hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
-        peers_.emplace(peer);
         updateQuorum();
         LOG(INFO) << idStr_ << "Add peer " << peer;
     } else {
@@ -510,14 +507,25 @@ void RaftPart::removePeer(const HostAddr& peer) {
         if ((*it)->isLearner()) {
             LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
             hosts_.erase(it);
-            peers_.erase(peer);
             return;
         }
         hosts_.erase(it);
-        peers_.erase(peer);
         updateQuorum();
         LOG(INFO) << idStr_ << "Remove peer " << peer;
     }
+}
+
+cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate) {
+    CHECK(!raftLock_.try_lock());
+    auto hosts = followers();
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
+        return h->address() == candidate;
+    });
+    if (it == hosts.end()) {
+        LOG(INFO) << idStr_ << "The candidate " << candidate << " is not in my peers";
+        return cpp2::ErrorCode::E_WRONG_LEADER;
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 void RaftPart::addListenerPeer(const HostAddr& listener) {
@@ -1442,13 +1450,9 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
-        return h->address() == candidate;
-    });
-    if (it == hosts.end()) {
-        LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
-        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+    auto code = checkPeer(candidate);
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        resp.set_error_code(code);
         return;
     }
     // Ok, no reason to refuse, we will vote for the candidate
@@ -1692,13 +1696,9 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         const cpp2::AppendLogRequest& req) {
     CHECK(!raftLock_.try_lock());
     auto candidate = HostAddr(req.get_leader_addr(), req.get_leader_port());
-    auto hosts = followers();
-    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
-        return h->address() == candidate;
-    });
-    if (it == hosts.end()) {
-        LOG(INFO) << idStr_ << "The candidate leader " << candidate << " is not my peers";
-        return cpp2::ErrorCode::E_WRONG_LEADER;
+    auto code = checkPeer(candidate);
+    if (code != cpp2::ErrorCode::SUCCEEDED) {
+        return code;
     }
 
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
@@ -1862,11 +1862,6 @@ std::vector<std::shared_ptr<Host>> RaftPart::followers() const {
         }
     }
     return hosts;
-}
-
-std::set<HostAddr> RaftPart::peers() const {
-    std::lock_guard<std::mutex> lck(raftLock_);
-    return peers_;
 }
 
 std::set<HostAddr> RaftPart::listeners() const {

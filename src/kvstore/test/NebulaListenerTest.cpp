@@ -365,14 +365,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
 INSTANTIATE_TEST_CASE_P(
     PartCount_Replicas_ListenerCount,
     ListenerBasicTest,
-    ::testing::Values(
-        std::make_tuple(1, 1, 1),
-        std::make_tuple(10, 1, 1),
-        std::make_tuple(1, 3, 1),
-        std::make_tuple(10, 3, 1),
-        std::make_tuple(3, 3, 3),
-        std::make_tuple(10, 3, 3),
-        std::make_tuple(10, 3, 10)));
+    ::testing::Values(std::make_tuple(1, 1, 1)));
 
 }  // namespace kvstore
 }  // namespace nebula

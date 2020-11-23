@@ -66,8 +66,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
     // As for listener, we don't need Host actually. However, listener need to be aware of
     // membership change, it can be handled in preProcessLog.
     for (auto& addr : peers) {
-        auto hostPtr = std::make_shared<raftex::Host>(addr, shared_from_this());
-        hosts_.emplace_back(hostPtr);
+        peers_.emplace(addr);
     }
 
     status_ = Status::RUNNING;

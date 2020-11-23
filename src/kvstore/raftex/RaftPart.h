@@ -277,6 +277,9 @@ protected:
 
     virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
+    // Check if we can accept candidate's message
+    virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
+
     // The inherited classes need to implement this method to commit
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
@@ -488,13 +491,11 @@ protected:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    // hosts_ contains all connection, hosts_ = peers_ + listeners_
+    // hosts_ contains all connection, hosts_ = all peers and listeners
     std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
 
-    // peers_ contanis all peers which could vote and learner, peers_ = follower + learner
-    std::set<HostAddr> peers_;
-    // all listener's role is learner (cannot promote to follower), but they are not in peers_
+    // all listener's role is learner (cannot promote to follower)
     std::set<HostAddr> listeners_;
 
     // The lock is used to protect logs_ and cachingPromise_

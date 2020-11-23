@@ -140,6 +140,15 @@ protected:
         LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
     }
 
+    raftex::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
+        CHECK(!raftLock_.try_lock());
+        if (peers_.find(candidate) == peers_.end()) {
+            LOG(WARNING) << idStr_ << "The candidate " << candidate << " is not in my peers";
+            return raftex::cpp2::ErrorCode::E_WRONG_LEADER;
+        }
+        return raftex::cpp2::ErrorCode::SUCCEEDED;
+    }
+
     // For listener, we just return true directly. Another background thread trigger the actual
     // apply work, and do it in worker thread, and update lastApplyLogId_
     bool commitLogs(std::unique_ptr<LogIterator>) override;
@@ -168,6 +177,7 @@ protected:
     LogID lastApplyLogId_ = 0;
     int64_t lastCommitTime_ = 0;
     int64_t lastApplyTime_ = 0;
+    std::set<HostAddr> peers_;
     meta::SchemaManager* schemaMan_{nullptr};
 };
 
