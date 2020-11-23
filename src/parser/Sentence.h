@@ -116,6 +116,9 @@ public:
         kListZones,
         kAddHostIntoZone,
         kDropHostFromZone,
+        kAddListener,
+        kRemoveListener,
+        kShowListener,
     };
 
     Kind kind() const {

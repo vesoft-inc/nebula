@@ -123,6 +123,10 @@ public:
         kDescribeZone,
         kAddHostIntoZone,
         kDropHostFromZone,
+        // listener related
+        kAddListener,
+        kRemoveListener,
+        kShowListener,
     };
 
     PlanNode(QueryContext* qctx, Kind kind);

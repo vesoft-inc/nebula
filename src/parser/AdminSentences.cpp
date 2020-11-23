@@ -160,6 +160,18 @@ std::string DropSnapshotSentence::toString() const {
     return folly::stringPrintf("DROP SNAPSHOT %s", name_.get()->c_str());
 }
 
+std::string AddListenerSentence::toString() const {
+    return "ADD LISTENER";
+}
+
+std::string RemoveListenerSentence::toString() const {
+    return "REMOVE LISTENER";
+}
+
+std::string ShowListenerSentence::toString() const {
+    return "SHOW LISTENER";
+}
+
 std::string AdminJobSentence::toString() const {
     switch (op_) {
     case meta::cpp2::AdminJobOp::ADD:

@@ -219,6 +219,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "ZONE"                      { return TokenType::KW_ZONE; }
 "ZONES"                     { return TokenType::KW_ZONES; }
 "INTO"                      { return TokenType::KW_INTO; }
+"LISTENER"                  { return TokenType::KW_LISTENER; }
+"ELASTICSEARCH"             { return TokenType::KW_ELASTICSEARCH; }
+
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

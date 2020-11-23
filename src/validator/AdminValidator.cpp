@@ -221,6 +221,48 @@ Status ShowSnapshotsValidator::toPlan() {
     return Status::OK();
 }
 
+Status AddListenerValidator::validateImpl() {
+    auto sentence = static_cast<AddListenerSentence*>(sentence_);
+    if (sentence->listeners()->hosts().empty()) {
+        return Status::SemanticError("Listener hosts should not be emptry");
+    }
+    return Status::OK();
+}
+
+Status AddListenerValidator::toPlan() {
+    auto sentence = static_cast<AddListenerSentence*>(sentence_);
+    auto *doNode = AddListener::make(qctx_,
+                                     nullptr,
+                                     sentence->type(),
+                                     sentence->listeners()->hosts());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status RemoveListenerValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status RemoveListenerValidator::toPlan() {
+    auto sentence = static_cast<RemoveListenerSentence*>(sentence_);
+    auto *doNode = RemoveListener::make(qctx_, nullptr, sentence->type());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowListenerValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowListenerValidator::toPlan() {
+    auto *doNode = ShowListener::make(qctx_, nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
 Status ShowHostsValidator::validateImpl() {
     return Status::OK();
 }

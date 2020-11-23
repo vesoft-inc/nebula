@@ -162,6 +162,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
+%token KW_LISTENER KW_ELASTICSEARCH
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -295,6 +296,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <sentence> add_zone_sentence drop_zone_sentence desc_zone_sentence
 %type <sentence> add_host_into_zone_sentence drop_host_from_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
+%type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -446,6 +448,8 @@ unreserved_keyword
     | KW_GROUPS             { $$ = new std::string("groups"); }
     | KW_ZONE               { $$ = new std::string("zone"); }
     | KW_ZONES              { $$ = new std::string("zones"); }
+    | KW_LISTENER           { $$ = new std::string("listener"); }
+    | KW_ELASTICSEARCH      { $$ = new std::string("elasticsearch"); }
     ;
 
 agg_function
@@ -2638,6 +2642,24 @@ drop_snapshot_sentence
     }
     ;
 
+add_listener_sentence
+    : KW_ADD KW_LISTENER KW_ELASTICSEARCH host_list {
+        $$ = new AddListenerSentence(meta::cpp2::ListenerType::ELASTICSEARCH, $4);
+    }
+    ;
+
+remove_listener_sentence
+    : KW_REMOVE KW_LISTENER KW_ELASTICSEARCH {
+        $$ = new RemoveListenerSentence(meta::cpp2::ListenerType::ELASTICSEARCH);
+    }
+    ;
+
+list_listener_sentence
+    : KW_SHOW KW_LISTENER {
+        $$ = new ShowListenerSentence();
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -2691,6 +2713,9 @@ maintain_sentence
     | balance_sentence { $$ = $1; }
     | create_snapshot_sentence { $$ = $1; };
     | drop_snapshot_sentence { $$ = $1; };
+    | add_listener_sentence { $$ = $1; }
+    | remove_listener_sentence { $$ = $1; }
+    | list_listener_sentence { $$ = $1; }
     ;
 
 return_sentence

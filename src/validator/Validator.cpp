@@ -215,6 +215,12 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<AddHostIntoZoneValidator>(sentence, context);
         case Sentence::Kind::kDropHostFromZone:
             return std::make_unique<DropHostFromZoneValidator>(sentence, context);
+        case Sentence::Kind::kAddListener:
+            return std::make_unique<AddListenerValidator>(sentence, context);
+        case Sentence::Kind::kRemoveListener:
+            return std::make_unique<RemoveListenerValidator>(sentence, context);
+        case Sentence::Kind::kShowListener:
+            return std::make_unique<ShowListenerValidator>(sentence, context);
         case Sentence::Kind::kShowGroups:
         case Sentence::Kind::kShowZones:
         case Sentence::Kind::kUnknown:

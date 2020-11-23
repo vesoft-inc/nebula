@@ -344,6 +344,72 @@ private:
         : SingleInputNode(qctx, Kind::kShowSnapshots, input) {}
 };
 
+class AddListener final : public SingleInputNode {
+public:
+    static AddListener* make(QueryContext* qctx,
+                             PlanNode* input,
+                             meta::cpp2::ListenerType type,
+                             std::vector<HostAddr> hosts) {
+        return qctx->objPool()->add(
+            new AddListener(qctx, input, std::move(type), std::move(hosts)));
+    }
+
+    const meta::cpp2::ListenerType& type() const {
+        return type_;
+    }
+
+    const std::vector<HostAddr> hosts() const {
+        return hosts_;
+    }
+
+private:
+    explicit AddListener(QueryContext* qctx,
+                         PlanNode* input,
+                         meta::cpp2::ListenerType type,
+                         std::vector<HostAddr> hosts)
+        : SingleInputNode(qctx, Kind::kAddListener, input) {
+        type_ = std::move(type);
+        hosts_ = std::move(hosts);
+    }
+
+private:
+    meta::cpp2::ListenerType type_;
+    std::vector<HostAddr> hosts_;
+};
+
+class RemoveListener final : public SingleInputNode {
+public:
+    static RemoveListener* make(QueryContext* qctx,
+                                PlanNode* input,
+                                meta::cpp2::ListenerType type) {
+        return qctx->objPool()->add(new RemoveListener(qctx, input, std::move(type)));
+    }
+
+    const meta::cpp2::ListenerType& type() const {
+        return type_;
+    }
+
+private:
+    explicit RemoveListener(QueryContext* qctx, PlanNode* input, meta::cpp2::ListenerType type)
+        : SingleInputNode(qctx, Kind::kRemoveListener, input) {
+        type_ = std::move(type);
+    }
+
+private:
+    meta::cpp2::ListenerType type_;
+};
+
+class ShowListener final : public SingleInputNode {
+public:
+    static ShowListener* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowListener(qctx, input));
+    }
+
+private:
+    explicit ShowListener(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowListener, input) {}
+};
+
 class Download final : public SingleInputNode {
 public:
 };

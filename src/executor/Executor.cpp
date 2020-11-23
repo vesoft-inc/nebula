@@ -29,6 +29,7 @@
 #include "executor/admin/ShowBalanceExecutor.h"
 #include "executor/admin/ShowHostsExecutor.h"
 #include "executor/admin/SnapshotExecutor.h"
+#include "executor/admin/ListenerExecutor.h"
 #include "executor/admin/SpaceExecutor.h"
 #include "executor/admin/StopBalanceExecutor.h"
 #include "executor/admin/SubmitJobExecutor.h"
@@ -428,6 +429,15 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kShowZones: {
             return pool->add(new ListZonesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAddListener: {
+            return pool->add(new AddListenerExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kRemoveListener: {
+            return pool->add(new RemoveListenerExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowListener: {
+            return pool->add(new ShowListenerExecutor(node, qctx));
         }
         case PlanNode::Kind::kUnknown: {
             LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

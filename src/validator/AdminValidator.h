@@ -125,6 +125,42 @@ private:
     Status toPlan() override;
 };
 
+class AddListenerValidator final : public Validator {
+public:
+    AddListenerValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class RemoveListenerValidator final : public Validator {
+public:
+    RemoveListenerValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class ShowListenerValidator final : public Validator {
+public:
+    ShowListenerValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+    }
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
 class ShowHostsValidator final : public Validator {
 public:
     ShowHostsValidator(Sentence* sentence, QueryContext* context)
