@@ -41,7 +41,8 @@ std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
     {"path_edge1", Value(Edge("1", "2", 1, "edge", 0, {}))},
     {"path_v1", Value("2")},
     {"path_edge2", Value(Edge("2", "3", 1, "edge", 0, {}))},
-    {"path_v2", Value(Vertex("3", {}))}
+    {"path_v2", Value(Vertex("3", {}))},
+    {"path_edge3", Value(Edge("3", "4", 1, "edge", 0, {}))},
 };
 
 }   // namespace nebula

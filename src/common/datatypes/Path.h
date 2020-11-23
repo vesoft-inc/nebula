@@ -111,7 +111,7 @@ struct Path {
     std::vector<Step> steps;
 
     Path() = default;
-    Path(const Path& p) : src(p.src), steps(p.steps) {}
+    Path(const Path& p) = default;
     Path(Path&& p) noexcept
         : src(std::move(p.src)), steps(std::move(p.steps)) {}
 

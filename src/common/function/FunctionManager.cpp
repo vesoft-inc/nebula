@@ -5,17 +5,23 @@
  */
 
 #include "FunctionManager.h"
+
+#include <unordered_set>
+
+#include <folly/String.h>
+
 #include "common/base/Base.h"
-#include "common/expression/Expression.h"
-#include "common/time/WallClock.h"
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
-#include "common/datatypes/Set.h"
-#include "common/datatypes/DataSet.h"
-#include "common/time/TimeUtils.h"
-#include "common/datatypes/Edge.h"
 #include "common/datatypes/Path.h"
+#include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
+#include "common/expression/Expression.h"
+#include "common/thrift/ThriftTypes.h"
+#include "common/time/TimeUtils.h"
+#include "common/time/WallClock.h"
 
 namespace nebula {
 
@@ -170,6 +176,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"head", {TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
     {"last", { TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
     {"coalesce", { TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
+    {"hasSameEdgeInPath", { TypeSignature({Value::Type::PATH}, Value::Type::BOOL), }},
 };
 
 // static
@@ -1180,6 +1187,35 @@ FunctionManager::FunctionManager() {
                 result.values.emplace_back(std::move(edge));
             }
             return result;
+        };
+    }
+    {
+        auto &attr = functions_["hasSameEdgeInPath"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isPath()) {
+                return Value::kNullBadType;
+            }
+            auto &path = args[0].getPath();
+            if (path.steps.size() < 2) {
+                return false;
+            }
+            std::unordered_set<std::string> uniqueSet;
+            auto src = path.src.vid;
+            for (const auto &step : path.steps) {
+                auto edgeSrc = step.type > 0 ? src : step.dst.vid;
+                auto edgeDst = step.type > 0 ? step.dst.vid : src;
+                auto edgeKey = folly::stringPrintf(
+                    "%s%s%s%ld", edgeSrc.c_str(), edgeDst.c_str(), step.name.c_str(), step.ranking);
+                auto res = uniqueSet.emplace(std::move(edgeKey));
+                if (!res.second) {
+                    return true;
+                }
+                src = step.dst.vid;
+            }
+            return false;
         };
     }
 }   // NOLINT
