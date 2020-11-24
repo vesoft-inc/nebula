@@ -28,15 +28,6 @@ private:
     using VertexProp = nebula::storage::cpp2::VertexProp;
     using EdgeProp = nebula::storage::cpp2::EdgeProp;
 
-    static Expression* makeIndexFilter(const std::string& label,
-                                       const MapExpression* map,
-                                       QueryContext* qctx);
-
-    static Expression* makeIndexFilter(const std::string& label,
-                                       const std::string& alias,
-                                       Expression* filter,
-                                       QueryContext* qctx);
-
     MatchVertexIndexSeekPlanner() = default;
 
     Status buildScanNode();
@@ -50,8 +41,6 @@ private:
     Status buildStepJoin();
 
     Status buildTailJoin();
-
-    Status buildFilter();
 
     template <typename T>
     T* saveObject(T *obj) const {

@@ -20,4 +20,5 @@ nebula_add_library(
     planners/MatchVertexIdSeekPlanner.cpp
     planners/MatchVertexIndexSeekPlanner.cpp
     planners/MatchTagScanPlanner.cpp
+    planners/MatchVariableLengthPatternIndexScanPlanner.cpp
 )

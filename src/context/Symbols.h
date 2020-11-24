@@ -7,8 +7,11 @@
 #ifndef CONTEXT_SYMBOLS_H_
 #define CONTEXT_SYMBOLS_H_
 
-#include "common/base/ObjectPool.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
+#include "common/base/ObjectPool.h"
 #include "common/datatypes/Value.h"
 
 namespace nebula {

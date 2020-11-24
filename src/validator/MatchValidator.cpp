@@ -152,10 +152,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path) {
         }
         auto *stepRange = edge->range();
         if (stepRange != nullptr) {
-            if (stepRange->min() != stepRange->max() ||
-                    stepRange->min() != 1) {
-                return Status::SemanticError("Variable steps not supported");
-            }
+            NG_RETURN_IF_ERROR(validateStepRange(stepRange));
+            edgeInfos[i].range = stepRange;
         }
         if (alias == nullptr) {
             anonymous = true;
@@ -211,8 +209,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
             return new YieldColumn(expr, alias);
         };
 
-        columns = new YieldColumns();
-        saveObject(columns);
+        columns = saveObject(new YieldColumns());
         auto steps = matchCtx_->edgeInfos.size();
 
         if (!matchCtx_->nodeInfos[0].anonymous) {
@@ -225,6 +222,12 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
             }
             if (!matchCtx_->nodeInfos[i+1].anonymous) {
                 columns->addColumn(makeColumn(*matchCtx_->nodeInfos[i+1].alias));
+            }
+        }
+
+        for (auto &aliasPair : matchCtx_->aliases) {
+            if (aliasPair.second == AliasType::kPath) {
+                columns->addColumn(makeColumn(aliasPair.first));
             }
         }
 
@@ -347,6 +350,21 @@ Status MatchValidator::validateAliases(const std::vector<const Expression*> &exp
     return Status::OK();
 }
 
+Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
+    auto min = range->min();
+    auto max = range->max();
+    if (min > max) {
+        return Status::SemanticError(
+            "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
+    }
+    if (max == std::numeric_limits<int64_t>::max()) {
+        return Status::SemanticError("Not set maximum hop for variable length relationships");
+    }
+    if (min == 0) {
+        return Status::SemanticError("Zero steps implementation coming soon.");
+    }
+    return Status::OK();
+}
 
 StatusOr<Expression*>
 MatchValidator::makeSubFilter(const std::string &alias,

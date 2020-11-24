@@ -49,6 +49,8 @@ public:
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
+    StatusOr<std::string> toGraphSpaceName(GraphSpaceID space) override;
+
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;
@@ -83,6 +85,7 @@ public:
         return Status::Error("Unimplemented");
     }
 
+    StatusOr<std::vector<nebula::meta::cpp2::FTClient> > getFTClients() override;
 
 private:
     std::unordered_map<std::string, GraphSpaceID>        spaceNameIds_;

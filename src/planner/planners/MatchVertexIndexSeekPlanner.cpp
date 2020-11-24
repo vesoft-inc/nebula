@@ -12,135 +12,8 @@
 
 namespace nebula {
 namespace graph {
-bool MatchVertexIndexSeekPlanner::match(AstContext* astCtx) {
-    if (astCtx->sentence->kind() != Sentence::Kind::kMatch) {
-        return false;
-    }
-    auto* matchCtx = static_cast<MatchAstContext*>(astCtx);
-
-    auto& head = matchCtx->nodeInfos[0];
-    if (head.label == nullptr) {
-        return false;
-    }
-
-    Expression *filter = nullptr;
-    if (matchCtx->filter != nullptr) {
-        filter = makeIndexFilter(*head.label, *head.alias, matchCtx->filter.get(), matchCtx->qctx);
-    }
-    if (filter == nullptr) {
-        if (head.props != nullptr && !head.props->items().empty()) {
-            filter = makeIndexFilter(*head.label, head.props, matchCtx->qctx);
-        }
-    }
-
-    if (filter == nullptr) {
-        return false;
-    }
-
-    matchCtx->scanInfo.filter = filter;
-    matchCtx->scanInfo.schemaId = head.tid;
-
-    return true;
-}
-
-Expression* MatchVertexIndexSeekPlanner::makeIndexFilter(const std::string &label,
-                                                         const MapExpression *map,
-                                                         QueryContext* qctx) {
-    auto &items = map->items();
-    Expression *root = new RelationalExpression(Expression::Kind::kRelEQ,
-            new TagPropertyExpression(
-                new std::string(label),
-                new std::string(*items[0].first)),
-            items[0].second->clone().release());
-    for (auto i = 1u; i < items.size(); i++) {
-        auto *left = root;
-        auto *right = new RelationalExpression(Expression::Kind::kRelEQ,
-                new TagPropertyExpression(
-                    new std::string(label),
-                    new std::string(*items[i].first)),
-                items[i].second->clone().release());
-        root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
-    }
-    return qctx->objPool()->add(root);
-}
-
-Expression* MatchVertexIndexSeekPlanner::makeIndexFilter(const std::string &label,
-                                                         const std::string &alias,
-                                                         Expression *filter,
-                                                         QueryContext* qctx) {
-    static const std::unordered_set<Expression::Kind> kinds = {
-        Expression::Kind::kRelEQ,
-        Expression::Kind::kRelLT,
-        Expression::Kind::kRelLE,
-        Expression::Kind::kRelGT,
-        Expression::Kind::kRelGE
-    };
-
-    std::vector<const Expression*> ands;
-    auto kind = filter->kind();
-    if (kinds.count(kind) == 1) {
-        ands.emplace_back(filter);
-    } else if (kind == Expression::Kind::kLogicalAnd) {
-        auto *logic = static_cast<LogicalExpression*>(filter);
-        ExpressionUtils::pullAnds(logic);
-        for (auto &operand : logic->operands()) {
-            ands.emplace_back(operand.get());
-        }
-    } else {
-        return nullptr;
-    }
-
-    std::vector<Expression*> relationals;
-    for (auto *item : ands) {
-        if (kinds.count(item->kind()) != 1) {
-            continue;
-        }
-
-        auto *binary = static_cast<const BinaryExpression*>(item);
-        auto *left = binary->left();
-        auto *right = binary->right();
-        const LabelAttributeExpression *la = nullptr;
-        const ConstantExpression *constant = nullptr;
-        if (left->kind() == Expression::Kind::kLabelAttribute &&
-                right->kind() == Expression::Kind::kConstant) {
-            la = static_cast<const LabelAttributeExpression*>(left);
-            constant = static_cast<const ConstantExpression*>(right);
-        } else if (right->kind() == Expression::Kind::kLabelAttribute &&
-                left->kind() == Expression::Kind::kConstant) {
-            la = static_cast<const LabelAttributeExpression*>(right);
-            constant = static_cast<const ConstantExpression*>(left);
-        } else {
-            continue;
-        }
-
-        if (*la->left()->name() != alias) {
-            continue;
-        }
-
-        auto *tpExpr = new TagPropertyExpression(
-                new std::string(label),
-                new std::string(*la->right()->name()));
-        auto *newConstant = constant->clone().release();
-        if (left->kind() == Expression::Kind::kLabelAttribute) {
-            auto *rel = new RelationalExpression(item->kind(), tpExpr, newConstant);
-            relationals.emplace_back(rel);
-        } else {
-            auto *rel = new RelationalExpression(item->kind(), newConstant, tpExpr);
-            relationals.emplace_back(rel);
-        }
-    }
-
-    if (relationals.empty()) {
-        return nullptr;
-    }
-
-    auto *root = relationals[0];
-    for (auto i = 1u; i < relationals.size(); i++) {
-        auto *left = root;
-        root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, relationals[i]);
-    }
-
-    return qctx->objPool()->add(root);
+bool MatchVertexIndexSeekPlanner::match(AstContext *astCtx) {
+    return MatchSolver::match(astCtx);
 }
 
 StatusOr<SubPlan> MatchVertexIndexSeekPlanner::transform(AstContext* astCtx) {
@@ -154,12 +27,13 @@ StatusOr<SubPlan> MatchVertexIndexSeekPlanner::transform(AstContext* astCtx) {
     if (!matchCtx_->edgeInfos.empty()) {
         NG_RETURN_IF_ERROR(buildTailJoin());
     }
-    NG_RETURN_IF_ERROR(buildFilter());
+    NG_RETURN_IF_ERROR(MatchSolver::buildFilter(matchCtx_, &subPlan_));
     NG_RETURN_IF_ERROR(MatchSolver::buildReturn(matchCtx_, subPlan_));
     return subPlan_;
 }
 
 Status MatchVertexIndexSeekPlanner::buildScanNode() {
+    // FIXME: Move following validation to MatchValidator
     if (!startFromNode_) {
         return Status::SemanticError("Scan from edge not supported now");
     }
@@ -198,7 +72,6 @@ Status MatchVertexIndexSeekPlanner::buildSteps() {
 
     return Status::OK();
 }
-
 
 Status MatchVertexIndexSeekPlanner::buildStep() {
     curStep_++;
@@ -276,7 +149,6 @@ Status MatchVertexIndexSeekPlanner::buildStep() {
 
     return Status::OK();
 }
-
 
 Status MatchVertexIndexSeekPlanner::buildGetTailVertices() {
     Expression *src = nullptr;
@@ -397,29 +269,5 @@ Status MatchVertexIndexSeekPlanner::buildTailJoin() {
     return Status::OK();
 }
 
-
-Status MatchVertexIndexSeekPlanner::buildFilter() {
-    if (matchCtx_->filter == nullptr) {
-        return Status::OK();
-    }
-    auto newFilter = matchCtx_->filter->clone();
-    auto rewriter = [] (const Expression *expr) {
-        if (expr->kind() == Expression::Kind::kLabel) {
-            return MatchSolver::rewrite(static_cast<const LabelExpression*>(expr));
-        } else {
-            return MatchSolver::rewrite(static_cast<const LabelAttributeExpression*>(expr));
-        }
-    };
-    RewriteMatchLabelVisitor visitor(std::move(rewriter));
-    newFilter->accept(&visitor);
-
-    auto *node = Filter::make(matchCtx_->qctx, subPlan_.root, saveObject(newFilter.release()));
-    node->setInputVar(subPlan_.root->outputVar());
-    node->setColNames(subPlan_.root->colNames());
-
-    subPlan_.root = node;
-
-    return Status::OK();
-}
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

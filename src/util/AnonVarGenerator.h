@@ -25,7 +25,7 @@ public:
     }
 
     std::string getVar() const {
-        auto var = folly::stringPrintf("__UNAMED_VAR_%ld", idGen_->id());
+        auto var = folly::stringPrintf("__VAR_%ld", idGen_->id());
         symTable_->newVariable(var);
         VLOG(1) << "Build anon var: " << var;
         return var;

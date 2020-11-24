@@ -6,6 +6,10 @@
 
 #include "util/ToJson.h"
 
+#include <folly/String.h>
+#include <folly/dynamic.h>
+#include <string>
+
 #include "common/clients/meta/MetaClient.h"
 #include "common/datatypes/Value.h"
 #include "common/expression/Expression.h"
@@ -15,8 +19,8 @@
 #include "parser/EdgeKey.h"
 #include "util/SchemaUtil.h"
 
-#include "parser/EdgeKey.h"
 #include "context/QueryExpressionContext.h"
+#include "parser/EdgeKey.h"
 
 namespace nebula {
 namespace util {
@@ -234,6 +238,28 @@ folly::dynamic toJson(const storage::cpp2::Expr &expr) {
     if (expr.__isset.expr) {
         obj.insert("expr", expr.get_expr());
     }
+    return obj;
+}
+
+folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc) {
+    folly::dynamic obj = folly::dynamic::object();
+    obj.insert("index_id", iqc.get_index_id());
+    auto filter = iqc.get_filter().empty() ? "" : Expression::decode(iqc.get_filter())->toString();
+    obj.insert("filter", filter);
+    obj.insert("columnHints", toJson(iqc.get_column_hints()));
+    return obj;
+}
+
+folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints) {
+    folly::dynamic obj = folly::dynamic::object();
+    obj.insert("column", hints.get_column_name());
+    auto scanType = storage::cpp2::_ScanType_VALUES_TO_NAMES.at(hints.get_scan_type());
+    obj.insert("scanType", scanType);
+    auto rtrim = [](const std::string &str) { return std::string(str.c_str()); };
+    auto begin = toJson(hints.get_begin_value());
+    obj.insert("beginValue", rtrim(begin));
+    auto end = toJson(hints.get_end_value());
+    obj.insert("endValue", rtrim(end));
     return obj;
 }
 

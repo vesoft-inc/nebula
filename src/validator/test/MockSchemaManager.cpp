@@ -97,6 +97,15 @@ StatusOr<GraphSpaceID> MockSchemaManager::toGraphSpaceID(folly::StringPiece spac
     return Status::Error("Space `%s' not found", spaceName.str().c_str());
 }
 
+StatusOr<std::string> MockSchemaManager::toGraphSpaceName(GraphSpaceID space) {
+    for (const auto& s : spaceNameIds_) {
+        if (s.second == space) {
+            return s.first;
+        }
+    }
+    return Status::Error("Space `%d' not found", space);
+}
+
 StatusOr<TagID> MockSchemaManager::toTagID(GraphSpaceID space, const folly::StringPiece tagName) {
     auto findIt = tagSchemas_.find(space);
     if (findIt == tagSchemas_.end()) {
@@ -152,5 +161,10 @@ StatusOr<std::vector<std::string>> MockSchemaManager::getAllEdge(GraphSpaceID) {
     }
     return edgeNames;
 }
+
+StatusOr<std::vector<nebula::meta::cpp2::FTClient>> MockSchemaManager::getFTClients() {
+    return Status::Error("Not implemented");
+}
+
 }  // namespace graph
 }  // namespace nebula

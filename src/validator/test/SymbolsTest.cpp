@@ -107,7 +107,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__UNAMED_COL_1"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__COL_1"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {6}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {5}));
         }
@@ -117,7 +117,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__UNAMED_COL_1"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__COL_1"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {12, 15, 18}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {6, 14}));
         }
@@ -157,7 +157,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"_vid", "__UNAMED_COL_2"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"_vid", "__COL_2"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {11}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {10}));
         }
@@ -167,7 +167,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"_vid", "__UNAMED_COL_2"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"_vid", "__COL_2"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {12}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {11}));
         }
@@ -178,7 +178,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
             EXPECT_EQ(variable->colNames,
-                      std::vector<std::string>({"id", "__UNAMED_COL_1", "_vid", "__UNAMED_COL_2"}));
+                      std::vector<std::string>({"id", "__COL_1", "_vid", "__COL_2"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {13}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {12}));
         }
@@ -188,7 +188,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__UNAMED_COL_1"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"id", "__COL_1"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {14}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {13}));
         }
@@ -218,7 +218,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
-            EXPECT_EQ(variable->colNames, std::vector<std::string>({"__UNAMED_COL_0", "_vid"}));
+            EXPECT_EQ(variable->colNames, std::vector<std::string>({"__COL_0", "_vid"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {18}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {17}));
         }
@@ -229,7 +229,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_EQ(variable->name, varName);
             EXPECT_EQ(variable->type, Value::Type::DATASET);
             EXPECT_EQ(variable->colNames,
-                      std::vector<std::string>({"__UNAMED_COL_0", "_vid", "id", "__UNAMED_COL_1"}));
+                      std::vector<std::string>({"__COL_0", "_vid", "id", "__COL_1"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {19}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {18}));
         }
@@ -241,7 +241,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_EQ(variable->type, Value::Type::DATASET);
             EXPECT_EQ(variable->colNames,
                       std::vector<std::string>(
-                          {"__UNAMED_COL_0", "_vid", "id", "__UNAMED_COL_1", "id"}));
+                          {"__COL_0", "_vid", "id", "__COL_1", "id"}));
             EXPECT_TRUE(checkNodes(variable->readBy, {20}));
             EXPECT_TRUE(checkNodes(variable->writtenBy, {19}));
         }

@@ -13,6 +13,9 @@
 #include "planner/Query.h"
 
 namespace nebula {
+
+class MatchStepRange;
+
 namespace graph {
 
 struct MatchAstContext;
@@ -31,6 +34,7 @@ public:
 
     struct EdgeInfo {
         bool                                    anonymous{false};
+        MatchStepRange                         *range{nullptr};
         std::vector<EdgeType>                   edgeTypes;
         MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
         std::vector<std::string>                types;
@@ -67,6 +71,8 @@ private:
     Status validateReturn(MatchReturn *ret);
 
     Status validateAliases(const std::vector<const Expression*> &exprs) const;
+
+    Status validateStepRange(const MatchStepRange *range) const;
 
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
                                         const MapExpression *map) const;

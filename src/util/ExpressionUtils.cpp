@@ -6,6 +6,9 @@
 
 #include "util/ExpressionUtils.h"
 
+#include <memory>
+
+#include "common/expression/PropertyExpression.h"
 #include "visitor/FoldConstantExprVisitor.h"
 
 namespace nebula {
@@ -61,6 +64,15 @@ ExpressionUtils::pullOrsImpl(LogicalExpression *expr,
         }
         pullOrsImpl(static_cast<LogicalExpression*>(operand.get()), operands);
     }
+}
+
+VariablePropertyExpression *ExpressionUtils::newVarPropExpr(const std::string &prop,
+                                                            const std::string &var) {
+    return new VariablePropertyExpression(new std::string(var), new std::string(prop));
+}
+
+std::unique_ptr<InputPropertyExpression> ExpressionUtils::inputPropExpr(const std::string &prop) {
+    return std::make_unique<InputPropertyExpression>(new std::string(prop));
 }
 
 }   // namespace graph

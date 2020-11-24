@@ -7,6 +7,7 @@
 #include "planner/Query.h"
 
 #include <folly/String.h>
+#include <folly/json.h>
 
 #include "util/ToJson.h"
 
@@ -104,7 +105,7 @@ std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
 IndexScan* IndexScan::clone(QueryContext* qctx) const {
     auto ctx = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
     auto returnCols = std::make_unique<std::vector<std::string>>(*returnColumns());
-    auto *scan = IndexScan::make(
+    auto* scan = IndexScan::make(
         qctx, nullptr, space(), std::move(ctx), std::move(returnCols), isEdge(), schemaId());
     scan->setOutputVar(this->outputVar());
     return scan;
@@ -112,7 +113,10 @@ IndexScan* IndexScan::clone(QueryContext* qctx) const {
 
 std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
     auto desc = Explore::explain();
-    // TODO
+    addDescription("schemaId", util::toJson(schemaId_), desc.get());
+    addDescription("isEdge", util::toJson(isEdge_), desc.get());
+    addDescription("returnCols", folly::toJson(util::toJson(*returnCols_)), desc.get());
+    addDescription("indexCtx", folly::toJson(util::toJson(*contexts_)), desc.get());
     return desc;
 }
 
@@ -190,7 +194,7 @@ std::unique_ptr<PlanNodeDescription> SwitchSpace::explain() const {
 
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("inputVars", folly::toJson(util::toJson(inputVars_)), desc.get());
+    addDescription("inputVar", folly::toJson(util::toJson(inputVars_)), desc.get());
     switch (collectKind_) {
         case CollectKind::kSubgraph: {
             addDescription("kind", "SUBGRAPH", desc.get());
@@ -222,8 +226,10 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
 
 std::unique_ptr<PlanNodeDescription> DataJoin::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("leftVar", folly::toJson(util::toJson(leftVar_)), desc.get());
-    addDescription("rightVar", folly::toJson(util::toJson(rightVar_)), desc.get());
+    folly::dynamic inputVar = folly::dynamic::object();
+    inputVar.insert("leftVar", util::toJson(leftVar_));
+    inputVar.insert("rightVar", util::toJson(rightVar_));
+    addDescription("inputVar", folly::toJson(inputVar), desc.get());
     addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
     addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
     return desc;

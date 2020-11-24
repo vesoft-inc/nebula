@@ -258,7 +258,7 @@ class NebulaTestSuite(object):
         assert resp.data is not None, 'resp.data is None'
         rows = resp.data.rows
 
-        assert len(rows) == len(expect)
+        assert len(rows) == len(expect), f'{len(rows)}!={len(expect)}'
 
         new_expect = expect
         if not is_regex:

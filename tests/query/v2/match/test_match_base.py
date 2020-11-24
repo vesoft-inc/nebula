@@ -5,6 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+import functools
 import pytest
 
 from tests.common.nebula_test_suite import NebulaTestSuite
@@ -12,7 +13,7 @@ from tests.common.path_value import PathVal
 
 
 @pytest.mark.usefixtures('set_vertices_and_edges')
-class TestMatch(NebulaTestSuite):
+class TestMatchBase(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.use_nba()
@@ -684,6 +685,20 @@ class TestMatch(NebulaTestSuite):
             ]
         self.check_out_of_order_result(resp, result)
 
+        stmt = 'MATCH p=(:player{name:"LeBron James"})-[:like]->()-[:like]->() RETURN *'
+        resp = self.execute_query(stmt)
+        self.check_resp_succeeded(resp)
+        columns_name = ['p']
+        self.check_column_names(resp, columns_name)
+        result = [
+            [PathVal([VERTICES["LeBron James"],
+                    (EDGES["LeBron James"+"Ray Allen"+"like"+"0"], 1),
+                    VERTICES["Ray Allen"],
+                    (EDGES["Ray Allen"+"Rajon Rondo"+"like"+"0"], 1),
+                    VERTICES["Rajon Rondo"]])]
+            ]
+        self.check_out_of_order_result(resp, result)
+
     def test_failures(self):
         # No RETURN
         stmt = 'MATCH (v:player{name:"abc")'
@@ -723,17 +738,6 @@ class TestMatch(NebulaTestSuite):
 
         # multiple steps
         stmt = 'MATCH (v:player:{name: "abc"}) -[r*2]-> () return *'
-        resp = self.execute_query(stmt)
-        self.check_resp_failed(resp)
-
-        # variable steps
-        stmt = 'MATCH (v:player:{name: "abc"}) -[r*1..3]-> () return *'
-        resp = self.execute_query(stmt)
-        self.check_resp_failed(resp)
-        stmt = 'MATCH (v:player:{name: "abc"}) -[r*..3]-> () return *'
-        resp = self.execute_query(stmt)
-        self.check_resp_failed(resp)
-        stmt = 'MATCH (v:player:{name: "abc"}) -[r*1..]-> () return *'
         resp = self.execute_query(stmt)
         self.check_resp_failed(resp)
 

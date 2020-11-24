@@ -43,12 +43,14 @@ class VertexProp;
 class EdgeProp;
 class StatProp;
 class Expr;
+class IndexQueryContext;
+class IndexColumnHint;
 }   // namespace cpp2
 }   // namespace storage
 
 namespace graph {
 struct Variable;
-}  // namespace graph
+}   // namespace graph
 namespace util {
 
 template <typename T>
@@ -80,6 +82,8 @@ folly::dynamic toJson(const storage::cpp2::VertexProp &prop);
 folly::dynamic toJson(const storage::cpp2::EdgeProp &prop);
 folly::dynamic toJson(const storage::cpp2::StatProp &prop);
 folly::dynamic toJson(const storage::cpp2::Expr &expr);
+folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc);
+folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints);
 folly::dynamic toJson(const graph::Variable *var);
 
 template <typename K, typename V>

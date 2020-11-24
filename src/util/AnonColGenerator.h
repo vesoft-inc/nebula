@@ -23,7 +23,7 @@ public:
     }
 
     std::string getCol() const {
-        return folly::stringPrintf("__UNAMED_COL_%ld", idGen_->id());
+        return folly::stringPrintf("__COL_%ld", idGen_->id());
     }
 
 private:

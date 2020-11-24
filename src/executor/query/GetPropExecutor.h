@@ -44,7 +44,7 @@ protected:
                 std::replace(colName.begin(), colName.end(), ':', '.');
             }
         }
-        VLOG(1) << "Resp: " << v;
+        VLOG(2) << "Dataset in get props: \n" << v << "\n";
         return finish(ResultBuilder()
                       .value(std::move(v))
                       .iter(Iterator::Kind::kProp)

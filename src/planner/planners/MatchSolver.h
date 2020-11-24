@@ -12,6 +12,9 @@
 
 namespace nebula {
 namespace graph {
+
+struct AstContext;
+
 class MatchSolver final {
 public:
     MatchSolver() = delete;
@@ -22,6 +25,21 @@ public:
     static Expression* rewrite(const LabelExpression *label);
 
     static Expression* rewrite(const LabelAttributeExpression *la);
+
+    static Expression* doRewrite(const MatchAstContext* mctx, const Expression* expr);
+
+    static bool match(AstContext* astCtx);
+
+    static Expression* makeIndexFilter(const std::string& label,
+                                       const MapExpression* map,
+                                       QueryContext* qctx);
+
+    static Expression* makeIndexFilter(const std::string& label,
+                                       const std::string& alias,
+                                       Expression* filter,
+                                       QueryContext* qctx);
+
+    static Status buildFilter(const MatchAstContext* mctx, SubPlan* plan);
 };
 }  // namespace graph
 }  // namespace nebula
