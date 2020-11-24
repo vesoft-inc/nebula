@@ -90,7 +90,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
 
 TEST_F(JobManagerTest, StatisJob) {
     std::vector<std::string> paras{"test_space"};
-    JobDescription job(12, cpp2::AdminCmd::STATIS, paras);
+    JobDescription job(12, cpp2::AdminCmd::STATS, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
     ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
     auto result = jobMgr->runJobInternal(job);
@@ -117,7 +117,7 @@ TEST_F(JobManagerTest, JobPriority) {
     ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
 
     std::vector<std::string> paras1{"test_space"};
-    JobDescription job2(14, cpp2::AdminCmd::STATIS, paras1);
+    JobDescription job2(14, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->addJob(job2, adminClient_.get());
     ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
 
@@ -152,13 +152,13 @@ TEST_F(JobManagerTest, JobDeduplication) {
     ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
 
     std::vector<std::string> paras1{"test_space"};
-    JobDescription job2(16, cpp2::AdminCmd::STATIS, paras1);
+    JobDescription job2(16, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->addJob(job2, adminClient_.get());
     ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
 
     ASSERT_EQ(2, jobMgr->jobSize());
 
-    JobDescription job3(17, cpp2::AdminCmd::STATIS, paras1);
+    JobDescription job3(17, cpp2::AdminCmd::STATS, paras1);
     JobID jId3 = 0;
     auto jobExist = jobMgr->checkJobExist(job3.getCmd(), job3.getParas(), jId3);
     if (!jobExist) {

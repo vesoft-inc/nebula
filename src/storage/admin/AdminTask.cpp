@@ -31,7 +31,7 @@ AdminTaskFactory::createAdminTask(StorageEnv* env, TaskContext&& ctx) {
     case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
         ret = std::make_shared<RebuildEdgeIndexTask>(env, std::move(ctx));
         break;
-    case meta::cpp2::AdminCmd::STATIS:
+    case meta::cpp2::AdminCmd::STATS:
         ret = std::make_shared<StatisTask>(env, std::move(ctx));
         break;
     default:

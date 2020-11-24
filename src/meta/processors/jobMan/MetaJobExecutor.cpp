@@ -55,7 +55,7 @@ MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,
                                              client,
                                              jd.getParas()));
         break;
-    case cpp2::AdminCmd::STATIS:
+    case cpp2::AdminCmd::STATS:
         ret.reset(new StatisJobExecutor(jd.getJobId(),
                                         store,
                                         client,

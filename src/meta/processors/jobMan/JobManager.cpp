@@ -195,7 +195,7 @@ bool JobManager::try_dequeue(JobID& jobId) {
 }
 
 void JobManager::enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd) {
-    if (cmd == cpp2::AdminCmd::STATIS) {
+    if (cmd == cpp2::AdminCmd::STATS) {
         highPriorityQueue_->enqueue(jobId);
     } else {
         lowPriorityQueue_->enqueue(jobId);

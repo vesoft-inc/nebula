@@ -67,7 +67,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         parameter.set_parts(parts);
 
         cpp2::AddAdminTaskRequest request;
-        request.set_cmd(meta::cpp2::AdminCmd::STATIS);
+        request.set_cmd(meta::cpp2::AdminCmd::STATS);
         request.set_job_id(1);
         request.set_task_id(13);
         request.set_para(std::move(parameter));
@@ -132,7 +132,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         parameter.set_parts(parts);
 
         cpp2::AddAdminTaskRequest request;
-        request.set_cmd(meta::cpp2::AdminCmd::STATIS);
+        request.set_cmd(meta::cpp2::AdminCmd::STATS);
         request.set_job_id(1);
         request.set_task_id(14);
         request.set_para(std::move(parameter));
@@ -203,7 +203,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         parameter.set_parts(parts);
 
         cpp2::AddAdminTaskRequest request;
-        request.set_cmd(meta::cpp2::AdminCmd::STATIS);
+        request.set_cmd(meta::cpp2::AdminCmd::STATS);
         request.set_job_id(1);
         request.set_task_id(15);
         request.set_para(std::move(parameter));

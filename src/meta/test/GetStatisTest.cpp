@@ -54,7 +54,7 @@ protected:
 TEST_F(GetStatisTest, StatisJob) {
     GraphSpaceID  spaceId = 1;
     std::vector<std::string> paras{"test_space"};
-    JobDescription statisJob(12, cpp2::AdminCmd::STATIS, paras);
+    JobDescription statisJob(12, cpp2::AdminCmd::STATS, paras);
     jobMgr->adminClient_ = adminClient_.get();
     auto rc = jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
     ASSERT_EQ(rc, nebula::kvstore::ResultCode::SUCCEEDED);
@@ -134,7 +134,7 @@ TEST_F(GetStatisTest, StatisJob) {
 
     // Execute new statis job in same space.
     std::vector<std::string> paras1{"test_space"};
-    JobDescription statisJob2(13, cpp2::AdminCmd::STATIS, paras1);
+    JobDescription statisJob2(13, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
     ASSERT_EQ(rc2, nebula::kvstore::ResultCode::SUCCEEDED);
     {

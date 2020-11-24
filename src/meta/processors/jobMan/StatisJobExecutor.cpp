@@ -52,7 +52,7 @@ folly::Future<Status>
 StatisJobExecutor::executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) {
     cpp2::StatisItem item;
     statisItem_.emplace(address, item);
-    return adminClient_->addTask(cpp2::AdminCmd::STATIS, jobId_, taskId_++,
+    return adminClient_->addTask(cpp2::AdminCmd::STATS, jobId_, taskId_++,
                                  space_, {std::move(address)}, {},
                                  std::move(parts), concurrency_, &(statisItem_[address]));
 }
