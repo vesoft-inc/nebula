@@ -8,9 +8,13 @@
 #define KVSTORE_PLUGINS_ES_LISTENER_H_
 
 #include "kvstore/Listener.h"
+#include "common/plugin/fulltext/FTStorageAdapter.h"
+#include "codec/RowReaderWrapper.h"
 
 namespace nebula {
 namespace kvstore {
+
+using nebula::plugin::DocItem;
 
 class ESListener : public Listener {
 public:
@@ -26,30 +30,51 @@ public:
               meta::SchemaManager* schemaMan)
         : Listener(spaceId, partId, std::move(localAddr), walPath,
                    ioPool, workers, handlers, snapshotMan, clientMan, schemaMan) {
+            CHECK(!!schemaMan);
+            lastApplyLogFile_ = std::make_unique<std::string>(
+            folly::stringPrintf("%s/last_apply_log_%d", walPath.c_str(), partId));
     }
 
 protected:
-    void init() override {
-    }
+    void init() override;
 
-    bool apply(const std::vector<KV>&) override {
-        return true;
-    }
+    bool apply(const std::vector<KV>& data) override;
 
-    bool persist(LogID, TermID, LogID) override {
-        return true;
-    }
+    bool persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) override;
 
-    std::pair<LogID, TermID> lastCommittedLogId() override {
-        return {0, 0};
-    }
+    std::pair<LogID, TermID> lastCommittedLogId() override;
 
-    LogID lastApplyLogId() override {
-        return 0;
-    }
+    LogID lastApplyLogId() override;
 
     void cleanup() override {
     }
+
+private:
+    bool writeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId);
+
+    std::string encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const noexcept;
+
+    bool appendDocItem(std::vector<DocItem>& items, const KV& kv) const;
+
+    bool appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) const;
+
+    bool appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const;
+
+    bool appendDocs(std::vector<DocItem>& items,
+                    const meta::SchemaProviderIf* schema,
+                    RowReader* reader,
+                    int32_t schemaId,
+                    bool isEdge) const;
+
+    bool writeData(const std::vector<nebula::plugin::DocItem>& items) const;
+
+    bool writeDatum(const std::vector<nebula::plugin::DocItem>& items) const;
+
+private:
+    std::unique_ptr<std::string>            lastApplyLogFile_{nullptr};
+    std::unique_ptr<std::string>            spaceName_{nullptr};
+    std::vector<nebula::plugin::HttpClient> esClients_;
+    int32_t                                 vIdLen_;
 };
 
 }  // namespace kvstore

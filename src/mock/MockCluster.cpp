@@ -14,6 +14,8 @@
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/GeneralStorageServiceHandler.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace mock {
 
@@ -103,10 +105,45 @@ void MockCluster::startMeta(int32_t port,
     LOG(INFO) << "The Meta Daemon started on port " << metaServer_->port_;
 }
 
+std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> MockCluster::getWorkers() {
+    auto worker =
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1, true);
+    worker->setNamePrefix("executor");
+    worker->start();
+    return worker;
+}
+
+void MockCluster::initListener(const char* dataPath, const HostAddr& addr) {
+    CHECK(metaServer_ != nullptr);
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIP(), metaServer_->port_)};
+    lMetaClient_ = std::make_unique<meta::MetaClient>(threadPool,
+                                                      localhosts,
+                                                      meta::MetaClientOptions());
+    lMetaClient_->waitForMetadReady();
+    LOG(INFO) << "Listener meta client has been ready!";
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    kvstore::KVOptions KVOpt;
+    KVOpt.listenerPath_ = folly::stringPrintf("%s/listener", dataPath);
+    KVOpt.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(addr,
+                                                                           lMetaClient_.get());
+    lSchemaMan_ = meta::SchemaManager::create(lMetaClient_.get());
+    KVOpt.schemaMan_ = lSchemaMan_.get();
+    esListener_ = std::make_unique<kvstore::NebulaStore>(std::move(KVOpt),
+                                                         ioThreadPool,
+                                                         addr,
+                                                         getWorkers());
+    esListener_->init();
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+}
+
 void MockCluster::initStorageKV(const char* dataPath,
                                 HostAddr addr,
                                 SchemaVer schemaVerCount,
-                                bool hasProp) {
+                                bool hasProp,
+                                bool hasListener,
+                                const std::vector<meta::cpp2::FTClient>& clients) {
+    FLAGS_heartbeat_interval_secs = 1;
     const std::vector<PartitionID> parts{1, 2, 3, 4, 5, 6};
     totalParts_ = 6;  // don't not delete this...
     kvstore::KVOptions options;
@@ -118,12 +155,36 @@ void MockCluster::initStorageKV(const char* dataPath,
         spaceDesc.replica_factor = 1;
         spaceDesc.charset_name = "utf8";
         spaceDesc.collate_name = "utf8_bin";
+        meta::cpp2::ColumnTypeDef type;
+        type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        type.set_type_length(32);
+        spaceDesc.vid_type = std::move(type);
         auto ret = metaClient_->createSpace(spaceDesc).get();
         if (!ret.ok()) {
             LOG(FATAL) << "can't create space";
         }
         GraphSpaceID spaceId = ret.value();
         LOG(INFO) << "spaceId = " << spaceId;
+        if (hasListener) {
+            HostAddr listenerHost(localIP(), network::NetworkUtils::getAvailablePort());
+            ret = metaClient_->addListener(spaceId,
+                                           meta::cpp2::ListenerType::ELASTICSEARCH,
+                                           {listenerHost}).get();
+            if (!ret.ok()) {
+                LOG(FATAL) << "listener init failed";
+            }
+            if (clients.empty()) {
+                LOG(FATAL) << "full text client list is empty";
+            }
+            ret = metaClient_->signInFTService(meta::cpp2::FTServiceType::ELASTICSEARCH,
+                                               clients).get();
+            if (!ret.ok()) {
+                LOG(FATAL) << "full text client sign in failed";
+            }
+            sleep(FLAGS_heartbeat_interval_secs + 1);
+            options.listenerPath_ = folly::stringPrintf("%s/listener", dataPath);
+            initListener(dataPath, {std::move(listenerHost)});
+        }
         options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                             addr,
                                             metaClient_.get());

@@ -135,6 +135,15 @@ public:
     folly::Future<cpp2::ListIndexStatusResp>
     future_listEdgeIndexStatus(const cpp2::ListIndexStatusReq& req) override;
 
+    folly::Future<cpp2::ExecResp>
+    future_signInFTService(const cpp2::SignInFTServiceReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_signOutFTService(const cpp2::SignOutFTServiceReq& req) override;
+
+    folly::Future<cpp2::ListFTClientsResp>
+    future_listFTClients(const cpp2::ListFTClientsReq& req) override;
+
     /**
      * User manager
      **/

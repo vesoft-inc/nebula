@@ -30,10 +30,14 @@ const std::string kLeadersTable        = "__leaders__";          // NOLINT
 const std::string kGroupsTable         = "__groups__";           // NOLINT
 const std::string kZonesTable          = "__zones__";            // NOLINT
 const std::string kListenerTable       = "__listener__";         // NOLINT
+
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
 // The number of edges of each edgetype in the space
 const std::string kStatisTable         = "__statis__";           // NOLINT
+
+const std::string kFTIndexTable        = "__ft_index__";         // NOLINT
+const std::string kFTServiceTable      = "__ft_service__";       // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -1082,6 +1086,31 @@ cpp2::StatisItem MetaServiceUtils::parseStatisVal(folly::StringPiece rawData) {
 
 const std::string& MetaServiceUtils::statisKeyPrefix() {
     return kStatisTable;
+}
+
+std::string MetaServiceUtils::fulltextServiceKey() {
+    std::string key;
+    key.reserve(kFTServiceTable.size());
+    key.append(kFTServiceTable.data(), kFTServiceTable.size());
+    return key;
+}
+
+std::string MetaServiceUtils::fulltextServiceVal(cpp2::FTServiceType type,
+                                                 const std::vector<cpp2::FTClient>& clients) {
+    std::string val, cval;
+    apache::thrift::CompactSerializer::serialize(clients, &cval);
+    val.reserve(sizeof(cpp2::FTServiceType) + cval.size());
+    val.append(reinterpret_cast<const char*>(&type), sizeof(cpp2::FTServiceType))
+        .append(cval);
+    return val;
+}
+
+std::vector<cpp2::FTClient> MetaServiceUtils::parseFTClients(folly::StringPiece rawData) {
+    std::vector<cpp2::FTClient> clients;
+    int32_t offset = sizeof(cpp2::FTServiceType);
+    auto clientsRaw = rawData.subpiece(offset, rawData.size() - offset);
+    apache::thrift::CompactSerializer::deserialize(clientsRaw, clients);
+    return clients;
 }
 
 }  // namespace meta

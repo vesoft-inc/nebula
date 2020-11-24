@@ -3,6 +3,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_meta_obj>
     $<TARGET_OBJECTS:common_meta_client_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
@@ -20,7 +21,11 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
+    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_time_utils_obj>
+    $<TARGET_OBJECTS:common_process_obj>
+    $<TARGET_OBJECTS:common_encryption_obj>
+    $<TARGET_OBJECTS:common_ft_es_storage_adapter_obj>
 )
 
 nebula_add_test(
@@ -33,6 +38,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -46,6 +52,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -59,6 +66,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -72,6 +80,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -85,6 +94,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         wangle
         gtest
 )
@@ -100,6 +110,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -113,6 +124,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         gtest
 )
 
@@ -126,6 +138,7 @@ nebula_add_executable(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         follybenchmark
         boost_regex
 )
@@ -140,6 +153,7 @@ nebula_add_executable(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        proxygenlib
         follybenchmark
         gtest
         boost_regex

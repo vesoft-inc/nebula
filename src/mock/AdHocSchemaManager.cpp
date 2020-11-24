@@ -206,6 +206,10 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
     }
 }
 
+StatusOr<std::string> AdHocSchemaManager::toGraphSpaceName(GraphSpaceID) {
+    return "default_space";
+}
+
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
     try {
@@ -274,5 +278,12 @@ StatusOr<EdgeSchemas> AdHocSchemaManager::getAllVerEdgeSchema(GraphSpaceID space
     return iter->second;
 }
 
+StatusOr<std::vector<nebula::meta::cpp2::FTClient>> AdHocSchemaManager::getFTClients() {
+    return ftClients_;
+}
+
+void AdHocSchemaManager::addFTClient(const nebula::meta::cpp2::FTClient& client) {
+    ftClients_.emplace_back(client);
+}
 }  // namespace mock
 }  // namespace nebula

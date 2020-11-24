@@ -33,11 +33,17 @@ public:
         if (metaClient_) {
             metaClient_->stop();
         }
+        if (lMetaClient_) {
+            lMetaClient_->stop();
+        }
         if (metaKV_) {
             metaKV_->stop();
         }
         if (storageKV_) {
             storageKV_->stop();
+        }
+        if (esListener_) {
+            esListener_->stop();
         }
         storageAdminServer_.reset();
         graphStorageServer_.reset();
@@ -90,7 +96,13 @@ public:
     void initStorageKV(const char* dataPath,
                        HostAddr localHost = HostAddr("", 0),
                        SchemaVer schemaVerCount = 1,
-                       bool hasProp = true);
+                       bool hasProp = true,
+                       bool hasListener = false,
+                       const std::vector<meta::cpp2::FTClient>& clients = {});
+
+    std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers();
+
+    void initListener(const char* dataPath, const HostAddr& addr);
 
     static std::string localIP();
 
@@ -115,6 +127,9 @@ public:
     std::unique_ptr<meta::IndexManager>             indexMan_;
     nebula::ClusterID                               clusterId_ = 10;
     int32_t                                         totalParts_;
+    std::unique_ptr<kvstore::NebulaStore>           esListener_{nullptr};
+    std::unique_ptr<meta::SchemaManager>            lSchemaMan_;
+    std::unique_ptr<meta::MetaClient>               lMetaClient_{nullptr};
 };
 
 }  // namespace mock

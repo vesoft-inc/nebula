@@ -1317,6 +1317,54 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     }
 }
 
+TEST(MetaClientTest, FTServiceTest) {
+    FLAGS_heartbeat_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/FTServiceTest.XXXXXX");
+
+    mock::MockCluster cluster;
+    cluster.startMeta(0, rootPath.path());
+    uint32_t localMetaPort = cluster.metaServer_->port_;
+    auto* kv = cluster.metaKV_.get();
+    auto localIp = cluster.localIP();
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    client->waitForMetadReady();
+
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    TestUtils::registerHB(kv, hosts);
+
+    std::vector<cpp2::FTClient> clients;
+    cpp2::FTClient c1, c2;
+    c1.set_host({"0", 0});
+    c1.set_user("u1");
+    c1.set_pwd("pwd");
+    clients.emplace_back(c1);
+    c2.set_host({"1", 1});
+    c2.set_user("u2");
+    clients.emplace_back(c2);
+    {
+        cpp2::FTServiceType type = cpp2::FTServiceType::ELASTICSEARCH;
+        auto result = client->signInFTService(type, clients).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->listFTClients().get();
+        ASSERT_TRUE(result.ok());
+        ASSERT_EQ(clients, result.value());
+    }
+    {
+        auto result = client->signOutFTService().get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->listFTClients().get();
+        ASSERT_TRUE(result.ok());
+        ASSERT_TRUE(result.value().empty());
+    }
+}
+
 class TestListener : public MetaChangedListener {
 public:
     virtual ~TestListener() = default;

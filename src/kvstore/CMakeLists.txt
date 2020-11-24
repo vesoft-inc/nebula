@@ -8,6 +8,7 @@ nebula_add_library(
     RocksEngineConfig.cpp
     LogEncoder.cpp
     SnapshotManagerImpl.cpp
+    plugins/elasticsearch/ESListener.cpp
 )
 
 nebula_add_subdirectory(raftex)
