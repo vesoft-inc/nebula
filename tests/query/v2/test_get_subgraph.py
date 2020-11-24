@@ -45,7 +45,7 @@ class TestSubGraph(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_failed(resp)
 
-    def test_zero_step(self):
+    def test_zero_step(self, check_subgraph_result):
         VERTEXS = self.VERTEXS
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan"'
@@ -62,7 +62,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Spurs"'
         resp = self.execute_query(stmt)
@@ -78,7 +78,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"'
         resp = self.execute_query(stmt)
@@ -95,7 +95,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
         resp = self.execute_query(stmt)
@@ -111,7 +111,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
         resp = self.execute_query(stmt)
@@ -128,7 +128,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = '''$a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id;
                   GET SUBGRAPH 0 STEPS FROM $a.id'''
@@ -145,7 +145,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = '''$a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id;
                   GET SUBGRAPH 0 STEPS FROM $a.id'''
@@ -163,9 +163,9 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
-    def test_subgraph(self):
+    def test_subgraph(self, check_subgraph_result):
         VERTEXS, EDGES = self.VERTEXS, self.EDGES
 
         stmt = "GET SUBGRAPH FROM 'Tim Duncan'"
@@ -246,7 +246,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan'"
         resp = self.execute_query(stmt)
@@ -448,7 +448,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan' IN like, serve"
         resp = self.execute_query(stmt)
@@ -528,7 +528,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan' IN like OUT serve"
         resp = self.execute_query(stmt)
@@ -681,7 +681,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve"
         resp = self.execute_query(stmt)
@@ -736,7 +736,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 3 STEPS FROM 'Paul George' OUT serve BOTH like"
         resp = self.execute_query(stmt)
@@ -841,7 +841,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH FROM 'Tony Parker' BOTH like"
         resp = self.execute_query(stmt)
@@ -897,7 +897,7 @@ class TestSubGraph(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over serve YIELD serve._src AS id | GET SUBGRAPH FROM $-.id"
         resp = self.execute_query(stmt)
@@ -978,7 +978,7 @@ class TestSubGraph(NebulaTestSuite):
         }
 
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])
 
         stmt = '''$a = GO FROM 'Tim Duncan' over serve YIELD serve._src AS id;
                   GET SUBGRAPH FROM $a.id'''
@@ -1060,4 +1060,4 @@ class TestSubGraph(NebulaTestSuite):
         }
 
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_subgraph_result(resp, expected_data["rows"])
+        check_subgraph_result(resp, expected_data["rows"])

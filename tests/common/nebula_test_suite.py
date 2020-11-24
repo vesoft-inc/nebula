@@ -7,17 +7,19 @@
 
 import time
 import datetime
+import pytest
+import re
+
 from pathlib import Path
 from typing import Pattern, Set
 
-import pytest
 from nebula2.Client import GraphClient
 from nebula2.common import ttypes as CommonTtypes
 from nebula2.ConnectionPool import ConnectionPool
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
-import functools
-import re
+from tests.common.utils import compare_value, \
+    row_to_string, to_value, value_to_string, find_in_rows
 
 
 T_EMPTY = CommonTtypes.Value()
@@ -34,11 +36,6 @@ T_NULL_UNKNOWN_PROP.set_nVal(CommonTtypes.NullType.UNKNOWN_PROP)
 T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
 T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 
-class PathVal:
-    items = []
-
-    def __init__(self, items):
-        self.items = items
 
 class NebulaTestSuite(object):
     @classmethod
@@ -164,6 +161,15 @@ class NebulaTestSuite(object):
             'PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
+    def check_rows_with_header(cls, stmt: str, expected: dict):
+        resp = cls.execute_query(stmt)
+        cls.check_resp_succeeded(resp)
+        if "column_names" in expected:
+            cls.check_column_names(resp, expected['column_names'])
+        if "rows" in expected:
+            cls.check_out_of_order_result(resp, expected['rows'])
+
+    @classmethod
     def prepare(cls):
         if hasattr(cls.prepare, 'is_overridden'):
             cls.prepare()
@@ -196,315 +202,95 @@ class NebulaTestSuite(object):
             )
 
     @classmethod
-    def check_value(self, col, expect):
-        if isinstance(expect, Pattern):
-            if col.getType() == CommonTtypes.Value.BVAL:
-                msg = self.check_format_str.format(col.get_bVal(), expect)
-                if not expect.match(str(col.get_bVal())):
-                    return False, msg
-                return True, ''
-
-            if col.getType() == CommonTtypes.Value.IVAL:
-                msg = self.check_format_str.format(col.get_iVal(), expect)
-                if not expect.match(str(col.get_iVal())):
-                    return False, msg
-                return True, ''
-
-            if col.getType() == CommonTtypes.Value.SVAL:
-                msg = self.check_format_str.format(col.get_sVal().decode('utf-8'),
-                                                   expect)
-                if not expect.match(col.get_sVal().decode('utf-8')):
-                    return False, msg
-                return True, ''
-
-            if col.getType() == CommonTtypes.Value.FVAL:
-                msg = self.check_format_str.format(col.get_fVal(),
-                                                   expect)
-                if not expect.match(str(col.get_fVal())):
-                    return False, msg
-                return True, ''
-
-            return False, 'ERROR: Type unsupported'
-
-        msg = self.check_format_str.format(col, expect)
-        if col == expect:
-            return True, ''
-        else:
-            return False, msg
-
-    @classmethod
-    def date_to_string(self, date):
-        return '{}/{}/{}'.format(date.year, date.month, date.day)
-
-    @classmethod
-    def time_to_string(self, time):
-        return '{}:{}:{}.{}'.format(time.hour, time.minute, time.sec, time.microsec)
-
-    @classmethod
-    def date_time_to_string(self, date_time):
-        return '{}/{}/{} {}:{}:{}.{}'.format(date_time.year,
-                                             date_time.month,
-                                             date_time.day,
-                                             date_time.hour,
-                                             date_time.minute,
-                                             date_time.sec,
-                                             date_time.microsec)
-
-    @classmethod
-    def map_to_string(self, map):
-        kvStrs = []
-        for key in map.kvs:
-            kvStrs.append('"{}":"{}"'.format(key.decode('utf-8'), self.value_to_string(map.kvs[key])))
-        return '{' + ','.join(kvStrs) + '}'
-
-    @classmethod
-    def list_to_string(self, list):
-        values = []
-        for val in list.values:
-            values.append('{}'.format(self.value_to_string(val)));
-        return '[' + ','.join(values) + ']'
-
-    @classmethod
-    def value_to_string(self, value):
-        if value.getType() == CommonTtypes.Value.__EMPTY__:
-            return '__EMPTY__'
-        elif value.getType() == CommonTtypes.Value.NVAL:
-            return '__NULL__'
-        elif value.getType() == CommonTtypes.Value.BVAL:
-            return str(value.get_bVal())
-        elif value.getType() == CommonTtypes.Value.IVAL:
-            return str(value.get_iVal())
-        elif value.getType() == CommonTtypes.Value.FVAL:
-            return str(value.get_fVal())
-        elif value.getType() == CommonTtypes.Value.SVAL:
-            return value.get_sVal().decode('utf-8')
-        elif value.getType() == CommonTtypes.Value.DVAL:
-            return self.date_to_string(value.get_dVal())
-        elif value.getType() == CommonTtypes.Value.TVAL:
-            return self.time_to_string(value.get_tVal())
-        elif value.getType() == CommonTtypes.Value.DTVAL:
-            return self.date_time_to_string(value.get_dtVal())
-        elif value.getType() == CommonTtypes.Value.MVAL:
-            return self.map_to_string(value.get_mVal())
-        else:
-            return value.__repr__();
-
-    @classmethod
-    def row_to_string(self, row):
-        value_list = []
-        for col in row.values:
-            value_list.append(self.value_to_string(col))
-        return '[' + ','.join(value_list) + ']'
-
-    @classmethod
     def search_result(self, resp, expect, is_regex=False):
-        ok, msg = self.search(resp, expect, is_regex)
-        assert ok, msg
+        self.search(resp, expect, is_regex)
 
     @classmethod
     def search_not_exist(self, resp, expect, is_regex=False):
-        ok, msg = self.search(resp, expect, is_regex)
-        assert not ok, 'expect "{}" has exist'.format(str(expect))
+        self.search(resp, expect, is_regex, False)
 
     @classmethod
-    def search(self, resp, expect, is_regex=False):
+    def search(self, resp, expect, is_regex=False, exist=True):
         if resp.data is None and len(expect) == 0:
-            return True
+            return
 
-        if resp.data is None:
-            return False, 'resp.data is None'
+        assert resp.data is not None, 'resp.data is None'
+
         rows = resp.data.rows
-
-        msg = 'len(rows)[%d] < len(expect)[%d]' % (len(rows), len(expect))
-        if len(rows) < len(expect):
-            return False, msg
+        assert len(rows) >= len(expect), f'{len(rows)} < {len(expect)}'
 
         new_expect = expect
         if not is_regex:
             # convert expect to thrift value
-            ok, new_expect, msg = self.convert_expect(expect)
-            if not ok:
-                return ok, 'convert expect failed, error msg: {}'.format(msg)
+            new_expect = self.convert_expect(expect)
 
+        msg = 'Returned row from nebula could not be found, row: {}, resp: {}'
         for exp in new_expect:
-            exp_values = []
-            exp_str = ''
-            if not is_regex:
-                exp_values = exp.values
-                exp_str = self.row_to_string(exp)
-            else:
-                exp_values = exp
-                exp_str = str(exp)
-            has = False
-            for row in rows:
-                ok = True
-                if len(row.values) != len(exp_values):
-                    return False, 'len(row)[%d] != len(exp_values)[%d]' % (len(row.values), len(exp_values))
-                for col1, col2 in zip(row.values, exp_values):
-                    ok, msg = self.check_value(col1, col2)
-                    if not ok:
-                        ok = False
-                        break
-                if ok:
-                    has = True
-                    break
-            if not has:
-                return has, 'The returned row from nebula could not be found, row: {}'.format(exp_str)
-        return True, ''
+            values, exp_str = (exp, str(exp)) if is_regex else (exp.values, row_to_string(exp))
+            assert find_in_rows(values, rows) == exist, \
+                msg.format(exp_str, value_to_string(rows))
 
     @classmethod
     def check_column_names(self, resp, expect):
-        assert len(resp.data.column_names) == len(expect), \
-            f'Column names does not match, expected: {expect}, actual: {resp.data.column_names}'
+        column_names = resp.data.column_names
+        assert len(column_names) == len(expect), \
+            f'Column names does not match, expected: {expect}, actual: {column_names}'
         for i in range(len(expect)):
-            result = bytes.decode(resp.data.column_names[i])
-            ok = (expect[i] == result)
-            assert ok, "different column name, expect: {} vs. result: {}".format(expect[i], result)
-
-    @classmethod
-    def to_path_value(self, col):
-        path = CommonTtypes.Path()
-        path.steps = []
-        for col, j in zip(col.items, range(len(col.items))):
-            if j == 0:
-                path.src = col.get_vVal()
-            elif (j % 2) == 1:
-                edge = col[0].get_eVal()
-                step = CommonTtypes.Step()
-                step.name = edge.name
-                step.ranking = edge.ranking
-                step.type = col[1]
-                step.props = edge.props
-                path.steps.append(step)
-            else:
-                print("step: %d", len(path.steps))
-                path.steps[-1].dst = col.get_vVal()
-        return path
-
-    @classmethod
-    def to_value(self, col):
-        value = CommonTtypes.Value()
-        if isinstance(col, bool):
-            value.set_bVal(col)
-        elif isinstance(col, int):
-            value.set_iVal(col)
-        elif isinstance(col, float):
-            value.set_fVal(col)
-        elif isinstance(col, str):
-            value.set_sVal(col.encode('utf-8'))
-        elif isinstance(col, CommonTtypes.Date):
-            value.set_dVal(col)
-        elif isinstance(col, CommonTtypes.Time):
-            value.set_tVal(col)
-        elif isinstance(col, CommonTtypes.DateTime):
-            value.set_dtVal(col)
-        elif isinstance(col, dict):
-            map_val = CommonTtypes.Map()
-            map_val.kvs = dict()
-            for key in col:
-                ok, temp = self.to_value(col[key])
-                if not ok:
-                    return ok, temp
-                map_val.kvs[key.encode('utf-8')] = temp
-            value.set_mVal(map_val)
-        elif isinstance(col, list):
-            list_val = CommonTtypes.List(list())
-            for i in col:
-                ok, temp = self.to_value(i)
-                if not ok:
-                    return ok, temp
-                list_val.values.append(temp)
-            value.set_lVal(list_val)
-        elif isinstance(col, set):
-            set_val = CommonTtypes.Set(set())
-            for i in col:
-                ok, temp = self.to_value(i)
-                if not ok:
-                    return ok, temp
-                set_val.values.add(temp)
-            value.set_uVal(set_val)
-        elif isinstance(col, PathVal):
-            value.set_pVal(self.to_path_value(col))
-        else:
-            return False, 'Wrong val type'
-        return True, value
+            result = bytes.decode(column_names[i])
+            assert expect[i] == result, \
+                f"different column name, expect: {expect[i]} vs. result: {result}"
 
     @classmethod
     def convert_expect(self, expect):
         result = []
         for row in expect:
-            if not isinstance(row, list):
-                return False, [], '{} is not list type'.format(str(row))
+            assert type(row) is list, f'{str(row)} is not list type'
             new_row = CommonTtypes.Row()
-            new_row.values = []
-            for col in row:
-                if isinstance(col, CommonTtypes.Value):
-                    new_row.values.append(col)
-                else:
-                    ok, value = self.to_value(col)
-                    if not ok:
-                        return ok, value, 'to_value:error'
-                    new_row.values.append(value)
+            new_row.values = list(map(to_value, row))
             result.append(new_row)
-        return True, result, ''
+        return result
 
     @classmethod
     def check_result(self, resp, expect, ignore_col: Set[int] = set(), is_regex=False):
         if resp.data is None and len(expect) == 0:
             return
 
-        if resp.data is None:
-            assert False, 'resp.data is None'
+        assert resp.data is not None, 'resp.data is None'
         rows = resp.data.rows
 
-        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
-        assert len(rows) == len(expect), msg
+        assert len(rows) == len(expect)
 
         new_expect = expect
         if not is_regex:
             # convert expect to thrift value
-            ok, new_expect, msg = self.convert_expect(expect)
-            if not ok:
-                assert ok, 'convert expect failed, error msg: {}'.format(msg)
+            new_expect = self.convert_expect(expect)
         for row, i in zip(rows, range(0, len(new_expect))):
-            if isinstance(new_expect[i], CommonTtypes.Row):
-                assert len(row.values) - len(ignore_col) == len(new_expect[i].values), \
-                    '{}, {}, {}'.format(len(row.values), len(ignore_col), len(new_expect[i].values))
-            else:
-                assert len(row.values) - len(ignore_col) == len(new_expect[i])
+            columns = new_expect[i].values if isinstance(new_expect[i], CommonTtypes.Row) else new_expect[i]
+            assert len(row.values) - len(ignore_col) == len(columns)
             ignored_col_count = 0
             for j, col in enumerate(row.values):
                 if j in ignore_col:
                     ignored_col_count += 1
                     continue
-                exp_val = None
-                expect_to_string = ''
-                if isinstance(new_expect[i], CommonTtypes.Row):
-                    exp_val = new_expect[i].values[j - ignored_col_count]
-                    expect_to_string = self.row_to_string(new_expect[i])
-                else:
-                    exp_val = new_expect[i][j - ignored_col_count]
-                    expect_to_string = str(new_expect[i])
-                ok, msg = self.check_value(col, exp_val)
-                assert ok, 'The returned row from nebula could not be found, row: {}, expect: {}, error message: {}'.format(
-                        self.row_to_string(row), expect_to_string, msg)
+                exp_val = columns[j - ignored_col_count]
+                expect_to_string = row_to_string(columns)
+                assert compare_value(col, exp_val), \
+                    'The returned row from nebula could not be found, row: {}, expect: {}'.format(
+                        row_to_string(row), expect_to_string)
 
     @classmethod
     def check_out_of_order_result(self, resp, expect, ignore_col: Set[int]=set()):
         if resp.data is None and len(expect) == 0:
             return
 
-        if resp.data is None:
-            assert False, 'resp.data is None'
+        assert resp.data is not None
 
         # convert expect to thrift value
-        ok, new_expect, msg = self.convert_expect(expect)
-        if not ok:
-            assert ok, 'convert expect failed, error msg: {}'.format(msg)
+        new_expect = self.convert_expect(expect)
         rows = resp.data.rows
-        sorted_rows = sorted(rows, key=str)
+        sorted_rows = sorted(rows, key=row_to_string)
         resp.data.rows = sorted_rows
-        sorted_expect = sorted(new_expect, key=str)
+        sorted_expect = sorted(new_expect, key=row_to_string)
         # has convert the expect, so set is_regex to True
         self.check_result(resp, sorted_expect, ignore_col, True)
 
@@ -517,103 +303,6 @@ class NebulaTestSuite(object):
         elif len(resp.data.rows) == 0:
             empty = True
         assert empty, msg
-
-    def compare_vertex(self, vertex1, vertex2):
-        assert isinstance(vertex1, CommonTtypes.Vertex) and isinstance(vertex2, CommonTtypes.Vertex)
-        if vertex1.vid != vertex2.vid:
-            if vertex1.vid < vertex2.vid:
-                return -1
-            return 1
-        if len(vertex1.tags) != len(vertex2.tags):
-            return len(vertex1.tags) - len(vertex2.tags)
-        return 0
-
-    def compare_edge(self, edge1, edge2):
-        assert isinstance(edge1, CommonTtypes.Edge) and isinstance(edge2, CommonTtypes.Edge)
-        if edge1.src != edge2.src:
-            if edge1.src < edge2.src:
-                return -1
-            return 1
-        if edge1.dst != edge2.dst:
-            if edge1.dst < edge2.dst:
-                return -1
-            return 1
-        if edge1.type != edge2.type:
-            return edge1.type - edge2.type
-        if edge1.ranking != edge2.ranking:
-            return edge1.ranking - edge2.ranking
-        if len(edge1.props) != len(edge2.props):
-            return len(edge1.props) - len(edge2.props)
-        return 0
-
-    def sort_vertex_list(self, rows):
-        assert len(rows) == 1
-        if isinstance(rows[0], CommonTtypes.Row):
-            vertex_list = list(map(lambda v : v.get_vVal(), rows[0].values[0].get_lVal().values))
-            sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
-        elif isinstance(rows[0], list):
-            vertex_list = list(map(lambda v : v.get_vVal(), rows[0][0]))
-            sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
-        else:
-            assert False
-        return sort_vertex_list
-
-    def sort_vertex_edge_list(self, rows):
-        new_rows = list()
-        for row in rows:
-            new_row = list()
-            if isinstance(row, CommonTtypes.Row):
-                vertex_list = row.values[0].get_lVal().values
-                new_vertex_list = list(map(lambda v : v.get_vVal(), vertex_list))
-                new_row.extend(sorted(new_vertex_list, key = functools.cmp_to_key(self.compare_vertex)))
-
-                edge_list = row.values[1].get_lVal().values
-                new_edge_list = list(map(lambda e : e.get_eVal(), edge_list))
-                new_row.extend(sorted(new_edge_list, key = functools.cmp_to_key(self.compare_edge)))
-            elif isinstance(row, list):
-                vertex_list = list(map(lambda v : v.get_vVal(), row[0]))
-                sort_vertex_list = sorted(vertex_list, key = functools.cmp_to_key(self.compare_vertex))
-                new_row.extend(sort_vertex_list)
-
-                edge_list = list(map(lambda e: e.get_eVal(), row[1]))
-                sort_edge_list = sorted(edge_list, key = functools.cmp_to_key(self.compare_edge))
-                new_row.extend(sort_edge_list)
-            else:
-                assert False, "Unsupport type : {}".format(type(row))
-
-            new_rows.append(new_row)
-        return new_rows
-
-    def check_subgraph_result(self, resp, expect):
-        if resp.data is None and len(expect) == 0:
-            return True
-
-        if resp.data is None:
-            return False, 'resp.data is None'
-
-        rows = resp.data.rows
-
-        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
-        assert len(rows) == len(expect), msg
-
-        if len(resp.data.column_names) == 1:
-            new_rows = self.sort_vertex_list(rows)
-            new_expect = self.sort_vertex_list(expect)
-        else:
-            new_rows = self.sort_vertex_edge_list(rows)
-            new_expect = self.sort_vertex_edge_list(expect)
-
-        for exp in new_expect:
-            find = False
-            for row in new_rows:
-                if row == exp:
-                    find = True
-                    new_rows.remove(row)
-                    break
-            assert find, 'Can not find {}'.format(exp)
-
-        assert len(new_rows) == 0
-
 
     @classmethod
     def check_path_result_without_prop(self, rows, expect):

@@ -7,7 +7,8 @@
 
 import pytest
 
-from tests.common.nebula_test_suite import NebulaTestSuite, PathVal
+from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.path_value import PathVal
 
 
 @pytest.mark.usefixtures('set_vertices_and_edges')
