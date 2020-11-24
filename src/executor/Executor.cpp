@@ -37,7 +37,7 @@
 #include "executor/admin/UpdateUserExecutor.h"
 #include "executor/admin/GroupExecutor.h"
 #include "executor/admin/ZoneExecutor.h"
-#include "executor/admin/ShowStatusExecutor.h"
+#include "executor/admin/ShowStatsExecutor.h"
 #include "executor/algo/BFSShortestPathExecutor.h"
 #include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
@@ -440,8 +440,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kShowListener: {
             return pool->add(new ShowListenerExecutor(node, qctx));
         }
-        case PlanNode::Kind::kShowStatus: {
-            return pool->add(new ShowStatusExecutor(node, qctx));
+        case PlanNode::Kind::kShowStats: {
+            return pool->add(new ShowStatsExecutor(node, qctx));
         }
         case PlanNode::Kind::kUnknown: {
             LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

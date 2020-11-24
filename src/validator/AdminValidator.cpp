@@ -420,7 +420,7 @@ Status ShowStatusValidator::validateImpl() {
 }
 
 Status ShowStatusValidator::toPlan() {
-    auto *node = ShowStatus::make(qctx_, nullptr);
+    auto *node = ShowStats::make(qctx_, nullptr);
     root_ = node;
     tail_ = root_;
     return Status::OK();

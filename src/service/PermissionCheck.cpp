@@ -137,7 +137,7 @@ Status PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kShowParts:
         case Sentence::Kind::kShowTags:
         case Sentence::Kind::kShowEdges:
-        case Sentence::Kind::kShowStatus:
+        case Sentence::Kind::kShowStats:
         case Sentence::Kind::kShowTagIndexes:
         case Sentence::Kind::kShowEdgeIndexes:
         case Sentence::Kind::kShowCreateTag:

@@ -140,7 +140,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
-%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE KW_STATUS
+%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -150,7 +150,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
-%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATIS
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
@@ -401,7 +401,6 @@ unreserved_keyword
     | KW_JOBS               { $$ = new std::string("jobs"); }
     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
     | KW_FORCE              { $$ = new std::string("force"); }
-    | KW_STATUS             { $$ = new std::string("status"); }
     | KW_PART               { $$ = new std::string("part"); }
     | KW_PARTS              { $$ = new std::string("parts"); }
     | KW_DEFAULT            { $$ = new std::string("default"); }
@@ -450,7 +449,7 @@ unreserved_keyword
     | KW_ZONES              { $$ = new std::string("zones"); }
     | KW_LISTENER           { $$ = new std::string("listener"); }
     | KW_ELASTICSEARCH      { $$ = new std::string("elasticsearch"); }
-    | KW_STATIS             { $$ = new std::string("statis"); }
+    | KW_STATS              { $$ = new std::string("stats"); }
     ;
 
 agg_function
@@ -2283,7 +2282,7 @@ admin_job_sentence
 admin_job_operation
     : KW_COMPACT         { $$ = new std::string("compact"); }
     | KW_FLUSH           { $$ = new std::string("flush"); }
-    | KW_STATIS          { $$ = new std::string("statis"); }
+    | KW_STATS           { $$ = new std::string("stats"); }
     | KW_REBUILD KW_TAG  { $$ = new std::string("rebuild tag"); }
     | KW_REBUILD KW_EDGE { $$ = new std::string("rebuild edge"); }
     | admin_job_operation admin_job_para {
@@ -2366,8 +2365,8 @@ show_sentence
     | KW_SHOW KW_ZONES {
         $$ = new ListZonesSentence();
     }
-    | KW_SHOW KW_STATUS {
-        $$ = new ShowStatusSentence();
+    | KW_SHOW KW_STATS {
+        $$ = new ShowStatsSentence();
     }
     ;
 

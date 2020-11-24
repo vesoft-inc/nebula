@@ -1199,15 +1199,15 @@ private:
         : SingleInputNode(qctx, Kind::kShowZones, input) {}
 };
 
-class ShowStatus final : public SingleInputNode {
+class ShowStats final : public SingleInputNode {
 public:
-    static ShowStatus* make(QueryContext* qctx, PlanNode* input) {
-        return qctx->objPool()->add(new ShowStatus(qctx, input));
+    static ShowStats* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowStats(qctx, input));
     }
 
 private:
-    ShowStatus(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowStatus, input) {}
+    ShowStats(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowStats, input) {}
 };
 
 }  // namespace graph

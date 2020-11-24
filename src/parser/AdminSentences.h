@@ -572,10 +572,10 @@ private:
     std::vector<std::string> paras_;
 };
 
-class ShowStatusSentence final : public Sentence {
+class ShowStatsSentence final : public Sentence {
 public:
-    ShowStatusSentence() {
-        kind_ = Kind::kShowStatus;
+    ShowStatsSentence() {
+        kind_ = Kind::kShowStats;
     }
 
     std::string toString() const override;

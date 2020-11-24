@@ -4,7 +4,7 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "executor/admin/ShowStatusExecutor.h"
+#include "executor/admin/ShowStatsExecutor.h"
 #include "context/QueryContext.h"
 #include "service/PermissionManager.h"
 #include "planner/Admin.h"
@@ -14,7 +14,7 @@
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> ShowStatusExecutor::execute() {
+folly::Future<Status> ShowStatsExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space().id;

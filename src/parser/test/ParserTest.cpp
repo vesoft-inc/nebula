@@ -1468,7 +1468,7 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW STATUS";
+        std::string query = "SHOW STATS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

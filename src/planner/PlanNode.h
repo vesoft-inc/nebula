@@ -102,7 +102,7 @@ public:
         kShowParts,
         kShowCharset,
         kShowCollation,
-        kShowStatus,
+        kShowStats,
         kShowConfigs,
         kShowGroups,
         kShowZones,

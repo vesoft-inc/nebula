@@ -200,8 +200,8 @@ void AdminJobSentence::addPara(const std::string& para) {
     paras_.emplace_back(para);
 }
 
-std::string ShowStatusSentence::toString() const {
-    return folly::stringPrintf("SHOW STATUS");
+std::string ShowStatsSentence::toString() const {
+    return folly::stringPrintf("SHOW STATS");
 }
 
 }   // namespace nebula

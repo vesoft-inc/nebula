@@ -471,9 +471,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("INTO", TokenType::KW_INTO),
         CHECK_SEMANTIC_TYPE("Into", TokenType::KW_INTO),
         CHECK_SEMANTIC_TYPE("into", TokenType::KW_INTO),
-        CHECK_SEMANTIC_TYPE("STATIS", TokenType::KW_STATIS),
-        CHECK_SEMANTIC_TYPE("Statis", TokenType::KW_STATIS),
-        CHECK_SEMANTIC_TYPE("statis", TokenType::KW_STATIS),
+        CHECK_SEMANTIC_TYPE("STATS", TokenType::KW_STATS),
+        CHECK_SEMANTIC_TYPE("Stats", TokenType::KW_STATS),
+        CHECK_SEMANTIC_TYPE("stats", TokenType::KW_STATS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
