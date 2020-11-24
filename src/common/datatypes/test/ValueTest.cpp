@@ -88,7 +88,7 @@ TEST(Value, Arithmetics) {
 
         v = vStr1 + vDate1;
         EXPECT_EQ(Value::Type::STRING, v.type());
-        EXPECT_EQ(std::string("Hello 2020/01/01"), v.getStr());
+        EXPECT_EQ(std::string("Hello 2020-01-01"), v.getStr());
     }
     // -
     {
