@@ -149,6 +149,10 @@ void FindAnyExprVisitor::visit(EdgeExpression *expr) {
     findExpr(expr);
 }
 
+void FindAnyExprVisitor::visit(ColumnExpression *expr) {
+    findExpr(expr);
+}
+
 void FindAnyExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
     findExpr(expr);
     if (found_) return;

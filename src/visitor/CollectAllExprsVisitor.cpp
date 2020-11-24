@@ -127,6 +127,10 @@ void CollectAllExprsVisitor::visit(EdgeExpression *expr) {
     collectExpr(expr);
 }
 
+void CollectAllExprsVisitor::visit(ColumnExpression *expr) {
+    collectExpr(expr);
+}
+
 void CollectAllExprsVisitor::visit(CaseExpression *expr) {
     collectExpr(expr);
     if (expr->hasCondition()) {

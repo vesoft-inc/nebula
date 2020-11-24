@@ -61,6 +61,8 @@ public:
     void visit(CaseExpression *expr) override;
     // path build expression
     void visit(PathBuildExpression *expr) override;
+    // column expression
+    void visit(ColumnExpression *expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
     Expression *fold(Expression *expr) const;

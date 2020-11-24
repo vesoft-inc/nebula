@@ -215,6 +215,10 @@ void DeducePropsVisitor::visit(EdgeExpression *expr) {
     UNUSED(expr);
 }
 
+void DeducePropsVisitor::visit(ColumnExpression *expr) {
+    UNUSED(expr);
+}
+
 void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
     auto status = qctx_->schemaMng()->toEdgeType(space_, *expr->sym());
     if (!status.ok()) {

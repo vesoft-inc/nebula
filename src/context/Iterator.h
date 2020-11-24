@@ -119,6 +119,18 @@ public:
     // The derived class should rewrite get prop if the Value is kind of dataset.
     virtual const Value& getColumn(const std::string& col) const = 0;
 
+    virtual const Value& getColumn(int32_t index) const = 0;
+
+    template <typename Iter>
+    const Value& getColumnByIndex(int32_t index, Iter iter) const {
+        auto size = iter->size();
+        if (static_cast<size_t>(std::abs(index)) >= size) {
+            return Value::kNullBadType;
+        }
+        auto currentRow = *iter;
+        return currentRow[(size + index) % size];
+    }
+
     virtual const Value& getTagProp(const std::string&,
                                     const std::string&) const {
         DLOG(FATAL) << "Shouldn't call the unimplemented method";
@@ -180,6 +192,11 @@ public:
     }
 
     const Value& getColumn(const std::string& /* col */) const override {
+        DLOG(FATAL) << "This method should not be invoked";
+        return Value::kEmpty;
+    }
+
+    const Value& getColumn(int32_t) const override {
         DLOG(FATAL) << "This method should not be invoked";
         return Value::kEmpty;
     }
@@ -246,6 +263,8 @@ public:
     }
 
     const Value& getColumn(const std::string& col) const override;
+
+    const Value& getColumn(int32_t index) const override;
 
     const Value& getTagProp(const std::string& tag,
                             const std::string& prop) const override;
@@ -506,6 +525,8 @@ public:
         }
     }
 
+    const Value& getColumn(int32_t index) const override;
+
     // TODO: We should build new iter for get props, the seq iter will
     // not meet the requirements of match any more.
     const Value& getTagProp(const std::string& tag,
@@ -680,6 +701,8 @@ public:
         }
     }
 
+    const Value& getColumn(int32_t index) const override;
+
     const LogicalRow* row() const override {
         if (!valid()) {
             return nullptr;
@@ -798,6 +821,8 @@ public:
     }
 
     const Value& getColumn(const std::string& col) const override;
+
+    const Value& getColumn(int32_t index) const override;
 
     Value getVertex() const override;
 

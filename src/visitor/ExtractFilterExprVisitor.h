@@ -46,6 +46,7 @@ private:
     void visit(VertexExpression *) override;
     void visit(EdgeExpression *) override;
     void visit(LogicalExpression *) override;
+    void visit(ColumnExpression *) override;
 
     bool canBePushed_{true};
     std::unique_ptr<Expression> remainedExpr_;

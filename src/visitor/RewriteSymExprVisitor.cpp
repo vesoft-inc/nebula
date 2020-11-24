@@ -205,6 +205,11 @@ void RewriteSymExprVisitor::visit(EdgeExpression *expr) {
     expr_.reset();
 }
 
+void RewriteSymExprVisitor::visit(ColumnExpression *expr) {
+    UNUSED(expr);
+    expr_.reset();
+}
+
 void RewriteSymExprVisitor::visit(CaseExpression *expr) {
     if (expr->hasCondition()) {
         expr->condition()->accept(this);

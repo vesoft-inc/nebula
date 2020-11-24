@@ -89,6 +89,10 @@ private:
         isEvaluable_ = false;
     }
 
+    void visit(ColumnExpression *) override {
+        isEvaluable_ = false;
+    }
+
     bool isEvaluable_{true};
 };
 

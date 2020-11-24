@@ -51,6 +51,9 @@ public:
     // Get the specified property from the input, such as $-.prop_name
     const Value& getInputProp(const std::string& prop) const override;
 
+    // Get the value by column index
+    Value getColumn(int32_t index) const override;
+
     // Get Vertex
     Value getVertex() const override;
 

@@ -46,7 +46,6 @@ bool equal_to<const nebula::graph::LogicalRow*>::operator()(
 
 namespace nebula {
 namespace graph {
-
 GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
     : Iterator(value, Kind::kGetNeighbors) {
     auto status = processList(value);
@@ -197,6 +196,10 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     return iter_->row_->values[found->second];
 }
 
+const Value& GetNeighborsIter::getColumn(int32_t index) const {
+    return getColumnByIndex(index, iter_);
+}
+
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
                                           const std::string& prop) const {
     if (!valid()) {
@@ -338,6 +341,10 @@ Value GetNeighborsIter::getEdge() const {
     return Value(std::move(edge));
 }
 
+const Value& SequentialIter::getColumn(int32_t index) const {
+    return getColumnByIndex(index, iter_);
+}
+
 void JoinIter::joinIndex(const Iterator* lhs, const Iterator* rhs) {
     size_t nextSeg = 0;
     if (lhs != nullptr && lhs->isSequentialIter()) {
@@ -385,6 +392,10 @@ size_t JoinIter::buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx) {
         colIdxIndices_.emplace(col.first + colIdxStart, std::make_pair(newSeg, col.second.second));
     }
     return nextSeg + 1;
+}
+
+const Value& JoinIter::getColumn(int32_t index) const {
+    return getColumnByIndex(index, iter_);
 }
 
 PropIter::PropIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kProp) {
@@ -587,6 +598,10 @@ List PropIter::getEdges() {
     }
     reset();
     return edges;
+}
+
+const Value& PropIter::getColumn(int32_t index) const {
+    return getColumnByIndex(index, iter_);
 }
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {

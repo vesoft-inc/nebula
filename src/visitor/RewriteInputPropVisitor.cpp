@@ -37,6 +37,10 @@ void RewriteInputPropVisitor::visit(SubscriptExpression* expr) {
     reportError(expr);
 }
 
+void RewriteInputPropVisitor::visit(ColumnExpression* expr) {
+    reportError(expr);
+}
+
 void RewriteInputPropVisitor::visit(ConstantExpression* expr) {
     UNUSED(expr);
 }

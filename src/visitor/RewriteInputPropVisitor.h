@@ -73,6 +73,8 @@ private:
     void visit(CaseExpression *) override;
     // path build expression
     void visit(PathBuildExpression *expr) override;
+    // column expression
+    void visit(ColumnExpression* expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
     void visitUnaryExpr(UnaryExpression *expr);

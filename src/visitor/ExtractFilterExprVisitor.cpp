@@ -77,6 +77,10 @@ void ExtractFilterExprVisitor::visit(EdgeExpression *) {
     canBePushed_ = false;
 }
 
+void ExtractFilterExprVisitor::visit(ColumnExpression *) {
+    canBePushed_ = false;
+}
+
 void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
     // TODO(dutor) It's buggy when there are multi-level embedded logical expressions
     if (expr->kind() == Expression::Kind::kLogicalAnd) {

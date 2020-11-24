@@ -59,6 +59,7 @@ private:
     void visit(EdgeDstIdExpression*) override {}
     void visit(VertexExpression*) override {}
     void visit(EdgeExpression*) override {}
+    void visit(ColumnExpression*) override {}
 
     void visitBinaryExpr(BinaryExpression *) override;
 

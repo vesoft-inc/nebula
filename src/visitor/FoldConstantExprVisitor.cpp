@@ -295,6 +295,11 @@ void FoldConstantExprVisitor::visit(EdgeExpression *expr) {
     canBeFolded_ = false;
 }
 
+void FoldConstantExprVisitor::visit(ColumnExpression *expr) {
+    UNUSED(expr);
+    canBeFolded_ = false;
+}
+
 void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
     bool leftCanBeFolded = true, rightCanBeFolded = true;
     if (!isConstant(expr->left())) {

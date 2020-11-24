@@ -57,6 +57,10 @@ void ExtractPropExprVisitor::visit(UUIDExpression* expr) {
     reportError(expr);
 }
 
+void ExtractPropExprVisitor::visit(ColumnExpression* expr) {
+    reportError(expr);
+}
+
 void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
     switch (expr->kind()) {
         case Expression::Kind::kUnaryPlus:

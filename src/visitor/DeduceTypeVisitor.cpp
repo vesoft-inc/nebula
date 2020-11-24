@@ -499,6 +499,10 @@ void DeduceTypeVisitor::visit(EdgeExpression *) {
     type_ = Value::Type::EDGE;
 }
 
+void DeduceTypeVisitor::visit(ColumnExpression *) {
+    type_ = Value::Type::__EMPTY__;
+}
+
 void DeduceTypeVisitor::visit(CaseExpression *expr) {
     if (expr->hasCondition()) {
         expr->condition()->accept(this);
