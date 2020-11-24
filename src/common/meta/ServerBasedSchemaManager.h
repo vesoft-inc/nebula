@@ -40,6 +40,8 @@ public:
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
+    StatusOr<std::string> toGraphSpaceName(GraphSpaceID space) override;
+
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;
@@ -55,6 +57,8 @@ public:
 
     // get all version of all tags
     StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override;
+
+    StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() override;
 
     void init(MetaClient *client);
 

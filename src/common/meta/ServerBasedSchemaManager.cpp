@@ -91,6 +91,11 @@ StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPie
     return  metaClient_->getSpaceIdByNameFromCache(spaceName.str());
 }
 
+StatusOr<std::string> ServerBasedSchemaManager::toGraphSpaceName(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->getSpaceNameByIdFromCache(space);
+}
+
 StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
                                                   folly::StringPiece tagName) {
     CHECK(metaClient_);
@@ -128,5 +133,15 @@ StatusOr<EdgeSchemas> ServerBasedSchemaManager::getAllVerEdgeSchema(GraphSpaceID
     return metaClient_->getAllVerEdgeSchema(space);
 }
 
+StatusOr<std::vector<nebula::meta::cpp2::FTClient>> ServerBasedSchemaManager::getFTClients() {
+    auto ret = metaClient_->getFTClientsFromCache();
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    if (ret.value().empty()) {
+        return Status::Error("fulltext client list is empty");
+    }
+    return std::move(ret).value();
+}
 }  // namespace meta
 }  // namespace nebula

@@ -85,6 +85,11 @@ public:
         kCase,
 
         kPathBuild,
+        // text or key word search expression
+        kTSPrefix,
+        kTSWildcard,
+        kTSRegexp,
+        kTSFuzzy,
     };
 
     explicit Expression(Kind kind) : kind_(kind) {}

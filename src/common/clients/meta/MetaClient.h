@@ -93,6 +93,9 @@ using UserPasswordMap = std::unordered_map<std::string, std::string>;
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>,
                                          cpp2::ConfigItem>;
 
+// get fulltext services
+using FulltextClientsList = std::vector<cpp2::FTClient>;
+
 class MetaChangedListener {
 public:
     virtual ~MetaChangedListener() = default;
@@ -395,8 +398,20 @@ public:
     StatusOr<std::vector<RemoteListenerInfo>>
     getListenerHostTypeBySpacePartType(GraphSpaceID spaceId, PartitionID partId);
 
+    // Operations for fulltext services
+    folly::Future<StatusOr<bool>>
+    signInFTService(cpp2::FTServiceType type, const std::vector<cpp2::FTClient>& clients);
+
+    folly::Future<StatusOr<bool>> signOutFTService();
+
+    folly::Future<StatusOr<std::vector<cpp2::FTClient>>> listFTClients();
+
+    StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    StatusOr<std::string> getSpaceNameByIdFromCache(GraphSpaceID spaceId);
 
     StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
@@ -565,6 +580,8 @@ protected:
 
     bool loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache);
 
+    bool loadFulltextClients();
+
     folly::Future<StatusOr<bool>> heartbeat();
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
@@ -650,6 +667,7 @@ private:
 
     NameIndexMap          tagNameIndexMap_;
     NameIndexMap          edgeNameIndexMap_;
+    FulltextClientsList   fulltextClientList_;
 
     mutable folly::RWSpinLock     localCacheLock_;
     // The listener_ is the NebulaStore

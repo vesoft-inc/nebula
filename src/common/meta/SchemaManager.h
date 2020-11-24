@@ -49,6 +49,8 @@ public:
 
     virtual StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
+    virtual StatusOr<std::string> toGraphSpaceName(GraphSpaceID space) = 0;
+
     virtual StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
     virtual StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) = 0;
@@ -64,6 +66,8 @@ public:
 
     // get all version of all edge schema
     virtual StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) = 0;
+
+    virtual StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() = 0;
 
     // Get the TagID or EdgeType by the name.
     // The first one is a bool which is used to distinguish the type.
