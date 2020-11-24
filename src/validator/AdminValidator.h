@@ -259,6 +259,18 @@ private:
     meta::cpp2::ConfigModule                 module_;
     std::string                              name_;
 };
+
+class ShowStatusValidator final : public Validator {
+public:
+    ShowStatusValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_ADMINVALIDATOR_H_

@@ -572,6 +572,15 @@ private:
     std::vector<std::string> paras_;
 };
 
+class ShowStatusSentence final : public Sentence {
+public:
+    ShowStatusSentence() {
+        kind_ = Kind::kShowStatus;
+    }
+
+    std::string toString() const override;
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

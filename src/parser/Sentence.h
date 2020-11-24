@@ -74,6 +74,7 @@ public:
         kShowCollation,
         kShowGroups,
         kShowZones,
+        kShowStatus,
         kDeleteVertices,
         kDeleteEdges,
         kLookup,

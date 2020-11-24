@@ -414,5 +414,17 @@ Status GetConfigValidator::toPlan() {
     tail_ = root_;
     return Status::OK();
 }
+
+Status ShowStatusValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowStatusValidator::toPlan() {
+    auto *node = ShowStatus::make(qctx_, nullptr);
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

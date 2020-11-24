@@ -1199,6 +1199,17 @@ private:
         : SingleInputNode(qctx, Kind::kShowZones, input) {}
 };
 
+class ShowStatus final : public SingleInputNode {
+public:
+    static ShowStatus* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowStatus(qctx, input));
+    }
+
+private:
+    ShowStatus(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowStatus, input) {}
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_

@@ -40,6 +40,8 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                 LOG(ERROR) << "Unknown job command rebuild " << params[1];
                 return Status::Error("Unknown job command rebuild %s", params[1].c_str());
             }
+        } else if (params[0] == "statis") {
+            cmd = meta::cpp2::AdminCmd::STATIS;
         } else {
             LOG(ERROR) << "Unknown job command " << params[0].c_str();
             return Status::Error("Unknown job command %s", params[0].c_str());

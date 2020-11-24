@@ -221,6 +221,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
             return std::make_unique<RemoveListenerValidator>(sentence, context);
         case Sentence::Kind::kShowListener:
             return std::make_unique<ShowListenerValidator>(sentence, context);
+        case Sentence::Kind::kShowStatus:
+            return std::make_unique<ShowStatusValidator>(sentence, context);
         case Sentence::Kind::kShowGroups:
         case Sentence::Kind::kShowZones:
         case Sentence::Kind::kUnknown:

@@ -1466,6 +1466,12 @@ TEST(Parser, AdminOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "SHOW STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UserOperation) {
@@ -1659,6 +1665,7 @@ TEST(Parser, UnreservedKeywords) {
                             " rebuild bool, submit bool, compact bool, "
                             " bidirect bool, force bool, configs string)";
         auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
     }
 }
 

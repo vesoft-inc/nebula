@@ -228,6 +228,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "RemoveListener";
         case Kind::kShowListener:
             return "ShowListener";
+        case Kind::kShowStatus:
+            return "ShowStatus";
         // no default so the compiler will warning when lack
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
