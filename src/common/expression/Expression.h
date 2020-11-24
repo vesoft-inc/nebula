@@ -49,6 +49,7 @@ public:
         kSubscript,
         kAttribute,
         kLabelAttribute,
+        kColumn,
 
         kLogicalAnd,
         kLogicalOr,

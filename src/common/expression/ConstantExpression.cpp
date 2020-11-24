@@ -15,7 +15,7 @@ bool ConstantExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const ConstantExpression&>(rhs);
+    const auto& r = static_cast<const ConstantExpression&>(rhs);
     return val_ == r.val_;
 }
 

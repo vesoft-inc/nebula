@@ -13,7 +13,7 @@ bool BinaryExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const BinaryExpression&>(rhs);
+    const auto& r = static_cast<const BinaryExpression&>(rhs);
     return *lhs_ == *(r.lhs_) && *rhs_ == *(r.rhs_);
 }
 

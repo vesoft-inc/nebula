@@ -14,7 +14,7 @@ bool UUIDExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const UUIDExpression&>(rhs);
+    const auto& r = static_cast<const UUIDExpression&>(rhs);
     return *field_ == *(r.field_);
 }
 

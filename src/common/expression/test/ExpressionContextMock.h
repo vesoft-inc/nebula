@@ -117,6 +117,8 @@ public:
         return Value();
     }
 
+    Value getColumn(int32_t index) const override;
+
     void setVar(const std::string& var, Value val) override {
         UNUSED(var);
         UNUSED(val);

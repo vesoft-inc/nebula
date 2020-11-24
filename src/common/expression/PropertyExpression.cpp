@@ -15,7 +15,7 @@ bool PropertyExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const PropertyExpression&>(rhs);
+    const auto& r = static_cast<const PropertyExpression&>(rhs);
     return *ref_ == *(r.ref_) && *sym_ == *(r.sym_) && *prop_ == *(r.prop_);
 }
 

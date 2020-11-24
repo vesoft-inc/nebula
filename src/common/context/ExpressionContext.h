@@ -61,6 +61,9 @@ public:
     // Get Edge
     virtual Value getEdge() const = 0;
 
+    // Get Value by Column index
+    virtual Value getColumn(int32_t index) const = 0;
+
     virtual void setVar(const std::string& var, Value val) = 0;
 };
 

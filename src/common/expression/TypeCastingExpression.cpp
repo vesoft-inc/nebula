@@ -105,7 +105,7 @@ bool TypeCastingExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const TypeCastingExpression&>(rhs);
+    const auto& r = static_cast<const TypeCastingExpression&>(rhs);
     return vType_ == r.vType_ && *operand_ == *(r.operand_);
 }
 

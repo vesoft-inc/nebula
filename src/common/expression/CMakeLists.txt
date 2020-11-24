@@ -27,6 +27,7 @@ nebula_add_library(
     CaseExpression.cpp
     PathBuildExpression.cpp
     TextSearchExpression.cpp
+    ColumnExpression.cpp
 )
 
 nebula_add_subdirectory(test)

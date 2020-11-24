@@ -29,7 +29,7 @@ bool FunctionCallExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const FunctionCallExpression&>(rhs);
+    const auto& r = static_cast<const FunctionCallExpression&>(rhs);
     return *name_ == *(r.name_) && *args_ == *(r.args_);
 }
 

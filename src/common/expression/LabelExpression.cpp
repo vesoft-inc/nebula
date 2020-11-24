@@ -22,7 +22,7 @@ bool LabelExpression::operator==(const Expression& rhs) const {
     if (kind_ != rhs.kind()) {
         return false;
     }
-    const auto& expr = dynamic_cast<const LabelExpression&>(rhs);
+    const auto& expr = static_cast<const LabelExpression&>(rhs);
     return *name_ == *(expr.name());
 }
 

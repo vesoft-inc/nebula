@@ -28,6 +28,7 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
 #include "common/expression/CaseExpression.h"
+#include "common/expression/ColumnExpression.h"
 
 namespace nebula {
 
@@ -330,6 +331,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kColumn: {
+            exp = std::make_unique<ColumnExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kAttribute: {
             exp = std::make_unique<AttributeExpression>();
             exp->resetFrom(decoder);
@@ -558,6 +564,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kSubscript:
             os << "Subscript";
+            break;
+        case Expression::Kind::kColumn:
+            os << "Column";
             break;
         case Expression::Kind::kAttribute:
             os << "Attribute";

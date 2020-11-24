@@ -15,7 +15,7 @@ bool UnaryExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    const auto& r = dynamic_cast<const UnaryExpression&>(rhs);
+    const auto& r = static_cast<const UnaryExpression&>(rhs);
     return *operand_ == *(r.operand_);
 }
 

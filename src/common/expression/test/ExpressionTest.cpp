@@ -33,6 +33,7 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
 #include "common/expression/CaseExpression.h"
+#include "common/expression/ColumnExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
@@ -2865,6 +2866,53 @@ TEST_F(ExpressionTest, PathBuildToString) {
             .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
                                                               new std::string("path_v1")));
         EXPECT_EQ(expr.toString(), "PathBuild[$var1.path_src,$var1.path_edge1,$var1.path_v1]");
+    }
+}
+
+TEST_F(ExpressionTest, ColumnExpression) {
+    {
+        ColumnExpression expr(2);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 3);
+    }
+    {
+        ColumnExpression expr(0);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 1);
+    }
+    {
+        ColumnExpression expr(-1);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 8);
+    }
+    {
+        ColumnExpression expr(-3);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::INT);
+        EXPECT_EQ(eval, 6);
+    }
+    {
+        ColumnExpression expr(8);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval, Value::kNullBadType);
+    }
+    {
+        ColumnExpression expr(-8);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval, Value::kNullBadType);
+    }
+    {
+        ColumnExpression expr(10);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval, Value::kNullBadType);
+    }
+    {
+        ColumnExpression expr(-10);
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval, Value::kNullBadType);
     }
 }
 
