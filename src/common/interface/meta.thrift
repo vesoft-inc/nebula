@@ -287,7 +287,7 @@ enum AdminCmd {
     FLUSH               = 1,
     REBUILD_TAG_INDEX   = 2,
     REBUILD_EDGE_INDEX  = 3,
-    STATIS              = 4,
+    STATS               = 4,
     UNKNOWN             = 5,
 } (cpp.enum_strict)
 
