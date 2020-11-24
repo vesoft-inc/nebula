@@ -76,6 +76,11 @@ public:
         return Value::kNullValue;
     }
 
+    // Get the value by column index
+    Value getColumn(int32_t) const override {
+        return Value::kNullValue;
+    }
+
     // Get the specified property from the tag, such as tag.prop_name
     Value getTagProp(const std::string& tagName, const std::string& prop) const override;
 

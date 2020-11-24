@@ -54,6 +54,11 @@ public:
         return Value::kEmpty;
     }
 
+    Value getColumn(int32_t) const override {
+        LOG(FATAL) << "Not allowed to call";
+        return Value::kEmpty;
+    }
+
     void setVar(const std::string&, Value) override {
     }
 
