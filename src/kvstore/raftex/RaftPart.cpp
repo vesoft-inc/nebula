@@ -1686,7 +1686,10 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         role_ = Role::FOLLOWER;
     }
     leader_ = candidate;
-    term_ = proposedTerm_ = req.get_current_term();
+    term_ = req.get_current_term();
+    if (proposedTerm_ <= req.get_current_term()) {
+        proposedTerm_ = req.get_current_term(;)
+    }
     votedAddr_ = std::make_pair(0, 0);
     weight_ = 1;
     // Before accept the logs from the new leader, check the logs locally.
