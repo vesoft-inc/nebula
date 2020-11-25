@@ -117,7 +117,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"right", {TypeSignature({Value::Type::STRING, Value::Type::INT}, Value::Type::STRING)}},
     {"replace", {TypeSignature({Value::Type::STRING,
             Value::Type::STRING, Value::Type::STRING}, Value::Type::STRING)}},
-    {"reverse", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
+    {"reverse", {TypeSignature({Value::Type::STRING}, Value::Type::STRING),
+                 TypeSignature({Value::Type::LIST}, Value::Type::LIST)}},
     {"split", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"lpad",
      {TypeSignature({Value::Type::STRING, Value::Type::INT, Value::Type::STRING},
@@ -189,6 +190,11 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                    TypeSignature({Value::Type::PATH}, Value::Type::VERTEX), }},
     {"endNode", {TypeSignature({Value::Type::EDGE}, Value::Type::VERTEX),
                  TypeSignature({Value::Type::PATH}, Value::Type::VERTEX), }},
+    {"keys", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
+              TypeSignature({Value::Type::EDGE}, Value::Type::LIST),
+              TypeSignature({Value::Type::MAP}, Value::Type::LIST), }},
+    {"nodes", {TypeSignature({Value::Type::PATH}, Value::Type::LIST), }},
+    {"tail", {TypeSignature({Value::Type::LIST}, Value::Type::LIST), }},
     {"relationships", {TypeSignature({Value::Type::PATH}, Value::Type::LIST), }},
     {"head", {TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
     {"last", { TypeSignature({Value::Type::LIST}, Value::Type::__EMPTY__), }},
@@ -714,7 +720,13 @@ FunctionManager::FunctionManager() {
                 std::string origStr(args[0].getStr());
                 std::reverse(origStr.begin(), origStr.end());
                 return origStr;
+            } else if (args[0].isList()) {
+                auto& list = args[0].getList();
+                List result(list.values);
+                std::reverse(result.values.begin(), result.values.end());
+                return result;
             }
+
             return Value::kNullBadType;
         };
     }
@@ -1315,6 +1327,70 @@ FunctionManager::FunctionManager() {
                 }
             }
             return Value::kNullValue;
+        };
+    }
+    {
+        auto &attr = functions_["keys"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            std::set<std::string> tmp;
+            if (args[0].isVertex()) {
+                for (auto& tag : args[0].getVertex().tags) {
+                    for (auto& prop : tag.props) {
+                        tmp.emplace(prop.first);
+                    }
+                }
+            } else if (args[0].isEdge()) {
+                for (auto& prop : args[0].getEdge().props) {
+                    tmp.emplace(prop.first);
+                }
+            } else if (args[0].isMap()) {
+                for (auto& kv : args[0].getMap().kvs) {
+                    tmp.emplace(kv.first);
+                }
+            } else {
+                return Value::kNullBadType;
+            }
+            List result;
+            result.values.assign(tmp.cbegin(), tmp.cend());
+            return result;
+        };
+    }
+    {
+        auto &attr = functions_["nodes"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isPath()) {
+                return Value::kNullBadType;
+            }
+            auto& path = args[0].getPath();
+            List result;
+            result.emplace_back(path.src);
+            for (auto& step : path.steps) {
+                result.emplace_back(step.dst);
+            }
+            return result;
+        };
+    }
+    {
+        auto &attr = functions_["tail"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isList()) {
+                return Value::kNullBadType;
+            }
+            auto& list = args[0].getList();
+            if (list.empty()) {
+                return List();
+            }
+            List result(std::vector<Value>(list.values.begin()+1, list.values.end()));
+            return result;
         };
     }
     {

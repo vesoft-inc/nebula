@@ -65,9 +65,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"neg_side", {"abcdefghijklmnopq", -2}},
     {"pad", {"abcdefghijkl", 16, "123"}},
     {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}},
-    {"edge", {Edge("1", "2", -1, "e1", 0, {})}},
     {"date", {Date(1984, 10, 11)}},
     {"datetime", {DateTime(1984, 10, 11, 12, 31, 14,  341)}},
+    {"edge", {Edge("1", "2", -1, "e1", 0, {{"e1", 1}, {"e2", 2}})}},
 };
 
 #define TEST_FUNCTION(expr, args, expected)                                                        \
@@ -1211,6 +1211,36 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(Value::Type::NULLVALUE, result.value());
     }
     {
+        auto result = FunctionManager::getReturnType("keys", {Value::Type::VERTEX});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("keys", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("keys", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("nodes", {Value::Type::PATH});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("reverse", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
+        auto result = FunctionManager::getReturnType("tail", {Value::Type::LIST});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::LIST, result.value());
+    }
+    {
         auto result = FunctionManager::getReturnType("relationships", {Value::Type::PATH});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::LIST, result.value());
@@ -1381,6 +1411,51 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
         args[0] = path;
         TEST_FUNCTION(length, args, 3);
     }
+}
+
+TEST_F(FunctionManagerTest, ListFunctionTest) {
+    {
+        // keys(null) return null
+        TEST_FUNCTION(keys, args_["nullvalue"], Value::kNullValue);
+        // keys(vertex)
+        Vertex vertex;
+        vertex.vid = "v1";
+        vertex.tags.emplace_back(Tag("t1", {{"p1", 1}, {"p2", 2}}));
+        vertex.tags.emplace_back(Tag("t2", {{"p3", 3}}));
+        vertex.tags.emplace_back(Tag("t3", {{"p1", 4}, {"p4", 6}, {"p5", 5}}));
+        std::vector<Value> args = {vertex};
+        TEST_FUNCTION(keys, args, List({"p1", "p2", "p3", "p4", "p5"}));
+        // keys(edge)
+        TEST_FUNCTION(keys, args_["edge"], List({"e1", "e2"}));
+        // keys(map)
+        Map m({{"k1", "v1"}, {"k2", "v2"}, {"k3", "v3"}});
+        args = {m};
+        TEST_FUNCTION(keys, args, List({"k1", "k2", "k3"}));
+    }
+    {
+        // nodes(null) return null
+        TEST_FUNCTION(nodes, args_["nullvalue"], Value::kNullValue);
+        // nodes(path)
+        auto v1 = Vertex("101", {});
+        auto v2 = Vertex("102", {});
+        auto v3 = Vertex("103", {});
+        Path path;
+        path.src = v1;
+        path.steps.emplace_back(Step(v2, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(nodes, args, List({v1, v2, v3}));
+    }
+    {
+       // reverse([2020, "Tony Parker", NULL 19])
+       std::vector<Value> args = {List({2020, "Tony Parker", Value::kNullValue, 19})};
+       TEST_FUNCTION(reverse, args, List({19, Value::kNullValue, "Tony Parker", 2020}));
+    }
+    {
+        // tail([1, 3, 5, NULL, 4]
+        std::vector<Value> args = {List({1, 3, 5, Value::kNullValue, 4})};
+        TEST_FUNCTION(tail, args, List({3, 5, Value::kNullValue, 4}));
+    }
     {
         // relationships(null) return null
         TEST_FUNCTION(relationships, args_["nullvalue"], Value::kNullValue);
@@ -1404,6 +1479,7 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
         TEST_FUNCTION(relationships, args, expected);
     }
 }
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {
