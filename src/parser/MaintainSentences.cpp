@@ -318,6 +318,14 @@ std::string ShowEdgeIndexesSentence::toString() const {
     return folly::stringPrintf("SHOW EDGE INDEXES");
 }
 
+std::string ShowTagIndexStatusSentence::toString() const {
+    return folly::stringPrintf("SHOW TAG INDEX STATUS");
+}
+
+std::string ShowEdgeIndexStatusSentence::toString() const {
+    return folly::stringPrintf("SHOW EDGE INDEX STATUS");
+}
+
 std::string ShowCreateTagIndexSentence::toString() const {
     return folly::stringPrintf("SHOW CREATE TAG INDEX %s", indexName_.get()->c_str());
 }

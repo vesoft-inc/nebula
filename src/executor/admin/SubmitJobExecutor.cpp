@@ -18,41 +18,10 @@ folly::Future<Status> SubmitJobExecutor::execute() {
 
     auto *sjNode = asNode<SubmitJob>(node());
     auto jobOp = sjNode->jobOp();
-    std::vector<std::string> jobArguments;
+    auto cmd = sjNode->cmd();
+    auto params = sjNode->params();
 
-    meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN;
-    if (jobOp == meta::cpp2::AdminJobOp::ADD) {
-        auto spaceName = qctx()->rctx()->session()->space().name;
-        jobArguments.emplace_back(std::move(spaceName));
-        auto& params = sjNode->params();
-        if (params[0] == "compact") {
-            cmd = meta::cpp2::AdminCmd::COMPACT;
-        } else if (params[0] == "flush") {
-            cmd = meta::cpp2::AdminCmd::FLUSH;
-        } else if (params[0] == "rebuild") {
-            if (params[1] == "tag") {
-                cmd = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
-                jobArguments.emplace_back(params[3]);
-            } else if (params[1] == "edge") {
-                cmd = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
-                jobArguments.emplace_back(params[3]);
-            } else {
-                LOG(ERROR) << "Unknown job command rebuild " << params[1];
-                return Status::Error("Unknown job command rebuild %s", params[1].c_str());
-            }
-        } else if (params[0] == "stats") {
-            cmd = meta::cpp2::AdminCmd::STATS;
-        } else {
-            LOG(ERROR) << "Unknown job command " << params[0].c_str();
-            return Status::Error("Unknown job command %s", params[0].c_str());
-        }
-    } else if (jobOp == meta::cpp2::AdminJobOp::SHOW || jobOp == meta::cpp2::AdminJobOp::STOP) {
-        auto& params = sjNode->params();
-        DCHECK_GT(params.size(), 0UL);
-        jobArguments.emplace_back(params[0]);
-    }
-
-    return qctx()->getMetaClient()->submitJob(jobOp, cmd, jobArguments)
+    return qctx()->getMetaClient()->submitJob(jobOp, cmd, params)
         .via(runner())
         .then([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
             SCOPED_TIMER(&execTime_);

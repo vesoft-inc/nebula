@@ -62,6 +62,8 @@ public:
         kShowEdges,
         kShowTagIndexes,
         kShowEdgeIndexes,
+        kShowTagIndexStatus,
+        kShowEdgeIndexStatus,
         kShowUsers,
         kShowRoles,
         kShowCreateSpace,

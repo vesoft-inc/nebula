@@ -141,5 +141,34 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
         });
 }
 
+folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
+    SCOPED_TIMER(&execTime_);
+
+    auto spaceId = qctx()->rctx()->session()->space().id;
+    return qctx()->getMetaClient()->listEdgeIndexStatus(spaceId).via(runner()).then(
+        [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+            if (!resp.ok()) {
+                LOG(ERROR) << "SpaceId: " << spaceId << ", Show edge index status failed"
+                           << resp.status();
+                return resp.status();
+            }
+
+            auto indexStatuses = std::move(resp).value();
+
+            DataSet dataSet;
+            dataSet.colNames = {"Name", "Index Status"};
+            for (auto &indexStatus : indexStatuses) {
+                Row row;
+                row.values.emplace_back(std::move(indexStatus.get_name()));
+                row.values.emplace_back(std::move(indexStatus.get_status()));
+                dataSet.rows.emplace_back(std::move(row));
+            }
+            return finish(ResultBuilder()
+                              .value(Value(std::move(dataSet)))
+                              .iter(Iterator::Kind::kDefault)
+                              .finish());
+        });
+}
+
 }   // namespace graph
 }   // namespace nebula

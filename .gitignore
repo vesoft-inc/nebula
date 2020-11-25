@@ -33,6 +33,7 @@ target/
 cluster.id
 pids/
 modules/
+nebula-python/
 
 # IDE
 .idea/

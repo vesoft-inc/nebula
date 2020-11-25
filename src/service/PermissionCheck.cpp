@@ -140,6 +140,8 @@ Status PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kShowStats:
         case Sentence::Kind::kShowTagIndexes:
         case Sentence::Kind::kShowEdgeIndexes:
+        case Sentence::Kind::kShowTagIndexStatus:
+        case Sentence::Kind::kShowEdgeIndexStatus:
         case Sentence::Kind::kShowCreateTag:
         case Sentence::Kind::kShowCreateEdge:
         case Sentence::Kind::kShowCreateTagIndex:

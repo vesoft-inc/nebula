@@ -51,6 +51,9 @@ jobs:
         - /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
       options: --mount type=tmpfs,destination=/tmp/ccache/nebula-graph,tmpfs-size=1073741824 --cap-add=SYS_PTRACE
     steps:
+      - name: Cleanup
+        if: ${{ always() }}
+        run: rm -rf *
       - uses: actions/checkout@v2
       - name: Checkout nebula-python
         uses: actions/checkout@v2
@@ -136,6 +139,3 @@ jobs:
         with:	
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path:  build/server_*/logs/
-      - name: Cleanup
-        if: ${{ always() }}
-        run: rm -rf build modules && rm -rf /tmp/nebula-*

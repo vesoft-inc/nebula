@@ -1442,18 +1442,18 @@ TEST(Parser, AdminOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
-    // {
-    //     GQLParser parser;
-    //     std::string query = "SHOW TAG INDEX STATUS";
-    //     auto result = parser.parse(query);
-    //     ASSERT_TRUE(result.ok()) << result.status();
-    // }
-    // {
-    //     GQLParser parser;
-    //     std::string query = "SHOW EDGE INDEX STATUS";
-    //     auto result = parser.parse(query);
-    //     ASSERT_TRUE(result.ok()) << result.status();
-    // }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEX STATUS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         GQLParser parser;
         std::string query = "SHOW CHARSET";

@@ -150,7 +150,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
-%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS KW_STATUS
 %token KW_BIDIRECT
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
@@ -177,7 +177,6 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token <strval> STRING VARIABLE LABEL IPV4
 
 %type <strval> name_label unreserved_keyword agg_function
-%type <strval> admin_job_operation admin_job_para
 %type <expr> expression
 %type <expr> property_expression
 %type <expr> vertex_prop_expression
@@ -267,7 +266,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <match_step_range> match_step_range
 %type <order_factors> match_order_by
 
-%type <intval> legal_integer unary_integer rank port
+%type <intval> legal_integer unary_integer rank port job_concurrency
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -450,6 +449,7 @@ unreserved_keyword
     | KW_LISTENER           { $$ = new std::string("listener"); }
     | KW_ELASTICSEARCH      { $$ = new std::string("elasticsearch"); }
     | KW_STATS              { $$ = new std::string("stats"); }
+    | KW_STATUS             { $$ = new std::string("status"); }
     ;
 
 agg_function
@@ -1856,10 +1856,8 @@ describe_edge_index_sentence
 
 rebuild_tag_index_sentence
     : KW_REBUILD KW_TAG KW_INDEX name_label {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD);
-        sentence->addPara("rebuild");
-        sentence->addPara("tag");
-        sentence->addPara("index");
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
@@ -1868,10 +1866,8 @@ rebuild_tag_index_sentence
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD);
-        sentence->addPara("rebuild");
-        sentence->addPara("edge");
-        sentence->addPara("index");
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
@@ -2253,10 +2249,28 @@ ingest_sentence
     ;
 
 admin_job_sentence
-    : KW_SUBMIT KW_JOB admin_job_operation {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD);
-        sentence->addPara(*$3);
-        delete $3;
+    : KW_SUBMIT KW_JOB KW_COMPACT job_concurrency {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::COMPACT);
+        if ($4 != 0) {
+            sentence->addPara(std::to_string($4));
+        }
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_FLUSH job_concurrency {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::FLUSH);
+        if ($4 != 0) {
+            sentence->addPara(std::to_string($4));
+        }
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_STATS job_concurrency {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::STATS);
+        if ($4 != 0) {
+            sentence->addPara(std::to_string($4));
+        }
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {
@@ -2279,22 +2293,12 @@ admin_job_sentence
     }
     ;
 
-admin_job_operation
-    : KW_COMPACT         { $$ = new std::string("compact"); }
-    | KW_FLUSH           { $$ = new std::string("flush"); }
-    | KW_STATS           { $$ = new std::string("stats"); }
-    | KW_REBUILD KW_TAG  { $$ = new std::string("rebuild tag"); }
-    | KW_REBUILD KW_EDGE { $$ = new std::string("rebuild edge"); }
-    | admin_job_operation admin_job_para {
-        $$ = new std::string(*$1 + " " + *$2);
+job_concurrency
+    : %empty {
+        $$ = 0;
     }
-    ;
-
-admin_job_para
-    : name_label ASSIGN name_label {
-        auto left = *$1;
-        auto right = *$3;
-        $$ = new std::string(*$1 + "=" + *$3);
+    | legal_integer {
+        $$ = $1;
     }
     ;
 
@@ -2349,6 +2353,14 @@ show_sentence
     }
     | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
         $$ = new ShowCreateEdgeIndexSentence($5);
+    }
+    | KW_SHOW KW_TAG KW_INDEX KW_STATUS {
+        auto sentence = new ShowTagIndexStatusSentence();
+        $$ = sentence;
+    }
+    | KW_SHOW KW_EDGE KW_INDEX KW_STATUS  {
+        auto sentence = new ShowEdgeIndexStatusSentence();
+        $$ = sentence;
     }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSnapshotsSentence();

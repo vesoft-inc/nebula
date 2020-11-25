@@ -188,8 +188,12 @@ std::string AdminJobSentence::toString() const {
     LOG(FATAL) << "Unkown job operation " << static_cast<uint8_t>(op_);
 }
 
-meta::cpp2::AdminJobOp AdminJobSentence::getType() const {
+meta::cpp2::AdminJobOp AdminJobSentence::getOp() const {
     return op_;
+}
+
+meta::cpp2::AdminCmd AdminJobSentence::getCmd() const {
+    return cmd_;
 }
 
 const std::vector<std::string> &AdminJobSentence::getParas() const {

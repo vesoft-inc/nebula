@@ -296,7 +296,11 @@ def to_value(col):
 def find_in_rows(row, rows):
     for r in rows:
         assert len(r.values) == len(row), f'{len(r.values)}!={len(row)}'
+        found = True
         for col1, col2 in zip(r.values, row):
-            if compare_value(col1, col2):
-                return True
+            if not compare_value(col1, col2):
+                found = False
+                break
+        if found:
+            return True
     return False

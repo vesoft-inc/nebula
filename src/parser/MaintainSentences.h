@@ -732,6 +732,24 @@ public:
     std::string toString() const override;
 };
 
+class ShowTagIndexStatusSentence : public Sentence {
+public:
+    ShowTagIndexStatusSentence() {
+        kind_ = Kind::kShowTagIndexStatus;
+    }
+
+    std::string toString() const override;
+};
+
+class ShowEdgeIndexStatusSentence : public Sentence {
+public:
+    ShowEdgeIndexStatusSentence() {
+        kind_ = Kind::kShowEdgeIndexStatus;
+    }
+
+    std::string toString() const override;
+};
+
 class ShowCreateTagIndexSentence : public Sentence {
 public:
     explicit ShowCreateTagIndexSentence(std::string *indexName) {

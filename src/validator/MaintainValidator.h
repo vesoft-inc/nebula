@@ -328,6 +328,28 @@ private:
     Status toPlan() override;
 };
 
+class ShowTagIndexStatusValidator final : public Validator {
+public:
+    ShowTagIndexStatusValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
+class ShowEdgeIndexStatusValidator final : public Validator {
+public:
+    ShowEdgeIndexStatusValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
+
+private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+};
+
 class AddGroupValidator final : public Validator {
 public:
     AddGroupValidator(Sentence* sentence, QueryContext* context)

@@ -72,6 +72,8 @@ public:
         kShowCreateEdgeIndex,
         kShowTagIndexes,
         kShowEdgeIndexes,
+        kShowTagIndexStatus,
+        kShowEdgeIndexStatus,
         kInsertVertices,
         kInsertEdges,
         kBalanceLeaders,

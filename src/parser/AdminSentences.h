@@ -558,17 +558,21 @@ public:
 
 class AdminJobSentence final : public Sentence {
 public:
-    explicit AdminJobSentence(meta::cpp2::AdminJobOp op) : op_(op) {
+    explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
+                              meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
+        : op_(op), cmd_(cmd) {
         kind_ = Kind::kAdminJob;
     }
 
     void addPara(const std::string& para);
     std::string toString() const override;
-    meta::cpp2::AdminJobOp getType() const;
+    meta::cpp2::AdminJobOp getOp() const;
+    meta::cpp2::AdminCmd getCmd() const;
     const std::vector<std::string> &getParas() const;
 
 private:
     meta::cpp2::AdminJobOp   op_;
+    meta::cpp2::AdminCmd     cmd_;
     std::vector<std::string> paras_;
 };
 

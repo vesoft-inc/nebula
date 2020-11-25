@@ -186,6 +186,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "PATH"                      { return TokenType::KW_PATH; }
 "BIDIRECT"                  { return TokenType::KW_BIDIRECT; }
 "STATS"                     { return TokenType::KW_STATS; }
+"STATUS"                    { return TokenType::KW_STATUS; }
 "FORCE"                     { return TokenType::KW_FORCE; }
 "PART"                      { return TokenType::KW_PART; }
 "PARTS"                     { return TokenType::KW_PARTS; }
