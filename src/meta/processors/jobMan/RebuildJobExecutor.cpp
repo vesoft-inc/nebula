@@ -22,18 +22,18 @@ bool RebuildJobExecutor::check() {
 }
 
 cpp2::ErrorCode RebuildJobExecutor::prepare() {
-    auto spaceRet = getSpaceIdFromName(paras_[0]);
+    auto spaceRet = getSpaceIdFromName(paras_[1]);
     if (!nebula::ok(spaceRet)) {
-        LOG(ERROR) << "Can't find the space: " << paras_[0];
+        LOG(ERROR) << "Can't find the space: " << paras_[1];
         return nebula::error(spaceRet);
     }
     space_ = nebula::value(spaceRet);
 
     std::string indexValue;
-    auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[1]);
+    auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[0]);
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get indexKey error indexName: " << paras_[1];
+        LOG(ERROR) << "Get indexKey error indexName: " << paras_[0];
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
 

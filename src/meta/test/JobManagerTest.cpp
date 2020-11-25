@@ -70,7 +70,7 @@ TEST_F(JobManagerTest, addJob) {
 
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
-    std::vector<std::string> paras{"test_space" , "tag_index_name"};
+    std::vector<std::string> paras{"tag_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
     ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
@@ -80,7 +80,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
 
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
-    std::vector<std::string> paras{"test_space" , "edge_index_name"};
+    std::vector<std::string> paras{"edge_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
     ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
