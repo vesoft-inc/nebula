@@ -302,6 +302,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kRelLE:
         case Expression::Kind::kRelGT:
         case Expression::Kind::kRelGE:
+        case Expression::Kind::kRelREG:
         case Expression::Kind::kContains:
         case Expression::Kind::kNotContains:
         case Expression::Kind::kStartsWith:
