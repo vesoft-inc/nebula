@@ -37,6 +37,7 @@ macro(config_nebula_common)
                 -DENABLE_COMPRESSED_DEBUG_INFO=${ENABLE_COMPRESSED_DEBUG_INFO}
                 -DNEBULA_USE_LINKER=${NEBULA_USE_LINKER}
                 -DENABLE_GDB_SCRIPT_SECTION=${ENABLE_GDB_SCRIPT_SECTION}
+                -DDISABLE_CXX11_ABI=${DISABLE_CXX11_ABI}
                 ${common_source_dir}
         WORKING_DIRECTORY ${common_build_dir}
         RESULT_VARIABLE cmake_status
