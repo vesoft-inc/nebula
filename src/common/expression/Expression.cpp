@@ -286,6 +286,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kRelREG: {
+            exp = std::make_unique<RelationalExpression>(Expression::Kind::kRelREG);
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kRelIn: {
             exp = std::make_unique<RelationalExpression>(Expression::Kind::kRelIn);
             exp->resetFrom(decoder);
@@ -537,6 +542,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kRelGE:
             os << "GreaterEqual";
+            break;
+        case Expression::Kind::kRelREG:
+            os << "RegexMatch";
             break;
         case Expression::Kind::kRelIn:
             os << "In";

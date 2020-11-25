@@ -41,6 +41,20 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
         case Kind::kRelGE:
             result_ = lhs >= rhs;
             break;
+        case Kind::kRelREG: {
+            if (lhs.isStr() && rhs.isStr()) {
+                try {
+                    const auto& r = ctx.getRegex(rhs.getStr());
+                    result_ = std::regex_match(lhs.getStr(), r);
+                } catch (const std::exception& ex) {
+                    LOG(ERROR) << "Regex match error: " << ex.what();
+                    result_ = Value::kNullBadType;
+                }
+            } else {
+                result_ = Value::kNullBadType;
+            }
+            break;
+        }
         case Kind::kRelIn: {
             if (rhs.isList()) {
                 result_ = rhs.getList().contains(lhs);
@@ -147,6 +161,9 @@ std::string RelationalExpression::toString() const {
             break;
         case Kind::kRelNE:
             op = "!=";
+            break;
+        case Kind::kRelREG:
+            op = "=~";
             break;
         case Kind::kRelIn:
             op = " IN ";

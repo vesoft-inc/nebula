@@ -57,6 +57,7 @@
 #include <folly/Hash.h>
 #include <folly/Random.h>
 #include <folly/Conv.h>
+#include <folly/Unicode.h>
 #include <folly/ThreadLocal.h>
 #include <folly/Varint.h>
 #include <folly/dynamic.h>

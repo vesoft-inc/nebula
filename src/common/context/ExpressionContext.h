@@ -64,7 +64,19 @@ public:
     // Get Value by Column index
     virtual Value getColumn(int32_t index) const = 0;
 
+    // Get regex
+    const std::regex& getRegex(const std::string& pattern) {
+        auto iter = regex_.find(pattern);
+        if (iter == regex_.end()) {
+            iter = regex_.emplace(pattern, std::regex(pattern)).first;
+        }
+        return iter->second;
+    }
+
     virtual void setVar(const std::string& var, Value val) = 0;
+
+private:
+    std::unordered_map<std::string, std::regex> regex_;
 };
 
 }  // namespace nebula

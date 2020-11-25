@@ -38,6 +38,7 @@ public:
         kRelLE,
         kRelGT,
         kRelGE,
+        kRelREG,
         kRelIn,
         kRelNotIn,
         kContains,
