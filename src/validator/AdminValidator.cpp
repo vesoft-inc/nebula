@@ -224,7 +224,7 @@ Status ShowSnapshotsValidator::toPlan() {
 Status AddListenerValidator::validateImpl() {
     auto sentence = static_cast<AddListenerSentence*>(sentence_);
     if (sentence->listeners()->hosts().empty()) {
-        return Status::SemanticError("Listener hosts should not be emptry");
+        return Status::SemanticError("Listener hosts should not be empty");
     }
     return Status::OK();
 }
