@@ -1909,21 +1909,17 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);
-    if (spaceIt == localCache_.end()) {
-        LOG(ERROR) << "Space " << spaceId << " not found!";
-        return std::shared_ptr<const NebulaSchemaProvider>();
-    } else {
+    if (spaceIt != localCache_.end()) {
         auto tagIt = spaceIt->second->tagSchemas_.find(tagID);
-        if (tagIt == spaceIt->second->tagSchemas_.end() ||
-            tagIt->second.empty() ||
-            tagIt->second.size() <= static_cast<size_t>(ver)) {
-            return std::shared_ptr<const NebulaSchemaProvider>();
-        } else if (ver < 0) {
-            return tagIt->second.back();
-        } else {
-            return tagIt->second[ver];
+        if (tagIt != spaceIt->second->tagSchemas_.end() && !tagIt->second.empty()) {
+            size_t vNum = tagIt->second.size();
+            if (static_cast<SchemaVer>(vNum) > ver) {
+                return ver < 0 ? tagIt->second.back() : tagIt->second[ver];
+            }
         }
     }
+    LOG(ERROR) << "The tag schema " << tagID << " not found in space " << spaceId;
+    return std::shared_ptr<const NebulaSchemaProvider>();
 }
 
 
@@ -1934,21 +1930,17 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);
-    if (spaceIt == localCache_.end()) {
-        LOG(ERROR) << "Space " << spaceId << " not found!";
-        return std::shared_ptr<const NebulaSchemaProvider>();
-    } else {
+    if (spaceIt != localCache_.end()) {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(edgeType);
-        if (edgeIt == spaceIt->second->edgeSchemas_.end() ||
-            edgeIt->second.empty() ||
-            edgeIt->second.size() <= static_cast<size_t>(ver)) {
-            return std::shared_ptr<const NebulaSchemaProvider>();
-        } else if (ver < 0) {
-            return edgeIt->second.back();
-        } else {
-            return edgeIt->second[ver];
+        if (edgeIt != spaceIt->second->edgeSchemas_.end() && !edgeIt->second.empty()) {
+            size_t vNum = edgeIt->second.size();
+            if (static_cast<SchemaVer>(vNum) > ver) {
+                return ver < 0 ? edgeIt->second.back() : edgeIt->second[ver];
+            }
         }
     }
+    LOG(ERROR) << "The edge schema " << edgeType << " not found in space " << spaceId;
+    return std::shared_ptr<const NebulaSchemaProvider>();
 }
 
 
