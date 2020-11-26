@@ -8,7 +8,9 @@
 #define COMMON_DATATYPES_DATASET_H_
 
 #include <iostream>
+#include <iterator>
 #include <sstream>
+#include <string>
 
 #include "common/datatypes/Value.h"
 #include "common/datatypes/List.h"
@@ -44,6 +46,47 @@ struct DataSet {
             rows = std::move(ds.rows);
         }
         return *this;
+    }
+
+    const std::vector<std::string>& keys() const {
+        return colNames;
+    }
+
+    const std::vector<Value>& rowValues(std::size_t index) const {
+        return rows[index].values;
+    }
+
+    std::vector<Value> colValues(const std::string &colName) const {
+        std::vector<Value> col;
+        const auto find = std::find(colNames.begin(), colNames.end(), colName);
+        if (find == colNames.end()) {
+            return col;
+        }
+        std::size_t index = std::distance(colNames.begin(), find);
+        col.reserve(rows.size());
+        for (const auto &row : rows) {
+            col.emplace_back(row.values[index]);
+        }
+        return col;
+    }
+
+    using iterator = std::vector<Row>::iterator;
+    using const_iterator = std::vector<Row>::const_iterator;
+
+    iterator begin() {
+        return rows.begin();
+    }
+
+    const_iterator begin() const {
+        return rows.begin();
+    }
+
+    iterator end() {
+        return rows.end();
+    }
+
+    const_iterator end() const {
+        return rows.end();
     }
 
     template <typename T,
