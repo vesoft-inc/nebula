@@ -248,6 +248,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "=="                        { return TokenType::EQ; }
 "!="                        { return TokenType::NE; }
 "<>"                        { return TokenType::NE; }
+"=~"                        { return TokenType::REG; }
 
 "|"                         { return TokenType::PIPE; }
 
@@ -358,6 +359,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     yyterminate();
                                 }
                                 sbuf()[sbufPos_++] = val;
+                            }
+<DQ_STR,SQ_STR>\\[uUxX]{HEX}{4} {
+                                auto encoded = folly::codePointToUtf8(std::strtoul(yytext+2, nullptr, 16));
+                                makeSpaceForString(encoded.size());
+                                ::strncpy(sbuf() + sbufPos_, encoded.data(), encoded.size());
+                                sbufPos_ += encoded.size();
                             }
 <DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
 <DQ_STR,SQ_STR>\\n          {
