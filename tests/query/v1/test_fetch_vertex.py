@@ -7,18 +7,14 @@
 
 import pytest
 
-from nebula2.graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_NULL, T_EMPTY
+from tests.common.nebula_test_suite import T_EMPTY
+
 
 class TestFetchQuery(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.use_nba()
-
-    @classmethod
-    def cleanup(cls):
-        pass
 
     def test_fetch_vertex_base(self):
         query = 'FETCH PROP ON player "Boris Diaw" YIELD player.name, player.age'

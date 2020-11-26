@@ -5,25 +5,24 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_NULL, T_EMPTY
 import pytest
+
+from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import T_EMPTY
+
 
 class TestGoQuery(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.use_nba()
 
-    def cleanup():
-        pass
-
     def test_one_step(self):
         stmt = 'GO FROM "Tim Duncan" OVER serve'
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -34,8 +33,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"]
             ]
@@ -47,8 +46,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -61,8 +60,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2003, 2005, "Hawks"],
                 ["Boris Diaw", 2005, 2008, "Suns"],
                 ["Boris Diaw", 2008, 2012, "Hornets"],
@@ -79,8 +78,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Rajon Rondo", 2014, 2015, "Mavericks"],
                 ["Rajon Rondo", 2015, 2016, "Kings"],
                 ["Rajon Rondo", 2016, 2017, "Bulls"],
@@ -95,8 +94,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
@@ -113,8 +112,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Russell Westbrook"],
                 ["Kevin Durant"],
                 ["James Harden"],
@@ -130,8 +129,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
@@ -155,8 +154,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
@@ -174,8 +173,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tracy McGrady"],
                 ["LaMarcus Aldridge"]
             ]
@@ -190,8 +189,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Kobe Bryant"],
                 ["Grant Hill"],
                 ["Rudy Gay"],
@@ -208,8 +207,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["id"],
-            "rows" : [
+            "column_names": ["id"],
+            "rows": [
                 ["Kobe Bryant"],
                 ["Grant Hill"],
                 ["Rudy Gay"]
@@ -224,8 +223,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["3"],
-            "rows" : [
+            "column_names": ["3"],
+            "rows": [
                 [3],
                 [3],
                 [3]
@@ -259,8 +258,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "$$.team.name"],
-            "rows" : [
+            "column_names": ["serve._dst", "$$.team.name"],
+            "rows": [
                 ["Spurs", "Spurs"],
                 ["Hornets", "Hornets"],
                 ["Trail Blazers", "Trail Blazers"]
@@ -273,8 +272,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["Tony Parker"],
                 ["Manu Ginobili"]
@@ -319,8 +318,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "James Harden"],
                 [T_EMPTY, "Dejounte Murray"],
                 [T_EMPTY, "Paul George"]
@@ -332,8 +331,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "Russell Westbrook"],
                 [T_EMPTY, "Russell Westbrook"],
                 [T_EMPTY, "Russell Westbrook"]
@@ -345,8 +344,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["James Harden", T_EMPTY, T_EMPTY],
                 ["Dejounte Murray", T_EMPTY, T_EMPTY],
                 ["Paul George", T_EMPTY, T_EMPTY]
@@ -358,8 +357,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Mavericks", T_EMPTY],
                 [T_EMPTY, "Steve Nash"],
                 [T_EMPTY, "Jason Kidd"],
@@ -372,8 +371,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "Grizzlies", T_EMPTY],
                 [T_EMPTY, "Lakers", T_EMPTY],
                 [T_EMPTY, "Bulls", T_EMPTY],
@@ -390,8 +389,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [95, T_EMPTY, T_EMPTY, "Tim Duncan"],
                 [95, T_EMPTY, T_EMPTY, "Tony Parker"],
                 [90, T_EMPTY, T_EMPTY, "Tiago Splitter"],
@@ -406,8 +405,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Trail Blazers", T_EMPTY],
                 [T_EMPTY, "Tim Duncan"],
                 [T_EMPTY, "Tony Parker"],
@@ -421,8 +420,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Spurs"],
@@ -441,8 +440,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [2008, T_EMPTY, 6, T_EMPTY],
                 [T_EMPTY, 90, T_EMPTY, 5],
                 [T_EMPTY, 90, T_EMPTY, 5]
@@ -455,8 +454,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "James Harden", T_EMPTY, -5],
                 [T_EMPTY, "Dejounte Murray", T_EMPTY, -5],
                 [T_EMPTY, "Paul George", T_EMPTY, -5],
@@ -470,8 +469,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [2008, T_EMPTY],
                 [T_EMPTY, 90],
                 [T_EMPTY, 90]
@@ -483,8 +482,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Magic", T_EMPTY],
                 ["Lakers",T_EMPTY],
                 ["Heat", T_EMPTY],
@@ -501,8 +500,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Thunders", T_EMPTY],
                 [T_EMPTY, "Paul George"],
                 [T_EMPTY, "James Harden"]
@@ -515,8 +514,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "James Harden", T_EMPTY, 80],
                 [T_EMPTY, "Dejounte Murray", T_EMPTY, 99],
                 [T_EMPTY, "Paul George", T_EMPTY, 95],
@@ -528,8 +527,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "Russell Westbrook"],
                 [T_EMPTY, "Russell Westbrook"],
                 [T_EMPTY, "Russell Westbrook"]
@@ -541,8 +540,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY, "James Harden"],
                 [T_EMPTY, "Dejounte Murray"],
                 [T_EMPTY, "Paul George"]
@@ -555,8 +554,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [95, T_EMPTY, "Tim Duncan"],
                 [95, T_EMPTY, "Tony Parker"],
                 [90, T_EMPTY, "Tiago Splitter"],
@@ -575,8 +574,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$-.name", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Manu Ginobili", "Tim Duncan"],
                 ["Tim Duncan", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Manu Ginobili"],
@@ -601,8 +600,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$-.name", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Manu Ginobili"],
                 ["Chris Paul", "LeBron James", "Ray Allen"],
@@ -624,8 +623,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$-.name", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Manu Ginobili", "Manu Ginobili", "Tim Duncan"],
                 ["Tim Duncan", "Tony Parker", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Tony Parker", "Manu Ginobili"],
@@ -649,8 +648,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Tim Duncan", "Manu Ginobili", "Manu Ginobili", "Tim Duncan"],
                 ["Tim Duncan", "Tony Parker", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Tony Parker", "Manu Ginobili"],
@@ -675,8 +674,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$var.name", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$var.name", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Manu Ginobili", "Tim Duncan"],
                 ["Tim Duncan", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Manu Ginobili"],
@@ -701,8 +700,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$var.name", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$var.name", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker", "LaMarcus Aldridge"],
                 ["Tim Duncan", "Tony Parker", "Manu Ginobili"],
                 ["Chris Paul", "LeBron James", "Ray Allen"],
@@ -736,8 +735,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2003, 2005, "Hawks"],
                 ["Boris Diaw", 2005, 2008, "Suns"],
             ]
@@ -750,8 +749,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Hornets"]
             ]
@@ -764,8 +763,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Hornets"]
             ]
@@ -782,8 +781,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Hornets"]
@@ -799,8 +798,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$A.dst"],
-            "rows" : [
+            "column_names": ["$A.dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"]
             ]
@@ -818,8 +817,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Trail Blazers"],
@@ -843,8 +842,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$A.dst"],
-            "rows" : [
+            "column_names": ["$A.dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"]
             ]
@@ -874,8 +873,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["LaMarcus Aldridge"],
@@ -895,8 +894,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.player.name"],
-            "rows" : [
+            "column_names": ["$$.player.name"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["LaMarcus Aldridge"],
@@ -918,8 +917,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.player.name"],
-            "rows" : [
+            "column_names": ["$$.player.name"],
+            "rows": [
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
                 ["Danny Green"],
@@ -935,8 +934,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["LaMarcus Aldridge"],
@@ -959,8 +958,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["Tim Duncan"],
                 ["Tony Parker"],
@@ -975,8 +974,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["Manu Ginobili"],
@@ -993,8 +992,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["LaMarcus Aldridge"],
                 ["LaMarcus Aldridge"],
                 ["Manu Ginobili"],
@@ -1016,8 +1015,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.player.name"],
-            "rows" : [
+            "column_names": ["$$.player.name"],
+            "rows": [
                 ["Marc Gasol"],
                 ["Vince Carter"],
                 ["Yao Ming"],
@@ -1031,8 +1030,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.player.name"],
-            "rows" : [
+            "column_names": ["$$.player.name"],
+            "rows": [
                 ["Marc Gasol"],
                 ["Vince Carter"],
                 ["Yao Ming"],
@@ -1047,8 +1046,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Hornets"],
@@ -1066,8 +1065,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.team.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$^.team.name", "$$.player.name"],
+            "rows": [
                 ["Cavaliers", "Danny Green"],
                 ["Cavaliers", "Danny Green"],
                 ["Cavaliers", "Dwyane Wade"],
@@ -1106,8 +1105,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.team.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$^.team.name", "$$.player.name"],
+            "rows": [
                 ["Cavaliers", "Danny Green"],
                 ["Cavaliers", "Danny Green"],
                 ["Cavaliers", "Dwyane Wade"],
@@ -1141,8 +1140,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"],
                 ["Spurs"],
                 ["Hornets"],
@@ -1159,8 +1158,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -1171,8 +1170,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["Tony Parker"],
@@ -1194,8 +1193,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst"],
+            "rows": [
                 ["Spurs", T_EMPTY],
                 [T_EMPTY, "Tony Parker"],
                 [T_EMPTY, "Manu Ginobili"],
@@ -1218,8 +1217,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.team.name"],
-            "rows" : [
+            "column_names": ["$$.team.name"],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -1230,8 +1229,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$$.player.name"],
-            "rows" : [
+            "column_names": ["$$.player.name"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["Tony Parker"],
@@ -1254,8 +1253,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "like._dst", "$$.player.name", "like.likeness"],
-            "rows" : [
+            "column_names": ["$^.player.name", "like._dst", "$$.player.name", "like.likeness"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker", "Tony Parker", 95],
                 ["Tim Duncan", "Manu Ginobili", "Manu Ginobili", 95],
                 ["Tim Duncan", "Tony Parker", "Tony Parker", 95],
@@ -1271,8 +1270,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve._dst", "$$.team.name", "like._dst", "$$.player.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve._dst", "$$.team.name", "like._dst", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Spurs", "Spurs", T_EMPTY, T_EMPTY],
                 ["Tim Duncan", T_EMPTY, T_EMPTY, "Tony Parker", "Tony Parker"],
                 ["Tim Duncan", T_EMPTY, T_EMPTY, "Manu Ginobili", "Manu Ginobili"],
@@ -1301,8 +1300,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst", "serve._dst", "teammate._dst"],
-            "rows" : [
+            "column_names": ["like._dst", "serve._dst", "teammate._dst"],
+            "rows": [
                 [T_EMPTY, "Spurs", T_EMPTY],
                 ["Tony Parker", T_EMPTY, T_EMPTY],
                 ["Manu Ginobili", T_EMPTY, T_EMPTY],
@@ -1332,8 +1331,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "serve._dst"],
+            "rows": [
                 ["Spurs", "Spurs"]
             ]
         }
@@ -1364,8 +1363,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2003, 2005, "Hawks"]
             ]
         }
@@ -1378,8 +1377,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2003, 2005, "Hawks"]
             ]
         }
@@ -1392,8 +1391,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2005, 2008, "Suns"]
             ]
         }
@@ -1405,8 +1404,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
-            "rows" : [
+            "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
+            "rows": [
                 ["Boris Diaw", 2003, 2005, "Hawks"],
                 ["Boris Diaw", 2005, 2008, "Suns"],
                 ["Boris Diaw", 2008, 2012, "Hornets"],
@@ -1444,8 +1443,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["LaMarcus Aldridge"],
@@ -1459,8 +1458,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tony Parker"],
                 ["Manu Ginobili"],
                 ["LaMarcus Aldridge"],
@@ -1475,8 +1474,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst", "like.likeness", "$$.player.name"],
-            "rows" : [
+            "column_names": ["like._dst", "like.likeness", "$$.player.name"],
+            "rows": [
                 ["Manu Ginobili", 95, "Manu Ginobili"],
                 ["LaMarcus Aldridge", 90, "LaMarcus Aldridge"],
                 ["Tim Duncan", 95, "Tim Duncan"],
@@ -1494,8 +1493,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst", "like.likeness", "$$.player.name"],
-            "rows" : [
+            "column_names": ["like._dst", "like.likeness", "$$.player.name"],
+            "rows": [
                 ["Manu Ginobili", 95, "Manu Ginobili"],
                 ["LaMarcus Aldridge", 90, "LaMarcus Aldridge"],
                 ["Tim Duncan", 95, "Tim Duncan"],
@@ -1512,8 +1511,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -1523,8 +1522,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 ["Spurs"]
             ]
         }
@@ -1540,8 +1539,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
@@ -1564,8 +1563,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
@@ -1588,8 +1587,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
                 ["Boris Diaw"],
@@ -1612,8 +1611,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["Tony Parker"],
                 ["Manu Ginobili"],
@@ -1641,8 +1640,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst"],
-            "rows" : [
+            "column_names": ["serve._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["Tony Parker"],
                 ["Manu Ginobili"],
@@ -1671,8 +1670,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
@@ -1702,8 +1701,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["like._dst"],
-            "rows" : [
+            "column_names": ["like._dst"],
+            "rows": [
                 ["Tim Duncan"],
                 ["LaMarcus Aldridge"],
                 ["Marco Belinelli"],
@@ -1733,8 +1732,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst"],
+            "rows": [
                 ["Thunders", T_EMPTY],
                 [T_EMPTY, "Paul George"],
                 [T_EMPTY, "James Harden"],
@@ -1753,8 +1752,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst"],
+            "rows": [
                 ["Thunders", T_EMPTY],
                 [T_EMPTY, "Paul George"],
                 [T_EMPTY, "James Harden"],
@@ -1775,8 +1774,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
+            "rows": [
                 ["Thunders", T_EMPTY, 2008, T_EMPTY, T_EMPTY],
                 [T_EMPTY, "Paul George", T_EMPTY, 90, "Paul George"],
                 [T_EMPTY, "James Harden", T_EMPTY, 90, "James Harden"],
@@ -1796,8 +1795,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
+            "rows": [
                 ["Thunders", T_EMPTY, 2008, T_EMPTY, T_EMPTY],
                 [T_EMPTY, "Paul George", T_EMPTY, 90, "Paul George"],
                 [T_EMPTY, "James Harden", T_EMPTY, 90, "James Harden"],
@@ -1817,8 +1816,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst"],
+            "rows": [
                 [T_EMPTY, "Dejounte Murray"],
                 [T_EMPTY, "James Harden"],
                 [T_EMPTY, "Paul George"],
@@ -1836,8 +1835,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["serve._dst", "like._dst"],
-            "rows" : [
+            "column_names": ["serve._dst", "like._dst"],
+            "rows": [
                 [T_EMPTY, "Dejounte Murray"],
                 [T_EMPTY, "James Harden"],
                 [T_EMPTY, "Paul George"],
@@ -1855,8 +1854,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : [],
-            "rows" : [
+            "column_names": [],
+            "rows": [
                 [T_EMPTY]
             ]
         }
@@ -1886,8 +1885,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "dst", "$^.player.name", "$$.player.name"],
-            "rows" : [
+            "column_names": ["src", "dst", "$^.player.name", "$$.player.name"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker", "Tim Duncan", "Tony Parker"],
                 ["Tim Duncan", "Manu Ginobili", "Tim Duncan", "Manu Ginobili"],
                 ["Tim Duncan", "Tony Parker", "Tim Duncan", "Tony Parker"],
@@ -1902,8 +1901,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "dst"],
-            "rows" : [
+            "column_names": ["src", "dst"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker"],
                 ["Tim Duncan", "Manu Ginobili"],
                 ["Tim Duncan", "Tony Parker"],
@@ -1919,8 +1918,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "dst"],
-            "rows" : [
+            "column_names": ["src", "dst"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker"],
                 ["Tim Duncan", "Manu Ginobili"],
                 ["Tim Duncan", "Tony Parker"],
@@ -1946,8 +1945,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "$-.dst", "dst", "like.likeness"],
-            "rows" : [
+            "column_names": ["src", "$-.dst", "dst", "like.likeness"],
+            "rows": [
                 ["Tim Duncan", "Tony Parker", "Tony Parker", 95],
                 ["Tim Duncan", "Tony Parker", "Manu Ginobili", 95],
                 ["Tim Duncan", "Manu Ginobili", "Tony Parker", 95],
@@ -1972,8 +1971,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "$-.dst", "dst"],
-            "rows" : [
+            "column_names": ["src", "$-.dst", "dst"],
+            "rows": [
                 ["Danny Green", "Tim Duncan", "Tony Parker"],
                 ["Danny Green", "Tim Duncan", "Manu Ginobili"],
                 ["Danny Green", "Tim Duncan", "LaMarcus Aldridge"],
@@ -1989,8 +1988,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["src", "$a.dst", "dst"],
-            "rows" : [
+            "column_names": ["src", "$a.dst", "dst"],
+            "rows": [
                 ["Danny Green", "Tim Duncan", "Tony Parker"],
                 ["Danny Green", "Tim Duncan", "Manu Ginobili"],
                 ["Danny Green", "Tim Duncan", "LaMarcus Aldridge"],
@@ -2006,8 +2005,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$-.src", "$-.dst", "like._src", "like._dst"],
-            "rows" : [
+            "column_names": ["$-.src", "$-.dst", "like._src", "like._dst"],
+            "rows": [
                 ["Tony Parker", "Tim Duncan", "Tim Duncan", "Manu Ginobili"],
                 ["Tony Parker", "Tim Duncan", "Tim Duncan", "Tony Parker"],
                 ["Tony Parker", "Tim Duncan", "LaMarcus Aldridge", "Tony Parker"],
@@ -2033,8 +2032,8 @@ class TestGoQuery(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["$a.src", "$a.dst", "like._src", "like._dst"],
-            "rows" : [
+            "column_names": ["$a.src", "$a.dst", "like._src", "like._dst"],
+            "rows": [
                 ["Tony Parker", "Tim Duncan", "Tim Duncan", "Manu Ginobili"],
                 ["Tony Parker", "Tim Duncan", "Tim Duncan", "Tony Parker"],
                 ["Tony Parker", "Tim Duncan", "LaMarcus Aldridge", "Tony Parker"],
@@ -2054,4 +2053,3 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_out_of_order_result(resp, expected_data["rows"])
-

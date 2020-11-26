@@ -9,6 +9,7 @@ import re
 import pytest
 
 from nebula2.common import ttypes
+from tests.common.utils import utf8b, utf8s
 
 from tests.query.v2.utils import check_subgraph
 
@@ -16,14 +17,6 @@ from tests.query.v2.utils import check_subgraph
 def edgekey(edge):
     return utf8s(edge.src) + utf8s(edge.dst) + utf8s(edge.name) \
         + str(edge.ranking)
-
-
-def utf8b(s: str):
-    return bytes(s, encoding='utf-8')
-
-
-def utf8s(b):
-    return str(b, encoding='utf-8')
 
 
 def create_vertex_team(line):

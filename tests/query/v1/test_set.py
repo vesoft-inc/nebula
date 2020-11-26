@@ -5,7 +5,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import pytest
 from nebula2.graph import ttypes
 
 from tests.common.nebula_test_suite import NebulaTestSuite

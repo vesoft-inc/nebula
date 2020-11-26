@@ -5,8 +5,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import time
-
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -19,8 +17,8 @@ class TestOrderBy(NebulaTestSuite):
         resp = self.execute_query('ORDER BY')
         self.check_resp_failed(resp)
 
-        resp = self.execute('GO FROM %ld OVER serve YIELD ' 
-                            '$^.player.name as name, serve.start_year as start, $$.team.name' 
+        resp = self.execute('GO FROM %ld OVER serve YIELD '
+                            '$^.player.name as name, serve.start_year as start, $$.team.name'
                             '| ORDER BY $-.$$.team.name')
         self.check_resp_failed(resp)
 

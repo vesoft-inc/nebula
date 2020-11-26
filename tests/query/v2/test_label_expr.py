@@ -8,7 +8,6 @@
 import time
 import re
 
-import pytest
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 

@@ -7,17 +7,13 @@
 
 import pytest
 
-from nebula2.graph import ttypes
-from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL, T_EMPTY
+from tests.common.nebula_test_suite import NebulaTestSuite
+
 
 class TestFetchEdges(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.use_nba()
-
-    @classmethod
-    def cleanup(cls):
-        pass
 
     def test_fetch_edges_base(self):
         query = 'FETCH PROP ON serve "Boris Diaw"->"Hawks" YIELD serve.start_year, serve.end_year'

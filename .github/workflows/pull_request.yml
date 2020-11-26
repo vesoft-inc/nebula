@@ -136,6 +136,6 @@ jobs:
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
-        with:	
+        with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path:  build/server_*/logs/

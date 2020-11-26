@@ -6,17 +6,12 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_EMPTY, T_NULL
-import pytest
+
 
 class TestGroupBy(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.load_data()
-
-    def cleanup():
-        pass
-
 
     def test_syntax_error(self):
         # Use groupby without input
@@ -96,8 +91,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["teamName", "start_year", "MAX($-.start_year)", "MIN($-.end_year)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
-            "rows" : [
+            "column_names": ["teamName", "start_year", "MAX($-.start_year)", "MIN($-.end_year)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
+            "rows": [
                 ["Celtics", 2017, 2017, 2019, 2019.0, 0.0, 1],
                 ["Magic", 2000, 2000, 2004, 2004.0, 0.0, 1],
                 ["Pistons", 2015, 2015, 2017, 2017.0, 0.0, 1],
@@ -122,8 +117,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["COUNT($-.id)", "start_year", "avg"],
-            "rows" : [
+            "column_names": ["COUNT($-.id)", "start_year", "avg"],
+            "rows": [
                 [2, 2018, 2018.5],
                 [1, 2017, 2018.0],
                 [1, 2016, 2017.0],
@@ -147,8 +142,8 @@ class TestGroupBy(NebulaTestSuite):
         # resp = self.execute_query(stmt)
         # self.check_resp_succeeded(resp)
         # expected_data = {
-        #     "column_names" : ["teamName", "start_year", "MAX(%-.start)", "MIN($-.end)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
-        #     "rows" : [
+        #     "column_names": ["teamName", "start_year", "MAX(%-.start)", "MIN($-.end)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
+        #     "rows": [
         #         ["Celtics", 2017, 2017, 2019, 2019.0, 0, 1],
         #         ["Magic", 2000, 2000, 2004, 2004.0, 0, 1],
         #         ["Pistons", 2015, 2015, 2017, 2017.0, 0, 1],
@@ -180,9 +175,9 @@ class TestGroupBy(NebulaTestSuite):
         # resp = self.execute_query(stmt)
         # self.check_resp_succeeded(resp)
         # expected_data = {
-        #     "column_names" : ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
+        #     "column_names": ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
         #                       "bit_or", "bit_xor", "COUNT($-.likeness)", "COUNT_DISTINCT($-.likeness)"],
-        #     "rows" : [
+        #     "rows": [
         #         ["LeBron James", 68, 34.0, 34, 34, 1, 2, 0, 2, 1],
         #         ["Chris Paul", 66, 33.0, 33, 33, 1, 2, 0, 2, 1],
         #         ["Dwyane Wade", 37, 37.0, 37, 37, 1, 2, 3, 1, 1],
@@ -211,9 +206,9 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
+            "column_names": ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
                               "bit_or", "bit_xor", "COUNT($-.likeness)"],
-            "rows" : [
+            "rows": [
                 ["LeBron James", 68, 34.0, 34, 34, 1, 2, 0, 2],
                 ["Chris Paul", 66, 33.0, 33, 33, 1, 2, 0, 2],
                 ["Dwyane Wade", 37, 37.0, 37, 37, 1, 2, 3, 1],
@@ -234,8 +229,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["name", "sum", "count", "cal"],
-            "rows" : [
+            "column_names": ["name", "sum", "count", "cal"],
+            "rows": [
                 ["LeBron James", 3.0, 2, 2],
                 ["Chris Paul", 3.0, 2, 2],
                 ["Dwyane Wade", 1.5, 1, 2],
@@ -258,8 +253,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["name", "sumAge"],
-            "rows" : [
+            "column_names": ["name", "sumAge"],
+            "rows": [
                 ["Grizzlies", 34],
                 ["Raptors", 34],
                 ["Lakers", 40]
@@ -337,8 +332,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["name", "sum", "count"],
-            "rows" : [
+            "column_names": ["name", "sum", "count"],
+            "rows": [
                 ["Carmelo Anthony", 1.5, 1],
                 ["Dwyane Wade", 1.5, 1],
                 ["Chris Paul", 3.0, 2],
@@ -359,8 +354,8 @@ class TestGroupBy(NebulaTestSuite):
         resp = self.execute_query(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names" : ["name", "sum", "count"],
-            "rows" : [
+            "column_names": ["name", "sum", "count"],
+            "rows": [
                 ["Carmelo Anthony", 1.5, 1],
                 ["Dwyane Wade", 1.5, 1]
             ]

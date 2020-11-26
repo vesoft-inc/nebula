@@ -8,10 +8,16 @@
 import pdb
 
 from typing import Pattern
-
 from nebula2.common import ttypes as CommonTtypes
-
 from tests.common.path_value import PathVal
+
+
+def utf8b(s: str):
+    return bytes(s, encoding='utf-8')
+
+
+def utf8s(b):
+    return str(b, encoding='utf-8')
 
 
 def _compare_values_by_pattern(real, expect):
