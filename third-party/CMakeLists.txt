@@ -9,7 +9,11 @@ set(CXX_STANDARD_REQUIRED ON)
 include(ExternalProject)
 
 # Get number of physical CPU cores and megabytes of available memory
-cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_PHYSICAL_CORES)
+if ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+    cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_PHYSICAL_CORES)
+elseif ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
+    cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_LOGICAL_CORES)
+endif()
 cmake_host_system_information(RESULT available_memory_mb QUERY AVAILABLE_PHYSICAL_MEMORY)
 
 execute_process(
