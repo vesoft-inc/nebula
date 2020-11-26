@@ -208,4 +208,39 @@ std::string ShowStatsSentence::toString() const {
     return folly::stringPrintf("SHOW STATS");
 }
 
+std::string ShowTSClientsSentence::toString() const {
+    return "SHOW TEXT SEARCH CLIENTS";
+}
+
+std::string SignInTextServiceSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "SIGN IN TEXT SERVICE ";
+    for (auto &client : clients_->clients()) {
+        buf += "(";
+        buf += client.get_host().host;
+        buf += ":";
+        buf += std::to_string(client.get_host().port);
+        if (client.__isset.user && !client.get_user()->empty()) {
+            buf += ", \"";
+            buf += *client.get_user();
+            buf += "\"";
+        }
+        if (client.__isset.pwd && !client.get_pwd()->empty()) {
+            buf += ", \"";
+            buf += *client.get_pwd();
+            buf += "\"";
+        }
+        buf += ")";
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+std::string SignOutTextServiceSentence::toString() const {
+    return "SIGN OUT TEXT SERVICE";
+}
 }   // namespace nebula

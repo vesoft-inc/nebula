@@ -30,6 +30,10 @@ const Pattern& IndexScanRule::pattern() const {
 StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext* qctx,
                                                             const MatchedResult& matched) const {
     auto groupNode = matched.node;
+    if (isEmptyResultSet(groupNode)) {
+        return TransformResult::noTransform();
+    }
+
     auto filter = filterExpr(groupNode);
     IndexQueryCtx iqctx = std::make_unique<std::vector<IndexQueryContext>>();
     if (filter == nullptr) {
@@ -174,7 +178,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
 
 #define CHECK_BOUND_VALUE(v, name)                                                                 \
     do {                                                                                           \
-        if (v == Value::kNullBadType) {                                                      \
+        if (v == Value::kNullBadType) {                                                            \
             LOG(ERROR) << "Get bound value error. field : "  << name;                              \
             return Status::Error("Get bound value error. field : %s", name.c_str());               \
         }                                                                                          \
@@ -605,5 +609,9 @@ IndexScanRule::findIndexForRangeScan(const std::vector<IndexItem>& indexes,
     return priorityIdxs;
 }
 
+bool IndexScanRule::isEmptyResultSet(const OptGroupNode *groupNode) const {
+    auto in = static_cast<const IndexScan *>(groupNode->node());
+    return in->isEmptyResultSet();
+}
 }   // namespace opt
 }   // namespace nebula

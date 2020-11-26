@@ -426,5 +426,42 @@ Status ShowStatusValidator::toPlan() {
     return Status::OK();
 }
 
+Status ShowTSClientsValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowTSClientsValidator::toPlan() {
+    auto *doNode = ShowTSClients::make(qctx_, nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status SignInTSServiceValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status SignInTSServiceValidator::toPlan() {
+    auto sentence = static_cast<SignInTextServiceSentence*>(sentence_);
+    std::vector<meta::cpp2::FTClient> clients;
+    if (sentence->clients() != nullptr) {
+        clients = sentence->clients()->clients();
+    }
+    auto *node = SignInTSService::make(qctx_, nullptr, std::move(clients));
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status SignOutTSServiceValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status SignOutTSServiceValidator::toPlan() {
+    auto *node = SignOutTSService::make(qctx_, nullptr);
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula

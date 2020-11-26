@@ -1213,6 +1213,52 @@ private:
         : SingleInputNode(qctx, Kind::kShowStats, input) {}
 };
 
+class ShowTSClients final : public SingleInputNode {
+public:
+    static ShowTSClients* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowTSClients(qctx, input));
+    }
+
+private:
+    ShowTSClients(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowTSClients, input) {}
+};
+
+class SignInTSService final : public SingleInputNode {
+public:
+    static SignInTSService* make(QueryContext* qctx,
+                                  PlanNode* input,
+                                  std::vector<meta::cpp2::FTClient> clients) {
+        return qctx->objPool()->add(new SignInTSService(qctx, input, std::move(clients)));
+    }
+
+    const std::vector<meta::cpp2::FTClient> &clients() const {
+        return clients_;
+    }
+
+    meta::cpp2::FTServiceType type() const {
+        return meta::cpp2::FTServiceType::ELASTICSEARCH;
+    }
+
+private:
+    SignInTSService(QueryContext* qctx, PlanNode* input, std::vector<meta::cpp2::FTClient> clients)
+        : SingleInputNode(qctx, Kind::kSignInTSService, input),
+          clients_(std::move(clients)) {}
+
+    std::vector<meta::cpp2::FTClient> clients_;
+};
+
+class SignOutTSService final : public SingleInputNode {
+public:
+    static SignOutTSService* make(QueryContext* qctx,
+                                  PlanNode* input) {
+        return qctx->objPool()->add(new SignOutTSService(qctx, input));
+    }
+
+private:
+    SignOutTSService(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kSignOutTSService, input) {}
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ADMIN_H_

@@ -2719,4 +2719,208 @@ TEST(Parser, Zone) {
     }
 }
 
+TEST(Parser, FullText) {
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1, 2)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", 1, 2)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", 1, 2)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 1, 2)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", AUTO, AND)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", AUTO, OR)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, AND)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1, 1)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, -1, 1)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1, -1)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", -1, OR, 1, 1)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 4, OR, 1, 1)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", -1, 2)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1, -2)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", AUTO, AND)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", AUTO, AND)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", AUTO, AND)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, FullTextServiceTest) {
+    {
+        GQLParser parser;
+        std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200), (127.0.0.1:9300)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\"), "
+                            "(127.0.0.1:9200, \"user\", \"password\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SIGN OUT TEXT SERVICE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\")";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
 }   // namespace nebula

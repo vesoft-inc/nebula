@@ -65,6 +65,9 @@ nebula_add_library(
     admin/ConfigExecutor.cpp
     admin/GroupExecutor.cpp
     admin/ZoneExecutor.cpp
+    admin/ShowTSClientsExecutor.cpp
+    admin/SignInTSServiceExecutor.cpp
+    admin/SignOutTSServiceExecutor.cpp
 )
 
 nebula_add_subdirectory(test)

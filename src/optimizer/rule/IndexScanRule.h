@@ -177,6 +177,8 @@ private:
 
     std::vector<IndexItem> findIndexForRangeScan(const std::vector<IndexItem>& indexes,
                                                  const FilterItems& items) const;
+
+    bool isEmptyResultSet(const OptGroupNode *groupNode) const;
 };
 
 }   // namespace opt

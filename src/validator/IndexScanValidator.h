@@ -9,9 +9,9 @@
 #include <planner/Query.h>
 #include "common/base/Base.h"
 #include "common/interface/gen-cpp2/storage_types.h"
+#include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "parser/TraverseSentences.h"
 #include "validator/Validator.h"
-
 
 namespace nebula {
 namespace graph {
@@ -32,20 +32,36 @@ private:
 
     Status prepareFilter();
 
-    Status checkFilter(Expression* expr, const std::string& from);
+    StatusOr<std::string> rewriteTSFilter(Expression* expr);
 
-    Status checkRelExpr(RelationalExpression* expr, const std::string& from);
+    StatusOr<std::vector<std::string>> textSearch(TextSearchExpression* expr);
 
-    Status rewriteRelExpr(RelationalExpression* expr, const std::string& from);
+    bool needTextSearch(Expression* expr);
+
+    Status checkFilter(Expression* expr);
+
+    Status checkRelExpr(RelationalExpression* expr);
+
+    Status rewriteRelExpr(RelationalExpression* expr);
 
     StatusOr<Value> checkConstExpr(Expression* expr, const std::string& prop);
 
+    Status checkTSService();
+
+    Status checkTSIndex();
+
+    const nebula::plugin::HttpClient& randomFTClient() const;
+
 private:
-    GraphSpaceID               spaceId_{0};
-    IndexScan::IndexQueryCtx   contexts_{nullptr};
-    IndexScan::IndexReturnCols returnCols_{};
-    bool                       isEdge_{false};
-    int32_t                    schemaId_;
+    GraphSpaceID                      spaceId_{0};
+    IndexScan::IndexQueryCtx          contexts_{};
+    IndexScan::IndexReturnCols        returnCols_{};
+    bool                              isEdge_{false};
+    int32_t                           schemaId_;
+    bool                              isEmptyResultSet_{false};
+    bool                              textSearchReady_{false};
+    std::string                       from_;
+    std::vector<nebula::plugin::HttpClient> esClients_;
 };
 
 }   // namespace graph

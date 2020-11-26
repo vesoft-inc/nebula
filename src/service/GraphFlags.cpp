@@ -48,3 +48,5 @@ DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path")
 DEFINE_uint32(max_allowed_statements, 512, "Max allowed sequential statements");
 
 DEFINE_bool(enable_optimizer, false, "Whether to enable optimizer");
+
+DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");

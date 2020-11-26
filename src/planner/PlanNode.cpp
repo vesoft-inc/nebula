@@ -234,6 +234,13 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowListener";
         case Kind::kShowStats:
             return "ShowStats";
+        // text search
+        case Kind::kShowTSClients:
+            return "ShowTSClients";
+        case Kind::kSignInTSService:
+            return "SignInTSService";
+        case Kind::kSignOutTSService:
+            return "SignOutTSService";
         // no default so the compiler will warning when lack
     }
     LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

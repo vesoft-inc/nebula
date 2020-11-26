@@ -122,6 +122,9 @@ public:
                                                       const std::string& var = "");
 
     static std::unique_ptr<InputPropertyExpression> inputPropExpr(const std::string& prop);
+
+    static std::unique_ptr<Expression> pushOrs(
+        const std::vector<std::unique_ptr<RelationalExpression>>& rels);
 };
 
 }   // namespace graph

@@ -585,6 +585,60 @@ public:
     std::string toString() const override;
 };
 
+class TSClientList final {
+public:
+    void addClient(nebula::meta::cpp2::FTClient *client) {
+        clients_.emplace_back(client);
+    }
+
+    std::string toString() const;
+
+    std::vector<nebula::meta::cpp2::FTClient> clients() const {
+        std::vector<nebula::meta::cpp2::FTClient> result;
+        result.reserve(clients_.size());
+        for (auto &client : clients_) {
+            result.emplace_back(*client);
+        }
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<nebula::meta::cpp2::FTClient>> clients_;
+};
+
+class ShowTSClientsSentence final : public Sentence {
+public:
+    ShowTSClientsSentence() {
+        kind_ = Kind::kShowTSClients;
+    }
+    std::string toString() const override;
+};
+
+class SignInTextServiceSentence final : public Sentence {
+public:
+    explicit SignInTextServiceSentence(TSClientList *clients) {
+        kind_ = Kind::kSignInTSService;
+        clients_.reset(clients);
+    }
+
+    std::string toString() const override;
+
+    TSClientList* clients() const {
+        return clients_.get();
+    }
+
+private:
+    std::unique_ptr<TSClientList>       clients_;
+};
+
+class SignOutTextServiceSentence final : public Sentence {
+public:
+    SignOutTextServiceSentence() {
+        kind_ = Kind::kSignOutTSService;
+    }
+
+    std::string toString() const override;
+};
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

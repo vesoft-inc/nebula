@@ -415,6 +415,7 @@ public:
                            IndexReturnCols&& returnCols,
                            bool isEdge,
                            int32_t schemaId,
+                           bool isEmptyResultSet = false,
                            bool dedup = false,
                            std::vector<storage::cpp2::OrderBy> orderBy = {},
                            int64_t limit = std::numeric_limits<int64_t>::max(),
@@ -426,6 +427,7 @@ public:
                                                   std::move(returnCols),
                                                   isEdge,
                                                   schemaId,
+                                                  isEmptyResultSet,
                                                   dedup,
                                                   std::move(orderBy),
                                                   limit,
@@ -452,6 +454,10 @@ public:
         return schemaId_;
     }
 
+    bool isEmptyResultSet() const {
+        return isEmptyResultSet_;
+    }
+
     void setIndexQueryContext(IndexQueryCtx contexts) {
         contexts_ = std::move(contexts);
     }
@@ -476,6 +482,7 @@ private:
               IndexReturnCols&& returnCols,
               bool isEdge,
               int32_t schemaId,
+              bool isEmptyResultSet,
               bool dedup,
               std::vector<storage::cpp2::OrderBy> orderBy,
               int64_t limit,
@@ -492,6 +499,7 @@ private:
         returnCols_ = std::move(returnCols);
         isEdge_ = isEdge;
         schemaId_ = schemaId;
+        isEmptyResultSet_ = isEmptyResultSet;
     }
 
 private:
@@ -499,6 +507,7 @@ private:
     IndexReturnCols                               returnCols_;
     bool                                          isEdge_;
     int32_t                                       schemaId_;
+    bool                                          isEmptyResultSet_;
 };
 
 /**
