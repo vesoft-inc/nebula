@@ -17,6 +17,7 @@
 #include "common/interface/gen-cpp2/storage_types.h"
 
 DECLARE_int32(storage_client_timeout_ms);
+DECLARE_uint32(storage_client_retry_interval_ms);
 
 
 namespace nebula {
@@ -66,6 +67,14 @@ public:
         failedParts_.emplace(partId, errorCode);
     }
 
+    void appendFailedParts(const std::vector<PartitionID> &partsId,
+                           storage::cpp2::ErrorCode errorCode) {
+        failedParts_.reserve(failedParts_.size() + partsId.size());
+        for (const auto &partId : partsId) {
+            emplaceFailedPart(partId, errorCode);
+        }
+    }
+
     std::vector<Response>& responses() {
         return responses_;
     }
@@ -100,10 +109,10 @@ protected:
     const HostAddr getLeader(const meta::PartHosts& partHosts) const;
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
     void invalidLeader(GraphSpaceID spaceId, PartitionID partId);
+    void invalidLeader(GraphSpaceID spaceId, std::vector<PartitionID> &partsId);
 
     template<class Request,
              class RemoteFunc,
-             class GetPartIDFunc,
              class Response =
                 typename std::result_of<
                     RemoteFunc(ClientType*, const Request&)
@@ -113,7 +122,8 @@ protected:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        GetPartIDFunc getPartIDFunc);
+        std::size_t retry = 0,
+        std::size_t retryLimit = 3);
 
     template<class Request,
              class RemoteFunc,
@@ -125,7 +135,10 @@ protected:
     folly::Future<StatusOr<Response>> getResponse(
             folly::EventBase* evb,
             std::pair<HostAddr, Request> request,
-            RemoteFunc remoteFunc);
+            RemoteFunc remoteFunc,
+            folly::Promise<StatusOr<Response>> pro = folly::Promise<StatusOr<Response>>(),
+            std::size_t retry = 0,
+            std::size_t retryLimit = 3);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
@@ -151,6 +164,40 @@ protected:
 
     virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
     getHostParts(GraphSpaceID spaceId) const;
+
+    // from map
+    template <typename K>
+    std::vector<PartitionID> getReqPartsIdFromContainer(
+        const std::unordered_map<PartitionID, K> &t) const {
+        std::vector<PartitionID> partsId;
+        partsId.reserve(t.size());
+        for (const auto &part : t) {
+            partsId.emplace_back(part.first);
+        }
+        return partsId;
+    }
+
+    // from list
+    std::vector<PartitionID> getReqPartsIdFromContainer(const std::vector<PartitionID> &t) const {
+        return t;
+    }
+
+    template <typename Request>
+    std::vector<PartitionID> getReqPartsId(const Request &req) const {
+        return getReqPartsIdFromContainer(req.get_parts());
+    }
+
+    std::vector<PartitionID> getReqPartsId(const cpp2::UpdateVertexRequest &req) const {
+        return {req.get_part_id()};
+    }
+
+    std::vector<PartitionID> getReqPartsId(const cpp2::UpdateEdgeRequest &req) const {
+        return {req.get_part_id()};
+    }
+
+    std::vector<PartitionID> getReqPartsId(const cpp2::GetUUIDReq &req) const {
+        return {req.get_part_id()};
+    }
 
 protected:
     meta::MetaClient* metaClient_{nullptr};

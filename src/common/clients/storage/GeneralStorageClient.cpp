@@ -42,9 +42,6 @@ GeneralStorageClient::get(GraphSpaceID space,
         [] (cpp2::GeneralStorageServiceAsyncClient* client,
             const cpp2::KVGetRequest& r) {
             return client->future_get(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<std::string>>& p) {
-            return p.first;
         });
 }
 
@@ -79,9 +76,6 @@ GeneralStorageClient::put(GraphSpaceID space,
         [] (cpp2::GeneralStorageServiceAsyncClient* client,
             const cpp2::KVPutRequest& r) {
             return client->future_put(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<KeyValue>>& p) {
-            return p.first;
         });
 }
 
@@ -115,9 +109,6 @@ GeneralStorageClient::remove(GraphSpaceID space,
         [] (cpp2::GeneralStorageServiceAsyncClient* client,
             const cpp2::KVRemoveRequest& r) {
             return client->future_remove(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<std::string>>& p) {
-            return p.first;
         });
 }
 

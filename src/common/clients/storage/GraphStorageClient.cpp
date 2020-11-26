@@ -81,9 +81,6 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::GetNeighborsRequest& r) {
             return client->future_getNeighbors(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<Row>>& p) {
-            return p.first;
         });
 }
 
@@ -124,9 +121,6 @@ GraphStorageClient::addVertices(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::AddVerticesRequest& r) {
             return client->future_addVertices(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<cpp2::NewVertex>>& p) {
-            return p.first;
         });
 }
 
@@ -166,9 +160,6 @@ GraphStorageClient::addEdges(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::AddEdgesRequest& r) {
             return client->future_addEdges(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<cpp2::NewEdge>>& p) {
-            return p.first;
         });
 }
 
@@ -231,9 +222,6 @@ GraphStorageClient::getProps(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::GetPropRequest& r) {
             return client->future_getProps(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<Row>>& p) {
-            return p.first;
         });
 }
 
@@ -269,9 +257,6 @@ GraphStorageClient::deleteEdges(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::DeleteEdgesRequest& r) {
             return client->future_deleteEdges(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<cpp2::EdgeKey>>& p) {
-            return p.first;
         });
 }
 
@@ -307,9 +292,6 @@ GraphStorageClient::deleteVertices(GraphSpaceID space,
         [] (cpp2::GraphStorageServiceAsyncClient* client,
             const cpp2::DeleteVerticesRequest& r) {
             return client->future_deleteVertices(r);
-        },
-        [] (const std::pair<const PartitionID, std::vector<Value>>& p) {
-            return p.first;
         });
 }
 
@@ -490,10 +472,7 @@ GraphStorageClient::lookupIndex(GraphSpaceID space,
                            std::move(requests),
                            [] (cpp2::GraphStorageServiceAsyncClient* client,
                                const cpp2::LookupIndexRequest& r) {
-                               return client->future_lookupIndex(r); },
-                           [] (const PartitionID& part) {
-                               return part;
-                           });
+                               return client->future_lookupIndex(r); });
 }
 
 
@@ -523,10 +502,7 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
                            std::move(requests),
                            [] (cpp2::GraphStorageServiceAsyncClient* client,
                                const cpp2::LookupAndTraverseRequest& r) {
-                               return client->future_lookupAndTraverse(r); },
-                           [] (const PartitionID& part) {
-                               return part;
-                           });
+                               return client->future_lookupAndTraverse(r); });
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFromRow(
