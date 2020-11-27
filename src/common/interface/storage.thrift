@@ -351,7 +351,7 @@ struct GetPropResponse {
     //
     // Each column represents one peoperty. When all properties are returned, the
     //   column name is in the form of
-    //   "<tag_name>:<prop_alias>" or "<edge_type_name>:<prop_alias>"
+    //   "tag_name.prop_alias" or "edge_type_name.prop_alias"
     //
     // If the vertex or the edge does NOT have the given property, the value will
     //   be a NULL
@@ -614,7 +614,7 @@ struct ScanVertexRequest {
     2: common.PartitionID                   part_id,
     // start key of this block
     3: optional binary                      cursor,
-    4: list<VertexProp>                     return_columns,
+    4: VertexProp                           return_columns,
     // If no_columns is true, no properties of tags will be returned,
     // no matter what property is defined in VertexProp
     5: bool                                 no_columns,
@@ -623,6 +623,12 @@ struct ScanVertexRequest {
     // only return data in time range [start_time, end_time)
     7: optional i64                         start_time,
     8: optional i64                         end_time,
+    9: optional binary                      filter,
+    // when storage enable multi versions and only_latest_version is true, only return latest version.
+    // when storage disable multi versions, just use the default value.
+    10: bool                                only_latest_version = false,
+    // if set to false, forbid follower read
+    11: bool                                enable_read_from_follower = true,
 }
 
 struct ScanVertexResponse {
@@ -643,7 +649,7 @@ struct ScanEdgeRequest {
     2: common.PartitionID                   part_id,
     // start key of this block
     3: optional binary                      cursor,
-    4: list<EdgeProp>                       return_columns,
+    4: EdgeProp                             return_columns,
     // If no_columns is true, no properties of edge will be returned,
     // no matter what property is defined in EdgeProp
     5: bool                                 no_columns,
@@ -652,6 +658,12 @@ struct ScanEdgeRequest {
     // only return data in time range [start_time, end_time)
     7: optional i64                         start_time,
     8: optional i64                         end_time,
+    9: optional binary                      filter,
+    // when storage enable multi versions and only_latest_version is true, only return latest version.
+    // when storage disable multi versions, just use the default value.
+    10: bool                                only_latest_version = false,
+    // if set to false, forbid follower read
+    11: bool                                enable_read_from_follower = true,
 }
 
 struct ScanEdgeResponse {
