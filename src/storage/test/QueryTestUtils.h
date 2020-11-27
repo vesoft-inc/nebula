@@ -46,7 +46,11 @@ public:
         for (const auto& vertex : vertices) {
             PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
             TagID tagId = vertex.tId_;
-            auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId, 0L);
+            auto ver = FLAGS_enable_multi_versions ?
+                       std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() :
+                       0L;
+            auto key = NebulaKeyUtils::vertexKey(
+                spaceVidLen, partId, vertex.vId_, tagId, folly::Endian::big(ver));
             auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 LOG(ERROR) << "Invalid tagId " << tagId;
@@ -105,7 +109,6 @@ public:
 
     static bool mockEdgeData(storage::StorageEnv* env,
                              int32_t totalParts,
-                             EdgeVersion maxVersions = 1,
                              bool enableIndex = false,
                              bool indexWithProp = true,
                              bool schemaWithProp = true) {
@@ -119,65 +122,66 @@ public:
         auto spaceVidLen = status.value();
         auto edges = mock::MockData::mockMultiEdges();
         std::vector<kvstore::KV> data;
-        for (EdgeVersion version = 0; version < maxVersions; version++) {
-            std::atomic<size_t> count(edges.size());
-            folly::Baton<true, std::atomic> baton;
-            for (const auto& edge : edges) {
-                PartitionID partId = (hash(edge.srcId_) % totalParts) + 1;
-                auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
-                                                   edge.rank_, edge.dstId_, version);
-                auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
-                if (!schema) {
-                    LOG(ERROR) << "Invalid edge " << edge.type_;
-                    return false;
-                }
-
-                std::vector<Value> values;
-                if (schemaWithProp) {
-                    values = edge.props_;
-                }  else {
-                    EXPECT_FALSE(indexWithProp);
-                }
-                EXPECT_TRUE(encode(schema.get(), key, values, data));
-
-                if (enableIndex) {
-                    if (edge.type_ == 102 || edge.type_ == 101) {
-                        int32_t colNum = 0;
-                        IndexID indexID = 0;
-
-                        // When schemaWithProp is true, indexWithProp can be true or false.
-                        // When schemaWithProp is false, indexWithProp must be false.
-                        if (indexWithProp) {
-                            EXPECT_TRUE(schemaWithProp);
-                            colNum = 3;
-                            indexID = edge.type_;
-                        } else {
-                            values.clear();
-                            indexID = edge.type_ == 101 ? 103 : 104;
-                        }
-
-                        encodeEdgeIndex(spaceVidLen,
-                                        partId,
-                                        edge.srcId_,
-                                        edge.dstId_,
-                                        edge.rank_,
-                                        indexID,
-                                        values,
-                                        colNum,
-                                        data);
-                    }
-                }
-                env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                            [&](kvstore::ResultCode code) {
-                                                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                                                count.fetch_sub(1);
-                                                if (count.load() == 0) {
-                                                    baton.post();
-                                                }
-                                            });
+        std::atomic<size_t> count(edges.size());
+        folly::Baton<true, std::atomic> baton;
+        for (const auto& edge : edges) {
+            PartitionID partId = (hash(edge.srcId_) % totalParts) + 1;
+            auto ver = FLAGS_enable_multi_versions ?
+                       std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() :
+                       0L;
+            auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
+                                                edge.rank_, edge.dstId_, folly::Endian::big(ver));
+            auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
+            if (!schema) {
+                LOG(ERROR) << "Invalid edge " << edge.type_;
+                return false;
             }
-            baton.wait();
+
+            std::vector<Value> values;
+            if (schemaWithProp) {
+                values = edge.props_;
+            }  else {
+                EXPECT_FALSE(indexWithProp);
+            }
+            EXPECT_TRUE(encode(schema.get(), key, values, data));
+
+            if (enableIndex) {
+                if (edge.type_ == 102 || edge.type_ == 101) {
+                    int32_t colNum = 0;
+                    IndexID indexID = 0;
+
+                    // When schemaWithProp is true, indexWithProp can be true or false.
+                    // When schemaWithProp is false, indexWithProp must be false.
+                    if (indexWithProp) {
+                        EXPECT_TRUE(schemaWithProp);
+                        colNum = 3;
+                        indexID = edge.type_;
+                    } else {
+                        values.clear();
+                        indexID = edge.type_ == 101 ? 103 : 104;
+                    }
+
+                    encodeEdgeIndex(spaceVidLen,
+                                    partId,
+                                    edge.srcId_,
+                                    edge.dstId_,
+                                    edge.rank_,
+                                    indexID,
+                                    values,
+                                    colNum,
+                                    data);
+                }
+            }
+            env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
+                                        [&](kvstore::ResultCode code) {
+                                            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                                            count.fetch_sub(1);
+                                            if (count.load() == 0) {
+                                                baton.post();
+                                            }
+                                        });
         }
+        baton.wait();
         if (FLAGS_enable_rocksdb_prefix_filtering) {
             auto code = env->kvstore_->flush(spaceId);
             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);

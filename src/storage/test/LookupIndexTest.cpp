@@ -335,7 +335,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, 1, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
 
     /**
      * one IndexQueryContext, where teammates.player1 == "Tony Parker"
@@ -676,7 +676,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, 1, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
 
     /**
      * one IndexQueryContext
@@ -922,7 +922,7 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, 1, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
 
     /**
      * one IndexQueryContext, where teammates.player1 == "Tony Parker"
@@ -1151,7 +1151,7 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, 1, true, false));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true, false));
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty
@@ -1227,7 +1227,7 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, false, false, false));
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, 1, true, false, false));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true, false, false));
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty

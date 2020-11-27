@@ -40,7 +40,8 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     }
 
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = env_->kvstore_->rangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
+    auto kvRet = env_->kvstore_->rangeWithPrefix(
+        spaceId_, partId_, start, prefix, &iter, req.get_enable_read_from_follower());
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         pushResultCode(to(kvRet), partId_);
         onFinished();
@@ -57,6 +58,9 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     }
     RowReaderWrapper reader;
 
+    bool onlyLatestVer = req.get_only_latest_version();
+    // last valid key without version
+    std::string lastValidKey;
     for (int32_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
         auto key = iter->key();
         if (!NebulaKeyUtils::isEdge(spaceVidLen_, key)) {
@@ -82,6 +86,15 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         reader.reset(schemaIter->second, val);
         if (!reader) {
             continue;
+        }
+
+        if (onlyLatestVer) {
+            auto noVer = NebulaKeyUtils::keyWithNoVersion(key);
+            if (noVer == lastValidKey) {
+                continue;
+            } else {
+                lastValidKey = noVer.str();
+            }
         }
 
         nebula::List list;
@@ -122,7 +135,7 @@ cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::ScanEdgeReq
         return ret;
     }
 
-    auto returnProps = std::move(req.return_columns);
+    std::vector<cpp2::EdgeProp> returnProps = {req.return_columns};
     return handleEdgeProps(returnProps, returnNoProps_);
 }
 

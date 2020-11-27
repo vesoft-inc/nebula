@@ -122,7 +122,7 @@ TEST(GetPropTest, PropertyTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {kVid, "1:name", "1:age", "1:avgScore"};
+        expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
         nebula::Row row({"Tim Duncan", "Tim Duncan", 44, 19.0});
         expected.rows.emplace_back(std::move(row));
         LOG(INFO) << resp.props;
@@ -150,7 +150,7 @@ TEST(GetPropTest, PropertyTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {"101:teamName", "101:startYear", "101:endYear"};
+        expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
         nebula::Row row({"Spurs", 1997, 2016});
         expected.rows.emplace_back(std::move(row));
         ASSERT_EQ(expected, resp.props);
@@ -183,9 +183,9 @@ TEST(GetPropTest, AllPropertyInOneSchemaTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {kVid, "1:name", "1:age", "1:playing", "1:career",
-                             "1:startYear", "1:endYear", "1:games", "1:avgScore",
-                             "1:serveTeams", "1:country", "1:champions"};
+        expected.colNames = {kVid, "1.name", "1.age", "1.playing", "1.career",
+                             "1.startYear", "1.endYear", "1.games", "1.avgScore",
+                             "1.serveTeams", "1.country", "1.champions"};
         nebula::Row row({"Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1,
                          "America", 5});
         expected.rows.emplace_back(std::move(row));
@@ -213,10 +213,10 @@ TEST(GetPropTest, AllPropertyInOneSchemaTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         nebula::DataSet expected;
-        expected.colNames = {"101:_src", "101:_type", "101:_rank", "101:_dst",
-                             "101:playerName", "101:teamName", "101:startYear", "101:endYear",
-                             "101:teamCareer", "101:teamGames", "101:teamAvgScore", "101:type",
-                             "101:champions"};
+        expected.colNames = {"101._src", "101._type", "101._rank", "101._dst",
+                             "101.playerName", "101.teamName", "101.startYear", "101.endYear",
+                             "101.teamCareer", "101.teamGames", "101.teamAvgScore", "101.type",
+                             "101.champions"};
         nebula::Row row({"Tim Duncan",  // src
                          101,           // type
                          1997,          // rank

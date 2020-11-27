@@ -215,7 +215,7 @@ void GetPropProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagP
         auto tagId = tagProp.tag;
         auto tagName = tagContext_.tagNames_[tagId];
         for (const auto& prop : tagProp.props) {
-            resultDataSet_.colNames.emplace_back(tagName + ":" + prop);
+            resultDataSet_.colNames.emplace_back(tagName + "." + prop);
         }
     }
 }
@@ -225,7 +225,7 @@ void GetPropProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeP
         auto edgeType = edgeProp.type;
         auto edgeName = edgeContext_.edgeNames_[edgeType];
         for (const auto& prop : edgeProp.props) {
-            resultDataSet_.colNames.emplace_back(edgeName + ":" + prop);
+            resultDataSet_.colNames.emplace_back(edgeName + "." + prop);
         }
     }
 }
