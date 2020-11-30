@@ -80,11 +80,12 @@ Expression* MatchSolver::rewrite(const LabelExpression *label) {
 }
 
 Expression* MatchSolver::rewrite(const LabelAttributeExpression *la) {
+    const auto &value = la->right()->value();
     auto *expr = new AttributeExpression(
             new VariablePropertyExpression(
                 new std::string(),
                 new std::string(*la->left()->name())),
-            new LabelExpression(*la->right()->name()));
+            new ConstantExpression(value));
     return expr;
 }
 
@@ -207,8 +208,9 @@ Expression *MatchSolver::makeIndexFilter(const std::string &label,
             continue;
         }
 
+        const auto &value = la->right()->value();
         auto *tpExpr = new TagPropertyExpression(new std::string(label),
-                                                 new std::string(*la->right()->name()));
+                                                 new std::string(value.getStr()));
         auto *newConstant = constant->clone().release();
         if (left->kind() == Expression::Kind::kLabelAttribute) {
             auto *rel = new RelationalExpression(item->kind(), tpExpr, newConstant);

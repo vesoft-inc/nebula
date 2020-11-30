@@ -49,7 +49,7 @@ void ExprVisitorImpl::visit(LabelAttributeExpression *expr) {
     DCHECK(ok());
     const_cast<LabelExpression *>(expr->left())->accept(this);
     if (ok()) {
-        const_cast<LabelExpression *>(expr->right())->accept(this);
+        const_cast<ConstantExpression *>(expr->right())->accept(this);
     }
 }
 

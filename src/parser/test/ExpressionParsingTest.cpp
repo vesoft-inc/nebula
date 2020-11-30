@@ -262,8 +262,8 @@ TEST_F(ExpressionParsingTest, Associativity) {
 
     ast = make<AttributeExpression>(make<LabelAttributeExpression>(
                                         make<LabelExpression>("a"),
-                                        make<LabelExpression>("b")),
-                                    make<LabelExpression>("c"));
+                                        make<ConstantExpression>("b")),
+                                    make<ConstantExpression>("c"));
     add("a.b.c", ast);
 
     ast = make<LogicalExpression>(Kind::kLogicalAnd,
@@ -436,7 +436,7 @@ TEST_F(ExpressionParsingTest, Precedence) {
                         new std::string("var")),
                     make<ConstantExpression>(0)),
                 make<ConstantExpression>("1")),
-            make<LabelExpression>("m"));
+            make<ConstantExpression>("m"));
     add("$var[0]['1'].m", ast);
 
     ast = make<LogicalExpression>(Kind::kLogicalXor,
@@ -445,15 +445,15 @@ TEST_F(ExpressionParsingTest, Precedence) {
                                           make<AttributeExpression>(
                                               make<LabelAttributeExpression>(
                                                   make<LabelExpression>("a"),
-                                                  make<LabelExpression>("b")),
-                                              make<LabelExpression>("c")),
+                                                  make<ConstantExpression>("b")),
+                                              make<ConstantExpression>("c")),
                                       make<SubscriptExpression>(
                                           make<SubscriptExpression>(
                                               make<AttributeExpression>(
                                                   make<VariablePropertyExpression>(
                                                       new std::string("var"),
                                                       new std::string("p")),
-                                                  make<LabelExpression>("q")),
+                                                  make<ConstantExpression>("q")),
                                               make<LabelExpression>("r")),
                                           make<LabelExpression>("s")))),
                                   make<RelationalExpression>(Kind::kRelIn,

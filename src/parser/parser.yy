@@ -663,10 +663,12 @@ subscript_expression
 attribute_expression
     : name_label DOT name_label {
         $$ = new LabelAttributeExpression(new LabelExpression($1),
-                                          new LabelExpression($3));
+                                          new ConstantExpression(*$3));
+        delete $3;
     }
     | compound_expression DOT name_label {
-        $$ = new AttributeExpression($1, new LabelExpression($3));
+        $$ = new AttributeExpression($1, new ConstantExpression(*$3));
+        delete $3;
     }
     ;
 
@@ -2349,8 +2351,9 @@ update_item
     }
     | name_label DOT name_label ASSIGN expression {
         auto expr = new LabelAttributeExpression(new LabelExpression($1),
-                                                 new LabelExpression($3));
+                                                 new ConstantExpression(*$3));
         $$ = new UpdateItem(expr, $5);
+        delete $3;
     }
     ;
 

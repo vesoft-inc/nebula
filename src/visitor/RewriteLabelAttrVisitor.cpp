@@ -162,7 +162,8 @@ std::vector<std::unique_ptr<Expression>> RewriteLabelAttrVisitor::rewriteExprLis
 
 Expression* RewriteLabelAttrVisitor::createExpr(const LabelAttributeExpression* expr) {
     auto leftName = new std::string(*expr->left()->name());
-    auto rightName = new std::string(*expr->right()->name());
+    const auto &value = expr->right()->value();
+    auto rightName = new std::string(value.getStr());
     if (isTag_) {
         return new TagPropertyExpression(leftName, rightName);
     }

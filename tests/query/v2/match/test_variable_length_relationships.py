@@ -733,3 +733,29 @@ class TestVariableLengthRelationshipMatch(NebulaTestSuite):
             ],
         }
         self.check_rows_with_header(stmt, expected)
+
+        stmt='''
+        MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+        WHERE e[0].likeness>90
+        RETURN p
+        '''
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
+        self.check_error_msg(resp, "SemanticError: Alias used but not defined: `e'")
+
+        stmt='''
+        MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+        RETURN e
+        '''
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
+        self.check_error_msg(resp, "SemanticError: Alias used but not defined: `e'")
+
+        stmt='''
+        MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+        WHERE e[0].likeness+e[1].likeness>90
+        RETURN p
+        '''
+        resp = self.execute_query(stmt)
+        self.check_resp_failed(resp)
+        self.check_error_msg(resp, "SemanticError: Alias used but not defined: `e'")

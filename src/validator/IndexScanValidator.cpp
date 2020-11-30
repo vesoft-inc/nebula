@@ -69,7 +69,8 @@ Status IndexScanValidator::prepareYield() {
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
             auto la = static_cast<LabelAttributeExpression *>(col->expr());
             schemaName = *la->left()->name();
-            colName = *la->right()->name();
+            const auto &value = la->right()->value();
+            colName = value.getStr();
         } else {
             return Status::SemanticError("Yield clauses are not supported : %s",
                                          col->expr()->toString().c_str());
@@ -298,7 +299,7 @@ Status IndexScanValidator::rewriteRelExpr(RelationalExpression* expr) {
                                      la->left()->name()->c_str());
     }
 
-    std::string prop = *la->right()->name();
+    std::string prop = la->right()->value().getStr();
     // rewrite ConstantExpression
     auto c = leftIsAE
              ? checkConstExpr(right, prop)

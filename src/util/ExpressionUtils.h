@@ -103,8 +103,9 @@ public:
               typename = std::enable_if_t<std::is_same<To, EdgePropertyExpression>::value ||
                                           std::is_same<To, TagPropertyExpression>::value>>
     static To* rewriteLabelAttribute(LabelAttributeExpression* expr) {
+        const auto& value = expr->right()->value();
         return new To(new std::string(std::move(*expr->left()->name())),
-                      new std::string(std::move(*expr->right()->name())));
+                      new std::string(value.getStr()));
     }
 
     // Clone and fold constant expression

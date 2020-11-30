@@ -545,7 +545,8 @@ Status UpdateValidator::getUpdateProps() {
             auto laExpr = static_cast<const LabelAttributeExpression*>(item->getFieldExpr());
             symNames.emplace(*laExpr->left()->name());
             symName = laExpr->left()->name();
-            fieldName = *laExpr->right()->name();
+            const auto &value = laExpr->right()->value();
+            fieldName = value.getStr();
         }
         auto valueExpr = item->value();
         if (valueExpr == nullptr) {

@@ -382,7 +382,7 @@ MatchValidator::makeSubFilter(const std::string &alias,
     root = new RelationalExpression(Expression::Kind::kRelEQ,
             new LabelAttributeExpression(
                 new LabelExpression(alias),
-                new LabelExpression(*items[0].first)),
+                new ConstantExpression(*items[0].first)),
             items[0].second->clone().release());
     for (auto i = 1u; i < items.size(); i++) {
         if (items[i].second->kind() != Expression::Kind::kConstant) {
@@ -393,7 +393,7 @@ MatchValidator::makeSubFilter(const std::string &alias,
         auto *right = new RelationalExpression(Expression::Kind::kRelEQ,
             new LabelAttributeExpression(
                 new LabelExpression(alias),
-                new LabelExpression(*items[i].first)),
+                new ConstantExpression(*items[i].first)),
             items[i].second->clone().release());
         root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
     }

@@ -368,7 +368,7 @@ TEST_F(ExpressionUtilsTest, pushOrs) {
         auto r = std::make_unique<RelationalExpression>(
             Expression::Kind::kRelEQ,
             new LabelAttributeExpression(new LabelExpression(folly::stringPrintf("tag%d", i)),
-                                         new LabelExpression(folly::stringPrintf("col%d", i))),
+                                         new ConstantExpression(folly::stringPrintf("col%d", i))),
             new ConstantExpression(Value(folly::stringPrintf("val%d", i))));
         rels.emplace_back(std::move(r));
     }
