@@ -433,9 +433,10 @@ private:
 
 class FindPathSentence final : public Sentence {
 public:
-    explicit FindPathSentence(bool isShortest) {
+    FindPathSentence(bool isShortest, bool withProperites) {
         kind_ = Kind::kFindPath;
         isShortest_ = isShortest;
+        withProperites_ = withProperites;
     }
 
     void setFrom(FromClause *clause) {
@@ -482,10 +483,15 @@ public:
         return isShortest_;
     }
 
+    bool withProperites() const {
+        return withProperites_;
+    }
+
     std::string toString() const override;
 
 private:
     bool                            isShortest_;
+    bool                            withProperites_;
     std::unique_ptr<FromClause>     from_;
     std::unique_ptr<ToClause>       to_;
     std::unique_ptr<OverClause>     over_;
