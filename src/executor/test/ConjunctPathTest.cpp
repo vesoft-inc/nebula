@@ -47,6 +47,21 @@ protected:
         qctx_->symTable()->newVariable("backwardPath1");
         qctx_->symTable()->newVariable("backwardPath2");
         qctx_->symTable()->newVariable("backwardPath3");
+        qctx_->symTable()->newVariable("conditionalVar");
+        {
+            DataSet ds;
+            ds.colNames = {kVid, kVid};
+            std::vector<std::string> dst = {"9", "12"};
+            for (size_t i = 0; i < 4; i++) {
+                for (size_t j = 0; j < dst.size(); ++j) {
+                    Row row;
+                    row.values.emplace_back(folly::to<std::string>(i));
+                    row.values.emplace_back(dst[j]);
+                    ds.rows.emplace_back(std::move(row));
+                }
+            }
+            qctx_->ectx()->setResult("conditionalVar", ResultBuilder().value(ds).finish());
+        }
         {
             DataSet ds;
             auto cost = 1;
@@ -1118,6 +1133,7 @@ TEST_F(ConjunctPathTest, multiplePairOneStep) {
     conjunct->setLeftVar("forwardPath1");
     conjunct->setRightVar("backwardPath1");
     conjunct->setColNames({"_path", "cost"});
+    conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();
@@ -1139,7 +1155,7 @@ TEST_F(ConjunctPathTest, multiplePairTwoSteps) {
     conjunct->setLeftVar("forwardPath2");
     conjunct->setRightVar("backwardPath2");
     conjunct->setColNames({"_path", "cost"});
-
+    conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();
@@ -1190,6 +1206,7 @@ TEST_F(ConjunctPathTest, multiplePairThreeSteps) {
     conjunct->setLeftVar("forwardPath3");
     conjunct->setRightVar("backwardPath3");
     conjunct->setColNames({"_path", "cost"});
+    conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();

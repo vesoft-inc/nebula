@@ -60,6 +60,14 @@ public:
         return steps_;
     }
 
+    void setConditionalVar(std::string varName) {
+        conditionalVar_ = std::move(varName);
+    }
+
+    std::string conditionalVar() const {
+        return conditionalVar_;
+    }
+
 private:
     ConjunctPath(QueryContext* qctx,
                  PlanNode* left,
@@ -73,6 +81,7 @@ private:
 
     PathKind pathKind_;
     size_t   steps_{0};
+    std::string conditionalVar_;
 };
 
 class ProduceAllPaths final : public SingleInputNode {
@@ -92,7 +101,7 @@ public:
         return qctx->objPool()->add(new CartesianProduct(qctx, input));
     }
 
-    Status addVarAndColNames(std::string varName, std::vector<std::string> colNames);
+    Status addVar(std::string varName);
 
     std::vector<std::string> inputVars() const;
 
@@ -105,7 +114,6 @@ private:
         : SingleDependencyNode(qctx, Kind::kCartesianProduct, input) {}
 
     std::vector<std::vector<std::string>> allColNames_;
-    std::unordered_set<std::string> uniqueNames_;
 };
 
 }  // namespace graph

@@ -173,6 +173,7 @@ std::multimap<Value, Path> ConjunctPathExecutor::buildBfsInterimPath(
 
 folly::Future<Status> ConjunctPathExecutor::floydShortestPath() {
     auto* conjunct = asNode<ConjunctPath>(node());
+    conditionalVar_ = conjunct->conditionalVar();
     auto lIter = ectx_->getResult(conjunct->leftInputVar()).iter();
     const auto& rHist = ectx_->getHistory(conjunct->rightInputVar());
     VLOG(1) << "current: " << node()->outputVar();
@@ -263,6 +264,7 @@ bool ConjunctPathExecutor::findPath(Iterator* backwardPathIter,
         for (auto& srcPaths : forwardPaths->second) {
             auto& startVid = srcPaths.first;
             if (startVid == endVid) {
+                delPathFromConditionalVar(startVid, endVid);
                 continue;
             }
             auto totalCost = cost + srcPaths.second.cost_;
@@ -274,11 +276,36 @@ bool ConjunctPathExecutor::findPath(Iterator* backwardPathIter,
             // update history cost
             auto& hist = historyCostMap_[startVid];
             hist[endVid] = totalCost;
+            delPathFromConditionalVar(startVid, endVid);
             conjunctPath(srcPaths.second.paths_, pathList.getList(), totalCost, ds);
             found = true;
         }
     }
     return found;
+}
+
+void ConjunctPathExecutor::delPathFromConditionalVar(const Value& start, const Value& end) {
+    auto iter = qctx_->ectx()->getResult(conditionalVar_).iter();
+
+    while (iter->valid()) {
+        auto startVid = iter->getColumn(0);
+        auto endVid = iter->getColumn(1);
+        if (startVid == endVid || (startVid == start && endVid == end)) {
+            iter->erase();
+        } else {
+            iter->next();
+        }
+    }
+
+    DataSet ds;
+    if (iter->size() == 0) {
+        Row row;
+        row.values.emplace_back("all path are found");
+        ds.rows.emplace_back(std::move(row));
+    }
+    qctx_->ectx()->setResult(
+        conditionalVar_,
+        ResultBuilder().value(Value(std::move(ds))).iter(std::move(iter)).finish());
 }
 
 folly::Future<Status> ConjunctPathExecutor::allPaths() {

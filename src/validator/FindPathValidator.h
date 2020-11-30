@@ -43,13 +43,14 @@ private:
                                     Starts& starts,
                                     std::string& startVidsVar,
                                     bool reverse);
-    Expression* buildMultiPairLoopCondition(uint32_t steps);
+    Expression* buildMultiPairLoopCondition(uint32_t steps, std::string conditionalVar);
     PlanNode* buildMultiPairFirstDataSet(PlanNode* dep,
                                          const std::string& inputVar,
                                          const std::string& outputVar);
 
 private:
     bool isShortest_{false};
+    bool isWeight_{false};
     Starts to_;
     Over over_;
     Steps steps_;

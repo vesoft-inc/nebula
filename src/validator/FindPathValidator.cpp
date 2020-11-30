@@ -330,9 +330,17 @@ Status FindPathValidator::multiPairPlan() {
     auto* projectTo =
         buildMultiPairFirstDataSet(projectFrom, toStartVidsVar, backward->outputVar());
 
-    // todo(jmq) optimize condition
+    auto* cartesianProduct = CartesianProduct::make(qctx_, projectTo);
+    NG_RETURN_IF_ERROR(cartesianProduct->addVar(fromStartVidsVar));
+    NG_RETURN_IF_ERROR(cartesianProduct->addVar(toStartVidsVar));
+
+    conjunct->setConditionalVar(cartesianProduct->outputVar());
+
     auto* loop =
-        Loop::make(qctx_, projectTo, conjunct, buildMultiPairLoopCondition(steps_.steps));
+        Loop::make(qctx_,
+                   cartesianProduct,
+                   conjunct,
+                   buildMultiPairLoopCondition(steps_.steps, cartesianProduct->outputVar()));
 
     auto* dataCollect = DataCollect::make(
         qctx_, loop, DataCollect::CollectKind::kMultiplePairShortest, {conjunct->outputVar()});
@@ -377,8 +385,9 @@ PlanNode* FindPathValidator::multiPairShortestPath(PlanNode* dep,
     return pssp;
 }
 
-Expression* FindPathValidator::buildMultiPairLoopCondition(uint32_t steps) {
-    // ++loopSteps{0} <= (steps/2+steps%2) && size(pathVar) == 0
+Expression* FindPathValidator::buildMultiPairLoopCondition(uint32_t steps,
+                                                           std::string conditionalVar) {
+    // (++loopSteps{0} <= steps/2+steps%2) && (isWeight_ == true || size(conditionalVar) == 0)
     auto loopSteps = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setValue(loopSteps, 0);
 
@@ -389,7 +398,23 @@ Expression* FindPathValidator::buildMultiPairLoopCondition(uint32_t steps) {
             new VersionedVariableExpression(new std::string(loopSteps), new ConstantExpression(0))),
         new ConstantExpression(static_cast<int32_t>(steps / 2 + steps % 2)));
 
-    return qctx_->objPool()->add(nSteps);
+    auto* args = new ArgumentList();
+    args->addArgument(std::make_unique<VariableExpression>(new std::string(conditionalVar)));
+    auto* notAllPathFind =
+        new RelationalExpression(Expression::Kind::kRelEQ,
+                                 new FunctionCallExpression(new std::string("size"), args),
+                                 new ConstantExpression(0));
+
+    auto* terminationCondition =
+        new LogicalExpression(Expression::Kind::kLogicalOr,
+                              new RelationalExpression(Expression::Kind::kRelEQ,
+                                                       new ConstantExpression(isWeight_),
+                                                       new ConstantExpression(true)),
+                              notAllPathFind);
+    auto* condition =
+        new LogicalExpression(Expression::Kind::kLogicalAnd, nSteps, terminationCondition);
+
+    return qctx_->objPool()->add(condition);
 }
 
 }  // namespace graph

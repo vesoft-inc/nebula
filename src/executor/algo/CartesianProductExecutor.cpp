@@ -46,7 +46,7 @@ folly::Future<Status> CartesianProductExecutor::execute() {
 
         leftIter.reset(joinIter.release());
     }
-    return finish(ResultBuilder().iter(std::move(leftIter)).finish());
+    return finish(ResultBuilder().value(DataSet()).iter(std::move(leftIter)).finish());
 }
 
 void CartesianProductExecutor::initJoinIter(JoinIter* joinIter, Iterator* rightIter) {

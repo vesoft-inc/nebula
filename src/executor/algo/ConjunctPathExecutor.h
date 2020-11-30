@@ -51,6 +51,7 @@ private:
     bool findAllPaths(Iterator* backwardPathsIter,
                       std::unordered_map<Value, const List&>& forwardPathsTable,
                       DataSet& ds);
+    void delPathFromConditionalVar(const Value& start, const Value& end);
 
 private:
     std::vector<std::multimap<Value, const Edge*>> forward_;
@@ -58,6 +59,7 @@ private:
     size_t count_{0};
     // startVid : {endVid, cost}
     std::unordered_map<Value, std::unordered_map<Value, Value>> historyCostMap_;
+    std::string conditionalVar_;
 };
 }  // namespace graph
 }  // namespace nebula
