@@ -1709,12 +1709,11 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
 }
 
 Value operator+(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
-
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (lhs.type()) {
@@ -1844,12 +1843,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
 
 
 Value operator-(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
-
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (lhs.type()) {
@@ -1900,12 +1898,11 @@ Value operator-(const Value& lhs, const Value& rhs) {
 
 
 Value operator*(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
-
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (lhs.type()) {
@@ -1943,12 +1940,11 @@ Value operator*(const Value& lhs, const Value& rhs) {
 
 
 Value operator/(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
-
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (lhs.type()) {
@@ -2005,12 +2001,11 @@ Value operator/(const Value& lhs, const Value& rhs) {
 }
 
 Value operator%(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
-
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (lhs.type()) {
@@ -2067,8 +2062,8 @@ Value operator%(const Value& lhs, const Value& rhs) {
 }
 
 Value operator-(const Value& rhs) {
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     switch (rhs.type()) {
@@ -2087,8 +2082,8 @@ Value operator-(const Value& rhs) {
 }
 
 Value operator!(const Value& rhs) {
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     if (rhs.type() != Value::Type::BOOL) {
