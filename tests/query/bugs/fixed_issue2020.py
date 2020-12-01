@@ -35,7 +35,7 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute('INSERT EDGE relation() VALUES hash("Laura")->hash("Lucy"):();')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM hash("Laura") OVER relation '
+        resp = self.execute('GO FROM hash("Laura") OVER relation '
                 'YIELD relation.start as start, $$.person.birthday as birthday;')
         self.check_resp_succeeded(resp)
 

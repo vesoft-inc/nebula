@@ -33,7 +33,7 @@ class TestBasicTypeCrud(NebulaTestSuite):
         resp = self.execute('CREATE TAG tag_date(f_date DATE, f_time TIME, f_datetime DATETIME)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query("SHOW CREATE TAG tag_date")
+        resp = self.execute("SHOW CREATE TAG tag_date")
         self.check_resp_succeeded(resp)
         create_str = 'CREATE TAG `tag_date` (\n' \
                      ' `f_date` date NULL,\n' \
@@ -46,7 +46,7 @@ class TestBasicTypeCrud(NebulaTestSuite):
         resp = self.execute('CREATE EDGE edge_date(f_date DATE, f_time TIME, f_datetime DATETIME)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query("SHOW CREATE EDGE edge_date")
+        resp = self.execute("SHOW CREATE EDGE edge_date")
         self.check_resp_succeeded(resp)
         create_str = 'CREATE EDGE `edge_date` (\n' \
                      ' `f_date` date NULL,\n' \
@@ -85,18 +85,18 @@ class TestBasicTypeCrud(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # query
-        resp = self.execute_query('FETCH PROP ON tag_date "test"')
+        resp = self.execute('FETCH PROP ON tag_date "test"')
         self.check_resp_succeeded(resp)
         result = [["test", CommonTtypes.Date(2017, 3, 4), CommonTtypes.Time(23, 1, 0, 0), CommonTtypes.DateTime(2017, 3, 4, 22, 30, 40, 0)]]
         self.check_out_of_order_result(resp, result)
 
-        resp = self.execute_query('FETCH PROP ON edge_date "test_src"->"test_dst"')
+        resp = self.execute('FETCH PROP ON edge_date "test_src"->"test_dst"')
         self.check_resp_succeeded(resp)
         result = [["test_src", "test_dst", 0, CommonTtypes.Date(2017, 3, 4), CommonTtypes.Time(23, 1, 0, 0), CommonTtypes.DateTime(2017, 3, 4, 22, 30, 40, 0)]]
         self.check_out_of_order_result(resp, result)
 
         # update
-        resp = self.execute_query('''
+        resp = self.execute('''
                                   UPDATE VERTEX "test"
                                   SET tag_date.f_date = Date("2018-03-04"), tag_date.f_time = Time("22:01:00"), tag_date.f_datetime = DateTime("2018-03-04T22:30:40")
                                   YIELD f_date, f_time, f_datetime
@@ -105,7 +105,7 @@ class TestBasicTypeCrud(NebulaTestSuite):
         result = [[CommonTtypes.Date(2018, 3, 4), CommonTtypes.Time(22, 1, 0, 0), CommonTtypes.DateTime(2018, 3, 4, 22, 30, 40, 0)]]
         self.check_out_of_order_result(resp, result)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
                                   UPDATE EDGE "test_src"->"test_dst" OF edge_date
                                   SET edge_date.f_date = Date("2018-03-04"), edge_date.f_time = Time("22:01:00"), edge_date.f_datetime = DateTime("2018-03-04T22:30:40")
                                   YIELD f_date, f_time, f_datetime
@@ -122,12 +122,12 @@ class TestBasicTypeCrud(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check deletion
-        resp = self.execute_query('FETCH PROP ON tag_date "test"')
+        resp = self.execute('FETCH PROP ON tag_date "test"')
         self.check_resp_succeeded(resp)
         result = []
         self.check_out_of_order_result(resp, result)
 
-        resp = self.execute_query('FETCH PROP ON edge_date "test_src"->"test_dst"')
+        resp = self.execute('FETCH PROP ON edge_date "test_src"->"test_dst"')
         self.check_resp_succeeded(resp)
         result = []
         self.check_out_of_order_result(resp, result)

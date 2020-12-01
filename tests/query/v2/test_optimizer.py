@@ -17,7 +17,7 @@ class TestOptimizer(NebulaTestSuite):
         cls.use_nba()
 
     def test_PushFilterDownGetNbrsRule(self):
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Boris Diaw" OVER serve
             WHERE $^.player.age > 18 YIELD serve.start_year as start_year
         ''')
@@ -30,7 +30,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_out_of_order_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "James Harden" OVER like REVERSELY
             WHERE $^.player.age > 18 YIELD like.likeness as likeness
         ''')
@@ -43,7 +43,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_out_of_order_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Boris Diaw" OVER serve
             WHERE serve.start_year > 2005 YIELD serve.start_year as start_year
         ''')
@@ -56,7 +56,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_out_of_order_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Lakers" OVER serve REVERSELY
             WHERE serve.start_year < 2017 YIELD serve.start_year as start_year
         ''')
@@ -71,7 +71,7 @@ class TestOptimizer(NebulaTestSuite):
 
     @pytest.mark.skip(reason="Depends on other opt rules to eliminate duplicate project nodes")
     def test_PushFilterDownGetNbrsRule_Failed(self):
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Boris Diaw" OVER serve
             WHERE $^.player.age > 18 AND $$.team.name == "Lakers"
             YIELD $^.player.name AS name
@@ -86,7 +86,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_out_of_order_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Boris Diaw" OVER serve
             WHERE $^.player.age > 18 OR $$.team.name == "Lakers"
             YIELD $^.player.name AS name
@@ -102,7 +102,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data)
 
         # fail to optimize cases
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Boris Diaw" OVER serve \
             WHERE $$.team.name == "Lakers" YIELD $^.player.name AS name
         ''')
@@ -117,7 +117,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data)
 
     def test_TopNRule(self):
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Marco Belinelli" OVER like
             YIELD like.likeness AS likeness
              | ORDER BY likeness
@@ -134,7 +134,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Marco Belinelli" OVER like REVERSELY
             YIELD like.likeness AS likeness |
             ORDER BY likeness |
@@ -152,7 +152,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_result(resp, expected_data)
 
     def test_TopNRule_Failed(self):
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Marco Belinelli" OVER like
             YIELD like.likeness as likeness
              | ORDER BY likeness
@@ -170,7 +170,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_exec_plan(resp, expected_plan)
         self.check_result(resp, expected_data)
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Marco Belinelli" OVER like
             YIELD like.likeness AS likeness
              | ORDER BY likeness
@@ -187,7 +187,7 @@ class TestOptimizer(NebulaTestSuite):
         self.check_result(resp, expected_data)
 
     def test_LimitPushDownRule(self):
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "James Harden" OVER like REVERSELY
              | Limit 2
         ''')
@@ -200,11 +200,11 @@ class TestOptimizer(NebulaTestSuite):
         ]
         # expected_data = [[90], [80], [99]]
         self.check_exec_plan(resp, expected_plan)
-        if resp.data is None:
+        if resp.is_empty():
             assert False, 'resp.data is None'
-        assert len(resp.data.rows) == 2
+        assert resp.row_size() == 2
 
-        resp = self.execute_query('''
+        resp = self.execute('''
             GO 1 STEPS FROM "Vince Carter" OVER serve
             YIELD serve.start_year as start_year
              | Limit 3, 4
@@ -218,5 +218,5 @@ class TestOptimizer(NebulaTestSuite):
         ]
         # expected_data = [[1998], [2004], [2009], [2010], [2011], [2014], [2017], [2018]]
         self.check_exec_plan(resp, expected_plan)
-        assert resp.data is not None, 'resp.data is None'
-        assert len(resp.data.rows) == 4
+        assert not resp.is_empty(), 'resp.data is None'
+        assert resp.row_size() == 4

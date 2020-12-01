@@ -39,7 +39,7 @@ class TestExplain(NebulaTestSuite):
         cls.check_resp_succeeded(resp)
 
     def check(self, query, err):
-        resp = self.execute_query(query, profile=False)
+        resp = self.execute(query, profile=False)
         if err is None:
             self.check_resp_succeeded(resp)
         else:

@@ -37,7 +37,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
         resp = self.execute('{} VERTEX {} SET {}.name = "hg" WHEN $^.{}.id > 0'.format(
             sentence, TestBugUpdateFilterOut.vertex, TestBugUpdateFilterOut.tag, TestBugUpdateFilterOut.tag))
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP ON {} {}'.format(TestBugUpdateFilterOut.tag, TestBugUpdateFilterOut.vertex))
+        resp = self.execute('FETCH PROP ON {} {}'.format(TestBugUpdateFilterOut.tag, TestBugUpdateFilterOut.vertex))
         self.check_resp_succeeded(resp)
         expect = [[TestBugUpdateFilterOut.vertex, 0, 'shylock']]
         self.check_result(resp.rows, expect)
@@ -46,7 +46,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
         resp = self.execute('{} EDGE {}->2333 OF {} SET name = "hg" WHEN {}.id > 0'.format(
             sentence, TestBugUpdateFilterOut.vertex, TestBugUpdateFilterOut.edge_type, TestBugUpdateFilterOut.edge_type))
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP ON {} {}->2333'.format(TestBugUpdateFilterOut.edge_type, TestBugUpdateFilterOut.vertex))
+        resp = self.execute('FETCH PROP ON {} {}->2333'.format(TestBugUpdateFilterOut.edge_type, TestBugUpdateFilterOut.vertex))
         self.check_resp_succeeded(resp)
         expect = [[TestBugUpdateFilterOut.vertex, 2333, 0, 0, 'shylock']]
         self.check_result(resp.rows, expect)

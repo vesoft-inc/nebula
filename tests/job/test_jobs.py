@@ -28,21 +28,21 @@ class TestJobs(NebulaTestSuite):
                                    'USE space_for_jobs;')
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute_query('SUBMIT JOB COMPACT;')
+        resp = self.client.execute('SUBMIT JOB COMPACT;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['New Job Id']
         self.check_column_names(resp, expect_col_names)
         expect_values = [[re.compile(r'\d+')]]
         self.check_result(resp, expect_values, is_regex=True)
 
-        resp = self.client.execute_query('SUBMIT JOB FLUSH;')
+        resp = self.client.execute('SUBMIT JOB FLUSH;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['New Job Id']
         self.check_column_names(resp, expect_col_names)
         expect_values = [[re.compile(r'\d+')]]
         self.check_result(resp, expect_values, is_regex=True)
 
-        resp = self.client.execute_query('SUBMIT JOB STATS;')
+        resp = self.client.execute('SUBMIT JOB STATS;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['New Job Id']
         self.check_column_names(resp, expect_col_names)
@@ -50,7 +50,7 @@ class TestJobs(NebulaTestSuite):
         self.check_result(resp, expect_values, is_regex=True)
 
         time.sleep(3)
-        resp = self.client.execute_query('SHOW JOBS;')
+        resp = self.client.execute('SHOW JOBS;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['Job Id', 'Command', 'Status', 'Start Time', 'Stop Time']
         self.check_column_names(resp, expect_col_names)
@@ -59,23 +59,23 @@ class TestJobs(NebulaTestSuite):
                          [re.compile(r'\d+'), re.compile(r'STATS'), re.compile(r'\S+'), re.compile(r'\d+'), re.compile(r'\d+')]]
         self.search_result(resp, expect_values, is_regex=True)
 
-        job_id = resp.data.rows[0].values[0].get_iVal()
-        resp = self.client.execute_query('SHOW JOB {};'.format(job_id))
+        job_id = resp.row_values(0)[0].as_int()
+        resp = self.client.execute('SHOW JOB {};'.format(job_id))
         self.check_resp_succeeded(resp)
         expect_col_names = ['Job Id(TaskId)', 'Command(Dest)', 'Status', 'Start Time', 'Stop Time']
         self.check_column_names(resp, expect_col_names)
         expect_values = [[re.compile(r'\d+'), re.compile(r'COMPACT|FLUSH|STATS'), re.compile(r'\S+'), re.compile(r'\d+'), re.compile(r'\d+')]]
         self.search_result(resp, expect_values, is_regex=True)
 
-        job_id = resp.data.rows[0].values[0].get_iVal()
-        resp = self.client.execute_query('STOP JOB {};'.format(job_id))
+        job_id = resp.row_values(0)[0].as_int()
+        resp = self.client.execute('STOP JOB {};'.format(job_id))
         self.check_resp_succeeded(resp)
         expect_col_names = ['Result']
         self.check_column_names(resp, expect_col_names)
         expect_values = [['Job stopped']]
         self.check_result(resp, expect_values)
 
-        resp = self.client.execute_query('SHOW JOBS;')
+        resp = self.client.execute('SHOW JOBS;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['Job Id', 'Command', 'Status', 'Start Time', 'Stop Time']
         self.check_column_names(resp, expect_col_names)
@@ -84,7 +84,7 @@ class TestJobs(NebulaTestSuite):
                          [re.compile(r'\d+'), re.compile(r'STATS'), re.compile(r'\S+'), re.compile(r'\d+'), re.compile(r'\d+')]]
         self.search_result(resp, expect_values, is_regex=True)
 
-        resp = self.client.execute_query('RECOVER JOB;')
+        resp = self.client.execute('RECOVER JOB;')
         self.check_resp_succeeded(resp)
         expect_col_names = ['Recovered job num']
         self.check_column_names(resp, expect_col_names)

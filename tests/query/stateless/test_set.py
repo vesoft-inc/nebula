@@ -17,7 +17,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age \
             UNION \
             GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['Lisa', 8], ['Peggy', 8], ['Kevin', 9], ['WangLe', 8]]
         print(cmd)
@@ -28,7 +28,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age \
             UNION ALL \
             GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['Lisa', 8], ['Peggy', 8], ['Kevin', 9], ['WangLe', 8], ['WangLe', 8]]
         print(cmd)
@@ -39,7 +39,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name \
             UNION \
             GO FROM 1004 OVER is_schoolmate YIELD $$.person.age as name;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['8'], ['9'], ['Lisa'], ['WangLe']]
         print(cmd)
@@ -50,7 +50,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name \
             UNION \
             GO FROM 1004 OVER is_schoolmate YIELD (string)($$.person.age+2) as name;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['10'], ['11'], ['Lisa'], ['WangLe']]
         print(cmd)
@@ -62,7 +62,7 @@ class TestSetQuery(NebulaTestSuite):
             cmd = 'GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name \
                         UNION \
                         GO FROM 1004 OVER is_schoolmate YIELD (string)($$.person.age+2) as name;'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -72,7 +72,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age \
             MINUS \
             GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['Peggy', 8], ['Kevin', 9]]
         print(cmd)
@@ -84,7 +84,7 @@ class TestSetQuery(NebulaTestSuite):
             cmd = 'GO FROM 1005 OVER is_schoolmate YIELD $$.person.age as name \
                 MINUS \
                 GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name;'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -94,7 +94,7 @@ class TestSetQuery(NebulaTestSuite):
         cmd = 'GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age \
             INTERSECT \
             GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name, $$.person.age as age;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['WangLe', 8]]
         print(cmd)
@@ -106,7 +106,7 @@ class TestSetQuery(NebulaTestSuite):
             cmd = 'GO FROM 1004 OVER is_schoolmate YIELD $$.person.name as name, $$.student.age as age \
                 INTERSECT \
                 GO FROM 1005 OVER is_schoolmate YIELD $$.person.name as name, $$.student.gender as gender;'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -117,7 +117,7 @@ class TestSetQuery(NebulaTestSuite):
                 GO FROM 1005 OVER * YIELD $$.person.name as name, $$.student.grade as grade MINUS \
                 GO FROM 1003 OVER * YIELD $$.person.name as name, $$.student.grade as grade INTERSECT \
                 GO FROM 1013 OVER * YIELD $$.person.name as name, $$.student.grade as grade;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['WangLe', 3]]
         print(cmd)
@@ -129,7 +129,7 @@ class TestSetQuery(NebulaTestSuite):
                 UNION ALL \
                 GO FROM 1005 OVER * YIELD is_schoolmate._dst as id, $$.person.name as name) \
                 | GO FROM $-.id OVER is_schoolmate YIELD DISTINCT $$.person.name as name, $$.person.age as age'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['Peggy', 8], ['Kevin', 9], ['WangLe', 8], ['Lisa', 8]]
         print(cmd)
@@ -143,7 +143,7 @@ class TestSetQuery(NebulaTestSuite):
                 | GO FROM $-.id OVER is_schoolmate YIELD is_schoolmate._dst as id, $$.person.name as name) \
                 UNION ALL \
                 GO FROM 1004 OVER * YIELD is_schoolmate._dst as id, $$.person.name as name;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[1005, 'Peggy'], [1006, 'Kevin'], [1007, 'WangLe']]
         print(cmd)

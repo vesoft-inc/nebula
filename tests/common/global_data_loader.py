@@ -8,8 +8,8 @@
 
 import time
 
-from nebula2.Client import GraphClient
-from nebula2.ConnectionPool import ConnectionPool
+from nebula2.gclient.net import ConnectionPool
+from nebula2.Config import Config
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
 
@@ -24,15 +24,21 @@ class GlobalDataLoader(object):
         self.has_load_data = False
 
     def __enter__(self):
-        self.client_pool = ConnectionPool(host=self.host, port=self.port, network_timeout=0)
-        self.client = GraphClient(self.client_pool)
-        self.client.authenticate(self.user, self.password)
+        config = Config()
+        config.max_connection_pool_size = 2
+        config.timeout = 0
+        # init connection pool
+        self.client_pool = ConnectionPool()
+        assert self.client_pool.init([(self.host, self.port)], config)
+
+        # get session from the pool
+        self.client = self.client_pool.get_session(self.user, self.password)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.has_load_data:
             self.drop_data()
-        self.client.sign_out()
+        self.client.release()
         self.client_pool.close()
 
     def load_all_test_data(self):
@@ -49,7 +55,7 @@ class GlobalDataLoader(object):
         with open(nba_file, 'r') as data_file:
             resp = self.client.execute(
                 'CREATE SPACE IF NOT EXISTS nba(partition_num=10, replica_factor=1, vid_type = fixed_string(30));USE nba;')
-            assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+            assert resp.is_succeeded(), resp.error_msg()
 
             lines = data_file.readlines()
             ddl = False
@@ -71,35 +77,35 @@ class GlobalDataLoader(object):
                     ngql_statement += " " + line
                     if line.endswith(';'):
                         resp = self.client.execute(ngql_statement)
-                        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+                        assert resp.is_succeeded(), resp.error_msg()
                         ngql_statement = ""
 
     # The whole test will load once, for the only read tests
     def load_student(self):
         resp = self.client.execute(
             'CREATE SPACE IF NOT EXISTS student_space(partition_num=10, replica_factor=1, vid_type = fixed_string(8)); USE student_space;')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE TAG IF NOT EXISTS person(name string, age int, gender string);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE TAG IF NOT EXISTS teacher(grade int, subject string);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE TAG IF NOT EXISTS student(grade int, hobby string DEFAULT "");')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE EDGE IF NOT EXISTS is_schoolmate(start_year int, end_year int);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE EDGE IF NOT EXISTS is_teacher(start_year int, end_year int);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE EDGE IF NOT EXISTS is_friend(start_year int, intimacy double);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('CREATE EDGE IF NOT EXISTS is_colleagues(start_year int, end_year int);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
         # TODO: update the time when config can use
         time.sleep(get_delay_time(self.client))
 
@@ -114,7 +120,7 @@ class GlobalDataLoader(object):
                                 "2008":("Ben", 24, "male", 4, "Music"), \
                                 "2009":("Helen", 24, "male", 2, "Sports") ,\
                                 "2010":("Lilan", 32, "male", 5, "Chinese");')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('INSERT VERTEX person(name, age, gender), student(grade) VALUES \
                                 "1001":("Anne", 7, "female", 2), \
@@ -137,7 +143,7 @@ class GlobalDataLoader(object):
                                 "1018":("Tom", 12, "male", 6), \
                                 "1019":("XiaMei", 11, "female", 6), \
                                 "1020":("Lily", 10, "female", 6);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('INSERT EDGE is_schoolmate(start_year, end_year) VALUES \
                                 "1001" -> "1002":(2018, 2019), \
@@ -166,7 +172,7 @@ class GlobalDataLoader(object):
                                 "1018" -> "1019":(2018, 2019), \
                                 "1017" -> "1020":(2013, 2018), \
                                 "1017" -> "1016":(2018, 2019);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('INSERT EDGE is_friend(start_year, intimacy) VALUES \
                                 "1003" -> "1004":(2017, 80.0), \
@@ -176,7 +182,7 @@ class GlobalDataLoader(object):
                                 "1017" -> "1020":(2018, 78.0), \
                                 "1018" -> "1016":(2013, 83.0), \
                                 "1018" -> "1020":(2018, 88.0);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('INSERT EDGE is_colleagues(start_year, end_year) VALUES \
                                 "2001" -> "2002":(2015, 0), \
@@ -186,7 +192,7 @@ class GlobalDataLoader(object):
                                 "2002" -> "2001":(2016, 2017), \
                                 "2007" -> "2001":(2013, 2018), \
                                 "2010" -> "2008":(2018, 0);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
         resp = self.client.execute('INSERT EDGE is_teacher(start_year, end_year) VALUES \
                                 "2002" -> "1004":(2018, 2019), \
@@ -200,8 +206,8 @@ class GlobalDataLoader(object):
                                 "2002" -> "1019":(2014, 2015), \
                                 "2010" -> "1016":(2018,2019), \
                                 "2006" -> "1008":(2017, 2018);')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()
 
     def drop_data(self):
         resp = self.client.execute('DROP SPACE nba; DROP SPACE student_space;')
-        assert resp.error_code == ttypes.ErrorCode.SUCCEEDED, resp.error_msg
+        assert resp.is_succeeded(), resp.error_msg()

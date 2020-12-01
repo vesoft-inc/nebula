@@ -45,32 +45,32 @@ class TestFetchEmptyVertices(NebulaTestSuite):
 
     def test_empty_props(self):
         # empty_tag_0
-        resp = self.execute_query('FETCH PROP ON empty_tag_0 "1"')
+        resp = self.execute('FETCH PROP ON empty_tag_0 "1"')
         self.check_resp_succeeded(resp)
         expect_result = [['1']]
         self.check_result(resp, expect_result)
 
         # *
-        resp = self.execute_query('FETCH PROP ON * "1"')
+        resp = self.execute('FETCH PROP ON * "1"')
         self.check_resp_succeeded(resp)
         expect_result = [['1']]
         self.check_result(resp, expect_result)
 
         # edge
-        resp = self.execute_query('FETCH PROP ON empty_edge "1"->"2"')
+        resp = self.execute('FETCH PROP ON empty_edge "1"->"2"')
         self.check_resp_succeeded(resp)
         expect_result = [['1', '2', 0]]
         self.check_result(resp, expect_result)
 
     def test_input_with_empty_props(self):
-        resp = self.execute_query('GO FROM "1" OVER empty_edge '
+        resp = self.execute('GO FROM "1" OVER empty_edge '
                                   'YIELD empty_edge._dst as id'
                                   '| FETCH PROP ON empty_tag_0 $-.id')
         self.check_resp_succeeded(resp)
         expect_result = [['2']]
         self.check_result(resp, expect_result)
 
-        resp = self.execute_query('GO FROM "1" OVER empty_edge '
+        resp = self.execute('GO FROM "1" OVER empty_edge '
                                   'YIELD empty_edge._src as src, empty_edge._dst as dst'
                                   '| FETCH PROP ON empty_edge $-.src->$-.dst')
         self.check_resp_succeeded(resp)

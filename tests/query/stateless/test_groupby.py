@@ -20,7 +20,7 @@ class TestGroupby(NebulaTestSuite):
                 YIELD $$.student.grade as grade \
                 | GROUP BY 1+1 \
                 YIELD COUNT(1), 1+1;'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -30,7 +30,7 @@ class TestGroupby(NebulaTestSuite):
             cmd = 'GO FROM 2002 over is_teacher \
                 YIELD $$.student.grade as grade \
                 | GROUP BY $-.name YIELD COUNT(1);'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -43,7 +43,7 @@ class TestGroupby(NebulaTestSuite):
                 YIELD $$.student.grade as grade, $$.person.name as name \
                 | GROUP BY $-.grade \
                 YIELD $-.grade as grade, upper($-.name) as len_name, COUNT(*) as count;'
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed')
@@ -55,7 +55,7 @@ class TestGroupby(NebulaTestSuite):
             YIELD $$.student.grade as grade \
             | GROUP BY $-.grade \
             YIELD $-.grade as grade, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[6, 1], [5, 3], [4, 1], [3, 4]]
         self.check_resp_succeeded(resp)
@@ -66,7 +66,7 @@ class TestGroupby(NebulaTestSuite):
                             YIELD $$.student.grade as grade \
                             | GROUP BY grade \
                             YIELD $-.grade as grade, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[6, 1], [5, 3], [4, 1], [3, 4]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
@@ -76,7 +76,7 @@ class TestGroupby(NebulaTestSuite):
             YIELD $$.student.grade as grade \
             | GROUP BY $-.grade \
             YIELD $-.grade as grade, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp.rows)
 
@@ -88,7 +88,7 @@ class TestGroupby(NebulaTestSuite):
             MAX($-.age) as max_age, MIN($-.age) as min_age, STD($-.age) AS std_age, \
             BIT_AND($-.grade) AS and_grade, BIT_OR($-.grade) AS or_grade,\
             BIT_XOR($-.grade) AS xor_grade, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [['male', 8.75, 35, 10, 8, 0.82915619758885, 1, 7, 6, 4],
                         ['female', 9.4, 47, 11, 8, 1.0198039027185568, 0, 7, 1, 5]]
@@ -102,7 +102,7 @@ class TestGroupby(NebulaTestSuite):
             YIELD $$.person.gender as gender, $$.student.grade as grade, $$.person.age as age \
             | GROUP BY $-.grade, $-.gender \
             YIELD $-.grade as grade, $-.gender as gender, AVG($-.age) as age, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[6, 'female', 11.000000, 1],
                         [5, 'male', 10.000000, 1],
@@ -118,7 +118,7 @@ class TestGroupby(NebulaTestSuite):
                 YIELD $$.student.grade as grade, $$.person.name as name \
                 | GROUP BY $-.grade \
                 YIELD $-.grade as grade, 2*3, COUNT(*) as count;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         # all aggfunc on group column
         expect_result = [[6, 6, 1],

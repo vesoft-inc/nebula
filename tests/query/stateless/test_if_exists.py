@@ -12,7 +12,6 @@ import time
 
 from nebula2.graph import ttypes
 
-import nebula2.Client
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestDropSpaceIfExists(NebulaTestSuite):
@@ -23,7 +22,7 @@ class TestDropSpaceIfExists(NebulaTestSuite):
     # issue 1461
     def test_drop_space(self):
         cmd = 'drop space IF EXISTS shakespaces'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
         resp = self.execute('CREATE SPACE shakespaces(partition_num=1024)')
@@ -33,11 +32,11 @@ class TestDropSpaceIfExists(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         cmd = 'drop space shakespaces'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
         cmd = 'drop space IF EXISTS shakespaces'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
         resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024)')
@@ -87,7 +86,7 @@ class TestDropSpaceIfExists(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         cmd = 'drop space shakespaces'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
     @classmethod

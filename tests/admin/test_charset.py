@@ -23,7 +23,7 @@ class TestCharset(NebulaTestSuite):
 
     def test_show_charset(self):
         # succeeded
-        resp = self.client.execute_query('SHOW CHARSET')
+        resp = self.client.execute('SHOW CHARSET')
         self.check_resp_succeeded(resp)
 
         self.check_column_names(resp, ["Charset", "Description", "Default collation", "Maxlen"])
@@ -31,12 +31,12 @@ class TestCharset(NebulaTestSuite):
         self.check_result(resp, [["utf8", "UTF-8 Unicode", "utf8_bin", 4]])
 
         # syntax error
-        resp = self.client.execute_query('SHOW CHARSETS')
+        resp = self.client.execute('SHOW CHARSETS')
         self.check_resp_failed(resp)
 
     def test_show_collate(self):
         # succeeded
-        resp = self.client.execute_query('SHOW COLLATION')
+        resp = self.client.execute('SHOW COLLATION')
         self.check_resp_succeeded(resp)
 
         self.check_column_names(resp, ["Collation", "Charset"])
@@ -44,9 +44,9 @@ class TestCharset(NebulaTestSuite):
         self.check_result(resp, [["utf8_bin", "utf8"]])
 
         # syntax error
-        resp = self.client.execute_query('SHOW COLLATE')
+        resp = self.client.execute('SHOW COLLATE')
         self.check_resp_failed(resp)
 
-        resp = self.client.execute_query('SHOW COLLATIONS')
+        resp = self.client.execute('SHOW COLLATIONS')
         self.check_resp_failed(resp)
 

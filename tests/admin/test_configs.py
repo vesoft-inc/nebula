@@ -24,7 +24,7 @@ class TestConfigs(NebulaTestSuite):
         self.check_resp_failed(resp)
 
         # update immutable config will fail, read-only
-        resp = self.client.execute_query('UPDATE CONFIGS storage:num_io_threads=10')
+        resp = self.client.execute('UPDATE CONFIGS storage:num_io_threads=10')
         self.check_resp_failed(resp)
 
         # set and get config after declaration
@@ -40,21 +40,21 @@ class TestConfigs(NebulaTestSuite):
         resp = self.client.execute('GET CONFIGS meta:v')
         self.check_resp_failed(resp)
 
-        resp = self.client.execute_query('GET CONFIGS graph:v')
+        resp = self.client.execute('GET CONFIGS graph:v')
         self.check_resp_succeeded(resp)
         expected_result = [['GRAPH', 'v', 'int', 'MUTABLE', 3]]
         self.check_result(resp, expected_result)
 
-        resp = self.client.execute_query('GET CONFIGS storage:v')
+        resp = self.client.execute('GET CONFIGS storage:v')
         self.check_resp_succeeded(resp)
         expected_result = [['STORAGE', 'v', 'int', 'MUTABLE', 3]]
         self.check_result(resp, expected_result)
 
         # show configs
-        resp = self.client.execute_query('SHOW CONFIGS meta')
+        resp = self.client.execute('SHOW CONFIGS meta')
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute_query('SHOW CONFIGS graph')
+        resp = self.client.execute('SHOW CONFIGS graph')
         self.check_resp_succeeded(resp)
         expected_result = [['GRAPH', 'v', 'int', 'MUTABLE', v],
                            ['GRAPH', 'minloglevel', 'int', 'MUTABLE', 0],
@@ -63,7 +63,7 @@ class TestConfigs(NebulaTestSuite):
                            ['GRAPH', 'meta_client_retry_times', 'int', 'MUTABLE', 3]]
         self.check_out_of_order_result(resp, expected_result)
 
-        resp = self.client.execute_query('SHOW CONFIGS storage')
+        resp = self.client.execute('SHOW CONFIGS storage')
         self.check_resp_succeeded(resp)
         expected_result = [['STORAGE', 'v', 'int', 'MUTABLE', 3],
                            ['STORAGE', 'wal_ttl', 'int', 'MUTABLE', 14400],
@@ -84,7 +84,7 @@ class TestConfigs(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result
-        resp = self.client.execute_query('GET CONFIGS minloglevel')
+        resp = self.client.execute('GET CONFIGS minloglevel')
         self.check_resp_succeeded(resp)
         expected_result = [['GRAPH', 'minloglevel', 'int', 'MUTABLE', 2],
                            ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 2]]
@@ -95,7 +95,7 @@ class TestConfigs(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.client.execute_query('GET CONFIGS minloglevel')
+        resp = self.client.execute('GET CONFIGS minloglevel')
         self.check_resp_succeeded(resp)
         expected_result = [['GRAPH', 'minloglevel', 'int', 'MUTABLE', 2],
                            ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 3]]
@@ -111,7 +111,7 @@ class TestConfigs(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.client.execute_query('GET CONFIGS storage:rocksdb_column_family_options')
+        resp = self.client.execute('GET CONFIGS storage:rocksdb_column_family_options')
         self.check_resp_succeeded(resp)
         value = {"max_bytes_for_level_base": 1024, "write_buffer_size": 1024, "max_write_buffer_number": 4}
         expected_result = [['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE', value]]

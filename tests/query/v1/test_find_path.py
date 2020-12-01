@@ -15,7 +15,7 @@ class TestFindPath(NebulaTestSuite):
 
     def test_single_pair_constant_input(self):
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER like'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -24,10 +24,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "LaMarcus Aldridge" OVER like'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -36,10 +36,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER like'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -48,10 +48,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER like, teammate'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -60,10 +60,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -72,12 +72,12 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
 
     def test_all_pairs_all_paths_constant_input(self):
         stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -89,10 +89,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Manu Ginobili" OVER like UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -108,10 +108,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -124,10 +124,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -146,11 +146,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
     def test_multi_source_shortest_path(self):
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -160,10 +160,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -174,10 +174,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -194,10 +194,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -212,10 +212,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Marco Belinelli", "Yao Ming" TO "Spurs", "Lakers" OVER * UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -228,10 +228,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -241,10 +241,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan", "Tiago Splitter" TO "Tony Parker","Spurs" OVER like,serve UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -256,10 +256,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Yao Ming"  TO "Tony Parker","Tracy McGrady" OVER like,serve UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -269,10 +269,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -284,10 +284,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -299,10 +299,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER like UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -311,10 +311,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -326,10 +326,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -341,10 +341,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER like UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -353,10 +353,10 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = 'FIND SHORTEST PATH FROM "Marco Belinelli" TO "Spurs", "Lakers" OVER * UPTO 5 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -367,11 +367,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
     def test_multi_source_no_path(self):
         stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -383,7 +383,7 @@ class TestFindPath(NebulaTestSuite):
     def test_run_time_input(self):
         stmt = '''YIELD "Yao Ming" AS src, "Tony Parker" AS dst
                 | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -392,11 +392,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''YIELD "Shaquile O\'Neal" AS src
                 | FIND SHORTEST PATH FROM $-.src TO "Manu Ginobili" OVER * UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -406,11 +406,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''YIELD "Manu Ginobili" AS dst
                 | FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO $-.dst OVER * UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -420,11 +420,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Yao Ming" over like YIELD like._dst AS src
                 | FIND SHORTEST PATH FROM $-.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -434,11 +434,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''$a = GO FROM "Yao Ming" over like YIELD like._dst AS src;
                 FIND SHORTEST PATH FROM $a.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -448,11 +448,11 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
                 | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -462,11 +462,11 @@ class TestFindPath(NebulaTestSuite):
             ]
             }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
                 FIND SHORTEST PATH FROM $a.src TO $a.dst OVER like UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -476,11 +476,11 @@ class TestFindPath(NebulaTestSuite):
             ]
             }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
                 | FIND ALL PATH FROM $-.src TO $-.dst OVER like UPTO 3 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -497,11 +497,11 @@ class TestFindPath(NebulaTestSuite):
             ]
             }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
                 FIND ALL PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -518,12 +518,12 @@ class TestFindPath(NebulaTestSuite):
             ]
             }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''$a = GO FROM "Tim Duncan" over like YIELD like._src AS src;
                 GO FROM "Tony Parker" OVER like YIELD like._src AS src, like._dst AS dst
                 | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["_path"],
@@ -533,4 +533,4 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        self.check_path_result_without_prop(resp.data.rows, expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])

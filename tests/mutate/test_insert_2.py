@@ -49,7 +49,7 @@ class TestInsert2(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check
-        resp = self.execute_query('FETCH PROP ON course "English"')
+        resp = self.execute('FETCH PROP ON course "English"')
         self.check_resp_succeeded(resp)
         expect_result = [['English', 'Engli', T_NULL]]
         self.check_out_of_order_result(resp, expect_result)
@@ -59,7 +59,7 @@ class TestInsert2(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check
-        resp = self.execute_query('FETCH PROP ON student ""')
+        resp = self.execute('FETCH PROP ON student ""')
         self.check_resp_succeeded(resp)
         expect_result = [['', 'Tom', 12]]
         self.check_out_of_order_result(resp, expect_result)

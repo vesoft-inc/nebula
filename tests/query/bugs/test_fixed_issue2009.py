@@ -42,7 +42,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
             TestBugUpdateFilterOut.edge_type, TestBugUpdateFilterOut.vertex))
         self.check_resp_succeeded(resp)
         # fetch
-        resp = self.execute_query('FETCH PROP ON {} {}'.format(
+        resp = self.execute('FETCH PROP ON {} {}'.format(
             TestBugUpdateFilterOut.tag, TestBugUpdateFilterOut.vertex))
         self.check_resp_succeeded(resp)
         expect = [
@@ -50,7 +50,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
         ]
         self.check_result(resp.rows, expect)
 
-        resp = self.execute_query('FETCH PROP ON {} {}->2333'.format(
+        resp = self.execute('FETCH PROP ON {} {}->2333'.format(
             TestBugUpdateFilterOut.edge_type, TestBugUpdateFilterOut.vertex))
         self.check_resp_succeeded(resp)
         expect = [

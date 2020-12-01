@@ -18,7 +18,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_one_step(self):
         stmt = 'GO FROM "Tim Duncan" OVER serve'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -30,7 +30,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Tim Duncan", "Tim Duncan" OVER serve'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -43,7 +43,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -57,7 +57,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Boris Diaw" OVER serve YIELD \
             $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -75,7 +75,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM "Rajon Rondo" OVER serve WHERE \
             serve.start_year >= 2013 AND serve.end_year <= 2018 YIELD \
             $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -91,7 +91,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Boris Diaw" OVER like YIELD like._dst as id \
             | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -109,7 +109,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Thunders' OVER serve REVERSELY"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -126,7 +126,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Boris Diaw" OVER like YIELD like._dst as id \
             | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -145,13 +145,13 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "NON EXIST VERTEX ID" OVER like YIELD like._dst as id \
             | (GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''GO FROM "Boris Diaw" OVER like, serve YIELD like._dst as id \
             | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -170,7 +170,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_assignment_simple(self):
         stmt = '''$var = GO FROM "Tracy McGrady" OVER like YIELD like._dst as id; \
             GO FROM $var.id OVER like'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -186,7 +186,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''$var = (GO FROM "Tracy McGrady" OVER like YIELD like._dst as id \
             | GO FROM $-.id OVER like YIELD like._dst as id); \
             GO FROM $var.id OVER like'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -204,7 +204,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_pipe_only_yield_input_prop(self):
         stmt = '''GO FROM "Tracy McGrady" OVER like YIELD like._dst as vid \
             | GO FROM $-.vid OVER like YIELD $-.vid as id'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["id"],
@@ -220,7 +220,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_pipe_only_yield_constant(self):
         stmt = '''GO FROM "Tracy McGrady" OVER like YIELD like._dst as vid \
             | GO FROM $-.vid OVER like YIELD 3'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["3"],
@@ -236,26 +236,26 @@ class TestGoQuery(NebulaTestSuite):
     def test_assignment_empty_result(self):
         stmt = '''$var = GO FROM "-1" OVER like YIELD like._dst as id; \
             GO FROM $var.id OVER like'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
 
     def test_variable_undefined(self):
         stmt = "GO FROM $var OVER like"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_distinct(self):
         stmt = '''GO FROM "Nobody" OVER serve \
             YIELD DISTINCT $^.player.name as name, $$.team.name as name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         stmt = '''GO FROM "Boris Diaw" OVER like YIELD like._dst as id \
             | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve \
             YIELD DISTINCT serve._dst, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "$$.team.name"],
@@ -269,7 +269,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO 2 STEPS FROM "Tony Parker" OVER like YIELD DISTINCT like._dst'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -284,38 +284,38 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_vertex_noexist(self):
         stmt = 'GO FROM "NON EXIST VERTEX ID" OVER serve'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''GO FROM "NON EXIST VERTEX ID" OVER serve YIELD \
             $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''GO FROM "NON EXIST VERTEX ID" OVER serve YIELD DISTINCT \
             $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
     def test_empty_inputs(self):
         stmt = '''GO FROM "NON EXIST VERTEX ID" OVER like YIELD like._dst as id \
             | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._dst as id, serve.start_year as start \
             | YIELD $-.id as id WHERE $-.start > 20000 | Go FROM $-.id over serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
     def test_multi_edges_over_all(self):
         stmt = 'GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._dst, like._dst'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -328,7 +328,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._src, like._src'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -341,7 +341,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Russell Westbrook" OVER * REVERSELY'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -354,7 +354,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Dirk Nowitzki" OVER * YIELD serve._dst, like._dst'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -368,7 +368,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Paul Gasol" OVER *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -386,7 +386,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Manu Ginobili" OVER * REVERSELY YIELD like.likeness, \
             teammate.start_year, serve.start_year, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -402,7 +402,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "LaMarcus Aldridge" OVER * YIELD $$.team.name, $$.player.name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -417,7 +417,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Boris Diaw" OVER * YIELD like._dst as id \
             | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -437,7 +437,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_edge_type(self):
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like \
             YIELD serve.start_year, like.likeness, serve._type, like._type'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -451,7 +451,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like REVERSELY \
             YIELD serve._dst, like._dst, serve._type, like._type'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -466,7 +466,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_multi_edges(self):
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like \
             YIELD serve.start_year, like.likeness'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -479,7 +479,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Shaquile O\'Neal" OVER serve, like'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -497,7 +497,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Russell Westbrook' OVER serve, like"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -511,7 +511,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Russell Westbrook" OVER serve, like REVERSELY \
             YIELD serve._dst, like._dst, serve.start_year, like.likeness'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -524,7 +524,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Russell Westbrook" OVER serve, like REVERSELY YIELD serve._src, like._src'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -537,7 +537,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = 'GO FROM "Russell Westbrook" OVER serve, like REVERSELY'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -551,7 +551,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM "Manu Ginobili" OVER like, teammate REVERSELY YIELD like.likeness, \
             teammate.start_year, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -571,7 +571,7 @@ class TestGoQuery(NebulaTestSuite):
             YIELD $^.player.name AS name, like._dst AS id \
             | GO FROM $-.id OVER like \
             YIELD $-.name, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
@@ -597,7 +597,7 @@ class TestGoQuery(NebulaTestSuite):
             | GO FROM $-.id OVER like \
             WHERE $-.name != $$.player.name \
             YIELD $-.name, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
@@ -620,7 +620,7 @@ class TestGoQuery(NebulaTestSuite):
             YIELD $^.player.name AS name, like._dst AS id \
             | GO FROM $-.id OVER like \
             YIELD $-.*, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$-.name", "$^.player.name", "$$.player.name"],
@@ -645,7 +645,7 @@ class TestGoQuery(NebulaTestSuite):
             YIELD $^.player.name AS name, like._dst AS id; \
             GO FROM $var.id OVER like \
             YIELD $var.*, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -671,7 +671,7 @@ class TestGoQuery(NebulaTestSuite):
             YIELD $^.player.name AS name, like._dst AS id; \
             GO FROM $var.id OVER like \
             YIELD $var.name, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$var.name", "$^.player.name", "$$.player.name"],
@@ -697,7 +697,7 @@ class TestGoQuery(NebulaTestSuite):
             GO FROM $var.id OVER like \
             WHERE $var.name != $$.player.name \
             YIELD $var.name, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$var.name", "$^.player.name", "$$.player.name"],
@@ -716,15 +716,15 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_no_existent_prop(self):
         stmt = "GO FROM 'Tim Duncan' OVER serve YIELD $^.player.test"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = "GO FROM 'Tim Duncan' OVER serve yield $^.player.test"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = "GO FROM 'Tim Duncan' OVER serve YIELD serve.test"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     @pytest.mark.skip(reason="not support udf_is_in now!")
@@ -732,7 +732,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM 'Boris Diaw' OVER serve \
             WHERE udf_is_in($$.team.name, 'Hawks', 'Suns') \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -746,7 +746,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id \
             | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -760,7 +760,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id \
             | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123) AND 1 == 1'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -778,7 +778,7 @@ class TestGoQuery(NebulaTestSuite):
             $rA = YIELD $A.* WHERE $A.dst == 123; \
             RETURN $rA IF $rA IS NOT NULL; \
             GO FROM $A.dst OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -795,7 +795,7 @@ class TestGoQuery(NebulaTestSuite):
             $rA = YIELD $A.* WHERE 1 == 1; \
             RETURN $rA IF $rA IS NOT NULL; \
             GO FROM $A.dst OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$A.dst"],
@@ -814,7 +814,7 @@ class TestGoQuery(NebulaTestSuite):
             $rB = YIELD $B.* WHERE $B.dstB == 456; \
             RETURN $rB IF $rB IS NOT NULL; \
             GO FROM $B.dstB OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -832,14 +832,14 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''$A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst; \
             $rA = YIELD $A.* WHERE $A.dst == 123; \
             RETURN $rA IF $rA IS NOT NULL'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''$A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst; \
             $rA = YIELD $A.* WHERE 1 == 1; \
             RETURN $rA IF $rA IS NOT NULL'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$A.dst"],
@@ -854,23 +854,23 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''$A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst; \
             $rA = YIELD $A.* WHERE 1 == 1; \
             RETURN $B IF $B IS NOT NULL'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '''$A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst; \
             $rA = YIELD $A.* WHERE 1 == 1; \
             RETURN $B IF $A IS NOT NULL'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # will return error
         stmt = '''RETURN $rA IF $rA IS NOT NULL;'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_reversely_one_step(self):
         stmt = "GO FROM 'Tim Duncan' OVER like REVERSELY YIELD like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -891,7 +891,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER like REVERSELY YIELD $$.player.name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.player.name"],
@@ -914,7 +914,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM 'Tim Duncan' OVER like REVERSELY \
             WHERE $$.player.age < 35 \
             YIELD $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.player.name"],
@@ -931,7 +931,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER * REVERSELY YIELD like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -955,7 +955,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_only_id_n_steps(self):
         stmt = "GO 2 STEPS FROM 'Tony Parker' OVER like YIELD like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -971,7 +971,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 3 STEPS FROM 'Tony Parker' OVER like YIELD like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -989,7 +989,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = "GO 1 STEPS FROM 'Tony Parker' OVER like YIELD like._dst AS id"\
                " | GO 2 STEPS FROM $-.id OVER like YIELD like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1012,7 +1012,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_reversely_two_steps(self):
         stmt = "GO 2 STEPS FROM 'Kobe Bryant' OVER like REVERSELY YIELD $$.player.name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.player.name"],
@@ -1027,7 +1027,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 2 STEPS FROM 'Kobe Bryant' OVER * REVERSELY YIELD $$.player.name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.player.name"],
@@ -1043,7 +1043,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Manu Ginobili' OVER * REVERSELY YIELD like._dst AS id \
             | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -1062,7 +1062,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_reversely_with_pipe(self):
         stmt = '''GO FROM 'LeBron James' OVER serve YIELD serve._dst AS id \
             | GO FROM $-.id OVER serve REVERSELY YIELD $^.team.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.team.name", "$$.player.name"],
@@ -1102,7 +1102,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM 'LeBron James' OVER serve YIELD serve._dst AS id \
             | GO FROM $-.id OVER serve REVERSELY WHERE $$.player.name != 'LeBron James' \
             YIELD $^.team.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.team.name", "$$.player.name"],
@@ -1137,7 +1137,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Manu Ginobili' OVER like REVERSELY YIELD like._dst AS id \
             | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -1155,7 +1155,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_bidirect(self):
         stmt = "GO FROM 'Tim Duncan' OVER serve bidirect"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -1167,7 +1167,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER like bidirect"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1190,7 +1190,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER serve, like bidirect"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst"],
@@ -1214,7 +1214,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER serve bidirect YIELD $$.team.name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.team.name"],
@@ -1226,7 +1226,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER like bidirect YIELD $$.player.name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$$.player.name"],
@@ -1250,7 +1250,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Tim Duncan' OVER like bidirect WHERE like.likeness > 90 \
             YIELD $^.player.name, like._dst, $$.player.name, like.likeness'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "like._dst", "$$.player.name", "like.likeness"],
@@ -1267,7 +1267,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_bidirect_over_all(self):
         stmt = '''GO FROM 'Tim Duncan' OVER * bidirect \
             YIELD $^.player.name, serve._dst, $$.team.name, like._dst, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve._dst", "$$.team.name", "like._dst", "$$.player.name"],
@@ -1297,7 +1297,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' OVER * bidirect"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst", "serve._dst", "teammate._dst"],
@@ -1328,7 +1328,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_duplicate_column_name(self):
         stmt = "GO FROM 'Tim Duncan' OVER serve YIELD serve._dst, serve._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "serve._dst"],
@@ -1341,26 +1341,26 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id, like.likeness AS id
                   | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '''GO FROM 'Tim Duncan' OVER like, serve
                   YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id
                   | GO FROM $-.id OVER *'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '''$a = GO FROM 'Tim Duncan' OVER *
                   YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id;
                   | GO FROM $-.id OVER serve'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_contains(self):
         """ the name_label is not a string any more, will be deprecated such a way of writing.
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $$.team.name CONTAINS Haw\
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -1374,7 +1374,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $$.team.name CONTAINS \"Haw\"\
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -1388,7 +1388,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE (string)serve.start_year CONTAINS "05" \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -1401,7 +1401,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE $^.player.name CONTAINS "Boris" \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$^.player.name", "serve.start_year", "serve.end_year", "$$.team.name"],
@@ -1418,13 +1418,13 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE !($^.player.name CONTAINS "Boris") \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = '''GO FROM 'Boris Diaw' OVER serve WHERE "Leo" CONTAINS "Boris" \
             YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -1434,13 +1434,13 @@ class TestGoQuery(NebulaTestSuite):
     def test_with_intermediate_data(self):
         # zero to zero
         stmt = "GO 0 TO 0 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         # simple
         stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1455,7 +1455,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 0 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1471,7 +1471,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like \
             YIELD DISTINCT like._dst, like.likeness, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst", "like.likeness", "$$.player.name"],
@@ -1490,7 +1490,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO 0 TO 2 STEPS FROM 'Tony Parker' OVER like \
             YIELD DISTINCT like._dst, like.likeness, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst", "like.likeness", "$$.player.name"],
@@ -1508,7 +1508,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 1 TO 3 STEPS FROM 'Tim Duncan' OVER serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -1519,7 +1519,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 0 TO 3 STEPS FROM 'Tim Duncan' OVER serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -1530,13 +1530,13 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 2 TO 3 STEPS FROM 'Tim Duncan' OVER serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         #reversely
         stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like REVERSELY YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1560,7 +1560,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 0 TO 2 STEPS FROM 'Tony Parker' OVER like REVERSELY YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1584,7 +1584,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 2 TO 2 STEPS FROM 'Tony Parker' OVER like REVERSELY YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1608,7 +1608,7 @@ class TestGoQuery(NebulaTestSuite):
 
         # empty starts before last step
         stmt = "GO 1 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -1637,7 +1637,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 0 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst"],
@@ -1667,7 +1667,7 @@ class TestGoQuery(NebulaTestSuite):
 
         # bidirectionally
         stmt = "GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like BIDIRECT YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1698,7 +1698,7 @@ class TestGoQuery(NebulaTestSuite):
 
 
         stmt = "GO 0 TO 2 STEPS FROM 'Tony Parker' OVER like BIDIRECT YIELD DISTINCT like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["like._dst"],
@@ -1729,7 +1729,7 @@ class TestGoQuery(NebulaTestSuite):
 
         # over *
         stmt = "GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD serve._dst, like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst"],
@@ -1749,7 +1749,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         stmt = "GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD serve._dst, like._dst"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst"],
@@ -1771,7 +1771,7 @@ class TestGoQuery(NebulaTestSuite):
         # with properties
         stmt = '''GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * \
             YIELD serve._dst, like._dst, serve.start_year, like.likeness, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
@@ -1792,7 +1792,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * \
             YIELD serve._dst, like._dst, serve.start_year, like.likeness, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst", "serve.start_year", "like.likeness", "$$.player.name"],
@@ -1813,7 +1813,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * \
             REVERSELY YIELD serve._dst, like._dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst"],
@@ -1832,7 +1832,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * \
             REVERSELY YIELD serve._dst, like._dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["serve._dst", "like._dst"],
@@ -1851,7 +1851,7 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_error_massage(self):
         stmt = "GO FROM 'Tim Duncan' OVER serve YIELD $$.player.name as name"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": [],
@@ -1863,18 +1863,18 @@ class TestGoQuery(NebulaTestSuite):
 
     def test_zero_step(self):
         stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
         stmt = "GO 0 STEPS FROM 'Tim Duncan' OVER like YIELD like._dst as id \
                 | GO FROM $-.id OVER serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -1882,7 +1882,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._src as src, like._dst as dst \
             | GO FROM $-.src OVER like \
             YIELD $-.src as src, like._dst as dst, $^.player.name, $$.player.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "dst", "$^.player.name", "$$.player.name"],
@@ -1898,7 +1898,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''$a = GO FROM 'Tim Duncan' OVER like YIELD like._src as src, like._dst as dst; \
             GO FROM $a.src OVER like YIELD $a.src as src, like._dst as dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "dst"],
@@ -1915,7 +1915,7 @@ class TestGoQuery(NebulaTestSuite):
         # with intermidate data pipe
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._src as src, like._dst as dst \
             | GO 1 TO 2 STEPS FROM $-.src OVER like YIELD $-.src as src, like._dst as dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "dst"],
@@ -1942,7 +1942,7 @@ class TestGoQuery(NebulaTestSuite):
         stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._src as src, like._dst as dst \
             | GO 1 TO 2 STEPS FROM $-.src OVER like \
             YIELD $-.src as src, $-.dst, like._dst as dst, like.likeness'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "$-.dst", "dst", "like.likeness"],
@@ -1968,7 +1968,7 @@ class TestGoQuery(NebulaTestSuite):
         # partial neighbors input
         stmt = '''GO FROM 'Danny Green' OVER like YIELD like._src AS src, like._dst AS dst \
             | GO FROM $-.dst OVER teammate YIELD $-.src AS src, $-.dst, teammate._dst AS dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "$-.dst", "dst"],
@@ -1985,7 +1985,7 @@ class TestGoQuery(NebulaTestSuite):
         # var
         stmt = '''$a = GO FROM 'Danny Green' OVER like YIELD like._src AS src, like._dst AS dst; \
             GO FROM $a.dst OVER teammate YIELD $a.src AS src, $a.dst, teammate._dst AS dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["src", "$a.dst", "dst"],
@@ -2002,7 +2002,7 @@ class TestGoQuery(NebulaTestSuite):
     def test_backtrack_overlap(self):
         stmt = '''GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst \
             | GO 2 STEPS FROM $-.src OVER like YIELD $-.src, $-.dst, like._src, like._dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$-.src", "$-.dst", "like._src", "like._dst"],
@@ -2029,7 +2029,7 @@ class TestGoQuery(NebulaTestSuite):
 
         stmt = '''$a = GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst; \
             GO 2 STEPS FROM $a.src OVER like YIELD $a.src, $a.dst, like._src, like._dst'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["$a.src", "$a.dst", "like._src", "like._dst"],

@@ -22,7 +22,7 @@ class TestFindAndMatch(NebulaTestSuite):
     def test_match(self):
         try:
             cmd = "match"
-            resp = self.execute_query(cmd)
+            resp = self.execute(cmd)
             self.check_resp_failed(resp)
         except Exception as e:
             if not 'error: Does not support' in str(e):

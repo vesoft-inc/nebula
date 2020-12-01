@@ -49,19 +49,19 @@ class TestDeleteEdges(NebulaTestSuite):
                             '"Zhangsan"->"Lisi"@1561013237:(77)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM "Zhangsan", "Jack" OVER friend '
+        resp = self.execute('GO FROM "Zhangsan", "Jack" OVER friend '
                                   'YIELD $^.person.name, friend.intimacy, friend._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 90, "Lisi"], ["Zhangsan", 50, "Jack"], ["Jack", 100, "Rose"]]
         self.check_out_of_order_result(resp, expect_result)
 
-        resp = self.execute_query('GO FROM "Zhangsan", "Lisi" OVER schoolmate '
+        resp = self.execute('GO FROM "Zhangsan", "Lisi" OVER schoolmate '
                                   'YIELD $^.person.name, schoolmate.likeness, schoolmate._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 60, "Jack"], ["Lisi", 70, "Rose"]]
         self.check_out_of_order_result(resp, expect_result)
 
-        resp = self.execute_query('GO FROM "Zhangsan" OVER transfer YIELD $^.person.name,'
+        resp = self.execute('GO FROM "Zhangsan" OVER transfer YIELD $^.person.name,'
                                   'transfer._rank, transfer.money, transfer._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 1561013236, 33, "Lisi"], ["Zhangsan", 1561013237, 77, "Lisi"]]
@@ -77,19 +77,19 @@ class TestDeleteEdges(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check
-        resp = self.execute_query('GO FROM "Zhangsan", "Jack" OVER friend '
+        resp = self.execute('GO FROM "Zhangsan", "Jack" OVER friend '
                                   'YIELD $^.person.name, friend.intimacy, friend._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 50, "Jack"]]
         self.check_result(resp, expect_result)
 
-        resp = self.execute_query('GO FROM "Zhangsan", "Lisi" OVER schoolmate '
+        resp = self.execute('GO FROM "Zhangsan", "Lisi" OVER schoolmate '
                                   'YIELD $^.person.name, schoolmate.likeness, schoolmate._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 60, "Jack"]]
         self.check_result(resp, expect_result)
 
-        resp = self.execute_query('GO FROM "Zhangsan", "Jack" OVER transfer '
+        resp = self.execute('GO FROM "Zhangsan", "Jack" OVER transfer '
                                   'YIELD $^.person.name, transfer._rank, transfer.money, transfer._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 1561013236, 33, "Lisi"]]
@@ -100,7 +100,7 @@ class TestDeleteEdges(NebulaTestSuite):
                             '"Zhangsan"->"Lisi"@15')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM "Zhangsan","Jack" OVER friend '
+        resp = self.execute('GO FROM "Zhangsan","Jack" OVER friend '
                                   'YIELD $^.person.name, friend.intimacy, friend._dst')
         self.check_resp_succeeded(resp)
         expect_result = [["Zhangsan", 50, "Jack"]]

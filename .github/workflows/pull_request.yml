@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-python
-          ref: 'v2.0'
+          ref: 'master'
           path: modules/nebula-python
       - name: Prepare environment
         id: prepare

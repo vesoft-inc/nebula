@@ -14,7 +14,7 @@ class TestSnapshot(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # show snapshots
-        resp = self.client.execute_query('SHOW SNAPSHOTS;')
+        resp = self.client.execute('SHOW SNAPSHOTS;')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Name", "Status", "Hosts"]
         expected_col_values = [[re.compile(r'SNAPSHOT_.*'),
@@ -23,14 +23,14 @@ class TestSnapshot(NebulaTestSuite):
 
         self.check_column_names(resp, expected_col_names)
         self.check_result(resp, expected_col_values, is_regex=True)
-        snapshot_name = resp.data.rows[0].values[0].get_sVal().decode('utf-8')
+        snapshot_name = resp.row_values(0)[0].as_string()
 
         # drop snapshot
         resp = self.client.execute('DROP SNAPSHOT {}'.format(snapshot_name))
         self.check_resp_succeeded(resp)
 
         # show snapshots
-        resp = self.client.execute_query('SHOW SNAPSHOTS;')
+        resp = self.client.execute('SHOW SNAPSHOTS;')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Name", "Status", "Hosts"]
 
@@ -41,7 +41,7 @@ class TestSnapshot(NebulaTestSuite):
         self.use_nba()
         resp = self.client.execute('INSERT VERTEX player(name, age) VALUES "Tom":("Tom", 10)')
         self.check_resp_succeeded(resp)
-        resp = self.client.execute_query('FETCH PROP ON player "Tom"')
+        resp = self.client.execute('FETCH PROP ON player "Tom"')
         self.check_resp_succeeded(resp)
         expected_value = [['Tom', 'Tom', 10]]
         self.check_result(resp, expected_value)

@@ -57,7 +57,7 @@ class TestUsers(NebulaTestSuite):
         query = 'SHOW USERS'
         expected_column_names = ['Account']
         expected_result = [[['root']], [['user1']], [['user2']]]
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
         for row in expected_result:
@@ -93,7 +93,7 @@ class TestUsers(NebulaTestSuite):
         query = 'SHOW USERS'
         expected_column_names = ['Account']
         expected_result = [[['root']], [['user1']], [['user2']]]
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
         for row in expected_result:
@@ -143,7 +143,7 @@ class TestUsers(NebulaTestSuite):
         query = 'SHOW USERS'
         expected_column_names = ['Account']
         expected_result = [[['root']], [['user1']], [['user2']]]
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
         for row in expected_result:
@@ -167,7 +167,7 @@ class TestUsers(NebulaTestSuite):
         self.check_resp_failed(resp);
 
         query = 'SHOW ROLES IN user_space'
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         expected_column_names = ['Account', 'Role Type']
         expected_result = [['user2', 'DBA'], ['user3', 'GUEST']]
         self.check_resp_succeeded(resp)
@@ -196,7 +196,7 @@ class TestUsers(NebulaTestSuite):
         query = 'SHOW ROLES IN user_space'
         expected_column_names = ['Account', 'Role Type']
         expected_result = [['user3', 'GUEST']]
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expected_column_names)
         self.check_out_of_order_result(resp, expected_result)

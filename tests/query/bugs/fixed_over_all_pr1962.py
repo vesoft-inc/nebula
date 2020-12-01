@@ -42,7 +42,7 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute('INSERT EDGE like(likeness) VALUES 1->2:(80.0)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM 1 OVER * YIELD $$.person.name, '
+        resp = self.execute('GO FROM 1 OVER * YIELD $$.person.name, '
                                   '$$.person.age')
         self.check_resp_succeeded(resp)
 

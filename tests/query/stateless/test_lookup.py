@@ -60,23 +60,23 @@ class TestIndex(NebulaTestSuite):
         resp = self.execute('INSERT EDGE serve(start_year, end_year) VALUES "121" -> "201":(1999, 2018)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('LOOKUP ON serve where serve.start_year > 0')
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 0')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 6
+        assert resp.row_size() == 6
 
-        resp = self.execute_query('LOOKUP ON serve where serve.start_year > 1997 and serve.end_year < 2020')
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 1997 and serve.end_year < 2020')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 3
+        assert resp.row_size() == 3
 
-        resp = self.execute_query('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
-        resp = self.execute_query('LOOKUP ON like where like.likeness > 89')
+        resp = self.execute('LOOKUP ON like where like.likeness > 89')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 3
+        assert resp.row_size() == 3
 
-        resp = self.execute_query('LOOKUP ON like where like.likeness < 39')
+        resp = self.execute('LOOKUP ON like where like.likeness < 39')
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -127,33 +127,33 @@ class TestIndex(NebulaTestSuite):
         resp = self.execute('INSERT VERTEX team(name) VALUES "204":("opl")')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('LOOKUP ON player where player.age == 35')
+        resp = self.execute('LOOKUP ON player where player.age == 35')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 1
+        assert resp.row_size() == 1
 
-        resp = self.execute_query('LOOKUP ON player where player.age > 0')
+        resp = self.execute('LOOKUP ON player where player.age > 0')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 8
+        assert resp.row_size() == 8
 
-        resp = self.execute_query('LOOKUP ON player where player.age < 100')
+        resp = self.execute('LOOKUP ON player where player.age < 100')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 8
+        assert resp.row_size() == 8
 
-        resp = self.execute_query('LOOKUP ON player where player.name == "Useless"')
+        resp = self.execute('LOOKUP ON player where player.name == "Useless"')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 1
+        assert resp.row_size() == 1
 
-        resp = self.execute_query('LOOKUP ON player where player.name == "Useless" and player.age < 30')
+        resp = self.execute('LOOKUP ON player where player.name == "Useless" and player.age < 30')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 1
+        assert resp.row_size() == 1
 
-        resp = self.execute_query('LOOKUP ON team where team.name == "Warriors"')
+        resp = self.execute('LOOKUP ON team where team.name == "Warriors"')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 1
+        assert resp.row_size() == 1
 
-        resp = self.execute_query('LOOKUP ON team where team.name == "oopp"')
+        resp = self.execute('LOOKUP ON team where team.name == "oopp"')
         self.check_resp_succeeded(resp)
-        assert len(resp.data.rows) == 1
+        assert resp.row_size() == 1
 
     @classmethod
     def cleanup(self):

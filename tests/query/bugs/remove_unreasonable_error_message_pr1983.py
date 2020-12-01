@@ -30,7 +30,7 @@ class TestPR1983(NebulaTestSuite):
             'INSERT VERTEX person(name, age) VALUES 1:(\'Bob\', 10)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM 1 OVER *')
+        resp = self.execute('GO FROM 1 OVER *')
         self.check_resp_succeeded(resp)
 
     @classmethod

@@ -72,14 +72,14 @@ class TestRangeChecking(NebulaTestSuite):
         # integer bound
         resp = self.execute("INSERT VERTEX test(id) VALUES '100':({})".format(number));
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
-        error = "SyntaxError: Out of range: near `{}'".format(number);
-        assert resp.error_msg, error
+        error = "SyntaxError: Out of range: near ";
+        assert resp.error_msg().find(error) == 0
 
         # hex bound
         resp = self.execute("INSERT VERTEX test(id) VALUES '100':({:#x})".format(number));
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
-        error = "SyntaxError: Out of range: near `{:#x}'".format(number);
-        assert resp.error_msg, error
+        error = "SyntaxError: Out of range: near ";
+        assert resp.error_msg().find(error) == 0
 
         # oct bound
         # TODO(shylock) Trick to make oct number valid
@@ -91,11 +91,7 @@ class TestRangeChecking(NebulaTestSuite):
             query = "INSERT VERTEX test(id) VALUES '100':(0{:o})".format(abs(number))
         resp = self.execute(query);
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SYNTAX_ERROR)
-        if number < 0:
-            error = "SyntaxError: Out of range: near `-0{:o}'".format(abs(number))
-        else:
-            error = "SyntaxError: Out of range: near `0{:o}'".format(abs(number))
-        assert resp.error_msg, error
+        assert resp.error_msg().find(error) == 0
 
     @classmethod
     def cleanup(self):

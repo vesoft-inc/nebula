@@ -13,9 +13,9 @@ import re
 from pathlib import Path
 from typing import Pattern, Set
 
-from nebula2.Client import GraphClient
 from nebula2.common import ttypes as CommonTtypes
-from nebula2.ConnectionPool import ConnectionPool
+from nebula2.gclient.net import ConnectionPool
+from nebula2.Config import Config
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
 from tests.common.utils import compare_value, \
@@ -48,9 +48,6 @@ class NebulaTestSuite(object):
         address = pytest.cmdline.address.split(':')
         self.host = address[0]
         self.port = address[1]
-        storage_address = pytest.cmdline.storage.split(':')
-        self.storage_host = storage_address[0]
-        self.storage_port = storage_address[1]
         self.user = pytest.cmdline.user
         self.password = pytest.cmdline.password
         self.replica_factor = pytest.cmdline.replica_factor
@@ -123,24 +120,26 @@ class NebulaTestSuite(object):
 
     @classmethod
     def create_nebula_clients(self):
-        self.client_pool = ConnectionPool(host=self.host,
-                                          port=self.port,
-                                          socket_num=16,
-                                          network_timeout=60000)
-        self.client = GraphClient(self.client_pool)
-        self.client.authenticate(self.user, self.password)
+        config = Config()
+        config.max_connection_pool_size = 20
+        config.timeout = 60000
+        # init connection pool
+        self.client_pool = ConnectionPool()
+        assert self.client_pool.init([(self.host, self.port)], config)
+
+        # get session from the pool
+        self.client = self.client_pool.get_session(self.user, self.password)
 
     @classmethod
-    def spawn_nebula_client(self):
-        return GraphClient(self.client_pool)
+    def spawn_nebula_client(self, user, password):
+        return self.client_pool.get_session(user, password)
 
     @classmethod
-    def close_nebula_client(self, client):
-        client.sign_out()
+    def release_nebula_client(self, client):
+        client.release()
 
     @classmethod
     def close_nebula_clients(self):
-        self.client.sign_out()
         self.client_pool.close()
 
     @classmethod
@@ -148,7 +147,8 @@ class NebulaTestSuite(object):
         if self.client is not None:
             self.cleanup()
             self.drop_data()
-            self.close_nebula_clients()
+            self.client.release()
+        self.close_nebula_clients()
 
     @classmethod
     def execute(self, ngql, profile=True):
@@ -156,13 +156,13 @@ class NebulaTestSuite(object):
             'PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
-    def execute_query(self, ngql, profile=True):
-        return self.client.execute_query(
+    def execute(self, ngql, profile=True):
+        return self.client.execute(
             'PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
     def check_rows_with_header(cls, stmt: str, expected: dict):
-        resp = cls.execute_query(stmt)
+        resp = cls.execute(stmt)
         cls.check_resp_succeeded(resp)
         if "column_names" in expected:
             cls.check_column_names(resp, expected['column_names'])
@@ -182,23 +182,21 @@ class NebulaTestSuite(object):
     @classmethod
     def check_resp_succeeded(self, resp):
         assert (
-            resp.error_code == ttypes.ErrorCode.SUCCEEDED
-            or resp.error_code == ttypes.ErrorCode.E_STATEMENT_EMTPY
-        ), bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
+            resp.is_succeeded
+            or resp.error_code() == ttypes.ErrorCode.E_STATEMENT_EMTPY
+        ), resp.error_msg()
 
     @classmethod
     def check_resp_failed(self, resp, error_code: ttypes.ErrorCode = ttypes.ErrorCode.SUCCEEDED):
         if error_code == ttypes.ErrorCode.SUCCEEDED:
-            assert resp.error_code != error_code, '{} == {}, {}'.format(
+            assert resp.error_code() != error_code, '{} == {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
-                ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
+                ttypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
             )
         else:
-            assert resp.error_code == error_code, '{} != {}, {}'.format(
+            assert resp.error_code() == error_code, '{} != {}, {}'.format(
                 ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
-                ttypes.ErrorCode._VALUES_TO_NAMES[error_code],
-                bytes.decode(resp.error_msg) if resp.error_msg is not None else ''
+                ttypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
             )
 
     @classmethod
@@ -211,12 +209,12 @@ class NebulaTestSuite(object):
 
     @classmethod
     def search(self, resp, expect, is_regex=False, exist=True):
-        if resp.data is None and len(expect) == 0:
+        if resp.is_empty() and len(expect) == 0:
             return
 
-        assert resp.data is not None, 'resp.data is None'
+        assert not resp.is_empty(), 'resp.data is None'
 
-        rows = resp.data.rows
+        rows = resp.rows()
         assert len(rows) >= len(expect), f'{len(rows)} < {len(expect)}'
 
         new_expect = expect
@@ -232,11 +230,11 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_column_names(self, resp, expect):
-        column_names = resp.data.column_names
+        column_names = resp.keys()
         assert len(column_names) == len(expect), \
             f'Column names does not match, expected: {expect}, actual: {column_names}'
         for i in range(len(expect)):
-            result = bytes.decode(column_names[i])
+            result = column_names[i]
             assert expect[i] == result, \
                 f"different column name, expect: {expect[i]} vs. result: {result}"
 
@@ -252,11 +250,11 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_result(self, resp, expect, ignore_col: Set[int] = set(), is_regex=False):
-        if resp.data is None and len(expect) == 0:
+        if resp.is_empty() and len(expect) == 0:
             return
 
-        assert resp.data is not None, 'resp.data is None'
-        rows = resp.data.rows
+        assert not resp.is_empty(), 'resp.data is None'
+        rows = resp.rows()
 
         assert len(rows) == len(expect), f'{len(rows)}!={len(expect)}'
 
@@ -280,16 +278,16 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_out_of_order_result(self, resp, expect, ignore_col: Set[int]=set()):
-        if resp.data is None and len(expect) == 0:
+        if resp.is_empty() and len(expect) == 0:
             return
 
-        assert resp.data is not None
+        assert not resp.is_empty()
 
         # convert expect to thrift value
         new_expect = self.convert_expect(expect)
-        rows = resp.data.rows
+        rows = resp.rows()
         sorted_rows = sorted(rows, key=row_to_string)
-        resp.data.rows = sorted_rows
+        resp._resp.data.rows = sorted_rows
         sorted_expect = sorted(new_expect, key=row_to_string)
         # has convert the expect, so set is_regex to True
         self.check_result(resp, sorted_expect, ignore_col, True)
@@ -297,12 +295,7 @@ class NebulaTestSuite(object):
     @classmethod
     def check_empty_result(self, resp):
         msg = 'the row was not empty {}'.format(resp)
-        empty = False
-        if resp.data is None:
-            empty = True
-        elif len(resp.data.rows) == 0:
-            empty = True
-        assert empty, msg
+        assert resp.is_empty(), msg
 
     @classmethod
     def check_path_result_without_prop(self, rows, expect):
@@ -347,8 +340,8 @@ class NebulaTestSuite(object):
     @classmethod
     def check_error_msg(self, resp, expect):
         self.check_resp_failed(resp)
-        msg = self.check_format_str.format(resp.error_msg, expect)
-        err_msg = resp.error_msg.decode('utf-8')
+        msg = self.check_format_str.format(resp.error_msg(), expect)
+        err_msg = resp.error_msg()
         if isinstance(expect, Pattern):
             assert expect.match(err_msg), msg
         else:
@@ -357,9 +350,9 @@ class NebulaTestSuite(object):
     @classmethod
     def check_exec_plan(cls, resp, expect):
         cls.check_resp_succeeded(resp)
-        if resp.plan_desc is None:
+        if resp.plan_desc() is None:
             return
-        cls.diff_plan_node(resp.plan_desc, 0, expect, 0)
+        cls.diff_plan_node(resp.plan_desc(), 0, expect, 0)
 
     @classmethod
     def diff_plan_node(cls, plan_desc, line_num, expect, expect_idx):

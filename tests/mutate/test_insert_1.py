@@ -117,7 +117,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result, does not support
-        resp = self.execute_query('FETCH PROP ON person "Conan"')
+        resp = self.execute('FETCH PROP ON person "Conan"')
         self.check_resp_succeeded(resp)
         expect_result = [['Conan', 'Conan', 10]]
         self.check_out_of_order_result(resp, expect_result)
@@ -152,7 +152,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result, does not support
-        resp = self.execute_query('FETCH PROP ON schoolmate "Tom"->"Bob"')
+        resp = self.execute('FETCH PROP ON schoolmate "Tom"->"Bob"')
         self.check_resp_succeeded(resp)
         expect_result = [['Tom', 'Bob', 0, 87, 'Superman']]
         self.check_result(resp, expect_result)
@@ -170,7 +170,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result, type cast is not yet implemented in go
-        # resp = self.execute_query('GO FROM "Laura" OVER study '
+        # resp = self.execute('GO FROM "Laura" OVER study '
         #                           'YIELD $$.school.name, study._dst,'
         #                           '$$.school.create_time, (string)study.start_time')
         # self.check_resp_succeeded(resp)
@@ -186,7 +186,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_result(resp, expect_result)
 
         # fetch sun_school
-        resp = self.execute_query('FETCH PROP ON school "sun_school"')
+        resp = self.execute('FETCH PROP ON school "sun_school"')
         self.check_resp_succeeded(resp)
         expect_result = [["sun_school", "sun_school", 1262311200]]
         self.check_result(resp, expect_result)
@@ -215,12 +215,12 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # check result
-        resp = self.execute_query('FETCH PROP ON person "Bob"')
+        resp = self.execute('FETCH PROP ON person "Bob"')
         self.check_resp_succeeded(resp)
         expect_result = [['Bob', 'Bob', 9]]
         self.check_result(resp, expect_result)
 
-        resp = self.execute_query('FETCH PROP ON student "Bob"')
+        resp = self.execute('FETCH PROP ON student "Bob"')
         self.check_resp_succeeded(resp)
         expect_result = [['Bob', 'four', 20191106001]]
         self.check_result(resp, expect_result)
@@ -261,7 +261,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.execute_query('GO FROM "Tom" OVER schoolmate YIELD $^.person.name,'
+        resp = self.execute('GO FROM "Tom" OVER schoolmate YIELD $^.person.name,'
                                   'schoolmate.likeness, $$.person.name')
         self.check_resp_succeeded(resp)
         expect_result = [['Tom', 85, 'Lucy'],
@@ -290,7 +290,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get multi tag through go, does not support get dst vertex
-        resp = self.execute_query('GO FROM "Lucy" OVER schoolmate YIELD '
+        resp = self.execute('GO FROM "Lucy" OVER schoolmate YIELD '
                                   'schoolmate.likeness, $$.person.name,'
                                   '$$.student.grade, $$.student.number')
         self.check_resp_succeeded(resp)
@@ -327,7 +327,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result, does not support get dst vertex
-        resp = self.execute_query('GO FROM "Laura" OVER schoolmate '
+        resp = self.execute('GO FROM "Laura" OVER schoolmate '
                                   'YIELD $$.student.number, $$.person.name')
         self.check_resp_succeeded(resp)
         expect_result = [[20190901003, 'Aero']]
@@ -361,7 +361,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # TODO: does not support get dst vertex
-        resp = self.execute_query('GO FROM "Joy" OVER schoolmate YIELD $^.person.name,'
+        resp = self.execute('GO FROM "Joy" OVER schoolmate YIELD $^.person.name,'
                                   'schoolmate.likeness, $$.person.name, $$.person.age,$$.employee.name')
         self.check_resp_succeeded(resp)
         expect_result = [['Joy', 90, 'Petter', 19, 456]]
@@ -394,7 +394,7 @@ class TestInsert1(NebulaTestSuite):
         # self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.execute_query('GO FROM "Petter" OVER schoolmate '
+        resp = self.execute('GO FROM "Petter" OVER schoolmate '
                                   'YIELD $^.person.name, $^.employee.name, '
                                   'schoolmate.likeness, $$.person.name, '
                                   '$$.interest.name, $$.person.age')
@@ -474,7 +474,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.execute_query('GO FROM "Tom" OVER schoolmateWithDefault YIELD $^.person.name,'
+        resp = self.execute('GO FROM "Tom" OVER schoolmateWithDefault YIELD $^.person.name,'
                                   'schoolmateWithDefault.likeness, $$.person.name')
         self.check_resp_succeeded(resp)
         expect_result = [['Tom', 80, 'Lucy'],
@@ -483,7 +483,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_out_of_order_result(resp, expect_result)
 
 
-        resp = self.execute_query('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
+        resp = self.execute('GO FROM "Lucy" OVER schoolmateWithDefault YIELD '
                                   'schoolmateWithDefault.likeness, $$.personWithDefault.name,'
                                   '$$.personWithDefault.birthday, $$.personWithDefault.department,'
                                   '$$.studentWithDefault.grade, $$.studentWithDefault.number')
@@ -518,7 +518,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.execute_query('GO FROM "Tony" OVER schoolmate '
+        resp = self.execute('GO FROM "Tony" OVER schoolmate '
                                   'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
         self.check_resp_succeeded(resp)
         expect_result = [['Mack', 21, 3]]
@@ -551,7 +551,7 @@ class TestInsert1(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # get result
-        resp = self.execute_query('GO FROM uuid("Tony") OVER schoolmate '
+        resp = self.execute('GO FROM uuid("Tony") OVER schoolmate '
                                   'YIELD $$.person.name, $$.person.age, schoolmate.likeness')
         self.check_resp_succeeded(resp)
         expect_result = [['Mack', 21, 3]]

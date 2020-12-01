@@ -18,38 +18,38 @@ class TestSubGraph(NebulaTestSuite):
 
     def test_invalid_input(self):
         stmt = 'GET SUBGRAPH FROM $-.id'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = 'GET SUBGRAPH FROM $a.id'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = 'GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH FROM $-.id'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '$a = GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS ID; GET SUBGRAPH FROM $a.ID'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '$a = GO FROM "Tim Duncan" OVER like YIELD like._src AS src; GET SUBGRAPH FROM $b.src'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = 'GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH FROM $-.id'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '$a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH FROM $a.id'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_zero_step(self, check_subgraph_result):
         VERTEXS = self.VERTEXS
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan"'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Tim Duncan']
@@ -65,7 +65,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Spurs"'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Tim Duncan'],
@@ -81,7 +81,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = 'GET SUBGRAPH 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Tony Parker'],
@@ -98,7 +98,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Spurs']
@@ -114,7 +114,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH 0 STEPS FROM $-.id"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Tony Parker'],
@@ -132,7 +132,7 @@ class TestSubGraph(NebulaTestSuite):
 
         stmt = '''$a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id;
                   GET SUBGRAPH 0 STEPS FROM $a.id'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Spurs']
@@ -149,7 +149,7 @@ class TestSubGraph(NebulaTestSuite):
 
         stmt = '''$a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id;
                   GET SUBGRAPH 0 STEPS FROM $a.id'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertices = [
                     VERTEXS['Tony Parker'],
@@ -169,7 +169,7 @@ class TestSubGraph(NebulaTestSuite):
         VERTEXS, EDGES = self.VERTEXS, self.EDGES
 
         stmt = "GET SUBGRAPH FROM 'Tim Duncan'"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS['Tim Duncan']]
@@ -249,7 +249,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan'"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS["Tim Duncan"]]
@@ -451,7 +451,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan' IN like, serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         vertex1 = [VERTEXS["Tim Duncan"]]
 
@@ -531,7 +531,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan' IN like OUT serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS["Tim Duncan"]]
@@ -684,7 +684,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [
@@ -739,7 +739,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH 3 STEPS FROM 'Paul George' OUT serve BOTH like"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS["Paul George"]]
@@ -844,7 +844,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GET SUBGRAPH FROM 'Tony Parker' BOTH like"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS["Tony Parker"]]
@@ -900,7 +900,7 @@ class TestSubGraph(NebulaTestSuite):
         check_subgraph_result(resp, expected_data["rows"])
 
         stmt = "GO FROM 'Tim Duncan' over serve YIELD serve._src AS id | GET SUBGRAPH FROM $-.id"
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS['Tim Duncan']]
@@ -982,7 +982,7 @@ class TestSubGraph(NebulaTestSuite):
 
         stmt = '''$a = GO FROM 'Tim Duncan' over serve YIELD serve._src AS id;
                   GET SUBGRAPH FROM $a.id'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
 
         vertex1 = [VERTEXS['Tim Duncan']]

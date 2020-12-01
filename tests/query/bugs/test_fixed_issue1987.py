@@ -40,7 +40,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
         resp = self.execute(
             'INSERT {} t() values {}:()'.format(schema[1], schema[2]))
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP ON t {}'.format(schema[2]))
+        resp = self.execute('FETCH PROP ON t {}'.format(schema[2]))
         self.check_resp_succeeded(resp)
         ignore = {0} if schema[0] == 'TAG' else {0, 1, 2}
         expect = [[233, 'shylock']]
@@ -54,7 +54,7 @@ class TestBugUpdateFilterOut(NebulaTestSuite):
         resp = self.execute(
             'INSERT {} t() values {}:()'.format(schema[1], schema[2]))
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP ON t {}'.format(schema[2]))
+        resp = self.execute('FETCH PROP ON t {}'.format(schema[2]))
         self.check_resp_succeeded(resp)
         ignore = {0} if schema[0] == 'TAG' else {0, 1, 2}
         expect = [[444, 'hg']]

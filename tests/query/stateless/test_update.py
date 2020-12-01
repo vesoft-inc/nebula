@@ -43,7 +43,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 100;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 'AA', 10, 3600]]
         self.check_resp_succeeded(resp)
@@ -56,7 +56,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 100;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 'AA', 10, 3600]]
         self.check_resp_succeeded(resp)
@@ -69,7 +69,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 100;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 'aa', 10, 3600]]
         self.check_resp_succeeded(resp)
@@ -83,7 +83,7 @@ class TestUpdate(NebulaTestSuite):
         # set YIELD
         cmd = 'UPDATE VERTEX 100 SET person.name = "cc", person.age = 15' \
               'YIELD $^.person.name as name , $^.person.age as age;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [['cc', 15]]
         self.check_out_of_order_result(resp.rows, expect_result)
@@ -96,7 +96,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 100;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 'dd', 18, 3600]]
         self.check_resp_succeeded(resp)
@@ -109,7 +109,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 200;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[200, 'aa', 8, 3600]]
         self.check_resp_succeeded(resp)
@@ -123,7 +123,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 201;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[201, 'aa', 8, 3601]]
         self.check_resp_succeeded(resp)
@@ -137,7 +137,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 202;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[202, 'bb', 3608, 10]]
         self.check_resp_succeeded(resp)
@@ -151,7 +151,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON person 202;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[202, 'bb', 18, 10]]
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
@@ -169,7 +169,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 100->101;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 101, 0, 3600, 1577844000, ""]]
         self.check_resp_succeeded(resp)
@@ -182,7 +182,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 100->101;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 101, 0, 3600, 1577844000, ""]]
         self.check_resp_succeeded(resp)
@@ -195,7 +195,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 100->101;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 101, 0, 100, 100, ""]]
         self.check_resp_succeeded(resp)
@@ -204,7 +204,7 @@ class TestUpdate(NebulaTestSuite):
         # set YIELD
         cmd = 'UPDATE EDGE 100->101 OF study SET start = 200, end = 200' \
               'YIELD study.start as start, study.end as end'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[200, 200]]
         self.check_out_of_order_result(resp.rows, expect_result)
@@ -217,7 +217,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 100->101;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[100, 101, 0, 3600, 200, "dd"]]
         self.check_resp_succeeded(resp)
@@ -230,7 +230,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 200->201;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[200, 201, 0, 3600, 1577844000, ""]]
         self.check_resp_succeeded(resp)
@@ -244,7 +244,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 202->203;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[202, 203, 0, 8, 1577844001, "aa"]]
         self.check_resp_succeeded(resp)
@@ -258,7 +258,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 204->205;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[204, 205, 0, 1577843000, 60000, "bb"]]
         self.check_resp_succeeded(resp)
@@ -271,7 +271,7 @@ class TestUpdate(NebulaTestSuite):
 
         # check result
         cmd = 'FETCH PROP ON study 206->207;'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
 
         expect_result = [[206, 207, 0, 59000, 60000, ""]]
         self.check_resp_succeeded(resp)

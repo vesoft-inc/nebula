@@ -36,12 +36,12 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('SHOW TAGS')
+        resp = self.execute('SHOW TAGS')
         self.check_resp_succeeded(resp)
         # 2.0 enable to show tagID
         self.search_result(resp, [[re.compile(r'per')]], is_regex = True)
 
-        resp = self.execute_query('SHOW EDGES')
+        resp = self.execute('SHOW EDGES')
         self.check_resp_succeeded(resp)
         self.check_result(resp, [[re.compile('lik')]], is_regex = True)
 
@@ -72,22 +72,22 @@ class TestSimpleQuery(NebulaTestSuite):
 
     @pytest.mark.skip(reason="does not support fetch and update")
     def test_upsert(self):
-        resp = self.execute_query('FETCH PROP on person "1"')
+        resp = self.execute('FETCH PROP on person "1"')
         expect_result = [[1, 'Bob', 10]]
         self.check_result(resp, expect_result)
         resp = self.execute('UPSERT VERTEX "1" SET person.name = "BobUpsert"')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person "1"')
+        resp = self.execute('FETCH PROP on person "1"')
         expect_result = [["1", 'BobUpsert', 10]]
         self.check_result(resp, expect_result)
         resp = self.execute('UPSERT VERTEX 4 SET person.name = "NewBob", person.age=11')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person "4"')
+        resp = self.execute('FETCH PROP on person "4"')
         expect_result = [["4", 'NewBob', 11]]
         self.check_result(resp, expect_result)
         resp = self.execute('UPDATE VERTEX "4" SET person.age=20')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('FETCH PROP on person "4"')
+        resp = self.execute('FETCH PROP on person "4"')
         expect_result = [["4", 'NewBob', 20]]
         self.check_result(resp, expect_result)
 
@@ -95,7 +95,7 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('GO FROM "1" OVER like YIELD $$.person.name, '
+        resp = self.execute('GO FROM "1" OVER like YIELD $$.person.name, '
                                   '$$.person.age, like.likeness')
         self.check_resp_succeeded(resp)
 
@@ -109,7 +109,7 @@ class TestSimpleQuery(NebulaTestSuite):
         resp = self.execute('USE simplequeryspace')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute_query('FIND SHORTEST PATH FROM 1 to 3 OVER *')
+        resp = self.execute('FIND SHORTEST PATH FROM 1 to 3 OVER *')
         self.check_resp_succeeded(resp)
         expect_result = [[1, (b"like", 0), 3]]
         self.check_path_result(resp, expect_result)

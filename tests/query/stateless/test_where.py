@@ -101,23 +101,23 @@ class TestWhere(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_where_and(self):
-        resp = self.execute_query('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON player where player.name == Useless and player.age < 30')
+        resp = self.execute('LOOKUP ON player where player.name == Useless and player.age < 30')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON like where like.likeness > 89 and like.likeness < 100')
+        resp = self.execute('LOOKUP ON like where like.likeness > 89 and like.likeness < 100')
         self.check_resp_succeeded(resp)
 
     def test_where_or(self):
-        resp = self.execute_query('LOOKUP ON like where like.likeness < 39 or like.likeness > 40')
+        resp = self.execute('LOOKUP ON like where like.likeness < 39 or like.likeness > 40')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON like where like.likeness < 39 or like.likeness < 40')
+        resp = self.execute('LOOKUP ON like where like.likeness < 39 or like.likeness < 40')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON serve where serve.start_year > 2000 or serve.end_year < 2020')
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 2000 or serve.end_year < 2020')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON player where player.name == Useless or player.age < 30')
+        resp = self.execute('LOOKUP ON player where player.name == Useless or player.age < 30')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('LOOKUP ON like where like.likeness > 89 or like.likeness < 100')
+        resp = self.execute('LOOKUP ON like where like.likeness > 89 or like.likeness < 100')
         self.check_resp_succeeded(resp)
 
     @classmethod

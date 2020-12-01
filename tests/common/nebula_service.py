@@ -117,7 +117,6 @@ class NebulaService(object):
 
         metad_ports = self._find_free_port()
         command = ''
-        storage_port = 0
         graph_port = 0
         server_ports = []
         for server_name in ['metad', 'storaged', 'graphd']:
@@ -127,8 +126,6 @@ class NebulaService(object):
             else:
                 ports = metad_ports
             server_ports.append(ports[0])
-            if server_name == 'storaged':
-                storage_port = ports[0]
             command = self._format_nebula_command(server_name,
                                                   metad_ports[0],
                                                   ports,
@@ -151,7 +148,7 @@ class NebulaService(object):
             with open(pf) as f:
                 self.pids[f.name] = int(f.readline())
 
-        return (storage_port, graph_port)
+        return graph_port
 
     def stop(self, cleanup):
         print("try to stop nebula services...")

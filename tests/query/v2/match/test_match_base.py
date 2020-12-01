@@ -21,7 +21,7 @@ class TestMatchBase(NebulaTestSuite):
     def test_single_node(self):
         VERTICES = self.VERTEXS
         stmt = 'MATCH (v:player {name: "Yao Ming"}) RETURN v'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             "column_names": ['v'],
@@ -33,7 +33,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
         stmt = 'MATCH (v:player) WHERE v.name == "Yao Ming" RETURN v.age AS Age'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             "column_names": ['Age'],
@@ -45,7 +45,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
         stmt = 'MATCH (v:player {age: 29}) return v.name AS Name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             "column_names": ['Name'],
@@ -60,7 +60,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
         stmt = 'MATCH (v:player {age: 29}) WHERE v.name STARTS WITH "J" return v.name AS Name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             "column_names": ['Name'],
@@ -73,7 +73,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
         stmt = 'MATCH (v:player) WHERE v.age >= 38 AND v.age < 45 return v.name AS Name, v.age AS Age'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             "column_names": ['Name', 'Age'],
@@ -95,7 +95,7 @@ class TestMatchBase(NebulaTestSuite):
 
     def test_one_step(self):
         stmt = 'MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.name AS Name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Type', 'Name'],
@@ -111,7 +111,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, expected['rows'])
 
         stmt = 'MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2) RETURN type(r) AS Type, v2.name AS Name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Type', 'Name'],
@@ -130,7 +130,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2)
                   RETURN type(r) AS Type, v2.name AS Name
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Type', 'Name'],
@@ -148,7 +148,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
                   RETURN type(r) AS Type, v2.name AS Name
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Type', 'Name'],
@@ -165,7 +165,7 @@ class TestMatchBase(NebulaTestSuite):
                   WHERE r.start_year <= 2005 AND r.end_year >= 2005
                   RETURN r.start_year AS Start_Year, r.end_year AS Start_Year
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Start_Year', 'Start_Year'],
@@ -180,7 +180,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "Danny Green"}) -[:like]-> (v2)
                   RETURN v1.name AS Name, v2.name AS Friend
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Friend'],
@@ -195,7 +195,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "Danny Green"}) <-[:like]- (v2)
                   RETURN v1.name AS Name, v2.name AS Friend
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Friend'],
@@ -212,7 +212,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "Danny Green"}) <-[:like]-> (v2)
                   RETURN v1.name AS Name, v2.name AS Friend
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Friend'],
@@ -231,7 +231,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{name: "Danny Green"}) -[:like]- (v2)
                   RETURN v1.name AS Name, v2.name AS Friend
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Friend'],
@@ -251,7 +251,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (v1:player{age: 28}) -[:like]-> (v2) -[:like]-> (v3)
                   RETURN v1.name AS Player, v2.name AS Friend, v3.name AS FoF
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Player', 'Friend', 'FoF'],
@@ -273,7 +273,7 @@ class TestMatchBase(NebulaTestSuite):
                         v3.name STARTS WITH 'D'
                   RETURN v1.name AS Player, v2.name AS Team, v3.name AS Teammate
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Player', 'Team', 'Teammate'],
@@ -292,7 +292,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)
                   RETURN v3.name AS Name
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name'],
@@ -313,7 +313,7 @@ class TestMatchBase(NebulaTestSuite):
                   MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)
                   RETURN DISTINCT v3.name AS Name
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name'],
@@ -335,7 +335,7 @@ class TestMatchBase(NebulaTestSuite):
                   RETURN v.name AS Name, v.age AS Age
                   ORDER BY Age DESC, Name ASC
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -363,7 +363,7 @@ class TestMatchBase(NebulaTestSuite):
                   ORDER BY Age DESC, Name ASC
                   LIMIT 3
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -383,7 +383,7 @@ class TestMatchBase(NebulaTestSuite):
                   ORDER BY Age DESC, Name ASC
                   SKIP 3
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -409,7 +409,7 @@ class TestMatchBase(NebulaTestSuite):
                   SKIP 3
                   LIMIT 3
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -429,7 +429,7 @@ class TestMatchBase(NebulaTestSuite):
                   SKIP 11
                   LIMIT 3
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -445,7 +445,7 @@ class TestMatchBase(NebulaTestSuite):
                   ORDER BY Age DESC, Name ASC
                   LIMIT 0
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected = {
             'column_names': ['Name', 'Age'],
@@ -460,7 +460,7 @@ class TestMatchBase(NebulaTestSuite):
                   RETURN v.name AS Name, v.age AS Age
                   ORDER BY v.age DESC, v.name ASC
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_match_by_id(self):
@@ -468,7 +468,7 @@ class TestMatchBase(NebulaTestSuite):
         stmt = '''
                     MATCH (n) WHERE id(n) == 'James Harden' RETURN n
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['n']
         self.check_column_names(resp, columns_name)
@@ -478,7 +478,7 @@ class TestMatchBase(NebulaTestSuite):
         stmt = '''
                     MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN n
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, columns_name)
         result = []
@@ -488,7 +488,7 @@ class TestMatchBase(NebulaTestSuite):
         stmt = '''
                     MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN id(n)
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['id(n)']
         self.check_column_names(resp, columns_name)
@@ -498,7 +498,7 @@ class TestMatchBase(NebulaTestSuite):
         stmt = '''
                     MATCH (n) WHERE id(n) == 'Tony Parker' RETURN id(n), labels(n)
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['id(n)', 'labels(n)']
         self.check_column_names(resp, columns_name)
@@ -508,7 +508,7 @@ class TestMatchBase(NebulaTestSuite):
         stmt = '''
                     MATCH (n) WHERE id(n) == 'not_exist_vertex' RETURN labels(n)
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['labels(n)']
         self.check_column_names(resp, columns_name)
@@ -520,7 +520,7 @@ class TestMatchBase(NebulaTestSuite):
                     MATCH (n) WHERE id(n) IN ['not_exist_vertex']
                     RETURN n
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['n']
         self.check_column_names(resp, columns_name)
@@ -531,7 +531,7 @@ class TestMatchBase(NebulaTestSuite):
                     MATCH (n) WHERE id(n) IN ['LaMarcus Aldridge', 'Tony Parker']
                     RETURN n
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, columns_name)
         result = [[self.VERTEXS['LaMarcus Aldridge']],
@@ -542,7 +542,7 @@ class TestMatchBase(NebulaTestSuite):
                     MATCH (n) WHERE id(n) IN ['LaMarcus Aldridge', 'Tony Parker', 'not_exist_vertex']
                     RETURN n
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, columns_name)
         result = [[self.VERTEXS['LaMarcus Aldridge']],
@@ -554,7 +554,7 @@ class TestMatchBase(NebulaTestSuite):
                     MATCH (n) WHERE id(n) IN ['LaMarcus Aldridge', 'Tony Parker', 'not_exist_vertex']
                     RETURN id(n)
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['id(n)']
         self.check_column_names(resp, columns_name)
@@ -566,7 +566,7 @@ class TestMatchBase(NebulaTestSuite):
                     MATCH (n) WHERE id(n) IN ['LaMarcus Aldridge', 'Tony Parker', 'not_exist_vertex']
                     RETURN id(n), `tags`(n)
                '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['id(n)', 'tags(n)']
         self.check_column_names(resp, columns_name)
@@ -578,7 +578,7 @@ class TestMatchBase(NebulaTestSuite):
         VERTICES, EDGES = self.VERTEXS, self.EDGES
 
         stmt = 'MATCH p = (n:player{name:"Tony Parker"}) return p,n'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp);
         columns_name = ['p', 'n']
         self.check_column_names(resp, columns_name)
@@ -588,7 +588,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, result)
 
         stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]->(m) return p, n.name, m.name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['p', 'n.name', 'm.name']
         self.check_column_names(resp, columns_name)
@@ -601,7 +601,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, result)
 
         stmt = 'MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m) return p, n.name, m.name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['p', 'n.name', 'm.name']
         self.check_column_names(resp, columns_name)
@@ -634,7 +634,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, result)
 
         stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]-(m) return p, n.name, m.name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['p', 'n.name', 'm.name']
         self.check_column_names(resp, columns_name)
@@ -671,7 +671,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, result)
 
         stmt = 'MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)-[:like]->(k) return p, n.name, m.name, k.name'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['p', 'n.name', 'm.name', 'k.name']
         self.check_column_names(resp, columns_name)
@@ -686,7 +686,7 @@ class TestMatchBase(NebulaTestSuite):
         self.check_out_of_order_result(resp, result)
 
         stmt = 'MATCH p=(:player{name:"LeBron James"})-[:like]->()-[:like]->() RETURN *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         columns_name = ['p']
         self.check_column_names(resp, columns_name)
@@ -702,50 +702,50 @@ class TestMatchBase(NebulaTestSuite):
     def test_failures(self):
         # No RETURN
         stmt = 'MATCH (v:player{name:"abc")'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_unimplemented_features(self):
         # No label
         stmt = 'MATCH (v) return v'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # Scan by label
         stmt = 'MATCH (v:player) return v'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # Scan by label
         stmt = 'MATCH (v:player:person) return v'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # start from edge
         stmt = 'MATCH () -[r:serve]-> () return *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # start from tail
         stmt = 'MATCH () -[]-> (v) return *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # start from middle
         stmt = 'MATCH () --> (v) --> () return *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # multiple steps
         stmt = 'MATCH (v:player:{name: "abc"}) -[r*2]-> () return *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # query edge by id
         stmt = 'MATCH (start)-[e]-(end) WHERE id(start) == "Paul George" RETURN *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = 'MATCH (start)-[e]-(end) WHERE id(start) IN ["Paul George", "not_exist_vertex"] RETURN *'
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)

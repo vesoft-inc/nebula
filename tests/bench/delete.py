@@ -41,17 +41,17 @@ class TestDeleteBench(NebulaTestSuite):
     def delete(self, duration=0.000001):
         for i in range(10000):
             query = 'lookup on person where person.age == {0} '.format(i)
-            resp = self.execute_query(query)
+            resp = self.execute(query)
             self.check_resp_succeeded(resp)
             if resp.rows is not None:
                 for row in resp.rows:
                     for col in row.columns:
                         if col.getType() == ttypes.ColumnValue.ID:
                             id = col.get_id()
-                            resp = self.execute_query('DELETE VERTEX {0}'.format(id))
+                            resp = self.execute('DELETE VERTEX {0}'.format(id))
                             self.check_resp_succeeded(resp)
 
-            resp = self.execute_query('lookup on person where person.age == {0} '.format(i))
+            resp = self.execute('lookup on person where person.age == {0} '.format(i))
             assert resp.rows is None, "Error Query: {}".format(query)
         return ""
 

@@ -17,13 +17,12 @@ from nebula2.graph import ttypes
 class TestPermission(NebulaTestSuite):
     @classmethod
     def spawn_nebula_client_and_auth(self, user, password):
-        client = self.spawn_nebula_client()
-        resp = client.authenticate(user, password)
-        if resp.error_code != ttypes.ErrorCode.SUCCEEDED:
-            self.close_nebula_client(client)
-            return resp, None
-        else:
-            return resp, client
+        try:
+            session = self.spawn_nebula_client(user, password)
+            return True, session
+        except Exception as e:
+            print('Get Exception: {}'.format(e))
+            return False, None
 
     @classmethod
     def prepare(self):
@@ -76,15 +75,15 @@ class TestPermission(NebulaTestSuite):
 
     def test_simple(self):
         # incorrect user/password
-        resp, _ = self.spawn_nebula_client_and_auth('test', 'pwd')
-        self.check_resp_failed(resp)
+        ret, _ = self.spawn_nebula_client_and_auth('test', 'pwd')
+        assert not ret
 
-        resp, _ = self.spawn_nebula_client_and_auth('user', 'test')
-        self.check_resp_failed(resp)
+        ret, _ = self.spawn_nebula_client_and_auth('user', 'test')
+        assert not ret
 
-        resp, client = self.spawn_nebula_client_and_auth('test', 'test')
-        self.check_resp_succeeded(resp)
-        self.close_nebula_client(client)
+        ret, client = self.spawn_nebula_client_and_auth('test', 'test')
+        assert ret
+        self.release_nebula_client(client)
 
         # test root user password and use space.
         query = 'CREATE SPACE test_permission_space(partition_num=1, replica_factor=1)'
@@ -108,12 +107,12 @@ class TestPermission(NebulaTestSuite):
         time.sleep(self.delay)
 
         # verify password changed
-        resp, _ = self.spawn_nebula_client_and_auth('test', 'test')
-        self.check_resp_failed(resp)
+        ret, _ = self.spawn_nebula_client_and_auth('test', 'test')
+        assert not ret
 
-        resp, client = self.spawn_nebula_client_and_auth('test', 'bb')
-        self.check_resp_succeeded(resp)
-        self.close_nebula_client(client)
+        ret, client = self.spawn_nebula_client_and_auth('test', 'bb')
+        assert ret
+        self.release_nebula_client(client)
 
         query = 'CHANGE PASSWORD test FROM "bb" TO "test"'
         resp = self.execute(query)
@@ -130,8 +129,8 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
-        resp, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
-        self.check_resp_succeeded(resp)
+        ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
+        assert ret
 
         query = 'GRANT ROLE ADMIN ON space1 TO admin'
         resp = self.execute(query)
@@ -215,17 +214,17 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         time.sleep(self.delay)
-        resp, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
-        self.check_resp_succeeded(resp)
+        ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
+        assert ret
 
-        resp, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
-        self.check_resp_succeeded(resp)
+        ret, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
+        assert ret
 
-        resp, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
-        self.check_resp_succeeded(resp)
+        ret, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
+        assert ret
 
-        resp, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
-        self.check_resp_succeeded(resp)
+        ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
+        assert ret
 
         # god write schema test
         query = 'USE space2'
@@ -664,14 +663,14 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
     def test_show_test(self):
-        resp, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
-        self.check_resp_succeeded(resp)
-        resp, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
-        self.check_resp_succeeded(resp)
-        resp, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
-        self.check_resp_succeeded(resp)
-        resp, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
-        self.check_resp_succeeded(resp)
+        ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
+        assert ret
+        ret, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
+        assert ret
+        ret, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
+        assert ret
+        ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
+        assert ret
 
         query = 'CREATE SPACE space4(partition_num=1, replica_factor=1)'
         resp = self.execute(query)
@@ -679,7 +678,7 @@ class TestPermission(NebulaTestSuite):
         time.sleep(self.delay)
 
         query = 'SHOW SPACES'
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         expected_column_names = ['Name']
         expected_result = [[['test_permission_space']], [['space1']], [['space2']], [['space3']], [['space4']]]
@@ -687,25 +686,25 @@ class TestPermission(NebulaTestSuite):
         for row in expected_result:
             self.search_result(resp, row)
 
-        resp = self.adminClient.execute_query(query)
+        resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
         expected_result = [['space2']]
         self.check_column_names(resp, expected_column_names)
         self.check_out_of_order_result(resp, expected_result)
 
-        resp = self.dbaClient.execute_query(query)
+        resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
         expected_result = [['space2']]
         self.check_column_names(resp, expected_column_names)
         self.check_out_of_order_result(resp, expected_result)
 
-        resp = self.userClient.execute_query(query)
+        resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
         expected_result = [['space2']]
         self.check_column_names(resp, expected_column_names)
         self.check_out_of_order_result(resp, expected_result)
 
-        resp = self.guestClient.execute_query(query)
+        resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
         expected_result = [['space2']]
         self.check_column_names(resp, expected_column_names)
@@ -758,39 +757,39 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
-        resp, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
-        self.check_resp_succeeded(resp)
-        resp, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
-        self.check_resp_succeeded(resp)
-        resp, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
-        self.check_resp_succeeded(resp)
-        resp, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
-        self.check_resp_succeeded(resp)
+        ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
+        assert ret
+        ret, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
+        assert ret
+        ret, self.userClient = self.spawn_nebula_client_and_auth('user', 'user')
+        assert ret
+        ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
+        assert ret
 
         query = 'SHOW ROLES IN space5'
         expected_result = [['guest', 'GUEST'],
                            ['user', 'USER'],
                            ['dba', 'DBA'],
                            ['admin', 'ADMIN']]
-        resp = self.execute_query(query)
+        resp = self.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
 
-        resp = self.adminClient.execute_query(query)
+        resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
 
         expected_result = [['dba', 'DBA']]
-        resp = self.dbaClient.execute_query(query)
+        resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
 
         expected_result = [['user', 'USER']]
-        resp = self.userClient.execute_query(query)
+        resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
 
         expected_result = [['guest', 'GUEST']]
-        resp = self.guestClient.execute_query(query)
+        resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)

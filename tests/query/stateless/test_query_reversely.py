@@ -65,12 +65,12 @@ class TestQueryReversely(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         resp = self.execute('INSERT EDGE teammate(years) VALUES 102->103:(5)')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('go from 101 over * reversely')
+        resp = self.execute('go from 101 over * reversely')
         self.check_resp_succeeded(resp)
         expect_result = [[0, 100], [0, 102], [100, 0]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('go from 100 over * reversely')
+        resp = self.execute('go from 100 over * reversely')
         self.check_empty_result(resp.rows)
 
     @classmethod

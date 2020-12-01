@@ -51,7 +51,6 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     pytest.cmdline.address = config.getoption("address")
-    pytest.cmdline.storage = config.getoption("storage")
     pytest.cmdline.user = config.getoption("user")
     pytest.cmdline.password = config.getoption("password")
     pytest.cmdline.replica_factor = config.getoption("replica_factor")

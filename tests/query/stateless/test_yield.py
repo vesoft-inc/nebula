@@ -29,62 +29,62 @@ class TestYield(NebulaTestSuite):
     def test_yield(self):
         # test addition
         cmd = "yield 2+2"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[4]]
         self.check_result(resp.rows, expect_result)
         # test sub
         cmd = "yield 2-2"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[0]]
         self.check_result(resp.rows, expect_result)
         #test Unary delimiter
         cmd = "yield -3 as a"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[-3]]
         self.check_result(resp.rows, expect_result)
         #test Multiplication
         cmd = "yield 2*2"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[4]]
         self.check_result(resp.rows, expect_result)
         # test Division
         cmd = "yield 2/2"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[1]]
         self.check_result(resp.rows, expect_result)
 
         # test Modulo division
         cmd = "yield 3%2"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[1]]
         self.check_result(resp.rows, expect_result)
         # test Power
         cmd = "yield pow(3,4)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[81]]
         self.check_result(resp.rows, expect_result)
         # test abs
         cmd = "yield abs(-9)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[9]]
         self.check_result(resp.rows, expect_result)
         #test ceil
         cmd = "yield ceil(0.9)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[1.0000]]
         self.check_result(resp.rows, expect_result)
         # test floor
         cmd = "yield floor(0.9)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[0.0]]
         self.check_result(resp.rows, expect_result)
@@ -118,13 +118,13 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         #test round
         cmd = "yield round(0.9)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[1.0000]]
         self.check_result(resp.rows, expect_result)
         # test floor
         cmd = "yield floor(0.9)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[0.0]]
         self.check_result(resp.rows, expect_result)
@@ -146,25 +146,25 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         # test substr
         cmd = "yield substr('hello',1,3)"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [["hel"]]
         self.check_result(resp.rows, expect_result)
         #test lower
         cmd = "yield lower('HellO')"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [["hello"]]
         self.check_result(resp.rows, expect_result)
         # test strcat
         cmd = "yield 'a'+'b'"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [["ab"]]
         self.check_result(resp.rows, expect_result)
         # test strlength
         cmd = "yield length('Hullo')"
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
         expect_result = [[5]]
         self.check_result(resp.rows, expect_result)
@@ -182,5 +182,5 @@ class TestYield(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         cmd = 'yield (timestamp)(now())'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)

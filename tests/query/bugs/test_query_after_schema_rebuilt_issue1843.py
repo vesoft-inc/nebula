@@ -13,14 +13,14 @@ from tests.common.nebula_test_suite import NebulaTestSuite
 class TestQuery(NebulaTestSuite):
     def test_rebuild_tag(self):
         cmd = 'FETCH PROP ON person 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[1004, 'Lisa', 8, 'female']]
         print(cmd)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
         cmd = 'FETCH PROP ON * 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[1004, 'Lisa', 8, 'female', 3, '']]
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -28,7 +28,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2018, 'Lisa'], [2018, 'Peggy'], [2018, 'Kevin'],
             [2018, 'WangLe'],[2017, 'Sandy'], [2015, 'Lynn'], [2015, 'Bonnie'],
             [2015, 'Peter'], [2014, 'XiaMei']]
@@ -49,14 +49,14 @@ class TestQuery(NebulaTestSuite):
         time.sleep(self.delay);
 
         cmd = 'FETCH PROP ON person 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = []
         print(cmd)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
         cmd = 'FETCH PROP ON * 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[1004, 3, '']]
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -64,7 +64,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
         expect_result = [[2018, ''], [2018, ''], [2018, ''],
@@ -77,14 +77,14 @@ class TestQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         cmd = 'FETCH PROP ON person 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[1004, 'Lisa', 8, 'female']]
         print(cmd)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
         cmd = 'FETCH PROP ON * 1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[1004, 3, '', 'Lisa', 8, 'female']]
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -92,7 +92,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2018, 'Lisa'], [2018, ''], [2018, ''],
             [2018, ''],[2017, ''], [2015, ''], [2015, ''],
             [2015, ''], [2014, '']]
@@ -138,7 +138,7 @@ class TestQuery(NebulaTestSuite):
 
     def test_rebuild_edge(self):
         cmd = 'FETCH PROP ON is_teacher 2002->1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2002, 1004, 0, 2018, 2019]]
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -146,7 +146,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2018, 'Lisa'], [2018, 'Peggy'], [2018, 'Kevin'],
             [2018, 'WangLe'],[2017, 'Sandy'], [2015, 'Lynn'], [2015, 'Bonnie'],
             [2015, 'Peter'], [2014, 'XiaMei']]
@@ -167,7 +167,7 @@ class TestQuery(NebulaTestSuite):
         time.sleep(self.delay);
 
         cmd = 'FETCH PROP ON is_teacher 2002->1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = []
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -175,7 +175,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = []
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -186,7 +186,7 @@ class TestQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         cmd = 'FETCH PROP ON is_teacher 2002->1004'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2002, 1004, 0, 2018, 2019]]
         print(cmd)
         self.check_resp_succeeded(resp)
@@ -194,7 +194,7 @@ class TestQuery(NebulaTestSuite):
 
         cmd = 'GO FROM 2002 OVER is_teacher '\
               'YIELD is_teacher.start_year, $$.person.name'
-        resp = self.execute_query(cmd)
+        resp = self.execute(cmd)
         expect_result = [[2018, 'Lisa']]
         print(cmd)
         self.check_resp_succeeded(resp)

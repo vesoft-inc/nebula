@@ -92,49 +92,49 @@ class TestIndex(NebulaTestSuite):
     def test_index(self):
         resp = self.execute('FETCH PROP ON player 100;')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('SHOW TAG INDEXES')
+        resp = self.execute('SHOW TAG INDEXES')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('SHOW EDGE INDEXES')
+        resp = self.execute('SHOW EDGE INDEXES')
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('DESCRIBE TAG INDEX player_index_1')
+        resp = self.execute('DESCRIBE TAG INDEX player_index_1')
         self.check_resp_succeeded(resp)
         expect_result = [["name", "string"]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('DESCRIBE TAG INDEX team_index_1')
+        resp = self.execute('DESCRIBE TAG INDEX team_index_1')
         expect_result = [["name", "string"]]
         self.check_out_of_order_result(resp.rows, expect_result)
         self.check_resp_succeeded(resp)
-        resp = self.execute_query('DESCRIBE EDGE INDEX serve_index_1')
+        resp = self.execute('DESCRIBE EDGE INDEX serve_index_1')
         self.check_resp_succeeded(resp)
         expect_result = [["start_year", "int"]]
         self.check_out_of_order_result(resp.rows, expect_result)
-        resp = self.execute_query('DESCRIBE EDGE INDEX like_index_1')
+        resp = self.execute('DESCRIBE EDGE INDEX like_index_1')
         self.check_resp_succeeded(resp)
         expect_result = [["likeness", "int"]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('go from 101 over like')
+        resp = self.execute('go from 101 over like')
         self.check_resp_succeeded(resp)
         expect_result = [[102]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('GO FROM 101 OVER serve')
+        resp = self.execute('GO FROM 101 OVER serve')
         self.check_resp_succeeded(resp)
         expect_result = [[201]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('GO FROM 101 OVER serve,like')
+        resp = self.execute('GO FROM 101 OVER serve,like')
         self.check_resp_succeeded(resp)
         expect_result = [[0, 102],[201, 0]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('GO FROM 102 OVER like yield $$.player.name')
+        resp = self.execute('GO FROM 102 OVER like yield $$.player.name')
         self.check_resp_succeeded(resp)
         expect_result = [["姚明"],["徐"]]
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        resp = self.execute_query('GO FROM 102 OVER serve yield $$.team.name')
+        resp = self.execute('GO FROM 102 OVER serve yield $$.team.name')
         self.check_resp_succeeded(resp)
         expect_result = [["宇宙第一"]]
         self.check_out_of_order_result(resp.rows, expect_result)

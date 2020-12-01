@@ -17,61 +17,61 @@ class TestGroupBy(NebulaTestSuite):
         # Use groupby without input
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name
                 | GROUP BY 1+1 YIELD COUNT(1), 1+1 '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # use var
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve.end_year AS end_year | GROUP BY $-.start_year YIELD COUNT($var) '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # use dst
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve.end_year AS end_year | GROUP BY $-.start_year YIELD COUNT($$.team.name) '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # groupby input noexist
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve._dst AS id | GROUP BY $-.start_year YIELD COUNT($-.id) '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # group alias noexist
         # stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
         #         serve._dst AS id | GROUP BY team YIELD COUNT($-.id), $-.name AS teamName '''
-        # resp = self.execute_query(stmt)
+        # resp = self.execute(stmt)
         # self.check_resp_failed(resp)
 
         # Field nonexistent
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve._dst AS id | GROUP BY $-.name YIELD COUNT($-.start_year) '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # use sum(*)
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve._dst AS id | GROUP BY $-.name YIELD SUM(*) '''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # use agg fun has more than one inputs
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve._dst AS id | GROUP BY $-.name YIELD COUNT($-.name, $-.id)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # group col has agg fun
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 serve._dst AS id | GROUP BY $-.name, SUM($-.id) YIELD $-.name,  SUM($-.id)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         # yield without group by
         stmt = '''GO FROM 'Marco Belinelli' OVER serve YIELD $$.team.name AS name,
                 COUNT(serve._dst) AS id'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_group_by(self):
@@ -88,7 +88,7 @@ class TestGroupBy(NebulaTestSuite):
                 AVG($-.end_year) AS avg_end_year,
                 STD($-.end_year) AS std_end_year,
                 COUNT($-.id)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["teamName", "start_year", "MAX($-.start_year)", "MIN($-.end_year)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
@@ -114,7 +114,7 @@ class TestGroupBy(NebulaTestSuite):
                 YIELD COUNT($-.id),
                 $-.start_year AS start_year,
                 AVG($-.end_year) as avg'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["COUNT($-.id)", "start_year", "avg"],
@@ -139,7 +139,7 @@ class TestGroupBy(NebulaTestSuite):
         #         | GROUP BY teamName, start_year YIELD $-.name AS teamName, $-.start_year AS start_year,
         #         MAX($-.start), MIN($-.end), AVG($-.end) AS avg_end_year, STD($-.end) AS std_end_year,
         #         COUNT($-.id)'''
-        # resp = self.execute_query(stmt)
+        # resp = self.execute(stmt)
         # self.check_resp_succeeded(resp)
         # expected_data = {
         #     "column_names": ["teamName", "start_year", "MAX(%-.start)", "MIN($-.end)", "avg_end_year", "std_end_year", "COUNT($-.id)"],
@@ -172,7 +172,7 @@ class TestGroupBy(NebulaTestSuite):
         #         BIT_XOR(3) AS bit_xor,
         #         COUNT($-.likeness),
         #         COUNT_DISTINCT($-.likeness)'''
-        # resp = self.execute_query(stmt)
+        # resp = self.execute(stmt)
         # self.check_resp_succeeded(resp)
         # expected_data = {
         #     "column_names": ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
@@ -203,7 +203,7 @@ class TestGroupBy(NebulaTestSuite):
                 BIT_OR(2) AS bit_or,
                 BIT_XOR(3) AS bit_xor,
                 COUNT($-.likeness)'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["name", "sum_dst_age", "avg_dst_age", "max_src_age", "min_src_age", "bit_and",
@@ -226,7 +226,7 @@ class TestGroupBy(NebulaTestSuite):
                 SUM(1.5) AS sum,
                 COUNT(*) AS count,
                 1+1 AS cal'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["name", "sum", "count", "cal"],
@@ -250,7 +250,7 @@ class TestGroupBy(NebulaTestSuite):
                 | GO FROM $-.id OVER serve
                 YIELD $$.team.name AS name,
                 $-.age AS sumAge'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["name", "sumAge"],
@@ -271,7 +271,7 @@ class TestGroupBy(NebulaTestSuite):
                 SUM(1.5) AS sum,
                 COUNT(*) AS count
                 | ORDER BY $-.sum | LIMIT 2'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -283,7 +283,7 @@ class TestGroupBy(NebulaTestSuite):
                 WHERE $-.start > 20000
                 | GROUP BY $-.name
                 YIELD $-.name AS name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -294,7 +294,7 @@ class TestGroupBy(NebulaTestSuite):
                 | YIELD $-.name as name
                 WHERE $-.start > 20000
                 | Limit 1'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         self.check_empty_result(resp)
 
@@ -308,7 +308,7 @@ class TestGroupBy(NebulaTestSuite):
                 YIELD COUNT($-.id),
                 $-.start_year AS start_year,
                 AVG($-.end_year) as avg'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
         stmt = '''GO FROM 'noexist' OVER serve
@@ -317,7 +317,7 @@ class TestGroupBy(NebulaTestSuite):
                 $$.team.name as name
                 | GROUP BY $-.name
                 YIELD $-.name AS name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_failed(resp)
 
     def test_groupby_orderby_limit(self):
@@ -329,7 +329,7 @@ class TestGroupBy(NebulaTestSuite):
                 SUM(1.5) AS sum,
                 COUNT(*) AS count
                 | ORDER BY $-.sum, $-.name'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["name", "sum", "count"],
@@ -351,7 +351,7 @@ class TestGroupBy(NebulaTestSuite):
                 SUM(1.5) AS sum,
                 COUNT(*) AS count
                 | ORDER BY $-.sum, $-.name  DESC | LIMIT 2'''
-        resp = self.execute_query(stmt)
+        resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
             "column_names": ["name", "sum", "count"],

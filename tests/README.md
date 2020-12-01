@@ -19,7 +19,7 @@
   - 框架提供的函数
     - execute(ngql)
       - 用来执行非查询的一些语句，比如insert/show等等
-    - execute_query(ngql)
+    - execute(ngql)
       - 用来执行查询语句
     - check_resp_succeeded(resp)
       - 用来检测返回的值是否成功

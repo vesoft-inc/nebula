@@ -33,7 +33,7 @@ class TestParts(NebulaTestSuite):
 
     def test_part(self):
         # All
-        resp = self.client.execute_query('SHOW PARTS')
+        resp = self.client.execute('SHOW PARTS')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
@@ -48,7 +48,7 @@ class TestParts(NebulaTestSuite):
 
 
         # Specify the part id
-        resp = self.client.execute_query('SHOW PART 3')
+        resp = self.client.execute('SHOW PART 3')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
@@ -59,7 +59,7 @@ class TestParts(NebulaTestSuite):
         self.check_result(resp, expected_result, is_regex=True)
 
         # Not exist part id
-        resp = self.client.execute_query('SHOW PART 10')
+        resp = self.client.execute('SHOW PART 10')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
