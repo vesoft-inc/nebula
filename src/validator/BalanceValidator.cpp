@@ -19,13 +19,20 @@ Status BalanceValidator::toPlan() {
     case BalanceSentence::SubType::kLeader:
         current = BalanceLeaders::make(qctx_, nullptr);
         break;
-    case BalanceSentence::SubType::kData:
+    case BalanceSentence::SubType::kData: {
+        auto hosts = sentence->hostDel() == nullptr ? std::vector<HostAddr>()
+                                                    : sentence->hostDel()->hosts();
+        if (!hosts.empty()) {
+            auto it = std::unique(hosts.begin(), hosts.end());
+            if (it != hosts.end()) {
+                return Status::SemanticError("Host have duplicated");
+            }
+        }
         current = Balance::make(qctx_,
                                 nullptr,
-                                sentence->hostDel() == nullptr
-                                    ? std::vector<HostAddr>()
-                                    : sentence->hostDel()->hosts());
+                                std::move(hosts));
         break;
+    }
     case BalanceSentence::SubType::kDataStop:
         current = StopBalance::make(qctx_, nullptr);
         break;
