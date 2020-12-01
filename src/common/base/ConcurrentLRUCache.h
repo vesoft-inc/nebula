@@ -206,8 +206,8 @@ public:
     }
 
     void insert(key_type&& key, value_type&& value) {
-        typename map_type::iterator i = map_.find(key);
-        if (i == map_.end()) {
+        typename map_type::iterator it = map_.find(key);
+        if (it == map_.end()) {
             // insert item into the cache, but first check if it is full
             if (size() >= capacity_) {
                 VLOG(3) << "Size:" << size() << ", capacity " << capacity_;
@@ -218,6 +218,11 @@ public:
             list_.push_front(key);
             map_.emplace(std::forward<key_type>(key),
                          std::make_tuple(std::forward<value_type>(value), list_.begin()));
+        } else {
+            // Overwrite the value
+            std::get<0>(it->second) = std::move(value);
+            typename list_type::iterator j = std::get<1>(it->second);
+            list_.splice(list_.begin(), list_, j);
         }
     }
 
@@ -237,11 +242,7 @@ public:
         CHECK(key == *j);
         if (j != list_.begin()) {
             // move item to the front of the most recently used list
-            list_.erase(j);
-            list_.push_front(key);
-            // update iterator in map
-            j = list_.begin();
-            std::get<1>(i->second) = j;
+            list_.splice(list_.begin(), list_, j);
         }
         hits_++;
         return value;
@@ -292,9 +293,9 @@ private:
     map_type map_;
     list_type list_;
     size_t capacity_;
-    std::atomic_uint64_t total_{0};
-    std::atomic_uint64_t hits_{0};
-    std::atomic_uint64_t evicts_{0};
+    uint64_t total_{0};
+    uint64_t hits_{0};
+    uint64_t evicts_{0};
 };
 
 }  // namespace nebula

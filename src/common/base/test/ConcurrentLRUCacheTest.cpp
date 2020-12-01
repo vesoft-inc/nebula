@@ -61,6 +61,7 @@ TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {
     EXPECT_EQ(1, cache.hits());
     EXPECT_EQ(2, cache.total());
 }
+
 TEST(ConcurrentLRUCacheTest, EvictTest) {
     ConcurrentLRUCache<int32_t, std::string> cache(1000, 0);
     for (auto j = 0; j < 1000; j++) {
@@ -139,6 +140,21 @@ TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
     EXPECT_EQ(10000, cache.total());
 }
 
+TEST(ConcurrentLRUCacheTest, OverwriteTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1024);
+    cache.insert(10, "ten");
+    {
+        auto v = cache.get(10);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten", v.value());
+    }
+    cache.insert(10, "ten_v1");
+    {
+        auto v = cache.get(10);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten_v1", v.value());
+    }
+}
 
 }  // namespace nebula
 
