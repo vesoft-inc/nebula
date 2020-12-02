@@ -43,7 +43,7 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = doRangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        pushResultCode(to(kvRet), partId_);
+        handleErrorCode(kvRet, spaceId_, partId_);
         onFinished();
         return;
     }

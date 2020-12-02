@@ -111,7 +111,7 @@ void MetaClient::heartBeatThreadFunc() {
         return;
     }
 
-    // if MetaServer has some changes, refesh the localCache_
+    // if MetaServer has some changes, refresh the localCache_
     loadData();
     loadCfg();
 }
@@ -266,7 +266,7 @@ static EdgeSchemas __buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
             schema->addField(colIt.name, std::move(colIt.type));
             schema->addDefaultValue(colIt.name, std::move(colIt.default_value));
         }
-        // handle shcem property
+        // handle schema property
         schema->setProp(edgeIt.schema.get_schema_prop());
         edgeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
     }

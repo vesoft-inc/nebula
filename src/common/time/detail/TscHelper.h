@@ -12,6 +12,7 @@
 namespace nebula {
 namespace time {
 
+#if defined(__x86_64__)
 class TscHelper final {
 public:
     static uint64_t readTsc();
@@ -40,6 +41,7 @@ private:
     std::atomic<double> ticksPerMSecFactor_{0.0};
     std::atomic<double> ticksPerUSecFactor_{0.0};
 };
+#endif  // defined(__x86_64__)
 
 }  // namespace time
 }  // namespace nebula
