@@ -332,7 +332,10 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
         }
         return Status::OK();
     };
-    inputs->applyTo(visitor, 1);
+    auto status = inputs->applyTo(visitor, 1);
+    if (!status.ok()) {
+        return status;
+    }
 
     return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }
