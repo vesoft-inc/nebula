@@ -1,0 +1,176 @@
+diff -ur a/util/crc32c_arm64.cc b/util/crc32c_arm64.cc
+--- a/util/crc32c_arm64.cc	2020-03-18 21:51:16.000000000 -0400
++++ b/util/crc32c_arm64.cc	2020-11-06 21:11:57.116812866 -0500
+@@ -12,6 +12,9 @@
+ #ifndef HWCAP_CRC32
+ #define HWCAP_CRC32 (1 << 7)
+ #endif
++#ifndef HWCAP_PMULL
++#define HWCAP_PMULL (1 << 4)
++#endif
+
+ #ifdef HAVE_ARM64_CRYPTO
+ /* unfolding to compute 8 * 3 = 24 bytes parallelly */
+@@ -33,11 +36,18 @@
+   } while (0)
+ #endif
+
++extern bool pmull_runtime_flag;
++
+ uint32_t crc32c_runtime_check(void) {
+   uint64_t auxv = getauxval(AT_HWCAP);
+   return (auxv & HWCAP_CRC32) != 0;
+ }
+
++bool crc32c_pmull_runtime_check(void) {
++  uint64_t auxv = getauxval(AT_HWCAP);
++  return (auxv & HWCAP_PMULL) != 0;
++}
++
+ uint32_t crc32c_arm64(uint32_t crc, unsigned char const *data,
+                              unsigned len) {
+   const uint8_t *buf8;
+@@ -45,6 +55,7 @@
+   int length = (int)len;
+   crc ^= 0xffffffff;
+
++  if (pmull_runtime_flag) {
+ #ifdef HAVE_ARM64_CRYPTO
+ /* Crc32c Parallel computation
+  *   Algorithm comes from Intel whitepaper:
+@@ -55,51 +66,52 @@
+  *   One Block: 42(BLK_LENGTH) * 8(step length: crc32c_u64) bytes
+  */
+ #define BLK_LENGTH 42
+-  while (length >= 1024) {
+-    uint64_t t0, t1;
+-    uint32_t crc0 = 0, crc1 = 0, crc2 = 0;
+-
+-    /* Parallel Param:
+-     *   k0 = CRC32(x ^ (42 * 8 * 8 * 2 - 1));
+-     *   k1 = CRC32(x ^ (42 * 8 * 8 - 1));
+-     */
+-    uint32_t k0 = 0xe417f38a, k1 = 0x8f158014;
+-
+-    /* Prefetch data for following block to avoid cache miss */
+-    PREF1KL1((uint8_t *)buf64, 1024);
+-
+-    /* First 8 byte for better pipelining */
+-    crc0 = crc32c_u64(crc, *buf64++);
+-
+-    /* 3 blocks crc32c parallel computation
+-     * Macro unfolding to compute parallelly
+-     * 168 * 6 = 1008 (bytes)
+-     */
+-    CRC32C7X24BYTES(0);
+-    CRC32C7X24BYTES(1);
+-    CRC32C7X24BYTES(2);
+-    CRC32C7X24BYTES(3);
+-    CRC32C7X24BYTES(4);
+-    CRC32C7X24BYTES(5);
+-    buf64 += (BLK_LENGTH * 3);
+-
+-    /* Last 8 bytes */
+-    crc = crc32c_u64(crc2, *buf64++);
+-
+-    t0 = (uint64_t)vmull_p64(crc0, k0);
+-    t1 = (uint64_t)vmull_p64(crc1, k1);
+-
+-    /* Merge (crc0, crc1, crc2) -> crc */
+-    crc1 = crc32c_u64(0, t1);
+-    crc ^= crc1;
+-    crc0 = crc32c_u64(0, t0);
+-    crc ^= crc0;
++    while (length >= 1024) {
++      uint64_t t0, t1;
++      uint32_t crc0 = 0, crc1 = 0, crc2 = 0;
++
++      /* Parallel Param:
++       *   k0 = CRC32(x ^ (42 * 8 * 8 * 2 - 1));
++       *   k1 = CRC32(x ^ (42 * 8 * 8 - 1));
++       */
++      uint32_t k0 = 0xe417f38a, k1 = 0x8f158014;
++
++      /* Prefetch data for following block to avoid cache miss */
++      PREF1KL1((uint8_t *)buf64, 1024);
++
++      /* First 8 byte for better pipelining */
++      crc0 = crc32c_u64(crc, *buf64++);
++
++      /* 3 blocks crc32c parallel computation
++       * Macro unfolding to compute parallelly
++       * 168 * 6 = 1008 (bytes)
++       */
++      CRC32C7X24BYTES(0);
++      CRC32C7X24BYTES(1);
++      CRC32C7X24BYTES(2);
++      CRC32C7X24BYTES(3);
++      CRC32C7X24BYTES(4);
++      CRC32C7X24BYTES(5);
++      buf64 += (BLK_LENGTH * 3);
++
++      /* Last 8 bytes */
++      crc = crc32c_u64(crc2, *buf64++);
++
++      t0 = (uint64_t)vmull_p64(crc0, k0);
++      t1 = (uint64_t)vmull_p64(crc1, k1);
++
++      /* Merge (crc0, crc1, crc2) -> crc */
++      crc1 = crc32c_u64(0, t1);
++      crc ^= crc1;
++      crc0 = crc32c_u64(0, t0);
++      crc ^= crc0;
+
+-    length -= 1024;
+-  }
++      length -= 1024;
++    }
+
+-  if (length == 0) return crc ^ (0xffffffffU);
++    if (length == 0) return crc ^ (0xffffffffU);
+ #endif
++  }
+   buf8 = (const uint8_t *)buf64;
+   while (length >= 8) {
+     crc = crc32c_u64(crc, *(const uint64_t *)buf8);
+diff -ur rocksdb-6.7.3/util/crc32c_arm64.h rocksdb-6.7.3.new/util/crc32c_arm64.h
+--- rocksdb-6.7.3/util/crc32c_arm64.h	2020-03-18 21:51:16.000000000 -0400
++++ rocksdb-6.7.3.new/util/crc32c_arm64.h	2020-11-06 21:12:17.226813198 -0500
+@@ -35,6 +35,7 @@
+
+ extern uint32_t crc32c_arm64(uint32_t crc, unsigned char const *data, unsigned len);
+ extern uint32_t crc32c_runtime_check(void);
++extern bool crc32c_pmull_runtime_check(void);
+
+ #ifdef __ARM_FEATURE_CRYPTO
+ #define HAVE_ARM64_CRYPTO
+diff -ur rocksdb-6.7.3/util/crc32c.cc rocksdb-6.7.3.new/util/crc32c.cc
+--- rocksdb-6.7.3/util/crc32c.cc	2020-03-18 21:51:16.000000000 -0400
++++ rocksdb-6.7.3.new/util/crc32c.cc	2020-11-06 21:07:43.976835367 -0500
+@@ -39,6 +39,10 @@
+
+ #endif
+
++#if defined(__linux__) && defined(HAVE_ARM64_CRC)
++bool pmull_runtime_flag = false;
++#endif
++
+ namespace rocksdb {
+ namespace crc32c {
+
+@@ -492,6 +496,7 @@
+   if (crc32c_runtime_check()) {
+     has_fast_crc = true;
+     arch = "Arm64";
++    pmull_runtime_flag = crc32c_pmull_runtime_check();
+   } else {
+     has_fast_crc = false;
+     arch = "Arm64";
+@@ -1222,6 +1227,7 @@
+   return isAltiVec() ? ExtendPPCImpl : ExtendImpl<Slow_CRC32>;
+ #elif defined(__linux__) && defined(HAVE_ARM64_CRC)
+   if(crc32c_runtime_check()) {
++    pmull_runtime_flag = crc32c_pmull_runtime_check();
+     return ExtendARMImpl;
+   } else {
+     return ExtendImpl<Slow_CRC32>;
