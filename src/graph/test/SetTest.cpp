@@ -719,5 +719,56 @@ TEST_F(SetTest, ExecutionError) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
+
+TEST_F(SetTest, CatchExceptionInSetOp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt =
+            "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+            "$var2 = YIELD left($var1.dst, 4) + \"x\" UNION YIELD left($var1.dst, 4) + \"y\";"
+            "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left((string)$var1.dst, 4) + \"x\" UNION YIELD left($var1.dst, "
+                    "4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left($var1.dst, 4) + \"x\" UNION YIELD left((string)$var1.dst, "
+                    "4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left((string)$var1.dst, 4) + \"x\" UNION YIELD "
+                    "left((string)$var1.dst, 4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<std::string>> expected = {
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "y"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "y"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula
