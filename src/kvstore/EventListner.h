@@ -39,23 +39,23 @@ public:
     // A callback function to RocksDB which will be called
     // before a RocksDB starts to flush memtables.
     void OnFlushBegin(rocksdb::DB*, const rocksdb::FlushJobInfo& info) override {
-        LOG(INFO) << "Rocksdb start flush column family: " << info.cf_name
-                  << " because of " << flushReasonString(info.flush_reason)
-                  << " the newly created file: " << info.file_path
-                  << " the smallest sequence number is " << info.smallest_seqno
-                  << " the largest sequence number is " << info.largest_seqno
-                  << " the properties of the table: " << info.table_properties.ToString();
+        VLOG(1) << "Rocksdb start flush column family: " << info.cf_name
+                << " because of " << flushReasonString(info.flush_reason)
+                << ", the newly created file: " << info.file_path
+                << ", the smallest sequence number is " << info.smallest_seqno
+                << ", the largest sequence number is " << info.largest_seqno
+                << ", the properties of the table: " << info.table_properties.ToString();
     }
 
     // A callback function to RocksDB which will be called
     // whenever a registered RocksDB flushes a file.
     void OnFlushCompleted(rocksdb::DB*, const rocksdb::FlushJobInfo& info) override {
-        LOG(INFO) << "Rocksdb flush completed column family: " << info.cf_name
-                  << " because of " << flushReasonString(info.flush_reason)
-                  << " the newly created file: " << info.file_path
-                  << " the smallest sequence number is " << info.smallest_seqno
-                  << " the largest sequence number is " << info.largest_seqno
-                  << " the properties of the table: " << info.table_properties.ToString();
+        VLOG(1) << "Rocksdb flush completed column family: " << info.cf_name
+                << " because of " << flushReasonString(info.flush_reason)
+                << " the newly created file: " << info.file_path
+                << " the smallest sequence number is " << info.smallest_seqno
+                << " the largest sequence number is " << info.largest_seqno
+                << " the properties of the table: " << info.table_properties.ToString();
     }
 
     // A callback function for RocksDB which will be called whenever a SST file is created.
@@ -71,18 +71,18 @@ public:
 
     // A callback function for RocksDB which will be called before a SST file is being created.
     void OnTableFileCreationStarted(const rocksdb::TableFileCreationBriefInfo& info) override {
-        LOG(INFO) << " database's name is " << info.db_name
-                  << " column family's name is " << info.cf_name
-                  << " the created file is " << info.file_path
-                  << " because of " << tableFileCreationReasonString(info.reason);
+        VLOG(3) << " database's name is " << info.db_name
+                << ", column family's name is " << info.cf_name
+                << ", the created file is " << info.file_path
+                << ", because of " << tableFileCreationReasonString(info.reason);
     }
 
     // A callback function for RocksDB which will be called before
     // a memtable is made immutable.
     void OnMemTableSealed(const rocksdb::MemTableInfo& info) override {
         VLOG(3) << "MemTable Sealed column family: " << info.cf_name
-                << " the total number of entries: " << info.num_entries
-                << " the total number of deletes: " << info.num_deletes;
+                << ", the total number of entries: " << info.num_entries
+                << ", the total number of deletes: " << info.num_deletes;
     }
 
     // A callback function for RocksDB which will be called before
@@ -94,9 +94,9 @@ public:
     void OnExternalFileIngested(rocksdb::DB*,
                                 const rocksdb::ExternalFileIngestionInfo& info) override {
         LOG(INFO) << "Ingest external SST file: column family " << info.cf_name
-                  << " the external file path " << info. external_file_path
-                  << " the internal file path " << info.internal_file_path
-                  << " the properties of the table: " << info.table_properties.ToString();
+                  << ", the external file path " << info. external_file_path
+                  << ", the internal file path " << info.internal_file_path
+                  << ", the properties of the table: " << info.table_properties.ToString();
     }
 
     // A callback function for RocksDB which will be called before setting the
@@ -110,8 +110,8 @@ public:
     // of superversion triggers a change of the stall conditions.
     void OnStallConditionsChanged(const rocksdb::WriteStallInfo& info) override {
         LOG(INFO) << "Stall conditions changed column family: " << info.cf_name
-                  << " current condition: " << writeStallConditionString(info.condition.cur)
-                  << " previous condition: " << writeStallConditionString(info.condition.prev);
+                  << ", current condition: " << writeStallConditionString(info.condition.cur)
+                  << ", previous condition: " << writeStallConditionString(info.condition.prev);
     }
 
     // A callback function for RocksDB which will be called whenever a file read
