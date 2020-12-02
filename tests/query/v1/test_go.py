@@ -566,6 +566,64 @@ class TestGoQuery(NebulaTestSuite):
         }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
+    def test_multi_edges_with_filter(self):
+        stmt = '''GO FROM "Russell Westbrook" OVER serve, like WHERE serve.start_year > 2000 \
+            YIELD serve.start_year, like.likeness'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": [],
+            "rows": [
+                [2008, T_EMPTY]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM "Manu Ginobili" OVER like, teammate REVERSELY WHERE like.likeness > 90 YIELD like.likeness, \
+            teammate.start_year, $$.player.name'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": [],
+            "rows": [
+                [95, T_EMPTY, "Tim Duncan"],
+                [95, T_EMPTY, "Tony Parker"],
+                [99, T_EMPTY, "Dejounte Murray"]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+
+        stmt = '''GO FROM "Manu Ginobili" OVER * \
+            WHERE $$.player.age > 30 or $$.team.name not starts with "Rockets" \
+            YIELD DISTINCT $$.player.age, $$.player.name, $$.team.name'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": [],
+            "rows": [
+                [T_EMPTY, T_EMPTY, "Spurs"],
+                [42, "Tim Duncan", T_EMPTY],
+                [36, "Tony Parker",T_EMPTY]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM "Manu Ginobili" OVER like, teammate REVERSELY \
+            WHERE $$.player.age > 30 and $$.player.age < 40 \
+            YIELD DISTINCT $$.player.age, $$.player.name'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": [],
+            "rows": [
+                [34, "Tiago Splitter"],
+                [36, "Tony Parker"]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+
     def test_reference_pipe_in_yieldandwhere(self):
         stmt = '''GO FROM 'Tim Duncan', 'Chris Paul' OVER like \
             YIELD $^.player.name AS name, like._dst AS id \
