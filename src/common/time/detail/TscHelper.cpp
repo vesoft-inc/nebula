@@ -12,6 +12,7 @@
 namespace nebula {
 namespace time {
 
+#if defined(__x86_64__)
 TscHelper::TscHelper() {
     auto ret = clock_gettime(CLOCK_REALTIME, &startRealTime_);
     DCHECK_EQ(0, ret);
@@ -101,6 +102,8 @@ uint64_t TscHelper::tickToTimePointInUSec(uint64_t tick) {
                                 + get().startRealTime_.tv_nsec / 1000;
     return st + get().ticksToDurationInUSec(tick - get().firstTick_);
 }
+
+#endif  // defined(__x86_64__)
 
 
 }  // namespace time

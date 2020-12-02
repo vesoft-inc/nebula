@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
-        : TraverseExecutor(exct, "find_path") {
+    : TraverseExecutor(exct, "find_path") {
     sentence_ = static_cast<FindPathSentence*>(sentence);
 }
 
@@ -41,6 +41,7 @@ Status FindPathExecutor::prepareClauses() {
             }
         }
         if (sentence_->over() != nullptr) {
+            direction_ = sentence_->over()->direction();
             status = sentence_->over()->prepare(over_);
             if (!status.ok()) {
                 break;
@@ -59,6 +60,7 @@ Status FindPathExecutor::prepareClauses() {
             }
         }
         shortest_ = sentence_->isShortest();
+        noLoop_ = sentence_->isNoLoop();
     } while (false);
 
     if (!status.ok()) {
@@ -237,15 +239,17 @@ void FindPathExecutor::findPath() {
             auto dstId = std::get<0>(neighbor);
             VLOG(2) << "src vertex:" << frontier.first;
             VLOG(2) << "dst vertex:" << dstId;
-            // if frontiers of F are neighbors of visitedByT,
-            // we found an odd path
-            if (visitedTo_.count(dstId) == 1) {
-                meetOddPath(frontier.first, dstId, neighbor);
-            }
-
+            // if current neighbor is acceptable
             // update the path to frontiers
-            updatePath(frontier.first, pathFrom_, neighbor, pathF, VisitedBy::FROM);
-            visitedFrom_.emplace(dstId);
+            if (updatePath(frontier.first, pathFrom_, neighbor, pathF, VisitedBy::FROM)) {
+                // only emplace dstId when at least one path was updated
+                visitedFrom_.emplace(dstId);
+                // if frontiers of F are neighbors of visitedByT,
+                // we found an odd path
+                if (visitedTo_.count(dstId) == 1) {
+                    meetOddPath(frontier.first, dstId, neighbor);
+                }
+            }
         }  // for `neighbor'
     }  // for `frontier'
     pathFrom_ = std::move(pathF);
@@ -260,8 +264,10 @@ void FindPathExecutor::findPath() {
         for (auto &neighbor : frontier.second) {
             auto dstId = std::get<0>(neighbor);
             // update the path to frontiers
-            updatePath(frontier.first, pathTo_, neighbor, pathT, VisitedBy::TO);
-            visitedTo_.emplace(dstId);
+            // only emplace dstId when at least one path was updated
+            if (updatePath(frontier.first, pathTo_, neighbor, pathT, VisitedBy::TO)) {
+                visitedTo_.emplace(dstId);
+            }
         }  // for `neighbor'
     }  // for `frontier'
     pathTo_ = std::move(pathT);
@@ -288,7 +294,7 @@ void FindPathExecutor::findPath() {
     }
 
     if (isFinalStep() ||
-         (shortest_ && targetNotFound_.empty())) {
+        (shortest_ && targetNotFound_.empty())) {
         doFinish(Executor::ProcessControl::kNext);
         return;
     } else {
@@ -305,6 +311,13 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
         auto rangeT = pathTo_.equal_range(dst);
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
             if (j->second.size() + i->second.size() > step_.recordTo_) {
+                continue;
+            }
+            // avoid ABA loop when meetOddPath
+            auto n0 = std::make_unique<Neighbor>(neighbor);
+            std::get<0>(*n0) = src;
+            std::get<1>(*n0) = - std::get<1>(neighbor);
+            if (!isPathAcceptable(j->second, *n0, VisitedBy::TO)) {
                 continue;
             }
             // Build path:
@@ -328,7 +341,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
                 targetNotFound_.erase(target);
                 auto pathFound = finalPath_.find(target);
                 if (pathFound != finalPath_.end()
-                        && pathFound->second.size() < path.size()) {
+                    && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
@@ -358,6 +371,12 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(2) << "PathF: " << buildPathString(path);
             if (j->second.size() > 0) {
                 StepOut *s = j->second.front();
+                // avoid ABA loop when meetEvenPath
+                auto n0 = std::make_unique<Neighbor>(*s);
+                std::get<1>(*n0) = - std::get<1>(*n0);
+                if (!isPathAcceptable(i->second, *n0, VisitedBy::FROM)) {
+                    continue;
+                }
                 auto s0 = std::make_unique<StepOut>(*s);
                 std::get<0>(*s0) = intersectId;
                 std::get<1>(*s0) = - std::get<1>(*s0);
@@ -366,6 +385,12 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
                 VLOG(2) << "Joiner: " << buildPathString(path);
             } else if (i->second.size() > 0) {
                 StepOut *s = i->second.back();
+                // avoid ABA loop when meetEvenPath
+                auto n0 = std::make_unique<Neighbor>(*s);
+                std::get<1>(*n0) = - std::get<1>(*n0);
+                if (!isPathAcceptable(j->second, *n0, VisitedBy::TO)) {
+                    continue;
+                }
                 auto s0 = std::make_unique<StepOut>(*s);
                 std::get<0>(*s0) = intersectId;
                 path.emplace_back(s0.get());
@@ -378,7 +403,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             if (shortest_) {
                 auto pathFound = finalPath_.find(target);
                 if (pathFound != finalPath_.end()
-                        && pathFound->second.size() < path.size()) {
+                    && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
@@ -394,14 +419,15 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
     }
 }
 
-inline void FindPathExecutor::updatePath(
-            VertexID &src,
-            std::multimap<VertexID, Path> &pathToSrc,
-            Neighbor &neighbor,
-            std::multimap<VertexID, Path> &pathToNeighbor,
-            VisitedBy visitedBy) {
+inline bool FindPathExecutor::updatePath(
+    VertexID &src,
+    std::multimap<VertexID, Path> &pathToSrc,
+    Neighbor &neighbor,
+    std::multimap<VertexID, Path> &pathToNeighbor,
+    VisitedBy visitedBy) {
     VLOG(2) << "Update Path.";
     auto range = pathToSrc.equal_range(src);
+    bool atLeastOnePathUpdated = false;
     for (auto i = range.first; i != range.second; ++i) {
         // Build path:
         // i->second + (src,type,ranking)
@@ -410,6 +436,9 @@ inline void FindPathExecutor::updatePath(
         VLOG(2) << "Interim path length before:" << path.size();
         auto s = std::make_unique<StepOut>(neighbor);
         std::get<0>(*s) = src;
+        if (!isPathAcceptable(path, neighbor, visitedBy)) {
+            continue;
+        }
         if (visitedBy == VisitedBy::FROM) {
             path.emplace_back(s.get());
         } else {
@@ -420,7 +449,44 @@ inline void FindPathExecutor::updatePath(
         VLOG(2) << "Interim path length:" << path.size();
         stepOutHolder_.emplace(std::move(s));
         pathToNeighbor.emplace(std::get<0>(neighbor), std::move(path));
+        atLeastOnePathUpdated = true;
     }  // for `i'
+    return atLeastOnePathUpdated;
+}
+
+inline bool FindPathExecutor::isPathAcceptable(Path path, Neighbor &neighbor, VisitedBy visitedBy) {
+    if (path.size() > 0) {
+        auto thisId = std::get<0>(neighbor);
+        // avoid one-step loop when BIDIRECT
+        if (direction_ == OverClause::Direction::kBidirect) {
+            StepOut lastNode;
+            if (visitedBy == VisitedBy::FROM) {
+                lastNode = *path.back();
+            } else {
+                lastNode = *path.front();
+            }
+            auto lastId = std::get<0>(lastNode);
+            auto lastEdge = std::get<1>(lastNode);
+            auto lastRank = std::get<2>(lastNode);
+            auto thisEdge = std::get<1>(neighbor);
+            auto thisRank = std::get<2>(neighbor);
+            if (lastId == thisId && lastEdge == -thisEdge && lastRank == thisRank) {
+                return false;
+            }
+        }
+        // avoid path loop when NOLOOP
+        if (noLoop_) {
+            auto iter = path.begin();
+            for (; iter != path.end(); ++iter) {
+                auto *step = *iter;
+                auto id = std::get<0>(*step);
+                if (id == thisId) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 Status FindPathExecutor::setupVids() {
@@ -471,7 +537,7 @@ Status FindPathExecutor::setupVidsFromRef(Clause::Vertices &vertices) {
 }
 
 void FindPathExecutor::getFromFrontiers(
-        std::vector<storage::cpp2::PropDef> props) {
+    std::vector<storage::cpp2::PropDef> props) {
     auto future = ectx()->getStorageClient()->getNeighbors(spaceId_,
                                                            std::move(fromVids_),
                                                            over_.edgeTypes_,
@@ -509,7 +575,7 @@ void FindPathExecutor::getFromFrontiers(
 }
 
 void FindPathExecutor::getToFrontiers(
-        std::vector<storage::cpp2::PropDef> props) {
+    std::vector<storage::cpp2::PropDef> props) {
     auto future = ectx()->getStorageClient()->getNeighbors(spaceId_,
                                                            std::move(toVids_),
                                                            over_.oppositeTypes_,
@@ -548,10 +614,10 @@ void FindPathExecutor::getToFrontiers(
 }
 
 Status FindPathExecutor::doFilter(
-        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
-        Expression *filter,
-        bool isOutBound,
-        Frontiers &frontiers) {
+    storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+    Expression *filter,
+    bool isOutBound,
+    Frontiers &frontiers) {
     UNUSED(filter);
     UNUSED(isOutBound);
 
@@ -566,10 +632,10 @@ Status FindPathExecutor::doFilter(
         if (eschema != nullptr) {
             std::transform(eschema->cbegin(), eschema->cend(),
                            std::inserter(edgeSchema, edgeSchema.begin()), [](auto &schema) {
-                               return std::make_pair(
-                                   schema.first,
-                                   std::make_shared<ResultSchemaProvider>(schema.second));
-                           });
+                    return std::make_pair(
+                        schema.first,
+                        std::make_shared<ResultSchemaProvider>(schema.second));
+                });
         }
 
         if (edgeSchema.empty()) {
@@ -616,10 +682,38 @@ Status FindPathExecutor::doFilter(
 
 StatusOr<std::vector<storage::cpp2::PropDef>>
 FindPathExecutor::getStepOutProps(bool reversely) {
-    auto *edges = &over_.edgeTypes_;
-    if (reversely) {
-        edges = &over_.oppositeTypes_;
+    std::vector<nebula::EdgeType> outEdges;
+    switch (direction_) {
+        case OverClause::Direction::kForward: {
+            if (reversely) {
+                outEdges.insert(outEdges.end(),
+                                over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            } else {
+                outEdges.insert(outEdges.end(),
+                                over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            }
+            break;
+        }
+        case OverClause::Direction::kBackward: {
+            if (reversely) {
+                outEdges.insert(outEdges.end(),
+                                over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            } else {
+                outEdges.insert(outEdges.end(),
+                                over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            }
+            break;
+        }
+        case OverClause::Direction::kBidirect: {
+            outEdges.insert(outEdges.end(),
+                            over_.edgeTypes_.begin(), over_.edgeTypes_.end());
+            outEdges.insert(outEdges.end(),
+                            over_.oppositeTypes_.begin(), over_.oppositeTypes_.end());
+            break;
+        }
     }
+    auto *edges = &outEdges;
+
     std::vector<storage::cpp2::PropDef> props;
     for (auto &e : *edges) {
         {
@@ -649,24 +743,8 @@ std::string FindPathExecutor::buildPathString(const Path &path) {
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
-        if (type < 0) {
-            pathStr += folly::to<std::string>(id);
-            ++iter;
-            break;
-        }
-
         pathStr += folly::stringPrintf("%ld<%d,%ld>", id, type, ranking);
     }
-
-    for (; iter != path.end(); ++iter) {
-        auto *step = *iter;
-        auto id = std::get<0>(*step);
-        auto type = std::get<1>(*step);
-        auto ranking = std::get<2>(*step);
-
-        pathStr += folly::stringPrintf("<%d,%ld>%ld", -type, ranking, id);
-    }
-
     return pathStr;
 }
 
@@ -676,29 +754,37 @@ cpp2::RowValue FindPathExecutor::buildPathRow(const Path &path) {
     cpp2::Path pathValue;
     auto entryList = pathValue.get_entry_list();
     auto iter = path.begin();
+    auto turningPointIndex = path.size() / 2 + path.size() % 2;
+    std::unordered_set<VertexID> pathVertexIDs;  // stores VertexIDs of current path
+    uint64_t iterIndex = 0;
     for (; iter != path.end(); ++iter) {
         auto *step = *iter;
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
-        if (type < 0) {
-            entryList.emplace_back();
-            cpp2::Vertex vertex;
-            vertex.set_id(id);
-            entryList.back().set_vertex(std::move(vertex));
-            ++iter;
-            break;
+        // avoid path loop when NOLOOP
+        if (noLoop_) {
+            // if id is already exists in pathVertexSet, we found a loop path
+            if (pathVertexIDs.count(id) == 1) {
+                return rowValue;
+            }
+            pathVertexIDs.emplace(id);
         }
+
         entryList.emplace_back();
         cpp2::Vertex vertex;
         vertex.set_id(id);
         entryList.back().set_vertex(std::move(vertex));
+        if (++iterIndex == turningPointIndex) {
+            ++iter;
+            break;
+        }
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypeNameMap_.find(type);
+        auto typeName = edgeTypeNameMap_.find(type >= 0 ? type : -type);
         DCHECK(typeName != edgeTypeNameMap_.end()) << type;
-        edge.set_type(typeName->second);
+        edge.set_type(type >= 0 ? typeName->second : (NEGATIVE_STR + typeName->second));
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));
     }
@@ -708,12 +794,21 @@ cpp2::RowValue FindPathExecutor::buildPathRow(const Path &path) {
         auto id = std::get<0>(*step);
         auto type = std::get<1>(*step);
         auto ranking = std::get<2>(*step);
+        type = -type;
+        // avoid path loop when NOLOOP
+        if (noLoop_) {
+            // if id is already exists in pathVertexSet, we found a loop path
+            if (pathVertexIDs.count(id) == 1) {
+                return rowValue;
+            }
+            pathVertexIDs.emplace(id);
+        }
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypeNameMap_.find(-type);
+        auto typeName = edgeTypeNameMap_.find(type >= 0 ? type : -type);
         DCHECK(typeName != edgeTypeNameMap_.end()) << type;
-        edge.set_type(typeName->second);
+        edge.set_type(type >= 0 ? typeName->second : (NEGATIVE_STR + typeName->second));
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));
 
@@ -734,6 +829,10 @@ void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     std::vector<cpp2::RowValue> rows;
     for (auto &path : finalPath_) {
         auto row = buildPathRow(path.second);
+        // if we meet an empty row, skip it
+        if (row.get_columns().empty()) {
+            continue;
+        }
         rows.emplace_back(std::move(row));
         VLOG(1) << "Path: " << buildPathString(path.second);
     }

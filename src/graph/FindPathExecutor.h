@@ -20,12 +20,12 @@ const std::vector<std::string> kReserveProps_ = {"_type", "_rank"};
 using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>; /* dst, type, rank*/
 using Neighbors = std::vector<Neighbor>;
 using Frontiers =
-        std::vector<
-                    std::pair<
-                              VertexID, /* start */
-                              Neighbors /* frontiers of vertex*/
-                             >
-                   >;
+std::vector<
+    std::pair<
+        VertexID, /* start */
+        Neighbors /* frontiers of vertex*/
+    >
+>;
 
 using StepOut = std::tuple<VertexID, EdgeType, EdgeRanking>; /* src, type, rank*/
 using Path = std::list<StepOut*>;
@@ -49,6 +49,8 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
     static std::string buildPathString(const Path &path);
+
+    const std::string NEGATIVE_STR = "-";
 
     cpp2::RowValue buildPathRow(const Path &path);
 
@@ -78,22 +80,24 @@ private:
 
     inline void meetEvenPath(VertexID intersectId);
 
-    inline void updatePath(
-            VertexID &src,
-            std::multimap<VertexID, Path> &pathToSrc,
-            Neighbor &neighbor,
-            std::multimap<VertexID, Path> &pathToNeighbor,
-            VisitedBy visitedBy);
+    inline bool updatePath(
+        VertexID &src,
+        std::multimap<VertexID, Path> &pathToSrc,
+        Neighbor &neighbor,
+        std::multimap<VertexID, Path> &pathToNeighbor,
+        VisitedBy visitedBy);
+
+    inline bool isPathAcceptable(Path path, Neighbor &neighbor, VisitedBy visitedBy);
 
     Status setupVids();
 
     Status setupVidsFromRef(Clause::Vertices &vertices);
 
     Status doFilter(
-            storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
-            Expression *filter,
-            bool isOutBound,
-            Frontiers &frontiers);
+        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+        Expression *filter,
+        bool isOutBound,
+        Frontiers &frontiers);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
 
@@ -108,7 +112,9 @@ private:
     Clause::Over                                    over_;
     Clause::Step                                    step_;
     Clause::Where                                   where_;
+    OverClause::Direction                           direction_{OverClause::Direction::kForward};
     bool                                            shortest_{false};
+    bool                                            noLoop_{false};
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                                 srcTagProps_;
     SchemaPropIndex                                 dstTagProps_;
