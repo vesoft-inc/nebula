@@ -23,63 +23,83 @@ const Value& LogicalExpression::eval(ExpressionContext& ctx) {
     }
 }
 
+// evalAnd short circuit logic: BADNULL == false > NULL >= EMPTY > true
 const Value& LogicalExpression::evalAnd(ExpressionContext &ctx) {
+    result_ = true;
     for (auto i = 0u; i < operands_.size(); i++) {
-        result_ = operands_[i]->eval(ctx);
-        if (!result_.isBool()) {
-            if (!result_.isNull()) {
-                result_ = Value::kNullValue;
-            }
-            break;
+        auto& value = operands_[i]->eval(ctx);
+        if (value.isBadNull()
+            || (value.isBool() && !value.getBool())) {
+            result_ = value;
+            return result_;
         }
-        if (!result_.getBool()) {
-            break;
-        }
-    }
-
-    return result_;
-}
-
-const Value& LogicalExpression::evalOr(ExpressionContext &ctx) {
-    for (auto i = 0u; i < operands_.size(); i++) {
-        result_ = operands_[i]->eval(ctx);
-        if (!result_.isBool()) {
-            if (!result_.isNull()) {
-                result_ = Value::kNullValue;
-            }
-            break;
-        }
-        if (result_.getBool()) {
-            break;
-        }
-    }
-
-    return result_;
-}
-
-const Value& LogicalExpression::evalXor(ExpressionContext &ctx) {
-    result_ = operands_[0]->eval(ctx);
-    if (!result_.isBool()) {
-        if (!result_.isNull()) {
-            result_ = Value::kNullValue;
-        }
-        return result_;
-    }
-    auto result = result_.getBool();
-
-    for (auto i = 1u; i < operands_.size(); i++) {
-        auto &value = operands_[i]->eval(ctx);
         if (!value.isBool()) {
-            if (!value.isNull()) {
-                result_ = Value::kNullValue;
-            } else {
+            if (value.isNull()) {
                 result_ = value;
+            } else if (value.empty() && !result_.isNull()) {
+                result_ = value;
+            } else {
+                result_ = Value::kNullBadType;
+                return result_;
             }
-            break;
         }
-        result = result ^ value.getBool();
     }
-    result_ = result;
+
+    return result_;
+}
+
+// evalOr short circuit logic: BADNULL == true > NULL >= EMPTY > false
+const Value& LogicalExpression::evalOr(ExpressionContext &ctx) {
+    result_ = false;
+    for (auto i = 0u; i < operands_.size(); i++) {
+        auto& value = operands_[i]->eval(ctx);
+        if (value.isBadNull()
+            || (value.isBool() && value.getBool())) {
+            result_ = value;
+            return result_;
+        }
+        if (!value.isBool()) {
+            if (value.isNull()) {
+                result_ = value;
+            } else if (value.empty() && !result_.isNull()) {
+                result_ = value;
+            } else {
+                result_ = Value::kNullBadType;
+                return result_;
+            }
+        }
+    }
+
+    return result_;
+}
+
+// evalXor short circuit logic: BADNULL == NULL > EMPTY > Bool
+const Value& LogicalExpression::evalXor(ExpressionContext &ctx) {
+    auto hasEmpty = 0u;
+    auto firstBool = 1u;
+    for (auto i = 0u; i < operands_.size(); i++) {
+        auto &value = operands_[i]->eval(ctx);
+        if (value.isNull()) {
+            result_ = value;
+            return result_;
+        }
+        if (!value.isBool()) {
+            if (value.empty()) {
+                result_ = value;
+                hasEmpty = 1;
+                continue;
+            }
+            result_ = Value::kNullBadType;
+            return result_;
+        }
+        if (hasEmpty) continue;
+        if (firstBool) {
+            result_ = static_cast<bool>(value.getBool());
+            firstBool = 0u;
+        } else {
+            result_ = static_cast<bool>(result_.getBool() ^ value.getBool());
+        }
+    }
 
     return result_;
 }

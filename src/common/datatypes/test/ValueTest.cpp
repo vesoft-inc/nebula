@@ -510,6 +510,8 @@ TEST(Value, Logical) {
 }
 
 TEST(Value, Bit) {
+    Value vNull(nebula::NullType::__NULL__);
+    Value vEmpty;
     Value vZero(0);
     Value vInt1(1);
     Value vInt2(2);
@@ -539,6 +541,42 @@ TEST(Value, Bit) {
 
         v = vDate1 & vDate2;
         EXPECT_TRUE(v.isNull());
+
+        v = vEmpty & true;
+        EXPECT_TRUE(v.empty());
+
+        v = vEmpty & false;
+        EXPECT_TRUE(v.empty());
+
+        v = true & vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = false & vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull & true;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull & false;
+        EXPECT_TRUE(v.isNull());
+
+        v = true & vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = false & vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty & vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty & vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull & vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull & vEmpty;
+        EXPECT_TRUE(v.isNull());
     }
 
     {
@@ -550,13 +588,50 @@ TEST(Value, Bit) {
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ(1, v.getInt());
 
-        v = vStr1 & vStr2;
+        v = vStr1 | vStr2;
         EXPECT_TRUE(v.isNull());
 
-        v = vFloat1 & vFloat2;
+        v = vFloat1 | vFloat2;
         EXPECT_TRUE(v.isNull());
 
-        v = vDate1 & vDate2;
+        v = vDate1 | vDate2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty | true;
+        EXPECT_TRUE(v.empty());
+
+        v = vEmpty | false;
+        EXPECT_TRUE(v.empty());
+
+        v = true | vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = false | vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull | true;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull | false;
+        EXPECT_TRUE(v.isNull());
+
+        v = true | vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = false | vNull;
+        EXPECT_TRUE(v.isNull());
+
+
+        v = vEmpty | vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty | vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull | vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull | vEmpty;
         EXPECT_TRUE(v.isNull());
     }
 
@@ -569,13 +644,49 @@ TEST(Value, Bit) {
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ(1, v.getInt());
 
-        v = vStr1 & vStr2;
+        v = vStr1 ^ vStr2;
         EXPECT_TRUE(v.isNull());
 
-        v = vFloat1 & vFloat2;
+        v = vFloat1 ^ vFloat2;
         EXPECT_TRUE(v.isNull());
 
-        v = vDate1 & vDate2;
+        v = vDate1 ^ vDate2;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty ^ true;
+        EXPECT_TRUE(v.empty());
+
+        v = vEmpty ^ false;
+        EXPECT_TRUE(v.empty());
+
+        v = true ^ vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = false ^ vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull ^ true;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull ^ false;
+        EXPECT_TRUE(v.isNull());
+
+        v = true ^ vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = false ^ vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty ^ vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vEmpty ^ vEmpty;
+        EXPECT_TRUE(v.empty());
+
+        v = vNull ^ vNull;
+        EXPECT_TRUE(v.isNull());
+
+        v = vNull ^ vEmpty;
         EXPECT_TRUE(v.isNull());
     }
 }

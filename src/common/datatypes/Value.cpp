@@ -2306,12 +2306,12 @@ Value operator||(const Value& lhs, const Value& rhs) {
 }
 
 Value operator&(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
 
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     if (lhs.type() != rhs.type()) {
@@ -2332,12 +2332,12 @@ Value operator&(const Value& lhs, const Value& rhs) {
 }
 
 Value operator|(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
 
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     if (lhs.type() != rhs.type()) {
@@ -2358,12 +2358,12 @@ Value operator|(const Value& lhs, const Value& rhs) {
 }
 
 Value operator^(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) {
-        return lhs.getNull();
+    if (lhs.isNull() || (lhs.empty() && !rhs.isNull())) {
+        return lhs;
     }
 
-    if (rhs.isNull()) {
-        return rhs.getNull();
+    if (rhs.isNull() || rhs.empty()) {
+        return rhs;
     }
 
     if (lhs.type() != rhs.type()) {
