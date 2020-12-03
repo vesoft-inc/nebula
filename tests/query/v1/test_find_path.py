@@ -460,7 +460,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
             ]
-            }
+        }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
@@ -474,7 +474,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
             ]
-            }
+        }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
@@ -495,7 +495,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
             ]
-            }
+        }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
@@ -516,7 +516,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
             ]
-            }
+        }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
@@ -530,6 +530,89 @@ class TestFindPath(NebulaTestSuite):
             "rows": [
                 ["Tim Duncan", ("like", 0, "Manu Ginobili")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+
+    def test_path_limit(self):
+        stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS | LIMIT 3'
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": []
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_empty_result(resp)
+
+        stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS | LIMIT 3'
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Tim Duncan", ("like", 0, "Tony Parker")],
+                ["Tim Duncan", ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Tony Parker"), ("serve", 0, "Spurs")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+
+        stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+                FIND ALL PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS | LIMIT 5'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+
+        stmt = '''FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers"
+                OVER * UPTO 5 STEPS | LIMIT 2'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
+                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+
+        stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | LIMIT 1'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
+            ]
+        }
+        self.check_column_names(resp, expected_data["column_names"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+
+        stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | LIMIT 10'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["_path"],
+            "rows": [
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Tim Duncan")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

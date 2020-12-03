@@ -20,6 +20,8 @@ Status FindPathValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateStarts(fpSentence->to(), to_));
     NG_RETURN_IF_ERROR(validateOver(fpSentence->over(), over_));
     NG_RETURN_IF_ERROR(validateStep(fpSentence->step(), steps_));
+
+    outputs_.emplace_back("_path", Value::Type::PATH);
     return Status::OK();
 }
 

@@ -16,9 +16,8 @@ namespace graph {
 bool SequentialPlanner::match(AstContext* astCtx) {
     if (astCtx->sentence->kind() == Sentence::Kind::kSequential) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
@@ -44,6 +43,7 @@ void SequentialPlanner::ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx)
         case PlanNode::Kind::kDedup:
         case PlanNode::Kind::kUnion:
         case PlanNode::Kind::kIntersect:
+        case PlanNode::Kind::kCartesianProduct:
         case PlanNode::Kind::kMinus:
         case PlanNode::Kind::kFilter: {
             auto* dc = DataCollect::make(qctx,
