@@ -347,34 +347,75 @@ const Value& SequentialIter::getColumn(int32_t index) const {
 
 void JoinIter::joinIndex(const Iterator* lhs, const Iterator* rhs) {
     size_t nextSeg = 0;
-    if (lhs != nullptr && lhs->isSequentialIter()) {
-        nextSeg = buildIndexFromSeqIter(static_cast<const SequentialIter*>(lhs), 0);
-    } else if (lhs != nullptr && lhs->isJoinIter()) {
-        nextSeg = buildIndexFromJoinIter(static_cast<const JoinIter*>(lhs), 0);
+    if (lhs != nullptr) {
+        switch (lhs->kind()) {
+            case Iterator::Kind::kSequential: {
+                nextSeg = buildIndexFromSeqIter(static_cast<const SequentialIter*>(lhs), 0);
+                break;
+            }
+            case Iterator::Kind::kJoin: {
+                nextSeg = buildIndexFromJoinIter(static_cast<const JoinIter*>(lhs), 0);
+                break;
+            }
+            case Iterator::Kind::kProp: {
+                nextSeg = buildIndexFromPropIter(static_cast<const PropIter*>(lhs), 0);
+                break;
+            }
+            case Iterator::Kind::kDefault:
+            case Iterator::Kind::kGetNeighbors: {
+                LOG(FATAL) << "Join Not Support " << lhs->kind();
+                break;
+            }
+        }
     }
-
-    if (rhs != nullptr && rhs->isSequentialIter()) {
-        buildIndexFromSeqIter(static_cast<const SequentialIter*>(rhs), nextSeg);
-    } else if (rhs != nullptr && rhs->isJoinIter()) {
-        buildIndexFromJoinIter(static_cast<const JoinIter*>(rhs), nextSeg);
+    if (rhs == nullptr) {
+        return;
+    }
+    switch (rhs->kind()) {
+        case Iterator::Kind::kSequential: {
+            buildIndexFromSeqIter(static_cast<const SequentialIter*>(rhs), nextSeg);
+            break;
+        }
+        case Iterator::Kind::kJoin: {
+            buildIndexFromJoinIter(static_cast<const JoinIter*>(rhs), nextSeg);
+            break;
+        }
+        case Iterator::Kind::kProp: {
+            buildIndexFromPropIter(static_cast<const PropIter*>(rhs), nextSeg);
+            break;
+        }
+        case Iterator::Kind::kDefault:
+        case Iterator::Kind::kGetNeighbors: {
+            LOG(FATAL) << "Join Not Support " << lhs->kind();
+            break;
+        }
     }
 }
 
-size_t JoinIter::buildIndexFromSeqIter(const SequentialIter* iter,
-                                       size_t segIdx) {
-    auto colIdxStart = colIndices_.size();
+size_t JoinIter::buildIndexFromPropIter(const PropIter* iter, size_t segIdx) {
+    auto colIdxStart = colIdxIndices_.size();
     for (auto& col : iter->getColIndices()) {
         DCHECK_LT(col.second + colIdxStart, colNames_.size());
         auto& colName = colNames_[col.second + colIdxStart];
         colIndices_.emplace(colName, std::make_pair(segIdx, col.second));
-        colIdxIndices_.emplace(col.second + colIdxStart,
-                               std::make_pair(segIdx, col.second));
+        colIdxIndices_.emplace(col.second + colIdxStart, std::make_pair(segIdx, col.second));
+    }
+    return segIdx + 1;
+}
+
+size_t JoinIter::buildIndexFromSeqIter(const SequentialIter* iter, size_t segIdx) {
+    auto colIdxStart = colIdxIndices_.size();
+    for (auto& col : iter->getColIndices()) {
+        DCHECK_LT(col.second + colIdxStart, colNames_.size());
+        auto& colName = colNames_[col.second + colIdxStart];
+        colIndices_.emplace(colName, std::make_pair(segIdx, col.second));
+        colIdxIndices_.emplace(col.second + colIdxStart, std::make_pair(segIdx, col.second));
     }
     return segIdx + 1;
 }
 
 size_t JoinIter::buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx) {
-    auto colIdxStart = colIndices_.size();
+    auto colIdxStart = colIdxIndices_.size();
     size_t nextSeg = 0;
     if (iter->getColIndices().empty()) {
         return nextSeg;

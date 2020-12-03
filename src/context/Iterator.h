@@ -503,7 +503,7 @@ public:
         return rows_.end();
     }
 
-    const std::unordered_map<std::string, int64_t>& getColIndices() const {
+    const std::unordered_map<std::string, size_t>& getColIndices() const {
         return colIndices_;
     }
 
@@ -562,9 +562,10 @@ private:
 private:
     RowsType<SeqLogicalRow>                      rows_;
     RowsIter<SeqLogicalRow>                      iter_;
-    std::unordered_map<std::string, int64_t>     colIndices_;
+    std::unordered_map<std::string, size_t>     colIndices_;
 };
 
+class PropIter;
 class JoinIter final : public Iterator {
 public:
     class JoinLogicalRow final : public LogicalRow {
@@ -719,6 +720,8 @@ private:
 
     size_t buildIndexFromJoinIter(const JoinIter* iter, size_t segIdx);
 
+    size_t buildIndexFromPropIter(const PropIter* iter, size_t segIdx);
+
 private:
     std::vector<std::string>                                       colNames_;
     RowsType<JoinLogicalRow>                                       rows_;
@@ -818,6 +821,10 @@ public:
             return nullptr;
         }
         return &*iter_;
+    }
+
+    const std::unordered_map<std::string, size_t>& getColIndices() const {
+        return dsIndex_.colIndices;
     }
 
     const Value& getColumn(const std::string& col) const override;

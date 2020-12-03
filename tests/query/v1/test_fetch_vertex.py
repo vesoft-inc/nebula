@@ -533,3 +533,61 @@ class TestFetchQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_column_names(resp, expect_column_names)
         self.check_out_of_order_result(resp, expect_result)
+
+    def test_fetch_vertex_pipe(self):
+        query = 'FETCH PROP ON player "nobody" | go from $-.VertexID over like yield like._dst'
+        resp = self.execute(query)
+        expect_column_names = ['like._dst']
+        expect_result = []
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player "Tim Duncan" | go from $-.VertexID over like yield like._dst'
+        resp = self.execute(query)
+        expect_column_names = ['like._dst']
+        expect_result = [
+            ['Tony Parker'],
+            ['Manu Ginobili']
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player "Tim Duncan", "Yao Ming" | go from $-.VertexID over like yield like._dst'
+        resp = self.execute(query)
+        expect_column_names = ['like._dst']
+        expect_result = [
+            ['Tony Parker'],
+            ['Manu Ginobili'],
+            ['Shaquile O\'Neal'],
+            ['Tracy McGrady'],
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = 'FETCH PROP ON player "Tim Duncan" yield player.name as id | go from $-.id over like yield like._dst'
+        resp = self.execute(query)
+        expect_column_names = ['like._dst']
+        expect_result = [
+            ['Tony Parker'],
+            ['Manu Ginobili']
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)
+
+        query = '''$a = FETCH PROP ON player "Tim Duncan", "Yao Ming";
+                 go from $a.VertexID over like yield like._dst'''
+        resp = self.execute(query)
+        expect_column_names = ['like._dst']
+        expect_result = [
+            ['Tony Parker'],
+            ['Manu Ginobili'],
+            ['Shaquile O\'Neal'],
+            ['Tracy McGrady'],
+        ]
+        self.check_resp_succeeded(resp)
+        self.check_column_names(resp, expect_column_names)
+        self.check_out_of_order_result(resp, expect_result)

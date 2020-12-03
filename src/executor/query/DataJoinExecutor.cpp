@@ -36,7 +36,7 @@ folly::Future<Status> DataJoinExecutor::doInnerJoin() {
                        .iter();
     DCHECK(!!lhsIter);
     VLOG(1) << "lhs: " << dataJoin->leftVar().first << " " << lhsIter->size();
-    if (!lhsIter->isSequentialIter() && !lhsIter->isJoinIter()) {
+    if (lhsIter->isGetNeighborsIter() || lhsIter->isDefaultIter()) {
         std::stringstream ss;
         ss << "Join executor does not support " << lhsIter->kind();
         return error(Status::Error(ss.str()));
@@ -47,7 +47,7 @@ folly::Future<Status> DataJoinExecutor::doInnerJoin() {
                        .iter();
     DCHECK(!!rhsIter);
     VLOG(1) << "rhs: " << dataJoin->rightVar().first << " " << rhsIter->size();
-    if (!rhsIter->isSequentialIter() && !rhsIter->isJoinIter()) {
+    if (lhsIter->isGetNeighborsIter() || lhsIter->isDefaultIter()) {
         std::stringstream ss;
         ss << "Join executor does not support " << lhsIter->kind();
         return error(Status::Error(ss.str()));
