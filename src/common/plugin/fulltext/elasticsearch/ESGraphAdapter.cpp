@@ -133,7 +133,7 @@ std::string ESGraphAdapter::body(const DocItem& item,
                                                      ("size", maxRows)
                                                      ("from", 0);
     std::stringstream os;
-    os << " -d'" << folly::toJson(itemQuery) << "'";
+    os << " -d'" << DocIDTraits::normalizedJson(folly::toJson(itemQuery)) << "'";
     return os.str();
 }
 

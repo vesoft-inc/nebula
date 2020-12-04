@@ -8,6 +8,7 @@
 #define COMMON_PLUGIN_FULLTEXT_UTILS_H_
 
 #include <iomanip>
+#include <boost/algorithm/string/replace.hpp>
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/encryption/MD5Utils.h"
@@ -21,6 +22,7 @@
 #define MAX_VALUE_LEN 255
 #define CURL_CONTENT_JSON " -H \"Content-Type: application/json; charset=utf-8\""
 #define CURL_CONTENT_NDJSON " -H \"Content-Type: application/x-ndjson; charset=utf-8\""
+#define ESCAPE_SINGLE_QUOTE  "\'\\\'\'"
 
 namespace nebula {
 namespace plugin {
@@ -180,6 +182,10 @@ struct DocIDTraits {
 
     static std::string val(const std::string &v) {
         return ((v.size() > MAX_VALUE_LEN) ? v.substr(0, MAX_VALUE_LEN) : v);
+    }
+
+    static std::string normalizedJson(const std::string &v) {
+        return boost::replace_all_copy(v, "'", ESCAPE_SINGLE_QUOTE);
     }
 
     static std::string docId(const DocItem& item) {

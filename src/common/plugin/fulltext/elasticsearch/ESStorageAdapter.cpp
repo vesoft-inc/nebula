@@ -136,7 +136,8 @@ StatusOr<bool> ESStorageAdapter::bulk(const HttpClient& client,
     }
     auto ret = nebula::ProcessUtils::runCommand(command.c_str());
     if (!ret.ok() || ret.value().empty()) {
-        LOG(ERROR) << "Http PUT Failed";
+        VLOG(3) << "Http PUT Failed";
+        VLOG(3) << command;
         return Status::Error("bulk command failed");
     }
     return checkBulk(ret.value());
@@ -158,7 +159,7 @@ std::string ESStorageAdapter::putBody(const DocItem& item) const noexcept {
                                              ("column_id", DocIDTraits::column(item.column))
                                              ("value", DocIDTraits::val(item.val));
     std::stringstream os;
-    os << " -d'" << folly::toJson(d) << "'";
+    os << " -d'" << DocIDTraits::normalizedJson(folly::toJson(d)) << "'";
     return os.str();
 }
 
@@ -196,7 +197,7 @@ std::string ESStorageAdapter::bulkBody(const std::vector<DocItem>& items) const 
                                                     ("column_id", DocIDTraits::column(item.column))
                                                     ("schema_id", item.schema);
         os << folly::toJson(folly::dynamic::object("index", meta)) << "\n";
-        os << folly::toJson(data) << "\n";
+        os << DocIDTraits::normalizedJson(folly::toJson(data)) << "\n";
     }
     os << "'";
     return os.str();
