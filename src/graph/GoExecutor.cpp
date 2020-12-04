@@ -681,7 +681,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcRespon
     // 7  ,  6
     // Will mistake lead to 7->6 if insert edge(dst, src) one by one
     // So read all roots of current step first , then insert them
-    std::multimap<VertexID, VertexID> backTrace;
+    std::unordered_set<std::pair<VertexID, VertexID>, HashPair> curBackTrace;
     std::unordered_set<VertexID> set;
     for (const auto &resp : rpcResp.responses()) {
         if (!resp.__isset.vertices) {
@@ -693,12 +693,17 @@ std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcRespon
                 for (const auto& edge : edata.get_edges()) {
                     auto dst = edge.get_dst();
                     if (!isFinalStep() && backTracker_ != nullptr) {
-                        auto range = backTracker_->get(vdata.get_vertex_id());
-                        if (range.first == range.second) {  // not found root
-                            backTrace.emplace(dst, vdata.get_vertex_id());
-                        }
-                        for (auto trace = range.first; trace != range.second; ++trace) {
-                            backTrace.emplace(dst, trace->second);
+                        // vertex_id is rootID
+                        if (curStep_ == 1) {
+                            auto key = std::pair<VertexID, VertexID>(dst, vdata.get_vertex_id());
+                            curBackTrace.emplace(key);
+                        } else {
+                            // find rootID from preStep
+                            auto preRange = backTracker_->get(curStep_ - 1, vdata.get_vertex_id());
+                            for (auto trace = preRange.first; trace != preRange.second; ++trace) {
+                                auto key = std::pair<VertexID, VertexID>(dst, trace->second);
+                                curBackTrace.emplace(key);
+                            }
                         }
                     }
                     set.emplace(dst);
@@ -707,7 +712,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromRespWithBackTrack(const RpcRespon
         }
     }
     if (!isFinalStep() && backTracker_ != nullptr) {
-        backTracker_->inject(backTrace);
+        backTracker_->inject(curBackTrace, curStep_);
     }
     return std::vector<VertexID>(set.begin(), set.end());
 }

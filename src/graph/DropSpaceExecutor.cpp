@@ -40,7 +40,9 @@ void DropSpaceExecutor::execute() {
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace("", -1);
         }
-        ectx()->addWarningMsg("Data will be deleted completely after restarting the services");
+        ectx()->addWarningMsg("If auto_remove_invalid_space is true, data will be deleted "
+                              "completely after restarting the storage services, else you "
+                              "need to remove data by manual");
 
         doFinish(Executor::ProcessControl::kNext);
     };

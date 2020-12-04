@@ -237,8 +237,12 @@ Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
                                   const std::string &prop,
                                   const RowReader *reader) {
-    DCHECK(reader != nullptr);
-    DCHECK(schema != nullptr);
+    if (schema == nullptr) {
+        return Status::Error("Schema is nullptr when getProp.");
+    }
+    if (reader == nullptr) {
+        return Status::Error("reader is nullptr when getProp.");
+    }
     using nebula::cpp2::SupportedType;
     auto type = schema->getFieldType(prop).type;
     switch (type) {
@@ -293,9 +297,15 @@ Status Collector::getSchema(const std::vector<VariantType> &vals,
                             const std::vector<std::string> &colNames,
                             const std::vector<nebula::cpp2::SupportedType> &colTypes,
                             SchemaWriter *outputSchema) {
-    DCHECK(outputSchema != nullptr);
-    DCHECK_EQ(vals.size(), colNames.size());
-    DCHECK_EQ(vals.size(), colTypes.size());
+    if (outputSchema == nullptr) {
+        return Status::Error("Schema is nullptr.");
+    }
+    if (vals.size() != colNames.size() || vals.size() != colTypes.size()) {
+        return Status::Error("column size not match, %ld vs. %ld vs. %ld",
+                             vals.size(),
+                             colNames.size(),
+                             colTypes.size());
+    }
     using nebula::cpp2::SupportedType;
     auto index = 0u;
     for (auto &it : colTypes) {
