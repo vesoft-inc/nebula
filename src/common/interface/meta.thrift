@@ -474,13 +474,15 @@ struct ListEdgesResp {
 }
 
 enum ListHostType {
-    ALLOC       = 0x00,
     // nebula 1.0 show hosts, show leader, partition info
+    ALLOC       = 0x00,
+    GRAPH       = 0x01,
+    META        = 0x02,
+    STORAGE     = 0x03,
 } (cpp.enum_strict)
 
 struct ListHostsReq {
     1: ListHostType      type
-    2: optional HostRole role
 }
 
 struct ListHostsResp {
