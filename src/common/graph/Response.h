@@ -26,7 +26,7 @@ enum class ErrorCode {
     E_SESSION_TIMEOUT = -6,
     E_SYNTAX_ERROR = -7,
     E_EXECUTION_ERROR = -8,
-    E_STATEMENT_EMTPY = -9,
+    E_STATEMENT_EMPTY = -9,
     E_USER_NOT_FOUND = -10,
     E_BAD_PERMISSION = -11,
     E_SEMANTIC_ERROR = -12,

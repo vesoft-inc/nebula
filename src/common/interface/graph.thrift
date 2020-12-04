@@ -47,7 +47,7 @@ enum ErrorCode {
     E_SYNTAX_ERROR = -7,
     E_EXECUTION_ERROR = -8,
     // Nothing is executed When command is comment
-    E_STATEMENT_EMTPY = -9,
+    E_STATEMENT_EMPTY = -9,
 
     // User and permission error
     E_USER_NOT_FOUND = -10,
