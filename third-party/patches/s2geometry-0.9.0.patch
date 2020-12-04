@@ -1,0 +1,14 @@
+diff -ur a/src/s2/encoded_uint_vector.h b/src/s2/encoded_uint_vector.h
+--- a/src/s2/encoded_uint_vector.h	2019-03-04 11:53:16.000000000 -0500
++++ b/src/s2/encoded_uint_vector.h	2020-11-05 22:54:29.008722506 -0500
+@@ -20,9 +20,9 @@
+ 
+ #include <type_traits>
+ #include <vector>
++#include "s2/util/coding/coder.h"
+ #include "s2/third_party/absl/base/internal/unaligned_access.h"
+ #include "s2/third_party/absl/types/span.h"
+-#include "s2/util/coding/coder.h"
+ 
+ namespace s2coding {
+ 

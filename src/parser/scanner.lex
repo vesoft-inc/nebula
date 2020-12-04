@@ -132,6 +132,7 @@ OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
 STOP                        ([Ss][Tt][Oo][Pp])
 SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
+NOLOOP                      ([Nn][Oo][Ll][Oo][Oo][Pp])
 PATH                        ([Pp][Aa][Tt][Hh])
 LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
 OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
@@ -306,6 +307,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {GRAPH}                     { return TokenType::KW_GRAPH; }
 {META}                      { return TokenType::KW_META; }
 {STORAGE}                   { return TokenType::KW_STORAGE; }
+{NOLOOP}                    { return TokenType::KW_NOLOOP; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 
