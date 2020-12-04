@@ -99,9 +99,8 @@ const char* GraphService::getErrorStr(ErrorCode result) {
         return "Syntax error";
     case ErrorCode::E_SEMANTIC_ERROR:
         return "Semantic error";
-    // TODO(shylock) fix the typo
-    case ErrorCode::E_STATEMENT_EMTPY:
-        return "Statement emtpy";
+    case ErrorCode::E_STATEMENT_EMPTY:
+        return "Statement empty";
     case ErrorCode::E_EXECUTION_ERROR:
         return "Execution error";
     case ErrorCode::E_RPC_FAILURE:

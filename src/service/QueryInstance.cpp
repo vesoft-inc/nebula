@@ -127,7 +127,7 @@ void QueryInstance::onError(Status status) {
             rctx->resp().errorCode = ErrorCode::E_SYNTAX_ERROR;
             break;
         case Status::Code::kStatementEmpty:
-            rctx->resp().errorCode = ErrorCode::E_STATEMENT_EMTPY;
+            rctx->resp().errorCode = ErrorCode::E_STATEMENT_EMPTY;
             break;
         case Status::Code::kSemanticError:
             rctx->resp().errorCode = ErrorCode::E_SEMANTIC_ERROR;
