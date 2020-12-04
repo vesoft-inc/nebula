@@ -20,21 +20,19 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
         return;
     }
 
-    if (!iter->valid()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
+    std::vector<cpp2::JobDesc> jobs;
     decltype(resp_.statuses) statuses;
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
-            auto jobDesc = JobDescription::makeJobDescription(iter->key(), iter->val());
-            if (jobDesc != folly::none &&
-                jobDesc->getCmd() == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX) {
-                auto paras = jobDesc->getParas();
+            auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
+            if (optJob == folly::none) {
+                continue;
+            }
+
+            auto jobDesc = optJob->toJobDesc();
+            if (jobDesc.get_cmd() == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX) {
+                auto paras = jobDesc.get_paras();
                 DCHECK_EQ(paras.size(), 2);
-                auto indexName = paras[0];
                 auto spaceName = paras[1];
                 auto ret = getSpaceId(spaceName);
                 if (!ret.ok()) {
@@ -46,12 +44,23 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
                 if (spaceId != curSpaceId) {
                     continue;
                 }
-                cpp2::IndexStatus status;
-                status.set_name(std::move(indexName));
-                status.set_status(meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(jobDesc->getStatus()));
-                statuses.emplace_back(std::move(status));
+
+                jobs.emplace_back(jobDesc);
             }
         }
+    }
+    std::sort(jobs.begin(), jobs.end(), [](const auto& a, const auto& b) {
+        return a.get_id() > b.get_id();
+    });
+    std::unordered_map<std::string, cpp2::JobStatus> tmp;
+    for (auto &jobDesc : jobs) {
+        tmp.emplace(jobDesc.get_paras()[0], jobDesc.get_status());
+    }
+    for (auto &kv : tmp) {
+        cpp2::IndexStatus status;
+        status.set_name(std::move(kv.first));
+        status.set_status(meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(kv.second));
+        statuses.emplace_back(std::move(status));
     }
     resp_.set_statuses(std::move(statuses));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
