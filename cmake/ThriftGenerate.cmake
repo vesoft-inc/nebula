@@ -86,7 +86,7 @@ add_custom_command(
     --gen "js:node:"
     --gen "csharp"
     --gen "java:hashcode"
-    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-clients/go/,use_context"
+    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/,use_context"
     -o "." "${file_path}/${file_name}.thrift"
   DEPENDS "${file_path}/${file_name}.thrift"
   COMMENT "Generating thrift files for ${file_name}"
