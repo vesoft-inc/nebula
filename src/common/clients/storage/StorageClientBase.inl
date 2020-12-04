@@ -238,14 +238,12 @@ StorageClientBase<ClientType>::collectResponse(
                         hasFailure = true;
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             auto* leader = code.get_leader();
-                            if (leader != nullptr &&
-                                !leader->host.empty() &&
-                                leader->port != 0) {
+                            if (isValidHostPtr(leader)) {
                                 updateLeader(spaceId, code.get_part_id(), *leader);
                             } else {
                                 invalidLeader(spaceId, code.get_part_id());
                             }
-                            if (retry < retryLimit) {
+                            if (retry < retryLimit && isValidHostPtr(leader)) {
                                 evb->runAfterDelay([this, evb, leader = *leader, r = std::move(r),
                                                     remoteFunc = std::move(remoteFunc), context,
                                                     start, retry, retryLimit] () {
@@ -370,14 +368,12 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
                         << ", failed code " << static_cast<int32_t>(code.get_code());
                 if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                     auto* leader = code.get_leader();
-                    if (leader != nullptr &&
-                        !leader->host.empty() &&
-                        leader->port != 0) {
+                    if (isValidHostPtr(leader)) {
                         updateLeader(spaceId, code.get_part_id(), *leader);
                     } else {
                         invalidLeader(spaceId, code.get_part_id());
                     }
-                    if (retry < retryLimit) {
+                    if (retry < retryLimit && isValidHostPtr(leader)) {
                         evb->runAfterDelay([this, evb, leader = *leader,
                                             req = std::move(request.second),
                                             remoteFunc = std::move(remoteFunc), p = std::move(p),
