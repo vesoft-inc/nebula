@@ -69,7 +69,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHostsInZone(kvstore::KVStore* kv,
     std::string zoneValue;
     auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
     auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Get zone " << zoneName << " failed";
         return activeHosts;
     }
@@ -91,6 +91,38 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHostsInZone(kvstore::KVStore* kv,
     }
     return activeHosts;
 }
+
+std::vector<HostAddr> ActiveHostsMan::getActiveHostsBySpace(kvstore::KVStore* kv,
+                                                            GraphSpaceID spaceId,
+                                                            int32_t expiredTTL) {
+    LOG(INFO) << "getActiveHostsBySpace";
+    std::string spaceValue;
+    std::vector<HostAddr> activeHosts;
+    auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+    auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceValue);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Space " << spaceId << " not exist";
+        return activeHosts;
+    }
+
+    std::string groupValue;
+    auto space = MetaServiceUtils::parseSpace(std::move(spaceValue));
+    auto groupKey = MetaServiceUtils::groupKey(space.group_name);
+    ret = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get group " << space.group_name  << "failed";
+        return activeHosts;
+    }
+
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+    for (const auto& zoneName : zoneNames) {
+        auto hosts = getActiveHostsInZone(kv, zoneName, expiredTTL);
+        LOG(INFO) << "Zone " << zoneName << " Host Size: " << hosts.size();
+        activeHosts.insert(activeHosts.end(), hosts.begin(), hosts.end());
+    }
+    return activeHosts;
+}
+
 std::vector<HostAddr> ActiveHostsMan::getActiveAdminHosts(kvstore::KVStore* kv,
                                                           int32_t expiredTTL,
                                                           cpp2::HostRole role) {
@@ -111,7 +143,7 @@ StatusOr<HostInfo> ActiveHostsMan::getHostInfo(kvstore::KVStore* kv, const HostA
     auto hostKey = MetaServiceUtils::hostKey(host.host, host.port);
     std::string hostValue;
     auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, hostKey, &hostValue);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Get host info " << host << " failed";
         return Status::Error("Get host info failed");
     }

@@ -15,8 +15,6 @@ DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultane
 namespace nebula {
 namespace meta {
 
-const std::string kBalancePlanTable = "__b_plan__"; // NOLINT
-
 void BalancePlan::dispatchTasks() {
     // Key -> spaceID + partID,  Val -> List of task index in tasks_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::vector<int32_t>> partTasks;
@@ -42,7 +40,7 @@ void BalancePlan::dispatchTasks() {
 }
 
 void BalancePlan::invoke() {
-    status_ = Status::IN_PROGRESS;
+    status_ = BalanceStatus::IN_PROGRESS;
     // Sort the tasks by its id to ensure the order after recovery.
     std::sort(tasks_.begin(), tasks_.end(), [](auto& l, auto& r) {
         return l.taskIdStr() < r.taskIdStr();
@@ -61,8 +59,8 @@ void BalancePlan::invoke() {
                             << finishedTaskNum_ << " task";
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
-                        if (status_ == Status::IN_PROGRESS) {
-                            status_ = Status::SUCCEEDED;
+                        if (status_ == BalanceStatus::IN_PROGRESS) {
+                            status_ = BalanceStatus::SUCCEEDED;
                             LOG(INFO) << "Balance " << id_ << " succeeded!";
                         }
                     }
@@ -75,7 +73,7 @@ void BalancePlan::invoke() {
                 } else if (j + 1 < this->buckets_[i].size()) {
                     auto& task = this->tasks_[this->buckets_[i][j + 1]];
                     if (stopped) {
-                        task.ret_ = BalanceTask::Result::INVALID;
+                        task.ret_ = BalanceTaskResult::INVALID;
                     }
                     task.invoke();
                 }
@@ -88,7 +86,7 @@ void BalancePlan::invoke() {
                     finishedTaskNum_++;
                     VLOG(1) << "Balance " << id_ << " has completed "
                             << finishedTaskNum_ << " task";
-                    status_ = Status::FAILED;
+                    status_ = BalanceStatus::FAILED;
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
                         LOG(INFO) << "Balance " << id_ << " failed!";
@@ -101,13 +99,13 @@ void BalancePlan::invoke() {
                     onFinished_();
                 } else if (j + 1 < this->buckets_[i].size()) {
                     auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                    if (tasks_[taskIndex].spaceId_ == task.spaceId_
-                            && tasks_[taskIndex].partId_ == task.partId_) {
+                    if (tasks_[taskIndex].spaceId_ == task.spaceId_ &&
+                        tasks_[taskIndex].partId_ == task.partId_) {
                         LOG(INFO) << "Skip the task for the same partId " << task.partId_;
-                        task.ret_ = BalanceTask::Result::FAILED;
+                        task.ret_ = BalanceTaskResult::FAILED;
                     }
                     if (stopped) {
-                        task.ret_ = BalanceTask::Result::INVALID;
+                        task.ret_ = BalanceTaskResult::INVALID;
                     }
                     task.invoke();
                 }
@@ -124,102 +122,83 @@ void BalancePlan::invoke() {
 }
 
 cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
-    if (kv_) {
-        std::vector<kvstore::KV> data;
-        data.emplace_back(planKey(), planVal());
-        if (!onlyPlan) {
-            for (auto& task : tasks_) {
-                data.emplace_back(task.taskKey(), task.taskVal());
-            }
+    CHECK_NOTNULL(kv_);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaServiceUtils::balancePlanKey(id_),
+                      MetaServiceUtils::balancePlanVal(status_));
+    if (!onlyPlan) {
+        for (auto& task : tasks_) {
+            data.emplace_back(MetaServiceUtils::balanceTaskKey(task.balanceId_,
+                                                               task.spaceId_,
+                                                               task.partId_,
+                                                               task.src_,
+                                                               task.dst_),
+                              MetaServiceUtils::balanceTaskVal(task.status_,
+                                                               task.ret_,
+                                                               task.startTimeMs_,
+                                                               task.endTimeMs_));
         }
-        folly::Baton<true, std::atomic> baton;
-        auto ret = kvstore::ResultCode::SUCCEEDED;
-        kv_->asyncMultiPut(kDefaultSpaceId,
-                           kDefaultPartId,
-                           std::move(data),
-                           [&baton, &ret] (kvstore::ResultCode code) {
-            if (kvstore::ResultCode::SUCCEEDED != code) {
-                ret = code;
-                LOG(ERROR) << "Can't write the kvstore, ret = " << static_cast<int32_t>(code);
-            }
-            baton.post();
-        });
-        baton.wait();
-        return MetaCommon::to(ret);
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kv_->asyncMultiPut(kDefaultSpaceId,
+                       kDefaultPartId,
+                       std::move(data),
+                       [&baton, &ret] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(ERROR) << "Can't write the kvstore, ret = " << static_cast<int32_t>(code);
+        }
+        baton.post();
+    });
+    baton.wait();
+    return MetaCommon::to(ret);
 }
 
 cpp2::ErrorCode BalancePlan::recovery(bool resume) {
-    if (kv_) {
-        const auto& prefix = BalanceTask::prefix(id_);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
-            return MetaCommon::to(ret);
+    CHECK_NOTNULL(kv_);
+    const auto& prefix = MetaServiceUtils::balanceTaskPrefix(id_);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+        return MetaCommon::to(ret);
+    }
+    while (iter->valid()) {
+        BalanceTask task;
+        task.kv_ = kv_;
+        task.client_ = client_;
+        {
+            auto tup = MetaServiceUtils::parseBalanceTaskKey(iter->key());
+            task.balanceId_ = std::get<0>(tup);
+            task.spaceId_ = std::get<1>(tup);
+            task.partId_ = std::get<2>(tup);
+            task.src_ = std::get<3>(tup);
+            task.dst_ = std::get<4>(tup);
+            task.taskIdStr_ = task.buildTaskId();
         }
-        while (iter->valid()) {
-            BalanceTask task;
-            task.kv_ = kv_;
-            task.client_ = client_;
-            {
-                auto tup = BalanceTask::parseKey(iter->key());
-                task.balanceId_ = std::get<0>(tup);
-                task.spaceId_ = std::get<1>(tup);
-                task.partId_ = std::get<2>(tup);
-                task.src_ = std::get<3>(tup);
-                task.dst_ = std::get<4>(tup);
-                task.taskIdStr_ = task.buildTaskId();
-            }
-            {
-                auto tup = BalanceTask::parseVal(iter->val());
-                task.status_ = std::get<0>(tup);
-                task.ret_ = std::get<1>(tup);
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
-                if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
-                    // Resume the failed task, skip the in-progress and invalid tasks
-                    if (task.ret_ == BalanceTask::Result::FAILED) {
-                        task.ret_ = BalanceTask::Result::IN_PROGRESS;
-                    }
-                    task.status_ = BalanceTask::Status::START;
-                    if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
-                        task.ret_ = BalanceTask::Result::INVALID;
-                    }
+        {
+            auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+            task.status_ = std::get<0>(tup);
+            task.ret_ = std::get<1>(tup);
+            task.startTimeMs_ = std::get<2>(tup);
+            task.endTimeMs_ = std::get<3>(tup);
+            if (resume && task.ret_ != BalanceTaskResult::SUCCEEDED) {
+                // Resume the failed task, skip the in-progress and invalid tasks
+                if (task.ret_ == BalanceTaskResult::FAILED) {
+                    task.ret_ = BalanceTaskResult::IN_PROGRESS;
+                }
+                task.status_ = BalanceTaskStatus::START;
+                if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
+                    LOG(ERROR) << "The destination is not lived";
+                    task.ret_ = BalanceTaskResult::INVALID;
                 }
             }
-            tasks_.emplace_back(std::move(task));
-            iter->next();
         }
+        tasks_.emplace_back(std::move(task));
+        iter->next();
     }
     return cpp2::ErrorCode::SUCCEEDED;
-}
-
-std::string BalancePlan::planKey() const {
-    std::string str;
-    str.reserve(48);
-    str.append(reinterpret_cast<const char*>(kBalancePlanTable.data()), kBalancePlanTable.size())
-       .append(reinterpret_cast<const char*>(&id_), sizeof(id_));
-    return str;
-}
-
-std::string BalancePlan::planVal() const {
-    std::string str;
-    str.append(reinterpret_cast<const char*>(&status_), sizeof(status_));
-    return str;
-}
-
-const std::string& BalancePlan::prefix() {
-    return kBalancePlanTable;
-}
-
-BalanceID BalancePlan::id(const folly::StringPiece& rawKey) {
-    return *reinterpret_cast<const BalanceID*>(rawKey.begin() + kBalancePlanTable.size());
-}
-
-BalancePlan::Status BalancePlan::status(const folly::StringPiece& rawVal) {
-    return static_cast<Status>(*rawVal.begin());
 }
 
 }  // namespace meta

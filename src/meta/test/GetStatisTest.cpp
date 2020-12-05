@@ -26,7 +26,7 @@ protected:
         kv_ = cluster.initMetaKV(rootPath_->path());
 
         ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
-        ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
+        TestUtils::assembleSpace(kv_.get(), 1, 1);
 
         std::vector<Status> sts(14, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));

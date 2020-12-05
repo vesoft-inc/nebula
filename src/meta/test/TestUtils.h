@@ -33,6 +33,9 @@ namespace meta {
 using nebula::meta::cpp2::PropertyType;
 using mock::MockCluster;
 
+using ZoneInfo  = std::unordered_map<std::string, std::vector<HostAddr>>;
+using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
+
 class TestFaultInjector : public FaultInjector {
 public:
     explicit TestFaultInjector(std::vector<Status> sts)
@@ -95,27 +98,27 @@ public:
 
 
     folly::Future<Status> createSnapshot() override {
-        return response(8);
-    }
-
-    folly::Future<Status> dropSnapshot() override {
         return response(9);
     }
 
-    folly::Future<Status> blockingWrites() override {
+    folly::Future<Status> dropSnapshot() override {
         return response(10);
     }
 
-    folly::Future<Status> rebuildTagIndex() override {
+    folly::Future<Status> blockingWrites() override {
         return response(11);
     }
 
-    folly::Future<Status> rebuildEdgeIndex() override {
+    folly::Future<Status> rebuildTagIndex() override {
         return response(12);
     }
 
-    folly::Future<Status> addTask() override {
+    folly::Future<Status> rebuildEdgeIndex() override {
         return response(13);
+    }
+
+    folly::Future<Status> addTask() override {
+        return response(14);
     }
 
     void reset(std::vector<Status> sts) {
@@ -183,10 +186,31 @@ public:
         return hosts.size();
     }
 
-    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,
+    static void assembleGroupAndZone(kvstore::KVStore* kv,
+                                     const ZoneInfo& zoneInfo,
+                                     const GroupInfo& groupInfo) {
+        std::vector<kvstore::KV> data;
+        for (auto iter = zoneInfo.begin(); iter != zoneInfo.end(); iter++) {
+            data.emplace_back(MetaServiceUtils::zoneKey(iter->first),
+                              MetaServiceUtils::zoneVal(iter->second));
+        }
+        for (auto iter = groupInfo.begin(); iter != groupInfo.end(); iter++) {
+            data.emplace_back(MetaServiceUtils::groupKey(iter->first),
+                              MetaServiceUtils::groupVal(iter->second));
+        }
+
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode code) {
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                              baton.post();
+                          });
+        baton.wait();
+    }
+
+    static void assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,
                               int32_t replica = 1, int32_t totalHost = 1) {
         // mock the part distribution like create space
-        bool ret = false;
         cpp2::SpaceDesc properties;
         properties.set_space_name("test_space");
         properties.set_partition_num(partitionNum);
@@ -214,11 +238,10 @@ public:
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
-                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
                               baton.post();
                           });
         baton.wait();
-        return ret;
     }
 
     static void mockTag(kvstore::KVStore* kv, int32_t tagNum,
@@ -252,7 +275,7 @@ public:
         baton.wait();
     }
 
-    static bool mockTagIndex(kvstore::KVStore* kv,
+    static void mockTagIndex(kvstore::KVStore* kv,
                              TagID tagID, std::string tagName,
                              IndexID indexID, std::string indexName,
                              std::vector<cpp2::ColumnDef> columns) {
@@ -271,18 +294,16 @@ public:
                           std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
         data.emplace_back(MetaServiceUtils::indexKey(space, indexID),
                           MetaServiceUtils::indexVal(item));
-        kvstore::ResultCode ret;
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
-                              ret = code;
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
                               baton.post();
                           });
         baton.wait();
-        return ret == kvstore::ResultCode::SUCCEEDED;
     }
 
-    static bool mockEdgeIndex(kvstore::KVStore* kv,
+    static void mockEdgeIndex(kvstore::KVStore* kv,
                               EdgeType edgeType, std::string edgeName,
                               IndexID indexID, std::string indexName,
                               std::vector<cpp2::ColumnDef> columns) {
@@ -301,15 +322,13 @@ public:
                           std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
         data.emplace_back(MetaServiceUtils::indexKey(space, indexID),
                           MetaServiceUtils::indexVal(item));
-        kvstore::ResultCode ret;
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
-                              ret = code;
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
                               baton.post();
                           });
         baton.wait();
-        return ret == kvstore::ResultCode::SUCCEEDED;
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum,

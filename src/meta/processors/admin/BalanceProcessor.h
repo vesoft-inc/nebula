@@ -24,7 +24,7 @@ public:
 
 private:
     explicit BalanceProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::BalanceResp>(kvstore) {}
+        : BaseProcessor<cpp2::BalanceResp>(kvstore) {}
 };
 
 }  // namespace meta

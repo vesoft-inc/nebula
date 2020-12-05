@@ -19,6 +19,8 @@
 namespace nebula {
 namespace meta {
 
+using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
+using PartAllocation = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
 
 /**
@@ -54,6 +56,9 @@ class Balancer {
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalanceTest);
     FRIEND_TEST(BalanceTest, ManyHostsLeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, LeaderBalanceWithZoneTest);
+    FRIEND_TEST(BalanceTest, LeaderBalanceWithLargerZoneTest);
+    FRIEND_TEST(BalanceTest, LeaderBalanceWithComplexZoneTest);
     FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
     FRIEND_TEST(BalanceIntegrationTest, BalanceTest);
 
@@ -134,72 +139,81 @@ private:
     cpp2::ErrorCode buildBalancePlan(std::unordered_set<HostAddr> hostDel);
 
     ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-    genTasks(GraphSpaceID spaceId, int32_t spaceReplica, std::unordered_set<HostAddr> hostDel);
+    genTasks(GraphSpaceID spaceId,
+             int32_t spaceReplica,
+             bool dependentOnGroup,
+             std::unordered_set<HostAddr> hostDel);
 
-    void getHostParts(GraphSpaceID spaceId,
-                      std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+    bool getHostParts(GraphSpaceID spaceId,
+                      bool dependentOnGroup,
+                      HostParts& hostParts,
                       int32_t& totalParts);
 
-    void calDiff(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+    void calDiff(const HostParts& hostParts,
                  const std::vector<HostAddr>& activeHosts,
                  std::vector<HostAddr>& newlyAdded,
                  std::unordered_set<HostAddr>& lost);
 
-    Status checkReplica(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+    Status checkReplica(const HostParts& hostParts,
                         const std::vector<HostAddr>& activeHosts,
                         int32_t replica,
                         PartitionID partId);
 
     StatusOr<HostAddr> hostWithMinimalParts(
-                        const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+                        const HostParts& hostParts,
                         PartitionID partId);
 
     void balanceParts(BalanceID balanceId,
                       GraphSpaceID spaceId,
-                      std::unordered_map<HostAddr, std::vector<PartitionID>>& newHostParts,
+                      HostParts& newHostParts,
                       int32_t totalParts,
                       std::vector<BalanceTask>& tasks);
 
 
     std::vector<std::pair<HostAddr, int32_t>>
-    sortedHostsByParts(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts);
+    sortedHostsByParts(const HostParts& hostParts);
 
-    bool getAllSpaces(std::vector<std::pair<GraphSpaceID, int32_t>>& spaces,
-                      kvstore::ResultCode& retCode);
+    bool getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>>
-    buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
-                           LeaderBalancePlan& plan, bool useDeviation = true);
+    bool buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
+                                GraphSpaceID spaceId,
+                                int32_t replicaFactor,
+                                bool dependentOnGroup,
+                                LeaderBalancePlan& plan,
+                                bool useDeviation = true);
 
     void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
-    int32_t acquireLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
-                           std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-                           std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+    int32_t acquireLeaders(HostParts& allHostParts,
+                           HostParts& leaderHostParts,
+                           PartAllocation& peersMap,
                            std::unordered_set<HostAddr>& activeHosts,
-                           HostAddr to,
-                           size_t maxLoad,
+                           const HostAddr& target,
                            LeaderBalancePlan& plan,
                            GraphSpaceID spaceId);
 
-    int32_t giveupLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
-                          std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+    int32_t giveupLeaders(HostParts& leaderHostParts,
+                          PartAllocation& peersMap,
                           std::unordered_set<HostAddr>& activeHosts,
-                          HostAddr from,
-                          size_t maxLoad,
+                          const HostAddr& source,
                           LeaderBalancePlan& plan,
                           GraphSpaceID spaceId);
 
 private:
     std::atomic_bool running_{false};
-    kvstore::KVStore* kv_ = nullptr;
+    kvstore::KVStore* kv_{nullptr};
     std::unique_ptr<AdminClient> client_{nullptr};
+
     // Current running plan.
     std::shared_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
     std::atomic_bool inLeaderBalance_{false};
+
+    // Host => Graph => Partitions
     std::unique_ptr<HostLeaderMap> hostLeaderMap_;
     mutable std::mutex lock_;
+
+    std::unordered_map<HostAddr, std::pair<int32_t, int32_t>> hostBounds_;
 };
 
 }  // namespace meta

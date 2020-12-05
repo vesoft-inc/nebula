@@ -543,11 +543,9 @@ bool FileBasedWal::appendLogInternal(LogID id,
                    << ", error:" << strerror(errno);
     }
 
-    if (policy_.sync) {
-        if (::fsync(currFd_) == -1) {
-            LOG(WARNING) << "sync wal \"" << currInfo_->path()
-                         << "\" failed, error: " << strerror(errno);
-        }
+    if (policy_.sync && ::fsync(currFd_) == -1) {
+        LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                     << "\" failed, error: " << strerror(errno);
     }
     currInfo_->setSize(currInfo_->size() + strBuf.size());
     currInfo_->setLastId(id);
@@ -560,7 +558,6 @@ bool FileBasedWal::appendLogInternal(LogID id,
     }
 
     logBuffer_->push(id, term, cluster, std::move(msg));
-
     return true;
 }
 

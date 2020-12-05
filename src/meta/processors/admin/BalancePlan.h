@@ -10,10 +10,9 @@
 #include <gtest/gtest_prod.h>
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/BalanceTask.h"
-
+#include "meta/processors/Common.h"
 namespace nebula {
 namespace meta {
-
 class BalancePlan {
     friend class Balancer;
     FRIEND_TEST(BalanceTest, BalancePlanTest);
@@ -27,18 +26,6 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
-    enum class Status : uint8_t {
-        NOT_START          = 0x01,
-        IN_PROGRESS        = 0x02,
-        SUCCEEDED          = 0x03,
-        /**
-         * TODO(heng): Currently, after the plan failed, we will try to resume it
-         * when running "balance" again. But in many cases, the plan will be failed
-         * forever, it this cases, we should rollback the plan.
-         * */
-        FAILED             = 0x04,
-    };
-
     BalancePlan(BalanceID id, kvstore::KVStore* kv, AdminClient* client)
         : id_(id)
         , kv_(kv)
@@ -66,7 +53,7 @@ public:
      * */
     void rollback() {}
 
-    Status status() {
+    BalanceStatus status() {
         return status_;
     }
 
@@ -88,17 +75,7 @@ public:
 private:
     cpp2::ErrorCode recovery(bool resume = true);
 
-    std::string planKey() const;
-
-    std::string planVal() const;
-
     void dispatchTasks();
-
-    static const std::string& prefix();
-
-    static BalanceID id(const folly::StringPiece& rawKey);
-
-    static BalancePlan::Status status(const folly::StringPiece& rawVal);
 
 private:
     BalanceID id_ = 0;
@@ -108,7 +85,7 @@ private:
     std::mutex lock_;
     size_t finishedTaskNum_ = 0;
     std::function<void()> onFinished_;
-    Status status_ = Status::NOT_START;
+    BalanceStatus status_ = BalanceStatus::NOT_START;
     bool stopped_ = false;
 
     // List of task index in tasks_;

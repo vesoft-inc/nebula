@@ -150,12 +150,11 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             for (auto& host : hosts) {
                 auto hostIter = hostLoading_.find(host);
                 if (hostIter == hostLoading_.end()) {
-                    LOG(ERROR) << "Host " << host << " not found";
-                    handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-                    onFinished();
-                    return;
+                    hostLoading_[host] = 0;
+                    zoneLoading_[zone] += 0;
+                } else {
+                    zoneLoading_[zone] += hostIter->second;
                 }
-                zoneLoading_[zone] += hostIter->second;
             }
             zoneHosts[zone] = std::move(hosts);
         }
@@ -178,7 +177,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
                 return;
             }
 
-            auto partHosts = partHostsRet.value();
+            auto partHosts = std::move(partHostsRet).value();
             data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                               MetaServiceUtils::partVal(partHosts));
         }

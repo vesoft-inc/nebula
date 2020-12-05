@@ -169,8 +169,6 @@ private:
 
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-    HostAddr toThriftHost(const HostAddr& addr);
-
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
 
     std::vector<HostAddr> getAdminAddrFromPeers(const std::vector<HostAddr> &peers);

@@ -38,27 +38,27 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     if (req.get_id() != nullptr) {
         auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
         if (!ret.ok()) {
-            handleErrorCode(cpp2::ErrorCode::E_BAD_BALANCE_PLAN);
+            LOG(ERROR) << "Balance ID not found: " << *req.get_id();
+            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
-        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         const auto& plan = ret.value();
         std::vector<cpp2::BalanceTask> thriftTasks;
         for (auto& task : plan.tasks()) {
             cpp2::BalanceTask t;
             t.set_id(task.taskIdStr());
             switch (task.result()) {
-                case BalanceTask::Result::SUCCEEDED:
+                case BalanceTaskResult::SUCCEEDED:
                     t.set_result(cpp2::TaskResult::SUCCEEDED);
                     break;
-                case BalanceTask::Result::FAILED:
+                case BalanceTaskResult::FAILED:
                     t.set_result(cpp2::TaskResult::FAILED);
                     break;
-                case BalanceTask::Result::IN_PROGRESS:
+                case BalanceTaskResult::IN_PROGRESS:
                     t.set_result(cpp2::TaskResult::IN_PROGRESS);
                     break;
-                case BalanceTask::Result::INVALID:
+                case BalanceTaskResult::INVALID:
                     t.set_result(cpp2::TaskResult::INVALID);
                     break;
             }
@@ -93,7 +93,6 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
-
 
 }  // namespace meta
 }  // namespace nebula

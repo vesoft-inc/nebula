@@ -30,14 +30,14 @@ protected:
         kv_ = cluster.initMetaKV(rootPath_->path());
 
         ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
-        ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
+        TestUtils::assembleSpace(kv_.get(), 1, 1);
 
         // Make sure the rebuild job could find the index name.
         std::vector<cpp2::ColumnDef> columns;
-        ASSERT_TRUE(TestUtils::mockTagIndex(kv_.get(), 1, "tag_name", 11,
-                                            "tag_index_name", columns));
-        ASSERT_TRUE(TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21,
-                                             "edge_index_name", columns));
+        TestUtils::mockTagIndex(kv_.get(), 1, "tag_name", 11,
+                                "tag_index_name", columns);
+        TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21,
+                                 "edge_index_name", columns);
 
         std::vector<Status> sts(14, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));

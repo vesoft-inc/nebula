@@ -120,6 +120,10 @@ public:
                                                       const std::string& zoneName,
                                                       int32_t expiredTTL = 0);
 
+    static std::vector<HostAddr> getActiveHostsBySpace(kvstore::KVStore* kv,
+                                                       GraphSpaceID spaceId,
+                                                       int32_t expiredTTL = 0);
+
     static std::vector<HostAddr> getActiveAdminHosts(kvstore::KVStore* kv,
                                                      int32_t expiredTTL = 0,
                                                      cpp2::HostRole role = cpp2::HostRole::STORAGE);

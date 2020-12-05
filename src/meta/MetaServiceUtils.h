@@ -12,6 +12,7 @@
 #include "common/datatypes/HostAddr.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
@@ -238,6 +239,41 @@ public:
 
     static HostAddr deserializeHostAddr(folly::StringPiece str);
 
+    static std::string balanceTaskKey(BalanceID balanceId,
+                                      GraphSpaceID spaceId,
+                                      PartitionID partId,
+                                      HostAddr src,
+                                      HostAddr dst);
+
+    static std::string balanceTaskVal(BalanceTaskStatus status,
+                                      BalanceTaskResult retult,
+                                      int64_t startTime,
+                                      int64_t endTime);
+
+    static std::string balanceTaskPrefix(BalanceID balanceId);
+
+    static std::string balancePlanKey(BalanceID id);
+
+    static std::string balancePlanVal(BalanceStatus status);
+
+    static std::string balancePlanPrefix();
+
+    static BalanceID parseBalanceID(const folly::StringPiece& rawKey);
+
+    static BalanceStatus parseBalanceStatus(const folly::StringPiece& rawVal);
+
+    static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
+    parseBalanceTaskKey(const folly::StringPiece& rawKey);
+
+    static std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t>
+    parseBalanceTaskVal(const folly::StringPiece& rawVal);
+
+    static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
+    parseBalancePlanKey(const folly::StringPiece& rawKey);
+
+    static std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t>
+    parseBalancePlanVal(const folly::StringPiece& rawVal);
+
     static std::string groupKey(const std::string& group);
 
     static std::string groupVal(const std::vector<std::string>& zones);
@@ -257,8 +293,6 @@ public:
     static std::string parseZoneName(folly::StringPiece rawData);
 
     static std::vector<HostAddr> parseZoneHosts(folly::StringPiece rawData);
-
-    static bool zoneDefined();  //  check whether the zone have defined
 
     static std::string listenerKey(GraphSpaceID spaceId,
                                    PartitionID partId,
