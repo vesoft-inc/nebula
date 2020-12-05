@@ -8,6 +8,7 @@
 #include "webservice/GetStatsHandler.h"
 #include "webservice/Common.h"
 #include "stats/StatsManager.h"
+#include "thread/ThreadManager.h"
 #include <folly/String.h>
 #include <folly/json.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -114,11 +115,20 @@ void GetStatsHandler::addOneStat(folly::dynamic& vals,
 
 folly::dynamic GetStatsHandler::getStats() const {
     auto stats = folly::dynamic::array();
+    static std::unordered_map<std::string, std::function<size_t()>> funcMap =
+            getFunctionMap();
     if (statNames_.empty()) {
         // Read all stats
         StatsManager::readAllValue(stats);
+        for (auto& func : funcMap) {
+            addOneStat(stats, func.first, func.second());
+        }
     } else {
         for (auto& sn : statNames_) {
+            if (funcMap.find(sn) != funcMap.end()) {
+                addOneStat(stats, sn, funcMap[sn]());
+                continue;
+            }
             auto status = StatsManager::readValue(sn);
             if (status.ok()) {
                 int64_t statValue = status.value();
@@ -128,10 +138,21 @@ folly::dynamic GetStatsHandler::getStats() const {
             }
         }
     }
-
     return stats;
 }
 
+std::unordered_map<std::string, std::function<size_t()>>
+        GetStatsHandler::getFunctionMap() const {
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> tm =
+            nebula::thread::getThreadManager();
+    std::unordered_map<std::string, std::function<size_t()>> funcMap = {
+        { "rpc.numIdleWorkers", [tm]() -> auto { return tm->idleWorkerCount();} },
+        { "rpc.pendingTaskCount", [tm]() -> auto { return tm->pendingTaskCount();} },
+        { "rpc.totalTaskCount", [tm]() -> auto { return tm->totalTaskCount();} },
+        { "rpc.expiredTaskCount", [tm]() -> auto { return tm->expiredTaskCount();} }
+    };
+    return funcMap;
+}
 
 std::string GetStatsHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;

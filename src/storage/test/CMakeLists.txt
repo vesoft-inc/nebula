@@ -18,6 +18,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:thread_manager_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>

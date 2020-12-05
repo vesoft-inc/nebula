@@ -18,13 +18,11 @@
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
-#include <thrift/lib/cpp/concurrency/ThreadManager.h>
-
+#include "thread/ThreadManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 
@@ -98,10 +96,7 @@ bool StorageServer::initWebService() {
 
 bool StorageServer::start() {
     ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-    workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-                                 FLAGS_num_worker_threads, true /*stats*/);
-    workers_->setNamePrefix("executor");
-    workers_->start();
+    workers_ = nebula::thread::getThreadManager();
 
     // Meta client
     meta::MetaClientOptions options;

@@ -13,3 +13,15 @@ nebula_add_test(
         gtest
         gtest_main
 )
+
+nebula_add_test(
+    NAME
+        thread_manager_test
+    SOURCES
+        ThreadManagerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:thread_manager_obj>
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        gtest
+)

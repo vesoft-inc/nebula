@@ -16,6 +16,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
 #include "graph/GraphFlags.h"
+#include "thread/ThreadManager.h"
 #include "webservice/WebService.h"
 
 using nebula::Status;
@@ -112,15 +113,6 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Number of networking IO threads: " << FLAGS_num_netio_threads;
 
-    if (FLAGS_num_worker_threads == 0) {
-        FLAGS_num_worker_threads = std::thread::hardware_concurrency();
-    }
-    if (FLAGS_num_worker_threads <= 0) {
-        LOG(WARNING) << "Number of worker threads should be greater than zero";
-        return EXIT_FAILURE;
-    }
-    LOG(INFO) << "Number of worker threads: " << FLAGS_num_worker_threads;
-
     auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
                             FLAGS_num_netio_threads, std::move(threadFactory));
@@ -142,8 +134,8 @@ int main(int argc, char *argv[]) {
         gServer->setReusePort(FLAGS_reuse_port);
     }
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
-    gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-    gServer->setCPUWorkerThreadName("executor");
+    auto workers = nebula::thread::getThreadManager();
+    gServer->setThreadManager(workers);
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
     gServer->setThreadStackSizeMB(5);

@@ -40,6 +40,9 @@ protected:
                     const std::string& error) const;
     std::string toStr(folly::dynamic& vals) const;
 
+private:
+    std::unordered_map<std::string, std::function<size_t()>> getFunctionMap() const;
+
 protected:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
