@@ -11,52 +11,15 @@
 #include "validator/TraversalValidator.h"
 #include "util/AnonVarGenerator.h"
 #include "planner/Query.h"
+#include "context/ast/QueryAstContext.h"
 
 namespace nebula {
 
 class MatchStepRange;
 
 namespace graph {
-
-struct MatchAstContext;
-
 class MatchValidator final : public TraversalValidator {
 public:
-    using Direction = MatchEdge::Direction;
-    struct NodeInfo {
-        TagID                                   tid{0};
-        bool                                    anonymous{false};
-        const std::string                      *label{nullptr};
-        const std::string                      *alias{nullptr};
-        const MapExpression                    *props{nullptr};
-        Expression                             *filter{nullptr};
-    };
-
-    struct EdgeInfo {
-        bool                                    anonymous{false};
-        MatchStepRange                         *range{nullptr};
-        std::vector<EdgeType>                   edgeTypes;
-        MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
-        std::vector<std::string>                types;
-        const std::string                      *alias{nullptr};
-        const MapExpression                    *props{nullptr};
-        Expression                             *filter{nullptr};
-    };
-
-    enum AliasType {
-        kNode, kEdge, kPath
-    };
-
-    struct ScanInfo {
-        Expression                             *filter{nullptr};
-        int32_t                                 schemaId{0};
-    };
-
-    enum class QueryEntry {
-        kId,  // query start by id
-        kIndex  // query start by index scan
-    };
-
     MatchValidator(Sentence *sentence, QueryContext *context);
 
 private:
@@ -64,13 +27,16 @@ private:
 
     AstContext* getAstContext() override;
 
-    Status validatePath(const MatchPath *path);
+    Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
 
-    Status validateFilter(const Expression *filter);
+    Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
-    Status validateReturn(MatchReturn *ret);
+    Status validateReturn(MatchReturn *ret,
+                          const MatchClauseContext &matchClauseCtx,
+                          ReturnClauseContext &retClauseCtx) const;
 
-    Status validateAliases(const std::vector<const Expression*> &exprs) const;
+    Status validateAliases(const std::vector<const Expression *> &exprs,
+                           std::unordered_map<std::string, AliasType> &aliases) const;
 
     Status validateStepRange(const MatchStepRange *range) const;
 
@@ -82,29 +48,29 @@ private:
         return qctx_->objPool()->add(obj);
     }
 
-    Status buildNodeInfo(const MatchPath *path);
+    Status buildNodeInfo(const MatchPath *path,
+                         std::vector<NodeInfo> &edgeInfos,
+                         std::unordered_map<std::string, AliasType> &aliases) const;
 
-    Status buildEdgeInfo(const MatchPath *path);
+    Status buildEdgeInfo(const MatchPath *path,
+                         std::vector<EdgeInfo> &nodeInfos,
+                         std::unordered_map<std::string, AliasType> &aliases) const;
 
-    Status buildPathExpr(const MatchPath *path);
+    Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+
+    template <typename T>
+    std::unique_ptr<T> getContext() const {
+        auto ctx = std::make_unique<T>();
+        ctx->sentence = sentence_;
+        ctx->qctx = qctx_;
+        ctx->space = space_;
+        return ctx;
+    }
 
 private:
     std::unique_ptr<MatchAstContext>            matchCtx_;
 };
 
-struct MatchAstContext final : AstContext {
-    std::vector<MatchValidator::NodeInfo>                       nodeInfos;
-    std::vector<MatchValidator::EdgeInfo>                       edgeInfos;
-    std::unordered_map<std::string, MatchValidator::AliasType>  aliases;
-    std::unique_ptr<PathBuildExpression>                        pathBuild;
-    std::unique_ptr<Expression>                                 filter;
-    const YieldColumns                                         *yieldColumns;
-    MatchValidator::ScanInfo                                    scanInfo;
-    const Expression                                           *ids;
-    std::vector<std::pair<size_t, OrderFactor::OrderType>>      indexedOrderFactors;
-    int64_t                                                     skip;
-    int64_t                                                     limit;
-};
 }   // namespace graph
 }   // namespace nebula
 

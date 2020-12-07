@@ -147,6 +147,5 @@ TEST_F(ExplainValidatorTest, TestProfileMultiStmts) {
         EXPECT_FALSE(checkResult(query));
     }
 }
-
 }   // namespace graph
 }   // namespace nebula

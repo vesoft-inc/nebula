@@ -153,6 +153,10 @@ public:
         return id_;
     }
 
+    virtual bool isSingleInput() const {
+        return false;
+    }
+
     void setOutputVar(std::string var) {
         DCHECK_EQ(1, outputVars_.size());
         auto* outputVarPtr = qctx_->symTable()->getVar(var);
@@ -256,6 +260,10 @@ protected:
 
 class SingleInputNode : public SingleDependencyNode {
 public:
+    bool isSingleInput() const override {
+        return true;
+    }
+
     void setInputVar(std::string inputVar) {
         DCHECK(!inputVars_.empty());
         auto* inputVarPtr = qctx_->symTable()->getVar(inputVar);

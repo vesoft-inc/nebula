@@ -42,34 +42,44 @@ Status MatchValidator::validateImpl() {
         return Status::SemanticError("OPTIONAL MATCH not supported");
     }
 
-    NG_RETURN_IF_ERROR(validatePath(matchClause->path()));
+    auto matchClauseCtx = getContext<MatchClauseContext>();
+    NG_RETURN_IF_ERROR(validatePath(matchClause->path(), *matchClauseCtx));
     if (matchClause->where() != nullptr) {
-        NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter()));
+        auto whereClauseCtx = getContext<WhereClauseContext>();
+        whereClauseCtx->aliases = &matchClauseCtx->aliases;
+        NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(), *whereClauseCtx));
+        matchClauseCtx->where = std::move(whereClauseCtx);
     }
-    NG_RETURN_IF_ERROR(validateReturn(sentence->ret()));
+
+    auto retClauseCtx = getContext<ReturnClauseContext>();
+    retClauseCtx->aliases = &matchClauseCtx->aliases;
+    NG_RETURN_IF_ERROR(validateReturn(sentence->ret(), *matchClauseCtx, *retClauseCtx));
+
+    matchCtx_->clauses.emplace_back(std::move(matchClauseCtx));
+    matchCtx_->clauses.emplace_back(std::move(retClauseCtx));
     return Status::OK();
 }
 
-
-Status MatchValidator::validatePath(const MatchPath *path) {
-    NG_RETURN_IF_ERROR(buildNodeInfo(path));
-    NG_RETURN_IF_ERROR(buildEdgeInfo(path));
-    NG_RETURN_IF_ERROR(buildPathExpr(path));
+Status MatchValidator::validatePath(const MatchPath *path,
+                                    MatchClauseContext &matchClauseCtx) const {
+    NG_RETURN_IF_ERROR(buildNodeInfo(path, matchClauseCtx.nodeInfos, matchClauseCtx.aliases));
+    NG_RETURN_IF_ERROR(buildEdgeInfo(path, matchClauseCtx.edgeInfos, matchClauseCtx.aliases));
+    NG_RETURN_IF_ERROR(buildPathExpr(path, matchClauseCtx));
     return Status::OK();
 }
 
-
-Status MatchValidator::buildPathExpr(const MatchPath *path) {
+Status MatchValidator::buildPathExpr(const MatchPath *path,
+                                     MatchClauseContext &matchClauseCtx) const {
     auto* pathAlias = path->alias();
     if (pathAlias == nullptr) {
         return Status::OK();
     }
-    if (!matchCtx_->aliases.emplace(*pathAlias, kPath).second) {
+    if (!matchClauseCtx.aliases.emplace(*pathAlias, AliasType::kPath).second) {
         return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
     }
 
-    auto& nodeInfos = matchCtx_->nodeInfos;
-    auto& edgeInfos = matchCtx_->edgeInfos;
+    auto& nodeInfos = matchClauseCtx.nodeInfos;
+    auto& edgeInfos = matchClauseCtx.edgeInfos;
 
     auto pathBuild = std::make_unique<PathBuildExpression>();
     for (size_t i = 0; i < edgeInfos.size(); ++i) {
@@ -80,15 +90,15 @@ Status MatchValidator::buildPathExpr(const MatchPath *path) {
     }
     pathBuild->add(std::make_unique<VariablePropertyExpression>(
         new std::string(), new std::string(*nodeInfos.back().alias)));
-    matchCtx_->pathBuild = std::move(pathBuild);
+    matchClauseCtx.pathBuild = std::move(pathBuild);
     return Status::OK();
 }
 
-
-Status MatchValidator::buildNodeInfo(const MatchPath *path) {
+Status MatchValidator::buildNodeInfo(const MatchPath *path,
+                                     std::vector<NodeInfo> &nodeInfos,
+                                     std::unordered_map<std::string, AliasType> &aliases) const {
     auto *sm = qctx_->schemaMng();
     auto steps = path->steps();
-    auto& nodeInfos = matchCtx_->nodeInfos;
     nodeInfos.resize(steps + 1);
 
     for (auto i = 0u; i <= steps; i++) {
@@ -108,7 +118,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path) {
             anonymous = true;
             alias = saveObject(new std::string(vctx_->anonVarGen()->getVar()));
         }
-        if (!matchCtx_->aliases.emplace(*alias, kNode).second) {
+        if (!aliases.emplace(*alias, AliasType::kNode).second) {
             return Status::SemanticError("`%s': Redefined alias", alias->c_str());
         }
         Expression *filter = nullptr;
@@ -127,10 +137,11 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path) {
     return Status::OK();
 }
 
-Status MatchValidator::buildEdgeInfo(const MatchPath *path) {
+Status MatchValidator::buildEdgeInfo(const MatchPath *path,
+                                     std::vector<EdgeInfo> &edgeInfos,
+                                     std::unordered_map<std::string, AliasType> &aliases) const {
     auto *sm = qctx_->schemaMng();
     auto steps = path->steps();
-    auto& edgeInfos = matchCtx_->edgeInfos;
     edgeInfos.resize(steps);
 
     for (auto i = 0u; i < steps; i++) {
@@ -159,7 +170,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path) {
             anonymous = true;
             alias = saveObject(new std::string(vctx_->anonVarGen()->getVar()));
         }
-        if (!matchCtx_->aliases.emplace(*alias, kEdge).second) {
+        if (!aliases.emplace(*alias, AliasType::kEdge).second) {
             return Status::SemanticError("`%s': Redefined alias", alias->c_str());
         }
         Expression *filter = nullptr;
@@ -178,11 +189,11 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path) {
     return Status::OK();
 }
 
+Status MatchValidator::validateFilter(const Expression *filter,
+                                      WhereClauseContext &whereClauseCtx) const {
+    whereClauseCtx.filter = ExpressionUtils::foldConstantExpr(filter);
 
-Status MatchValidator::validateFilter(const Expression *filter) {
-    matchCtx_->filter = ExpressionUtils::foldConstantExpr(filter);
-
-    auto typeStatus = deduceExprType(matchCtx_->filter.get());
+    auto typeStatus = deduceExprType(whereClauseCtx.filter.get());
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
@@ -193,13 +204,14 @@ Status MatchValidator::validateFilter(const Expression *filter) {
         return Status::SemanticError(ss.str());
     }
 
-    NG_RETURN_IF_ERROR(validateAliases({matchCtx_->filter.get()}));
+    NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter.get()}, *whereClauseCtx.aliases));
 
     return Status::OK();
 }
 
-
-Status MatchValidator::validateReturn(MatchReturn *ret) {
+Status MatchValidator::validateReturn(MatchReturn *ret,
+                                      const MatchClauseContext &matchClauseCtx,
+                                      ReturnClauseContext &retClauseCtx) const {
     // `RETURN *': return all named nodes or edges
     YieldColumns *columns = nullptr;
     if (ret->isAll()) {
@@ -210,22 +222,22 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
         };
 
         columns = saveObject(new YieldColumns());
-        auto steps = matchCtx_->edgeInfos.size();
+        auto steps = matchClauseCtx.edgeInfos.size();
 
-        if (!matchCtx_->nodeInfos[0].anonymous) {
-            columns->addColumn(makeColumn(*matchCtx_->nodeInfos[0].alias));
+        if (!matchClauseCtx.nodeInfos[0].anonymous) {
+            columns->addColumn(makeColumn(*matchClauseCtx.nodeInfos[0].alias));
         }
 
         for (auto i = 0u; i < steps; i++) {
-            if (!matchCtx_->edgeInfos[i].anonymous) {
-                columns->addColumn(makeColumn(*matchCtx_->edgeInfos[i].alias));
+            if (!matchClauseCtx.edgeInfos[i].anonymous) {
+                columns->addColumn(makeColumn(*matchClauseCtx.edgeInfos[i].alias));
             }
-            if (!matchCtx_->nodeInfos[i+1].anonymous) {
-                columns->addColumn(makeColumn(*matchCtx_->nodeInfos[i+1].alias));
+            if (!matchClauseCtx.nodeInfos[i+1].anonymous) {
+                columns->addColumn(makeColumn(*matchClauseCtx.nodeInfos[i+1].alias));
             }
         }
 
-        for (auto &aliasPair : matchCtx_->aliases) {
+        for (auto &aliasPair : matchClauseCtx.aliases) {
             if (aliasPair.second == AliasType::kPath) {
                 columns->addColumn(makeColumn(aliasPair.first));
             }
@@ -237,17 +249,19 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
     }
 
     if (columns == nullptr) {
-        matchCtx_->yieldColumns = ret->columns();
+        retClauseCtx.yieldColumns = ret->columns();
     } else {
-        matchCtx_->yieldColumns = columns;
+        retClauseCtx.yieldColumns = columns;
     }
     // Check all referencing expressions are valid
     std::vector<const Expression*> exprs;
-    exprs.reserve(matchCtx_->yieldColumns->size());
-    for (auto *col : matchCtx_->yieldColumns->columns()) {
+    exprs.reserve(retClauseCtx.yieldColumns->size());
+    for (auto *col : retClauseCtx.yieldColumns->columns()) {
         exprs.push_back(col->expr());
     }
-    NG_RETURN_IF_ERROR(validateAliases(exprs));
+    NG_RETURN_IF_ERROR(validateAliases(exprs, *retClauseCtx.aliases));
+
+    retClauseCtx.distinct = ret->isDistinct();
 
     auto *skipExpr = ret->skip();
     auto *limitExpr = ret->limit();
@@ -282,13 +296,15 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
         }
         limit = value.getInt();
     }
-    matchCtx_->skip = skip;
-    matchCtx_->limit = limit;
+    retClauseCtx.pagination = getContext<PaginationContext>();
+    retClauseCtx.pagination->skip = skip;
+    retClauseCtx.pagination->limit = limit;
 
     if (ret->orderFactors() != nullptr) {
+        retClauseCtx.order = getContext<OrderByClauseContext>();
         std::vector<std::string> inputColList;
-        inputColList.reserve(matchCtx_->yieldColumns->columns().size());
-        for (auto *col : matchCtx_->yieldColumns->columns()) {
+        inputColList.reserve(retClauseCtx.yieldColumns->columns().size());
+        for (auto *col : retClauseCtx.yieldColumns->columns()) {
             if (col->alias() != nullptr) {
                 inputColList.emplace_back(*col->alias());
             } else {
@@ -313,15 +329,15 @@ Status MatchValidator::validateReturn(MatchReturn *ret) {
             if (iter == inputColIndices.end()) {
                 return Status::SemanticError("Column `%s' not found", name->c_str());
             }
-            matchCtx_->indexedOrderFactors.emplace_back(iter->second, factor->orderType());
+            retClauseCtx.order->indexedOrderFactors.emplace_back(iter->second, factor->orderType());
         }
     }
 
     return Status::OK();
 }
 
-
-Status MatchValidator::validateAliases(const std::vector<const Expression*> &exprs) const {
+Status MatchValidator::validateAliases(const std::vector<const Expression *> &exprs,
+                                       std::unordered_map<std::string, AliasType> &aliases) const {
     static const std::unordered_set<Expression::Kind> kinds = {
         Expression::Kind::kLabel,
         Expression::Kind::kLabelAttribute
@@ -342,7 +358,7 @@ Status MatchValidator::validateAliases(const std::vector<const Expression*> &exp
                 name = static_cast<const LabelAttributeExpression*>(refExpr)->left()->name();
             }
             DCHECK(name != nullptr);
-            if (matchCtx_->aliases.count(*name) != 1) {
+            if (aliases.count(*name) != 1) {
                 return Status::SemanticError("Alias used but not defined: `%s'", name->c_str());
             }
         }

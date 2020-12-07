@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/planners/SequentialPlanner.h"
+#include "planner/SequentialPlanner.h"
 
 #include "parser/Sentence.h"
 #include "planner/Logic.h"

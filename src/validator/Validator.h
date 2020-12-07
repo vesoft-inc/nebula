@@ -8,7 +8,7 @@
 #define VALIDATOR_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "context/AstContext.h"
+#include "context/ast/AstContext.h"
 #include "context/QueryContext.h"
 #include "context/ValidateContext.h"
 #include "parser/Sentence.h"

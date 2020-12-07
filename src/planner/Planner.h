@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "planner/PlanNode.h"
-#include "context/AstContext.h"
+#include "context/ast/AstContext.h"
 
 namespace nebula {
 namespace graph {

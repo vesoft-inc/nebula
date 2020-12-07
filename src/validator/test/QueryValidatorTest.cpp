@@ -1276,5 +1276,91 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
               "SemanticError: The maximum number of statements allowed has been exceeded");
 }
 
+TEST_F(QueryValidatorTest, TestMatch) {
+    {
+        std::string query = "MATCH (v1:person{name: \"LeBron James\"}) -[r]-> (v2) "
+                            "RETURN type(r) AS Type, v2.name AS Name";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kDedup,
+            PK::kProject,
+            PK::kIndexScan,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "MATCH (:person{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3) "
+                            "RETURN DISTINCT v3.name AS Name";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kDedup,
+            PK::kProject,
+            PK::kIndexScan,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "MATCH (v1) -[r]-> (v2) "
+                            "WHERE id(v1) == \"LeBron James\""
+                            "RETURN type(r) AS Type, v2.name AS Name";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kGetNeighbors,
+            PK::kDedup,
+            PK::kProject,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
+
 }  // namespace graph
 }  // namespace nebula
