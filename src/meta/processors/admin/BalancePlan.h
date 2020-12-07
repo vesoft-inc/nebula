@@ -24,7 +24,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
-    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
+    FRIEND_TEST(BalanceTest, StopAndRecoverTest);
     FRIEND_TEST(BalanceTest, CleanLastInvalidBalancePlanTest);
 
 public:

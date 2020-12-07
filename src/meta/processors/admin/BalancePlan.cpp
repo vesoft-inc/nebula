@@ -179,10 +179,8 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
                 task.startTimeMs_ = std::get<2>(tup);
                 task.endTimeMs_ = std::get<3>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
-                    // Resume the failed task, skip the in-progress and invalid tasks
-                    if (task.ret_ == BalanceTask::Result::FAILED) {
-                        task.ret_ = BalanceTask::Result::IN_PROGRESS;
-                    }
+                    // Resume any task not finished
+                    task.ret_ = BalanceTask::Result::IN_PROGRESS;
                     task.status_ = BalanceTask::Status::START;
                     if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
                         task.ret_ = BalanceTask::Result::INVALID;
