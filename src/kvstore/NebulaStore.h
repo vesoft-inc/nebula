@@ -19,6 +19,7 @@
 #include "kvstore/ListenerFactory.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "utils/Utils.h"
 
 namespace nebula {
 namespace kvstore {
@@ -67,18 +68,12 @@ public:
     ~NebulaStore();
 
     // Calculate the raft service address based on the storage service address
-    static HostAddr getRaftAddr(HostAddr srvcAddr) {
-        if (srvcAddr == HostAddr("", 0)) {
-            return srvcAddr;
-        }
-        return HostAddr(srvcAddr.host, srvcAddr.port + 1);
+    static HostAddr getRaftAddr(const HostAddr& srvcAddr) {
+        return Utils::getRaftAddrFromStoreAddr(srvcAddr);
     }
 
-    static HostAddr getStoreAddr(HostAddr raftAddr) {
-        if (raftAddr == HostAddr("", 0)) {
-            return raftAddr;
-        }
-        return HostAddr(raftAddr.host, raftAddr.port - 1);
+    static HostAddr getStoreAddr(const HostAddr& raftAddr) {
+        return Utils::getStoreAddrFromRaftAddr(raftAddr);
     }
 
     // Pull meta information from the PartManager and initiate

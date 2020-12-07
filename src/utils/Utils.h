@@ -26,6 +26,21 @@ public:
         }
         return HostAddr(adminAddr.host, adminAddr.port + 1);
     }
+
+    // Calculate the raft service address based on the storage service address
+    static HostAddr getRaftAddrFromStoreAddr(const HostAddr& srvcAddr) {
+        if (srvcAddr == HostAddr("", 0)) {
+            return srvcAddr;
+        }
+        return HostAddr(srvcAddr.host, srvcAddr.port + 1);
+    }
+
+    static HostAddr getStoreAddrFromRaftAddr(const HostAddr& raftAddr) {
+        if (raftAddr == HostAddr("", 0)) {
+            return raftAddr;
+        }
+        return HostAddr(raftAddr.host, raftAddr.port - 1);
+    }
 };
 }  // namespace nebula
 #endif  // UTILS_UTILS_H_

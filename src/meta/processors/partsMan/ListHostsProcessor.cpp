@@ -16,6 +16,19 @@ DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
 namespace nebula {
 namespace meta {
 
+static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
+    switch (type) {
+        case cpp2::ListHostType::GRAPH:
+            return cpp2::HostRole::GRAPH;
+        case cpp2::ListHostType::META:
+            return cpp2::HostRole::META;
+        case cpp2::ListHostType::STORAGE:
+            return cpp2::HostRole::STORAGE;
+        default:
+            return cpp2::HostRole::UNKNOWN;
+    }
+}
+
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     Status status;
     {
@@ -26,13 +39,19 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
             return;
         }
 
-        status = req.__isset.role ? allHostsWithStatus(*req.get_role())
-                                  : fillLeaderAndPartInfoPerHost();
+        meta::cpp2::ListHostType type = req.get_type();
+        if (type == cpp2::ListHostType::ALLOC) {
+            status = fillLeaderAndPartInfoPerHost();
+        } else {
+            auto hostRole = toHostRole(type);
+            status = allHostsWithStatus(hostRole);
+        }
     }
     if (status.ok()) {
         handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_hosts(std::move(hostItems_));
     }
+
     onFinished();
 }
 
@@ -52,6 +71,24 @@ Status ListHostsProcessor::allMetaHostsStatus() {
     }
     auto partMeta = status.value();
     for (auto& host : partMeta.hosts_) {
+        cpp2::HostItem item;
+        item.set_hostAddr(std::move(host));
+        item.set_role(cpp2::HostRole::META);
+        item.set_git_info_sha(NEBULA_STRINGIFY(GIT_INFO_SHA));
+        item.set_status(cpp2::HostStatus::ONLINE);
+        hostItems_.emplace_back(item);
+    }
+
+    auto errOrPart = kvstore_->part(kDefaultSpaceId, kDefaultPartId);
+    if (!nebula::ok(errOrPart)) {
+        return Status::SpaceNotFound();
+    }
+    auto metaPeers = nebula::value(errOrPart)->peers();
+    // transform raft port to servre port
+    for (auto& metaHost : metaPeers) {
+        metaHost = Utils::getStoreAddrFromRaftAddr(metaHost);
+    }
+    for (auto& host : metaPeers) {
         cpp2::HostItem item;
         item.set_hostAddr(std::move(host));
         item.set_role(cpp2::HostRole::META);

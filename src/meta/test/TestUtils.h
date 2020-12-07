@@ -173,7 +173,8 @@ public:
         registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
-            req.set_role(cpp2::HostRole::STORAGE);
+            req.set_type(cpp2::ListHostType::STORAGE);
+
             auto* processor = ListHostsProcessor::instance(kv);
             auto f = processor->getFuture();
             processor->process(req);
