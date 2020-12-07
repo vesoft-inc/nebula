@@ -40,6 +40,7 @@ enum ErrorCode {
     E_NO_RUNNING_BALANCE_PLAN   = -36,
     E_NO_VALID_HOST             = -37,
     E_CORRUPTTED_BALANCE_PLAN   = -38,
+    E_NO_INVALID_BALANCE_PLAN   = -39,
 
     // Authentication Failure
     E_INVALID_PASSWORD          = -41,
@@ -562,6 +563,7 @@ struct BalanceReq {
     2: optional i64 id,
     3: optional list<common.HostAddr> host_del,
     4: optional bool stop,
+    5: optional bool reset,
 }
 
 enum TaskResult {

@@ -1991,7 +1991,8 @@ MetaClient::getUserRoles(std::string account) {
 }
 
 folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
-                                                     bool isStop) {
+                                                     bool isStop,
+                                                     bool isReset) {
     cpp2::BalanceReq req;
     if (!hostDel.empty()) {
         std::vector<nebula::cpp2::HostAddr> tHostDel;
@@ -2007,6 +2008,9 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostD
     }
     if (isStop) {
         req.set_stop(isStop);
+    }
+    if (isReset) {
+        req.set_reset(isReset);
     }
 
     folly::Promise<StatusOr<int64_t>> promise;

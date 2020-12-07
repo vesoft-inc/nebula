@@ -49,6 +49,7 @@ class Balancer {
     FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
+    FRIEND_TEST(BalanceTest, CleanLastInvalidBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
@@ -80,6 +81,11 @@ public:
      * Stop balance plan by canceling all waiting balance task.
      * */
     StatusOr<BalanceID> stop();
+
+    /**
+     * Clean invalid plan, return the invalid plan key if any
+     * */
+    ErrorOr<cpp2::ErrorCode, BalanceID> cleanLastInValidPlan();
 
     /**
      * TODO(heng): rollback some balance plan.

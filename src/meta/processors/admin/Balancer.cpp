@@ -77,6 +77,48 @@ StatusOr<BalanceID> Balancer::stop() {
     return plan_->id();
 }
 
+ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
+    std::lock_guard<std::mutex> lg(lock_);
+    auto* store = static_cast<kvstore::NebulaStore*>(kv_);
+    if (!store->isLeader(kDefaultSpaceId, kDefaultPartId)) {
+        return cpp2::ErrorCode::E_LEADER_CHANGED;
+    }
+    if (running_) {
+        return cpp2::ErrorCode::E_BALANCER_RUNNING;
+    }
+    const auto& prefix = BalancePlan::prefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+        return MetaCommon::to(ret);
+    }
+    // There should be at most one invalid plan, and it must be the latest one
+    while (iter->valid()) {
+        auto status = BalancePlan::status(iter->val());
+        if (status == BalancePlan::Status::IN_PROGRESS || status == BalancePlan::Status::FAILED) {
+            auto balanceId = BalancePlan::id(iter->key());
+            folly::Baton<true, std::atomic> baton;
+            cpp2::ErrorCode result = cpp2::ErrorCode::SUCCEEDED;
+            // Only remove the plan will be enough
+            kv_->asyncMultiRemove(kDefaultSpaceId,
+                                  kDefaultPartId,
+                                  {iter->key().str()},
+                                  [&baton, &result] (kvstore::ResultCode code) {
+                result = MetaCommon::to(code);
+                baton.post();
+            });
+            baton.wait();
+            if (result != cpp2::ErrorCode::SUCCEEDED) {
+                return result;
+            }
+            return balanceId;
+        }
+        break;
+    }
+    return cpp2::ErrorCode::E_NO_INVALID_BALANCE_PLAN;
+}
+
 cpp2::ErrorCode Balancer::recovery() {
     CHECK(!plan_) << "plan should be nullptr now";
     if (kv_) {

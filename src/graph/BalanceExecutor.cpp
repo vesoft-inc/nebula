@@ -26,10 +26,13 @@ void BalanceExecutor::execute() {
             balanceLeader();
             break;
         case BalanceSentence::SubType::kData:
-            balanceData();
+            balanceData(false, false);
             break;
         case BalanceSentence::SubType::kDataStop:
-            balanceData(true);
+            balanceData(true, false);
+            break;
+        case BalanceSentence::SubType::kDataReset:
+            balanceData(false, true);
             break;
         case BalanceSentence::SubType::kShowBalancePlan:
             showBalancePlan();
@@ -66,14 +69,15 @@ void BalanceExecutor::balanceLeader() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void BalanceExecutor::balanceData(bool isStop) {
+void BalanceExecutor::balanceData(bool isStop, bool isReset) {
     std::vector<HostAddr> hostDelList;
     auto hostDel = sentence_->hostDel();
     if (hostDel != nullptr) {
         hostDelList = hostDel->hosts();
     }
     auto future = ectx()->getMetaClient()->balance(std::move(hostDelList),
-                                                   isStop);
+                                                   isStop,
+                                                   isReset);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
