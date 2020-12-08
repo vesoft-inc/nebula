@@ -689,7 +689,7 @@ AdminClient::addTask(cpp2::AdminCmd cmd,
     getResponse(hosts, 0, std::move(req),
                 [] (auto client, auto request) {
                     return client->future_addAdminTask(request);
-                }, 0, std::move(pro), 0);
+                }, 0, std::move(pro), 0, std::move(respGen));
     return f;
 }
 
