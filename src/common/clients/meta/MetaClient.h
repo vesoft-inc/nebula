@@ -419,6 +419,8 @@ public:
 
     StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
+    StatusOr<meta::cpp2::IsolationLevel> getIsolationLevel(GraphSpaceID spaceId);
+
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space,
                                             const std::string& name);
 

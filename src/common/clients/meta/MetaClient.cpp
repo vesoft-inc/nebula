@@ -1902,6 +1902,16 @@ StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& space) {
     return spaceIt->second->spaceDesc_;
 }
 
+
+StatusOr<meta::cpp2::IsolationLevel> MetaClient::getIsolationLevel(GraphSpaceID spaceId) {
+    auto spaceDescStatus = getSpaceDesc(spaceId);
+    if (!spaceDescStatus.ok()) {
+        return spaceDescStatus.status();
+    }
+    return spaceDescStatus.value().isolation_level;
+}
+
+
 StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
     if (!ready_) {

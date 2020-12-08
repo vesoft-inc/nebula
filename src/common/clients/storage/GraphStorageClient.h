@@ -74,7 +74,8 @@ public:
         std::vector<cpp2::NewEdge> edges,
         std::vector<std::string> propNames,
         bool overwritable,
-        folly::EventBase* evb = nullptr);
+        folly::EventBase* evb = nullptr,
+        bool useToss = false);
 
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> deleteEdges(
         GraphSpaceID space,

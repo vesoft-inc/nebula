@@ -23,7 +23,7 @@ thrift_generate("raftex" "RaftexService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CUR
 # Target object name : storage_thrift_obj
 thrift_generate(
     "storage"
-    "GraphStorageService;StorageAdminService;GeneralStorageService"
+    "GraphStorageService;StorageAdminService;GeneralStorageService;InternalStorageService"
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     "common/interface"
