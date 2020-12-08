@@ -18,7 +18,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")]
             ]
@@ -30,7 +30,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")]
             ]
@@ -42,7 +42,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")]
             ]
@@ -54,7 +54,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("teammate", 0, "LaMarcus Aldridge")]
             ]
@@ -66,7 +66,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("teammate", 0, "LaMarcus Aldridge")]
             ]
@@ -80,7 +80,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
@@ -95,7 +95,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili")],
@@ -114,7 +114,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
@@ -130,7 +130,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("serve", 0, "Spurs")],
@@ -153,7 +153,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("serve", 0, "Spurs")],
@@ -166,7 +166,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("teammate", 0, "Tony Parker")],
@@ -180,7 +180,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
@@ -200,7 +200,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
@@ -218,7 +218,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Yao Ming", ("like", 0, "Tracy McGrady"), ("serve", 0, "Spurs")],
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("serve", 0, "Lakers")],
@@ -234,7 +234,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
@@ -247,7 +247,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tiago Splitter", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tiago Splitter", ("serve", 0, "Spurs")],
@@ -262,7 +262,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Yao Ming", ("like", 0, "Tracy McGrady")],
@@ -275,7 +275,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
                 ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
@@ -290,7 +290,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
                 ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
@@ -305,7 +305,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
             ]
@@ -317,7 +317,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
                 ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
@@ -332,7 +332,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
                 ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
@@ -347,7 +347,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
             ]
@@ -359,7 +359,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Marco Belinelli", ("serve", 0, "Spurs")],
                 ["Marco Belinelli", ("serve", 1, "Spurs")],
@@ -374,7 +374,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": []
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -386,7 +386,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Yao Ming", ("like", 0, "Shaquile O'Neal"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
             ]
@@ -399,7 +399,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
@@ -413,7 +413,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
@@ -427,7 +427,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tracy McGrady", ("like", 0, "Rudy Gay"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
@@ -441,7 +441,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tracy McGrady", ("like", 0, "Rudy Gay"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
@@ -455,7 +455,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
@@ -469,7 +469,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
@@ -483,7 +483,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
@@ -504,7 +504,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],
@@ -526,7 +526,7 @@ class TestFindPath(NebulaTestSuite):
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Manu Ginobili")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
@@ -536,80 +536,80 @@ class TestFindPath(NebulaTestSuite):
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
     def test_path_limit(self):
-        stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS | LIMIT 3'
+        stmt = 'FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS | ORDER BY $-.path | LIMIT 3'
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": []
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_empty_result(resp)
 
-        stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS | LIMIT 3'
+        stmt = 'FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS | ORDER BY $-.path | LIMIT 3'
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
-                ["Tim Duncan", ("like", 0, "Tony Parker")],
-                ["Tim Duncan", ("serve", 0, "Spurs")],
-                ["Tim Duncan", ("like", 0, "Tony Parker"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
+                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''$a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
-                FIND ALL PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS | LIMIT 5'''
+                FIND ALL PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS | ORDER BY $-.path | LIMIT 5'''
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
-                ["Tony Parker", ("like", 0, "Tim Duncan")],
-                ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
-                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers"
-                OVER * UPTO 5 STEPS | LIMIT 2'''
+                OVER * UPTO 5 STEPS | ORDER BY $-.path | LIMIT 2'''
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
+                ["Shaquile O\'Neal", ("serve", 0, "Lakers")],
                 ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
-                ["Shaquile O\'Neal", ("like", 0, "Tim Duncan"), ("teammate", 0, "Manu Ginobili")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
-                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | LIMIT 1'''
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | ORDER BY $-.path | LIMIT 1'''
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
-                ["Tony Parker", ("like", 0, "Tim Duncan")],
+                ["Manu Ginobili", ("like", 0, "Tim Duncan")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
         self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
-                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | LIMIT 10'''
+                | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | ORDER BY $-.path | LIMIT 10'''
         resp = self.execute(stmt)
         self.check_resp_succeeded(resp)
         expected_data = {
-            "column_names": ["_path"],
+            "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan")],

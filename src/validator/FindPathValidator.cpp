@@ -21,7 +21,7 @@ Status FindPathValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateOver(fpSentence->over(), over_));
     NG_RETURN_IF_ERROR(validateStep(fpSentence->step(), steps_));
 
-    outputs_.emplace_back("_path", Value::Type::PATH);
+    outputs_.emplace_back("path", Value::Type::PATH);
     return Status::OK();
 }
 
@@ -75,7 +75,7 @@ Status FindPathValidator::singlePairPlan() {
 
     auto* dataCollect = DataCollect::make(
         qctx_, loop, DataCollect::CollectKind::kBFSShortest, {conjunct->outputVar()});
-    dataCollect->setColNames({"_path"});
+    dataCollect->setColNames({"path"});
 
     root_ = dataCollect;
     tail_ = loop;
@@ -202,7 +202,7 @@ Status FindPathValidator::allPairPaths() {
 
     auto* dataCollect = DataCollect::make(
         qctx_, loop, DataCollect::CollectKind::kAllPaths, {conjunct->outputVar()});
-    dataCollect->setColNames({"_path"});
+    dataCollect->setColNames({"path"});
 
     root_ = dataCollect;
     tail_ = loopDepTail_ == nullptr ? projectFrom : loopDepTail_;
@@ -346,7 +346,7 @@ Status FindPathValidator::multiPairPlan() {
 
     auto* dataCollect = DataCollect::make(
         qctx_, loop, DataCollect::CollectKind::kMultiplePairShortest, {conjunct->outputVar()});
-    dataCollect->setColNames({"_path"});
+    dataCollect->setColNames({"path"});
 
     root_ = dataCollect;
     tail_ = loopDepTail_ == nullptr ? projectFrom : loopDepTail_;
