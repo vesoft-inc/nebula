@@ -68,9 +68,9 @@ Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx &iqctx,
                                           const FilterItems& items,
                                           graph::QueryContext *qctx,
                                           const OptGroupNode *groupNode) const {
-    return kind.isLogicalAnd()
-           ? createIQCWithLogicAnd(iqctx, items, qctx, groupNode)
-           : createIQCWithLogicOR(iqctx, items, qctx, groupNode);
+    return kind.isSingleScan()
+           ? createSingleIQC(iqctx, items, qctx, groupNode)
+           : createMultipleIQC(iqctx, items, qctx, groupNode);
 }
 
 Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx &iqctx,
@@ -87,10 +87,10 @@ Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx &iqctx,
 }
 
 
-Status IndexScanRule::createIQCWithLogicAnd(IndexQueryCtx &iqctx,
-                                            const FilterItems& items,
-                                            graph::QueryContext *qctx,
-                                            const OptGroupNode *groupNode) const {
+Status IndexScanRule::createSingleIQC(IndexQueryCtx &iqctx,
+                                      const FilterItems& items,
+                                      graph::QueryContext *qctx,
+                                      const OptGroupNode *groupNode) const {
     auto index = findOptimalIndex(qctx, groupNode, items);
     if (index == nullptr) {
         return Status::IndexNotFound("No valid index found");
@@ -100,16 +100,12 @@ Status IndexScanRule::createIQCWithLogicAnd(IndexQueryCtx &iqctx,
     return appendIQCtx(index, items, iqctx, filter);
 }
 
-Status IndexScanRule::createIQCWithLogicOR(IndexQueryCtx &iqctx,
-                                           const FilterItems& items,
-                                           graph::QueryContext *qctx,
-                                           const OptGroupNode *groupNode) const {
+Status IndexScanRule::createMultipleIQC(IndexQueryCtx &iqctx,
+                                        const FilterItems& items,
+                                        graph::QueryContext *qctx,
+                                        const OptGroupNode *groupNode) const {
     for (auto const& item : items.items) {
-        auto index = findOptimalIndex(qctx, groupNode, FilterItems({item}));
-        if (index == nullptr) {
-            return Status::IndexNotFound("No valid index found");
-        }
-        auto ret = appendIQCtx(index, FilterItems({item}), iqctx);
+        auto ret = createSingleIQC(iqctx, FilterItems({item}), qctx, groupNode);
         NG_RETURN_IF_ERROR(ret);
     }
     return Status::OK();
@@ -336,8 +332,8 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
         case Expression::Kind::kLogicalAnd : {
             auto lExpr = static_cast<LogicalExpression*>(expr);
             auto k = expr->kind() == Expression::Kind::kLogicalAnd
-                     ? ScanKind::Kind::LOGICAL_AND : ScanKind::Kind::LOGICAL_OR;
-            if (kind->getKind() == ScanKind::Kind::UNKNOWN) {
+                     ? ScanKind::Kind::kSingleScan : ScanKind::Kind::kMultipleScan;
+            if (kind->getKind() == ScanKind::Kind::kUnknown) {
                 kind->setKind(k);
             } else if (kind->getKind() != k) {
                 auto errorMsg = folly::StringPiece("Condition not support yet : %s",
@@ -360,6 +356,11 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
                        ? addFilterItem<EdgePropertyExpression>(rExpr, items)
                        : addFilterItem<TagPropertyExpression>(rExpr, items);
             NG_RETURN_IF_ERROR(ret);
+            if (kind->getKind() == ScanKind::Kind::kMultipleScan &&
+                expr->kind() == Expression::Kind::kRelNE) {
+                kind->setKind(ScanKind::Kind::kSingleScan);
+                return Status::OK();
+            }
             break;
         }
         default: {

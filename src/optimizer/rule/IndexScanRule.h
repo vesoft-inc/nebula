@@ -42,9 +42,9 @@ public:
 private:
     struct ScanKind {
         enum class Kind {
-            UNKNOWN = 0,
-            LOGICAL_OR,
-            LOGICAL_AND,
+            kUnknown = 0,
+            kMultipleScan,
+            kSingleScan,
         };
 
     private:
@@ -52,7 +52,7 @@ private:
 
     public:
         ScanKind() {
-            kind_ = Kind::UNKNOWN;
+            kind_ = Kind::kUnknown;
         }
         void setKind(Kind k) {
             kind_ = k;
@@ -60,8 +60,8 @@ private:
         Kind getKind() {
             return kind_;
         }
-        bool isLogicalAnd() {
-            return kind_ == Kind::LOGICAL_AND;
+        bool isSingleScan() {
+            return kind_ == Kind::kSingleScan;
         }
     };
 
@@ -112,15 +112,15 @@ private:
                                graph::QueryContext *qctx,
                                const OptGroupNode *groupNode) const;
 
-    Status createIQCWithLogicAnd(IndexQueryCtx &iqctx,
-                                 const FilterItems& items,
-                                 graph::QueryContext *qctx,
-                                 const OptGroupNode *groupNode) const;
+    Status createSingleIQC(IndexQueryCtx &iqctx,
+                           const FilterItems& items,
+                           graph::QueryContext *qctx,
+                           const OptGroupNode *groupNode) const;
 
-    Status createIQCWithLogicOR(IndexQueryCtx &iqctx,
-                                const FilterItems& items,
-                                graph::QueryContext *qctx,
-                                const OptGroupNode *groupNode) const;
+    Status createMultipleIQC(IndexQueryCtx &iqctx,
+                             const FilterItems& items,
+                             graph::QueryContext *qctx,
+                             const OptGroupNode *groupNode) const;
 
     Status appendIQCtx(const IndexItem& index,
                        const FilterItems& items,
