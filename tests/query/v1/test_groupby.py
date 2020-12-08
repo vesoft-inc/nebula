@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite, T_NULL_BAD_TYPE
 
 
 class TestGroupBy(NebulaTestSuite):
@@ -216,6 +216,62 @@ class TestGroupBy(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst | \
+                  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following | \
+                  GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR($-.following) AS following'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["dst", "following"],
+            "rows": [
+                ["Tony Parker" , T_NULL_BAD_TYPE],
+                ["Manu Ginobili" , T_NULL_BAD_TYPE]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst | \
+                  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following | \
+                  GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR(case when $-.following==true then 1 else 0 end) AS following '''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["dst", "following"],
+            "rows": [
+                ["Tony Parker" , 1],
+                ["Manu Ginobili" , 1]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst | \
+                  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following | \
+                  GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND($-.following) AS following'''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["dst", "following"],
+            "rows": [
+                ["Tony Parker" , T_NULL_BAD_TYPE],
+                ["Manu Ginobili" , T_NULL_BAD_TYPE]
+            ]
+        }
+        self.check_out_of_order_result(resp, expected_data["rows"])
+
+        stmt = '''GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst | \
+                  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == 'Tim Duncan' as following | \
+                  GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND(case when $-.following==true then 1 else 0 end) AS following '''
+        resp = self.execute(stmt)
+        self.check_resp_succeeded(resp)
+        expected_data = {
+            "column_names": ["dst", "following"],
+            "rows": [
+                ["Tony Parker" , 0],
+                ["Manu Ginobili" , 1]
+            ]
+        }
         self.check_out_of_order_result(resp, expected_data["rows"])
 
         # group has fun col
