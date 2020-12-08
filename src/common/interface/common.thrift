@@ -101,27 +101,27 @@ union Value {
     9: Vertex (cpp.type = "nebula::Vertex")     vVal (cpp.ref_type = "unique");
     10: Edge (cpp.type = "nebula::Edge")        eVal (cpp.ref_type = "unique");
     11: Path (cpp.type = "nebula::Path")        pVal (cpp.ref_type = "unique");
-    12: List (cpp.type = "nebula::List")        lVal (cpp.ref_type = "unique");
-    13: Map (cpp.type = "nebula::Map")          mVal (cpp.ref_type = "unique");
-    14: Set (cpp.type = "nebula::Set")          uVal (cpp.ref_type = "unique");
+    12: NList (cpp.type = "nebula::List")       lVal (cpp.ref_type = "unique");
+    13: NMap (cpp.type = "nebula::Map")         mVal (cpp.ref_type = "unique");
+    14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
 // Ordered list
-struct List {
+struct NList {
     1: list<Value> values;
 } (cpp.type = "nebula::List")
 
 
 // Unordered key/values pairs
-struct Map {
+struct NMap {
     1: map<binary, Value> (cpp.template = "std::unordered_map") kvs;
 } (cpp.type = "nebula::Map")
 
 
 // Unordered and unique values
-struct Set {
+struct NSet {
     1: set<Value> (cpp.template = "std::unordered_set") values;
 } (cpp.type = "nebula::Set")
 

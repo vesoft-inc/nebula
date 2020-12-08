@@ -52,7 +52,7 @@ template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::List>::write(Protocol* proto, nebula::List const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->writeStructBegin("List");
+    xfer += proto->writeStructBegin("NList");
 
     xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_LIST, 1);
     xfer += detail::pm::protocol_methods<
@@ -134,7 +134,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::List>::serializedSize(Protocol const* proto,
                                                nebula::List const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("List");
+    xfer += proto->serializedStructSize("NList");
 
     xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 1);
     xfer += detail::pm::protocol_methods<
@@ -151,7 +151,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::List>::serializedSizeZC(Protocol const* proto,
                                                  nebula::List const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("List");
+    xfer += proto->serializedStructSize("NList");
 
     xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_LIST, 1);
     xfer += detail::pm::protocol_methods<

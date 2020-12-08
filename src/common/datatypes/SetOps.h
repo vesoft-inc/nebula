@@ -52,7 +52,7 @@ template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Set>::write(Protocol* proto, nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->writeStructBegin("Set");
+    xfer += proto->writeStructBegin("NSet");
 
     xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
@@ -135,7 +135,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::Set>::serializedSize(Protocol const* proto,
                                               nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("Set");
+    xfer += proto->serializedStructSize("NSet");
     xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
             type_class::set<type_class::structure>,
@@ -151,7 +151,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::Set>::serializedSizeZC(Protocol const* proto,
                                                 nebula::Set const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("Set");
+    xfer += proto->serializedStructSize("NSet");
     xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
     xfer += detail::pm::protocol_methods<
             type_class::set<type_class::structure>,

@@ -52,7 +52,7 @@ template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Map>::write(Protocol* proto, nebula::Map const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->writeStructBegin("Map");
+    xfer += proto->writeStructBegin("NMap");
 
     xfer += proto->writeFieldBegin("kvs", apache::thrift::protocol::T_MAP, 1);
     xfer += detail::pm::protocol_methods<
@@ -134,7 +134,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::Map>::serializedSize(Protocol const* proto,
                                               nebula::Map const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("Map");
+    xfer += proto->serializedStructSize("NMap");
 
     xfer += proto->serializedFieldSize("kvs", apache::thrift::protocol::T_MAP, 1);
     xfer += detail::pm::protocol_methods<
@@ -151,7 +151,7 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::Map>::serializedSizeZC(Protocol const* proto,
                                                 nebula::Map const* obj) {
     uint32_t xfer = 0;
-    xfer += proto->serializedStructSize("Map");
+    xfer += proto->serializedStructSize("NMap");
 
     xfer += proto->serializedFieldSize("kvs", apache::thrift::protocol::T_MAP, 1);
     xfer += detail::pm::protocol_methods<

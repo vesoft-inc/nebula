@@ -211,7 +211,7 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
             if (obj->getListPtr()) {
                 xfer += Cpp2Ops<nebula::List>::write(proto, obj->getListPtr());
             } else {
-                xfer += proto->writeStructBegin("List");
+                xfer += proto->writeStructBegin("NList");
                 xfer += proto->writeStructEnd();
                 xfer += proto->writeFieldStop();
             }
@@ -224,7 +224,7 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
             if (obj->getMapPtr()) {
                 xfer += Cpp2Ops<nebula::Map>::write(proto, obj->getMapPtr());
             } else {
-                xfer += proto->writeStructBegin("Map");
+                xfer += proto->writeStructBegin("NMap");
                 xfer += proto->writeStructEnd();
                 xfer += proto->writeFieldStop();
             }
@@ -237,7 +237,7 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
             if (obj->getSetPtr()) {
                 xfer += Cpp2Ops<nebula::Set>::write(proto, obj->getSetPtr());
             } else {
-                xfer += proto->writeStructBegin("Set");
+                xfer += proto->writeStructBegin("NSet");
                 xfer += proto->writeStructEnd();
                 xfer += proto->writeFieldStop();
             }
@@ -575,7 +575,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto,
             if (obj->getListPtr()) {
                 xfer += Cpp2Ops<nebula::List>::serializedSize(proto, obj->getListPtr());
             } else {
-                xfer += proto->serializedStructSize("List");
+                xfer += proto->serializedStructSize("NList");
                 xfer += proto->serializedSizeStop();
             }
             break;
@@ -586,7 +586,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto,
             if (obj->getMapPtr()) {
                 xfer += Cpp2Ops<nebula::Map>::serializedSize(proto, obj->getMapPtr());
             } else {
-                xfer += proto->serializedStructSize("Map");
+                xfer += proto->serializedStructSize("NMap");
                 xfer += proto->serializedSizeStop();
             }
             break;
@@ -597,7 +597,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto,
             if (obj->getSetPtr()) {
                 xfer += Cpp2Ops<nebula::Set>::serializedSize(proto, obj->getSetPtr());
             } else {
-                xfer += proto->serializedStructSize("Set");
+                xfer += proto->serializedStructSize("NSet");
                 xfer += proto->serializedSizeStop();
             }
             break;
@@ -729,7 +729,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto,
                 xfer += Cpp2Ops<nebula::List>
                     ::serializedSizeZC(proto, obj->getListPtr());
             } else {
-                xfer += proto->serializedStructSize("List");
+                xfer += proto->serializedStructSize("NList");
                 xfer += proto->serializedSizeStop();
             }
             break;
@@ -740,7 +740,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto,
             if (obj->getMapPtr()) {
                 xfer += Cpp2Ops<nebula::Map>::serializedSizeZC(proto, obj->getMapPtr());
             } else {
-                xfer += proto->serializedStructSize("Map");
+                xfer += proto->serializedStructSize("NMap");
                 xfer += proto->serializedSizeStop();
             }
             break;
@@ -751,7 +751,7 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto,
             if (obj->getSetPtr()) {
                 xfer += Cpp2Ops<nebula::Set>::serializedSizeZC(proto, obj->getSetPtr());
             } else {
-                xfer += proto->serializedStructSize("Set");
+                xfer += proto->serializedStructSize("NSet");
                 xfer += proto->serializedSizeStop();
             }
             break;
