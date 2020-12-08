@@ -30,6 +30,7 @@ nebula_add_library(
     mutate/AddVerticesProcessor.cpp
     mutate/DeleteVerticesProcessor.cpp
     mutate/AddEdgesProcessor.cpp
+    mutate/AddEdgesAtomicProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
     mutate/UpdateVertexProcessor.cpp
     mutate/UpdateEdgeProcessor.cpp
@@ -49,11 +50,24 @@ nebula_add_library(
 )
 
 nebula_add_library(
+    internal_storage_service_handler OBJECT
+    InternalStorageServiceHandler.cpp
+)
+
+nebula_add_library(
     storage_http_handler OBJECT
     http/StorageHttpIngestHandler.cpp
     http/StorageHttpDownloadHandler.cpp
     http/StorageHttpAdminHandler.cpp
     http/StorageHttpStatsHandler.cpp
+)
+
+nebula_add_library(
+    storage_transaction_executor OBJECT
+    transaction/TransactionManager.cpp
+    transaction/TransactionProcessor.cpp
+    transaction/GetValueProcessor.cpp
+    transaction/TransactionUtils.cpp
 )
 
 nebula_add_library(

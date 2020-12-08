@@ -21,7 +21,11 @@ namespace nebula {
  * For data in Nebula 1.0, all vertexId is int64_t, so the size would be 8.
  * For data in Nebula 2.0, all vertexId is fixed length string according to space property.
  *
+ * LockKeyUtils:
+ * EdgeKeyWithNoVersion + placeHolder(8) + version(8) + surfix(2)
  * */
+
+const std::string kLockSuffix = "lk";  // NOLINT
 
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
@@ -131,6 +135,11 @@ public:
         return etype & kTagEdgeMask;
     }
 
+    static bool isLock(size_t vIdLen, const folly::StringPiece& rawKey) {
+        auto len = rawKey.size() - sizeof(EdgeVersion) - kLockSuffix.size();
+        return isEdge(vIdLen, folly::StringPiece(rawKey.begin(), len));
+    }
+
     static bool isSystemCommit(const folly::StringPiece& rawKey) {
         if (rawKey.size() != kSystemLen) {
             return false;
@@ -152,7 +161,7 @@ public:
     }
 
     static VertexIDSlice getSrcId(size_t vIdLen, const folly::StringPiece& rawKey) {
-        if (rawKey.size() != kEdgeLen + (vIdLen << 1)) {
+        if (rawKey.size() < kEdgeLen + (vIdLen << 1)) {
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID);
@@ -160,7 +169,7 @@ public:
     }
 
     static VertexIDSlice getDstId(size_t vIdLen, const folly::StringPiece& rawKey) {
-        if (rawKey.size() != kEdgeLen + (vIdLen << 1)) {
+        if (rawKey.size() < kEdgeLen + (vIdLen << 1)) {
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID) + vIdLen +
@@ -169,7 +178,7 @@ public:
     }
 
     static EdgeType getEdgeType(size_t vIdLen, const folly::StringPiece& rawKey) {
-        if (rawKey.size() != kEdgeLen + (vIdLen << 1)) {
+        if (rawKey.size() < kEdgeLen + (vIdLen << 1)) {
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID) + vIdLen;
@@ -178,7 +187,7 @@ public:
     }
 
     static EdgeRanking getRank(size_t vIdLen, const folly::StringPiece& rawKey) {
-        if (rawKey.size() != kEdgeLen + (vIdLen << 1)) {
+        if (rawKey.size() < kEdgeLen + (vIdLen << 1)) {
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
@@ -186,9 +195,15 @@ public:
     }
 
     static int64_t getVersion(size_t vIdLen, const folly::StringPiece& rawKey) {
-        CHECK(isVertex(vIdLen, rawKey) || isEdge(vIdLen, rawKey));
-        auto offset = rawKey.size() - sizeof(int64_t);
-        return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
+        if (isVertex(vIdLen, rawKey) || isEdge(vIdLen, rawKey)) {
+            auto offset = rawKey.size() - sizeof(int64_t);
+            return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
+        } else if (isLock(vIdLen, rawKey)) {
+            return getLockVersion(rawKey);
+        } else {
+            LOG(FATAL) << "key is not one of vertex, edge or lock";
+        }
+        return 0;  // will not runs here, just for satisfied g++
     }
 
     static bool isDataKey(const folly::StringPiece& key) {
@@ -205,6 +220,32 @@ public:
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
+    }
+
+    /**
+     * @brief gen edge key from lock, this will used at resume
+     *        if enableMvcc ver of edge and lock will be same,
+     *        else ver of lock should be 0, and ver of edge should be 1
+     */
+    static std::string toEdgeKey(const folly::StringPiece& lockKey, bool enableMvcc = false);
+
+    /**
+     * @brief gen edge lock from lock
+     *        if enableMvcc ver of edge and lock will be same,
+     *        else ver of lock should be 0, and ver of edge should be 1
+     */
+    static std::string toLockKey(const folly::StringPiece& rawKey,
+                                 bool enableMvcc = false);
+
+    static EdgeVersion getLockVersion(const folly::StringPiece& rawKey) {
+        // TODO(liuyu) We should change the method if varint data version supportted.
+        auto offset = rawKey.size() - sizeof(int64_t) * 2 - kLockSuffix.size();
+        return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
+    }
+
+    static folly::StringPiece lockWithNoVersion(const folly::StringPiece& rawKey) {
+        // TODO(liuyu) We should change the method if varint data version supportted.
+        return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t) * 2 - kLockSuffix.size());
     }
 
     static void dumpBadKey(const folly::StringPiece& rawKey, size_t expect, size_t vIdLen) {

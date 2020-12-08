@@ -209,5 +209,28 @@ std::string NebulaKeyUtils::systemPrefix() {
     return key;
 }
 
-}  // namespace nebula
+std::string NebulaKeyUtils::toLockKey(const folly::StringPiece& rawKey,
+                                      bool enableMvcc) {
+    EdgeVersion verPlaceHolder = 0;
+    EdgeVersion ver = 0;
+    if (enableMvcc) {
+        auto offset = rawKey.size() - sizeof(EdgeVersion);
+        ver = readInt<int64_t>(rawKey.data() + offset, sizeof(EdgeVersion));
+    }
 
+    auto lockKey = keyWithNoVersion(rawKey).str();
+    lockKey.append(reinterpret_cast<const char*>(&verPlaceHolder), sizeof(EdgeVersion));
+    lockKey.append(reinterpret_cast<const char*>(&ver), sizeof(EdgeVersion));
+    return lockKey + kLockSuffix;
+}
+
+std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey, bool enableMvcc) {
+    // edges in toss space must have edge ver greater then 0.
+    EdgeVersion ver = enableMvcc ? NebulaKeyUtils::getLockVersion(lockKey) : 1;
+
+    auto rawKey = lockWithNoVersion(lockKey).str();
+    rawKey.append(reinterpret_cast<const char*>(&ver), sizeof(EdgeVersion));
+    return rawKey;
+}
+
+}   // namespace nebula

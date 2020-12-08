@@ -117,6 +117,7 @@ protected:
 // Iterator of single specified type
 class SingleEdgeIterator : public StorageIterator {
 public:
+    SingleEdgeIterator() = default;
     SingleEdgeIterator(
             PlanContext* planCtx,
             std::unique_ptr<kvstore::KVIterator> iter,

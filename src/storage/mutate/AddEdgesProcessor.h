@@ -16,6 +16,8 @@ namespace nebula {
 namespace storage {
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
+    friend class TransactionManager;
+    friend class AddEdgesAtomicProcessor;
 public:
     static AddEdgesProcessor* instance(StorageEnv* env,
                                        stats::Stats* stats) {

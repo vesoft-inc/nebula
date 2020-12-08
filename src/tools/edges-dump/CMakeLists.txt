@@ -7,6 +7,9 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:storage_admin_service_handler>
         $<TARGET_OBJECTS:graph_storage_service_handler>
+        $<TARGET_OBJECTS:storage_transaction_executor>
+        $<TARGET_OBJECTS:common_internal_storage_client_obj>
+        $<TARGET_OBJECTS:common_storage_client_base_obj>
         $<TARGET_OBJECTS:storage_common_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>

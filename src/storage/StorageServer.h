@@ -61,6 +61,11 @@ private:
 
     std::unique_ptr<apache::thrift::ThriftServer> storageServer_;
     std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
+
+    std::unique_ptr<std::thread> internalStorageThread_;
+    std::atomic_int internalStorageSvcStatus_{STATUS_UNINITIALIZED};
+    std::unique_ptr<apache::thrift::ThriftServer> internalStorageServer_;
+
     std::unique_ptr<nebula::WebService> webSvc_;
     std::unique_ptr<meta::MetaClient> metaClient_;
     std::unique_ptr<kvstore::KVStore> kvstore_;
@@ -78,6 +83,7 @@ private:
     std::string listenerPath_;
 
     AdminTaskManager* taskMgr_{nullptr};
+    std::unique_ptr<TransactionManager> txnMan_;
 };
 
 }  // namespace storage

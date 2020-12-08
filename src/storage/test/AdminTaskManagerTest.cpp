@@ -33,6 +33,8 @@ namespace storage {
  *      6.2 cancel_a_task_while_some_sub_task_running
  * */
 
+// using ResultCode = nebula::kvstore::ResultCode;
+using ResultCode = cpp2::ErrorCode;
 using ErrOrSubTasks = ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>;
 
 auto suc = cpp2::ErrorCode::SUCCEEDED;
@@ -206,7 +208,7 @@ TEST(TaskManagerTest, happy_path_task1_sub1) {
 
     mockTask->setJobId(jobId);
     mockTask->setTaskId(jobId);
-    folly::Promise<cpp2::ErrorCode> pTaskFini;
+    folly::Promise<ResultCode> pTaskFini;
     auto fTaskFini = pTaskFini.getFuture();
 
     auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
@@ -246,8 +248,8 @@ TEST(TaskManagerTest, run_a_medium_task_before_a_huge_task) {
 
         mockTask->setJobId(jobId);
         mockTask->setTaskId(jobId);
-        folly::Promise<cpp2::ErrorCode> pro;
-        folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+        folly::Promise<ResultCode> pro;
+        folly::Future<ResultCode> fut = pro.getFuture();
 
         auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
             pro.setValue(ret);
@@ -279,8 +281,8 @@ TEST(TaskManagerTest, happy_path) {
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -308,8 +310,8 @@ TEST(TaskManagerTest, happy_path) {
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -334,8 +336,8 @@ TEST(TaskManagerTest, happy_path) {
             size_t numSubTask = 3;
             std::shared_ptr<AdminTask> task = std::make_shared<HookableTask>();
             HookableTask* mockTask = dynamic_cast<HookableTask*>(task.get());
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
@@ -366,8 +368,8 @@ TEST(TaskManagerTest, happy_path) {
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -394,8 +396,8 @@ TEST(TaskManagerTest, happy_path) {
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -422,8 +424,8 @@ TEST(TaskManagerTest, happy_path) {
             int jobId = ++gJobId;
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -451,8 +453,8 @@ TEST(TaskManagerTest, happy_path) {
 
             mockTask->setJobId(jobId);
             mockTask->setTaskId(jobId);
-            folly::Promise<cpp2::ErrorCode> pro;
-            folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+            folly::Promise<ResultCode> pro;
+            folly::Future<ResultCode> fut = pro.getFuture();
 
             auto taskCallback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
                 pro.setValue(ret);
@@ -485,8 +487,8 @@ TEST(TaskManagerTest, gen_sub_task_failed) {
             return cpp2::ErrorCode::E_INVALID_TASK_PARA;
         };
 
-        folly::Promise<cpp2::ErrorCode> pro;
-        folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+        folly::Promise<ResultCode> pro;
+        folly::Future<ResultCode> fut = pro.getFuture();
 
         auto cb = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem&) {
             pro.setValue(ret);
@@ -526,8 +528,8 @@ TEST(TaskManagerTest, some_subtask_failed) {
         mockTask->setJobId(jobId);
         mockTask->setTaskId(jobId);
 
-        folly::Promise<cpp2::ErrorCode> pro;
-        folly::Future<cpp2::ErrorCode> fut = pro.getFuture();
+        folly::Promise<ResultCode> pro;
+        folly::Future<ResultCode> fut = pro.getFuture();
         for (size_t i = 0; i < totalSubTask; ++i) {
             mockTask->addSubTask([&]() {
                 ++subTaskCalled;
@@ -559,8 +561,8 @@ TEST(TaskManagerTest, cancel_a_running_task_with_only_1_sub_task) {
     folly::Promise<int> pTaskRun;
     auto fTaskRun = pTaskRun.getFuture();
 
-    folly::Promise<cpp2::ErrorCode> pFinish;
-    folly::Future<cpp2::ErrorCode> fFinish = pFinish.getFuture();
+    folly::Promise<ResultCode> pFinish;
+    folly::Future<ResultCode> fFinish = pFinish.getFuture();
 
     folly::Promise<int> pCancel;
     folly::Future<int> fCancel = pCancel.getFuture();
@@ -598,14 +600,14 @@ TEST(TaskManagerTest, cancel_1_task_in_a_2_tasks_queue) {
 
     auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
-    folly::Promise<cpp2::ErrorCode> pTask1;
+    folly::Promise<ResultCode> pTask1;
     auto fTask1 = pTask1.getFuture();
 
     folly::Promise<int> pRunTask1;
     auto fRunTask1 = pRunTask1.getFuture();
 
-    folly::Promise<cpp2::ErrorCode> pTask2;
-    folly::Future<cpp2::ErrorCode> fTask2 = pTask2.getFuture();
+    folly::Promise<ResultCode> pTask2;
+    folly::Future<ResultCode> fTask2 = pTask2.getFuture();
 
     folly::Promise<int> pCancelTask2;
     folly::Future<int> fCancelTask2 = pCancelTask2.getFuture();
@@ -661,7 +663,7 @@ TEST(TaskManagerTest, cancel_a_task_before_all_sub_task_running) {
     auto err = cpp2::ErrorCode::E_USER_CANCEL;
 
     int jobId = ++gJobId;
-    folly::Promise<cpp2::ErrorCode> pFiniTask0;
+    folly::Promise<ResultCode> pFiniTask0;
     auto fFiniTask0 = pFiniTask0.getFuture();
 
     folly::Promise<int> pRunTask;
@@ -765,8 +767,8 @@ TEST(TaskManagerTest, cancel_a_task_while_some_sub_task_running) {
     auto usr_cancel = cpp2::ErrorCode::E_USER_CANCEL;
     int jobId = ++gJobId;
 
-    folly::Promise<cpp2::ErrorCode> task1_p;
-    folly::Future<cpp2::ErrorCode> task1_f = task1_p.getFuture();
+    folly::Promise<ResultCode> task1_p;
+    folly::Future<ResultCode> task1_f = task1_p.getFuture();
 
     folly::Promise<int> cancle_p;
     folly::Future<int> cancel = cancle_p.getFuture();

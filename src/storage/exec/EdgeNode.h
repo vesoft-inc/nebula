@@ -10,6 +10,8 @@
 #include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
 #include "storage/exec/StorageIterator.h"
+#include "storage/transaction/TransactionManager.h"
+#include "storage/transaction/TossEdgeIterator.h"
 
 namespace nebula {
 namespace storage {
@@ -134,8 +136,15 @@ public:
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleEdgeIterator(
-                planContext_, std::move(iter), edgeType_, schemas_, &ttl_, false));
+            if (planContext_->env_->txnMan_ &&
+                planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
+                bool stopAtFirstEdge = true;
+                iter_.reset(new TossEdgeIterator(
+                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
+            } else {
+                iter_.reset(new SingleEdgeIterator(
+                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, false));
+            }
         } else {
             iter_.reset();
         }
@@ -167,8 +176,15 @@ public:
         prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_, partId, vId, edgeType_);
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleEdgeIterator(
-                planContext_, std::move(iter), edgeType_, schemas_, &ttl_));
+            if (planContext_->env_->txnMan_ &&
+                planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
+                bool stopAtFirstEdge = false;
+                iter_.reset(new TossEdgeIterator(
+                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
+            } else {
+                iter_.reset(new SingleEdgeIterator(
+                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_));
+            }
         } else {
             iter_.reset();
         }

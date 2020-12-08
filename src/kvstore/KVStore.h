@@ -171,6 +171,17 @@ public:
                                raftex::AtomicOp op,
                                KVCallback cb) = 0;
 
+    /**
+     * @brief async commit multi operation.
+     *        difference between asyncMultiPut or asyncMultiRemove is
+     *        this func allow contains both put and remove together
+     *        difference between asyncAtomicOp is asyncAtomicOp may have CAS
+     */
+    virtual void asyncAppendBatch(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::string& batch,
+                                  KVCallback cb) = 0;
+
     virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
 
     virtual int32_t allLeader(std::unordered_map<GraphSpaceID,

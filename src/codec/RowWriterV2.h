@@ -42,7 +42,7 @@ enum class WriteResult {
 
   Version 2:
                  0 0 0 0 1 v v v
-    In version 2, the left three bits are reserved. THe middle two bits
+    In version 2, the left three bits are reserved. The middle two bits
     indicate the encoder version, and the right three bits indicate the number
     of bytes used for the schema version
 

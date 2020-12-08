@@ -70,6 +70,13 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
         });
 }
 
+void Part::asyncAppendBatch(std::string& batch, KVCallback cb) {
+    appendAsync(FLAGS_cluster_id, std::move(batch))
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
+        });
+}
+
 
 void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);

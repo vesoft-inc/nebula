@@ -32,6 +32,8 @@ using IndexKey    = std::tuple<GraphSpaceID, IndexID, PartitionID>;
 using IndexGuard  = folly::ConcurrentHashMap<IndexKey, IndexState>;
 
 
+class TransactionManager;
+
 // unify TagID, EdgeType
 using SchemaID = TagID;
 static_assert(sizeof(SchemaID) == sizeof(EdgeType), "sizeof(TagID) != sizeof(EdgeType)");
@@ -43,6 +45,8 @@ public:
     meta::IndexManager*                             indexMan_{nullptr};
     std::atomic<int32_t>                            onFlyingRequest_{0};
     std::unique_ptr<IndexGuard>                     rebuildIndexGuard_{nullptr};
+    meta::MetaClient*                               metaClient_{nullptr};
+    TransactionManager*                             txnMan_{nullptr};
 
     IndexState getIndexState(GraphSpaceID space, PartitionID part, IndexID indexID) {
         auto key = std::make_tuple(space, indexID, part);
@@ -74,7 +78,7 @@ struct PropContext;
 class PlanContext {
 public:
     PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId)
-        : env_(env), spaceId_(spaceId), vIdLen_(vIdLen) , isIntId_(isIntId) {}
+        : env_(env), spaceId_(spaceId), vIdLen_(vIdLen), isIntId_(isIntId) {}
 
     StorageEnv*         env_;
     GraphSpaceID        spaceId_;
@@ -100,6 +104,9 @@ public:
 
     // used for lookup
     bool                                isEdge_ = false;
+
+    // used for toss version
+    int64_t                             defaultEdgeVer_ = 0L;
 };
 
 class CommonUtils final {
@@ -108,6 +115,11 @@ public:
                                        RowReader* reader,
                                        const std::string& ttlCol,
                                        int64_t ttlDuration);
+    static cpp2::ErrorCode to(const Status& status);
+
+    static cpp2::ErrorCode to(kvstore::ResultCode rc);
+
+    static kvstore::ResultCode to(cpp2::ErrorCode rc);
 };
 
 }  // namespace storage

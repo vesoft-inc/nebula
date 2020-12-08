@@ -42,10 +42,12 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     }
 
     planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
-
+    if (env_->txnMan_ && env_->txnMan_->enableToss(spaceId_)) {
+        planContext_->defaultEdgeVer_ = 1L;
+    }
     retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Failure build contexts!";
+        LOG(ERROR) << "Failure build contexts: " << static_cast<int>(retCode);
         pushResultCode(retCode, partId);
         onFinished();
         return;

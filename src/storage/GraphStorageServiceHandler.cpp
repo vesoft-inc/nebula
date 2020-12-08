@@ -7,6 +7,7 @@
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
+#include "storage/mutate/AddEdgesAtomicProcessor.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
@@ -16,6 +17,7 @@
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/index/LookupProcessor.h"
+#include "storage/transaction/TransactionProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -94,6 +96,12 @@ GraphStorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
     auto* processor = ScanEdgeProcessor::instance(env_, &scanEdgeQpsStat_);
     RETURN_FUTURE(processor);
 }
+folly::Future<cpp2::ExecResponse>
+GraphStorageServiceHandler::future_addEdgesAtomic(const cpp2::AddEdgesRequest& req) {
+    auto* processor = AddEdgesAtomicProcessor::instance(env_, &addEdgesQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
 
 }  // namespace storage
 }  // namespace nebula

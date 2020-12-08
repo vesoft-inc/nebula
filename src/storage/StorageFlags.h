@@ -33,6 +33,10 @@ DECLARE_int32(reader_handlers);
 
 DECLARE_bool(enable_multi_versions);
 
+DECLARE_uint64(default_mvcc_ver);
+
 DECLARE_string(reader_handlers_type);
+
+DECLARE_bool(trace_toss);
 
 #endif  // STORAGE_STORAGEFLAGS_H_

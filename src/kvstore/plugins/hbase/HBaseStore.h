@@ -175,6 +175,13 @@ public:
         LOG(FATAL) << "Not supportted yet!";
     }
 
+    void asyncAtomicOp(GraphSpaceID,
+                       PartitionID,
+                       std::string&& multiValues,
+                       KVCallback) override {
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
     ResultCode ingest(GraphSpaceID spaceId) override;
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,

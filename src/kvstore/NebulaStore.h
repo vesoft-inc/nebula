@@ -197,6 +197,11 @@ public:
                           const std::string& end,
                           KVCallback cb) override;
 
+    void asyncAppendBatch(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               std::string& batch,
+                               KVCallback cb) override;
+
     void asyncAtomicOp(GraphSpaceID spaceId,
                        PartitionID partId,
                        raftex::AtomicOp op,

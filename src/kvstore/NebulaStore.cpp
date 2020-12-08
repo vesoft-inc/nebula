@@ -672,6 +672,18 @@ ResultCode NebulaStore::sync(GraphSpaceID spaceId,
     return ret;
 }
 
+void NebulaStore::asyncAppendBatch(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   std::string& batch,
+                                   KVCallback cb) {
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    part->asyncAppendBatch(batch, std::move(cb));
+}
 
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
@@ -908,7 +920,7 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         /**
-         * Drop checkpoint and wal together 
+         * Drop checkpoint and wal together
          **/
         auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s",
                                                   engine->getDataRoot(),

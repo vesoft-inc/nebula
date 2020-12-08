@@ -84,6 +84,9 @@ public:
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
+        } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
+            auto edgeKey = NebulaKeyUtils::toEdgeKey(key, true);
+            return schemaValid(spaceId, edgeKey);
         }
         return true;
     }
@@ -127,6 +130,9 @@ public:
                 return false;
             }
             return checkDataTtlValid(schema.get(), reader.get());
+        } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
+            auto edgeKey = NebulaKeyUtils::toEdgeKey(key, true);
+            return ttlValid(spaceId, edgeKey, val);
         }
         return true;
     }
@@ -158,6 +164,22 @@ public:
     }
 
     bool filterVersions(const folly::StringPiece& key) const {
+        if (NebulaKeyUtils::isLock(vIdLen_, key)) {
+            /*
+             * if MVCC enabled,
+             * only erase lock if there is a prev edge
+             * edges will not erase no matter if thers is a lock before
+             * e.g.
+             * LOCK (1)
+             * LOCK (2)
+             * EDGE (3)
+             * EDGE (4)
+             * LOCK (5)
+             * EDGE (6)
+             * 4, 5, 6 will erased by compaction, 1, 2, 3 won't
+             * */
+            return NebulaKeyUtils::lockWithNoVersion(key) == lastKeyWithNoVersion_;
+        }
         folly::StringPiece keyWithNoVersion = NebulaKeyUtils::keyWithNoVersion(key);
         if (keyWithNoVersion == lastKeyWithNoVersion_) {
             // TODO(heng): we could support max-versions configuration in schema if needed.

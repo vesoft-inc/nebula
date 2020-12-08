@@ -51,6 +51,8 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    void asyncAppendBatch(std::string& batch, KVCallback cb);
+
     void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);
