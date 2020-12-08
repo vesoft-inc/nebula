@@ -96,7 +96,7 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
     // There should be at most one invalid plan, and it must be the latest one
     while (iter->valid()) {
         auto status = BalancePlan::status(iter->val());
-        if (status == BalancePlan::Status::IN_PROGRESS || status == BalancePlan::Status::FAILED) {
+        if (status == BalancePlan::Status::FAILED) {
             auto balanceId = BalancePlan::id(iter->key());
             folly::Baton<true, std::atomic> baton;
             cpp2::ErrorCode result = cpp2::ErrorCode::SUCCEEDED;
