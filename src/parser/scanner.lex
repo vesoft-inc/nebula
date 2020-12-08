@@ -158,6 +158,7 @@ ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
 RESET                       ([Rr][Ee][Ss][Ee][Tt])
+PLAN                        ([Pp][Ll][Aa][Nn])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -312,6 +313,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 {RESET}                     { return TokenType::KW_RESET; }
+{PLAN}                      { return TokenType::KW_PLAN; }
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }

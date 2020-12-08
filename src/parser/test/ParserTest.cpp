@@ -1773,7 +1773,7 @@ TEST(Parser, BalanceOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "BALANCE DATA RESET";
+        std::string query = "BALANCE DATA RESET PLAN";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
