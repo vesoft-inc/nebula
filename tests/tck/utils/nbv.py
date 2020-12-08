@@ -188,7 +188,7 @@ def p_list(p):
         list : '[' list_items ']'
              | '[' ']'
     '''
-    l = List()
+    l = NList()
     if len(p) == 4:
         l.values = p[2]
     else:
@@ -199,7 +199,7 @@ def p_set(p):
     '''
         set : '{' list_items '}'
     '''
-    s = Set()
+    s = NSet()
     s.values = set(p[2])
     p[0] = Value(uVal = s)
 
@@ -219,7 +219,7 @@ def p_map(p):
         map : '{' map_items '}'
             | '{' '}'
     '''
-    m = Map()
+    m = NMap()
     if len(p) == 4:
         m.kvs = p[2]
     else:

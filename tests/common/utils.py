@@ -275,15 +275,15 @@ def to_value(col):
     elif isinstance(col, CommonTtypes.DateTime):
         value.set_dtVal(col)
     elif type(col) is dict:
-        map_val = CommonTtypes.Map()
+        map_val = CommonTtypes.NMap()
         map_val.kvs = {k.encode('utf-8'): to_value(v) for k, v in col.items()}
         value.set_mVal(map_val)
     elif type(col) is list:
-        list_val = CommonTtypes.List()
+        list_val = CommonTtypes.NList()
         list_val.values = list(map(to_value, col))
         value.set_lVal(list_val)
     elif type(col) is set:
-        set_val = CommonTtypes.Set()
+        set_val = CommonTtypes.NSet()
         set_val.values = set(map(to_value, col))
         value.set_uVal(set_val)
     elif isinstance(col, CommonTtypes.Edge):
