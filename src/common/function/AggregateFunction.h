@@ -323,6 +323,10 @@ public:
         if (val.isNull() || val.empty()) {
             return;
         }
+        if (!val.isInt()) {
+            result_ = Value::kNullBadType;
+            return;
+        }
         if (distinct_) {
             uniques_.emplace(val);
         } else {
@@ -336,6 +340,7 @@ public:
     }
 
     Value getResult() override {
+        if (result_.isBadNull()) return result_;
         if (distinct_ && !uniques_.empty()) {
             Value result = *uniques_.begin();
             for (auto& v : uniques_) {
@@ -361,6 +366,10 @@ public:
         if (val.isNull() || val.empty()) {
             return;
         }
+        if (!val.isInt()) {
+            result_ = Value::kNullBadType;
+            return;
+        }
         if (distinct_) {
             uniques_.emplace(val);
         } else {
@@ -374,6 +383,7 @@ public:
     }
 
     Value getResult() override {
+        if (result_.isBadNull()) return result_;
         if (distinct_ && !uniques_.empty()) {
             Value result = *uniques_.begin();
             for (auto& v : uniques_) {
@@ -399,6 +409,10 @@ public:
         if (val.isNull() || val.empty()) {
             return;
         }
+        if (!val.isInt()) {
+            result_ = Value::kNullBadType;
+            return;
+        }
         if (distinct_) {
             uniques_.emplace(val);
         } else {
@@ -412,6 +426,9 @@ public:
     }
 
     Value getResult() override {
+        if (result_.isBadNull()) {
+            return result_;
+        }
         if (distinct_ && !uniques_.empty()) {
             Value result = *uniques_.begin();
             std::for_each(++uniques_.begin(), uniques_.end(), [&result] (auto& v) {

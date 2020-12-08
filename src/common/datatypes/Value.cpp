@@ -2314,14 +2314,11 @@ Value operator&(const Value& lhs, const Value& rhs) {
         return rhs;
     }
 
-    if (lhs.type() != rhs.type()) {
+    if (!lhs.isInt() || lhs.type() != rhs.type()) {
         return Value::kNullBadType;
     }
 
     switch (lhs.type()) {
-        case Value::Type::BOOL: {
-            return lhs.getBool() & rhs.getBool();
-        }
         case Value::Type::INT: {
             return lhs.getInt() & rhs.getInt();
         }
@@ -2340,14 +2337,11 @@ Value operator|(const Value& lhs, const Value& rhs) {
         return rhs;
     }
 
-    if (lhs.type() != rhs.type()) {
+    if (!lhs.isInt() || lhs.type() != rhs.type()) {
         return Value::kNullBadType;
     }
 
     switch (lhs.type()) {
-        case Value::Type::BOOL: {
-            return lhs.getBool() | rhs.getBool();
-        }
         case Value::Type::INT: {
             return lhs.getInt() | rhs.getInt();
         }
@@ -2366,14 +2360,11 @@ Value operator^(const Value& lhs, const Value& rhs) {
         return rhs;
     }
 
-    if (lhs.type() != rhs.type()) {
+    if (!lhs.isInt() || lhs.type() != rhs.type()) {
         return Value::kNullBadType;
     }
 
     switch (lhs.type()) {
-        case Value::Type::BOOL: {
-            return lhs.getBool() ^ rhs.getBool();
-        }
         case Value::Type::INT: {
             return lhs.getInt() ^ rhs.getInt();
         }

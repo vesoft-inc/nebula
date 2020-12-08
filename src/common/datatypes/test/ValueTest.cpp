@@ -530,8 +530,8 @@ TEST(Value, Bit) {
         EXPECT_EQ(0, v.getInt());
 
         v = vBool1 & vBool2;
-        EXPECT_EQ(Value::Type::INT, v.type());
-        EXPECT_EQ(0, v.getInt());
+        EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+        EXPECT_EQ(NullType::BAD_TYPE, v.getNull());
 
         v = vStr1 & vStr2;
         EXPECT_TRUE(v.isNull());
@@ -585,8 +585,8 @@ TEST(Value, Bit) {
         EXPECT_EQ(3, v.getInt());
 
         v = vBool1 | vBool2;
-        EXPECT_EQ(Value::Type::INT, v.type());
-        EXPECT_EQ(1, v.getInt());
+        EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+        EXPECT_EQ(NullType::BAD_TYPE, v.getNull());
 
         v = vStr1 | vStr2;
         EXPECT_TRUE(v.isNull());
@@ -641,8 +641,8 @@ TEST(Value, Bit) {
         EXPECT_EQ(3, v.getInt());
 
         v = vBool1 ^ vBool2;
-        EXPECT_EQ(Value::Type::INT, v.type());
-        EXPECT_EQ(1, v.getInt());
+        EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+        EXPECT_EQ(NullType::BAD_TYPE, v.getNull());
 
         v = vStr1 ^ vStr2;
         EXPECT_TRUE(v.isNull());

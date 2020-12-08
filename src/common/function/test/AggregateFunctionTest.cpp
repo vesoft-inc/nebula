@@ -20,6 +20,7 @@ public:
         vals4_.emplace_back(Value(NullType::__NULL__));
         vals4_.emplace_back(Value());
         vals5_ = {7, 3, 2, 3, 4, 1, 6, 7, 8, 5, 9, 0, 1};
+        vals6_ = {true, false, false, true};
     }
 protected:
     static std::vector<Value>  vals1_;
@@ -27,6 +28,7 @@ protected:
     static std::vector<Value>  vals3_;
     static std::vector<Value>  vals4_;
     static std::vector<Value>  vals5_;
+    static std::vector<Value>  vals6_;
 };
 
 std::vector<Value>  AggregateFunctionTest::vals1_;
@@ -34,6 +36,7 @@ std::vector<Value>  AggregateFunctionTest::vals2_;
 std::vector<Value>  AggregateFunctionTest::vals3_;
 std::vector<Value>  AggregateFunctionTest::vals4_;
 std::vector<Value>  AggregateFunctionTest::vals5_;
+std::vector<Value>  AggregateFunctionTest::vals6_;
 
 TEST_F(AggregateFunctionTest, Group) {
     auto group = AggFun::aggFunMap_[AggFun::Function::kNone](false);
@@ -376,6 +379,13 @@ TEST_F(AggregateFunctionTest, BitAnd) {
         EXPECT_EQ(bitAnd->getResult(), Value::kNullValue);
     }
     {
+        auto bitAnd = AggFun::aggFunMap_[AggFun::Function::kBitAnd](false);
+        for (auto& val : vals6_) {
+            bitAnd->apply(val);
+        }
+        EXPECT_EQ(bitAnd->getResult(), Value::kNullBadType);
+    }
+    {
         auto bitAnd = AggFun::aggFunMap_[AggFun::Function::kBitAnd](true);
         for (auto& val : vals1_) {
             bitAnd->apply(val);
@@ -403,6 +413,13 @@ TEST_F(AggregateFunctionTest, BitAnd) {
         }
         EXPECT_EQ(bitAnd->getResult(), 0);
     }
+    {
+        auto bitAnd = AggFun::aggFunMap_[AggFun::Function::kBitAnd](true);
+        for (auto& val : vals6_) {
+            bitAnd->apply(val);
+        }
+        EXPECT_EQ(bitAnd->getResult(), Value::kNullBadType);
+    }
 }
 
 TEST_F(AggregateFunctionTest, BitOr) {
@@ -426,6 +443,13 @@ TEST_F(AggregateFunctionTest, BitOr) {
             bitOr->apply(val);
         }
         EXPECT_EQ(bitOr->getResult(), Value::kNullValue);
+    }
+    {
+        auto bitOr = AggFun::aggFunMap_[AggFun::Function::kBitOr](false);
+        for (auto& val : vals6_) {
+            bitOr->apply(val);
+        }
+        EXPECT_EQ(bitOr->getResult(), Value::kNullBadType);
     }
     {
         auto bitOr = AggFun::aggFunMap_[AggFun::Function::kBitOr](true);
@@ -454,6 +478,13 @@ TEST_F(AggregateFunctionTest, BitOr) {
             bitOr->apply(val);
         }
         EXPECT_EQ(bitOr->getResult(), 15);
+    }
+    {
+        auto bitOr = AggFun::aggFunMap_[AggFun::Function::kBitOr](true);
+        for (auto& val : vals6_) {
+            bitOr->apply(val);
+        }
+        EXPECT_EQ(bitOr->getResult(), Value::kNullBadType);
     }
 }
 
@@ -480,6 +511,13 @@ TEST_F(AggregateFunctionTest, BitXor) {
         EXPECT_EQ(bitXor->getResult(), Value::kNullValue);
     }
     {
+        auto bitXor = AggFun::aggFunMap_[AggFun::Function::kBitXor](false);
+        for (auto& val : vals6_) {
+            bitXor->apply(val);
+        }
+        EXPECT_EQ(bitXor->getResult(), Value::kNullBadType);
+    }
+    {
         auto bitXor = AggFun::aggFunMap_[AggFun::Function::kBitXor](true);
         for (auto& val : vals1_) {
             bitXor->apply(val);
@@ -506,6 +544,13 @@ TEST_F(AggregateFunctionTest, BitXor) {
             bitXor->apply(val);
         }
         EXPECT_EQ(bitXor->getResult(), 1);
+    }
+    {
+        auto bitXor = AggFun::aggFunMap_[AggFun::Function::kBitXor](true);
+        for (auto& val : vals6_) {
+            bitXor->apply(val);
+        }
+        EXPECT_EQ(bitXor->getResult(), Value::kNullBadType);
     }
 }
 
