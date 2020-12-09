@@ -15,6 +15,7 @@ ExternalProject_Add(
     STAMP_DIR ${BUILD_INFO_DIR}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     SOURCE_DIR ${source_dir}
+    PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/patches/rocksdb-6.7.3.patch
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${common_cmake_args}

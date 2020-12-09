@@ -65,7 +65,7 @@ class AppendLogsIterator;
 
 /**
  * The operation will be atomic, if the operation failed, empty string will be returned,
- * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * otherwise it will return the new operation's encoded string which should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
 using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
@@ -529,6 +529,8 @@ protected:
     uint64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
     uint64_t lastMsgAcceptedCostMs_{0};
+    // Make sure only one election is in progress
+    std::atomic_bool inElection_{false};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
