@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
+#include "kvstore/RocksEngineConfig.h"
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
@@ -628,6 +629,115 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
             EXPECT_EQ(10, rowCount);
         }
     }
+}
+
+TEST(IndexTest, VertexBloomFilterTest) {
+    // vertex bloom filter should be used when enable_multi_versions is false
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/InsertVerticesTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+
+    auto writeData = [&] (VertexID vIdFrom, VertexID vIdTo) {
+        cpp2::AddVerticesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
+        PartitionID partId = 0;
+        auto vertices = TestUtils::setupVertices(partId, vIdFrom, vIdTo, 3001, 3010);
+        req.parts.emplace(partId, std::move(vertices));
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        indexMan.get(),
+                                                        nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    };
+
+    auto statistics = kvstore::getDBStatistics();
+    // write initial data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // overwrite existed data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // write not existed data
+    writeData(100, 200);
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    auto count = statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // when enable_multi_versions is true, whole key bloom filter won't be used anymore
+    FLAGS_enable_multi_versions = true;
+    writeData(200, 300);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), count);
+    FLAGS_enable_multi_versions = false;
+
+    FLAGS_enable_rocksdb_statistics = false;
+}
+
+TEST(IndexTest, EdgeBloomFilterTest) {
+    // edge bloom filter should be used when enable_multi_versions is false
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/InsertEdgesTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+
+    auto writeData = [&] (VertexID vIdFrom, VertexID vIdTo) {
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+        cpp2::AddEdgesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
+        PartitionID partId = 0;
+        auto edges = TestUtils::setupEdges(partId, vIdFrom, vIdTo, 101);
+        req.parts.emplace(partId, std::move(edges));
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    };
+
+    // reset stat count
+    auto statistics = kvstore::getDBStatistics();
+    statistics->getAndResetTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    // write initial data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // overwrite existed data
+    writeData(0, 100);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // write not existed data
+    writeData(100, 200);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    auto count = statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // when enable_multi_versions is true, whole key bloom filter won't be used anymore
+    FLAGS_enable_multi_versions = true;
+    writeData(200, 300);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), count);
+    FLAGS_enable_multi_versions = false;
+
+    FLAGS_enable_rocksdb_statistics = false;
 }
 
 }  // namespace storage

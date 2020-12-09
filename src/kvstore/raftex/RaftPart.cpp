@@ -631,7 +631,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     }
 
     if (!checkAppendLogResult(res)) {
-        // Mosy likely failed because the parttion is not leader
+        // Most likely failed because the partition is not leader
         LOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
@@ -761,6 +761,12 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
         }
 
         hosts = hosts_;
+
+        if (term_ != currTerm) {
+            VLOG(2) << idStr_ << "Term has been updated, previous "
+                    << currTerm << ", current " << term_;
+            currTerm = term_;
+        }
     } while (false);
 
     if (!checkAppendLogResult(res)) {
@@ -1090,6 +1096,14 @@ bool RaftPart::leaderElection() {
     VLOG(2) << idStr_ << "Start leader election...";
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
+    bool expected = false;
+    if (!inElection_.compare_exchange_strong(expected, true)) {
+        return true;
+    }
+    SCOPE_EXIT {
+        inElection_ = false;
+    };
+
     cpp2::AskForVoteRequest voteReq;
     decltype(hosts_) hosts;
     if (!prepareElectionRequest(voteReq, hosts)) {
@@ -1276,7 +1290,7 @@ void RaftPart::processAskForVoteRequest(
         const cpp2::AskForVoteRequest& req,
         cpp2::AskForVoteResponse& resp) {
     LOG(INFO) << idStr_
-              << "Recieved a VOTING request"
+              << "Received a VOTING request"
               << ": space = " << req.get_space()
               << ", partition = " << req.get_part()
               << ", candidateAddr = "
@@ -1487,7 +1501,7 @@ void RaftPart::processAppendLogRequest(
             // When leader has been sending a snapshot already, sometimes it would send a request
             // with empty log list, and lastLogId in wal may be 0 because of reset.
             if (numLogs != 0) {
-                CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+                CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
             }
             lastLogId_ = wal_->lastLogId();
             lastLogTerm_ = wal_->lastLogTerm();
@@ -1520,6 +1534,7 @@ void RaftPart::processAppendLogRequest(
         resp.set_committed_log_id(committedLogId_);
         resp.set_last_log_id(lastLogId_);
         resp.set_last_log_term(lastLogTerm_);
+        return;
     }
 
     // req.get_last_log_id_sent() >= committedLogId_
@@ -1548,6 +1563,15 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
+        // TODO(doodle): This is a potential bug which would cause data not in consensus. In most
+        // case, we would hit this path when leader append logs to follower and timeout (leader
+        // would set lastLogIdSent_ = logIdToSend_ - 1 in Host). **But follower actually received
+        // it successfully**. Which will explain when leader retry to append these logs, the LOG
+        // belows is printed, and lastLogId_ == req.get_last_log_id_sent() + 1 in the LOG.
+        //
+        // In fact we should always rollback to req.get_last_log_id_sent(), and append the logs from
+        // leader (we can't make promise that the logs in range [req.get_last_log_id_sent() + 1,
+        // lastLogId_] is same with follower). However, this makes no difference in the above case.
         LOG(INFO) << idStr_ << "Stale log! Local lastLogId " << lastLogId_
                   << ", lastLogTerm " << lastLogTerm_
                   << ", lastLogIdSent " << req.get_last_log_id_sent()
@@ -1565,7 +1589,9 @@ void RaftPart::processAppendLogRequest(
                             req.get_log_term(),
                             req.get_log_str_list());
     if (wal_->appendLogs(iter)) {
-        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+        if (numLogs != 0) {
+            CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
+        }
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
         resp.set_last_log_id(lastLogId_);
@@ -1581,7 +1607,7 @@ void RaftPart::processAppendLogRequest(
         // We can only commit logs from firstId to min(lastLogId_, leader's commit log id),
         // follower can't always commit to leader's commit id because of lack of log
         LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
-        CHECK(committedLogId_ + 1 <= lastLogIdCanCommit);
+        CHECK_LE(committedLogId_ + 1, lastLogIdCanCommit);
         if (commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit))) {
             VLOG(1) << idStr_ << "Follower succeeded committing log "
                               << committedLogId_ + 1 << " to "
@@ -1750,7 +1776,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
             lastLogTerm_ = req.get_committed_log_term();
         }
         if (wal_->lastLogId() <= committedLogId_) {
-            LOG(INFO) << "Reset invalid wal after snapshot received";
+            LOG(INFO) << idStr_ << "Reset invalid wal after snapshot received";
             wal_->reset();
         }
         status_ = Status::RUNNING;

@@ -137,7 +137,7 @@ struct SpaceDesc {
 };
 
 
-// config cahce, get config via module and name
+// config cache, get config via module and name
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
 
 class MetaChangedListener {
@@ -402,7 +402,7 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
-    // Opeartions for cache.
+    // Operations for cache.
     StatusOr<GraphSpaceID>
     getSpaceIdByNameFromCache(const std::string& name);
 
@@ -562,7 +562,7 @@ protected:
                      RemoteFunc remoteFunc,
                      RespGenerator respGen,
                      folly::Promise<StatusOr<Response>> pro,
-                     bool toLeader = false,
+                     bool toLeader = true,
                      int32_t retry = 0,
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 

@@ -16,6 +16,9 @@ namespace graph {
 using RpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpIndexResp>;
 
 class LookupExecutor final : public TraverseExecutor {
+    FRIEND_TEST(LookupTest, OptimizerTest);
+    FRIEND_TEST(LookupTest, OptimizerWithStringFieldTest);
+
 public:
     LookupExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -46,11 +49,23 @@ private:
 
     Status optimize();
 
-    Status traversalExpr(const Expression *expr);
+    Status traversalExpr(const Expression *expr, const meta::SchemaProviderIf* schema);
 
     Status checkFilter();
 
-    Status findValidIndex();
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndexWithStr();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndexNoStr();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findValidIndex();
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForEqualScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> findIndexForRangeScan(
+        const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes);
+
+    Status findOptimalIndex();
 
     void lookUp();
 
@@ -70,6 +85,9 @@ private:
 
     bool processFinalVertexResult(RpcResponse &rpcResp, const Callback& cb) const;
 
+    Status relationalExprCheck(RelationalExpression::Operator op) const;
+
+    bool supportedDataTypeForRange(nebula::cpp2::SupportedType type) const;
 
 private:
     using FilterItem = std::pair<std::string, RelationalExpression::Operator>;

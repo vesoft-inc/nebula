@@ -55,6 +55,25 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doGetFirstRecord(GraphSpaceID spaceId,
+                                                          PartitionID partId,
+                                                          std::string& key,
+                                                          std::string* value) {
+    if (!FLAGS_enable_multi_versions) {
+        int64_t version = folly::Endian::big(0L);
+        key.append(reinterpret_cast<const char*>(&version), sizeof(int64_t));
+        return kvstore_->get(spaceId, partId, key, value);
+    } else {
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(spaceId, partId, key, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
+            *value = iter->val().str();
+        }
+        return ret;
+    }
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV> data) {
@@ -89,6 +108,17 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    std::vector<std::string> keys) {
     this->kvstore_->asyncMultiRemove(
         spaceId, partId, std::move(keys), [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const std::string& start,
+                                        const std::string& end) {
+    this->kvstore_->asyncRemoveRange(
+        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
             handleAsync(spaceId, partId, code);
         });
 }
