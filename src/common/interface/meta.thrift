@@ -76,14 +76,6 @@ enum ErrorCode {
     E_BALANCER_FAILURE       = -58,
     E_JOB_NOT_FINISHED       = -59,
 
-    // Backup Failure
-    E_BACKUP_FAILURE = -60,
-    E_BACKUP_BUILDING_INDEX = -61,
-    E_BACKUP_SPACE_NOT_FOUND = -62,
-
-    // RESTORE Failure
-    E_RESTORE_FAILURE = -70,
-
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
@@ -1000,48 +992,6 @@ struct GetStatisResp {
     3: StatisItem       statis,
 }
 
-struct CheckpointInfo {
-    1: common.HostAddr host,
-    2: binary          checkpoint_dir,
-}
-
-struct SpaceBackupInfo {
-    1: SpaceDesc                    space,
-    2: common.PartitionBackupInfo   partition_info,
-    // storage checkpoint directory name
-    3: list<CheckpointInfo>         cp_dirs,
-}
-
-struct BackupMeta {
-    // space_name => SpaceBackupInfo
-    1: map<common.GraphSpaceID, SpaceBackupInfo> (cpp.template = "std::unordered_map")  backup_info,
-    // sst file
-    2: list<binary>                               meta_files,
-    // backup
-    3: binary                                     backup_name,
-}
-
-struct CreateBackupReq {
-    // null means all spaces
-    1: optional list<binary>  spaces,
-}
-
-struct CreateBackupResp {
-    1: ErrorCode          code,
-    2: common.HostAddr    leader,
-    3: BackupMeta         meta,
-}
-
-struct HostPair {
-    1: common.HostAddr   from_host,
-    2: common.HostAddr   to_host,
-}
-
-struct RestoreMetaReq {
-    1: list<binary>     files,
-    2: list<HostPair>   hosts,
-}
-
 enum FTServiceType {
     ELASTICSEARCH = 0x01,
 } (cpp.enum_strict)
@@ -1151,8 +1101,6 @@ service MetaService {
     GetGroupResp   getGroup(1: GetGroupReq req);
     ListGroupsResp listGroups(1: ListGroupsReq req);
 
-    CreateBackupResp createBackup(1: CreateBackupReq req);
-    ExecResp       restoreMeta(1: RestoreMetaReq req);
     ExecResp       addListener(1: AddListenerReq req);
     ExecResp       removeListener(1: RemoveListenerReq req);
     ListListenerResp listListener(1: ListListenerReq req);

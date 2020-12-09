@@ -73,9 +73,6 @@ enum ErrorCode {
     E_FAILED_TO_CHECKPOINT   = -60,
     E_CHECKPOINT_BLOCKED     = -61,
 
-    //backup failed
-    E_BACKUP_FAILED          = -65,
-
     // partial result, used for kv interfaces
     E_PARTIAL_RESULT         = -71,
 
@@ -839,21 +836,6 @@ struct RebuildIndexRequest {
     3: common.IndexID               index_id,
 }
 
-struct CreateCPResp {
-    1: required ResponseCommon result,
-    2: binary                  path,
-}
-
-struct PartitionInfoResp {
-    1: required ResponseCommon          result,
-    2: binary                           backup_name,
-    3: common.PartitionBackupInfo       partition_info,
-}
-
-struct PartitionInfoRequest {
-    1: common.GraphSpaceID                  space_id,
-    2: binary                               backup_name,
-}
 
 service StorageAdminService {
     // Interfaces for admin operations
@@ -865,7 +847,7 @@ service StorageAdminService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
 
     // Interfaces for nebula cluster checkpoint
-    CreateCPResp  createCheckpoint(1: CreateCPRequest req);
+    AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
