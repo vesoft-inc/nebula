@@ -1372,6 +1372,24 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW HOSTS graph";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW HOSTS meta";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW HOSTS storage";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "SHOW SPACES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

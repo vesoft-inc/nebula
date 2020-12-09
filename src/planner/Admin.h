@@ -60,13 +60,18 @@ private:
 class ShowHosts final : public SingleDependencyNode {
     // TODO(shylock) meta/storage/graph enumerate
 public:
-    static ShowHosts* make(QueryContext* qctx, PlanNode* dep) {
-        return qctx->objPool()->add(new ShowHosts(qctx, dep));
+    static ShowHosts* make(QueryContext* qctx, PlanNode* dep, meta::cpp2::ListHostType type) {
+        return qctx->objPool()->add(new ShowHosts(qctx, dep, type));
+    }
+
+    meta::cpp2::ListHostType getType() const {
+        return type_;
     }
 
 private:
-    ShowHosts(QueryContext* qctx, PlanNode* dep)
-        : SingleDependencyNode(qctx, Kind::kShowHosts, dep) {}
+    ShowHosts(QueryContext* qctx, PlanNode* dep, meta::cpp2::ListHostType type)
+        : SingleDependencyNode(qctx, Kind::kShowHosts, dep), type_(type) {}
+    meta::cpp2::ListHostType type_;
 };
 
 class CreateSpace final : public SingleInputNode {

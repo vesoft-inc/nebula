@@ -97,6 +97,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::meta::cpp2::ConfigModule        config_module;
+    nebula::meta::cpp2::ListHostType       list_host_type;
     nebula::ConfigRowItem                  *config_row_item;
     nebula::EdgeKey                        *edge_key;
     nebula::EdgeKeys                       *edge_keys;
@@ -132,7 +133,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 
 /* destructors */
 %destructor {} <sentences>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -242,6 +243,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
+%type <list_host_type> list_host_type
 %type <config_row_item> show_config_item get_config_item set_config_item
 %type <edge_key> edge_key
 %type <edge_keys> edge_keys
@@ -2523,7 +2525,10 @@ job_concurrency
 
 show_sentence
     : KW_SHOW KW_HOSTS {
-        $$ = new ShowHostsSentence();
+        $$ = new ShowHostsSentence(meta::cpp2::ListHostType::ALLOC);
+    }
+    | KW_SHOW KW_HOSTS list_host_type {
+        $$ = new ShowHostsSentence($3);
     }
     | KW_SHOW KW_SPACES {
         $$ = new ShowSpacesSentence();
@@ -2602,6 +2607,12 @@ show_sentence
     | KW_SHOW KW_TEXT KW_SEARCH KW_CLIENTS {
         $$ = new ShowTSClientsSentence();
     }
+    ;
+
+list_host_type
+    : KW_GRAPH      { $$ = meta::cpp2::ListHostType::GRAPH; }
+    | KW_META       { $$ = meta::cpp2::ListHostType::META; }
+    | KW_STORAGE    { $$ = meta::cpp2::ListHostType::STORAGE; }
     ;
 
 config_module_enum

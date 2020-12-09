@@ -268,7 +268,8 @@ Status ShowHostsValidator::validateImpl() {
 }
 
 Status ShowHostsValidator::toPlan() {
-    auto *showHosts = ShowHosts::make(qctx_, nullptr);
+    auto sentence = static_cast<ShowHostsSentence *>(sentence_);
+    auto *showHosts = ShowHosts::make(qctx_, nullptr, sentence->getType());
     root_ = showHosts;
     tail_ = root_;
     return Status::OK();

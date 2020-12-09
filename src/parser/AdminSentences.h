@@ -20,7 +20,19 @@ public:
     ShowHostsSentence() {
         kind_ = Kind::kShowHosts;
     }
+
+    explicit ShowHostsSentence(meta::cpp2::ListHostType type) : type_(type) {
+        kind_ = Kind::kShowHosts;
+    }
+
     std::string toString() const override;
+
+    meta::cpp2::ListHostType getType() const {
+        return type_;
+    }
+
+private:
+    meta::cpp2::ListHostType type_;
 };
 
 class ShowSpacesSentence : public Sentence {
