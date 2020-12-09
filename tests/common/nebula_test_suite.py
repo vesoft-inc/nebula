@@ -182,7 +182,7 @@ class NebulaTestSuite(object):
     @classmethod
     def check_resp_succeeded(self, resp):
         assert (
-            resp.is_succeeded
+            resp.is_succeeded()
             or resp.error_code() == ttypes.ErrorCode.E_STATEMENT_EMPTY
         ), resp.error_msg()
 
@@ -190,12 +190,12 @@ class NebulaTestSuite(object):
     def check_resp_failed(self, resp, error_code: ttypes.ErrorCode = ttypes.ErrorCode.SUCCEEDED):
         if error_code == ttypes.ErrorCode.SUCCEEDED:
             assert resp.error_code() != error_code, '{} == {}, {}'.format(
-                ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
+                ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code()],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
             )
         else:
             assert resp.error_code() == error_code, '{} != {}, {}'.format(
-                ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code],
+                ttypes.ErrorCode._VALUES_TO_NAMES[resp.error_code()],
                 ttypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
             )
 

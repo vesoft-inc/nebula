@@ -291,7 +291,6 @@ class TestIndex(NebulaTestSuite):
         if self.find_result(resp0, [['single_edge_index', 'FINISHED']]):
             resp = self.client.execute('LOOKUP ON edge_1 WHERE edge_1.col2 == 22 YIELD edge_1.col2')
             self.check_resp_succeeded(resp)
-            print(resp0.data.rows)
             expect = [['102', 0, '103', 22]]
             self.check_out_of_order_result(resp, expect)
 
