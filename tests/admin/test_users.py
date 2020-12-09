@@ -9,6 +9,7 @@ import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 
+
 class TestUsers(NebulaTestSuite):
     @classmethod
     def prepare(self):

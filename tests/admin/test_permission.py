@@ -7,11 +7,8 @@
 
 import time
 
-import pytest
-
-from tests.common.nebula_test_suite import NebulaTestSuite
-
 from nebula2.graph import ttypes
+from tests.common.nebula_test_suite import NebulaTestSuite
 
 
 class TestPermission(NebulaTestSuite):

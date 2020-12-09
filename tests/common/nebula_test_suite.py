@@ -5,21 +5,25 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+import pytest
 import time
 import datetime
-import pytest
-import re
 
 from pathlib import Path
 from typing import Pattern, Set
 
 from nebula2.common import ttypes as CommonTtypes
-from nebula2.gclient.net import ConnectionPool
-from nebula2.Config import Config
+# from nebula2.gclient.net import ConnectionPool
+# from nebula2.Config import Config
 from nebula2.graph import ttypes
 from tests.common.configs import get_delay_time
-from tests.common.utils import compare_value, \
-    row_to_string, to_value, value_to_string, find_in_rows
+from tests.common.utils import (
+    compare_value,
+    row_to_string,
+    to_value,
+    value_to_string,
+    find_in_rows,
+)
 
 
 T_EMPTY = CommonTtypes.Value()
@@ -37,32 +41,31 @@ T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
 T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 
 
+@pytest.mark.usefixtures("workarround_for_class")
 class NebulaTestSuite(object):
     @classmethod
     def set_delay(self):
         self.delay = get_delay_time(self.client)
 
-    @classmethod
-    def setup_class(self):
-        self.spaces = []
-        address = pytest.cmdline.address.split(':')
-        self.host = address[0]
-        self.port = address[1]
-        self.user = pytest.cmdline.user
-        self.password = pytest.cmdline.password
-        self.replica_factor = pytest.cmdline.replica_factor
-        self.partition_num = pytest.cmdline.partition_num
-        self.check_format_str = 'result: {}, expect: {}'
-        self.data_dir = pytest.cmdline.data_dir
-        self.data_loaded = False
-        self.create_nebula_clients()
-        self.set_delay()
-        self.prepare()
+    # @classmethod
+    # def setup_class(self):
+    #     self.spaces = []
+    #     self.user = pytest.cmdline.user
+    #     self.password = pytest.cmdline.password
+    #     self.replica_factor = pytest.cmdline.replica_factor
+    #     self.partition_num = pytest.cmdline.partition_num
+    #     self.check_format_str = 'result: {}, expect: {}'
+    #     self.data_dir = pytest.cmdline.data_dir
+    #     self.data_loaded = False
+    #     self.create_nebula_clients()
+    #     self.set_delay()
+    #     self.prepare()
 
     @classmethod
     def load_data(self):
         self.data_loaded = True
-        pathlist = Path(self.data_dir).rglob('*.ngql')
+        # pathlist = Path(self.data_dir).rglob('*.ngql')
+        pathlist = [Path(self.data_dir).joinpath("data/nba.ngql")]
         for path in pathlist:
             print("open: ", path)
             with open(path, 'r') as data_file:
@@ -115,20 +118,20 @@ class NebulaTestSuite(object):
 
     @classmethod
     def use_student_space(self):
-        resp = self.execute('USE student_space;')
+        resp = self.execute('USE student;')
         self.check_resp_succeeded(resp)
 
-    @classmethod
-    def create_nebula_clients(self):
-        config = Config()
-        config.max_connection_pool_size = 20
-        config.timeout = 60000
-        # init connection pool
-        self.client_pool = ConnectionPool()
-        assert self.client_pool.init([(self.host, self.port)], config)
+    # @classmethod
+    # def create_nebula_clients(self):
+    #     config = Config()
+    #     config.max_connection_pool_size = 20
+    #     config.timeout = 60000
+    #     # init connection pool
+    #     self.client_pool = ConnectionPool()
+    #     assert self.client_pool.init([(self.host, self.port)], config)
 
-        # get session from the pool
-        self.client = self.client_pool.get_session(self.user, self.password)
+    #     # get session from the pool
+    #     self.client = self.client_pool.get_session(self.user, self.password)
 
     @classmethod
     def spawn_nebula_client(self, user, password):
@@ -138,22 +141,17 @@ class NebulaTestSuite(object):
     def release_nebula_client(self, client):
         client.release()
 
-    @classmethod
-    def close_nebula_clients(self):
-        self.client_pool.close()
+    # @classmethod
+    # def close_nebula_clients(self):
+    #     self.client_pool.close()
 
-    @classmethod
-    def teardown_class(self):
-        if self.client is not None:
-            self.cleanup()
-            self.drop_data()
-            self.client.release()
-        self.close_nebula_clients()
-
-    @classmethod
-    def execute(self, ngql, profile=True):
-        return self.client.execute(
-            'PROFILE {{{}}}'.format(ngql) if profile else ngql)
+    # @classmethod
+    # def teardown_class(self):
+    #     if self.client is not None:
+    #         self.cleanup()
+    #         self.drop_data()
+    #         self.client.release()
+    #     self.close_nebula_clients()
 
     @classmethod
     def execute(self, ngql, profile=True):

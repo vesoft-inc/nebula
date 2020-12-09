@@ -1,0 +1,11 @@
+:SRC_VID(string),:DST_VID(string),teammate.start_year:int,teammate.end_year:int
+Tony Parker,Tim Duncan,2001,2016
+Tony Parker,Manu Ginobili,2002,2018
+Tony Parker,LaMarcus Aldridge,2015,2018
+Tony Parker,Kyle Anderson,2014,2016
+Tim Duncan,Tony Parker,2001,2016
+Tim Duncan,Manu Ginobili,2002,2016
+Tim Duncan,LaMarcus Aldridge,2015,2016
+Tim Duncan,Danny Green,2010,2016
+Manu Ginobili,Tim Duncan,2002,2016
+Manu Ginobili,Tony Parker,2002,2016

@@ -155,7 +155,7 @@ def get_datatype(line):
     return None
 
 
-def fill_ve(line, datatype: str, VERTEXS, EDGES):
+def fill_vertices_and_edges(line, datatype: str, VERTEXS, EDGES):
     line = re.split(':|,|->', line.strip(',; \t'))
     line = list(map(lambda i: i.strip(' ()"'), line))
     value = ttypes.Value()
@@ -216,7 +216,7 @@ def parse_line(line, dataType, VERTEXS, EDGES):
     if dt is not None:
         dataType[0] = dt
     else:
-        fill_ve(line, dataType[0], VERTEXS, EDGES)
+        fill_vertices_and_edges(line, dataType[0], VERTEXS, EDGES)
 
 
 @pytest.fixture(scope="class")

@@ -5,12 +5,10 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import re
-import sys
 import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite
-from tests.common.nebula_test_suite import T_EMPTY, T_NULL
+from tests.common.nebula_test_suite import T_EMPTY
 
 
 class TestSchema(NebulaTestSuite):
@@ -83,14 +81,14 @@ class TestSchema(NebulaTestSuite):
             resp = self.execute('CREATE TAG TAG_empty')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create tag with wrong type
         try:
             resp = self.execute('CREATE TAG TAG_wrong_type(name list)')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create tag with wrong default value type
         try:
@@ -98,7 +96,7 @@ class TestSchema(NebulaTestSuite):
                                 'gender string default false) ')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create tag with wrong ttl type
         try:
@@ -106,9 +104,7 @@ class TestSchema(NebulaTestSuite):
                                 'ttl_duration = 100, ttl_col = "gender"')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
-
-
+            print('failed', x)
 
     def test_alter_tag_succeed(self):
         # create tag
@@ -172,21 +168,21 @@ class TestSchema(NebulaTestSuite):
             resp = self.execute('ALTER TAG student ttl_col email')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # alter drop nonexistent col
         try:
             resp = self.execute('ALTER TAG student drop name')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # alter add existent col
         try:
             resp = self.execute('ALTER TAG student add (email, int)')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
     def test_create_edge_succeed(self):
         # create edge without prop
@@ -246,14 +242,14 @@ class TestSchema(NebulaTestSuite):
             resp = self.execute('CREATE EDGE EDGE_empty')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create edge with wrong type
         try:
             resp = self.execute('CREATE EDGE EDGE_wrong_type(name list)')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create edge with wrong default value type
         try:
@@ -261,7 +257,7 @@ class TestSchema(NebulaTestSuite):
                                 'gender string default false) ')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # create edge with wrong ttl type
         try:
@@ -269,7 +265,7 @@ class TestSchema(NebulaTestSuite):
                                 'ttl_duration = 100, ttl_col = "gender"')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
     def test_alter_edge_succeed(self):
         # create edge
@@ -327,21 +323,21 @@ class TestSchema(NebulaTestSuite):
             resp = self.execute('ALTER EDGE relationship ttl_col email')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # alter drop nonexistent col
         try:
             resp = self.execute('ALTER EDGE relationship drop name')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
         # alter add existent col
         try:
             resp = self.execute('ALTER EDGE relationship add (email, int)')
             self.check_resp_failed(resp)
         except Exception as x:
-            print('failed')
+            print('failed', x)
 
     # Cover https://github.com/vesoft-inc/nebula/issues/1732
     def test_cover_fix_negative_default_value(self):

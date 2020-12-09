@@ -5,8 +5,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import time
-
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -14,10 +12,6 @@ class TestDeleteEdges2(NebulaTestSuite):
     @classmethod
     def prepare(self):
         self.load_data()
-
-    @classmethod
-    def cleanup(self):
-        pass
 
     def test_delete_with_pipe_wrong_vid_type(self):
         resp = self.execute('GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE EDGE like $-.id->$-.id')

@@ -1,0 +1,12 @@
+DROP SPACE IF EXISTS nba;
+CREATE SPACE nba(partition_num=7, replica_factor=1, vid_type=FIXED_STRING(30));
+USE nba;
+CREATE TAG IF NOT EXISTS player(name string, age int);
+CREATE TAG IF NOT EXISTS team(name string);
+CREATE TAG IF NOT EXISTS bachelor(name string, speciality string);
+CREATE EDGE IF NOT EXISTS like(likeness int);
+CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);
+CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);
+CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));
+CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
+CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));

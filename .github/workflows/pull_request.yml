@@ -131,8 +131,9 @@ jobs:
       - name: Pytest
         env:
           NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
-        run: ./ci/test.sh test --rm_dir=false
+        run: python3 -m pytest --dist=loadfile -n8 --rm_dir=false --build_dir="$PWD/../build" -m "not skip"
         timeout-minutes: 25
+        working-directory: tests
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}

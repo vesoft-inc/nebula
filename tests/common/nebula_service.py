@@ -18,11 +18,19 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
 class NebulaService(object):
-    def __init__(self, build_dir, src_dir):
+    def __init__(self, build_dir, src_dir, cleanup=True):
         self.build_dir = build_dir
         self.src_dir = src_dir
         self.work_dir = os.path.join(self.build_dir, 'server_' + time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime()))
         self.pids = {}
+        self._cleanup = cleanup
+
+    def __enter__(self):
+        self.install()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop(cleanup=self._cleanup)
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -65,14 +73,32 @@ class NebulaService(object):
         command = NEBULA_START_COMMAND_FORMAT.format(name, name, param)
         return command
 
-    def _find_free_port(self):
+    @staticmethod
+    def is_port_in_use(port):
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            return s.connect_ex(('localhost', port)) == 0
+
+    @staticmethod
+    def get_free_port():
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.bind(('', 0))
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            return s.getsockname()[1]
+
+    # TODO(yee): Find free port range
+    @staticmethod
+    def _find_free_port():
+        # tcp_port, http_port, https_port
         ports = []
-        for i in range(0, 3):
-            with closing(socket.socket(socket.AF_INET,
-                                       socket.SOCK_STREAM)) as s:
-                s.bind(('', 0))
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                ports.append(s.getsockname()[1])
+        for i in range(0, 2):
+            ports.append(NebulaService.get_free_port())
+        while True:
+            port = NebulaService.get_free_port()
+            if port not in ports and all(
+                    not NebulaService.is_port_in_use(port + i)
+                    for i in range(-2, 3)):
+                ports.insert(0, port)
+                break
         return ports
 
     def _telnet_port(self, port):
@@ -116,13 +142,19 @@ class NebulaService(object):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
+        all_ports = [metad_ports[0]]
         command = ''
         graph_port = 0
         server_ports = []
         for server_name in ['metad', 'storaged', 'graphd']:
             ports = []
             if server_name != 'metad':
-                ports = self._find_free_port()
+                while True:
+                    ports = self._find_free_port()
+                    if all((ports[0] + i) not in all_ports
+                           for i in range(-2, 3)):
+                        all_ports += [ports[0]]
+                        break
             else:
                 ports = metad_ports
             server_ports.append(ports[0])
@@ -141,8 +173,9 @@ class NebulaService(object):
         # wait nebula start
         start_time = time.time()
         if not self._check_servers_status(server_ports):
-            raise Exception('nebula servers not ready in {}s'.format(time.time() - start_time))
-        print('nebula servers start ready in {}s'.format(time.time() - start_time))
+            raise Exception(
+                f'nebula servers not ready in {time.time() - start_time}s')
+        print(f'nebula servers start ready in {time.time() - start_time}s')
 
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):
             with open(pf) as f:
@@ -150,30 +183,42 @@ class NebulaService(object):
 
         return graph_port
 
-    def stop(self, cleanup):
+    def stop(self):
         print("try to stop nebula services...")
-        for p in self.pids:
-            try:
-                os.kill(self.pids[p], signal.SIGTERM)
-            except OSError as err:
-                print("nebula stop {} failed: {}".format(p, str(err)))
+        self.kill_all(signal.SIGTERM)
 
         max_retries = 30
-        while self.check_procs_alive() and max_retries >= 0:
+        while self.is_procs_alive() and max_retries >= 0:
             time.sleep(1)
             max_retries = max_retries-1
 
-        if cleanup:
+        self.kill_all(signal.SIGKILL)
+
+        if self._cleanup:
             shutil.rmtree(self.work_dir, ignore_errors=True)
 
-    def check_procs_alive(self):
+    def kill_all(self, sig):
+        for p in self.pids:
+            self.kill(p, sig)
+
+    def kill(self, pid, sig):
+        if not self.is_proc_alive(pid):
+            return
+        try:
+            os.kill(self.pids[pid], sig)
+        except OSError as err:
+            print("stop nebula {} failed: {}".format(pid, str(err)))
+
+    def is_procs_alive(self):
+        return any(self.is_proc_alive(pid) for pid in self.pids)
+
+    def is_proc_alive(self, pid):
         process = subprocess.Popen(['ps', '-eo', 'pid,args'],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         stdout = process.communicate()
         for line in bytes.decode(stdout[0]).splitlines():
-            pid = line.lstrip().split(' ', 1)[0]
-            for p in self.pids:
-                if str(self.pids[p]) == str(pid):
-                    return True
+            p = line.lstrip().split(' ', 1)[0]
+            if str(p) == str(self.pids[pid]):
+                return True
         return False

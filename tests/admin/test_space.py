@@ -6,20 +6,11 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import time
-import re
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
 class TestSpace(NebulaTestSuite):
-
-    @classmethod
-    def prepare(self):
-        pass
-
-    @classmethod
-    def cleanup(self):
-        pass
 
     def test_space(self):
         # not exist
@@ -73,7 +64,6 @@ class TestSpace(NebulaTestSuite):
         # check result from show create
         resp = self.client.execute('DROP SPACE default_space')
         self.check_resp_succeeded(resp)
-
 
         resp = self.client.execute(create_space_str)
         self.check_resp_succeeded(resp)
