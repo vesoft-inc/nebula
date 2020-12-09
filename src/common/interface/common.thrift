@@ -39,6 +39,8 @@ typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
 typedef binary (cpp.type = "nebula::VertexID") VertexID
+typedef i64 (cpp.type = "nebula::LogID") LogID
+typedef i64 (cpp.type = "nebula::TermID") TermID
 
 typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
@@ -188,3 +190,12 @@ struct KeyValue {
     1: binary key,
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
+
+struct LogInfo {
+    1: LogID  log_id;
+    2: TermID term_id;
+}
+
+struct PartitionBackupInfo {
+    1: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map")  info,
+}

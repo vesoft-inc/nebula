@@ -3315,7 +3315,6 @@ MetaClient::listFTClients() {
     return future;
 }
 
-
 StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
     if (!ready_) {
         return Status::Error("Not ready!");
