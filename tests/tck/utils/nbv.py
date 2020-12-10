@@ -342,7 +342,7 @@ def p_edge_spec(p):
     '''
     e = Edge()
     name = None
-    rank = None
+    rank = 0
     src = None
     dst = None
     props = None

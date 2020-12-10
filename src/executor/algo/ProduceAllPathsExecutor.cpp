@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
 #include "executor/algo/ProduceAllPathsExecutor.h"
 
 #include "planner/Algo.h"
@@ -73,10 +72,14 @@ void ProduceAllPathsExecutor::buildPaths(const std::vector<const Path*>& history
             Path path = *histPath;
             path.steps.emplace_back(
                 Step(Vertex(edge.dst, {}), edge.type, edge.name, edge.ranking, {}));
+            if (path.hasDuplicateEdges()) {
+                continue;
+            }
             VLOG(1) << "Build path: " << path;
             interims[edge.dst].emplace_back(std::move(path));
         }
     }
 }
+
 }  // namespace graph
 }  // namespace nebula

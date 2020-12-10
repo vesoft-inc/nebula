@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
 #include "executor/algo/ConjunctPathExecutor.h"
 
 #include "planner/Algo.h"
@@ -383,6 +382,9 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
                 backward.reverse();
                 VLOG(1) << "Backward reverse path:" << backward;
                 forward.append(std::move(backward));
+                if (forward.hasDuplicateEdges()) {
+                    continue;
+                }
                 VLOG(1) << "Found path: " << forward;
                 row.values.emplace_back(std::move(forward));
                 ds.rows.emplace_back(std::move(row));

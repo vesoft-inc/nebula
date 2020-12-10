@@ -83,7 +83,6 @@ class TestFindPath(NebulaTestSuite):
             "column_names": ["path"],
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
-                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")]
             ]
@@ -100,11 +99,9 @@ class TestFindPath(NebulaTestSuite):
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Manu Ginobili")],
-                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")],
-                ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili")]
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
@@ -118,7 +115,6 @@ class TestFindPath(NebulaTestSuite):
             "rows": [
                 ["Tim Duncan", ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge")],
-                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker")]
             ]
@@ -136,7 +132,6 @@ class TestFindPath(NebulaTestSuite):
                 ["Tim Duncan", ("serve", 0, "Spurs")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("serve", 0, "Spurs")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("serve", 0, "Spurs")],
-                ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker")],
                 ["Tim Duncan", ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
                 ["Tim Duncan", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan"), ("serve", 0, "Spurs")],
@@ -490,9 +485,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
-                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
-                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
             ]
         }
@@ -511,9 +504,7 @@ class TestFindPath(NebulaTestSuite):
                 ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
-                ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
-                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
             ]
         }
@@ -568,10 +559,10 @@ class TestFindPath(NebulaTestSuite):
             "column_names": ["path"],
             "rows": [
                 ["Manu Ginobili", ("like", 0, "Tim Duncan")],
-                ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
                 ["Manu Ginobili", ("like", 0, "Tim Duncan"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tim Duncan")],
                 ["Tony Parker", ("like", 0, "LaMarcus Aldridge"), ("like", 0, "Tony Parker"), ("like", 0, "Tim Duncan")],
+                ["Tony Parker", ("like", 0, "Manu Ginobili"), ("like", 0, "Tim Duncan")],
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])

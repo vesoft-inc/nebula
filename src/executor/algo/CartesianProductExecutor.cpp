@@ -26,7 +26,7 @@ folly::Future<Status> CartesianProductExecutor::execute() {
         auto rightIter = ectx_->getResult(vars[i]).iter();
         DCHECK(!!rightIter);
         VLOG(1) << "Vars[" << i << "] : " << vars[i];
-        if (!rightIter->isSequentialIter() && !rightIter->isJoinIter()) {
+        if (rightIter->isDefaultIter() || rightIter->isGetNeighborsIter()) {
             std::stringstream ss;
             ss << "CartesianProductExecutor does not support" << rightIter->kind();
             return Status::Error(ss.str());
