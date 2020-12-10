@@ -294,7 +294,8 @@ enum AdminCmd {
     REBUILD_TAG_INDEX   = 2,
     REBUILD_EDGE_INDEX  = 3,
     STATS               = 4,
-    UNKNOWN             = 5,
+    DATA_BALANCE        = 5,
+    UNKNOWN             = 99,
 } (cpp.enum_strict)
 
 enum JobStatus {
