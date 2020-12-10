@@ -1,0 +1,45 @@
+########## nebula-storaged-listener ###########
+########## basics ##########
+# Whether to run as a daemon process
+--daemonize=true
+# The file to host the process id
+--pid_file=pids_listener/nebula-storaged.pid
+
+########## logging ##########
+# The directory to host logging files, which must already exists
+--log_dir=logs_listener
+# Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+--minloglevel=0
+# Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+--v=0
+# Maximum seconds to buffer the log messages
+--logbufsecs=0
+
+########## networking ##########
+# Meta server address
+--meta_server_addrs=192.168.2.1:45500
+# Local ip
+--local_ip=192.168.2.4
+# Storage daemon listening port
+--port=44510
+# HTTP service ip
+--ws_ip=192.168.2.4
+# HTTP service port
+--ws_http_port=12021
+# HTTP2 service port
+--ws_h2_port=12031
+
+########## storage ##########
+--listener_path=data/listener
+# The type of part manager, [memory | meta]
+--part_man_type=memory
+# The default reserved bytes for one batch operation
+--rocksdb_batch_size=4096
+# The default block cache size used in BlockBasedTable.
+# The unit is MB.
+--rocksdb_block_cache=4
+# The type of storage engine, `rocksdb', `memory', etc.
+--engine_type=rocksdb
+# The type of part, `simple', `consensus'...
+--part_type=simple
+
