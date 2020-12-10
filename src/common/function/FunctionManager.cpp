@@ -333,7 +333,12 @@ FunctionManager::FunctionManager() {
             if (args[0].isNumeric() && args[1].isNumeric()) {
                 auto base = args[0].isInt() ? args[0].getInt() : args[0].getFloat();
                 auto exp = args[1].isInt() ? args[1].getInt() : args[1].getFloat();
-                return std::pow(base, exp);
+                auto val = std::pow(base, exp);
+                if (args[0].isInt() && args[1].isInt()) {
+                    return static_cast<int64_t>(val);
+                } else {
+                    return val;
+                }
             }
             return Value::kNullBadType;
         };
