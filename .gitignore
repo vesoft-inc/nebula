@@ -34,6 +34,7 @@ cluster.id
 pids/
 modules/
 nebula-python/
+!tests/Makefile
 
 # IDE
 .idea/

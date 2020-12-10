@@ -589,7 +589,7 @@ class TestFindPath(NebulaTestSuite):
             ]
         }
         self.check_column_names(resp, expected_data["column_names"])
-        # self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
+        self.check_path_result_without_prop(resp.rows(), expected_data["rows"])
 
         stmt = '''GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
                 | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS | ORDER BY $-.path | LIMIT 1'''
