@@ -30,6 +30,15 @@ protected:
         EXPECT_EQ(result.value()(args), expect);
     }
 
+    Path createPath(const std::string& src, const std::vector<std::string>& steps) {
+        Path path;
+        path.src = Vertex(src, {});
+        for (auto& i : steps) {
+            path.steps.emplace_back(Step(Vertex(i, {}), 1, "edge1", 0, {}));
+        }
+        return path;
+    }
+
     static std::unordered_map<std::string, std::vector<Value>> args_;
 };
 
@@ -1477,6 +1486,82 @@ TEST_F(FunctionManagerTest, ListFunctionTest) {
                      {{"likeness", (i + 51)}}));
         }
         TEST_FUNCTION(relationships, args, expected);
+    }
+}
+
+TEST_F(FunctionManagerTest, duplicateEdgesORVerticesInPath) {
+    {
+        Path path = createPath("0", {});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, false);
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        Path path = createPath("0", {"0"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, true);
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        Path path = createPath("0", {"1"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, false);
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        Path path = createPath("0", {"1", "2"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, false);
+    }
+    {
+        Path path = createPath("0", {"1", "2", "1"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, true);
+    }
+    {
+        Path path = createPath("0", {"1", "2", "3", "0"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, true);
+    }
+    {
+        Path path = createPath("0", {"1", "2", "3", "0", "1"});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, true);
+        TEST_FUNCTION(hasSameEdgeInPath, args, true);
+    }
+    {
+        auto v0 = Vertex("0", {});
+        auto v1 = Vertex("1", {});
+        Path path;
+        path.src = v0;
+        path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v0, -1, "like", 0, {}));
+
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameEdgeInPath, args, true);
+    }
+    {
+        auto v0 = Vertex("0", {});
+        auto v1 = Vertex("1", {});
+        Path path;
+        path.src = v0;
+        path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v0, 1, "like", 0, {}));
+
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        auto v0 = Vertex("0", {});
+        auto v1 = Vertex("1", {});
+        Path path;
+        path.src = v0;
+        path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v0, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v1, 1, "like", 1, {}));
+
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
     }
 }
 

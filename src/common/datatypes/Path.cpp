@@ -7,7 +7,8 @@
 #include <algorithm>
 
 #include <folly/hash/Hash.h>
-
+#include <folly/String.h>
+#include <unordered_set>
 #include "common/datatypes/Path.h"
 
 namespace nebula {
@@ -34,6 +35,43 @@ bool Path::append(Path path) {
                  std::make_move_iterator(path.steps.end()));
     return true;
 }
+
+bool Path::hasDuplicateVertices() const {
+    if (steps.empty()) {
+        return false;
+    }
+    std::unordered_set<std::string> uniqueVid;
+    auto srcVid = src.vid;
+    uniqueVid.emplace(srcVid);
+    for (const auto& step : steps) {
+        auto ret = uniqueVid.emplace(step.dst.vid);
+        if (!ret.second) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Path::hasDuplicateEdges() const {
+    if (steps.size() < 2) {
+        return false;
+    }
+    std::unordered_set<std::string> uniqueSet;
+    auto srcVid = src.vid;
+    for (const auto& step : steps) {
+        auto edgeSrc = step.type > 0 ? srcVid : step.dst.vid;
+        auto edgeDst = step.type > 0 ? step.dst.vid : srcVid;
+        auto edgeKey = folly::stringPrintf(
+            "%s%s%s%ld", edgeSrc.c_str(), edgeDst.c_str(), step.name.c_str(), step.ranking);
+        auto res = uniqueSet.emplace(std::move(edgeKey));
+        if (!res.second) {
+            return true;
+        }
+        srcVid = step.dst.vid;
+    }
+    return false;
+}
+
 }  // namespace nebula
 
 namespace std {

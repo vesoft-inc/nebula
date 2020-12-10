@@ -171,6 +171,9 @@ struct Path {
         }
         return false;
     }
+
+    bool hasDuplicateEdges() const;
+    bool hasDuplicateVertices() const;
 };
 
 inline void swap(Step& a, Step& b) {
