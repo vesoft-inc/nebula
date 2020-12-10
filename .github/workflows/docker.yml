@@ -19,6 +19,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: vesoft/nebula-graphd
-          tags: v2-preview-nightly
+          tags: v2-nightly
           cache_froms: vesoft/nebula-dev:centos7
           add_git_labels: true
