@@ -47,6 +47,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 
     nodeCtx->scanInfo.filter = filter;
     nodeCtx->scanInfo.schemaId = node.tid;
+    nodeCtx->scanInfo.schemaName = node.label;
 
     return true;
 }
@@ -60,6 +61,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
     auto contexts = std::make_unique<std::vector<IQC>>();
     contexts->emplace_back(std::move(iqctx));
     auto columns = std::make_unique<std::vector<std::string>>();
+    columns->emplace_back(kVid);
     auto scan = IndexScan::make(matchClauseCtx->qctx,
                                 nullptr,
                                 matchClauseCtx->space.id,
@@ -67,6 +69,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
                                 std::move(columns),
                                 false,
                                 nodeCtx->scanInfo.schemaId);
+    scan->setColNames({kVid});
     plan.tail = scan;
     plan.root = scan;
 
@@ -74,5 +77,6 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
     nodeCtx->initialExpr = ExpressionUtils::newVarPropExpr(kVid);
     return plan;
 }
+
 }  // namespace graph
 }  // namespace nebula

@@ -56,6 +56,10 @@ public:
     }
 
 private:
+    std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo &edge);
+
+    StatusOr<std::vector<storage::cpp2::EdgeProp>> buildAllEdgeProp();
+
     MatchClauseContext* matchCtx_;
     Expression**        initialExpr_;
 };

@@ -25,7 +25,10 @@ Status AssignmentValidator::validateImpl() {
 
 Status AssignmentValidator::toPlan() {
     root_ = validator_->root();
-    qctx_->symTable()->newVariable(var_);
+    auto *var = qctx_->symTable()->newVariable(var_);
+    for (const auto &outputCol : validator_->outputCols()) {
+        var->colNames.emplace_back(outputCol.name);
+    }
     root_->setOutputVar(var_);
     tail_ = validator_->tail();
     return Status::OK();

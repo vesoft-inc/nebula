@@ -38,6 +38,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
         });
 }
 
+// TODO(shylock) merge the handler with GetProp
 template <typename Resp>
 Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp) {
     auto completeness = handleCompleteness(rpcResp, false);
@@ -57,6 +58,10 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
         } else {
             state = Result::State::kPartialSuccess;
         }
+    }
+    if (!node()->colNamesRef().empty()) {
+        DCHECK_EQ(node()->colNamesRef().size(), v.colNames.size());
+        v.colNames = node()->colNamesRef();
     }
     // TODO(yee): Unify the response structure of IndexScan and GetProps and change the following
     // iterator to PropIter type

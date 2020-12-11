@@ -31,9 +31,16 @@ private:
 
     Expression* buildFilterCondition(int64_t step);
 
-    GetNeighbors::EdgeProps buildEdgeProps();
+    StatusOr<GetNeighbors::EdgeProps> buildEdgeProps();
 
     Status zeroStep(PlanNode* depend, const std::string& inputVar);
+
+    StatusOr<std::vector<storage::cpp2::VertexProp>> buildVertexProp();
+
+    StatusOr<std::vector<storage::cpp2::EdgeProp>> fillEdgeProp(
+        const std::unordered_set<EdgeType> &edges);
+
+    StatusOr<std::vector<storage::cpp2::EdgeProp>> buildAllEdgeProp();
 
 private:
     std::unordered_set<EdgeType>                edgeTypes_;

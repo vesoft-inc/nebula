@@ -157,12 +157,11 @@ public:
         return false;
     }
 
-    void setOutputVar(std::string var) {
+    void setOutputVar(const std::string &var) {
         DCHECK_EQ(1, outputVars_.size());
         auto* outputVarPtr = qctx_->symTable()->getVar(var);
         DCHECK(outputVarPtr != nullptr);
         auto oldVar = outputVars_[0]->name;
-        outputVarPtr->colNames = outputVars_[0]->colNames;
         outputVars_[0] = outputVarPtr;
         qctx_->symTable()->updateWrittenBy(oldVar, var, this);
     }

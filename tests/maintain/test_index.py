@@ -291,18 +291,18 @@ class TestIndex(NebulaTestSuite):
         if self.find_result(resp0, [['single_edge_index', 'FINISHED']]):
             resp = self.client.execute('LOOKUP ON edge_1 WHERE edge_1.col2 == 22 YIELD edge_1.col2')
             self.check_resp_succeeded(resp)
-            expect = [['102', 0, '103', 22]]
+            expect = [['102', '103', 0, 22]]
             self.check_out_of_order_result(resp, expect)
 
         if self.find_result(resp0, [['multi_edge_index', 'FINISHED']]):
             resp = self.client.execute('LOOKUP ON edge_1 WHERE edge_1.col3 > 43.4 YIELD edge_1.col1')
             self.check_resp_succeeded(resp)
-            expect = [['102', 0, '103', 'Yellow'], ['101', 0, '102', 'Red']]
+            expect = [['102', '103', 0, 'Yellow'], ['101', '102', 0, 'Red']]
             self.check_out_of_order_result(resp, expect)
 
             resp = self.client.execute('LOOKUP ON edge_1 WHERE edge_1.col2 > 45 AND edge_1.col3 < 44.3 YIELD edge_1.col1')
             self.check_resp_succeeded(resp)
-            expect = [['103', 0, '101', 'Blue']]
+            expect = [['103', '101', 0, 'Blue']]
             self.check_out_of_order_result(resp, expect)
 
         # Describe Edge Index

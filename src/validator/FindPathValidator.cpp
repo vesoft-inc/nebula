@@ -107,8 +107,10 @@ PlanNode* FindPathValidator::bfs(PlanNode* dep,
     project->setColNames(deduceColNames(columns));
 
     auto* dedup = Dedup::make(qctx_, project);
-    dedup->setColNames(project->colNames());
+    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
+    startVidsVarPtr->colNames = project->colNames();
     dedup->setOutputVar(startVidsVar);
+
 
     DataSet ds;
     ds.colNames = {"_vid", "edge"};
@@ -204,7 +206,8 @@ PlanNode* FindPathValidator::buildAllPairFirstDataSet(PlanNode* dep,
 
     auto* project = Project::make(qctx_, dep, columns);
     project->setInputVar(inputVar);
-    project->setColNames({kVid, "path"});
+    auto* outputVarPtr = qctx_->symTable()->getVar(outputVar);
+    outputVarPtr->colNames = {kVid, "path"};
     project->setOutputVar(outputVar);
     return project;
 }
@@ -273,7 +276,8 @@ PlanNode* FindPathValidator::allPaths(PlanNode* dep,
     project->setColNames(deduceColNames(columns));
 
     auto* dedup = Dedup::make(qctx_, project);
-    dedup->setColNames(project->colNames());
+    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
+    startVidsVarPtr->colNames = project->colNames();
     dedup->setOutputVar(startVidsVar);
 
     return dedup;
@@ -350,7 +354,8 @@ PlanNode* FindPathValidator::buildMultiPairFirstDataSet(PlanNode* dep,
 
     auto* project = Project::make(qctx_, dep, columns);
     project->setInputVar(inputVar);
-    project->setColNames({kDst, kSrc, "cost", "paths"});
+    auto* outputVarPtr = qctx_->symTable()->getVar(outputVar);
+    outputVarPtr->colNames = {kDst, kSrc, "cost", "paths"};
     project->setOutputVar(outputVar);
     return project;
 }
@@ -428,7 +433,8 @@ PlanNode* FindPathValidator::multiPairShortestPath(PlanNode* dep,
     project->setColNames(deduceColNames(columns));
 
     auto* dedup = Dedup::make(qctx_, project);
-    dedup->setColNames(project->colNames());
+    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
+    startVidsVarPtr->colNames = project->colNames();
     dedup->setOutputVar(startVidsVar);
 
     return dedup;

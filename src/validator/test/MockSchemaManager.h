@@ -80,9 +80,14 @@ public:
 
     // get all version of all edges
     StatusOr<meta::EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override {
-        UNUSED(space);
-        DLOG(FATAL) << "Unimplemented";
-        return Status::Error("Unimplemented");
+        meta::EdgeSchemas allVerEdgeSchemas;
+        const auto& edgeSchemas = edgeSchemas_[space];
+        for (const auto &edgeSchema : edgeSchemas) {
+            allVerEdgeSchemas.emplace(edgeSchema.first,
+                                     std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>
+                                        {edgeSchema.second});
+        }
+        return allVerEdgeSchemas;
     }
 
     StatusOr<std::vector<nebula::meta::cpp2::FTClient> > getFTClients() override;

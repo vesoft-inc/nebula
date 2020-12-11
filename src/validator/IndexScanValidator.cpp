@@ -14,6 +14,12 @@ DECLARE_uint32(ft_request_retry_times);
 namespace nebula {
 namespace graph {
 
+/*static*/ constexpr char IndexScanValidator::kSrcVID[];
+/*static*/ constexpr char IndexScanValidator::kDstVID[];
+/*static*/ constexpr char IndexScanValidator::kRanking[];
+
+/*static*/ constexpr char IndexScanValidator::kVertexID[];
+
 Status IndexScanValidator::validateImpl() {
     NG_RETURN_IF_ERROR(prepareFrom());
     NG_RETURN_IF_ERROR(prepareYield());
@@ -22,12 +28,18 @@ Status IndexScanValidator::validateImpl() {
 }
 
 Status IndexScanValidator::toPlan() {
-    return genSingleNodePlan<IndexScan>(spaceId_,
-                                        std::move(contexts_),
-                                        std::move(returnCols_),
-                                        isEdge_,
-                                        schemaId_,
-                                        isEmptyResultSet_);
+    auto *is = IndexScan::make(qctx_,
+                               nullptr,
+                               spaceId_,
+                               std::move(contexts_),
+                               std::move(returnCols_),
+                               isEdge_,
+                               schemaId_,
+                               isEmptyResultSet_);
+    is->setColNames(std::move(colNames_));
+    root_ = is;
+    tail_ = is;
+    return Status::OK();
 }
 
 Status IndexScanValidator::prepareFrom() {
@@ -46,6 +58,18 @@ Status IndexScanValidator::prepareFrom() {
 Status IndexScanValidator::prepareYield() {
     auto *sentence = static_cast<const LookupSentence *>(sentence_);
     returnCols_ = std::make_unique<std::vector<std::string>>();
+    // always return
+    if (isEdge_) {
+        returnCols_->emplace_back(kSrc);
+        colNames_.emplace_back(kSrcVID);
+        returnCols_->emplace_back(kDst);
+        colNames_.emplace_back(kDstVID);
+        returnCols_->emplace_back(kRank);
+        colNames_.emplace_back(kRanking);
+    } else {
+        returnCols_->emplace_back(kVid);
+        colNames_.emplace_back(kVertexID);
+    }
     if (sentence->yieldClause() == nullptr) {
         return Status::OK();
     }
@@ -85,6 +109,7 @@ Status IndexScanValidator::prepareYield() {
                                          colName.c_str(), from_.c_str());
         }
         returnCols_->emplace_back(colName);
+        colNames_.emplace_back(from_ + "." + colName);
     }
     return Status::OK();
 }
