@@ -12,6 +12,7 @@ namespace graph {
 folly::Future<Status> ProduceAllPathsExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto* allPaths = asNode<ProduceAllPaths>(node());
+    noLoop_ = allPaths->noLoop();
     auto iter = ectx_->getResult(allPaths->inputVar()).iter();
     DCHECK(!!iter);
 
@@ -58,6 +59,9 @@ void ProduceAllPathsExecutor::createPaths(const Edge& edge, Interims& interims) 
     Path path;
     path.src = Vertex(edge.src, {});
     path.steps.emplace_back(Step(Vertex(edge.dst, {}), edge.type, edge.name, edge.ranking, {}));
+    if (noLoop_ && path.hasDuplicateVertices()) {
+        return;
+    }
     VLOG(1) << "Create path: " << path;
     interims[edge.dst].emplace_back(std::move(path));
 }
@@ -73,6 +77,9 @@ void ProduceAllPathsExecutor::buildPaths(const std::vector<const Path*>& history
             path.steps.emplace_back(
                 Step(Vertex(edge.dst, {}), edge.type, edge.name, edge.ranking, {}));
             if (path.hasDuplicateEdges()) {
+                continue;
+            }
+            if (noLoop_ && path.hasDuplicateVertices()) {
                 continue;
             }
             VLOG(1) << "Build path: " << path;

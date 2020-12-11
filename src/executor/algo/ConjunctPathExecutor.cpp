@@ -309,6 +309,7 @@ void ConjunctPathExecutor::delPathFromConditionalVar(const Value& start, const V
 
 folly::Future<Status> ConjunctPathExecutor::allPaths() {
     auto* conjunct = asNode<ConjunctPath>(node());
+    noLoop_ = conjunct->noLoop();
     auto lIter = ectx_->getResult(conjunct->leftInputVar()).iter();
     const auto& rHist = ectx_->getHistory(conjunct->rightInputVar());
     VLOG(1) << "current: " << node()->outputVar();
@@ -383,6 +384,9 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
                 VLOG(1) << "Backward reverse path:" << backward;
                 forward.append(std::move(backward));
                 if (forward.hasDuplicateEdges()) {
+                    continue;
+                }
+                if (noLoop_ && forward.hasDuplicateVertices()) {
                     continue;
                 }
                 VLOG(1) << "Found path: " << forward;

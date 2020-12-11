@@ -60,6 +60,7 @@ private:
     // startVid : {endVid, cost}
     std::unordered_map<Value, std::unordered_map<Value, Value>> historyCostMap_;
     std::string conditionalVar_;
+    bool noLoop_;
 };
 }  // namespace graph
 }  // namespace nebula

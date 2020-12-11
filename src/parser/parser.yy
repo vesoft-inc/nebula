@@ -155,7 +155,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER
-%token KW_SHORTEST KW_PATH
+%token KW_SHORTEST KW_PATH KW_NOLOOP
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS KW_STATUS
@@ -440,6 +440,7 @@ unreserved_keyword
     | KW_STORAGE            { $$ = new std::string("storage"); }
     | KW_ALL                { $$ = new std::string("all"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
+    | KW_NOLOOP             { $$ = new std::string("noloop"); }
     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
     | KW_CONTAINS           { $$ = new std::string("contains"); }
     | KW_STARTS             { $$ = new std::string("starts"); }
@@ -1666,7 +1667,7 @@ fetch_sentence
 find_path_sentence
     : KW_FIND KW_ALL KW_PATH opt_with_properites from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(false, $4);
+        auto *s = new FindPathSentence(false, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
@@ -1676,12 +1677,22 @@ find_path_sentence
     }
     | KW_FIND KW_SHORTEST KW_PATH opt_with_properites from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(true, $4);
+        auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setStep($8);
         /* s->setWhere($9); */
+        $$ = s;
+    }
+    | KW_FIND KW_NOLOOP KW_PATH opt_with_properites from_clause to_clause over_clause find_path_upto_clause
+    /* where_clause */ {
+        auto *s = new FindPathSentence(false, $4, true);
+        s->setFrom($5);
+        s->setTo($6);
+        s->setOver($7);
+        s->setStep($8);
+        /* s->setWhere($9) */
         $$ = s;
     }
     ;

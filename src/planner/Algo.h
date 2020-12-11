@@ -68,6 +68,14 @@ public:
         return conditionalVar_;
     }
 
+    bool noLoop() const {
+        return noLoop_;
+    }
+
+    void setNoLoop(bool noLoop) {
+        noLoop_ = noLoop;
+    }
+
 private:
     ConjunctPath(QueryContext* qctx,
                  PlanNode* left,
@@ -82,17 +90,29 @@ private:
     PathKind pathKind_;
     size_t   steps_{0};
     std::string conditionalVar_;
+    bool noLoop_;
 };
 
 class ProduceAllPaths final : public SingleInputNode {
- public:
+public:
     static ProduceAllPaths* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ProduceAllPaths(qctx, input));
     }
 
- private:
+    bool noLoop() const {
+        return noLoop_;
+    }
+
+    void setNoLoop(bool noLoop) {
+        noLoop_ = noLoop;
+    }
+
+private:
     ProduceAllPaths(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kProduceAllPaths, input) {}
+
+private:
+    bool noLoop_{false};
 };
 
 class CartesianProduct final : public SingleDependencyNode {

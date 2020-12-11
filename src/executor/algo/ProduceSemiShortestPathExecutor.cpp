@@ -217,7 +217,6 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
         if (historyCostPathMap_.find(src) == historyCostPathMap_.end()) {
             // src not in history, now src must be startVid
             Path path;
-            // (todo) can't get dst's vertex
             path.src = Vertex(src, {});
             path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
             if (currentCostPathMap.find(dst) != currentCostPathMap.end()) {

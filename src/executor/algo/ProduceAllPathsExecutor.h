@@ -31,6 +31,7 @@ private:
 
     size_t count_{0};
     HistoryPaths historyPaths_;
+    bool noLoop_{false};
 };
 }  // namespace graph
 }  // namespace nebula
