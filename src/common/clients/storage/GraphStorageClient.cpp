@@ -193,7 +193,6 @@ GraphStorageClient::getProps(GraphSpaceID space,
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        req.set_column_names(std::move(input.colNames));
         req.set_parts(std::move(c.second));
         req.set_dedup(dedup);
         if (vertexProps != nullptr) {
