@@ -30,9 +30,10 @@ private:
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanVertexRequest& req) override;
 
+    void buildTagColName(const std::vector<cpp2::VertexProp>& tagProps);
+
     void onProcessFinished() override;
 
-    bool returnNoProps_{false};
     PartitionID partId_;
 };
 

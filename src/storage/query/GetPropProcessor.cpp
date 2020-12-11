@@ -99,7 +99,8 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(nebula::DataSet* result) {
         tags.emplace_back(tag.get());
         plan.addNode(std::move(tag));
     }
-    auto output = std::make_unique<GetTagPropNode>(planContext_.get(), tags, result);
+    auto output = std::make_unique<GetTagPropNode>(
+        planContext_.get(), tags, result, tagContext_.vertexCache_);
     for (auto* tag : tags) {
         output->addDependency(tag);
     }
@@ -116,7 +117,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(nebula::DataSet* resu
         edges.emplace_back(edge.get());
         plan.addNode(std::move(edge));
     }
-    auto output = std::make_unique<GetEdgePropNode>(edges, spaceVidLen_, isIntId_, result);
+    auto output = std::make_unique<GetEdgePropNode>(planContext_.get(), edges, result);
     for (auto* edge : edges) {
         output->addDependency(edge);
     }
@@ -124,34 +125,26 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(nebula::DataSet* resu
     return plan;
 }
 
-cpp2::ErrorCode GetPropProcessor::checkColumnNames(const std::vector<std::string>& colNames) {
-    // Column names for the pass-in data. When getting the vertex props, the first
-    // column has to be "_vid", when getting the edge props, the first four columns
-    // have to be "_src", "_type", "_rank", and "_dst"
-    if (colNames.size() != 1 && colNames.size() != 4) {
+cpp2::ErrorCode GetPropProcessor::checkRequest(const cpp2::GetPropRequest& req) {
+    if (!req.__isset.vertex_props && !req.__isset.edge_props) {
+        return cpp2::ErrorCode::E_INVALID_OPERATION;
+    } else if (req.__isset.vertex_props && req.__isset.edge_props) {
         return cpp2::ErrorCode::E_INVALID_OPERATION;
     }
-    if (colNames.size() == 1 && colNames[0] == kVid) {
+    if (req.__isset.vertex_props) {
         isEdge_ = false;
-        return cpp2::ErrorCode::SUCCEEDED;
-    } else if (colNames.size() == 4 &&
-               colNames[0] == kSrc &&
-               colNames[1] == kType &&
-               colNames[2] == kRank &&
-               colNames[3] == kDst) {
+    } else {
         isEdge_ = true;
-        return cpp2::ErrorCode::SUCCEEDED;
     }
-    return cpp2::ErrorCode::E_INVALID_OPERATION;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetPropRequest& req) {
-    auto code = checkColumnNames(req.column_names);
+    auto code = checkRequest(req);
     if (code != cpp2::ErrorCode::SUCCEEDED) {
         return code;
     }
     if (!isEdge_) {
-        resultDataSet_.colNames.emplace_back(kVid);
         code = getSpaceVertexSchema();
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return code;
@@ -211,6 +204,7 @@ cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& r
 }
 
 void GetPropProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
+    resultDataSet_.colNames.emplace_back(kVid);
     for (const auto& tagProp : tagProps) {
         auto tagId = tagProp.tag;
         auto tagName = tagContext_.tagNames_[tagId];

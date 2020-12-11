@@ -15,7 +15,6 @@ namespace storage {
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
     spaceId_ = req.get_space_id();
     partId_ = req.get_part_id();
-    returnNoProps_ = req.get_no_columns();
 
     auto retCode = getSpaceVidLen(spaceId_);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -98,17 +97,11 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         }
 
         nebula::List list;
-        auto vId = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
-        auto id = vId.subpiece(0, vId.find_first_of('\0'));
-        list.emplace_back(id.toString());
-        list.emplace_back(tagId);
-
-        if (!returnNoProps_) {
-            auto idx = tagIter->second;
-            auto props = &(tagContext_.propContexts_[idx].second);
-            if (!QueryUtils::collectPropsInValue(reader.get(), props, list).ok()) {
-                continue;
-            }
+        auto idx = tagIter->second;
+        auto props = &(tagContext_.propContexts_[idx].second);
+        if (!QueryUtils::collectVertexProps(key, spaceVidLen_, isIntId_,
+                                            reader.get(), props, list).ok()) {
+            continue;
         }
         resultDataSet_.rows.emplace_back(std::move(list));
         rowCount++;
@@ -131,7 +124,19 @@ cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVerte
     }
 
     std::vector<cpp2::VertexProp> returnProps = {req.return_columns};
-    return handleVertexProps(returnProps, returnNoProps_);
+    ret = handleVertexProps(returnProps);
+    buildTagColName(returnProps);
+    return ret;
+}
+
+void ScanVertexProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
+    for (const auto& tagProp : tagProps) {
+        auto tagId = tagProp.tag;
+        auto tagName = tagContext_.tagNames_[tagId];
+        for (const auto& prop : tagProp.props) {
+            resultDataSet_.colNames.emplace_back(tagName + "." + prop);
+        }
+    }
 }
 
 void ScanVertexProcessor::onProcessFinished() {

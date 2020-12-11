@@ -52,7 +52,7 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<EdgeType> over = {serve};
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
-        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore", kVid, kTag});
         edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear",
                                                            kSrc, kType, kRank, kDst});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
@@ -91,7 +91,7 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<EdgeType> over = {-serve};
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
-        tags.emplace_back(team, std::vector<std::string>{"name"});
+        tags.emplace_back(team, std::vector<std::string>{"name", kVid, kTag});
         edges.emplace_back(-serve, std::vector<std::string>{
                            "playerName", "startYear", "teamCareer",
                            kSrc, kType, kRank, kDst});
@@ -267,7 +267,7 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(player, std::vector<std::string>{
             "name", "age", "playing", "career", "startYear", "endYear", "games",
-            "avgScore", "serveTeams", "country", "champions"});
+            "avgScore", "serveTeams", "country", "champions", kVid, kTag});
         edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear",
             "playerName", "teamCareer", "teamGames", "teamAvgScore", "type", "champions",
             kSrc, kType, kRank, kDst});
@@ -787,7 +787,7 @@ TEST(GetNeighborsTest, TtlTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
     }
     sleep(FLAGS_mock_ttl_duration + 1);
     {
@@ -962,7 +962,7 @@ TEST(GetNeighborsTest, ReturnAllPropertyTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 7);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 7);
     }
     {
         LOG(INFO) << "ReturnAllPropertyInTagAndEdge";
@@ -983,7 +983,7 @@ TEST(GetNeighborsTest, ReturnAllPropertyTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, -serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 7);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 7);
     }
 }
 
@@ -1012,7 +1012,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 3);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 3);
     }
     {
         LOG(INFO) << "GoFromPlayerOverAll";
@@ -1030,7 +1030,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
     }
     {
         LOG(INFO) << "GoFromTeamOverAll";
@@ -1048,7 +1048,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
     }
     {
         LOG(INFO) << "GoFromPlayerOverInEdge";
@@ -1066,7 +1066,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - serve, - teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 8);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "GoFromPlayerOverOutEdge";
@@ -1084,7 +1084,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 8);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "GoFromMultiPlayerOverAll";
@@ -1102,7 +1102,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 3, 10);
     }
     {
         LOG(INFO) << "GoFromMultiTeamOverAll";
@@ -1120,7 +1120,7 @@ TEST(GetNeighborsTest, GoOverAllTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 3, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 3, 10);
     }
 }
 
@@ -1150,7 +1150,7 @@ TEST(GetNeighborsTest, MultiVersionTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, 1, 10);
+        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
     }
     FLAGS_enable_multi_versions = false;
 }

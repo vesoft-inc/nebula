@@ -23,7 +23,7 @@ public:
             TagContext* ctx,
             TagID tagId,
             const std::vector<PropContext>* props,
-            ExpressionContext* expCtx = nullptr,
+            StorageExpressionContext* expCtx = nullptr,
             Expression* exp = nullptr)
         : planContext_(planCtx)
         , tagContext_(ctx)
@@ -41,6 +41,7 @@ public:
     }
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
+        reader_.reset();
         auto ret = RelNode::execute(partId, vId);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
@@ -50,75 +51,94 @@ public:
 
         // when update, has already evicted
         if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
-            auto result = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_));
-            if (result.ok()) {
-                cacheResult_ = std::move(result).value();
-                iter_.reset(new SingleTagIterator(planContext_, cacheResult_, schemas_, &ttl_));
-                return kvstore::ResultCode::SUCCEEDED;
+            auto cache = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_));
+            if (cache.ok()) {
+                key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_, partId, vId, tagId_, 0L);
+                value_ = std::move(cache.value());
+                // if data in vertex cache is valid, don't read from kv
+                if (resetReader(vId)) {
+                    return kvstore::ResultCode::SUCCEEDED;
+                }
             }
         }
 
         std::unique_ptr<kvstore::KVIterator> iter;
-        prefix_ = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId, tagId_);
-        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
+        auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId, tagId_);
+        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
-            iter_.reset(new SingleTagIterator(planContext_, std::move(iter), tagId_,
-                                              schemas_, &ttl_));
-        } else {
-            iter_.reset();
+            key_ = iter->key().str();
+            value_ = iter->val().str();
+            resetReader(vId);
+            return kvstore::ResultCode::SUCCEEDED;
         }
         return ret;
     }
 
     kvstore::ResultCode collectTagPropsIfValid(NullHandler nullHandler,
-                                               TagPropHandler valueHandler) {
-        if (!iter_ || !iter_->valid()) {
+                                               PropHandler valueHandler) {
+        if (!valid()) {
             return nullHandler(props_);
         }
-        return valueHandler(tagId_, iter_->reader(), props_);
+        return valueHandler(key_, reader_.get(), props_);
     }
 
     bool valid() const override {
-        return iter_ && iter_->valid();
+        return !stopSearching_ && reader_ != nullptr;
     }
 
     void next() override {
-        iter_->next();
+        // tag only has one valid record, so stop iterate
+        stopSearching_ = true;
     }
 
     folly::StringPiece key() const override {
-        return iter_->key();
+        return key_;
     }
 
     folly::StringPiece val() const override {
-        return iter_->val();
+        return value_;
     }
 
     RowReader* reader() const override {
-        if (iter_) {
-            return iter_->reader();
-        }
-        return nullptr;
+        return reader_.get();
     }
 
     const std::string& getTagName() {
         return tagName_;
     }
 
+    TagID getTagId() {
+        return tagId_;
+    }
+
 private:
+    bool resetReader(const VertexID& vId) {
+        reader_.reset(*schemas_, value_);
+        if (!reader_ || (ttl_.hasValue() && CommonUtils::checkDataExpiredForTTL(
+            schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
+            reader_.reset();
+            if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
+                tagContext_->vertexCache_->evict(std::make_pair(vId, tagId_));
+            }
+            return false;
+        }
+        return true;
+    }
+
     PlanContext                                                          *planContext_;
     TagContext                                                           *tagContext_;
     TagID                                                                 tagId_;
     const std::vector<PropContext>                                       *props_;
-    ExpressionContext                                                    *expCtx_;
+    StorageExpressionContext                                             *expCtx_;
     Expression                                                           *exp_;
-    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;
     folly::Optional<std::pair<std::string, int64_t>>                      ttl_;
     std::string                                                           tagName_;
 
-    std::unique_ptr<StorageIterator>                                      iter_;
-    std::string                                                           prefix_;
-    std::string                                                           cacheResult_;
+    bool                                                                  stopSearching_ = false;
+    std::string                                                           key_;
+    std::string                                                           value_;
+    RowReaderWrapper                                                      reader_;
 };
 
 }  // namespace storage

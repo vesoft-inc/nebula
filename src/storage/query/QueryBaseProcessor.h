@@ -30,11 +30,13 @@ namespace storage {
 struct PropContext {
 public:
     enum class PropInKeyType {
-        NONE = 0x00,
-        SRC = 0x01,
-        TYPE = 0x02,
-        RANK = 0x03,
-        DST = 0x04,
+        NONE    = 0x00,
+        VID     = 0x01,
+        TAG     = 0x02,
+        SRC     = 0x03,
+        TYPE    = 0x04,
+        RANK    = 0x05,
+        DST     = 0x06,
     };
 
     explicit PropContext(const char* name)
@@ -58,7 +60,11 @@ public:
     }
 
     void setPropInKey() {
-        if (name_ == kSrc) {
+        if (name_ == kVid) {
+            propInKeyType_ = PropContext::PropInKeyType::VID;
+        } else if (name_ == kTag) {
+            propInKeyType_ = PropContext::PropInKeyType::TAG;
+        } else if (name_ == kSrc) {
             propInKeyType_ = PropContext::PropInKeyType::SRC;
         } else if (name_ == kType) {
             propInKeyType_ = PropContext::PropInKeyType::TYPE;
@@ -146,11 +152,9 @@ protected:
     cpp2::ErrorCode getSpaceEdgeSchema();
 
     // build tagContexts_ according to return props
-    cpp2::ErrorCode handleVertexProps(std::vector<cpp2::VertexProp>& tagProps,
-                                      bool returnNoProps = false);
+    cpp2::ErrorCode handleVertexProps(std::vector<cpp2::VertexProp>& tagProps);
     // build edgeContexts_ according to return props
-    cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps,
-                                    bool returnNoProps = false);
+    cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
 
     cpp2::ErrorCode buildFilter(const REQ& req);
     cpp2::ErrorCode buildYields(const REQ& req);

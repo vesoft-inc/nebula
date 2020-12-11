@@ -137,8 +137,9 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             ASSERT_TRUE(schema != nullptr);
             auto wrapper = std::make_unique<RowReaderWrapper>();
             ASSERT_TRUE(wrapper->reset(schema.get(), val, readerVer));
-            auto code = node.collectEdgeProps(wrapper.get(), key, vIdLen, isIntId, &props, list);
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            auto code = QueryUtils::collectEdgeProps(key, vIdLen, isIntId,
+                                                     wrapper.get(), &props, list);
+            ASSERT_TRUE(code.ok());
             result.mutableList().values.emplace_back(std::move(list));
         }
         LOG(WARNING) << "ProcessEdgeProps with schema from map: process " << edgeRowCount
@@ -163,8 +164,9 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_, spaceId,
                                                          std::abs(edgeType), val);
             ASSERT_TRUE(reader.get() != nullptr);
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            auto code = QueryUtils::collectEdgeProps(key, vIdLen, isIntId,
+                                                     reader.get(), &props, list);
+            ASSERT_TRUE(code.ok());
             result.mutableList().values.emplace_back(std::move(list));
         }
         LOG(WARNING) << "ProcessEdgeProps without reader reset: process " << edgeRowCount
@@ -189,8 +191,9 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             reader = RowReaderWrapper::getEdgePropReader(env->schemaMan_, spaceId,
                                                          std::abs(edgeType), val);
             ASSERT_TRUE(reader.get() != nullptr);
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            auto code = QueryUtils::collectEdgeProps(key, vIdLen, isIntId,
+                                                     reader.get(), &props, list);
+            ASSERT_TRUE(code.ok());
             result.mutableList().values.emplace_back(std::move(list));
         }
         LOG(WARNING) << "ProcessEdgeProps with reader reset: process " << edgeRowCount
@@ -227,8 +230,9 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
             } else {
                 ASSERT_TRUE(reader->reset(schemas, val));
             }
-            auto code = node.collectEdgeProps(reader.get(), key, vIdLen, isIntId, &props, list);
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            auto code = QueryUtils::collectEdgeProps(key, vIdLen, isIntId,
+                                                     reader.get(), &props, list);
+            ASSERT_TRUE(code.ok());
             result.mutableList().values.emplace_back(std::move(list));
         }
         LOG(WARNING) << "ProcessEdgeProps using local schmeas: process " << edgeRowCount

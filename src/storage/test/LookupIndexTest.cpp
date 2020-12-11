@@ -24,8 +24,6 @@
 namespace nebula {
 namespace storage {
 
-constexpr double kEpsilon = 0.0000000000000001;
-
 TEST(LookupIndexTest, LookupIndexTestV1) {
     fs::TempDir rootPath("/tmp/LookupIndexTestV1.XXXXXX");
     mock::MockCluster cluster;
@@ -122,6 +120,7 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
         returnCols.emplace_back("col_bool");
         returnCols.emplace_back("col_int");
         req.set_return_columns(std::move(returnCols));
@@ -143,7 +142,9 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "col_bool", "col_int"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               "1.col_bool",
+                                               "1.col_int"};
         decltype(resp.get_data()->rows) expectRows;
 
         int64_t vid1 = 1, vid2 = 2;
@@ -210,6 +211,8 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -230,13 +233,16 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "age"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.age"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string vId;
         vId.append(name.data(), name.size());
         Row row1;
         row1.emplace_back(Value(vId));
+        row1.emplace_back(Value(1L));
         row1.emplace_back(Value(34L));
         expectRows.emplace_back(Row(row1));
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -273,6 +279,8 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
         req.set_return_columns(std::move(returnCols));
         // player.name_ == "Rudy Gay"
@@ -307,18 +315,22 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "age"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.age"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string vId1, vId2;
         vId1.append(name1.data(), name1.size());
         Row row1;
         row1.emplace_back(Value(vId1));
+        row1.emplace_back(Value(1L));
         row1.emplace_back(Value(34L));
         expectRows.emplace_back(Row(row1));
         vId2.append(name2.data(), name2.size());
         Row row2;
         row2.emplace_back(Value(vId2));
+        row2.emplace_back(Value(1L));
         row2.emplace_back(Value(41L));
         expectRows.emplace_back(Row(row2));
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -371,6 +383,10 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
         returnCols.emplace_back("teamName");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -390,7 +406,11 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst", "teamName"};
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.teamName"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string srcId, dstId;
@@ -398,12 +418,14 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         dstId.append(manu.data(), manu.size());
         Row row1;
         row1.emplace_back(Value(srcId));
+        row1.emplace_back(Value(102L));
         row1.emplace_back(Value(2002L));
         row1.emplace_back(Value(dstId));
         row1.emplace_back(Value("Spurs"));
         expectRows.emplace_back(Row(row1));
         Row row2;
         row2.emplace_back(Value(dstId));
+        row2.emplace_back(Value(102L));
         row2.emplace_back(Value(2002L));
         row2.emplace_back(Value(srcId));
         row2.emplace_back(Value("Spurs"));
@@ -447,6 +469,10 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         std::string yao = "Yao Ming";
         std::string tracy = "Tracy McGrady";
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
         returnCols.emplace_back("teamName");
         req.set_return_columns(std::move(returnCols));
         // teammates.player1 == "Tony Parker"
@@ -479,7 +505,11 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst", "teamName"};
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.teamName"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string vId1, vId2, vId3, vId4;
@@ -489,24 +519,28 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         vId4.append(tracy.data(), tracy.size());
         Row row1;
         row1.emplace_back(Value(vId1));
+        row1.emplace_back(Value(102L));
         row1.emplace_back(Value(2002L));
         row1.emplace_back(Value(vId2));
         row1.emplace_back(Value("Spurs"));
         expectRows.emplace_back(Row(row1));
         Row row2;
         row2.emplace_back(Value(vId2));
+        row2.emplace_back(Value(102L));
         row2.emplace_back(Value(2002L));
         row2.emplace_back(Value(vId1));
         row2.emplace_back(Value("Spurs"));
         expectRows.emplace_back(Row(row2));
         Row row3;
         row3.emplace_back(Value(vId3));
+        row3.emplace_back(Value(102L));
         row3.emplace_back(Value(2004L));
         row3.emplace_back(Value(vId4));
         row3.emplace_back(Value("Rockets"));
         expectRows.emplace_back(Row(row3));
         Row row4;
         row4.emplace_back(Value(vId4));
+        row4.emplace_back(Value(102L));
         row4.emplace_back(Value(2004L));
         row4.emplace_back(Value(vId3));
         row4.emplace_back(Value("Rockets"));
@@ -562,6 +596,8 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -588,13 +624,16 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "age"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.age"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string vId;
         vId.append(name.data(), name.size());
         Row row1;
         row1.emplace_back(Value(vId));
+        row1.emplace_back(Value(1L));
         row1.emplace_back(Value(34L));
         expectRows.emplace_back(Row(row1));
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -635,6 +674,8 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -661,7 +702,9 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "age"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.age"};
         QueryTestUtils::checkResponse(resp, expectCols, {});
     }
 }
@@ -717,6 +760,10 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
         returnCols.emplace_back("teamName");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -742,7 +789,11 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst", "teamName"};
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.teamName"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string srcId, dstId;
@@ -750,12 +801,14 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         dstId.append(manu.data(), manu.size());
         Row row1;
         row1.emplace_back(Value(srcId));
+        row1.emplace_back(Value(102L));
         row1.emplace_back(Value(2002L));
         row1.emplace_back(Value(dstId));
         row1.emplace_back(Value("Spurs"));
         expectRows.emplace_back(Row(row1));
         Row row2;
         row2.emplace_back(Value(dstId));
+        row2.emplace_back(Value(102L));
         row2.emplace_back(Value(2002L));
         row2.emplace_back(Value(srcId));
         row2.emplace_back(Value("Spurs"));
@@ -802,6 +855,10 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
         returnCols.emplace_back("teamName");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -827,7 +884,11 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst", "teamName"};
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.teamName"};
         QueryTestUtils::checkResponse(resp, expectCols, {});
     }
 }
@@ -879,6 +940,8 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
         }
         req.set_parts(std::move(parts));
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
         returnCols.emplace_back("games");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -899,13 +962,16 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid", "games"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.games"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string vId;
         vId.append(name.data(), name.size());
         Row row1;
         row1.emplace_back(Value(vId));
+        row1.emplace_back(Value(1L));
         row1.emplace_back(Value(939L));
         expectRows.emplace_back(Row(row1));
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -962,6 +1028,10 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
         decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
         returnCols.emplace_back("startYear");
         req.set_return_columns(std::move(returnCols));
         cpp2::IndexColumnHint columnHint;
@@ -981,7 +1051,11 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst", "startYear"};
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.startYear"};
         decltype(resp.get_data()->rows) expectRows;
 
         std::string srcId, dstId;
@@ -989,12 +1063,14 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
         dstId.append(manu.data(), manu.size());
         Row row1;
         row1.emplace_back(Value(srcId));
+        row1.emplace_back(Value(102L));
         row1.emplace_back(Value(2002L));
         row1.emplace_back(Value(dstId));
         row1.emplace_back(Value(2002L));
         expectRows.emplace_back(Row(row1));
         Row row2;
         row2.emplace_back(Value(dstId));
+        row2.emplace_back(Value(102L));
         row2.emplace_back(Value(2002L));
         row2.emplace_back(Value(srcId));
         row2.emplace_back(Value(2002L));
@@ -1053,18 +1129,21 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
         contexts.emplace_back(std::move(context1));
         indices.set_contexts(std::move(contexts));
         req.set_indices(std::move(indices));
+        req.set_return_columns({kVid, kTag});
 
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag)};
         decltype(resp.get_data()->rows) expectRows;
 
         auto playerVerticeId = mock::MockData::mockPlayerVerticeIds();
         for (auto& vId : playerVerticeId) {
-            Row row1;
-            row1.emplace_back(Value(vId));
-            expectRows.emplace_back(Row(row1));
+            Row row;
+            row.emplace_back(vId);
+            row.emplace_back(1);
+            expectRows.emplace_back(std::move(row));
         }
 
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -1121,18 +1200,21 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
         contexts.emplace_back(std::move(context1));
         indices.set_contexts(std::move(contexts));
         req.set_indices(std::move(indices));
+        req.set_return_columns({kVid, kTag});
 
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_vid"};
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag)};
         decltype(resp.get_data()->rows) expectRows;
 
         auto playerVerticeId = mock::MockData::mockPlayerVerticeIds();
         for (auto& vId : playerVerticeId) {
-            Row row1;
-            row1.emplace_back(Value(vId));
-            expectRows.emplace_back(Row(row1));
+            Row row;
+            row.emplace_back(vId);
+            row.emplace_back(1);
+            expectRows.emplace_back(std::move(row));
         }
 
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -1177,7 +1259,7 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
         cpp2::LookupIndexRequest req;
         decltype(req.indices) indices;
         req.set_space_id(spaceId);
-        indices.set_tag_or_edge_id(102);
+        indices.set_tag_or_edge_id(101);
         indices.set_is_edge(true);
         decltype(req.parts) parts;
         for (int32_t p = 1; p <= totalParts; p++) {
@@ -1191,11 +1273,15 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
         contexts.emplace_back(std::move(context1));
         indices.set_contexts(std::move(contexts));
         req.set_indices(std::move(indices));
+        req.set_return_columns({kSrc, kType, kRank, kDst});
 
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst"};
+        std::vector<std::string> expectCols = {std::string("101.").append(kSrc),
+                                               std::string("101.").append(kType),
+                                               std::string("101.").append(kRank),
+                                               std::string("101.").append(kDst)};
         decltype(resp.get_data()->rows) expectRows;
 
         auto serveEdgeKey = mock::MockData::mockEdgeKeys();
@@ -1205,11 +1291,12 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
             if (edgekey.type_ < 0) {
                 continue;
             }
-            Row row1;
-            row1.emplace_back(Value(edgekey.srcId_));
-            row1.emplace_back(Value(edgekey.rank_));
-            row1.emplace_back(Value(edgekey.dstId_));
-            expectRows.emplace_back(Row(row1));
+            Row row;
+            row.emplace_back(edgekey.srcId_);
+            row.emplace_back(edgekey.type_);
+            row.emplace_back(edgekey.rank_);
+            row.emplace_back(edgekey.dstId_);
+            expectRows.emplace_back(std::move(row));
         }
 
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -1253,7 +1340,7 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
         cpp2::LookupIndexRequest req;
         decltype(req.indices) indices;
         req.set_space_id(spaceId);
-        indices.set_tag_or_edge_id(102);
+        indices.set_tag_or_edge_id(101);
         indices.set_is_edge(true);
         decltype(req.parts) parts;
         for (int32_t p = 1; p <= totalParts; p++) {
@@ -1267,11 +1354,15 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
         contexts.emplace_back(std::move(context1));
         indices.set_contexts(std::move(contexts));
         req.set_indices(std::move(indices));
+        req.set_return_columns({kSrc, kType, kRank, kDst});
 
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        std::vector<std::string> expectCols = {"_src", "_ranking", "_dst"};
+        std::vector<std::string> expectCols = {std::string("101.").append(kSrc),
+                                               std::string("101.").append(kType),
+                                               std::string("101.").append(kRank),
+                                               std::string("101.").append(kDst)};
         decltype(resp.get_data()->rows) expectRows;
 
         auto serveEdgeKey = mock::MockData::mockEdgeKeys();
@@ -1281,11 +1372,12 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
             if (edgekey.type_ < 0) {
                 continue;
             }
-            Row row1;
-            row1.emplace_back(Value(edgekey.srcId_));
-            row1.emplace_back(Value(edgekey.rank_));
-            row1.emplace_back(Value(edgekey.dstId_));
-            expectRows.emplace_back(Row(row1));
+            Row row;
+            row.emplace_back(edgekey.srcId_);
+            row.emplace_back(edgekey.type_);
+            row.emplace_back(edgekey.rank_);
+            row.emplace_back(edgekey.dstId_);
+            expectRows.emplace_back(std::move(row));
         }
 
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
@@ -1461,6 +1553,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
     cpp2::LookupIndexRequest req;
     req.set_space_id(spaceId);
     req.set_parts({1, 2, 3, 4, 5, 6});
+    req.set_return_columns({kVid});
     {
         LOG(INFO) << "lookup on tag where tag.col1 == 0";
         cpp2::IndexColumnHint columnHint;
@@ -1484,7 +1577,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         ASSERT_EQ(0, resp.get_data()->size());
     }
     {
@@ -1510,7 +1603,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"1_a_1_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -1548,7 +1641,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"1_a_1_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -1576,7 +1669,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"1_a_1_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -1604,7 +1697,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"string_null"}));
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         expected.rows.emplace_back(nebula::Row({"3_c_null_null"}));
@@ -1634,7 +1727,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         expected.rows.emplace_back(nebula::Row({"3_c_null_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
@@ -1681,7 +1774,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         // Because col3 is out of index, so col3 > 1 will be used as filter
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         ASSERT_EQ(expected, *(resp.get_data()));
@@ -1727,7 +1820,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -1781,7 +1874,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -1967,6 +2060,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
     cpp2::LookupIndexRequest req;
     req.set_space_id(spaceId);
     req.set_parts({1, 2, 3, 4, 5, 6});
+    req.set_return_columns({kVid});
 
     // bool range scan will be forbiden in query engine, so only test preix for bool
     {
@@ -1991,7 +2085,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         expected.rows.emplace_back(nebula::Row({"true_4_null_d"}));
         ASSERT_EQ(expected, *(resp.get_data()));
@@ -2020,7 +2114,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2052,7 +2146,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_4_null_d"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2084,7 +2178,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2113,7 +2207,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2142,7 +2236,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"false_5_5.0_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2179,7 +2273,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2216,7 +2310,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"false_5_5.0_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2247,7 +2341,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"false_5_5.0_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2280,7 +2374,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2315,7 +2409,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2348,7 +2442,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2374,7 +2468,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"null_2_2.0_b"}));
         expected.rows.emplace_back(nebula::Row({"all_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
@@ -2403,7 +2497,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"all_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2434,7 +2528,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"all_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2467,7 +2561,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"all_null"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2500,7 +2594,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_4_null_d"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2533,7 +2627,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"false_null_3.0_c"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }
@@ -2566,7 +2660,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         ASSERT_EQ(expected, *(resp.get_data()));
     }
     {
@@ -2594,7 +2688,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_parts.size());
-        nebula::DataSet expected({"_vid"});
+        nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"null_2_2.0_b"}));
         ASSERT_EQ(expected, *(resp.get_data()));
     }

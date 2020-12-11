@@ -57,25 +57,36 @@ public:
 
         // add result of each tag node to tagResult
         for (auto* tagNode : tagNodes_) {
-            const auto& tagName = tagNode->getTagName();
             ret = tagNode->collectTagPropsIfValid(
                 [&result] (const std::vector<PropContext>*) -> kvstore::ResultCode {
                     result.values.emplace_back(Value());
                     return kvstore::ResultCode::SUCCEEDED;
                 },
-                [this, &result, &tagName] (TagID tagId,
-                                           RowReader* reader,
-                                           const std::vector<PropContext>* props)
+                [this, &vId, &result, tagNode] (folly::StringPiece key,
+                                                RowReader* reader,
+                                                const std::vector<PropContext>* props)
                 -> kvstore::ResultCode {
                     nebula::List list;
-                    auto code = collectTagProps(tagId,
-                                                tagName,
-                                                reader,
-                                                props,
-                                                list,
-                                                expCtx_);
-                    if (code != kvstore::ResultCode::SUCCEEDED) {
-                        return code;
+                    list.reserve(props->size());
+                    const auto& tagName = tagNode->getTagName();
+                    auto tagId = tagNode->getTagId();
+                    for (const auto& prop : *props) {
+                        VLOG(2) << "Collect prop " << prop.name_;
+                        auto value = QueryUtils::readVertexProp(
+                            key, planContext_->vIdLen_, planContext_->isIntId_, reader, prop);
+                        if (!value.ok()) {
+                            return kvstore::ResultCode::ERR_TAG_PROP_NOT_FOUND;
+                        }
+                        if (prop.filtered_ && expCtx_ != nullptr) {
+                            expCtx_->setTagProp(tagName, prop.name_, value.value());
+                        }
+                        if (prop.returned_) {
+                            list.emplace_back(std::move(value).value());
+                        }
+                    }
+                    if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
+                        tagContext_->vertexCache_->insert(std::make_pair(vId, tagId),
+                                                          reader->getData());
                     }
                     result.values.emplace_back(std::move(list));
                     return kvstore::ResultCode::SUCCEEDED;

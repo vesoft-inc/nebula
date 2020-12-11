@@ -90,6 +90,21 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
     return true;
 }
 
+void addTagPropInKey(std::vector<std::string>& returnCols) {
+    {
+        auto* tag = new std::string("1");
+        auto* prop = new std::string(kVid);
+        SourcePropertyExpression exp(tag, prop);
+        returnCols.emplace_back(Expression::encode(exp));
+    }
+    {
+        auto* tag = new std::string("1");
+        auto* prop = new std::string(kTag);
+        SourcePropertyExpression exp(tag, prop);
+        returnCols.emplace_back(Expression::encode(exp));
+    }
+}
+
 // not filter, update success
 TEST(UpdateVertexTest, No_Filter_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
@@ -152,6 +167,8 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+    addTagPropInKey(tmpProps);
+
     req.set_return_props(std::move(tmpProps));
     req.set_insertable(false);
 
@@ -163,19 +180,23 @@ TEST(UpdateVertexTest, No_Filter_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(4, resp.props.rows[0].values.size());
+    EXPECT_EQ(6, resp.props.rows[0].values.size());
 
     EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(45, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("China", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -278,6 +299,8 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
         SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
         req.set_insertable(false);
     }
@@ -292,17 +315,22 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     EXPECT_EQ(1, resp.result.failed_parts.size());
 
     // Note: If filtered out, the result is old
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
+    EXPECT_EQ(6, resp.props.rows[0].values.size());
     EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(44, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
 
     // get player from kvstore directly
     // Because no update, the value is old
@@ -383,6 +411,8 @@ TEST(UpdateVertexTest, Insertable_Test) {
         SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
         req.set_insertable(true);
     }
@@ -395,17 +425,22 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
+    EXPECT_EQ(6, resp.props.rows[0].values.size());
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -711,6 +746,8 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
         SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
         req.set_insertable(true);
     }
@@ -723,17 +760,21 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -966,6 +1007,8 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
         SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
     }
     req.set_insertable(true);
@@ -980,19 +1023,24 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(4, resp.props.rows[0].values.size());
+    EXPECT_EQ(6, resp.props.rows[0].values.size());
 
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Tim", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Tim", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -1085,6 +1133,8 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
         SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
     }
     req.set_insertable(true);
@@ -1099,19 +1149,23 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(4, resp.props.colNames.size());
+    EXPECT_EQ(6, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
-    EXPECT_EQ("1:country", resp.props.colNames[3]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ("1.country", resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
 
     EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(4, resp.props.rows[0].values.size());
+    EXPECT_EQ(6, resp.props.rows[0].values.size());
 
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(50L, resp.props.rows[0].values[2].getInt());
     EXPECT_EQ("China", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
 
     // Get player from kvstore directly, ttl expired data can be readed
     // First record is inserted record data
@@ -1277,6 +1331,8 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
         SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
+        addTagPropInKey(tmpProps);
+
         req.set_return_props(std::move(tmpProps));
         req.set_insertable(true);
     }
@@ -1289,15 +1345,20 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(3, resp.props.colNames.size());
+    EXPECT_EQ(5, resp.props.colNames.size());
     EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1:name", resp.props.colNames[1]);
-    EXPECT_EQ("1:age", resp.props.colNames[2]);
+    EXPECT_EQ("1.name", resp.props.colNames[1]);
+    EXPECT_EQ("1.age", resp.props.colNames[2]);
+    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[4]);
 
     EXPECT_EQ(1, resp.props.rows.size());
+    EXPECT_EQ(5, resp.props.rows[0].values.size());
     EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
     EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
     EXPECT_EQ(10, resp.props.rows[0].values[2].getInt());
+    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[3].getStr());
+    EXPECT_EQ(1, resp.props.rows[0].values[4].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);

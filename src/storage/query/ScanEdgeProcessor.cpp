@@ -15,7 +15,6 @@ namespace storage {
 void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     spaceId_ = req.get_space_id();
     partId_ = req.get_part_id();
-    returnNoProps_ = req.get_no_columns();
 
     auto retCode = getSpaceVidLen(spaceId_);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -98,22 +97,11 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         }
 
         nebula::List list;
-        auto srcId = NebulaKeyUtils::getSrcId(spaceVidLen_, key);
-        auto rank = NebulaKeyUtils::getRank(spaceVidLen_, key);
-        auto dstId = NebulaKeyUtils::getDstId(spaceVidLen_, key);
-        auto src = srcId.subpiece(0, srcId.find_first_of('\0'));
-        auto dst = dstId.subpiece(0, dstId.find_first_of('\0'));
-        list.emplace_back(src.toString());
-        list.emplace_back(edgeType);
-        list.emplace_back(rank);
-        list.emplace_back(dst.toString());
-
-        if (!returnNoProps_) {
-            auto idx = edgeIter->second;
-            auto props = &(edgeContext_.propContexts_[idx].second);
-            if (!QueryUtils::collectPropsInValue(reader.get(), props, list).ok()) {
-                continue;
-            }
+        auto idx = edgeIter->second;
+        auto props = &(edgeContext_.propContexts_[idx].second);
+        if (!QueryUtils::collectEdgeProps(key, spaceVidLen_, isIntId_,
+                                          reader.get(), props, list).ok()) {
+            continue;
         }
         resultDataSet_.rows.emplace_back(std::move(list));
         rowCount++;
@@ -136,7 +124,19 @@ cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::ScanEdgeReq
     }
 
     std::vector<cpp2::EdgeProp> returnProps = {req.return_columns};
-    return handleEdgeProps(returnProps, returnNoProps_);
+    ret = handleEdgeProps(returnProps);
+    buildEdgeColName(returnProps);
+    return ret;
+}
+
+void ScanEdgeProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps) {
+    for (const auto& edgeProp : edgeProps) {
+        auto edgeType = edgeProp.type;
+        auto edgeName = edgeContext_.edgeNames_[edgeType];
+        for (const auto& prop : edgeProp.props) {
+            resultDataSet_.colNames.emplace_back(edgeName + "." + prop);
+        }
+    }
 }
 
 void ScanEdgeProcessor::onProcessFinished() {

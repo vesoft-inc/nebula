@@ -30,9 +30,10 @@ private:
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanEdgeRequest& req) override;
 
+    void buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps);
+
     void onProcessFinished() override;
 
-    bool returnNoProps_{false};
     PartitionID partId_;
 };
 

@@ -13,8 +13,7 @@ namespace storage {
 
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
-        std::vector<cpp2::VertexProp>& vertexProps,
-        bool returnNoProps) {
+        std::vector<cpp2::VertexProp>& vertexProps) {
     for (auto& vertexProp : vertexProps) {
         auto tagId = vertexProp.tag;
         auto iter = tagContext_.schemas_.find(tagId);
@@ -31,16 +30,18 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
         }
 
         std::vector<PropContext> ctxs;
-        if (returnNoProps) {
-            // just add the tagId into tagContext_
-        } else if (!vertexProp.props.empty()) {
+        if (!vertexProp.props.empty()) {
             for (const auto& name : vertexProp.props) {
-                auto field = tagSchema->field(name);
-                if (field == nullptr) {
-                    VLOG(1) << "Can't find prop " << name << " tagId " << tagId;
-                    return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+                if (name != kVid && name != kTag) {
+                    auto field = tagSchema->field(name);
+                    if (field == nullptr) {
+                        VLOG(1) << "Can't find prop " << name << " tagId " << tagId;
+                        return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+                    }
+                    addReturnPropContext(ctxs, name.c_str(), field);
+                } else {
+                    addReturnPropContext(ctxs, name.c_str(), nullptr);
                 }
-                addReturnPropContext(ctxs, name.c_str(), field);
             }
         } else {
             // if the list of property names is empty, then all properties on the given tag
@@ -62,8 +63,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
 
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
-        std::vector<cpp2::EdgeProp>& edgeProps,
-        bool returnNoProps) {
+        std::vector<cpp2::EdgeProp>& edgeProps) {
     for (auto& edgeProp : edgeProps) {
         auto edgeType = edgeProp.type;
         auto iter = edgeContext_.schemas_.find(std::abs(edgeType));
@@ -80,9 +80,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
         }
 
         std::vector<PropContext> ctxs;
-        if (returnNoProps) {
-            // just add the edgeType into edgeContext_
-        } else if (!edgeProp.props.empty()) {
+        if (!edgeProp.props.empty()) {
             for (const auto& name : edgeProp.props) {
                 if (name != kSrc && name != kType && name != kRank && name != kDst) {
                     auto field = edgeSchema->field(name);
@@ -98,14 +96,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
         } else {
             // if the list of property names is empty, then all properties on the given edgeType
             // will be returned
-            addReturnPropContext(ctxs, kSrc, nullptr);
-            addReturnPropContext(ctxs, kType, nullptr);
-            addReturnPropContext(ctxs, kRank, nullptr);
-            addReturnPropContext(ctxs, kDst, nullptr);
-            edgeProp.props.emplace_back(kSrc);
-            edgeProp.props.emplace_back(kType);
-            edgeProp.props.emplace_back(kRank);
-            edgeProp.props.emplace_back(kDst);
             auto count = edgeSchema->getNumFields();
             for (size_t i = 0; i < count; i++) {
                 auto name = edgeSchema->getFieldName(i);
@@ -222,13 +212,6 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
         if (direction == cpp2::EdgeDirection::IN_EDGE) {
             edgeProp.type = -edgeProp.type;
         }
-
-        // add default property in key
-        edgeProp.props.emplace_back(kSrc);
-        edgeProp.props.emplace_back(kType);
-        edgeProp.props.emplace_back(kRank);
-        edgeProp.props.emplace_back(kDst);
-
         const auto& schema = entry.second.back();
         auto count = schema->getNumFields();
         for (size_t i = 0; i < count; i++) {
@@ -420,6 +403,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             CHECK(!iter->second.empty());
             const auto& tagSchema = iter->second.back();
 
+            if (*propName == kVid || *propName == kTag) {
+                return cpp2::ErrorCode::SUCCEEDED;
+            }
+
             auto field = tagSchema->field(*propName);
             if (field == nullptr) {
                 VLOG(1) << "Can't find related prop " << *propName << " on tag " << *tagName;
@@ -462,6 +449,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             }
             CHECK(!iter->second.empty());
             const auto& edgeSchema = iter->second.back();
+
+            if (*propName == kSrc || *propName == kType ||
+                *propName == kRank || *propName == kDst) {
+                return cpp2::ErrorCode::SUCCEEDED;
+            }
 
             const meta::SchemaProviderIf::Field* field = nullptr;
             if (exp->kind() == Expression::Kind::kEdgeProperty) {

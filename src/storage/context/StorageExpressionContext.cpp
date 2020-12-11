@@ -40,24 +40,9 @@ Value StorageExpressionContext::getTagProp(const std::string& tagName,
     if (isIndex_) {
         return getIndexValue(prop, false);
     }
-    if (reader_ != nullptr) {
-        if (tagName != name_) {
-            return Value::kNullValue;
-        }
-        if (prop == kVid) {
-            auto vId = NebulaKeyUtils::getVertexId(vIdLen_, key_);
-            return isIntId_ ? vId.toString() : vId.subpiece(0, vId.find_first_of('\0')).toString();
-        } else {
-            return readValue(prop);
-        }
-    } else {
-        auto iter = tagFilters_.find(std::make_pair(tagName, prop));
-        if (iter == tagFilters_.end()) {
-            return Value::kNullValue;
-        }
-        return iter->second;
-    }
+    return getSrcProp(tagName, prop);
 }
+
 // Get the specified property from the edge, such as edgename.prop_name
 Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
                                             const std::string& prop) const {
@@ -101,7 +86,14 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
         if (tagName != name_) {
             return Value::kNullValue;
         }
-        return readValue(prop);
+        if (prop == kVid) {
+            auto vId = NebulaKeyUtils::getVertexId(vIdLen_, key_);
+            return isIntId_ ? vId.toString() : vId.subpiece(0, vId.find_first_of('\0')).toString();
+        } else if (prop == kTag) {
+            return NebulaKeyUtils::getTagId(vIdLen_, key_);
+        } else {
+            return readValue(prop);
+        }
     } else {
         auto iter = tagFilters_.find(std::make_pair(tagName, prop));
         if (iter == tagFilters_.end()) {

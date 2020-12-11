@@ -26,11 +26,11 @@ public:
     }
 
     kvstore::ResultCode collectEdgePropsIfValid(NullHandler nullHandler,
-                                                EdgePropHandler valueHandler) {
+                                                PropHandler valueHandler) {
         if (!iter_ || !iter_->valid()) {
             return nullHandler(props_);
         }
-        return valueHandler(edgeType_, iter_->key(), iter_->reader(), props_);
+        return valueHandler(iter_->key(), iter_->reader(), props_);
     }
 
     bool valid() const override {
@@ -65,7 +65,7 @@ protected:
              EdgeContext* ctx,
              EdgeType edgeType,
              const std::vector<PropContext>* props,
-             ExpressionContext* expCtx,
+             StorageExpressionContext* expCtx,
              Expression* exp)
         : planContext_(planCtx)
         , edgeContext_(ctx)
@@ -91,7 +91,7 @@ protected:
     EdgeContext* edgeContext_;
     EdgeType edgeType_;
     const std::vector<PropContext>* props_;
-    ExpressionContext* expCtx_;
+    StorageExpressionContext* expCtx_;
     Expression* exp_;
 
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
@@ -111,7 +111,7 @@ public:
                   EdgeContext* ctx,
                   EdgeType edgeType,
                   const std::vector<PropContext>* props,
-                  ExpressionContext* expCtx = nullptr,
+                  StorageExpressionContext* expCtx = nullptr,
                   Expression* exp = nullptr)
         : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
 
@@ -160,7 +160,7 @@ public:
                    EdgeContext* ctx,
                    EdgeType edgeType,
                    const std::vector<PropContext>* props,
-                   ExpressionContext* expCtx = nullptr,
+                   StorageExpressionContext* expCtx = nullptr,
                    Expression* exp = nullptr)
         : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
 

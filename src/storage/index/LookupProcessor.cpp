@@ -43,6 +43,17 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
 }
 
 void LookupProcessor::onProcessFinished() {
+    if (planContext_->isEdge_) {
+        std::transform(resultDataSet_.colNames.begin(),
+                       resultDataSet_.colNames.end(),
+                       resultDataSet_.colNames.begin(),
+                       [this](const auto& col) { return planContext_->edgeName_ + "." + col; });
+    } else {
+        std::transform(resultDataSet_.colNames.begin(),
+                       resultDataSet_.colNames.end(),
+                       resultDataSet_.colNames.begin(),
+                       [this](const auto& col) { return planContext_->tagName_ + "." + col; });
+    }
     resp_.set_data(std::move(resultDataSet_));
 }
 

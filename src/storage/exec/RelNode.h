@@ -21,14 +21,9 @@ namespace storage {
 
 using NullHandler = std::function<kvstore::ResultCode(const std::vector<PropContext>*)>;
 
-using TagPropHandler = std::function<kvstore::ResultCode(TagID,
-                                                         RowReader*,
-                                                         const std::vector<PropContext>* props)>;
-
-using EdgePropHandler = std::function<kvstore::ResultCode(EdgeType,
-                                                          folly::StringPiece,
-                                                          RowReader*,
-                                                          const std::vector<PropContext>* props)>;
+using PropHandler = std::function<kvstore::ResultCode(folly::StringPiece,
+                                                      RowReader*,
+                                                      const std::vector<PropContext>* props)>;
 
 template<typename T> class StoragePlan;
 
@@ -88,54 +83,6 @@ public:
     }
 
 protected:
-    // if yields is not empty, will eval the yield expression, otherwize, collect property
-    kvstore::ResultCode collectEdgeProps(
-            RowReader* reader,
-            folly::StringPiece key,
-            size_t vIdLen,
-            bool isIntId,
-            const std::vector<PropContext>* props,
-            nebula::List& list) {
-        for (const auto& prop : *props) {
-            if (prop.returned_) {
-                VLOG(2) << "Collect prop " << prop.name_;
-                auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
-                if (!value.ok()) {
-                    return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
-                }
-                list.values.emplace_back(std::move(value).value());
-            }
-        }
-
-        return kvstore::ResultCode::SUCCEEDED;
-    }
-
-    // Always put filter property into expression context.
-    // if yields is not empty, will eval the yield expression, otherwize, collect property.
-    kvstore::ResultCode collectTagProps(
-            TagID tagId,
-            const std::string& tagName,
-            RowReader* reader,
-            const std::vector<PropContext>* props,
-            nebula::List& list,
-            StorageExpressionContext* ctx = nullptr) {
-        for (auto& prop : *props) {
-            VLOG(2) << "Collect prop " << prop.name_ << ", type " << tagId;
-            auto status = QueryUtils::readValue(reader, prop.name_, prop.field_);
-            if (!status.ok()) {
-                return kvstore::ResultCode::ERR_TAG_PROP_NOT_FOUND;
-            }
-            auto value = std::move(status).value();
-            if (ctx != nullptr && prop.filtered_) {
-                ctx->setTagProp(tagName, prop.name_, value);
-            }
-            if (prop.returned_) {
-                list.values.emplace_back(std::move(value));
-            }
-        }
-        return kvstore::ResultCode::SUCCEEDED;
-    }
-
     Value result_;
 };
 

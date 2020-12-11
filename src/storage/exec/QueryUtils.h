@@ -91,17 +91,67 @@ public:
                     dstId.toString() :
                     dstId.subpiece(0, dstId.find_first_of('\0')).toString();
             }
+            default:
+                LOG(FATAL) << "Should not read here";
         }
         return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
     }
 
-    static Status collectPropsInValue(RowReader* reader,
-                                      const std::vector<PropContext>* props,
-                                      nebula::List& list) {
+    static StatusOr<nebula::Value> readVertexProp(folly::StringPiece key,
+                                                  size_t vIdLen,
+                                                  bool isIntId,
+                                                  RowReader* reader,
+                                                  const PropContext& prop) {
+        switch (prop.propInKeyType_) {
+            // prop in value
+            case PropContext::PropInKeyType::NONE: {
+                return readValue(reader, prop.name_, prop.field_);
+            }
+            case PropContext::PropInKeyType::VID: {
+                auto srcId = NebulaKeyUtils::getVertexId(vIdLen, key);
+                return isIntId ?
+                    srcId.toString() :
+                    srcId.subpiece(0, srcId.find_first_of('\0')).toString();
+            }
+            case PropContext::PropInKeyType::TAG: {
+                auto tag = NebulaKeyUtils::getTagId(vIdLen, key);
+                return tag;
+            }
+            default:
+                LOG(FATAL) << "Should not read here";
+        }
+        return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
+    }
+
+    static Status collectVertexProps(folly::StringPiece key,
+                                     size_t vIdLen,
+                                     bool isIntId,
+                                     RowReader* reader,
+                                     const std::vector<PropContext>* props,
+                                     nebula::List& list) {
         for (const auto& prop : *props) {
-            if (prop.returned_ && prop.propInKeyType_ == PropContext::PropInKeyType::NONE) {
+            if (prop.returned_) {
                 VLOG(2) << "Collect prop " << prop.name_;
-                auto value = QueryUtils::readValue(reader, prop.name_, prop.field_);
+                auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+                if (!value.ok()) {
+                    return value.status();
+                }
+                list.emplace_back(std::move(value).value());
+            }
+        }
+        return Status::OK();
+    }
+
+    static Status collectEdgeProps(folly::StringPiece key,
+                                   size_t vIdLen,
+                                   bool isIntId,
+                                   RowReader* reader,
+                                   const std::vector<PropContext>* props,
+                                   nebula::List& list) {
+        for (const auto& prop : *props) {
+            if (prop.returned_) {
+                VLOG(2) << "Collect prop " << prop.name_;
+                auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
                 if (!value.ok()) {
                     return value.status();
                 }

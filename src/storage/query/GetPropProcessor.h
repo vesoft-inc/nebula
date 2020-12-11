@@ -41,7 +41,7 @@ protected:
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::GetPropRequest& req) override;
 
-    cpp2::ErrorCode checkColumnNames(const std::vector<std::string>& colNames);
+    cpp2::ErrorCode checkRequest(const cpp2::GetPropRequest& req);
 
     cpp2::ErrorCode buildTagContext(const cpp2::GetPropRequest& req);
 

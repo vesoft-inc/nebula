@@ -46,10 +46,10 @@ public:
         row.emplace_back(insert_);
 
         for (auto& retExp : returnPropsExp_) {
-            auto& val = retExp->eval(*expCtx_);
-            auto exp = dynamic_cast<const PropertyExpression*>(retExp);
+            auto exp = static_cast<PropertyExpression*>(retExp);
+            auto& val = exp->eval(*expCtx_);
             if (exp) {
-                result_->colNames.emplace_back(folly::stringPrintf("%s:%s",
+                result_->colNames.emplace_back(folly::stringPrintf("%s.%s",
                                                exp->sym()->c_str(),
                                                exp->prop()->c_str()));
             } else {

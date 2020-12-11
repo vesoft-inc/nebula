@@ -18,7 +18,6 @@ cpp2::ScanEdgeRequest buildRequest(
         const std::string& cursor,
         const std::pair<EdgeType, std::vector<std::string>>& edge,
         int32_t rowLimit = 100,
-        bool returnNoColumns = false,
         int64_t startTime = 0,
         int64_t endTime = std::numeric_limits<int64_t>::max(),
         bool onlyLatestVer = false) {
@@ -33,7 +32,6 @@ cpp2::ScanEdgeRequest buildRequest(
         edgeProp.props.emplace_back(std::move(prop));
     }
     req.set_return_columns(std::move(edgeProp));
-    req.set_no_columns(returnNoColumns);
     req.set_limit(rowLimit);
     req.set_start_time(startTime);
     req.set_end_time(endTime);
@@ -43,34 +41,28 @@ cpp2::ScanEdgeRequest buildRequest(
 
 void checkResponse(const nebula::DataSet& dataSet,
                    const std::pair<EdgeType, std::vector<std::string>> edge,
-                   std::unordered_map<TagID, size_t>& expectColumnCount,
+                   size_t expectColumnCount,
                    size_t& totalRowCount) {
+    ASSERT_EQ(dataSet.colNames.size(), expectColumnCount);
+    if (!edge.second.empty()) {
+        ASSERT_EQ(dataSet.colNames.size(), edge.second.size());
+        for (size_t i = 0; i < dataSet.colNames.size(); i++) {
+            ASSERT_EQ(dataSet.colNames[i], std::to_string(edge.first) + "." + edge.second[i]);
+        }
+    }
     totalRowCount += dataSet.rows.size();
     for (const auto& row : dataSet.rows) {
+        // always pass name or kSrc at first
         auto srcId = row.values[0].getStr();
-        auto edgeType = row.values[1].getInt();
-        auto expectCol = expectColumnCount[edgeType];
-        ASSERT_EQ(expectCol, row.values.size());
+        auto edgeType = edge.first;
+        ASSERT_EQ(expectColumnCount, row.values.size());
         auto props = edge.second;
         switch (edgeType) {
             case 101: {
                 // out edge serve
                 auto iter = mock::MockData::playerServes_.find(srcId);
                 CHECK(iter != mock::MockData::playerServes_.end());
-                std::vector<Value> values;
-                if (expectCol == 4 + 9) {
-                    // return all columns, collect all columns
-                    for (size_t i = 0; i < row.values.size(); i++) {
-                        values.emplace_back(std::move(row.values[i]));
-                    }
-                    QueryTestUtils::checkOutServe(edgeType, props, iter->second, values);
-                } else if (expectCol > 4) {
-                    // return some properties, collect properites starting from fifth column
-                    for (size_t i = 4; i < row.values.size(); i++) {
-                        values.emplace_back(std::move(row.values[i]));
-                    }
-                    QueryTestUtils::checkOutServe(edgeType, props, iter->second, values);
-                }
+                QueryTestUtils::checkOutServe(edgeType, props, iter->second, row.values, 4, 5);
                 break;
             }
             case -101: {
@@ -78,19 +70,7 @@ void checkResponse(const nebula::DataSet& dataSet,
                 auto iter = mock::MockData::teamServes_.find(srcId);
                 CHECK(iter != mock::MockData::teamServes_.end());
                 std::vector<Value> values;
-                if (expectCol == 4 + 9) {
-                    // return all columns, collect all columns
-                    for (size_t i = 0; i < row.values.size(); i++) {
-                        values.emplace_back(std::move(row.values[i]));
-                    }
-                    QueryTestUtils::checkInServe(edgeType, props, iter->second, values);
-                } else if (expectCol > 4) {
-                    // return some properties, collect properites starting from fifth column
-                    for (size_t i = 4; i < row.values.size(); i++) {
-                        values.emplace_back(std::move(row.values[i]));
-                    }
-                    QueryTestUtils::checkInServe(edgeType, props, iter->second, values);
-                }
+                QueryTestUtils::checkInServe(edgeType, props, iter->second, row.values);
                 break;
             }
             default:
@@ -114,10 +94,8 @@ TEST(ScanEdgeTest, PropertyTest) {
     {
         LOG(INFO) << "Scan one edge with some properties in one batch";
         size_t totalRowCount = 0;
-        auto edge =
-            std::make_pair(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 3);
+        auto edge = std::make_pair(serve, std::vector<std::string>{
+            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             auto req = buildRequest(partId, "", edge);
             auto* processor = ScanEdgeProcessor::instance(env, nullptr);
@@ -126,7 +104,7 @@ TEST(ScanEdgeTest, PropertyTest) {
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }
@@ -134,8 +112,6 @@ TEST(ScanEdgeTest, PropertyTest) {
         LOG(INFO) << "Scan one edge with all properties in one batch";
         size_t totalRowCount = 0;
         auto edge = std::make_pair(serve, std::vector<std::string>{});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 9);
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             auto req = buildRequest(partId, "", edge);
             auto* processor = ScanEdgeProcessor::instance(env, nullptr);
@@ -144,25 +120,8 @@ TEST(ScanEdgeTest, PropertyTest) {
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
-        }
-        CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
-    }
-    {
-        LOG(INFO) << "Scan one edge with no properties in one batch";
-        size_t totalRowCount = 0;
-        auto edge = std::make_pair(serve, std::vector<std::string>{});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 0);
-        for (PartitionID partId = 1; partId <= totalParts; partId++) {
-            auto req = buildRequest(partId, "", edge, 100, true);
-            auto* processor = ScanEdgeProcessor::instance(env, nullptr);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-
-            ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+            // all 9 columns in value
+            checkResponse(resp.edge_data, edge, 9, totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }
@@ -182,10 +141,8 @@ TEST(ScanEdgeTest, CursorTest) {
     {
         LOG(INFO) << "Scan one edge with some properties with limit = 5";
         size_t totalRowCount = 0;
-        auto edge =
-            std::make_pair(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 3);
+        auto edge = std::make_pair(serve, std::vector<std::string>{
+            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             bool hasNext = true;
             std::string cursor = "";
@@ -197,7 +154,7 @@ TEST(ScanEdgeTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+                checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
                     CHECK(resp.__isset.next_cursor);
@@ -210,10 +167,8 @@ TEST(ScanEdgeTest, CursorTest) {
     {
         LOG(INFO) << "Scan one edge with some properties with limit = 1";
         size_t totalRowCount = 0;
-        auto edge =
-            std::make_pair(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 3);
+        auto edge = std::make_pair(serve, std::vector<std::string>{
+            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             bool hasNext = true;
             std::string cursor = "";
@@ -225,7 +180,7 @@ TEST(ScanEdgeTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+                checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
                     CHECK(resp.__isset.next_cursor);
@@ -255,20 +210,18 @@ TEST(ScanEdgeTest, OnlyLatestVerTest) {
     {
         LOG(INFO) << "Scan one edge with some properties only latest version";
         size_t totalRowCount = 0;
-        auto edge =
-            std::make_pair(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 3);
+        auto edge = std::make_pair(serve, std::vector<std::string>{
+            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             auto req = buildRequest(
-                partId, "", edge, 100, false, 0, std::numeric_limits<int64_t>::max(), true);
+                partId, "", edge, 100, 0, std::numeric_limits<int64_t>::max(), true);
             auto* processor = ScanEdgeProcessor::instance(env, nullptr);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }
@@ -276,20 +229,18 @@ TEST(ScanEdgeTest, OnlyLatestVerTest) {
     {
         LOG(INFO) << "Scan one edge with some properties all version";
         size_t totalRowCount = 0;
-        auto edge =
-            std::make_pair(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        std::unordered_map<TagID, size_t> expectColumnCount;
-        expectColumnCount.emplace(serve, 4 + 3);
+        auto edge = std::make_pair(serve, std::vector<std::string>{
+            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
         for (PartitionID partId = 1; partId <= totalParts; partId++) {
             auto req = buildRequest(
-                partId, "", edge, 100, false, 0, std::numeric_limits<int64_t>::max(), true);
+                partId, "", edge, 100, 0, std::numeric_limits<int64_t>::max(), true);
             auto* processor = ScanEdgeProcessor::instance(env, nullptr);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, expectColumnCount, totalRowCount);
+            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }

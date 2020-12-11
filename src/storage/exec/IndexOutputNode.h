@@ -162,21 +162,21 @@ private:
         auto returnCols = result_->colNames;
         for (const auto& val : data) {
             Row row;
-            auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
-            if (planContext_->isIntId_) {
-                row.emplace_back(vId.toString());
-            } else {
-                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
-            }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
             }
-            // skip vertexID
-            for (size_t i = 1; i < returnCols.size(); i++) {
-                auto v = reader->getValueByName(returnCols[i]);
-                row.emplace_back(std::move(v));
+            for (const auto& colName : returnCols) {
+                if (colName == kVid) {
+                    auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, val.first);
+                    addVidToRow(vId, row);
+                } else if (colName == kTag) {
+                    row.emplace_back(planContext_->tagId_);
+                } else {
+                    auto v = reader->getValueByName(colName);
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
@@ -187,22 +187,21 @@ private:
         auto returnCols = result_->colNames;
         for (const auto& val : data) {
             Row row;
-            auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, val.first);
-            if (planContext_->isIntId_) {
-                row.emplace_back(vId.toString());
-            } else {
-                row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
-            }
-
-            // skip vertexID
-            for (size_t i = 1; i < returnCols.size(); i++) {
-                auto v = IndexKeyUtils::getValueFromIndexKey(planContext_->vIdLen_,
-                                                             val.first,
-                                                             returnCols[i],
-                                                             fields_,
-                                                             false,
-                                                             hasNullableCol_);
-                row.emplace_back(std::move(v));
+            for (const auto& colName : returnCols) {
+                if (colName == kVid) {
+                    auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, val.first);
+                    addVidToRow(vId, row);
+                } else if (colName == kTag) {
+                    row.emplace_back(planContext_->tagId_);
+                } else {
+                    auto v = IndexKeyUtils::getValueFromIndexKey(planContext_->vIdLen_,
+                                                                 val.first,
+                                                                 colName,
+                                                                 fields_,
+                                                                 false,
+                                                                 hasNullableCol_);
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
@@ -219,27 +218,26 @@ private:
         auto returnCols = result_->colNames;
         for (const auto& val : data) {
             Row row;
-            auto src = NebulaKeyUtils::getSrcId(planContext_->vIdLen_, val.first);
-            auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, val.first);
-            auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, val.first);
-            if (planContext_->isIntId_) {
-                row.emplace_back(src.toString());
-                row.emplace_back(rank);
-                row.emplace_back(dst.toString());
-            } else {
-                row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
-                row.emplace_back(rank);
-                row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
-            }
             auto reader = RowReaderWrapper::getRowReader(schema, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
             }
-            // skip column src_, ranking, dst_
-            for (size_t i = 3; i < returnCols.size(); i++) {
-                auto v = reader->getValueByName(returnCols[i]);
-                row.emplace_back(std::move(v));
+            for (const auto& colName : returnCols) {
+                if (colName == kSrc) {
+                    auto src = NebulaKeyUtils::getSrcId(planContext_->vIdLen_, val.first);
+                    addVidToRow(src, row);
+                } else if (colName == kType) {
+                    row.emplace_back(planContext_->edgeType_);
+                } else if (colName == kRank) {
+                    row.emplace_back(NebulaKeyUtils::getRank(planContext_->vIdLen_, val.first));
+                } else if (colName == kDst) {
+                    auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, val.first);
+                    addVidToRow(dst, row);
+                } else {
+                    auto v = reader->getValueByName(colName);
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
@@ -250,27 +248,38 @@ private:
         auto returnCols = result_->colNames;
         for (const auto& val : data) {
             Row row;
-            auto src = IndexKeyUtils::getIndexSrcId(planContext_->vIdLen_, val.first);
-            auto rank = IndexKeyUtils::getIndexRank(planContext_->vIdLen_, val.first);
-            auto dst = IndexKeyUtils::getIndexDstId(planContext_->vIdLen_, val.first);
-
-            row.emplace_back(Value(std::move(src).subpiece(0, src.find_first_of('\0')).toString()));
-            row.emplace_back(Value(std::move(rank)));
-            row.emplace_back(Value(std::move(dst).subpiece(0, dst.find_first_of('\0')).toString()));
-
-            // skip column src_ , ranking, dst_
-            for (size_t i = 3; i < returnCols.size(); i++) {
-                auto v = IndexKeyUtils::getValueFromIndexKey(planContext_->vIdLen_,
-                                                             val.first,
-                                                             returnCols[i],
-                                                             fields_,
-                                                             true,
-                                                             hasNullableCol_);
-                row.emplace_back(std::move(v));
+            for (const auto& colName : returnCols) {
+                if (colName == kSrc) {
+                    auto src = IndexKeyUtils::getIndexSrcId(planContext_->vIdLen_, val.first);
+                    addVidToRow(src, row);
+                } else if (colName == kType) {
+                    row.emplace_back(planContext_->edgeType_);
+                } else if (colName == kRank) {
+                    row.emplace_back(IndexKeyUtils::getIndexRank(planContext_->vIdLen_, val.first));
+                } else if (colName == kDst) {
+                    auto dst = IndexKeyUtils::getIndexDstId(planContext_->vIdLen_, val.first);
+                    addVidToRow(dst, row);
+                } else {
+                    auto v = IndexKeyUtils::getValueFromIndexKey(planContext_->vIdLen_,
+                                                                 val.first,
+                                                                 colName,
+                                                                 fields_,
+                                                                 true,
+                                                                 hasNullableCol_);
+                    row.emplace_back(std::move(v));
+                }
             }
             result_->rows.emplace_back(std::move(row));
         }
         return kvstore::ResultCode::SUCCEEDED;
+    }
+
+    void addVidToRow(VertexIDSlice vId, Row& row) {
+        if (planContext_->isIntId_) {
+            row.emplace_back(vId.toString());
+        } else {
+            row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
+        }
     }
 
 private:
