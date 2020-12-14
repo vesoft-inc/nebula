@@ -441,61 +441,27 @@ nebula_add_executable(
         boost_regex
 )
 
+nebula_add_test(
+    NAME
+        compaction_test
+    SOURCES
+        CompactionTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        proxygenlib
+        wangle
+        gtest
+)
 
-#nebula_add_test(
-#    NAME
-#        vertex_props_test
-#    SOURCES
-#        QueryVertexPropsTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
-#nebula_add_test(
-#    NAME
-#        edge_props_test
-#    SOURCES
-#        QueryEdgePropsTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
-#nebula_add_test(
-#    NAME
-#        query_stats_test
-#    SOURCES
-#        QueryStatsTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:http_client_obj>
-#        $<TARGET_OBJECTS:process_obj>
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
 #nebula_add_test(
 #    NAME
 #        storage_client_test
 #    SOURCES
 #        StorageClientTest.cpp
 #    OBJECTS
-#        $<TARGET_OBJECTS:meta_service_handler>
 #        $<TARGET_OBJECTS:common_ws_obj>
 #        $<TARGET_OBJECTS:common_http_client_obj>
 #        $<TARGET_OBJECTS:common_process_obj>
@@ -503,88 +469,67 @@ nebula_add_executable(
 #    LIBRARIES
 #        ${ROCKSDB_LIBRARIES}
 #        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
-#nebula_add_test(
-#    NAME
-#        storage_http_admin_test
-#    SOURCES
-#        StorageHttpAdminHandlerTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:storage_http_handler>
-#        $<TARGET_OBJECTS:http_client_obj>
-#        $<TARGET_OBJECTS:ws_obj>
-#        $<TARGET_OBJECTS:ws_common_obj>
-#        $<TARGET_OBJECTS:process_obj>
-#        ${storage_test_deps}
-#    LIBRARIES
-#        proxygenhttpserver
 #        proxygenlib
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
 #        wangle
 #        gtest
 #)
-#
-#nebula_add_test(
-#    NAME
-#        storage_http_download_test
-#    SOURCES
-#        StorageHttpDownloadHandlerTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:storage_http_handler>
-#        $<TARGET_OBJECTS:http_client_obj>
-#        $<TARGET_OBJECTS:ws_obj>
-#        $<TARGET_OBJECTS:ws_common_obj>
-#        $<TARGET_OBJECTS:process_obj>
-#        ${storage_test_deps}
-#    LIBRARIES
-#        proxygenhttpserver
-#        proxygenlib
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#nebula_add_test(
-#    NAME
-#        storage_http_ingest_test
-#    SOURCES
-#        StorageHttpIngestHandlerTest.cpp
-#    OBJECTS
-#        $<TARGET_OBJECTS:storage_http_handler>
-#        $<TARGET_OBJECTS:common_http_client_obj>
-#        $<TARGET_OBJECTS:common_ws_obj>
-#        $<TARGET_OBJECTS:common_ws_common_obj>
-#        ${storage_test_deps}
-#    LIBRARIES
-#        proxygenhttpserver
-#        proxygenlib
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#nebula_add_test(
-#    NAME
-#        compaction_test
-#    SOURCES
-#        CompactionTest.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        wangle
-#        gtest
-#)
-#
-#
+
+
+nebula_add_test(
+    NAME
+        storage_http_admin_test
+    SOURCES
+        StorageHttpAdminHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:common_ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        storage_http_download_test
+    SOURCES
+        StorageHttpDownloadHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:common_ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        storage_http_ingest_test
+    SOURCES
+        StorageHttpIngestHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:common_ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+
 #nebula_add_test(
 #    NAME
 #        vertex_cache_test

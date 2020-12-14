@@ -8,11 +8,13 @@
 #include "common/fs/TempDir.h"
 #include "common/webservice/Router.h"
 #include "common/webservice/WebService.h"
+#include "common/http/HttpClient.h"
 #include <gtest/gtest.h>
-#include "http/HttpClient.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/test/MockHdfsHelper.h"
 #include "storage/test/TestUtils.h"
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
 
 DECLARE_string(meta_server_addrs);
 
@@ -29,7 +31,8 @@ public:
         FLAGS_ws_h2_port = 0;
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpDownloadHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path());
+        cluster_ = std::make_unique<mock::MockCluster>();
+        cluster_->initStorageKV(rootPath_->path());
 
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);
@@ -40,7 +43,7 @@ public:
         router.get("/download").handler([this](nebula::web::PathParams&&) {
             auto handler = new storage::StorageHttpDownloadHandler();
             std::vector<std::string> paths{rootPath_->path()};
-            handler->init(helper.get(), pool_.get(), kv_.get(), paths);
+            handler->init(helper.get(), pool_.get(), cluster_->storageEnv_->kvstore_, paths);
             return handler;
         });
         auto status = webSvc_->start();
@@ -48,7 +51,7 @@ public:
     }
 
     void TearDown() override {
-        kv_.reset();
+        cluster_.reset();
         rootPath_.reset();
         webSvc_.reset();
         pool_->stop();
@@ -56,9 +59,9 @@ public:
     }
 
 private:
+    std::unique_ptr<mock::MockCluster>  cluster_;
     std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<fs::TempDir> rootPath_;
-    std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
@@ -72,7 +75,7 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
         ASSERT_TRUE(resp.value().empty());
     }
     {
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
@@ -80,7 +83,7 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
         ASSERT_EQ("SSTFile download successfully", resp.value());
     }
     {
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&space=0";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&space=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
@@ -89,7 +92,7 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
     }
     {
         helper = std::make_unique<nebula::storage::MockHdfsExistHelper>();
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);

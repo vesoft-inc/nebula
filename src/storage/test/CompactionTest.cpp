@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -7,461 +7,396 @@
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 #include <gtest/gtest.h>
-#include <folly/synchronization/Baton.h>
-#include "storage/test/TestUtils.h"
 #include "storage/CommonUtils.h"
-#include "storage/CompactionFilter.h"
+#include "storage/test/QueryTestUtils.h"
+#include "storage/test/TestUtils.h"
 #include "codec/RowWriterV2.h"
+#include "mock/AdHocSchemaManager.h"
+#include "mock/AdHocIndexManager.h"
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
 
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv) {
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        std::vector<kvstore::KV> data;
-        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (TagID tagId = 3001; tagId < 3010; tagId++) {
-                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                auto val = TestUtils::encodeValue(partId, vertexId, tagId);
-                data.emplace_back(std::move(key), std::move(val));
-            }
+// statis tag record count, can distinguish multiple versions
+void checkTagVertexData(int32_t spaceVidLen,
+                        GraphSpaceID spaceId,
+                        TagID tagId,
+                        int parts,
+                        StorageEnv* env,
+                        int expectNum,
+                        bool distinguishMultiVer = false) {
+    int totalCount = 0;
+    // partId start 1
+    std::unique_ptr<kvstore::KVIterator> iter;
+    VertexID lastVertexId = "";
 
-            // Generate 7 out-edges for each edgeType.
-            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
-                VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                for (EdgeVersion version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, 0, dstId,
-                                                       std::numeric_limits<int>::max() - version);
-                    auto val = TestUtils::encodeValue(partId, vertexId, dstId, 101);
-                    data.emplace_back(std::move(key), std::move(val));
+    for (int part = 1; part <= parts; part++) {
+        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
+        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+
+        while (iter && iter->valid()) {
+            auto key = iter->key();
+            if (NebulaKeyUtils::isVertex(spaceVidLen, key)) {
+                auto tId = NebulaKeyUtils::getTagId(spaceVidLen, key);
+                if (tId == tagId) {
+                    if (distinguishMultiVer) {
+                        auto vId = NebulaKeyUtils::getVertexId(spaceVidLen, key).str();
+                        if (lastVertexId == vId) {
+                            // mutil version
+                        } else {
+                            lastVertexId  = vId;
+                            totalCount++;
+                        }
+                    } else {
+                        totalCount++;
+                    }
                 }
             }
+            iter->next();
+        }
+    }
 
-            // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
-                VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (EdgeVersion version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101, 0, srcId,
-                                                       std::numeric_limits<int>::max() - version);
-                    auto val = TestUtils::setupEncode(10, 20);
-                    data.emplace_back(std::move(key), std::move(val));
+    ASSERT_EQ(expectNum, totalCount);
+}
+
+// statis edge record count, can distinguish multiple versions
+void checkEdgeData(int32_t spaceVidLen,
+                   GraphSpaceID spaceId,
+                   EdgeType type,
+                   int parts,
+                   StorageEnv* env,
+                   int expectNum,
+                   bool distinguishMultiVer = false) {
+    int totalCount = 0;
+    // partId start 1
+    std::unique_ptr<kvstore::KVIterator> iter;
+    VertexID    lastSrcVertexId = "";
+    VertexID    lastDstVertexId = "";
+    EdgeRanking lastRank = 0;
+
+    for (int part = 1; part <= parts; part++) {
+        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
+        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+
+        while (iter && iter->valid()) {
+            auto key = iter->key();
+            if (NebulaKeyUtils::isEdge(spaceVidLen, key)) {
+                auto eType = NebulaKeyUtils::getEdgeType(spaceVidLen, key);
+                if (eType == type) {
+                    if (distinguishMultiVer) {
+                        auto source = NebulaKeyUtils::getSrcId(spaceVidLen, key).str();
+                        auto ranking = NebulaKeyUtils::getRank(spaceVidLen, key);
+                        auto destination = NebulaKeyUtils::getDstId(spaceVidLen, key).str();
+                        if (source == lastSrcVertexId &&
+                            ranking == lastRank &&
+                            destination == lastDstVertexId) {
+                            // Multi version
+                        } else {
+                            lastSrcVertexId = source;
+                            lastRank = ranking;
+                            lastDstVertexId = destination;
+                            totalCount++;
+                        }
+                    } else {
+                        totalCount++;
+                    }
                 }
             }
+            iter->next();
         }
-
-        folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
-        baton.wait();
     }
+
+    ASSERT_EQ(expectNum, totalCount);
 }
 
-void mockTTLDataExpired(kvstore::KVStore* kv) {
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            // one tag data, the record data will always expire
-            auto tagId = 3001;
-            auto tagkey = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-            RowWriter tagwriter;
-            for (int64_t numInt = 0; numInt < 3; numInt++) {
-                // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
-                // With TTL, the record data will always expire
-                tagwriter << numInt + 1546272000;
-            }
-            for (auto numString = 3; numString < 6; numString++) {
-                tagwriter << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto tagval = tagwriter.encode();
-            data.emplace_back(std::move(tagkey), std::move(tagval));
+// statis index record count
+void checkIndexData(GraphSpaceID spaceId,
+                    IndexID indexId,
+                    int parts,
+                    StorageEnv* env,
+                    int expectNum) {
+    int totalCount = 0;
+    // partId start 1
+    std::unique_ptr<kvstore::KVIterator> iter;
 
-            // one edge data, the record data will always expire
-            auto edgeType = 101;
-            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max() - 1);
-            RowWriter edgewriter;
-            for (int64_t numInt = 0; numInt < 10; numInt++) {
-                // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
-                // With TTL, the record data will always expire
-                edgewriter << numInt + 1546272000;
-            }
-            for (auto numString = 10; numString < 20; numString++) {
-                edgewriter << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto edgeval = edgewriter.encode();
-            data.emplace_back(std::move(edgekey), std::move(edgeval));
+    for (int part = 1; part <= parts; part++) {
+        auto prefix = IndexKeyUtils::indexPrefix(part, indexId);
+        auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
+        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+
+        while (iter && iter->valid()) {
+            totalCount++;
+            iter->next();
         }
-
-        folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
-        baton.wait();
     }
+
+    ASSERT_EQ(expectNum, totalCount);
 }
 
-void mockTTLDataNotExpired(kvstore::KVStore* kv) {
-    auto tagId = 3001;
-    auto edgeType = 101;
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            // one tag data, the record data will never expire
-            auto tagkey = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-            RowWriter tagwriter;
-            for (int64_t numInt = 0; numInt < 3; numInt++) {
-                // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
-                // With TTL, the record data will never expire
-                tagwriter << numInt + 4102416000;
-            }
-            for (auto numString = 3; numString < 6; numString++) {
-                tagwriter << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto tagval = tagwriter.encode();
-            data.emplace_back(std::move(tagkey), std::move(tagval));
+TEST(CompactionFilterTest, InvalidSchemaFilterTest) {
+    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
 
-            // one edge data, the record data will never expire
-            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max() - 1);
-            RowWriter edgewriter;
-            for (int64_t numInt = 0; numInt < 10; numInt++) {
-                // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
-                // With TTL, the record data will never expire
-                edgewriter << numInt + 4102416000;
-            }
-            for (auto numString = 10; numString < 20; numString++) {
-                edgewriter << folly::stringPrintf("string_col_%d", numString);
-            }
-            auto edgeval = edgewriter.encode();
-            data.emplace_back(std::move(edgekey), std::move(edgeval));
-        }
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
 
-        folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
-        baton.wait();
-    }
-}
+    GraphSpaceID spaceId = 1;
+    // remove players data, tagId is 1
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
 
-void mockIndexData(kvstore::KVStore* kv) {
-    auto tagId = 3001;
-    auto edgeType = 101;
-    IndexValues values;
-    values.emplace_back(nebula::cpp2::SupportedType::STRING, "col1");
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            auto tiKey = NebulaKeyUtils::vertexIndexKey(partId, tagId + 1000, vertexId, values);
-            data.emplace_back(std::move(tiKey), "");
-            /**
-             * pseudo vertex index
-             */
-            auto ptiKey = NebulaKeyUtils::vertexIndexKey(partId, tagId + 1001, vertexId, values);
-            data.emplace_back(std::move(ptiKey), "");
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts));
 
-            auto eiKey = NebulaKeyUtils::edgeIndexKey(partId, edgeType + 100,
-                                                      vertexId, 0, 10001, values);
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 0
+    checkTagVertexData(spaceVidLen, spaceId, tagId, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
 
-            data.emplace_back(std::move(eiKey), "");
-            /**
-             * pseudo edge index
-             */
-            auto peiKey = NebulaKeyUtils::edgeIndexKey(partId, edgeType + 101,
-                                                       vertexId, 0, 10001, values);
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
 
-            data.emplace_back(std::move(peiKey), "");
-        }
-
-        folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
-        baton.wait();
-    }
-}
-
-TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
-    fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
-    auto schemaMan = TestUtils::mockSchemaMan();
-    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         6,
-                                         {0, network::NetworkUtils::getAvailablePort()},
-                                         nullptr,
-                                         false,
-                                         std::move(cffBuilder)));
-    LOG(INFO) << "Write some data";
-    mockData(kv.get());
     LOG(INFO) << "Let's delete one tag";
-    auto* adhoc = static_cast<AdHocSchemaManager*>(schemaMan.get());
-    adhoc->removeTagSchema(0, 3001);
+    auto* adhoc = dynamic_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
+    adhoc->removeTagSchema(spaceId, tagId);
 
-    auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
-    ns->compact(0);
-    LOG(INFO) << "Finish compaction, check data...";
-
-    auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check tag " << partId << ":" << vertexId << ":" << tagId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            checkTag(partId, vertexId, 3001, 0);
-            for (TagID tagId = 3002; tagId < 3010; tagId++) {
-                checkTag(partId, vertexId, tagId, 1);
-            }
-            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
-                checkEdge(partId, vertexId, 101, 0, dstId, 1);
-            }
-            for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
-                checkEdge(partId, vertexId, -101, 0, srcId, 1);
-            }
-        }
-    }
-}
-
-
-TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
-    fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
-    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         6,
-                                         {0, network::NetworkUtils::getAvailablePort()},
-                                         nullptr,
-                                         false,
-                                         std::move(cffBuilder)));
-    LOG(INFO) << "Write some data";
-    mockTTLDataExpired(kv.get());
-
-    auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
-    ns->compact(0);
-    LOG(INFO) << "Finish compaction, check data...";
-
-    auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check tag " << partId << ":" << vertexId << ":" << tagId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            checkTag(partId, vertexId, 3001, 0);
-            checkEdge(partId, vertexId, 101, 0, 10001, 0);
-        }
-    }
-}
-
-
-TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
-    fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
-    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                                              nullptr));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         6,
-                                         {0, network::NetworkUtils::getAvailablePort()},
-                                         nullptr,
-                                         false,
-                                         std::move(cffBuilder)));
-    LOG(INFO) << "Write some data";
-    mockTTLDataNotExpired(kv.get());
-
-    auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
-    ns->compact(0);
-    LOG(INFO) << "Finish compaction, check data...";
-
-    auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::vertexKey(partId,
-                                                vertexId,
-                                                tagId,
-                                                0);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check tag " << partId << ":" << vertexId << ":" << tagId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
-                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
-        auto start = NebulaKeyUtils::edgeKey(partId,
-                                             vertexId,
-                                             edge,
-                                             rank,
-                                             dstId,
-                                             0);
-        auto end = NebulaKeyUtils::edgeKey(partId,
-                                           vertexId,
-                                           edge,
-                                           rank,
-                                           dstId,
-                                           std::numeric_limits<int>::max());
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
-                << edge << ":" << rank << ":" << dstId;
-        ASSERT_EQ(expectedNum, num);
-    };
-
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            checkTag(partId, vertexId, 3001, 1);
-            checkEdge(partId, vertexId, 101, 0, 10001, 1);
-        }
-    }
-}
-
-TEST(NebulaCompactionFilterTest, DropIndexTest) {
-    fs::TempDir rootPath("/tmp/DropIndexTest.XXXXXX");
-    GraphSpaceID spaceId = 0;
-    auto schemaMan = TestUtils::mockSchemaMan(spaceId);
-    auto indexMan = TestUtils::mockIndexMan(spaceId, 3001, 3002, 101, 102);
-
-    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
-        new StorageCompactionFilterFactoryBuilder(schemaMan.get(),
-                                                  indexMan.get()));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
-                                         6,
-                                         {0, network::NetworkUtils::getAvailablePort()},
-                                         nullptr,
-                                         false,
-                                         std::move(cffBuilder)));
-    LOG(INFO) << "Write some data";
-    mockIndexData(kv.get());
-
-    auto* ns = dynamic_cast<kvstore::NebulaStore*>(kv.get());
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
     ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check data...";
+    // check players data, data count is 0
+    checkTagVertexData(spaceVidLen, spaceId, tagId, parts, env, 0);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+}
+
+
+TEST(CompactionFilterTest, MutliVersionsFilterTest) {
+    FLAGS_enable_multi_versions = true;
+
+    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    // Edge contains multi version
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts, false, true, true, 2));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check serve positive data, data count is 334
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 334);
+    // check teammates positive data, data count is 36
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 36);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check data...";
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    FLAGS_enable_multi_versions = false;
+}
+
+
+TEST(CompactionFilterTest, TTLFilterDataExpiredTest) {
+    FLAGS_mock_ttl_col = true;
+    FLAGS_mock_ttl_duration = 1;
+
+    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // wait ttl data Expire
+    sleep(FLAGS_mock_ttl_duration + 1);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check data...";
+    // check players data, data count is 0
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 0);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 0
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 0);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    FLAGS_mock_ttl_col = false;
+}
+
+
+TEST(CompactionFilterTest, TTLFilterDataNotExpiredTest) {
+    FLAGS_mock_ttl_col = true;
+    FLAGS_mock_ttl_duration = 1800;
+
+    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    FLAGS_mock_ttl_col = false;
+}
+
+TEST(CompactionFilterTest, DropIndexTest) {
+    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    // Add tag/edge data and index data
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts, true));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 51);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 167);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
+
+    // drop player indexId 1
+    LOG(INFO) << "Let's delete one tag index";
+    IndexID indexId = 1;
+    auto* adIndex = dynamic_cast<mock::AdHocIndexManager*>(env->indexMan_);
+    adIndex->removeTagIndex(spaceId, indexId);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
     LOG(INFO) << "Finish compaction, check index data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
 
-    auto checkIndex = [&](PartitionID partId, IndexID indexId, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::indexPrefix(partId, indexId);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
-        int32_t num = 0;
-        while (iter->valid()) {
-            iter->next();
-            num++;
-        }
-        LOG(INFO) << "Check index " << partId << ":" << indexId;
-        ASSERT_EQ(expectedNum, num);
-    };
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
 
-    for (PartitionID partId = 0; partId < 3; partId++) {
-        /**
-         * index exists
-         */
-        checkIndex(partId, 3001 + 1000, 10);
-        checkIndex(partId, 101 + 100, 10);
-        /**
-         * index dropped
-         */
-        checkIndex(partId, 3001 + 1001, 0);
-        checkIndex(partId, 101 + 101, 0);
-    }
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 0);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 167);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
 }
 
 }  // namespace storage
@@ -474,3 +409,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
+

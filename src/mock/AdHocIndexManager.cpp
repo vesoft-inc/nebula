@@ -33,6 +33,21 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
     }
 }
 
+void AdHocIndexManager::removeTagIndex(GraphSpaceID space,
+                                       IndexID indexID) {
+    folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
+    auto iter = tagIndexes_.find(space);
+    if (iter != tagIndexes_.end()) {
+        std::vector<std::shared_ptr<IndexItem>>::iterator iItemIter = iter->second.begin();
+        for (; iItemIter != iter->second.end(); iItemIter++) {
+            if ((*iItemIter)->index_id == indexID) {
+                iter->second.erase(iItemIter);
+                return;
+            }
+        }
+    }
+}
+
 void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
                                      EdgeType edgeType,
                                      IndexID indexID,

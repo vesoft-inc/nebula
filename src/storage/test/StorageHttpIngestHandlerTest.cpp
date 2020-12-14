@@ -9,10 +9,11 @@
 #include "common/http/HttpClient.h"
 #include "common/webservice/Router.h"
 #include "common/webservice/WebService.h"
-#include "storage/test/TestUtils.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>
 #include <rocksdb/sst_file_writer.h>
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
 
 namespace nebula {
 namespace storage {
@@ -26,7 +27,8 @@ public:
         VLOG(1) << "Starting web service...";
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path(), 1);
+        cluster_ = std::make_unique<mock::MockCluster>();
+        cluster_->initStorageKV(rootPath_->path());
 
         auto partPath = folly::stringPrintf("%s/disk1/nebula/0/download/0", rootPath_->path());
         ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
@@ -51,7 +53,7 @@ public:
         auto& router = webSvc_->router();
         router.get("/ingest").handler([this](nebula::web::PathParams&&) {
             auto handler = new storage::StorageHttpIngestHandler();
-            handler->init(kv_.get());
+            handler->init(cluster_->storageEnv_->kvstore_);
             return handler;
         });
         auto webStatus = webSvc_->start();
@@ -59,7 +61,7 @@ public:
     }
 
     void TearDown() override {
-        kv_.reset();
+        cluster_.reset();
         rootPath_.reset();
         webSvc_.reset();
         VLOG(1) << "Web service stopped";
@@ -67,13 +69,13 @@ public:
 
 private:
     std::unique_ptr<fs::TempDir> rootPath_;
-    std::unique_ptr<kvstore::KVStore> kv_;
+    std::unique_ptr<mock::MockCluster> cluster_;
     std::unique_ptr<WebService> webSvc_;
 };
 
 TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
     {
-        auto url = "/ingest?space=0";
+        auto url = "/ingest?space=1";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
@@ -81,7 +83,7 @@ TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
         ASSERT_EQ("SSTFile ingest successfully", resp.value());
     }
     {
-        auto url = "/ingest?space=1";
+        auto url = "/ingest?space=0";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                                            FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);

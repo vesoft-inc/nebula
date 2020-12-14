@@ -98,7 +98,8 @@ public:
                        SchemaVer schemaVerCount = 1,
                        bool hasProp = true,
                        bool hasListener = false,
-                       const std::vector<meta::cpp2::FTClient>& clients = {});
+                       const std::vector<meta::cpp2::FTClient>& clients = {},
+                       bool needCffBuilder = false);
 
     std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers();
 

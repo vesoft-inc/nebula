@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/meta/NebulaSchemaProvider.h"
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
 #include "utils/NebulaKeyUtils.h"

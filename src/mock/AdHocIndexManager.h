@@ -55,6 +55,8 @@ public:
     void init(nebula::meta::MetaClient *) override {
     }
 
+    void removeTagIndex(GraphSpaceID space, IndexID indexID);
+
 protected:
     folly::RWSpinLock tagIndexLock_;
     folly::RWSpinLock edgeIndexLock_;

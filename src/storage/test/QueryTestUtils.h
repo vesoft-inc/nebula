@@ -111,7 +111,8 @@ public:
                              int32_t totalParts,
                              bool enableIndex = false,
                              bool indexWithProp = true,
-                             bool schemaWithProp = true) {
+                             bool schemaWithProp = true,
+                             int vers = 1) {
         GraphSpaceID spaceId = 1;
         auto status = env->schemaMan_->getSpaceVidLen(spaceId);
         if (!status.ok()) {
@@ -126,24 +127,28 @@ public:
         folly::Baton<true, std::atomic> baton;
         for (const auto& edge : edges) {
             PartitionID partId = (hash(edge.srcId_) % totalParts) + 1;
-            auto ver = FLAGS_enable_multi_versions ?
-                       std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() :
-                       0L;
-            auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
-                                                edge.rank_, edge.dstId_, folly::Endian::big(ver));
-            auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
-            if (!schema) {
-                LOG(ERROR) << "Invalid edge " << edge.type_;
-                return false;
-            }
 
             std::vector<Value> values;
-            if (schemaWithProp) {
-                values = edge.props_;
-            }  else {
-                EXPECT_FALSE(indexWithProp);
+            for (int i = 0; i < vers; i++) {
+                auto ver = FLAGS_enable_multi_versions ?
+                    std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() - i:
+                    0L;
+                auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
+                                                   edge.rank_, edge.dstId_,
+                                                   folly::Endian::big(ver));
+                auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
+                if (!schema) {
+                    LOG(ERROR) << "Invalid edge " << edge.type_;
+                    return false;
+                }
+
+                if (schemaWithProp) {
+                    values = edge.props_;
+                }  else {
+                    EXPECT_FALSE(indexWithProp);
+                }
+                EXPECT_TRUE(encode(schema.get(), key, values, data));
             }
-            EXPECT_TRUE(encode(schema.get(), key, values, data));
 
             if (enableIndex) {
                 if (edge.type_ == 102 || edge.type_ == 101) {
