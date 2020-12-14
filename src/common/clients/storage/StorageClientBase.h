@@ -134,11 +134,26 @@ protected:
             >
     folly::Future<StatusOr<Response>> getResponse(
             folly::EventBase* evb,
-            std::pair<HostAddr, Request> request,
-            RemoteFunc remoteFunc,
+            std::pair<HostAddr, Request>&& request,
+            RemoteFunc&& remoteFunc,
             folly::Promise<StatusOr<Response>> pro = folly::Promise<StatusOr<Response>>(),
             std::size_t retry = 0,
             std::size_t retryLimit = 3);
+
+    template<class Request,
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(ClientType* client, const Request&)
+                >::type::value_type
+            >
+    void getResponseImpl(
+            folly::EventBase* evb,
+            std::pair<HostAddr, Request> request,
+            RemoteFunc remoteFunc,
+            folly::Promise<StatusOr<Response>> pro,
+            std::size_t retry,
+            std::size_t retryLimit);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
