@@ -22,6 +22,7 @@ using nebula::fs::TempDir;
 class StorageHttpAdminHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
+        FLAGS_ws_ip = "127.0.0.1";
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpAdminHandler.XXXXXX");

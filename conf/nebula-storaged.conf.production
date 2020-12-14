@@ -15,18 +15,20 @@
 --logbufsecs=0
 
 ########## networking ##########
-# Meta server address
+# Comma separated Meta server addresses
 --meta_server_addrs=192.168.2.1:45500
-# Local ip
+# Local IP used to identify the nebula-storaged process.
+# Change it to an address other than loopback if the service is distributed or
+# will be accessed remotely.
 --local_ip=192.168.2.3
 # Storage daemon listening port
---port=44500
+--port=9779
 # HTTP service ip
---ws_ip=192.168.2.3
+--ws_ip=0.0.0.0
 # HTTP service port
---ws_http_port=12000
+--ws_http_port=19779
 # HTTP2 service port
---ws_h2_port=12002
+--ws_h2_port=19780
 # heartbeat with meta service
 --heartbeat_interval_secs=10
 
@@ -59,7 +61,7 @@
 #   * lz4 to gain more CPU performance, with the same compression ratio with snappy
 #   * zstd to occupy less disk space
 #   * lz4hc for the read-heavy write-light scenario
---rocksdb_compression=snappy
+--rocksdb_compression=lz4
 
 # Set different compressions for different levels
 # For example, if --rocksdb_compression is snappy,

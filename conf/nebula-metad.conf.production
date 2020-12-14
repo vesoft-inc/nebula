@@ -15,18 +15,20 @@
 --logbufsecs=0
 
 ########## networking ##########
-# Meta Server Address
---meta_server_addrs=192.168.2.1:45500
-# Local ip
+# Comma separated Meta Server addresses
+--meta_server_addrs=192.168.2.1:9559
+# Local IP used to identify the nebula-metad process.
+# Change it to an address other than loopback if the service is distributed or
+# will be accessed remotely.
 --local_ip=192.168.2.1
 # Meta daemon listening port
---port=45500
+--port=9559
 # HTTP service ip
---ws_ip=192.168.2.1
+--ws_ip=0.0.0.0
 # HTTP service port
---ws_http_port=11000
+--ws_http_port=19559
 # HTTP2 service port
---ws_h2_port=11002
+--ws_h2_port=19560
 
 ########## storage ##########
 # Root data path, here should be only single path for metad
