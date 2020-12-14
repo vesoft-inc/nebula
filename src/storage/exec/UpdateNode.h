@@ -167,6 +167,7 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
+        planContext_->env_->onFlyingRequest_.fetch_add(1);
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
@@ -209,7 +210,6 @@ public:
                 }
             },
             [&ret, &baton, this] (kvstore::ResultCode code) {
-                planContext_->env_->onFlyingRequest_.fetch_sub(1);
                 if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
                     this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                     ret = this->exeResult_;
@@ -219,7 +219,7 @@ public:
                 baton.post();
             });
         baton.wait();
-
+        planContext_->env_->onFlyingRequest_.fetch_sub(1);
         return ret;
     }
 
@@ -317,7 +317,6 @@ public:
 
     folly::Optional<std::string>
     updateAndWriteBack(const PartitionID partId, const VertexID vId) {
-        planContext_->env_->onFlyingRequest_.fetch_add(1);
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
             auto updateExp = Expression::decode(updateProp.get_value());
@@ -464,6 +463,7 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
+        planContext_->env_->onFlyingRequest_.fetch_add(1);
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
@@ -509,7 +509,6 @@ public:
         };
 
         kvstore::KVCallback cb = [&ret, &baton, this] (kvstore::ResultCode code) {
-            planContext_->env_->onFlyingRequest_.fetch_sub(1);
             if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
                 this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
                 ret = this->exeResult_;
@@ -535,6 +534,7 @@ public:
                 planContext_->spaceId_, partId, std::move(op), std::move(cb));
             baton.wait();
         }
+        planContext_->env_->onFlyingRequest_.fetch_sub(1);
         return ret;
     }
 
@@ -647,7 +647,6 @@ public:
 
     folly::Optional<std::string>
     updateAndWriteBack(const PartitionID partId, const cpp2::EdgeKey& edgeKey) {
-        planContext_->env_->onFlyingRequest_.fetch_add(1);
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
             auto updateExp = Expression::decode(updateProp.get_value());
