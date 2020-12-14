@@ -48,7 +48,8 @@ def result_should_be_relax_cmp(result, nba_space):
     ds = dataset(table(result))
     dsw = DataSetWrapper(ds)
     dscmp = DataSetWrapperComparator(strict=False, order=False)
-    assert dscmp(rs._data_set_wrapper, dsw)
+    assert dscmp(rs._data_set_wrapper, dsw), \
+        f"Response: {str(rs)} vs. Expected: {str(dsw)}"
 
 
 @then("no side effects")

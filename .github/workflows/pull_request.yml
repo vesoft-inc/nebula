@@ -127,7 +127,7 @@ jobs:
       - name: Pytest
         env:
           NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
-        run: python3 -m pytest --dist=loadfile -n8 --rm_dir=false -m "not skip" --build_dir="$PWD/../build"
+        run: python3 -m pytest --dist=loadfile -n8 --rm_dir=false -m "not skip"
         timeout-minutes: 25
         working-directory: tests
       - name: Upload logs

@@ -56,7 +56,7 @@ def pytest_addoption(parser):
 
     parser.addoption("--build_dir",
                      dest="build_dir",
-                     default="",
+                     default=f"{CURR_PATH}/../build",
                      help="Nebula Graph CMake build directory")
 
 

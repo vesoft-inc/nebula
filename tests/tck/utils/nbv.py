@@ -346,7 +346,7 @@ def p_edge_spec(p):
     src = None
     dst = None
     props = None
-    type = 1
+    etype = 1
 
     if len(p) == 5:
         rank = p[2]
@@ -362,13 +362,13 @@ def p_edge_spec(p):
         src = p[2].get_sVal()
         dst = p[5].get_sVal()
         if p[3] == '<' and p[4] == '-':
-            type = -1
+            etype = -1
         props = p[6]
     elif len(p) == 9:
         src = p[2].get_sVal()
         dst = p[5].get_sVal()
         if p[3] == '<' and p[4] == '-':
-            type = -1
+            etype = -1
         rank = p[6]
         props = p[7]
     elif len(p) == 10:
@@ -376,14 +376,14 @@ def p_edge_spec(p):
         src = p[4].get_sVal()
         dst = p[7].get_sVal()
         if p[5] == '<' and p[6] == '-':
-            type = -1
+            etype = -1
         props = p[8]
     elif len(p) == 11:
         name = p[3]
         src = p[4].get_sVal()
         dst = p[7].get_sVal()
         if p[5] == '<' and p[6] == '-':
-            type = -1
+            etype = -1
         rank = p[8]
         props = p[9]
 
@@ -392,7 +392,7 @@ def p_edge_spec(p):
     e.src = src
     e.dst = dst
     e.props = props
-    e.type = type
+    e.type = etype
 
     p[0] = Value(eVal=e)
 
