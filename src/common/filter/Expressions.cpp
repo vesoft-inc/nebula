@@ -676,7 +676,7 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
         }
     }
 
-    return value.status();
+    return value;
 }
 
 Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor) const {
