@@ -118,6 +118,14 @@ public:
         return std::vector<PropPair>(aliasProps_.begin(), aliasProps_.end());
     }
 
+    std::unordered_set<std::string> edgeNamesInExpr() const {
+        std::unordered_set<std::string> edgeNames;
+        for (auto& kv : aliasProps_) {
+            edgeNames.emplace(kv.first);
+        }
+        return edgeNames;
+    }
+
     using VariableProp = std::pair<std::string, std::string>;
 
     std::vector<VariableProp> variableProps() const {
