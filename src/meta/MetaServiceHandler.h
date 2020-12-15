@@ -210,6 +210,8 @@ public:
     folly::Future<cpp2::AdminJobResp>
     future_runAdminJob(const cpp2::AdminJobReq& req) override;
 
+    folly::Future<cpp2::CreateBackupResp>
+    future_createBackup(const cpp2::CreateBackupReq& req) override;
     /**
      * Zone manager
      **/
@@ -258,6 +260,8 @@ public:
 
     folly::Future<cpp2::ListListenerResp>
     future_listListener(const cpp2::ListListenerReq& req) override;
+
+    folly::Future<cpp2::ExecResp> future_restoreMeta(const cpp2::RestoreMetaReq& req) override;
 
     folly::Future<cpp2::GetStatisResp>
     future_getStatis(const cpp2::GetStatisReq& req) override;

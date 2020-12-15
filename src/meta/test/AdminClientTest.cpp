@@ -83,9 +83,19 @@ public:
         RETURN_OK(req);
     }
 
-    folly::Future<storage::cpp2::AdminExecResp>
-    future_createCheckpoint(const storage::cpp2::CreateCPRequest& req) override {
-        RETURN_OK(req);
+    folly::Future<storage::cpp2::CreateCPResp> future_createCheckpoint(
+        const storage::cpp2::CreateCPRequest& req) override {
+        UNUSED(req);
+        folly::Promise<storage::cpp2::CreateCPResp> pro;
+        auto f = pro.getFuture();
+        storage::cpp2::CreateCPResp resp;
+        storage::cpp2::ResponseCommon result;
+        std::vector<storage::cpp2::PartitionResult> partRetCode;
+        result.set_failed_parts(partRetCode);
+        resp.set_result(result);
+        resp.set_path("snapshot_path");
+        pro.setValue(std::move(resp));
+        return f;
     }
 
     folly::Future<storage::cpp2::AdminExecResp>

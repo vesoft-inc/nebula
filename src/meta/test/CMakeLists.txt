@@ -325,3 +325,35 @@ nebula_add_test(
         wangle
         gtest
 )
+
+nebula_add_test(
+    NAME
+        create_backup_test
+    SOURCES
+        CreateBackupProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        restore_test
+    SOURCES
+        RestoreProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)

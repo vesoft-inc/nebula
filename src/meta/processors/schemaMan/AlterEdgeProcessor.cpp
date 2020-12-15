@@ -12,6 +12,7 @@ namespace meta {
 void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(spaceId, req.get_edge_name());
     if (!ret.ok()) {

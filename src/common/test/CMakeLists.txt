@@ -9,6 +9,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
+        $<TARGET_OBJECTS:common_common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -25,6 +26,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
+        $<TARGET_OBJECTS:common_common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -41,6 +43,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
+        $<TARGET_OBJECTS:common_common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

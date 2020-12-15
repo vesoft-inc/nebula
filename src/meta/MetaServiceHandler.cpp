@@ -50,6 +50,7 @@
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
+#include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/jobMan/GetStatisProcessor.h"
 #include "meta/processors/jobMan/ListTagIndexStatusProcessor.h"
 #include "meta/processors/jobMan/ListEdgeIndexStatusProcessor.h"
@@ -64,6 +65,7 @@
 #include "meta/processors/zoneMan/ListGroupsProcessor.h"
 #include "meta/processors/zoneMan/UpdateGroupProcessor.h"
 #include "meta/processors/listenerMan/ListenerProcessor.h"
+#include "meta/processors/admin/RestoreProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -409,6 +411,12 @@ MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::CreateBackupResp>
+MetaServiceHandler::future_createBackup(const cpp2::CreateBackupReq& req) {
+    auto* processor = CreateBackupProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_addZone(const cpp2::AddZoneReq &req) {
     auto* processor = AddZoneProcessor::instance(kvstore_);
@@ -496,6 +504,12 @@ MetaServiceHandler::future_removeListener(const cpp2::RemoveListenerReq& req) {
 folly::Future<cpp2::ListListenerResp>
 MetaServiceHandler::future_listListener(const cpp2::ListListenerReq& req) {
     auto* processor = ListListenerProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_restoreMeta(const cpp2::RestoreMetaReq& req) {
+    auto* processor = RestoreProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

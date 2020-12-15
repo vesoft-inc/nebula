@@ -11,6 +11,7 @@
 #include "common/base/Status.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "common/base/ErrorOr.h"
 
 namespace nebula {
 namespace kvstore {
@@ -93,7 +94,6 @@ public:
     // Remove partId from current storage engine.
     virtual void removePart(PartitionID partId) = 0;
 
-
     // Return all partIds current storage engine holds.
     virtual std::vector<PartitionID> allParts() = 0;
 
@@ -117,11 +117,16 @@ public:
 
     virtual ResultCode createCheckpoint(const std::string& name) = 0;
 
+    // fo meta
+    virtual ErrorOr<ResultCode, std::string> backupTable(
+        const std::string& path,
+        const std::string& tablePrefix,
+        std::function<bool(const folly::StringPiece& key)> filter) = 0;
+
 protected:
     GraphSpaceID spaceId_;
 };
 
-}  // namespace kvstore
-}  // namespace nebula
-#endif  // KVSTORE_KVENGINE_H_
-
+}   // namespace kvstore
+}   // namespace nebula
+#endif   // KVSTORE_KVENGINE_H_

@@ -570,10 +570,10 @@ TEST(NebulaStoreTest, CheckpointTest) {
     });
     baton.wait();
 
-    ResultCode ret = store->createCheckpoint(1, "test_checkpoint");
-    ASSERT_EQ(ResultCode::SUCCEEDED, ret);
+    auto ret = store->createCheckpoint(1, "test_checkpoint");
+    ASSERT_TRUE(ret.isRightType());
     ret = store->createCheckpoint(2, "test_checkpoint");
-    ASSERT_EQ(ResultCode::SUCCEEDED, ret);
+    ASSERT_TRUE(ret.isRightType());
 }
 
 TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
@@ -713,7 +713,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
     for (int i = 0; i < replicas; i++) {
         auto ret = stores[i]->createCheckpoint(0, "snapshot");
-        ASSERT_EQ(ResultCode::SUCCEEDED, ret);
+        ASSERT_TRUE(ret.isRightType());
     }
 
     sleep(FLAGS_raft_heartbeat_interval_secs);

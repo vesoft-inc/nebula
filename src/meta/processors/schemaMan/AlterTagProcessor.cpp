@@ -12,6 +12,7 @@ namespace meta {
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(spaceId, req.get_tag_name());
     if (!ret.ok()) {

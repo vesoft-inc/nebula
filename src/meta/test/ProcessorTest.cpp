@@ -44,6 +44,8 @@
 #include "meta/processors/zoneMan/UpdateGroupProcessor.h"
 #include "meta/processors/zoneMan/AddZoneProcessor.h"
 #include "meta/processors/zoneMan/ListZonesProcessor.h"
+#include "meta/processors/admin/CreateBackupProcessor.h"
+
 
 DECLARE_int32(expired_threshold_sec);
 

@@ -29,8 +29,6 @@ private:
                                      AdminClient* client)
             : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
-    std::string genSnapshotName();
-
 private:
     AdminClient* client_;
 };

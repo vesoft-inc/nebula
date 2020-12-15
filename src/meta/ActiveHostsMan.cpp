@@ -39,8 +39,8 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
 }
 
 std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
-                                                     int32_t expiredTTL,
-                                                     cpp2::HostRole role) {
+                                                                      int32_t expiredTTL,
+                                                                      cpp2::HostRole role) {
     std::vector<HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -54,11 +54,14 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info = HostInfo::decode(iter->val());
-        if ((info.role_ == role) && (now - info.lastHBTimeInMilliSec_ < threshold)) {
-            hosts.emplace_back(host.host, host.port);
+        if (info.role_ == role) {
+            if (now - info.lastHBTimeInMilliSec_ < threshold) {
+                hosts.emplace_back(host.host, host.port);
+            }
         }
         iter->next();
     }
+
     return hosts;
 }
 

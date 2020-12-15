@@ -14,24 +14,22 @@ namespace meta {
 
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     // check the index rebuild. not allowed to create snapshot when index rebuilding.
-    auto prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(ret));
+
+    auto result = MetaServiceUtils::isIndexRebuilding(kvstore_);
+    if (result == folly::none) {
+        handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
         return;
     }
-    while (iter->valid()) {
-        if (iter->val() == "RUNNING") {
-            LOG(ERROR) << "Index is rebuilding, not allowed to block write.";
-            handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
-            onFinished();
-            return;
-        }
-        iter->next();
+
+    if (result.value()) {
+        LOG(ERROR) << "Index is rebuilding, not allowed to create snapshot.";
+        handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+        onFinished();
+        return;
     }
-    auto snapshot = genSnapshotName();
+
+    auto snapshot = folly::format("SNAPSHOT_{}", MetaServiceUtils::genTimestampStr()).str();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
@@ -69,9 +67,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
     // step 3 : Create checkpoint for all storage engines and meta engine.
     auto csRet = Snapshot::instance(kvstore_,  client_)->createSnapshot(snapshot);
-    if (csRet != cpp2::ErrorCode::SUCCEEDED) {
+    if (csRet.isLeftType()) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
-        handleErrorCode(csRet);
+        handleErrorCode(csRet.left());
         cancelWriteBlocking();
         onFinished();
         return;
@@ -88,7 +86,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
     // step 5 : create checkpoint for meta server.
     auto meteRet = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
-    if (meteRet != kvstore::ResultCode::SUCCEEDED) {
+    if (csRet.isLeftType()) {
         LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
         handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
@@ -110,13 +108,6 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
     LOG(INFO) << "Create snapshot " << snapshot << " successfully";
     onFinished();
-}
-
-std::string CreateSnapshotProcessor::genSnapshotName() {
-    char ch[60];
-    std::time_t t = std::time(nullptr);
-    std::strftime(ch, sizeof(ch), "%Y_%m_%d_%H_%M_%S", localtime(&t));
-    return folly::stringPrintf("SNAPSHOT_%s", ch);
 }
 
 cpp2::ErrorCode CreateSnapshotProcessor::cancelWriteBlocking() {

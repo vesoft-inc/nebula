@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
-#include "common/fs/FileUtils.h"
+#include "kvstore/RocksEngine.h"
 #include <folly/String.h>
 #include <rocksdb/convenience.h>
-#include "kvstore/RocksEngine.h"
+#include "common/base/Base.h"
+#include "common/fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
 #include "utils/NebulaKeyUtils.h"
@@ -16,8 +16,8 @@
 namespace nebula {
 namespace kvstore {
 
-using fs::FileUtils;
 using fs::FileType;
+using fs::FileUtils;
 
 namespace {
 
@@ -65,8 +65,7 @@ public:
     }
 };
 
-}  // Anonymous namespace
-
+}   // Anonymous namespace
 
 /***************************************
  *
@@ -77,8 +76,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
-        : KVEngine(spaceId)
-        , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
+    : KVEngine(spaceId), dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         if (!FileUtils::makeDir(path)) {
@@ -119,7 +117,6 @@ std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
     return std::make_unique<RocksWriteBatch>();
 }
 
-
 ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
                                          bool disableWAL,
                                          bool sync) {
@@ -135,7 +132,6 @@ ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
     return ResultCode::ERR_UNKNOWN;
 }
 
-
 ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     rocksdb::ReadOptions options;
     rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
@@ -150,7 +146,6 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     }
 }
 
-
 std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
                                           std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
@@ -161,19 +156,17 @@ std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
 
     auto status = db_->MultiGet(options, slices, values);
     std::vector<Status> ret;
-    std::transform(status.begin(), status.end(), std::back_inserter(ret),
-                   [] (const auto& s) {
-                       if (s.ok()) {
-                           return Status::OK();
-                       } else if (s.IsNotFound()) {
-                           return Status::KeyNotFound();
-                       } else {
-                           return Status::Error();
-                       }
-                   });
+    std::transform(status.begin(), status.end(), std::back_inserter(ret), [](const auto& s) {
+        if (s.ok()) {
+            return Status::OK();
+        } else if (s.IsNotFound()) {
+            return Status::KeyNotFound();
+        } else {
+            return Status::Error();
+        }
+    });
     return ret;
 }
-
 
 ResultCode RocksEngine::range(const std::string& start,
                               const std::string& end,
@@ -188,7 +181,6 @@ ResultCode RocksEngine::range(const std::string& start,
     return ResultCode::SUCCEEDED;
 }
 
-
 ResultCode RocksEngine::prefix(const std::string& prefix,
                                std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
@@ -200,7 +192,6 @@ ResultCode RocksEngine::prefix(const std::string& prefix,
     storageIter->reset(new RocksPrefixIter(iter, prefix));
     return ResultCode::SUCCEEDED;
 }
-
 
 ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
                                         const std::string& prefix,
@@ -215,7 +206,6 @@ ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
     return ResultCode::SUCCEEDED;
 }
 
-
 ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
@@ -227,7 +217,6 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
         return ResultCode::ERR_UNKNOWN;
     }
 }
-
 
 ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     rocksdb::WriteBatch updates(FLAGS_rocksdb_batch_size);
@@ -245,7 +234,6 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     }
 }
 
-
 ResultCode RocksEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
@@ -257,7 +245,6 @@ ResultCode RocksEngine::remove(const std::string& key) {
         return ResultCode::ERR_UNKNOWN;
     }
 }
-
 
 ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     rocksdb::WriteBatch deletes(FLAGS_rocksdb_batch_size);
@@ -275,9 +262,7 @@ ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     }
 }
 
-
-ResultCode RocksEngine::removeRange(const std::string& start,
-                                    const std::string& end) {
+ResultCode RocksEngine::removeRange(const std::string& start, const std::string& end) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
@@ -301,17 +286,15 @@ void RocksEngine::addPart(PartitionID partId) {
     }
 }
 
-
 void RocksEngine::removePart(PartitionID partId) {
-     rocksdb::WriteOptions options;
-     options.disableWAL = FLAGS_rocksdb_disable_wal;
-     auto status = db_->Delete(options, partKey(partId));
-     if (status.ok()) {
-         partsNum_--;
-         CHECK_GE(partsNum_, 0);
-     }
+    rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
+    auto status = db_->Delete(options, partKey(partId));
+    if (status.ok()) {
+        partsNum_--;
+        CHECK_GE(partsNum_, 0);
+    }
 }
-
 
 std::vector<PartitionID> RocksEngine::allParts() {
     std::unique_ptr<KVIterator> iter;
@@ -336,11 +319,9 @@ std::vector<PartitionID> RocksEngine::allParts() {
     return parts;
 }
 
-
 int32_t RocksEngine::totalPartsNum() {
     return partsNum_;
 }
-
 
 ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
@@ -353,12 +334,8 @@ ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     }
 }
 
-
-ResultCode RocksEngine::setOption(const std::string& configKey,
-                                  const std::string& configValue) {
-    std::unordered_map<std::string, std::string> configOptions = {
-        {configKey, configValue}
-    };
+ResultCode RocksEngine::setOption(const std::string& configKey, const std::string& configValue) {
+    std::unordered_map<std::string, std::string> configOptions = {{configKey, configValue}};
 
     rocksdb::Status status = db_->SetOptions(configOptions);
     if (status.ok()) {
@@ -370,12 +347,8 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
     }
 }
 
-
-ResultCode RocksEngine::setDBOption(const std::string& configKey,
-                                    const std::string& configValue) {
-    std::unordered_map<std::string, std::string> configOptions = {
-        {configKey, configValue}
-    };
+ResultCode RocksEngine::setDBOption(const std::string& configKey, const std::string& configValue) {
+    std::unordered_map<std::string, std::string> configOptions = {{configKey, configValue}};
 
     rocksdb::Status status = db_->SetDBOptions(configOptions);
     if (status.ok()) {
@@ -386,7 +359,6 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
         return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
-
 
 ResultCode RocksEngine::compact() {
     rocksdb::CompactRangeOptions options;
@@ -461,5 +433,69 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
     return ResultCode::SUCCEEDED;
 }
 
-}  // namespace kvstore
-}  // namespace nebula
+ErrorOr<ResultCode, std::string> RocksEngine::backupTable(
+    const std::string& name,
+    const std::string& tablePrefix,
+    std::function<bool(const folly::StringPiece& key)> filter) {
+    auto backupPath = folly::stringPrintf(
+        "%s/checkpoints/%s/%s.sst", dataPath_.c_str(), name.c_str(), tablePrefix.c_str());
+    VLOG(3) << "Start writing the sst file with table (" << tablePrefix
+            << ") to file: " << backupPath;
+
+    auto parent = backupPath.substr(0, backupPath.rfind('/'));
+    if (!FileUtils::exist(parent)) {
+        if (!FileUtils::makeDir(parent)) {
+            LOG(ERROR) << "Make dir " << parent << " failed";
+            return ResultCode::ERR_BACKUP_EXISTED;
+        }
+    }
+
+    rocksdb::Options options;
+    rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
+
+    std::unique_ptr<KVIterator> iter;
+    auto ret = prefix(tablePrefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ResultCode::ERR_BACKUP_EMPTY_TABLE;
+    }
+
+    if (!iter->valid()) {
+        return ResultCode::ERR_BACKUP_EMPTY_TABLE;
+    }
+
+    auto s = sstFileWriter.Open(backupPath);
+    if (!s.ok()) {
+        LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+        return ResultCode::ERR_BACKUP_OPEN_FAILED;
+    }
+
+    while (iter->valid()) {
+        if (filter && filter(iter->key())) {
+            iter->next();
+            continue;
+        }
+        s = sstFileWriter.Put(iter->key().toString(), iter->val().toString());
+        if (!s.ok()) {
+            LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
+            sstFileWriter.Finish();
+            return ResultCode::ERR_BACKUP_TABLE_FAILED;
+        }
+        iter->next();
+    }
+
+    s = sstFileWriter.Finish();
+    if (!s.ok()) {
+        LOG(WARNING) << "Failure to insert data when backupTable,  " << backupPath
+                     << ", error: " << s.ToString();
+        return ResultCode::ERR_BACKUP_EMPTY_TABLE;
+    }
+
+    if (sstFileWriter.FileSize() == 0) {
+        return ResultCode::ERR_BACKUP_EMPTY_TABLE;
+    }
+
+    return backupPath;
+}
+
+}   // namespace kvstore
+}   // namespace nebula

@@ -26,7 +26,12 @@ public:
 
     ~Snapshot() = default;
 
-    cpp2::ErrorCode createSnapshot(const std::string& name);
+    inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) {
+        spaces_ = std::move(spaces);
+    }
+
+    ErrorOr<cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>>>
+    createSnapshot(const std::string& name);
 
     cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
@@ -42,6 +47,7 @@ private:
 private:
     kvstore::KVStore* kv_{nullptr};
     AdminClient* client_{nullptr};
+    std::unordered_set<GraphSpaceID> spaces_;
     std::unique_ptr<folly::Executor> executor_;
 };
 

@@ -13,11 +13,13 @@
 
 namespace nebula {
 namespace meta {
-cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
+ErrorOr<cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>>>
+Snapshot::createSnapshot(const std::string& name) {
     auto retSpacesHosts = getSpacesHosts();
     if (!retSpacesHosts.ok()) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
+    std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>> info;
     auto spacesHosts = retSpacesHosts.value();
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
@@ -25,9 +27,11 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
             if (!status.ok()) {
                 return cpp2::ErrorCode::E_RPC_FAILURE;
             }
+            info[spaceHosts.first].emplace_back(
+                apache::thrift::FRAGILE, host, status.value());
         }
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return info;
 }
 
 cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
@@ -61,15 +65,21 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     auto spacesHosts = retSpacesHosts.value();
+    auto ret = cpp2::ErrorCode::SUCCEEDED;
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
+            LOG(INFO) << "will block write host: " << host;
             auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
             if (!status.ok()) {
                 LOG(ERROR) << " Send blocking sign error on host : " << host;
+                ret = cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
+                if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
+                    break;
+                }
             }
         }
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return ret;
 }
 
 StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() {
@@ -85,6 +95,13 @@ StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() 
     while (iter->valid()) {
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         auto space = MetaServiceUtils::parsePartKeySpaceId(iter->key());
+        if (!spaces_.empty()) {
+            auto it = spaces_.find(space);
+            if (it == spaces_.end()) {
+                continue;
+            }
+        }
+
         for (auto& ph : partHosts) {
             hostsByspaces[space].emplace(std::move(ph));
         }

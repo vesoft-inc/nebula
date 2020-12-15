@@ -12,7 +12,10 @@ namespace meta {
 void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
+
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+
     TagID tagId;
     auto indexKey = MetaServiceUtils::indexTagKey(spaceId, req.get_tag_name());
     auto iRet = doGet(indexKey);

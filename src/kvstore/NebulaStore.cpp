@@ -881,18 +881,23 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& name) {
+ErrorOr<ResultCode, std::string> NebulaStore::createCheckpoint(GraphSpaceID spaceId,
+                                                               const std::string& name) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
     }
 
     auto space = nebula::value(spaceRet);
+    std::string cpPath;
+
     for (auto& engine : space->engines_) {
         auto code = engine->createCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }
+        // Maybe there's a judgment call here.
+        cpPath = folly::stringPrintf("%s/checkpoints/%s", engine->getDataRoot(), name.c_str());
         // create wal hard link for all parts
         auto parts = engine->allParts();
         for (auto& part : parts) {
@@ -901,15 +906,15 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
                 LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
                 return error(ret);
             }
-            auto walPath = folly::stringPrintf("%s/checkpoints/%s/wal/%d",
-                                                      engine->getDataRoot(), name.c_str(), part);
+            auto walPath = folly::stringPrintf(
+                "%s/checkpoints/%s/wal/%d", engine->getDataRoot(), name.c_str(), part);
             auto p = nebula::value(ret);
             if (!p->linkCurrentWAL(walPath.data())) {
                 return ResultCode::ERR_CHECKPOINT_ERROR;
             }
         }
     }
-    return ResultCode::SUCCEEDED;
+    return cpPath;
 }
 
 ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
@@ -953,22 +958,7 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
                 return error(partRet);
             }
             auto p = nebula::value(partRet);
-            auto ret = ResultCode::SUCCEEDED;
             p->setBlocking(sign);
-            if (sign) {
-                folly::Baton<true, std::atomic> baton;
-                p->sync([&ret, &baton] (kvstore::ResultCode code) {
-                    if (kvstore::ResultCode::SUCCEEDED != code) {
-                        ret = code;
-                    }
-                    baton.post();
-                });
-                baton.wait();
-            }
-            if (ret != ResultCode::SUCCEEDED) {
-                 LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
-                 return ret;
-            }
         }
     }
     return ResultCode::SUCCEEDED;
@@ -1061,6 +1051,58 @@ void NebulaStore::cleanWAL() {
             }
         }
     }
+}
+
+ErrorOr<ResultCode, std::vector<std::string>> NebulaStore::backupTable(
+    GraphSpaceID spaceId,
+    const std::string& name,
+    const std::string& tablePrefix,
+    std::function<bool(const folly::StringPiece& key)> filter) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+
+    auto space = nebula::value(spaceRet);
+    std::vector<std::string> backupPath;
+    for (auto& engine : space->engines_) {
+        auto path = engine->backupTable(name, tablePrefix, filter);
+        if (!ok(path)) {
+            auto result = error(path);
+            if (result != kvstore::ResultCode::ERR_BACKUP_EMPTY_TABLE) {
+                return result;
+            }
+            LOG(WARNING) << "Since the table(" << tablePrefix
+                         << ") is empty, the backup of the current table is skipped.";
+            continue;
+        }
+        backupPath.emplace_back(value(path));
+    }
+
+    if (backupPath.empty()) {
+        return kvstore::ResultCode::ERR_BACKUP_EMPTY_TABLE;
+    }
+
+    return backupPath;
+}
+
+ResultCode NebulaStore::restoreFromFiles(GraphSpaceID spaceId,
+                                         const std::vector<std::string>& files) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        LOG(ERROR) << "Get Space " << spaceId << " Failed";
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+
+    for (auto& engine : space->engines_) {
+        auto ret = engine->ingest(files);
+        if (ret != ResultCode::SUCCEEDED) {
+            return ret;
+        }
+    }
+
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

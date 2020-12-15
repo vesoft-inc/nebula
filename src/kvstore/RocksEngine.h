@@ -7,12 +7,12 @@
 #ifndef KVSTORE_ROCKSENGINE_H_
 #define KVSTORE_ROCKSENGINE_H_
 
-#include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
 #include <rocksdb/utilities/checkpoint.h>
-#include "kvstore/KVIterator.h"
+#include "common/base/Base.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/KVIterator.h"
 
 namespace nebula {
 namespace kvstore {
@@ -20,11 +20,9 @@ namespace kvstore {
 class RocksRangeIter : public KVIterator {
 public:
     RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
-        : iter_(iter)
-        , start_(start)
-        , end_(end) {}
+        : iter_(iter), start_(start), end_(end) {}
 
-    ~RocksRangeIter()  = default;
+    ~RocksRangeIter() = default;
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
@@ -55,10 +53,9 @@ private:
 class RocksPrefixIter : public KVIterator {
 public:
     RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
-        : iter_(iter)
-        , prefix_(prefix) {}
+        : iter_(iter), prefix_(prefix) {}
 
-    ~RocksPrefixIter()  = default;
+    ~RocksPrefixIter() = default;
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
@@ -127,8 +124,7 @@ public:
                      const std::string& end,
                      std::unique_ptr<KVIterator>* iter) override;
 
-    ResultCode prefix(const std::string& prefix,
-                      std::unique_ptr<KVIterator>* iter) override;
+    ResultCode prefix(const std::string& prefix, std::unique_ptr<KVIterator>* iter) override;
 
     ResultCode rangeWithPrefix(const std::string& start,
                                const std::string& prefix,
@@ -145,8 +141,7 @@ public:
 
     ResultCode multiRemove(std::vector<std::string> keys) override;
 
-    ResultCode removeRange(const std::string& start,
-                           const std::string& end) override;
+    ResultCode removeRange(const std::string& start, const std::string& end) override;
 
     /*********************
      * Non-data operation
@@ -161,11 +156,9 @@ public:
 
     ResultCode ingest(const std::vector<std::string>& files) override;
 
-    ResultCode setOption(const std::string& configKey,
-                         const std::string& configValue) override;
+    ResultCode setOption(const std::string& configKey, const std::string& configValue) override;
 
-    ResultCode setDBOption(const std::string& configKey,
-                           const std::string& configValue) override;
+    ResultCode setDBOption(const std::string& configKey, const std::string& configValue) override;
 
     ResultCode compact() override;
 
@@ -176,16 +169,20 @@ public:
      ********************/
     ResultCode createCheckpoint(const std::string& path) override;
 
+    ErrorOr<ResultCode, std::string> backupTable(
+        const std::string& path,
+        const std::string& tablePrefix,
+        std::function<bool(const folly::StringPiece& key)> filter) override;
+
 private:
     std::string partKey(PartitionID partId);
 
 private:
-    std::string  dataPath_;
+    std::string dataPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };
 
-}  // namespace kvstore
-}  // namespace nebula
-#endif  // KVSTORE_ROCKSENGINE_H_
-
+}   // namespace kvstore
+}   // namespace nebula
+#endif   // KVSTORE_ROCKSENGINE_H_

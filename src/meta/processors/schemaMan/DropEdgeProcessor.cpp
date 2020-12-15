@@ -12,7 +12,9 @@ namespace meta {
 void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+
     EdgeType edgeType;
     auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, req.get_edge_name());
     auto iRet = doGet(indexKey);

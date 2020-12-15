@@ -224,6 +224,69 @@ TEST(RocksEngineTest, IngestTest) {
     EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key_not_exist", &result));
 }
 
+TEST(RocksEngineTest, BackupRestoreTable) {
+    rocksdb::Options options;
+    rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
+    fs::TempDir rootPath("/tmp/rocksdb_engine_backuptable.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+
+    std::vector<KV> data;
+    for (int32_t i = 0; i < 10; i++) {
+        data.emplace_back(folly::stringPrintf("part_%d", i),
+                          folly::stringPrintf("val_%d", i));
+        data.emplace_back(folly::stringPrintf("tags_%d", i),
+                          folly::stringPrintf("val_%d", i));
+    }
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+
+    std::vector<std::string> sst_files;
+    std::string partPrefix = "part_";
+    std::string tagsPrefix = "tags_";
+    auto parts = engine->backupTable("backup_test", partPrefix, nullptr);
+    EXPECT_TRUE(ok(parts));
+    sst_files.emplace_back(value(parts));
+    auto tags = engine->backupTable("backup_test", tagsPrefix, [](const folly::StringPiece& key) {
+        auto i = key.subpiece(5, key.size());
+        if (folly::to<int>(i) % 2 == 0) {
+            return true;
+        }
+        return false;
+    });
+    EXPECT_TRUE(ok(tags));
+    sst_files.emplace_back(value(tags));
+
+    fs::TempDir restoreRootPath("/tmp/rocksdb_engine_restoretable.XXXXXX");
+    auto restore_engine = std::make_unique<RocksEngine>(0, restoreRootPath.path());
+    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->ingest(sst_files));
+
+    std::unique_ptr<KVIterator> iter;
+    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->prefix(partPrefix, &iter));
+    int index = 0;
+    while (iter->valid()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        EXPECT_EQ(folly::stringPrintf("%s%d", partPrefix.c_str(), index), key);
+        EXPECT_EQ(folly::stringPrintf("val_%d", index), val);
+        iter->next();
+        index++;
+    }
+    EXPECT_EQ(index, 10);
+
+    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->prefix(tagsPrefix, &iter));
+    index = 1;
+    int num = 0;
+    while (iter->valid()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        EXPECT_EQ(folly::stringPrintf("%s%d", tagsPrefix.c_str(), index), key);
+        EXPECT_EQ(folly::stringPrintf("val_%d", index), val);
+        iter->next();
+        index += 2;
+        num++;
+    }
+    EXPECT_EQ(num, 5);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

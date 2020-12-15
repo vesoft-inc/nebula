@@ -7,11 +7,11 @@
 #ifndef KVSTORE_COMMON_H_
 #define KVSTORE_COMMON_H_
 
-#include "common/base/Base.h"
-#include "common/thrift/ThriftTypes.h"
-#include "common/datatypes/HostAddr.h"
-#include <rocksdb/slice.h>
 #include <folly/Function.h>
+#include <rocksdb/slice.h>
+#include "common/base/Base.h"
+#include "common/datatypes/HostAddr.h"
+#include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
 namespace kvstore {
@@ -40,6 +40,10 @@ enum class ResultCode {
     ERR_INVALID_DATA        = -20,
     ERR_BUILD_INDEX_FAILED  = -21,
     ERR_INVALID_OPERATION   = -22,
+    ERR_BACKUP_TABLE_FAILED = -23,
+    ERR_BACKUP_EXISTED      = -24,
+    ERR_BACKUP_OPEN_FAILED  = -25,
+    ERR_BACKUP_EMPTY_TABLE  = -26,
     ERR_USER_CANCELLED      = -98,
     ERR_PARTIAL_RESULT      = -99,
     ERR_UNKNOWN             = -100,
@@ -73,6 +77,6 @@ inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
 using KVMap = std::unordered_map<std::string, std::string>;
 using KVArrayIterator = std::vector<KV>::const_iterator;
 
-}  // namespace kvstore
-}  // namespace nebula
-#endif  // KVSTORE_COMMON_H_
+}   // namespace kvstore
+}   // namespace nebula
+#endif   // KVSTORE_COMMON_H_

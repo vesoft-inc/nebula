@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     auto spaceRet = getSpaceId(req.get_space_name());
 

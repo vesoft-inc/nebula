@@ -10,14 +10,16 @@ namespace nebula {
 namespace storage {
 
 void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
-    LOG(INFO) << "Receive block sign for space " << req.get_space_id();
     auto spaceId = req.get_space_id();
     auto sign = req.get_sign() == cpp2::EngineSignType::BLOCK_ON;
+    LOG(INFO) << "Receive block sign for space " << req.get_space_id() << ", block: " <<  sign;
+
     auto code = env_->kvstore_->setWriteBlocking(spaceId, sign);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         cpp2::PartitionResult thriftRet;
         thriftRet.set_code(to(code));
         codes_.emplace_back(std::move(thriftRet));
+        LOG(INFO) << "set block sign failed, error: " << code;
     }
     onFinished();
 }

@@ -35,6 +35,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto ret = getIndexID(space, indexName);
     if (ret.ok()) {

@@ -580,7 +580,7 @@ protected:
 
     std::atomic<uint64_t> weight_;
 
-    bool blocking_{false};
+    std::atomic<bool> blocking_{false};
 };
 
 }  // namespace raftex

@@ -13,12 +13,15 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
     CHECK_NOTNULL(env_);
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
-    auto retCode = env_->kvstore_->createCheckpoint(spaceId, std::move(name));
-    if (retCode != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = env_->kvstore_->createCheckpoint(spaceId, std::move(name));
+    if (!ok(ret)) {
         cpp2::PartitionResult thriftRet;
-        thriftRet.set_code(to(retCode));
+        thriftRet.set_code(to(error(ret)));
         codes_.emplace_back(std::move(thriftRet));
+        onFinished();
+        return;
     }
+    resp_.set_path(nebula::value(ret));
     onFinished();
 }
 

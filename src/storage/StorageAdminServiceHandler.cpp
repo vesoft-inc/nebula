@@ -68,7 +68,7 @@ StorageAdminServiceHandler::future_getLeaderParts(const cpp2::GetLeaderReq& req)
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::AdminExecResp>
+folly::Future<cpp2::CreateCPResp>
 StorageAdminServiceHandler::future_createCheckpoint(const cpp2::CreateCPRequest& req) {
     auto* processor = CreateCheckpointProcessor::instance(env_);
     RETURN_FUTURE(processor);

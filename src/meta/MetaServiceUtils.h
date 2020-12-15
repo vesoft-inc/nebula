@@ -40,7 +40,7 @@ public:
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
-    static std::string spaceVal(const cpp2::SpaceDesc &spaceDesc);
+    static std::string spaceVal(const cpp2::SpaceDesc& spaceDesc);
 
     static cpp2::SpaceDesc parseSpace(folly::StringPiece rawData);
 
@@ -167,12 +167,12 @@ public:
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
-                                           cpp2::SchemaProp&  prop,
+                                           cpp2::SchemaProp& prop,
                                            const cpp2::ColumnDef col,
                                            const cpp2::AlterSchemaOp op);
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<cpp2::ColumnDef>& cols,
-                                           cpp2::SchemaProp&  schemaProp,
+                                           cpp2::SchemaProp& schemaProp,
                                            cpp2::SchemaProp alterSchemaProp,
                                            bool existIndex);
 
@@ -198,9 +198,7 @@ public:
 
     static std::string parseRoleStr(folly::StringPiece key);
 
-    static std::string tagDefaultKey(GraphSpaceID spaceId,
-                                     TagID tag,
-                                     const std::string& field);
+    static std::string tagDefaultKey(GraphSpaceID spaceId, TagID tag, const std::string& field);
 
     static std::string edgeDefaultKey(GraphSpaceID spaceId,
                                       EdgeType edge,
@@ -208,13 +206,11 @@ public:
 
     static const std::string& defaultPrefix();
 
-    static std::string configKey(const cpp2::ConfigModule& module,
-                                 const std::string& name);
+    static std::string configKey(const cpp2::ConfigModule& module, const std::string& name);
 
     static std::string configKeyPrefix(const cpp2::ConfigModule& module);
 
-    static std::string configValue(const cpp2::ConfigMode& valueMode,
-                                   const Value& config);
+    static std::string configValue(const cpp2::ConfigMode& valueMode, const Value& config);
 
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 
@@ -222,8 +218,7 @@ public:
 
     static std::string snapshotKey(const std::string& name);
 
-    static std::string snapshotVal(const cpp2::SnapshotStatus& status ,
-                                   const std::string& hosts);
+    static std::string snapshotVal(const cpp2::SnapshotStatus& status, const std::string& hosts);
 
     static cpp2::SnapshotStatus parseSnapshotStatus(folly::StringPiece rawData);
 
@@ -323,9 +318,41 @@ public:
                                           const std::vector<cpp2::FTClient>& clients);
 
     static std::vector<cpp2::FTClient> parseFTClients(folly::StringPiece rawData);
+
+    static std::string genTimestampStr();
+
+    static folly::Optional<bool> isIndexRebuilding(kvstore::KVStore*);
+
+    static GraphSpaceID parseEdgesKeySpaceID(folly::StringPiece key);
+    static GraphSpaceID parseTagsKeySpaceID(folly::StringPiece key);
+    static GraphSpaceID parseIndexesKeySpaceID(folly::StringPiece key);
+    static GraphSpaceID parseIndexStatusKeySpaceID(folly::StringPiece key);
+    static GraphSpaceID parseIndexKeySpaceID(folly::StringPiece key);
+    static GraphSpaceID parseDefaultKeySpaceID(folly::StringPiece key);
+
+    static bool replaceHostInPartition(kvstore::KVStore* kvstore,
+                                       const HostAddr& ipv4From,
+                                       const HostAddr& ipv4To);
+    static bool replaceHostInZone(kvstore::KVStore* kvstore,
+                                  const HostAddr& ipv4From,
+                                  const HostAddr& ipv4To);
+    // backup
+    static ErrorOr<kvstore::ResultCode, std::vector<std::string>> backupIndexTable(
+        kvstore::KVStore* kvstore,
+        const std::unordered_set<GraphSpaceID>& spaces,
+        const std::string& backupName,
+        const std::vector<std::string>* spaceName);
+    static std::function<bool(const folly::StringPiece& key)> spaceFilter(
+        const std::unordered_set<GraphSpaceID>& spaces,
+        std::function<GraphSpaceID(folly::StringPiece rawKey)> parseSpace);
+
+    static folly::Optional<std::vector<std::string>> backup(
+        kvstore::KVStore* kvstore,
+        const std::unordered_set<GraphSpaceID>& spaces,
+        const std::string& backupName,
+        const std::vector<std::string>* spaceNames);
 };
 
-}  // namespace meta
-}  // namespace nebula
-#endif  // META_METAUTILS_H_
-
+}   // namespace meta
+}   // namespace nebula
+#endif   // META_METAUTILS_H_
