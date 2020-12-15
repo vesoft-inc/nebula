@@ -158,7 +158,7 @@ IndexScanValidator::rewriteTSFilter(Expression* expr) {
         isEmptyResultSet_ = true;
         return Status::OK();
     }
-    std::vector<std::unique_ptr<RelationalExpression>> rels;
+    std::vector<std::unique_ptr<Expression>> rels;
     for (const auto& row : vRet.value()) {
         std::unique_ptr<RelationalExpression> r;
         if (isEdge_) {

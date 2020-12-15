@@ -9,6 +9,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "util/ExpressionUtils.h"
+#include "parser/GQLParser.h"
 
 namespace nebula {
 namespace graph {
@@ -363,7 +364,7 @@ TEST_F(ExpressionUtilsTest, PullOrs) {
 }
 
 TEST_F(ExpressionUtilsTest, pushOrs) {
-    std::vector<std::unique_ptr<RelationalExpression>> rels;
+    std::vector<std::unique_ptr<Expression>> rels;
     for (int16_t i = 0; i < 5; i++) {
         auto r = std::make_unique<RelationalExpression>(
             Expression::Kind::kRelEQ,
@@ -381,5 +382,176 @@ TEST_F(ExpressionUtilsTest, pushOrs) {
     ASSERT_EQ(expected, t->toString());
 }
 
+TEST_F(ExpressionUtilsTest, pushAnds) {
+    std::vector<std::unique_ptr<Expression>> rels;
+    for (int16_t i = 0; i < 5; i++) {
+        auto r = std::make_unique<RelationalExpression>(
+            Expression::Kind::kRelEQ,
+            new LabelAttributeExpression(new LabelExpression(folly::stringPrintf("tag%d", i)),
+                                         new ConstantExpression(folly::stringPrintf("col%d", i))),
+            new ConstantExpression(Value(folly::stringPrintf("val%d", i))));
+        rels.emplace_back(std::move(r));
+    }
+    auto t = ExpressionUtils::pushAnds(rels);
+    auto expected = std::string("(((((tag0.col0==val0) AND "
+                                "(tag1.col1==val1)) AND "
+                                "(tag2.col2==val2)) AND "
+                                "(tag3.col3==val3)) AND "
+                                "(tag4.col4==val4))");
+    ASSERT_EQ(expected, t->toString());
+}
+
+std::unique_ptr<Expression> parse(const std::string& expr) {
+    std::string query = "LOOKUP on t1 WHERE " + expr;
+    GQLParser parser;
+    auto result = parser.parse(std::move(query));
+    CHECK(result.ok()) << result.status();
+    auto stmt = std::move(result).value();
+    auto *seq = static_cast<SequentialSentences *>(stmt.get());
+    auto *lookup = static_cast<LookupSentence *>(seq->sentences()[0]);
+    return lookup->whereClause()->filter()->clone();
+}
+
+TEST_F(ExpressionUtilsTest, expandExpression) {
+    {
+        auto filter = parse("t1.c1 == 1");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(t1.c1==1)";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and t1.c2 == 2");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((t1.c1==1) AND (t1.c2==2))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and t1.c2 == 2 and t1.c3 == 3");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c1==1) AND (t1.c2==2)) AND (t1.c3==3))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 or t1.c2 == 2");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((t1.c1==1) OR (t1.c2==2))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 or t1.c2 == 2 or t1.c3 == 3");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c1==1) OR (t1.c2==2)) OR (t1.c3==3))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and t1.c2 == 2 or t1.c1 == 3");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c1==1) AND (t1.c2==2)) OR (t1.c1==3))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 or t1.c2 == 2 and t1.c1 == 3");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((t1.c1==1) OR ((t1.c2==2) AND (t1.c1==3)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c3 == 3");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c1==1) AND (t1.c3==3)) OR ((t1.c2==2) AND (t1.c3==3)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c3 == 3 or t1.c4 == 4");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((t1.c1==1) AND (t1.c3==3)) OR "
+                        "((t1.c2==2) AND (t1.c3==3))) OR "
+                        "(t1.c4==4))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and (t1.c3 == 3 or t1.c4 == 4)");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((((t1.c1==1) AND (t1.c3==3)) OR "
+                        "((t1.c1==1) AND (t1.c4==4))) OR "
+                        "((t1.c2==2) AND (t1.c3==3))) OR "
+                        "((t1.c2==2) AND (t1.c4==4)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2 or t1.c3 == 3 or t1.c4 == 4) "
+                            "and t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((((t1.c1==1) AND (t1.c5==5)) OR "
+                        "((t1.c2==2) AND (t1.c5==5))) OR "
+                        "((t1.c3==3) AND (t1.c5==5))) OR "
+                        "((t1.c4==4) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and t1.c4 == 4 and t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5)) OR "
+                        "(((t1.c2==2) AND (t1.c4==4)) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4 == 4) and t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)) OR "
+                        "(((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and t1.c2 == 2 and (t1.c4 == 4 or t1.c5 == 5)");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c4==4)) OR "
+                        "(((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("(t1.c1 == 1 or t1.c2 == 2) and "
+                            "(t1.c3 == 3 or t1.c4 == 4) and "
+                            "t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((((t1.c1==1) AND (t1.c3==3)) AND (t1.c5==5)) OR "
+                        "(((t1.c1==1) AND (t1.c4==4)) AND (t1.c5==5))) OR "
+                        "(((t1.c2==2) AND (t1.c3==3)) AND (t1.c5==5))) OR "
+                        "(((t1.c2==2) AND (t1.c4==4)) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c4 == 4 or (t1.c1 == 1 and (t1.c2 == 2 or t1.c3 == 3))");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((t1.c4==4) OR "
+                        "(((t1.c1==1) AND (t1.c2==2)) OR "
+                        "((t1.c1==1) AND (t1.c3==3))))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c4 == 4 or "
+                            "(t1.c1 == 1 and (t1.c2 == 2 or t1.c3 == 3)) or "
+                            "t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c4==4) OR "
+                        "(((t1.c1==1) AND (t1.c2==2)) OR ((t1.c1==1) AND (t1.c3==3)))) OR "
+                        "(t1.c5==5))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4) and t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "((((t1.c1==1) AND (t1.c2==2)) AND (t1.c5==5)) OR "
+                        "(((t1.c1==1) AND t1.c4) AND (t1.c5==5)))";
+        ASSERT_EQ(expected, target->toString());
+    }
+    {
+        // Invalid expression for index. don't need to expand.
+        auto filter = parse("t1.c1 == 1 and (t1.c2 == 2 or t1.c4) == true and t1.c5 == 5");
+        auto target = ExpressionUtils::expandExpr(filter.get());
+        auto expected = "(((t1.c1==1) AND (((t1.c2==2) OR t1.c4)==true)) AND (t1.c5==5))";
+        ASSERT_EQ(expected, target->toString());
+    }
+}
 }   // namespace graph
 }   // namespace nebula

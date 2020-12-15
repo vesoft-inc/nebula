@@ -125,7 +125,19 @@ public:
     static std::unique_ptr<InputPropertyExpression> inputPropExpr(const std::string& prop);
 
     static std::unique_ptr<Expression> pushOrs(
-        const std::vector<std::unique_ptr<RelationalExpression>>& rels);
+        const std::vector<std::unique_ptr<Expression>>& rels);
+
+    static std::unique_ptr<Expression> pushAnds(
+        const std::vector<std::unique_ptr<Expression>>& rels);
+
+    static std::unique_ptr<Expression> pushImpl(
+        Expression::Kind kind, const std::vector<std::unique_ptr<Expression>>& rels);
+
+    static std::unique_ptr<Expression> expandExpr(const Expression *expr);
+
+    static std::unique_ptr<Expression> expandImplAnd(const Expression *expr);
+
+    static std::vector<std::unique_ptr<Expression>> expandImplOr(const Expression *expr);
 };
 
 }   // namespace graph

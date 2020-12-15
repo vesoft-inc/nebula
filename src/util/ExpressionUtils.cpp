@@ -76,18 +76,125 @@ std::unique_ptr<InputPropertyExpression> ExpressionUtils::inputPropExpr(const st
 }
 
 std::unique_ptr<Expression>
-ExpressionUtils::pushOrs(const std::vector<std::unique_ptr<RelationalExpression>>& rels) {
+ExpressionUtils::pushOrs(const std::vector<std::unique_ptr<Expression>>& rels) {
+    return pushImpl(Expression::Kind::kLogicalOr, rels);
+}
+
+std::unique_ptr<Expression>
+ExpressionUtils::pushAnds(const std::vector<std::unique_ptr<Expression>>& rels) {
+    return pushImpl(Expression::Kind::kLogicalAnd, rels);
+}
+
+std::unique_ptr<Expression>
+ExpressionUtils::pushImpl(Expression::Kind kind,
+                          const std::vector<std::unique_ptr<Expression>>& rels) {
     DCHECK_GT(rels.size(), 1);
-    auto root = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalOr);
+    DCHECK(kind == Expression::Kind::kLogicalOr || kind == Expression::Kind::kLogicalAnd);
+    auto root = std::make_unique<LogicalExpression>(kind);
     root->addOperand(rels[0]->clone().release());
     root->addOperand(rels[1]->clone().release());
     for (size_t i = 2; i < rels.size(); i++) {
-        auto l = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalOr);
+        auto l = std::make_unique<LogicalExpression>(kind);
         l->addOperand(root->clone().release());
         l->addOperand(rels[i]->clone().release());
         root = std::move(l);
     }
     return root;
+}
+
+std::unique_ptr<Expression> ExpressionUtils::expandExpr(const Expression *expr) {
+    auto kind = expr->kind();
+    std::vector<std::unique_ptr<Expression>> target;
+    switch (kind) {
+        case Expression::Kind::kLogicalOr: {
+            const auto *logic = static_cast<const LogicalExpression*>(expr);
+            for (const auto& e : logic->operands()) {
+                if (e->kind() == Expression::Kind::kLogicalAnd) {
+                    target.emplace_back(expandImplAnd(e.get()));
+                } else {
+                    target.emplace_back(expandExpr(e.get()));
+                }
+            }
+            break;
+        }
+        case Expression::Kind::kLogicalAnd: {
+            target.emplace_back(expandImplAnd(expr));
+            break;
+        }
+        default: {
+            return expr->clone();
+        }
+    }
+    if (target.size() == 1) {
+        if (target[0]->kind() == Expression::Kind::kLogicalAnd) {
+            const auto *logic = static_cast<const LogicalExpression*>(target[0].get());
+            const auto& ops = logic->operands();
+            DCHECK_EQ(ops.size(), 2);
+            if (ops[0]->kind() == Expression::Kind::kLogicalOr ||
+                ops[1]->kind() == Expression::Kind::kLogicalOr) {
+                return expandExpr(target[0].get());
+            }
+        }
+        return std::move(target[0]);
+    }
+    return pushImpl(kind, target);
+}
+
+std::unique_ptr<Expression> ExpressionUtils::expandImplAnd(const Expression *expr) {
+    DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
+    const auto *logic = static_cast<const LogicalExpression*>(expr);
+    DCHECK_EQ(logic->operands().size(), 2);
+    std::vector<std::unique_ptr<Expression>> subL;
+    auto& ops = logic->operands();
+    if (ops[0]->kind() == Expression::Kind::kLogicalOr) {
+        auto target = expandImplOr(ops[0].get());
+        for (const auto& e : target) {
+            subL.emplace_back(e->clone().release());
+        }
+    } else {
+        subL.emplace_back(expandExpr(std::move(ops[0]).get()));
+    }
+    std::vector<std::unique_ptr<Expression>> subR;
+    if (ops[1]->kind() == Expression::Kind::kLogicalOr) {
+        auto target = expandImplOr(ops[1].get());
+        for (const auto& e : target) {
+            subR.emplace_back(e->clone().release());
+        }
+    } else {
+        subR.emplace_back(expandExpr(std::move(ops[1]).get()));
+    }
+
+    std::vector<std::unique_ptr<Expression>> target;
+    for (auto& le : subL) {
+        for (auto& re : subR) {
+            auto l = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
+            l->addOperand(le->clone().release());
+            l->addOperand(re->clone().release());
+            target.emplace_back(std::move(l));
+        }
+    }
+    if (target.size() == 1) {
+        return std::move(target[0]);
+    }
+    return pushImpl(Expression::Kind::kLogicalOr, target);
+}
+
+std::vector<std::unique_ptr<Expression>> ExpressionUtils::expandImplOr(const Expression *expr) {
+    DCHECK(expr->kind() == Expression::Kind::kLogicalOr);
+    const auto *logic = static_cast<const LogicalExpression*>(expr);
+    std::vector<std::unique_ptr<Expression>> exprs;
+    auto& ops = logic->operands();
+    for (const auto& op : ops) {
+        if (op->kind() == Expression::Kind::kLogicalOr) {
+            auto target = expandImplOr(op.get());
+            for (const auto& e : target) {
+                exprs.emplace_back(e->clone().release());
+            }
+        } else {
+            exprs.emplace_back(op->clone().release());
+        }
+    }
+    return exprs;
 }
 }   // namespace graph
 }   // namespace nebula
