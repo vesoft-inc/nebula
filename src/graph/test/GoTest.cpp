@@ -2275,7 +2275,6 @@ TEST_P(GoTest, FilterPushdown) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // Filter pushdown: ((serve.start_year>2013)&&(serve.end_year<2018))
         auto *fmt = "GO FROM %ld OVER serve, like "
                     "WHERE serve.start_year > 2013 OR like.likeness > 90";
         auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
@@ -2301,7 +2300,6 @@ TEST_P(GoTest, FilterPushdown) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // Filter pushdown: ((serve.start_year>2013)&&(serve.end_year<2018))
         auto *fmt = "GO FROM %ld OVER serve, like "
                     "WHERE !(serve.start_year > 2013 OR like.likeness > 90)";
         auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
