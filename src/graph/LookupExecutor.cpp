@@ -131,12 +131,10 @@ Status LookupExecutor::prepareYield() {
             }
             auto* prop = col->expr();
             const AliasPropertyExpression* aExpr;
-            if (prop->kind() == Expression::kAliasProp) {
-                aExpr = dynamic_cast<const AliasPropertyExpression*>(prop);
-            } else if (isEdge_ && prop->kind() == Expression::kEdgeSrcId) {
-                aExpr = dynamic_cast<const EdgeSrcIdExpression*>(prop);
-            } else if (isEdge_ && prop->kind() == Expression::kEdgeDstId) {
-                aExpr = dynamic_cast<const EdgeDstIdExpression*>(prop);
+            if (prop->kind() == Expression::kAliasProp ||
+                (isEdge_ && prop->kind() == Expression::kEdgeSrcId) ||
+                (isEdge_ && prop->kind() == Expression::kEdgeDstId)) {
+                aExpr = static_cast<const AliasPropertyExpression*>(prop);
             } else {
                 return Status::SyntaxError("Expressions other than "
                                            "AliasProp/kEdgeSrcId/kEdgeDstId are not supported");
