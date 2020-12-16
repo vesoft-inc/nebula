@@ -33,8 +33,13 @@ target/
 cluster.id
 pids/
 modules/
-nebula-python/
+
+# tests
 !tests/Makefile
+reformat-gherkin
+nebula-python
+.pytest
+.pytest_cache
 
 # IDE
 .idea/

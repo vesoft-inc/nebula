@@ -5,6 +5,14 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+import os
+
+DATA_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..",
+    "data",
+)
+
 all_configs = {'--address'        : ['address', '', 'Address of the Nebula'],
                '--user'           : ['user', 'root', 'The user of Nebula'],
                '--password'       : ['password', 'nebula', 'The password of Nebula'],

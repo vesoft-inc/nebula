@@ -4,6 +4,28 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 
+class SpaceDesc:
+    def __init__(self,
+                 name: str,
+                 vid_type: str = "FIXED_STRING(32)",
+                 partition_num: int = 7,
+                 replica_factor: int = 1):
+        self.name = name
+        self.vid_type = vid_type
+        self.partition_num = partition_num
+        self.replica_factor = replica_factor
+
+    def create_stmt(self) -> str:
+        return "CREATE SPACE IF NOT EXISTS `{}`(partition_num={}, replica_factor={}, vid_type={});".format(
+            self.name, self.partition_num, self.replica_factor, self.vid_type)
+
+    def use_stmt(self) -> str:
+        return f"USE `{self.name}`;"
+
+    def drop_stmt(self) -> str:
+        return f"DROP SPACE IF EXISTS `{self.name}`;"
+
+
 class Column:
     def __init__(self, index: int):
         if index < 0:

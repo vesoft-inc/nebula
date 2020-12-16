@@ -1,6 +1,3 @@
-DROP SPACE IF EXISTS student;
-CREATE SPACE IF NOT EXISTS student(partition_num=7, replica_factor=1, vid_type=FIXED_STRING(8));
-USE student;
 CREATE TAG IF NOT EXISTS person(name string, age int, gender string);
 CREATE TAG IF NOT EXISTS teacher(grade int, subject string);
 CREATE TAG IF NOT EXISTS student(grade int, hobby string DEFAULT "");

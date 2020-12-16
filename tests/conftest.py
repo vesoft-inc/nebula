@@ -5,26 +5,27 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import pytest
+import json
+import logging
 import os
 import time
-import logging
-import json
 
+import pytest
 from filelock import FileLock
-from pathlib import Path
-from nebula2.gclient.net import ConnectionPool
 from nebula2.Config import Config
+from nebula2.gclient.net import ConnectionPool
 
 from tests.common.configs import all_configs
 from tests.common.nebula_service import NebulaService
-from tests.common.csv_import import CSVImporter
+from tests.common.types import SpaceDesc
+from tests.common.utils import create_space, load_csv_data
 
 tests_collected = set()
 tests_executed = set()
 data_dir = os.getenv('NEBULA_DATA_DIR')
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
+
 
 # pytest hook to handle test collection when xdist is used (parallel tests)
 # https://github.com/pytest-dev/pytest-xdist/pull/35/commits (No official documentation available)
@@ -113,7 +114,8 @@ def conn_pool(pytestconfig, worker_id, tmp_path_factory):
             data["num_workers"] += 1
             fn.write_text(json.dumps(data))
         else:
-            nb = NebulaService(build_dir, project_dir, rm_dir.lower() == "true")
+            nb = NebulaService(build_dir, project_dir,
+                               rm_dir.lower() == "true")
             nb.install()
             port = nb.start()
             pool = get_conn_pool("localhost", port)
@@ -141,7 +143,7 @@ def conn_pool(pytestconfig, worker_id, tmp_path_factory):
         os.remove(str(fn))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def session(conn_pool, pytestconfig):
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
@@ -150,70 +152,43 @@ def session(conn_pool, pytestconfig):
     sess.release()
 
 
-def load_csv_data(pytestconfig, conn_pool, folder: str):
-    data_dir = os.path.join(CURR_PATH, 'data', folder)
-    schema_path = os.path.join(data_dir, 'schema.ngql')
-
-    user = pytestconfig.getoption("user")
-    password = pytestconfig.getoption("password")
-    sess = conn_pool.get_session(user, password)
-
-    with open(schema_path, 'r') as f:
-        stmts = []
-        for line in f.readlines():
-            ln = line.strip()
-            if ln.startswith('--'):
-                continue
-            stmts.append(ln)
-        rs = sess.execute(' '.join(stmts))
-        assert rs.is_succeeded()
-
-    time.sleep(3)
-
-    for path in Path(data_dir).rglob('*.csv'):
-        for stmt in CSVImporter(path):
-            rs = sess.execute(stmt)
-            assert rs.is_succeeded()
-
-    sess.release()
+def load_csv_data_once(tmp_path_factory, pytestconfig, worker_id, conn_pool,
+                       space_desc: SpaceDesc):
+    space_name = space_desc.name
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+    fn = root_tmp_dir / f"csv-data-{space_name}"
+    with FileLock(str(fn) + ".lock"):
+        if fn.is_file():
+            logging.info(
+                f"session-{worker_id} need not to load {space_name} csv data")
+            yield space_desc
+            return
+        data_dir = os.path.join(CURR_PATH, 'data', space_name)
+        user = pytestconfig.getoption("user")
+        password = pytestconfig.getoption("password")
+        sess = conn_pool.get_session(user, password)
+        create_space(space_desc, sess)
+        load_csv_data(pytestconfig, sess, data_dir)
+        sess.release()
+        fn.write_text(space_name)
+        logging.info(f"session-{worker_id} load {space_name} csv data")
+        yield space_desc
+        os.remove(str(fn))
 
 
 # TODO(yee): optimize data load fixtures
 @pytest.fixture(scope="session")
 def load_nba_data(conn_pool, pytestconfig, tmp_path_factory, worker_id):
-    root_tmp_dir = tmp_path_factory.getbasetemp().parent
-    fn = root_tmp_dir / "csv-data-nba"
-    load = False
-    with FileLock(str(fn) + ".lock"):
-        if not fn.is_file():
-            load_csv_data(pytestconfig, conn_pool, "nba")
-            fn.write_text("nba")
-            logging.info(f"session-{worker_id} load nba csv data")
-            load = True
-        else:
-            logging.info(f"session-{worker_id} need not to load nba csv data")
-    yield
-    if load:
-        os.remove(str(fn))
+    space_desc = SpaceDesc(name="nba", vid_type="FIXED_STRING(30)")
+    yield from load_csv_data_once(tmp_path_factory, pytestconfig, worker_id,
+                                  conn_pool, space_desc)
 
 
 @pytest.fixture(scope="session")
 def load_student_data(conn_pool, pytestconfig, tmp_path_factory, worker_id):
-    root_tmp_dir = tmp_path_factory.getbasetemp().parent
-    fn = root_tmp_dir / "csv-data-student"
-    load = False
-    with FileLock(str(fn) + ".lock"):
-        if not fn.is_file():
-            load_csv_data(pytestconfig, conn_pool, "student")
-            fn.write_text("student")
-            logging.info(f"session-{worker_id} load student csv data")
-            load = True
-        else:
-            logging.info(
-                f"session-{worker_id} need not to load student csv data")
-    yield
-    if load:
-        os.remove(str(fn))
+    space_desc = SpaceDesc(name="student", vid_type="FIXED_STRING(8)")
+    yield from load_csv_data_once(tmp_path_factory, pytestconfig, worker_id,
+                                  conn_pool, space_desc)
 
 
 # TODO(yee): Delete this when we migrate all test cases

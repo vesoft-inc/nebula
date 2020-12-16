@@ -1,6 +1,3 @@
-DROP SPACE IF EXISTS nba;
-CREATE SPACE nba(partition_num=7, replica_factor=1, vid_type=FIXED_STRING(30));
-USE nba;
 CREATE TAG IF NOT EXISTS player(name string, age int);
 CREATE TAG IF NOT EXISTS team(name string);
 CREATE TAG IF NOT EXISTS bachelor(name string, speciality string);

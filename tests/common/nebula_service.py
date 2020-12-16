@@ -173,15 +173,19 @@ class NebulaService(object):
         # wait nebula start
         start_time = time.time()
         if not self._check_servers_status(server_ports):
-            raise Exception(
-                f'nebula servers not ready in {time.time() - start_time}s')
-        print(f'nebula servers start ready in {time.time() - start_time}s')
+            self._collect_pids()
+            self.kill_all(signal.SIGKILL)
+            elapse = time.time() - start_time
+            raise Exception(f'nebula servers not ready in {elapse}s')
 
+        self._collect_pids()
+
+        return graph_port
+
+    def _collect_pids(self):
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):
             with open(pf) as f:
                 self.pids[f.name] = int(f.readline())
-
-        return graph_port
 
     def stop(self):
         print("try to stop nebula services...")

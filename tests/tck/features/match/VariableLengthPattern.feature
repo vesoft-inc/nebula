@@ -1,4 +1,4 @@
-Feature: Variable length relationship match (m to n)
+Feature: Variable length Pattern match (m to n)
 
   Background:
     Given a graph with space named "nba"

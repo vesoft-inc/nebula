@@ -20,7 +20,6 @@ Feature: Basic match
       | 'Ray Allen'     | 43  |
       | 'David West'    | 38  |
       | 'Tracy McGrady' | 39  |
-    And no side effects
     When executing query:
       """
       MATCH (v:player {age: 29})
@@ -32,4 +31,3 @@ Feature: Basic match
       | 'Jonathon Simmons' |
       | 'Klay Thompson'    |
       | 'Dejounte Murray'  |
-    And no side effects

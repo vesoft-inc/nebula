@@ -4,33 +4,36 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import math
+from functools import reduce
 
 from nebula2.data.DataObject import (
+    DataSetWrapper,
     Node,
+    PathWrapper,
     Record,
     Relationship,
-    PathWrapper,
-    DataSetWrapper,
     ValueWrapper,
 )
 
 
 class DataSetWrapperComparator:
-    def __init__(self, strict=True, order=False):
+    def __init__(self, strict=True, order=False, included=False):
         self._strict = strict
         self._order = order
+        self._included = included
 
-    def __call__(self, lhs: DataSetWrapper, rhs: DataSetWrapper):
-        return self.compare(lhs, rhs)
+    def __call__(self, resp: DataSetWrapper, expect: DataSetWrapper):
+        return self.compare(resp, expect)
 
-    def compare(self, lhs: DataSetWrapper, rhs: DataSetWrapper):
-        if lhs.get_row_size() != rhs.get_row_size():
+    def compare(self, resp: DataSetWrapper, expect: DataSetWrapper):
+        if resp.get_row_size() < expect.get_row_size():
             return False
-        if not lhs.get_col_names() == rhs.get_col_names():
+        if not resp.get_col_names() == expect.get_col_names():
             return False
         if self._order:
-            return all(self.compare_row(l, r) for (l, r) in zip(lhs, rhs))
-        return self._compare_list(lhs, rhs, self.compare_row)
+            return all(self.compare_row(l, r) for (l, r) in zip(resp, expect))
+        return self._compare_list(resp, expect, self.compare_row,
+                                  self._included)
 
     def compare_value(self, lhs: ValueWrapper, rhs: ValueWrapper):
         """
@@ -90,21 +93,40 @@ class DataSetWrapperComparator:
             for (l, r) in zip(lhs, rhs))
 
     def compare_edge(self, lhs: Relationship, rhs: Relationship):
-        if not lhs == rhs:
-            return False
-        if not self._strict:
-            return True
+        if self._strict:
+            if not lhs == rhs:
+                return False
+        else:
+            redge = rhs._value
+            if redge.src is not None and redge.dst is not None:
+                if lhs.start_vertex_id() != rhs.start_vertex_id():
+                    return False
+                if lhs.end_vertex_id() != rhs.end_vertex_id():
+                    return False
+            if redge.ranking is not None:
+                if lhs.ranking() != rhs.ranking():
+                    return False
+            if redge.name is not None:
+                if lhs.edge_name() != rhs.edge_name():
+                    return False
+            # FIXME(yee): diff None and {} test cases
+            if len(rhs.propertys()) == 0:
+                return True
         return self.compare_map(lhs.propertys(), rhs.propertys())
 
     def compare_node(self, lhs: Node, rhs: Node):
-        if lhs.get_id() != rhs.get_id():
-            return False
-        if not self._strict:
-            return True
-        if len(lhs.tags()) != len(rhs.tags()):
-            return False
-        for tag in lhs.tags():
-            if not rhs.has_tag(tag):
+        if self._strict:
+            if lhs.get_id() != rhs.get_id():
+                return False
+            if len(lhs.tags()) != len(rhs.tags()):
+                return False
+        else:
+            if rhs._value.vid is not None and lhs.get_id() != rhs.get_id():
+                return False
+            if len(lhs.tags()) < len(rhs.tags()):
+                return False
+        for tag in rhs.tags():
+            if not lhs.has_tag(tag):
                 return False
             lprops = lhs.propertys(tag)
             rprops = rhs.propertys(tag)
@@ -124,29 +146,28 @@ class DataSetWrapperComparator:
         return True
 
     def compare_list(self, lhs, rhs):
-        if len(lhs) != len(rhs):
-            return False
-        if self._strict:
-            return all(self.compare_value(l, r) for (l, r) in zip(lhs, rhs))
-        return self._compare_list(lhs, rhs, self.compare_value)
+        return len(lhs) == len(rhs) and \
+            self._compare_list(lhs, rhs, self.compare_value)
 
     def compare_row(self, lrecord: Record, rrecord: Record):
         if not lrecord.size() == rrecord.size():
             return False
-        return all(self.compare_value(l, r)
-                   for (l, r) in zip(lrecord, rrecord))
+        return all(
+            self.compare_value(l, r) for (l, r) in zip(lrecord, rrecord))
 
-    def _compare_list(self, lhs, rhs, cmp_fn):
+    def _compare_list(self, lhs, rhs, cmp_fn, included=False):
         visited = []
-        size = 0
-        for lr in lhs:
-            size += 1
+        for rr in rhs:
             found = False
-            for i, rr in enumerate(rhs):
+            for i, lr in enumerate(lhs):
                 if i not in visited and cmp_fn(lr, rr):
                     visited.append(i)
                     found = True
                     break
             if not found:
                 return False
+        lst = [1 for i in lhs]
+        size = reduce(lambda x, y: x + y, lst) if len(lst) > 0 else 0
+        if included:
+            return len(visited) <= size
         return len(visited) == size
