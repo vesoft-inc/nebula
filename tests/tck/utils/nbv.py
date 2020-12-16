@@ -4,6 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
 
+import re
 import ply.lex as lex
 import ply.yacc as yacc
 
@@ -25,6 +26,7 @@ Value.__hash__ = lambda self: self.value.__hash__()
 states = (
     ('sstr', 'exclusive'),
     ('dstr', 'exclusive'),
+    ('regex', 'exclusive'),
 )
 
 tokens = (
@@ -42,14 +44,15 @@ tokens = (
     'STRING',
     'BOOLEAN',
     'LABEL',
+    'PATTERN',
 )
 
-literals = ['(', ')', '[', ']', '{', '}', '<', '>', '@', '-', ':', ',']
+literals = ['(', ')', '[', ']', '{', '}', '<', '>', '@', '-', ':', ',', '/']
 
 t_LABEL = r'[_a-zA-Z][_a-zA-Z0-9]*'
 
 t_ignore = ' \t\n'
-t_sstr_dstr_ignore = ''
+t_sstr_dstr_regex_ignore = ''
 
 
 def t_EMPTY(t):
@@ -143,6 +146,13 @@ def t_dstr(t):
     pass
 
 
+def t_regex(t):
+    r'/'
+    t.lexer.string = ''
+    t.lexer.begin('regex')
+    pass
+
+
 def t_sstr_dstr_escape_newline(t):
     r'\\n'
     t.lexer.string += '\n'
@@ -172,6 +182,21 @@ def t_dstr_any(t):
     t.lexer.string += t.value
     pass
 
+def t_regex_escape_char(t):
+    r'\\/'
+    t.lexer.string += t.value[1]
+    pass
+
+def t_regex_any(t):
+    r'[^/]'
+    t.lexer.string += t.value
+    pass
+
+def t_regex_PATTERN(t):
+    r'/'
+    t.value = re.compile(t.lexer.string)
+    t.lexer.begin('INITIAL')
+    return t
 
 def t_sstr_STRING(t):
     r'\''
@@ -207,6 +232,7 @@ def p_expr(p):
              | FLOAT
              | BOOLEAN
              | STRING
+             | PATTERN
              | list
              | set
              | map
@@ -516,9 +542,11 @@ if __name__ == '__main__':
     expected['True'] = Value(bVal=True)
     expected['false'] = Value(bVal=False)
     expected['fAlse'] = Value(bVal=False)
-    expected["'string'"] = Value(sVal="string")
-    expected['"string"'] = Value(sVal='string')
-    expected['''"string'string'"'''] = Value(sVal="string'string'")
+    expected["'string'"] = Value(sVal=b"string")
+    expected['"string"'] = Value(sVal=b'string')
+    expected['''"string'string'"'''] = Value(sVal=b"string'string'")
+    expected['''/^[_a-z][-_a-z0-9]*$/'''] = re.compile(r'^[_a-z][-_a-z0-9]*$')
+    expected['''/\\//'''] = re.compile(r'/')
     expected['[]'] = Value(lVal=NList([]))
     expected['[{}]'] = Value(lVal=NList([Value(mVal=NMap({}))]))
     expected['[1,2,3]'] = Value(
