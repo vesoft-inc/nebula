@@ -33,7 +33,10 @@ public:
         auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId);
         auto ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
                                                         partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED || iter == nullptr || !iter->valid()) {
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+        if (iter == nullptr || !iter->valid()) {
             // not emplace row when vertex not exists
             return kvstore::ResultCode::SUCCEEDED;
         }
