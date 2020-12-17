@@ -6,6 +6,7 @@
 
 #include <folly/container/Enumerate.h>
 #include "storage/transaction/GetValueProcessor.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -20,6 +21,9 @@ void GetValueProcessor::process(const cpp2::GetValueRequest& req) {
 
     std::string value;
     kvstore::ResultCode rc = env_->kvstore_->get(spaceId, partId, key, &value);
+    LOG_IF(INFO, FLAGS_trace_toss)
+        << "getValue for partId=" << partId << ", key=" << folly::hexlify(key)
+        << ", rc=" << static_cast<int>(rc);
     if (rc != kvstore::ResultCode::SUCCEEDED) {
         handleErrorCode(rc, spaceId, partId);
     } else {

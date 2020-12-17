@@ -17,6 +17,9 @@ using StorageClient = storage::GraphStorageClient;
 constexpr bool kUseToss = true;
 constexpr bool kNotToss = false;
 
+static int32_t b_ = 1;
+static int32_t gap = 1000;
+
 enum class TossTestEnum {
     NO_TOSS = 1,
     // add one edge
@@ -57,6 +60,11 @@ public:
     }
 
     void SetUp() override {
+        if (b_ % gap) {
+            b_ = (b_ / gap + 1) * gap;
+        } else {
+            b_ += gap;
+        }
     }
 
     void TearDown() override {
@@ -115,21 +123,17 @@ TEST_F(TossTest, NO_TOSS) {
     EXPECT_EQ(env_->countSquareBrackets(props), 1);
 }
 
-TEST_F(TossTest, ADD_ONES_EDGE) {
+TEST_F(TossTest, ONE_EDGE) {
     auto num = 1U;
     auto values = TossTestUtils::genValues(num);
 
-    int32_t __e = static_cast<int32_t>(TossTestEnum::ADD_ONES_EDGE) * 100;
-    int64_t src = env_->getSpaceId() * __e * kPart;
-
     std::vector<cpp2::NewEdge> edges;
-    edges.emplace_back(env_->generateEdge(src, 0, values.back(), src + kPart));
+    edges.emplace_back(env_->generateEdge(b_, 0, values.back(), b_ + kPart));
 
     std::vector<cpp2::NewEdge> startWith{edges[0]};
     auto props = env_->getNeiProps(startWith);
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
-    LOG(INFO) << "going to add edge:" << edges.back().props.back();
     LOG(INFO) << "going to add edge:" << TossTestUtils::hexEdgeId(edges.back().key);
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
@@ -152,20 +156,20 @@ TEST_F(TossTest, TWO_EDGES_CASE_1) {
     int32_t num = 2;
     auto values = TossTestUtils::genValues(num);
 
-    int32_t __e = static_cast<int32_t>(TossTestEnum::TWO_EDGES_CASE_1) * 100;
-    int64_t src = env_->getSpaceId() * __e * kPart;
-
     std::vector<cpp2::NewEdge> edges;
-    edges.emplace_back(env_->generateEdge(src, 0, values[0], src + kPart));
-    edges.emplace_back(env_->generateEdge(src, 0, values[1], src + kPart*2));
+    edges.emplace_back(env_->generateEdge(b_, 0, values[0], b_ + kPart));
+    edges.emplace_back(env_->generateEdge(b_, 0, values[1], b_ + kPart*2));
+
+    for (auto& e : edges) {
+        LOG(INFO) << "going to add edge: " << TossTestUtils::hexEdgeId(e.key);
+    }
 
     std::vector<cpp2::NewEdge> startWith{edges[0]};
     auto props = env_->getNeiProps(startWith);
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
-        << "fatal code=" << static_cast<int32_t>(code);
+    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
     props = env_->getNeiProps(startWith);
     EXPECT_EQ(env_->countSquareBrackets(props), 2);
@@ -331,44 +335,277 @@ TEST_F(TossTest, TEN_EDGES_CASE_2) {
     }
 }
 
-TEST_F(TossTest, internal_storage_client_test) {
-    auto num = 1U;
-    std::vector<cpp2::NewEdge> edges = env_->generateNEdges(num);
+TEST_F(TossTest, lock_test_0) {
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
 
-    // auto interClient =
+    auto edge = TossTestUtils::toVertexIdEdge(edges[0]);
 
-    std::vector<cpp2::NewEdge> first{edges[0]};
+    auto vIdLen = 8;
+    auto partId = 5;  // just a random number
+    int64_t ver = 1;
+    auto rawKey = TransactionUtils::edgeKey(vIdLen, partId, edge.key, ver);
+    auto lockKey = NebulaKeyUtils::toLockKey(rawKey);
 
-    auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
-
-    auto props = env_->getNeiProps(first);
-
-    auto svec = TossTestUtils::splitNeiResults(props);
-    EXPECT_EQ(svec.size(), num);
-    // TossTestUtils::logIfSizeNotAsExpect(svec.size(), num);
+    ASSERT_TRUE(NebulaKeyUtils::isLock(vIdLen, lockKey));
 }
 
-/*
-TEST_F(TossTest, base_component_test_1) {
-    auto num = 1U;
-    std::vector<cpp2::NewEdge> edges = env_->generateNEdges(num);
+/**
+ * @brief good lock
+ */
+TEST_F(TossTest, lock_test_1) {
+    auto num = 1;
+    LOG(INFO) << "b_=" << b_;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
 
-    std::vector<cpp2::NewEdge> first{edges[0]};
+    auto lockKey = env_->insertLock(edges[0], true);
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
 
-    auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
-
-    auto props = env_->getNeiProps(first);
-
+    auto props = env_->getNeiProps(edges);
     auto svec = TossTestUtils::splitNeiResults(props);
-    EXPECT_EQ(svec.size(), num);
-    // TossTestUtils::logIfSizeNotAsExpect(svec.size(), num);
 
-    auto lockKey = env_->insertLock(edges[0]);
-    LOG(INFO) << "base_component_test_1 lockKey = " << lockKey;
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    auto rawKey = NebulaKeyUtils::toEdgeKey(lockKey);
+    ASSERT_TRUE(env_->keyExist(rawKey));
+
+    auto reversedEdgeKey = env_->reverseEdgeKey(edges[0].key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_TRUE(env_->keyExist(reversedRawKey.first));
+
+    ASSERT_EQ(svec.size(), num);
 }
-*/
+
+/**
+ * @brief good lock + edge
+ */
+TEST_F(TossTest, lock_test_2) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_, true);
+
+    auto lockKey = env_->insertLock(edges[0], true);
+
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+    auto rawKey = env_->insertEdge(edges[1]);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    // auto rawKey = NebulaKeyUtils::toEdgeKey(lockKey);
+    ASSERT_TRUE(env_->keyExist(rawKey));
+
+    // step 3rd: reverse edge key exist
+    auto reversedEdgeKey = env_->reverseEdgeKey(edges[0].key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_TRUE(env_->keyExist(reversedRawKey.first));
+
+    // step 4th: the get neighbors result is from lock
+    auto lockStrVal = edges[0].props[1].toString();
+    ASSERT_TRUE(svec.back().size() > lockStrVal.size());
+    auto neighborStrVal = svec.back().substr(svec.back().size() - lockStrVal.size());
+    ASSERT_EQ(lockStrVal, neighborStrVal);
+
+    ASSERT_EQ(svec.size(), num);
+}
+
+/**
+ * @brief bad lock
+ */
+TEST_F(TossTest, lock_test_3) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_, true);
+
+    auto lockKey = env_->insertLock(edges[0], false);
+    ASSERT_TRUE(env_->keyExist(lockKey));
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    EXPECT_EQ(svec.size(), 0);
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+}
+
+/**
+ * @brief bad lock + edge
+ */
+TEST_F(TossTest, lock_test_4) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_, true);
+    ASSERT_EQ(edges.size(), 2);
+
+    auto lockKey = env_->insertLock(edges[0], false);
+    ASSERT_TRUE(env_->keyExist(lockKey));
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto rawKey = env_->insertEdge(edges[1]);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    ASSERT_EQ(svec.size(), num);
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    // auto rawKey = NebulaKeyUtils::toEdgeKey(lockKey);
+    ASSERT_TRUE(env_->keyExist(rawKey));
+
+    // step 3rd: reverse edge key exist
+    auto reversedEdgeKey = env_->reverseEdgeKey(edges[0].key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_FALSE(env_->keyExist(reversedRawKey.first));
+
+    // step 4th: the get neighbors result is from lock
+    auto edgeStrVal = edges[1].props[1].toString();
+    ASSERT_TRUE(svec.back().size() > edgeStrVal.size());
+    auto neighborStrVal = svec.back().substr(svec.back().size() - edgeStrVal.size());
+    ASSERT_EQ(edgeStrVal, neighborStrVal);
+}
+
+/**
+ * @brief neighbor edge + edge
+ *        check normal data(without lock) can be read without err
+ */
+TEST_F(TossTest, neighbors_test_1) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 2;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+    ASSERT_EQ(edges.size(), 2);
+
+    auto rawKey1 = env_->insertEdge(edges[0]);
+    auto rawKey2 = env_->insertEdge(edges[1]);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    ASSERT_TRUE(TossTestUtils::compareSize(svec, num));
+}
+
+/**
+ * @brief neighbor edge + good lock
+ */
+TEST_F(TossTest, neighbors_test_2) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 2;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+    ASSERT_EQ(edges.size(), 2);
+
+    auto rawKey1 = env_->insertEdge(edges[0]);
+
+    auto lockKey = env_->insertLock(edges[1], true);
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    ASSERT_TRUE(TossTestUtils::compareSize(svec, num));
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    auto rawKey = NebulaKeyUtils::toEdgeKey(lockKey);
+    ASSERT_TRUE(env_->keyExist(rawKey));
+
+    // step 3rd: reverse edge key exist
+    auto reversedEdgeKey = env_->reverseEdgeKey(edges[1].key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_TRUE(env_->keyExist(reversedRawKey.first));
+}
+
+/**
+ * @brief neighbor edge + good lock + edge
+ */
+TEST_F(TossTest, neighbors_test_3) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 2;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+    ASSERT_EQ(edges.size(), 2);
+    auto lockEdge = env_->dupEdge(edges[1]);
+
+    auto rawKey1 = env_->insertEdge(edges[0]);
+    auto rawKey2 = env_->insertEdge(edges[1]);
+    auto lockKey = env_->insertLock(lockEdge, true);
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    ASSERT_TRUE(TossTestUtils::compareSize(svec, num));
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    ASSERT_TRUE(env_->keyExist(rawKey1));
+    ASSERT_TRUE(env_->keyExist(rawKey2));
+
+    // step 3rd: reverse edge key exist
+    auto reversedEdgeKey = env_->reverseEdgeKey(edges[1].key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_TRUE(env_->keyExist(reversedRawKey.first));
+
+    // TossTestUtils::print_svec(svec);
+    LOG(INFO) << "edges[0]=" << edges[0].props[1].toString();
+    LOG(INFO) << "edges[1]=" << edges[1].props[1].toString();
+    LOG(INFO) << "lockEdge=" << lockEdge.props[1].toString();
+
+    LOG(INFO) << "lockEdge.size()=" << lockEdge.props[1].toString().size();
+
+    // step 4th: the get neighbors result is from lock
+    auto strProps = env_->extractStrVals(svec);
+    decltype(strProps) expect{edges[0].props[1].toString(), lockEdge.props[1].toString()};
+    ASSERT_EQ(strProps, expect);
+}
+
+/**
+ * @brief neighbor edge + bad lock
+ */
+TEST_F(TossTest, neighbors_test_4) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 2;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+    ASSERT_EQ(edges.size(), 2);
+
+    auto rawKey1 = env_->insertEdge(edges[0]);
+    auto lockEdge = env_->dupEdge(edges[1]);
+
+    auto lockKey = env_->insertLock(lockEdge, false);
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+    ASSERT_TRUE(TossTestUtils::compareSize(svec, num-1));
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    ASSERT_TRUE(env_->keyExist(rawKey1));
+
+    // step 3rd: reverse edge key exist
+    // auto reversedEdgeKey = env_->reverseEdgeKey(lockEdge.key);
+    // auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    // ASSERT_FALSE(env_->keyExist(reversedRawKey.first));
+
+    // TossTestUtils::print_svec(svec);
+    LOG(INFO) << "edges[0]=" << edges[0].props[1].toString();
+    // LOG(INFO) << "edges[1]=" << edges[1].props[1].toString();
+    // LOG(INFO) << "lockEdge=" << lockEdge.props[1].toString();
+
+    // LOG(INFO) << "lockEdge.size()=" << lockEdge.props[1].toString().size();
+
+    // step 4th: the get neighbors result is from lock
+    auto strProps = env_->extractStrVals(svec);
+    decltype(strProps) expect{edges[0].props[1].toString()};
+    ASSERT_EQ(strProps, expect);
+}
 
 }  // namespace storage
 }  // namespace nebula

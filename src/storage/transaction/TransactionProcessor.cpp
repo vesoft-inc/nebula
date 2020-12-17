@@ -17,9 +17,8 @@ void InterTxnProcessor::process(const cpp2::InternalTxnRequest& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
 
-
-    LOG_IF(INFO, FLAGS_trace_toss) << "enter forward income req, txnId=" << txnId
-        << ", spaceId=" << spaceId << ", partId=" << partId;
+    LOG_IF(INFO, FLAGS_trace_toss) << "process req, txnId=" << txnId
+                                   << ", spaceId=" << spaceId << ", partId=" << partId;
     auto data = req.get_data()[req.get_position()].back();
 
     env_->txnMan_->commitBatch(spaceId, partId, data)

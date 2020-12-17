@@ -13,9 +13,15 @@ DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(path, "", "rocksdb instance path");
 DEFINE_string(space_name, "", "The space name.");
 DEFINE_string(vertex_id, "", "Specify the vertex id");
+DEFINE_bool(print_hex_edge_id, false, "Print edge src & dst in hex");
 
 namespace nebula {
 namespace storage {
+
+std::string hexEdgeId(size_t vIdLen, folly::StringPiece key) {
+    return folly::hexlify(NebulaKeyUtils::getSrcId(vIdLen, key)) +
+           folly::hexlify(NebulaKeyUtils::getDstId(vIdLen, key));
+}
 
 class DumpEdges {
 public:
@@ -104,6 +110,7 @@ public:
             if (NebulaKeyUtils::isEdge(spaceVidLen_, key)) {
                 LOG(INFO) << NebulaKeyUtils::getSrcId(spaceVidLen_, key) << ","
                           << NebulaKeyUtils::getDstId(spaceVidLen_, key);
+                LOG_IF(INFO, FLAGS_print_hex_edge_id) << hexEdgeId(spaceVidLen_, key);
                 count++;
             }
             iter->Next();

@@ -35,6 +35,8 @@ class TransactionManager {
 public:
     explicit TransactionManager(storage::StorageEnv* env);
 
+    ~TransactionManager() = default;
+
     /**
      * @brief edges have same localPart and remotePart will share
      *        one signle RPC request
@@ -96,8 +98,7 @@ public:
     std::unordered_map<std::string, std::list<int64_t>> timer_;
 
 protected:
-    folly::SemiFuture<kvstore::ResultCode> commitEdgeOut(size_t vIdLen,
-                                                         GraphSpaceID spaceId,
+    folly::SemiFuture<kvstore::ResultCode> commitEdgeOut(GraphSpaceID spaceId,
                                                          PartitionID partId,
                                                          std::string&& key,
                                                          std::string&& props);
@@ -108,11 +109,11 @@ protected:
 
     folly::SemiFuture<kvstore::ResultCode> commitEdge(GraphSpaceID spaceId,
                                                       PartitionID partId,
-                                                      std::string&& key,
-                                                      std::string&& encodedProp);
+                                                      std::string& key,
+                                                      std::string& encodedProp);
 
     folly::SemiFuture<cpp2::ErrorCode>
-    erasePersistLock(size_t vIdLen, GraphSpaceID spaceId, std::string rawKey);
+    eraseKey(GraphSpaceID spaceId, PartitionID partId, const std::string& key);
 
     void eraseMemoryLock(const std::string& rawKey, int64_t ver);
 
@@ -121,8 +122,6 @@ protected:
     std::string reverseKey(size_t vIdLen, GraphSpaceID spaceId, std::string& rawKey, int64_t ver);
 
     nebula::meta::cpp2::IsolationLevel getSpaceIsolationLvel(GraphSpaceID spaceId);
-
-    cpp2::ErrorCode extractErrorCode(folly::Try<StatusOr<cpp2::ExecResponse>>& t);
 
     folly::SemiFuture<kvstore::ResultCode> writeLock(size_t vIdLen,
                                                      GraphSpaceID spaceId,

@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
@@ -7,25 +6,7 @@
 
 #pragma once
 
-#include <chrono>
-
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-
-#include <folly/Benchmark.h>
-#include <folly/Format.h>
-#include <folly/container/Enumerate.h>
-
-#include "codec/RowWriterV2.h"
-#include "common/base/Base.h"
-#include "common/clients/storage/GraphStorageClient.h"
-#include "common/clients/storage/InternalStorageClient.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/meta/SchemaManager.h"
-#include "storage/transaction/TransactionUtils.h"
-#include "utils/NebulaKeyUtils.h"
-#include "kvstore/LogEncoder.h"
+#include "TossTestUtils.h"
 
 #define FLOG_FMT(...) LOG(INFO) << folly::sformat(__VA_ARGS__)
 
@@ -43,114 +24,6 @@ constexpr int32_t kReplica = 3;
 constexpr int32_t kSum = 10000 * 10000;
 
 using StorageClient = storage::GraphStorageClient;
-
-struct TossTestUtils {
-    static std::vector<std::vector<nebula::Value>> genValues(size_t num) {
-        boost::uuids::random_generator          gen;
-        std::vector<std::vector<nebula::Value>> ret(num);
-        for (auto i = 0U; i != num; ++i) {
-            ret[i].resize(2);
-            int32_t n = 1024*(1+i);
-            ret[i][0].setInt(n);
-            ret[i][1].setStr(boost::uuids::to_string(gen()));
-        }
-        return ret;
-    }
-
-    static std::string dumpDataSet(const DataSet& ds) {
-        std::stringstream oss;
-        for (auto&& it : folly::enumerate(ds.colNames)) {
-            oss << "\ncolNames[" << it.index << "]=" << *it;
-        }
-        oss << "\n";
-
-        oss << dumpRows(ds.rows);
-        return oss.str();
-    }
-
-    static std::string concatValues(const std::vector<nebula::Value>& vals) {
-        if (vals.empty()) {
-            return "";
-        }
-        std::ostringstream oss;
-        for (auto& val : vals) {
-            oss << val << ',';
-        }
-        std::string ret = oss.str();
-        return ret.substr(0, ret.size()-1);
-    }
-
-    static std::string dumpValues(const std::vector<Value>& vals) {
-        std::stringstream oss;
-        oss << "vals.size() = " << vals.size() << "\n";
-        for (auto& val : vals) {
-            oss << val.toString() << "\n";
-        }
-        return oss.str();
-    }
-
-    static std::string dumpRows(const std::vector<Row>& rows) {
-        std::stringstream oss;
-        oss << "rows.size() = " << rows.size() << "\n";
-        for (auto& row : rows) {
-            oss << "row.size()=" << row.size() << "\n";
-            oss << row.toString() << "\n";
-        }
-        return oss.str();
-    }
-
-    static std::string hexVid(int64_t vid) {
-        std::string str(reinterpret_cast<char*>(&vid), sizeof(int64_t));
-        return folly::hexlify(str);
-    }
-
-    static std::string hexEdgeId(const cpp2::EdgeKey& ek) {
-        return hexVid(ek.src.getInt()) + hexVid(ek.dst.getInt());
-    }
-
-    static std::vector<std::string> splitNeiResults(std::vector<std::string>& svec) {
-        std::vector<std::string> ret;
-        for (auto& str : svec) {
-            auto sub = splitNeiResult(str);
-            ret.insert(ret.end(), sub.begin(), sub.end());
-        }
-        return ret;
-    }
-
-    static void logIfSizeNotAsExpect(const std::vector<std::string>& svec, size_t expect) {
-        if (svec.size() != expect) {
-            print_svec(svec);
-        }
-    }
-
-    static std::vector<std::string> splitNeiResult(folly::StringPiece str) {
-        std::vector<std::string> ret;
-        auto begin = str.begin();
-        auto end = str.end();
-        if (str.startsWith("[[")) {
-            begin++;
-            begin++;
-        }
-        if (str.endsWith("]]")) {
-            end--;
-            end--;
-        }
-        str.assign(begin, end);
-        folly::split("],[", str, ret);
-        if (ret.size() == 1U && ret.back() == "__EMPTY__") {
-            ret.clear();
-        }
-        return ret;
-    }
-
-    static void print_svec(const std::vector<std::string>& svec) {
-        LOG(INFO) << "svec.size()=" << svec.size();
-        for (auto& str : svec) {
-            LOG(INFO) << str;
-        }
-    }
-};  // end TossTestUtils
-
 struct TossEnvironment {
     static TossEnvironment* getInstance(const std::string& metaName, int32_t metaPort) {
         static TossEnvironment inst(metaName, metaPort);
@@ -195,6 +68,10 @@ struct TossEnvironment {
             LOG(INFO) << "sleep for " << sleepSecs-- << " sec";
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
+
+        auto stVIdLen = mClient_->getSpaceVidLen(spaceId_);
+        LOG_IF(FATAL, !stVIdLen.ok());
+        vIdLen_ = stVIdLen.value();
 
         bool leaderLoaded = false;
         while (!leaderLoaded) {
@@ -466,9 +343,25 @@ struct TossEnvironment {
                                       limit);
     }
 
-    std::vector<std::string> getNeiProps(const std::vector<cpp2::NewEdge>& edges,
+    /**
+     * @brief Get the Nei Props object,
+     *        will unique same src & dst input edges.
+     */
+    std::vector<std::string> getNeiProps(const std::vector<cpp2::NewEdge>& _edges,
                                          int64_t limit = std::numeric_limits<int64_t>::max()) {
         bool retLeaderChange = false;
+        auto edges(_edges);
+        std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
+            if (a.key.src == b.key.src) {
+                return a.key.dst < b.key.dst;
+            }
+            return a.key.src < b.key.src;
+        });
+        auto last = std::unique(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
+            return a.key.src == b.key.src && a.key.dst == b.key.dst;
+        });
+        edges.erase(last, edges.end());
+        LOG(INFO) << "_edges.size()=" << _edges.size() << ", edges.size()=" << edges.size();
         do {
             auto f = getNeighborsWrapper(edges, limit);
             f.wait();
@@ -563,19 +456,48 @@ struct TossEnvironment {
         return ret;
     }
 
-    int64_t getSrc() const {
-        return src_;
+    std::set<std::string> extractStrVals(const std::vector<std::string>& svec) {
+        auto len = 36;
+        std::set<std::string> strVals;
+        for (auto& e : svec) {
+            strVals.insert(e.substr(e.size() - len));
+        }
+        // std::sort(strVals.begin(), strVals.end());
+        return strVals;
     }
 
-    void setSrc(int64_t src) {
-        src_ = src;
+    std::vector<std::string> diffProps(std::vector<std::string> actual,
+                                       std::vector<std::string> expect) {
+        std::sort(actual.begin(), actual.end());
+        std::sort(expect.begin(), expect.end());
+        std::vector<std::string> diff;
+
+        std::set_difference(actual.begin(), actual.end(), expect.begin(), expect.end(),
+                            std::inserter(diff, diff.begin()));
+        return diff;
     }
 
-    std::vector<cpp2::NewEdge> generateNEdges(size_t cnt) {
-        auto vals = TossTestUtils::genValues(cnt);
+    cpp2::NewEdge dupEdge(const cpp2::NewEdge& e) {
+        cpp2::NewEdge dupEdge{e};
+        int n = e.props[0].getInt() / 1024 + 1;
+        dupEdge.props = TossTestUtils::genSingleVal(n);
+        return dupEdge;
+    }
+
+    /**
+     * @brief gen num edges base from src
+     *        dst shoule begin from [src + 1, src + num + 1)
+     * @param extraSameKey
+     *        if set, gen another edge, has the same src & dst will always equal to src + 1
+     */
+    std::vector<cpp2::NewEdge> generateMultiEdges(int num, int64_t src, bool extraSameKey = false) {
+        LOG_IF(FATAL, num <= 0) << "num must > 0";
+        num += static_cast<int>(extraSameKey);
+        auto vals = TossTestUtils::genValues(num);
         std::vector<cpp2::NewEdge> edges;
-        for (auto i = 0U; i != cnt; ++i) {
-            edges.emplace_back(generateEdge(src_, 0, vals[i], src_ + i));
+        for (int i = 0; i < num; ++i) {
+            auto dst = extraSameKey ? 1 : src + i + 1;
+            edges.emplace_back(generateEdge(src, 0, vals[i], dst));
         }
         return edges;
     }
@@ -585,41 +507,101 @@ struct TossEnvironment {
         // auto lockKey = ;
     }
 
+    int32_t getPartId(const std::string& src) {
+        // auto stPart = mClient_->partId(spaceId_, edgeKey.src.getStr());
+        auto stPart = mClient_->partId(spaceId_, src);
+        LOG_IF(FATAL, !stPart.ok()) << "mClient_->partId failed";
+        return stPart.value();
+    }
 
-    std::string insertLock(const cpp2::NewEdge& edge, size_t vIdLen = 8) {
-        auto& edgeKey = edge.key;
-        auto stPart = mClient_->partId(spaceId_, edgeKey.src.getStr());
-        if (!stPart.ok()) {
-            LOG(FATAL) << "partId(spaceId_, edgeKey.src.getStr()) not ok";
-        }
-        auto partId = stPart.value();
-        auto rawKey = TransactionUtils::edgeKey(vIdLen, partId, edgeKey, 0);
-        auto lockKey = NebulaKeyUtils::toLockKey(rawKey);
-        auto cpLockKey = lockKey;
+    /**
+     * @brief gen rawkey and partId from EdgeKey
+     * @return std::pair<std::string, int32_t> rawkey vs partId
+     */
+    std::pair<std::string, int32_t> makeRawKey(const cpp2::EdgeKey& e) {
+        auto edgeKey = TossTestUtils::toVidKey(e);
+        auto partId = getPartId(edgeKey.src.getStr());
 
-        auto props = edge.props;
-        auto edgeType = edgeKey.get_edge_type();
+        auto ver = 1;
+        auto rawKey = TransactionUtils::edgeKey(vIdLen_, partId, edgeKey, ver);
+        return std::make_pair(rawKey, partId);
+    }
+
+    std::string encodeProps(const cpp2::NewEdge& e) {
+        auto edgeType = e.key.get_edge_type();
         auto pSchema = schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType)).get();
-        if (!pSchema) {
-            LOG(FATAL) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
+        LOG_IF(FATAL, !pSchema) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
+        auto propNames = makeColNames(e.props.size());
+        return encodeRowVal(pSchema, propNames, e.props);
+    }
+
+    std::string insertEdge(const cpp2::NewEdge& e) {
+        std::string rawKey;
+        int32_t partId = 0;
+        std::tie(rawKey, partId) = makeRawKey(e.key);
+        auto encodedProps = encodeProps(e);
+        putValue(rawKey, encodedProps, partId);
+        return rawKey;
+    }
+
+    cpp2::EdgeKey reverseEdgeKey(const cpp2::EdgeKey& input) {
+        cpp2::EdgeKey ret(input);
+        std::swap(ret.src, ret.dst);
+        ret.edge_type = 0 - ret.edge_type;
+        return ret;
+    }
+
+    std::string insertReverseEdge(const cpp2::NewEdge& _e) {
+        cpp2::NewEdge e(_e);
+        e.key = reverseEdgeKey(_e.key);
+        return insertEdge(e);
+    }
+
+    /**
+     * @brief insert a lock according to the given edge e.
+     *        also insert reverse edge
+     * @return lockKey
+     */
+    std::string insertLock(const cpp2::NewEdge& e, bool insertInEdge) {
+        if (insertInEdge) {
+            insertReverseEdge(e);
         }
 
-        auto propNames = makeColNames(edge.props.size());
-        auto lockVal = encodeRowVal(pSchema, propNames, edge.props);
+        std::string rawKey;
+        int32_t lockPartId;
+        std::tie(rawKey, lockPartId) = makeRawKey(e.key);
+
+        auto lockKey = NebulaKeyUtils::toLockKey(rawKey);
+        auto lockVal = encodeProps(e);
+
+        putValue(lockKey, lockVal, lockPartId);
+
+        return lockKey;
+    }
+
+    void putValue(std::string key, std::string val, int32_t partId) {
+        LOG(INFO) << "put value, partId=" << partId << ", key=" << folly::hexlify(key);
         kvstore::BatchHolder bat;
-        bat.put(std::move(lockKey), std::move(lockVal));
+        bat.put(std::move(key), std::move(val));
         auto batch = encodeBatchValue(bat.getBatch());
 
-        auto sf = interClient_->forwardTransaction(0, spaceId_, partId, std::move(batch)).wait();
-        LOG_IF(FATAL, !sf.hasValue()) << "!sf.hasValue()";
+        auto txnId = 0;
+        auto sf = interClient_->forwardTransaction(txnId, spaceId_, partId, std::move(batch));
+        sf.wait();
 
-        auto& stExec = sf.value();
-        LOG_IF(FATAL, !stExec.ok()) << "!stExec.ok()";
+        if (sf.value() != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(FATAL) << "forward txn return=" << static_cast<int>(sf.value());
+        }
+    }
 
-        auto& respCommon = stExec.value().result;
-        LOG_IF(FATAL, !respCommon.failed_parts.empty()) << "!respCommon.failed_parts.empty()";
-
-        return cpLockKey;
+    bool keyExist(folly::StringPiece key) {
+        auto sf = interClient_->getValue(vIdLen_, spaceId_, key);
+        sf.wait();
+        if (!sf.hasValue()) {
+            LOG(FATAL) << "interClient_->getValue has no value";
+            return false;
+        }
+        return nebula::ok(sf.value());
     }
 
     // simple copy of Storage::BaseProcessor::encodeRowVal
@@ -651,6 +633,7 @@ struct TossEnvironment {
         return std::move(rowWrite).moveEncodedStr();
     }
 
+public:
     std::shared_ptr<folly::IOThreadPoolExecutor>        executor_;
     std::unique_ptr<meta::MetaClient>                   mClient_;
     std::unique_ptr<StorageClient>                      sClient_;
@@ -659,7 +642,7 @@ struct TossEnvironment {
 
     int32_t                                             spaceId_{0};
     int32_t                                             edgeType_{0};
-    int64_t                                             src_{0};
+    int32_t                                             vIdLen_{0};
 };
 
 }  // namespace storage

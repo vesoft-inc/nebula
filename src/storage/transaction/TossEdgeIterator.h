@@ -39,18 +39,9 @@ public:
             ttlCol_ = ttl->value().first;
             ttlDuration_ = ttl->value().second;
         }
-        if (isEdge(iter_->key()) && setReader(iter_->val())) {
-            lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, iter_->key());
-            lastDstId_ = NebulaKeyUtils::getDstId(planContext_->vIdLen_, iter_->key()).str();
-            if (stopAtFirstEdge_) {
-                stopSearching_ = true;
-            }
-            LOG_IF(INFO, FLAGS_trace_toss)
-                << "TossEdgeIterator::TossEdgeIterator()"
-                << ", key=" << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
-        } else {
-            next();
-        }
+        LOG_IF(INFO, FLAGS_trace_toss)
+            << "TossEdgeIterator::ctor() iter_->key=" << folly::hexlify(iter_->key());
+        next();
     }
 
     folly::StringPiece key() const override {
@@ -94,6 +85,9 @@ public:
      * iter_ will invalid after step1.
      */
     void next() override {
+        LOG_IF(INFO, FLAGS_trace_toss)
+            << "TossEdgeIterator::next() iter_->key=" << folly::hexlify(iter_->key())
+            << ", iter_->valid()=" << iter_->valid();
         if (stopSearching_) {
             return;
         }
@@ -101,13 +95,16 @@ public:
 
         // Step 1: normal scan iterator from begin to end.
         while (iter_->valid()) {
-            iter_->next();
+            if (!calledByCtor_) {
+                iter_->next();
+            }
+            calledByCtor_ = false;
             if (!iter_->valid()) {
                 break;
             }
             if (isEdge(iter_->key())) {
                 LOG_IF(INFO, FLAGS_trace_toss)
-                    << "TossEdgeIterator::next(), to an edge, hex="
+                    << "TossEdgeIterator::next(), found an edge, hex="
                     << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
                 if (isLatestEdge(iter_->key()) && setReader(iter_->val())) {
                     lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, iter_->key());
@@ -121,6 +118,10 @@ public:
                         << "TossEdgeIterator::next(), return edge hex="
                         << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
                     return;
+                } else {
+                    LOG_IF(INFO, FLAGS_trace_toss) << "edge, hex="
+                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key())
+                        << ", is not latest";
                 }
 
                 /**
@@ -128,8 +129,9 @@ public:
                  */
                 if (lastIsLock_) {
                     LOG_IF(INFO, FLAGS_trace_toss)
-                        << "TossEdgeIterator::next(), prev is a lock, hex="
-                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
+                        << "TossEdgeIterator::next(), prev is a lock, hexEdgeId="
+                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key())
+                        << ", hex=" << folly::hexlify(iter_->key());
                     auto tryLockData = recoverEdges_.back()->tryWLock();
                     if (tryLockData && tryLockData->first.empty()) {
                         tryLockData->first = iter_->key().str();
@@ -139,6 +141,9 @@ public:
                     continue;
                 }
             } else if (NebulaKeyUtils::isLock(planContext_->vIdLen_, iter_->key())) {
+                LOG_IF(INFO, FLAGS_trace_toss)
+                    << "TossEdgeIterator::next() found a lock, hex="
+                    << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
                 std::string rawKey = NebulaKeyUtils::toEdgeKey(iter_->key());
                 auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, rawKey);
                 auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, rawKey).str();
@@ -167,24 +172,34 @@ public:
                     << folly::hexDump(iter_->val().data(), iter_->val().size());
             }
         }   // end while(iter_->valid())
-        LOG_IF(INFO, FLAGS_trace_toss) << "TossEdgeIterator::next(), no more iter to read";
+        LOG_IF(INFO, FLAGS_trace_toss) << "next(), no more iter to read";
 
         // Step 2: return the resumed locks/edges.
         // set recoverEdgesIter_ as begin() at first time. else ++recoverEdgesIter_
         if (needWaitResumeTask_) {
-            folly::collectAll(resumeTasks_).wait();
+            LOG_IF(INFO, FLAGS_trace_toss) << "next(), waiting resume finished";
+            folly::collectAll(std::move(resumeTasks_)).wait();
             needWaitResumeTask_ = false;
             recoverEdgesIter_ = recoverEdges_.begin();
         } else {
             recoverEdgesIter_++;
         }
 
-        if (recoverEdgesIter_ != recoverEdges_.end()) {
+        while (recoverEdgesIter_ != recoverEdges_.end()) {
             auto data = (*recoverEdgesIter_)->copy();
             if (!data.second.empty()) {
-                setReader(data.second);
+                if (setReader(data.second)) {
+                    LOG_IF(INFO, FLAGS_trace_toss) << "valid lock, break";
+                    break;
+                } else {
+                    LOG_IF(INFO, FLAGS_trace_toss) << "setReader failed, continue";
+                }
+            } else {
+                LOG_IF(INFO, FLAGS_trace_toss) << "invalid lock, data.second.empty(), continue";
             }
+            recoverEdgesIter_++;
         }
+        LOG_IF(INFO, FLAGS_trace_toss) << "next(), exit";
     }
 
     bool isEdge(const folly::StringPiece& key) {
@@ -232,6 +247,7 @@ private:
      */
     bool                                                 stopAtFirstEdge_{false};
     bool                                                 stopSearching_{false};
+    bool                                                 calledByCtor_{true};
     std::list<folly::SemiFuture<cpp2::ErrorCode>>        resumeTasks_;
     std::list<TResultsItem>                              recoverEdges_;
     std::list<TResultsItem>::iterator                    recoverEdgesIter_;

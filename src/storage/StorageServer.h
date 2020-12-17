@@ -63,7 +63,7 @@ private:
     std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
 
     std::unique_ptr<std::thread> internalStorageThread_;
-    std::atomic_int internalStorageSvcStatus_{STATUS_UNINITIALIZED};
+    std::atomic<ServiceStatus> internalStorageSvcStatus_{STATUS_UNINITIALIZED};
     std::unique_ptr<apache::thrift::ThriftServer> internalStorageServer_;
 
     std::unique_ptr<nebula::WebService> webSvc_;
