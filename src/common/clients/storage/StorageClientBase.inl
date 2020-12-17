@@ -176,6 +176,7 @@ StorageClientBase<ClientType>::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
+        int32_t portOffsetIfRetry,
         std::size_t retry,
         std::size_t retryLimit) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
@@ -200,7 +201,8 @@ StorageClientBase<ClientType>::collectResponse(
                          res,
                          remoteFunc = std::move(remoteFunc),
                          retry,
-                         retryLimit] () mutable {
+                         retryLimit,
+                         portOffsetIfRetry] () mutable {
             auto client = clientsMan_->client(host,
                                               evb,
                                               false,
@@ -219,7 +221,8 @@ StorageClientBase<ClientType>::collectResponse(
                             evb,
                             remoteFunc = std::move(remoteFunc),
                             retry,
-                            retryLimit] (folly::Try<Response>&& val) {
+                            retryLimit,
+                            portOffsetIfRetry] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host
@@ -246,11 +249,13 @@ StorageClientBase<ClientType>::collectResponse(
                             if (retry < retryLimit && isValidHostPtr(leader)) {
                                 evb->runAfterDelay([this, evb, leader = *leader, r = std::move(r),
                                                     remoteFunc = std::move(remoteFunc), context,
-                                                    start, retry, retryLimit] () {
+                                                    start, retry, retryLimit,
+                                                    portOffsetIfRetry] (){
                                     getResponse(evb,
                                                 std::pair<HostAddr, Request>(leader,
                                                                             std::move(r)),
                                                 std::move(remoteFunc),
+                                                portOffsetIfRetry,
                                                 folly::Promise<StatusOr<Response>>(),
                                                 retry + 1,
                                                 retryLimit)
@@ -325,6 +330,7 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
         folly::EventBase* evb,
         std::pair<HostAddr, Request>&& request,
         RemoteFunc&& remoteFunc,
+        int32_t leaderPortOffset,
         folly::Promise<StatusOr<Response>> pro,
         std::size_t retry,
         std::size_t retryLimit) {
@@ -332,12 +338,12 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
     getResponseImpl(evb,
                 std::forward<decltype(request)>(request),
                 std::forward<RemoteFunc>(remoteFunc),
+                leaderPortOffset,
                 std::move(pro),
                 retry,
                 retryLimit);
     return f;
 }
-
 
 template<typename ClientType>
 template<class Request, class RemoteFunc, class Response>
@@ -345,6 +351,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,
         RemoteFunc remoteFunc,
+        int32_t leaderPortOffset,
         folly::Promise<StatusOr<Response>> pro,
         std::size_t retry,
         std::size_t retryLimit) {
@@ -353,7 +360,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
         evb = ioThreadPool_->getEventBase();
     }
     folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
-                     pro = std::move(pro), retry, retryLimit, this] () mutable {
+                     leaderPortOffset, pro = std::move(pro), retry, retryLimit, this] () mutable {
         auto host = request.first;
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
@@ -368,6 +375,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
                     evb,
                     retry,
                     retryLimit,
+                    leaderPortOffset,
                     this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
@@ -395,11 +403,14 @@ void StorageClientBase<ClientType>::getResponseImpl(
                         evb->runAfterDelay([this, evb, leader = *leader,
                                 req = std::move(request.second),
                                 remoteFunc = std::move(remoteFunc), p = std::move(p),
+                                leaderPortOffset,
                                 retry, retryLimit] () mutable {
+                                leader.port += leaderPortOffset;
                                 getResponseImpl(evb,
                                         std::pair<HostAddr, Request>(std::move(leader),
-                                            std::move(req)),
+                                        std::move(req)),
                                         std::move(remoteFunc),
+                                        leaderPortOffset,
                                         std::move(p),
                                         retry + 1,
                                         retryLimit);

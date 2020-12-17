@@ -30,14 +30,13 @@ public:
     InternalStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                           meta::MetaClient* metaClient)
         : Parent(ioThreadPool, metaClient) {}
-    virtual ~InternalStorageClient() {}
+    virtual ~InternalStorageClient() = default;
 
-    folly::SemiFuture<StatusOr<cpp2::ExecResponse>> forwardTransaction(
-        int64_t txnId,
-        GraphSpaceID spaceId,
-        PartitionID partId,
-        std::string&& data,
-        folly::EventBase* evb = nullptr);
+    folly::SemiFuture<cpp2::ErrorCode> forwardTransaction(int64_t txnId,
+                                                          GraphSpaceID spaceId,
+                                                          PartitionID partId,
+                                                          std::string&& data,
+                                                          folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<ErrOrVal> getValue(size_t vIdLen,
                                          GraphSpaceID spaceId,
@@ -51,7 +50,7 @@ protected:
                                 GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::string&& data,
-                                folly::Promise<StatusOr<cpp2::ExecResponse>> p,
+                                folly::Promise<cpp2::ErrorCode> p,
                                 folly::EventBase* evb);
 
     void getValueImpl(GraphSpaceID spaceId,

@@ -154,7 +154,6 @@ GraphStorageClient::addEdges(GraphSpaceID space,
         req.set_parts(std::move(c.second));
         req.set_prop_names(std::move(propNames));
     }
-
     return collectResponse(
         evb,
         std::move(requests),
