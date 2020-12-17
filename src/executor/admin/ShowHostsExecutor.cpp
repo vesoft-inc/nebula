@@ -29,6 +29,11 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
                    "Leader count",
                    "Leader distribution",
                    "Partition distribution"});
+
+        std::map<std::string, int64_t> leaderPartsCount;
+        std::map<std::string, int64_t> allPartsCount;
+        int64_t  totalLeader = 0;
+
         for (const auto &host : hostVec) {
             nebula::Row r({host.get_hostAddr().host,
                            host.get_hostAddr().port,
@@ -40,20 +45,31 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
             std::stringstream leaders;
             std::stringstream parts;
             std::size_t i = 0;
-            for (const auto &l : host.get_leader_parts()) {
+
+            auto& leaderParts = host.get_leader_parts();
+            std::map<std::string, std::vector<PartitionID>> lPartsCount(leaderParts.begin(),
+                                                                        leaderParts.end());
+
+            for (const auto &l : lPartsCount) {
+                leaderPartsCount[l.first] += l.second.size();
                 leaders << l.first << ":" << l.second.size();
-                if (i < host.get_leader_parts().size() - 1) {
+                if (i < lPartsCount.size() - 1) {
                     leaders << kPartitionDelimeter;
                 }
                 ++i;
             }
-            if (host.get_leader_parts().empty()) {
+            if (lPartsCount.empty()) {
                 leaders << kNoPartition;
             }
+
             i = 0;
-            for (const auto &p : host.get_all_parts()) {
+            auto& allParts = host.get_all_parts();
+            std::map<std::string, std::vector<PartitionID>> aPartsCount(allParts.begin(),
+                                                                        allParts.end());
+            for (const auto &p : aPartsCount) {
+                allPartsCount[p.first] += p.second.size();
                 parts << p.first << ":" << p.second.size();
-                if (i < host.get_all_parts().size() - 1) {
+                if (i < aPartsCount.size() - 1) {
                     parts << kPartitionDelimeter;
                 }
                 ++i;
@@ -61,11 +77,51 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
             if (host.get_all_parts().empty()) {
                 parts << kNoPartition;
             }
+            totalLeader += leaderCount;
             r.emplace_back(leaderCount);
             r.emplace_back(leaders.str());
             r.emplace_back(parts.str());
             v.emplace_back(std::move(r));
         }   // row loop
+        {
+            // set sum of leader/partitions of all hosts
+            nebula::Row r({"Total",
+                           Value(),
+                           Value()});
+            r.emplace_back(totalLeader);
+
+            std::stringstream leaders;
+            std::stringstream parts;
+            std::size_t i = 0;
+            for (const auto &spaceEntry : leaderPartsCount) {
+                leaders << spaceEntry.first << ":" << spaceEntry.second;
+                if (i < leaderPartsCount.size() - 1) {
+                    leaders << kPartitionDelimeter;
+                }
+                ++i;
+            }
+            i = 0;
+            for (const auto &spaceEntry : allPartsCount) {
+                parts << spaceEntry.first << ":" << spaceEntry.second;
+                if (i < allPartsCount.size() - 1) {
+                    parts << kPartitionDelimeter;
+                }
+                ++i;
+            }
+
+            if (leaders.str().empty()) {
+                r.emplace_back(Value());
+            } else {
+                r.emplace_back(leaders.str());
+            }
+
+            if (parts.str().empty()) {
+                r.emplace_back(Value());
+            } else {
+                r.emplace_back(parts.str());
+            }
+            v.emplace_back(std::move(r));
+        }
         return v;
     };
 
