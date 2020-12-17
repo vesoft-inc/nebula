@@ -3,6 +3,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+import os
 import csv
 import re
 
@@ -22,19 +23,64 @@ class CSVImporter:
     _VID = ':VID'
     _RANK = ':RANK'
 
-    def __init__(self, filepath):
-        self._filepath = filepath
+    def __init__(self, file_desc, data_dir):
+        self._filepath = os.path.join(data_dir, file_desc['path'])
         self._insert_stmt = ""
         self._create_stmt = ""
+        self._file_desc = file_desc
         self._type = None
+        self._gen_header(file_desc)
 
     def __iter__(self):
         with open(self._filepath, 'r') as f:
+            with_header = self._file_desc.get("withHeader", False)
             for i, row in enumerate(csv.reader(f)):
-                if i == 0:
-                    yield self.parse_header(row)
+                if with_header and i == 0:
+                    header = self._header if len(self._header) > 0 else row
+                    yield self.parse_header(header)
                 else:
                     yield self.process(row)
+
+    def _gen_header(self, file_desc):
+        header = {}
+        if file_desc["type"] == "vertex":
+            vertex = file_desc["vertex"]
+            vid = vertex["vid"]
+            header[self._key(vid)] = self._vid(vid, self._VID)
+            tags = vertex["tags"]
+            for tag in tags:
+                tagname = tag['name']
+                for prop in tag['props']:
+                    header[self._key(prop)] = self._prop(prop, tagname)
+        elif file_desc["type"] == "edge":
+            edge = file_desc["edge"]
+            name = edge['name']
+            src = edge['srcVID']
+            header[self._key(src)] = self._vid(src, self._SRC_VID)
+            dst = edge['dstVID']
+            header[self._key(dst)] = self._vid(dst, self._DST_VID)
+            if "rank" in edge:
+                header[self._key(edge['rank'])] = self._RANK
+            for prop in edge['props']:
+                header[self._key(prop)] = self._prop(prop, name)
+        else:
+            raise ValueError("Invalid config file")
+        self._header = [header[str(i)] for i in range(len(header))]
+
+    @staticmethod
+    def _vid(vid, name: str):
+        vtype = vid['type']
+        if 'function' not in vid:
+            return f"{name}({vtype})"
+        return f"{name}({vtype},{vid['function']})"
+
+    @staticmethod
+    def _key(v):
+        return str(v['index'])
+
+    @staticmethod
+    def _prop(prop, prefix):
+        return f"{prefix}.{prop['name']}:{prop['type']}"
 
     def process(self, row: list):
         if isinstance(self._type, Vertex):
@@ -47,7 +93,7 @@ class CSVImporter:
             col = row[p.index]
             props.append(self.value(p.ptype, col))
         vid = self._type.vid
-        id_val = self.value(vid.id_type, row[vid.index])
+        id_val = self.vid_str(vid, row[vid.index])
         return f'{self._insert_stmt} {id_val}:({",".join(props)});'
 
     def build_edge_insert_stmt(self, row: list):
@@ -57,8 +103,8 @@ class CSVImporter:
             props.append(self.value(p.ptype, col))
         src = self._type.src
         dst = self._type.dst
-        src_vid = self.value(src.id_type, row[src.index])
-        dst_vid = self.value(dst.id_type, row[dst.index])
+        src_vid = self.vid_str(src, row[src.index])
+        dst_vid = self.vid_str(dst, row[dst.index])
         if self._type.rank is None:
             return f'{self._insert_stmt} {src_vid}->{dst_vid}:({",".join(props)});'
         rank = row[self._type.rank.index]
@@ -66,6 +112,14 @@ class CSVImporter:
 
     def value(self, ptype: str, col):
         return f'"{col}"' if ptype == 'string' else f'{col}'
+
+    def vid_str(self, vid: VID, col: str):
+        is_str = (vid.id_type == 'string')
+        if vid.function is None:
+            return f'"{col}"' if is_str else f'{col}'
+        if is_str:
+            return f'{vid.function}("{col}")'
+        return f'{vid.function}({col})'
 
     def parse_header(self, row):
         """
@@ -91,13 +145,13 @@ class CSVImporter:
             if col == self._RANK:
                 self._type.rank = Rank(i)
                 continue
-            m = re.search(r':SRC_VID\((.*)\)', col)
-            if m:
-                self._type.src = VID(i, m.group(1))
+            b, src_vid = self._search_vid(i, "SRC_VID", col)
+            if b:
+                self._type.src = src_vid
                 continue
-            m = re.search(r':DST_VID\((.*)\)', col)
-            if m:
-                self._type.dst = VID(i, m.group(1))
+            b, dst_vid = self._search_vid(i, "DST_VID", col)
+            if b:
+                self._type.dst = dst_vid
                 continue
             m = re.search(r'(\w+)\.(\w+):(\w+)', col)
             if not m:
@@ -119,9 +173,9 @@ class CSVImporter:
         tag = Tag()
         props = []
         for i, col in enumerate(row):
-            m = re.search(r':VID\((.*)\)', col)
-            if m:
-                self._type.vid = VID(i, m.group(1))
+            b, vid = self._search_vid(i, "VID", col)
+            if b:
+                self._type.vid = vid
                 continue
             m = re.search(r'(\w+)\.(\w+):(\w+)', col)
             if not m:
@@ -139,7 +193,12 @@ class CSVImporter:
         pdecl = ','.join(f"`{p.name}` {p.ptype}" for p in tag.props)
         self._create_stmt = f"CREATE TAG IF NOT EXISTS `{tag.name}`({pdecl});"
 
-
-if __name__ == '__main__':
-    for row in CSVImporter('../data/nba/player.csv'):
-        print(row)
+    def _search_vid(self, i: int, prefix: str, value: str):
+        m = re.search(r":{}\((int|string)\)".format(prefix), value)
+        if m:
+            return True, VID(i, m.group(1))
+        m = re.search(r":{}\((int|string),\s*(hash|uuid)\)".format(prefix),
+                      value)
+        if m:
+            return True, VID(i, m.group(1), m.group(2))
+        return False, None

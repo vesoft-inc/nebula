@@ -1,0 +1,139 @@
+space:
+  name: student
+  partitionNum: 7
+  replicaFactor: 1
+  vidType: FIXED_STRING(32)
+  charset: utf8
+  collate: utf8_bin
+schema: |
+  CREATE TAG IF NOT EXISTS person(name string, age int, gender string);
+  CREATE TAG IF NOT EXISTS teacher(grade int, subject string);
+  CREATE TAG IF NOT EXISTS student(grade int, hobby string DEFAULT "");
+  CREATE EDGE IF NOT EXISTS is_schoolmate(start_year int, end_year int);
+  CREATE EDGE IF NOT EXISTS is_teacher(start_year int, end_year int);
+  CREATE EDGE IF NOT EXISTS is_friend(start_year int, intimacy double);
+  CREATE EDGE IF NOT EXISTS is_colleagues(start_year int, end_year int);
+files:
+  - path: ./person.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: person
+          props:
+            - name: name
+              type: string
+              index: 1
+            - name: age
+              type: int
+              index: 2
+            - name: gender
+              type: string
+              index: 3
+  - path: ./teacher.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: teacher
+          props:
+            - name: grade
+              type: int
+              index: 1
+            - name: subject
+              type: string
+              index: 2
+  - path: ./student.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: student
+          props:
+            - name: hobby
+              type: string
+              index: 1
+            - name: grade
+              type: int
+              index: 2
+  - path: ./is_teacher.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: is_teacher
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: start_year
+          type: int
+          index: 2
+        - name: end_year
+          type: int
+          index: 3
+  - path: ./is_schoolmate.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: is_schoolmate
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: start_year
+          type: int
+          index: 2
+        - name: end_year
+          type: int
+          index: 3
+  - path: ./is_friend.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: is_friend
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: start_year
+          type: int
+          index: 2
+        - name: intimacy
+          type: double
+          index: 3
+  - path: ./is_colleagues.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: is_colleagues
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: start_year
+          type: int
+          index: 2
+        - name: end_year
+          type: int
+          index: 3

@@ -5,17 +5,19 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-import string
-import random
-import time
 import os
-
-from typing import Pattern
+import random
+import string
+import time
 from pathlib import Path
-from nebula2.gclient.net import Session
+from typing import Pattern
+
+import yaml
 from nebula2.common import ttypes as CommonTtypes
-from tests.common.path_value import PathVal
+from nebula2.gclient.net import Session
+
 from tests.common.csv_import import CSVImporter
+from tests.common.path_value import PathVal
 from tests.common.types import SpaceDesc
 
 
@@ -331,27 +333,29 @@ def create_space(space_desc: SpaceDesc, sess: Session):
     exec(space_desc.use_stmt())
 
 
+def _load_data_from_file(sess, data_dir, fd):
+    for stmt in CSVImporter(fd, data_dir):
+        rs = sess.execute(stmt)
+        assert rs.is_succeeded(), \
+            f"fail to exec: {stmt}, error: {rs.error_msg()}"
+
+
 def load_csv_data(pytestconfig, sess: Session, data_dir: str):
     """
     Before loading CSV data files, you must create and select a graph
-    space. The `schema.ngql' file only create schema about tags and
+    space. The `config.yaml' file only create schema about tags and
     edges, not include space.
     """
-    schema_path = os.path.join(data_dir, 'schema.ngql')
+    config_path = os.path.join(data_dir, 'config.yaml')
 
-    with open(schema_path, 'r') as f:
-        stmts = []
-        for line in f.readlines():
-            ln = line.strip()
-            if ln.startswith('--'):
-                continue
-            stmts.append(ln)
-        rs = sess.execute(' '.join(stmts))
+    with open(config_path, 'r') as f:
+        config = yaml.full_load(f)
+        schemas = config['schema']
+        stmts = ' '.join(map(lambda x: x.strip(), schemas.splitlines()))
+        rs = sess.execute(stmts)
         assert rs.is_succeeded()
 
-    time.sleep(3)
+        time.sleep(3)
 
-    for path in Path(data_dir).rglob('*.csv'):
-        for stmt in CSVImporter(path):
-            rs = sess.execute(stmt)
-            assert rs.is_succeeded()
+        for fd in config["files"]:
+            _load_data_from_file(sess, data_dir, fd)
