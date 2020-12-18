@@ -93,8 +93,8 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             iter->next();
             continue;
         } else {
-            currentSrcVertex = source.data();
-            currentDstVertex = destination.data();
+            currentSrcVertex = source.toString();
+            currentDstVertex = destination.toString();
             currentRanking = ranking;
         }
 
@@ -115,9 +115,9 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
         auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
                                                     part,
                                                     item->get_index_id(),
-                                                    source.data(),
+                                                    source.toString(),
                                                     ranking,
-                                                    destination.data(),
+                                                    destination.toString(),
                                                     std::move(valuesRet).value());
         data.emplace_back(std::move(indexKey), "");
         iter->next();

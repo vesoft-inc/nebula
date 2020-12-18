@@ -84,7 +84,7 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             iter->next();
             continue;
         } else {
-            currentVertex = vertex.data();
+            currentVertex = vertex.toString();
         }
 
         reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_, space, tagID, val);
@@ -103,7 +103,7 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
         auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
                                                       part,
                                                       item->get_index_id(),
-                                                      vertex.data(),
+                                                      vertex.toString(),
                                                       std::move(valuesRet).value());
         data.emplace_back(std::move(indexKey), "");
         iter->next();
