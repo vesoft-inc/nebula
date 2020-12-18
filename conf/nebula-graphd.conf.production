@@ -24,14 +24,16 @@
 --stderrthreshold=2
 
 ########## networking ##########
-# Meta Server Address
---meta_server_addrs=127.0.0.1:45500
-# Local ip
+# Comma separated Meta Server Addresses
+--meta_server_addrs=127.0.0.1:9559
+# Local IP used to identify the nebula-graphd process.
+# Change it to an address other than loopback if the service is distributed or
+# will be accessed remotely.
 --local_ip=127.0.0.1
 # Network device to listen on
 --listen_netdev=any
 # Port to listen on
---port=3699
+--port=9669
 # To turn on SO_REUSEPORT or not
 --reuse_port=false
 # Backlog of the listen socket, adjust this together with net.core.somaxconn
@@ -47,11 +49,11 @@
 # The number of threads to execute user queries, 0 for # of CPU cores
 --num_worker_threads=0
 # HTTP service ip
---ws_ip=127.0.0.1
+--ws_ip=0.0.0.0
 # HTTP service port
---ws_http_port=13000
+--ws_http_port=19669
 # HTTP2 service port
---ws_h2_port=13002
+--ws_h2_port=19670
 
 # Heartbeat interval of communication between meta client and graphd service
 --heartbeat_interval_secs=10
