@@ -12,16 +12,16 @@ namespace graph {
 
 Status AdminJobValidator::validateImpl() {
     if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
-        auto spaceInfo = qctx()->rctx()->session()->space();
-        auto spaceId = spaceInfo.id;
-        auto spaceName = spaceInfo.name;
-        sentence_->addPara(spaceName);
-
         auto cmd = sentence_->getCmd();
         if (cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX ||
             cmd == meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
+            const auto &spaceInfo = qctx()->rctx()->session()->space();
+            auto spaceId = spaceInfo.id;
+            const auto &spaceName = spaceInfo.name;
+            sentence_->addPara(spaceName);
             DCHECK_EQ(sentence_->getParas().size(), 2);
-            auto indexName = sentence_->getParas()[0];
+
+            const auto &indexName = sentence_->getParas()[0];
             auto ret = cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX
                            ? qctx()->getMetaClient()->getTagIndexesFromCache(spaceId)
                            : qctx()->getMetaClient()->getEdgeIndexesFromCache(spaceId);
@@ -29,7 +29,7 @@ Status AdminJobValidator::validateImpl() {
                 return Status::SemanticError(
                     "Index %s not found in space %s", indexName.c_str(), spaceName.c_str());
             }
-            auto indexes = ret.value();
+            auto indexes = std::move(ret).value();
             auto it = std::find_if(indexes.begin(),
                                    indexes.end(),
                                    [&indexName](std::shared_ptr<meta::cpp2::IndexItem>& item) {
