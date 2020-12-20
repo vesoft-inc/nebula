@@ -150,7 +150,19 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
     std::chrono::milliseconds take_dura{10};
     if (auto subTask = task->subtasks_.try_take_for(take_dura)) {
         if (task->status() == cpp2::ErrorCode::SUCCEEDED) {
-            auto rc = subTask->invoke();
+            auto rc = cpp2::ErrorCode::E_UNKNOWN;
+            try {
+                rc = subTask->invoke();
+            } catch (std::exception& ex) {
+                LOG(ERROR) << folly::sformat("task({}, {}) invoke() throw exception: {}",
+                                             handle.first,
+                                             handle.second,
+                                             ex.what());
+            } catch (...) {
+                LOG(ERROR) << folly::sformat("task({}, {}) invoke() throw unknown exception",
+                                             handle.first,
+                                             handle.second);
+            }
             task->subTaskFinish(rc);
         }
 
