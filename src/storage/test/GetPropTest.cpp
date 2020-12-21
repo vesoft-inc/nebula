@@ -27,7 +27,6 @@ cpp2::GetPropRequest buildVertexRequest(
         req.parts[partId].emplace_back(std::move(row));
     }
 
-    UNUSED(tags);
     std::vector<cpp2::VertexProp> vertexProps;
     if (tags.empty()) {
         req.set_vertex_props(std::move(vertexProps));
@@ -62,7 +61,6 @@ cpp2::GetPropRequest buildEdgeRequest(
         req.parts[partId].emplace_back(std::move(row));
     }
 
-    UNUSED(edges);
     std::vector<cpp2::EdgeProp> edgeProps;
     if (edges.empty()) {
         req.set_edge_props(std::move(edgeProps));
