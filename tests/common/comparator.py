@@ -4,137 +4,259 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import math
-from functools import reduce
+import re
 
-from nebula2.data.DataObject import (
-    DataSetWrapper,
-    Node,
-    PathWrapper,
-    Record,
-    Relationship,
-    ValueWrapper,
+from typing import Union, Dict, List
+from nebula2.common.ttypes import (
+    DataSet,
+    Edge,
+    Path,
+    Row,
+    Value,
+    Vertex,
 )
+from tests.common.dataset_printer import DataSetPrinter
+
+KV = Dict[Union[str, bytes], Value]
+Pattern = type(re.compile(r'/'))
 
 
-class DataSetWrapperComparator:
-    def __init__(self, strict=True, order=False, included=False):
+class DataSetComparator:
+    def __init__(self,
+                 strict=True,
+                 order=False,
+                 included=False,
+                 decode_type: str = 'utf-8'):
         self._strict = strict
         self._order = order
         self._included = included
+        self._decode_type = decode_type
 
-    def __call__(self, resp: DataSetWrapper, expect: DataSetWrapper):
+    def __call__(self, resp: DataSet, expect: DataSet):
         return self.compare(resp, expect)
 
-    def compare(self, resp: DataSetWrapper, expect: DataSetWrapper):
-        if resp.get_row_size() < expect.get_row_size():
+    def b(self, v: str) -> bytes:
+        return v.encode(self._decode_type)
+
+    def s(self, b: bytes) -> str:
+        return b.decode(self._decode_type)
+
+    def compare(self, resp: DataSet, expect: DataSet):
+        if all(x is None for x in [expect, resp]):
+            return True
+        if None in [expect, resp]:
             return False
-        if not resp.get_col_names() == expect.get_col_names():
+        if len(resp.rows) < len(expect.rows):
             return False
+        if len(resp.column_names) != len(expect.column_names):
+            return False
+        for (ln, rn) in zip(resp.column_names, expect.column_names):
+            if ln != self.bstr(rn):
+                return False
         if self._order:
-            return all(self.compare_row(l, r) for (l, r) in zip(resp, expect))
-        return self._compare_list(resp, expect, self.compare_row,
+            return all(
+                self.compare_row(l, r)
+                for (l, r) in zip(resp.rows, expect.rows))
+        return self._compare_list(resp.rows, expect.rows, self.compare_row,
                                   self._included)
 
-    def compare_value(self, lhs: ValueWrapper, rhs: ValueWrapper):
+    def compare_value(self, lhs: Value, rhs: Union[Value, Pattern]) -> bool:
         """
         lhs and rhs represent response data and expected data respectively
         """
-        if lhs.is_null():
-            return rhs.is_null() and lhs.as_null() == rhs.as_null()
-        if lhs.is_empty():
-            return rhs.is_empty()
-        if lhs.is_bool():
-            return rhs.is_bool() and lhs.as_bool() == rhs.as_bool()
-        if lhs.is_int():
-            return rhs.is_int() and lhs.as_int() == rhs.as_int()
-        if lhs.is_double():
-            return (rhs.is_double()
-                    and math.fabs(lhs.as_double() - rhs.as_double()) < 1.0E-8)
-        if lhs.is_string():
-            return rhs.is_string() and lhs.as_string() == rhs.as_string()
-        if lhs.is_date():
-            return (rhs.is_date() and lhs.as_date() == rhs.as_date()) or (
-                rhs.is_string() and str(lhs.as_date()) == rhs.as_string())
-        if lhs.is_time():
-            return (rhs.is_time() and lhs.as_time() == rhs.as_time()) or (
-                rhs.is_string() and str(lhs.as_time()) == rhs.as_string())
-        if lhs.is_datetime():
-            return ((rhs.is_datetime()
-                     and lhs.as_datetime() == rhs.as_datetime())
-                    or (rhs.is_string()
-                        and str(lhs.as_datetime()) == rhs.as_string()))
-        if lhs.is_list():
-            return rhs.is_list() and self.compare_list(lhs.as_list(),
-                                                       rhs.as_list())
-        if lhs.is_set():
-            return rhs.is_set() and self._compare_list(
-                lhs.as_set(), rhs.as_set(), self.compare_value)
-        if lhs.is_map():
-            return rhs.is_map() and self.compare_map(lhs.as_map(),
-                                                     rhs.as_map())
-        if lhs.is_vertex():
-            return rhs.is_vertex() and self.compare_node(
-                lhs.as_node(), rhs.as_node())
-        if lhs.is_edge():
-            return rhs.is_edge() and self.compare_edge(lhs.as_relationship(),
-                                                       rhs.as_relationship())
-        if lhs.is_path():
-            return rhs.is_path() and self.compare_path(lhs.as_path(),
-                                                       rhs.as_path())
+        if type(rhs) is Pattern:
+            dsp = DataSetPrinter(self._decode_type)
+            return bool(rhs.match(dsp.to_string(lhs)))
+        if lhs.getType() == Value.__EMPTY__:
+            return rhs.getType() == Value.__EMPTY__
+        if lhs.getType() == Value.NVAL:
+            if not rhs.getType() == Value.NVAL:
+                return False
+            return lhs.get_nVal() == rhs.get_nVal()
+        if lhs.getType() == Value.BVAL:
+            if not rhs.getType() == Value.BVAL:
+                return False
+            return lhs.get_bVal() == rhs.get_bVal()
+        if lhs.getType() == Value.IVAL:
+            if not rhs.getType() == Value.IVAL:
+                return False
+            return lhs.get_iVal() == rhs.get_iVal()
+        if lhs.getType() == Value.FVAL:
+            if not rhs.getType() == Value.FVAL:
+                return False
+            return math.fabs(lhs.get_fVal() - rhs.get_fVal()) < 1.0E-8
+        if lhs.getType() == Value.SVAL:
+            if not rhs.getType() == Value.SVAL:
+                return False
+            return lhs.get_sVal() == self.bstr(rhs.get_sVal())
+        if lhs.getType() == Value.DVAL:
+            if rhs.getType() == Value.DVAL:
+                return lhs.get_dVal() == rhs.get_dVal()
+            if rhs.getType() == Value.SVAL:
+                ld = lhs.get_dVal()
+                lds = "%d-%02d-%02d" % (ld.year, ld.month, ld.day)
+                rv = rhs.get_sVal()
+                return lds == rv if type(rv) == str else self.b(lds) == rv
+            return False
+        if lhs.getType() == Value.TVAL:
+            if rhs.getType() == Value.TVAL:
+                return lhs.get_tVal() == rhs.get_tVal()
+            if rhs.getType() == Value.SVAL:
+                lt = lhs.get_tVal()
+                lts = "%02d:%02d:%02d.%06d" % (lt.hour, lt.minute, lt.sec,
+                                               lt.microsec)
+                rv = rhs.get_sVal()
+                return lts == rv if type(rv) == str else self.b(lts) == rv
+            return False
+        if lhs.getType() == Value.DTVAL:
+            if rhs.getType() == Value.DTVAL:
+                return lhs.get_dtVal() == rhs.get_dtVal()
+            if rhs.getType() == Value.SVAL:
+                ldt = lhs.get_dtVal()
+                ldts = "%d-%02d-%02dT%02d:%02d:%02d.%06d" % (
+                    ldt.year, ldt.month, ldt.day, ldt.hour, ldt.minute,
+                    ldt.sec, ldt.microsec)
+                rv = rhs.get_sVal()
+                return ldts == rv if type(rv) == str else self.b(ldts) == rv
+            return False
+        if lhs.getType() == Value.LVAL:
+            if not rhs.getType() == Value.LVAL:
+                return False
+            lvals = lhs.get_lVal().values
+            rvals = rhs.get_lVal().values
+            return self.compare_list(lvals, rvals)
+        if lhs.getType() == Value.UVAL:
+            if not rhs.getType() == Value.UVAL:
+                return False
+            lvals = lhs.get_uVal().values
+            rvals = rhs.get_uVal().values
+            return self._compare_list(lvals, rvals, self.compare_value)
+        if lhs.getType() == Value.MVAL:
+            if not rhs.getType() == Value.MVAL:
+                return False
+            lkvs = lhs.get_mVal().kvs
+            rkvs = rhs.get_mVal().kvs
+            return self.compare_map(lkvs, rkvs)
+        if lhs.getType() == Value.VVAL:
+            if not rhs.getType() == Value.VVAL:
+                return False
+            return self.compare_node(lhs.get_vVal(), rhs.get_vVal())
+        if lhs.getType() == Value.EVAL:
+            if not rhs.getType() == Value.EVAL:
+                return False
+            return self.compare_edge(lhs.get_eVal(), rhs.get_eVal())
+        if lhs.getType() == Value.PVAL:
+            if not rhs.getType() == Value.PVAL:
+                return False
+            return self.compare_path(lhs.get_pVal(), rhs.get_pVal())
         return False
 
-    def compare_path(self, lhs: PathWrapper, rhs: PathWrapper):
-        if lhs.length() != rhs.length():
+    def compare_path(self, lhs: Path, rhs: Path):
+        if len(lhs.steps) != len(rhs.steps):
             return False
-        return all(
-            self.compare_node(l.start_node, r.start_node)
-            and self.compare_node(l.end_node, r.end_node)
-            and self.compare_edge(l.relationship, r.relationship)
-            for (l, r) in zip(lhs, rhs))
+        lsrc, rsrc = lhs.src, rhs.src
+        for (l, r) in zip(lhs.steps, rhs.steps):
+            lreverse = l.type is not None and l.type < 0
+            rreverse = r.type is not None and r.type < 0
+            lsrc, ldst = (lsrc, l.dst) if not lreverse else (l.dst, lsrc)
+            rsrc, rdst = (rsrc, r.dst) if not rreverse else (r.dst, rsrc)
+            if not self.compare_node(lsrc, rsrc):
+                return False
+            if not self.compare_node(ldst, rdst):
+                return False
+            if self._strict:
+                if l.ranking != r.ranking:
+                    return False
+                if r.name is None or l.name != self.bstr(r.name):
+                    return False
+                if r.props is None or not self.compare_map(l.props, r.props):
+                    return False
+            else:
+                if r.ranking is not None and l.ranking != r.ranking:
+                    return False
+                if r.name is not None and l.name != self.bstr(r.name):
+                    return False
+                if not (r.props is None or self.compare_map(l.props, r.props)):
+                    return False
+            lsrc, rsrc = ldst, rdst
+        return True
 
-    def compare_edge(self, lhs: Relationship, rhs: Relationship):
+    def eid(self, e: Edge, etype: int):
+        src, dst = e.src, e.dst
+        if e.type is None:
+            if etype < 0:
+                src, dst = e.dst, e.src
+        else:
+            if etype != e.type:
+                src, dst = e.dst, e.src
+        if type(src) == str:
+            src = self.bstr(src)
+        if type(dst) == str:
+            dst = self.bstr(dst)
+        return src, dst
+
+    def compare_edge(self, lhs: Edge, rhs: Edge):
         if self._strict:
-            if not lhs == rhs:
+            if not lhs.name == self.bstr(rhs.name):
+                return False
+            if not lhs.ranking == rhs.ranking:
+                return False
+            rsrc, rdst = self.eid(rhs, lhs.type)
+            if lhs.src != rsrc or lhs.dst != rdst:
+                return False
+            if rhs.props is None or len(lhs.props) != len(rhs.props):
                 return False
         else:
-            redge = rhs._value
-            if redge.src is not None and redge.dst is not None:
-                if lhs.start_vertex_id() != rhs.start_vertex_id():
+            if rhs.src is not None and rhs.dst is not None:
+                rsrc, rdst = self.eid(rhs, lhs.type)
+                if lhs.src != rsrc or lhs.dst != rdst:
                     return False
-                if lhs.end_vertex_id() != rhs.end_vertex_id():
+            if rhs.ranking is not None:
+                if lhs.ranking != rhs.ranking:
                     return False
-            if redge.ranking is not None:
-                if lhs.ranking() != rhs.ranking():
+            if rhs.name is not None:
+                if lhs.name != self.bstr(rhs.name):
                     return False
-            if redge.name is not None:
-                if lhs.edge_name() != rhs.edge_name():
-                    return False
-            # FIXME(yee): diff None and {} test cases
-            if len(rhs.propertys()) == 0:
+            if rhs.props is None:
                 return True
-        return self.compare_map(lhs.propertys(), rhs.propertys())
+        return self.compare_map(lhs.props, rhs.props)
 
-    def compare_node(self, lhs: Node, rhs: Node):
+    def bstr(self, vid) -> bytes:
+        return self.b(vid) if type(vid) == str else vid
+
+    def compare_node(self, lhs: Vertex, rhs: Vertex):
+        rtags = []
         if self._strict:
-            if lhs.get_id() != rhs.get_id():
+            assert rhs.vid is not None
+            if not lhs.vid == self.bstr(rhs.vid):
                 return False
-            if len(lhs.tags()) != len(rhs.tags()):
+            if rhs.tags is None or len(lhs.tags) != len(rhs.tags):
                 return False
+            rtags = rhs.tags
         else:
-            if rhs._value.vid is not None and lhs.get_id() != rhs.get_id():
+            if rhs.vid is not None:
+                if not lhs.vid == self.bstr(rhs.vid):
+                    return False
+            if rhs.tags is not None and len(lhs.tags) < len(rhs.tags):
                 return False
-            if len(lhs.tags()) < len(rhs.tags()):
+            rtags = [] if rhs.tags is None else rhs.tags
+        for tag in rtags:
+            ltag = [[lt.name, lt.props] for lt in lhs.tags
+                    if self.bstr(tag.name) == lt.name]
+            if len(ltag) != 1:
                 return False
-        for tag in rhs.tags():
-            if not lhs.has_tag(tag):
-                return False
-            lprops = lhs.propertys(tag)
-            rprops = rhs.propertys(tag)
-            if not self.compare_map(lprops, rprops):
+            if self._strict:
+                if tag.props is None:
+                    return False
+            else:
+                if tag.props is None:
+                    continue
+            lprops = ltag[0][1]
+            if not self.compare_map(lprops, tag.props):
                 return False
         return True
 
-    def compare_map(self, lhs: dict, rhs: dict):
+    def compare_map(self, lhs: Dict[bytes, Value], rhs: KV):
         if len(lhs) != len(rhs):
             return False
         for lkey, lvalue in lhs.items():
@@ -145,15 +267,15 @@ class DataSetWrapperComparator:
                 return False
         return True
 
-    def compare_list(self, lhs, rhs):
+    def compare_list(self, lhs: List[Value], rhs: List[Value]):
         return len(lhs) == len(rhs) and \
             self._compare_list(lhs, rhs, self.compare_value)
 
-    def compare_row(self, lrecord: Record, rrecord: Record):
-        if not lrecord.size() == rrecord.size():
+    def compare_row(self, lhs: Row, rhs: Row):
+        if not len(lhs.values) == len(rhs.values):
             return False
         return all(
-            self.compare_value(l, r) for (l, r) in zip(lrecord, rrecord))
+            self.compare_value(l, r) for (l, r) in zip(lhs.values, rhs.values))
 
     def _compare_list(self, lhs, rhs, cmp_fn, included=False):
         visited = []
@@ -166,8 +288,7 @@ class DataSetWrapperComparator:
                     break
             if not found:
                 return False
-        lst = [1 for i in lhs]
-        size = reduce(lambda x, y: x + y, lst) if len(lst) > 0 else 0
+        size = len(lhs)
         if included:
             return len(visited) <= size
         return len(visited) == size

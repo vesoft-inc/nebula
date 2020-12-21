@@ -157,20 +157,23 @@ def load_csv_data_once(tmp_path_factory, pytestconfig, worker_id, conn_pool,
     space_name = space_desc.name
     root_tmp_dir = tmp_path_factory.getbasetemp().parent
     fn = root_tmp_dir / f"csv-data-{space_name}"
+    is_file = True
     with FileLock(str(fn) + ".lock"):
-        if fn.is_file():
-            logging.info(
-                f"session-{worker_id} need not to load {space_name} csv data")
-            yield space_desc
-            return
-        data_dir = os.path.join(CURR_PATH, 'data', space_name)
-        user = pytestconfig.getoption("user")
-        password = pytestconfig.getoption("password")
-        sess = conn_pool.get_session(user, password)
-        create_space(space_desc, sess)
-        load_csv_data(pytestconfig, sess, data_dir)
-        sess.release()
-        fn.write_text(space_name)
+        if not fn.is_file():
+            data_dir = os.path.join(CURR_PATH, "data", space_name)
+            user = pytestconfig.getoption("user")
+            password = pytestconfig.getoption("password")
+            sess = conn_pool.get_session(user, password)
+            create_space(space_desc, sess)
+            load_csv_data(pytestconfig, sess, data_dir)
+            sess.release()
+            fn.write_text(space_name)
+            is_file = False
+    if is_file:
+        logging.info(
+            f"session-{worker_id} need not to load {space_name} csv data")
+        yield space_desc
+    else:
         logging.info(f"session-{worker_id} load {space_name} csv data")
         yield space_desc
         os.remove(str(fn))

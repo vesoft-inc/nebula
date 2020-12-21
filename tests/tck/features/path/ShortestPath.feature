@@ -8,7 +8,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER like
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")-[:like]->("Tony Parker")> |
 
@@ -17,7 +17,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "LaMarcus Aldridge" OVER like
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
 
@@ -26,7 +26,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER like
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                                 |
       | <("Tiago Splitter")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
 
@@ -35,7 +35,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER like, teammate
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                            |
       | <("Tiago Splitter")-[:like]->("Tim Duncan")-[:teammate]->("LaMarcus Aldridge")> |
 
@@ -44,7 +44,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tiago Splitter" TO "LaMarcus Aldridge" OVER *
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                            |
       | <("Tiago Splitter")-[:like]->("Tim Duncan")-[:teammate]->("LaMarcus Aldridge")> |
 
@@ -53,7 +53,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")-[:like]->("Tony Parker")> |
       | <("Tim Duncan")-[:serve]->("Spurs")>      |
@@ -63,7 +63,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                          |
       | <("Tim Duncan")-[:like]->("Tony Parker")>     |
       | <("Tim Duncan")-[:teammate]->("Tony Parker")> |
@@ -74,7 +74,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                                                      |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>                            |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")>                        |
@@ -91,7 +91,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                               |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
@@ -106,7 +106,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Marco Belinelli", "Yao Ming" TO "Spurs", "Lakers" OVER * UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                          |
       | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                 |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>                              |
@@ -119,7 +119,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
@@ -129,7 +129,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan", "Tiago Splitter" TO "Tony Parker","Spurs" OVER like,serve UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                  |
       | <("Tiago Splitter")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
       | <("Tiago Splitter")-[:serve]->("Spurs")>                              |
@@ -141,7 +141,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Yao Ming"  TO "Tony Parker","Tracy McGrady" OVER like,serve UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                         |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
       | <("Yao Ming")-[:like]->("Tracy McGrady")>                                                    |
@@ -151,7 +151,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                         |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
       | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
@@ -163,7 +163,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                         |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
       | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
@@ -175,7 +175,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO "Manu Ginobili", "Spurs", "Lakers" OVER like UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
 
@@ -184,7 +184,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Marco Belinelli" TO "Spurs", "Lakers" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                          |
       | <("Marco Belinelli")-[:serve]->("Spurs")>                                                     |
       | <("Marco Belinelli")-[:serve@1]->("Spurs")>                                                   |
@@ -195,7 +195,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path |
 
   Scenario: [1] MultiPair Shortest Path Run Time input
@@ -204,7 +204,7 @@ Feature: Shortest Path
       YIELD "Yao Ming" AS src, "Tony Parker" AS dst
       | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                         |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
 
@@ -214,7 +214,7 @@ Feature: Shortest Path
       YIELD "Shaquile O\'Neal" AS src
       | FIND SHORTEST PATH FROM $-.src TO "Manu Ginobili" OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                         |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
@@ -225,7 +225,7 @@ Feature: Shortest Path
       YIELD "Manu Ginobili" AS dst
       | FIND SHORTEST PATH FROM "Shaquile O\'Neal" TO $-.dst OVER * UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                         |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
@@ -236,7 +236,7 @@ Feature: Shortest Path
       GO FROM "Yao Ming" over like YIELD like._dst AS src
       | FIND SHORTEST PATH FROM $-.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                              |
       | <("Tracy McGrady")-[:like]->("Rudy Gay")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                            |
@@ -247,7 +247,7 @@ Feature: Shortest Path
       $a = GO FROM "Yao Ming" over like YIELD like._dst AS src;
       FIND SHORTEST PATH FROM $a.src TO "Tony Parker" OVER like, serve UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                              |
       | <("Tracy McGrady")-[:like]->("Rudy Gay")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                            |
@@ -258,7 +258,7 @@ Feature: Shortest Path
       GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
       | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                        |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")>   |
@@ -269,7 +269,7 @@ Feature: Shortest Path
       $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
       FIND SHORTEST PATH FROM $a.src TO $a.dst OVER like UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                        |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")>   |
@@ -281,7 +281,7 @@ Feature: Shortest Path
       GO FROM "Tony Parker" OVER like YIELD like._src AS src, like._dst AS dst
       | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")>                              |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
@@ -291,7 +291,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS | ORDER BY $-.path | LIMIT 3
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path |
 
   Scenario: [2] Shortest Path With Limit
@@ -300,7 +300,7 @@ Feature: Shortest Path
       FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS
       | ORDER BY $-.path | LIMIT 2
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Shaquile O'Neal")-[:serve]->("Lakers")>                               |
       | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
@@ -312,7 +312,7 @@ Feature: Shortest Path
       | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS
       | ORDER BY $-.path | LIMIT 1
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                        |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
 
@@ -323,7 +323,7 @@ Feature: Shortest Path
       | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS
       | ORDER BY $-.path | LIMIT 10
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                        |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")>   |
@@ -333,7 +333,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like REVERSELY UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path |
 
   Scenario: [2] Shortest Path REVERSELY
@@ -341,7 +341,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER like REVERSELY
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")<-[:like]-("Tony Parker")> |
 
@@ -350,7 +350,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "LaMarcus Aldridge" OVER like REVERSELY
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                            |
       | <("Tim Duncan")<-[:like]-("LaMarcus Aldridge")> |
 
@@ -359,7 +359,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve REVERSELY UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")<-[:like]-("Tony Parker")> |
 
@@ -368,7 +368,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * REVERSELY
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                             |
       | <("Tony Parker")<-[:teammate]-("Manu Ginobili")> |
 
@@ -385,7 +385,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT UPTO 2 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                             |
       | <("Tony Parker")-[:serve]->("Spurs")>            |
       | <("Tony Parker")<-[:teammate]-("Manu Ginobili")> |
@@ -397,7 +397,7 @@ Feature: Shortest Path
       """
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                               |
       | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")<-[:serve]-("Manu Ginobili")>          |
       | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")<-[:like]-("Manu Ginobili")>     |

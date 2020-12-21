@@ -11,18 +11,18 @@ import io
 import csv
 import re
 
-from nebula2.data.DataObject import DataSetWrapper
 from nebula2.graph.ttypes import ErrorCode
 from pytest_bdd import given, parsers, then, when
 
-from tests.common.comparator import DataSetWrapperComparator
+from tests.common.dataset_printer import DataSetPrinter
+from tests.common.comparator import DataSetComparator
 from tests.common.configs import DATA_DIR
 from tests.common.types import SpaceDesc
 from tests.common.utils import create_space, load_csv_data, space_generator
 from tests.tck.utils.table import dataset, table
 
 parse = functools.partial(parsers.parse)
-reparse = functools.partial(parsers.re)
+rparse = functools.partial(parsers.re)
 
 
 @pytest.fixture
@@ -104,12 +104,15 @@ def cmp_dataset(graph_spaces,
                 included=False) -> None:
     rs = graph_spaces['result_set']
     assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
-    ds = DataSetWrapper(dataset(table(result)))
-    dscmp = DataSetWrapperComparator(strict=strict,
-                                     order=order,
-                                     included=included)
-    assert dscmp(rs._data_set_wrapper, ds), \
-        f"Response: {str(rs._data_set_wrapper)} vs. Expected: {str(ds)}"
+    ds = dataset(table(result))
+    dscmp = DataSetComparator(strict=strict,
+                              order=order,
+                              included=included,
+                              decode_type=rs._decode_type)
+    dsp = DataSetPrinter(rs._decode_type)
+    resp_ds = rs._data_set_wrapper._data_set
+    assert dscmp(resp_ds, ds), \
+        f"Response: {dsp.ds_to_string(resp_ds)} vs. Expected: {dsp.ds_to_string(ds)}"
 
 
 @then(parse("the result should be, in order:\n{result}"))
@@ -117,8 +120,7 @@ def result_should_be_in_order(result, graph_spaces):
     cmp_dataset(graph_spaces, result, order=True, strict=True)
 
 
-@then(
-    parse("the result should be, in order, with relax comparision:\n{result}"))
+@then(parse("the result should be, in order, with relax comparison:\n{result}"))
 def result_should_be_in_order_relax_cmp(result, graph_spaces):
     cmp_dataset(graph_spaces, result, order=True, strict=False)
 
@@ -128,10 +130,7 @@ def result_should_be(result, graph_spaces):
     cmp_dataset(graph_spaces, result, order=False, strict=True)
 
 
-@then(
-    parse(
-        "the result should be, in any order, with relax comparision:\n{result}"
-    ))
+@then(parse("the result should be, in any order, with relax comparison:\n{result}"))
 def result_should_be_relax_cmp(result, graph_spaces):
     cmp_dataset(graph_spaces, result, order=False, strict=False)
 
@@ -153,14 +152,12 @@ def execution_should_be_succ(graph_spaces):
     assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
 
 
-@then(
-    reparse("a (?P<err_type>\w+) should be raised at (?P<time>.*):(?P<msg>.*)")
-)
+@then(rparse(r"a (?P<err_type>\w+) should be raised at (?P<time>.*):(?P<msg>.*)"))
 def raised_type_error(err_type, time, msg, graph_spaces):
     res = graph_spaces["result_set"]
     assert not res.is_succeeded(), "Response should be failed"
     err_type = err_type.strip()
-    msg = msg.strip().replace('$', '\$')
+    msg = msg.strip().replace('$', r'\$')
     res_msg = res.error_msg()
     if res.error_code() == ErrorCode.E_EXECUTION_ERROR:
         assert err_type == "ExecutionError"

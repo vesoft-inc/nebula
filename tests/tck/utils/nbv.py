@@ -182,15 +182,18 @@ def t_dstr_any(t):
     t.lexer.string += t.value
     pass
 
+
 def t_regex_escape_char(t):
     r'\\/'
     t.lexer.string += t.value[1]
     pass
 
+
 def t_regex_any(t):
     r'[^/]'
     t.lexer.string += t.value
     pass
+
 
 def t_regex_PATTERN(t):
     r'/'
@@ -198,16 +201,17 @@ def t_regex_PATTERN(t):
     t.lexer.begin('INITIAL')
     return t
 
+
 def t_sstr_STRING(t):
     r'\''
-    t.value = Value(sVal=bytes(t.lexer.string, 'utf-8'))
+    t.value = Value(sVal=t.lexer.string)
     t.lexer.begin('INITIAL')
     return t
 
 
 def t_dstr_STRING(t):
     r'"'
-    t.value = Value(sVal=bytes(t.lexer.string, 'utf-8'))
+    t.value = Value(sVal=t.lexer.string)
     t.lexer.begin('INITIAL')
     return t
 
@@ -337,8 +341,6 @@ def p_tag_list(p):
             p[1] = []
         p[1].append(p[2])
         p[0] = p[1]
-    else:
-        p[0] = []
 
 
 def p_tag(p):
@@ -346,7 +348,7 @@ def p_tag(p):
         tag : ':' LABEL map
             | ':' LABEL
     '''
-    tag = Tag(name=bytes(p[2], 'utf-8'))
+    tag = Tag(name=p[2])
     if len(p) == 4:
         tag.props = p[3].get_mVal().kvs
     p[0] = tag
@@ -368,11 +370,11 @@ def p_edge_spec(p):
     '''
     e = Edge()
     name = None
-    rank = 0
+    rank = None
     src = None
     dst = None
     props = None
-    etype = 1
+    etype = None
 
     if len(p) == 5:
         rank = p[2]
@@ -413,11 +415,12 @@ def p_edge_spec(p):
         rank = p[8]
         props = p[9]
 
-    e.name = None if name is None else bytes(name, 'utf-8')
+    e.name = name
     e.ranking = rank
     e.src = src
     e.dst = dst
     e.props = props
+    # default value of e.type is 1 if etype is None
     e.type = etype
 
     p[0] = Value(eVal=e)
@@ -436,7 +439,7 @@ def p_edge_props(p):
                    | map
     '''
     if len(p) == 1:
-        p[0] = {}
+        p[0] = None
     else:
         p[0] = p[1].get_mVal().kvs
 
@@ -542,20 +545,24 @@ if __name__ == '__main__':
     expected['True'] = Value(bVal=True)
     expected['false'] = Value(bVal=False)
     expected['fAlse'] = Value(bVal=False)
-    expected["'string'"] = Value(sVal=b"string")
-    expected['"string"'] = Value(sVal=b'string')
-    expected['''"string'string'"'''] = Value(sVal=b"string'string'")
+    expected["'string'"] = Value(sVal="string")
+    expected['"string"'] = Value(sVal='string')
+    expected['''"string'string'"'''] = Value(sVal="string'string'")
     expected['''/^[_a-z][-_a-z0-9]*$/'''] = re.compile(r'^[_a-z][-_a-z0-9]*$')
     expected['''/\\//'''] = re.compile(r'/')
     expected['[]'] = Value(lVal=NList([]))
     expected['[{}]'] = Value(lVal=NList([Value(mVal=NMap({}))]))
-    expected['[1,2,3]'] = Value(
-        lVal=NList([Value(iVal=1), Value(
-            iVal=2), Value(iVal=3)]))
+    expected['[1,2,3]'] = Value(lVal=NList([
+        Value(iVal=1),
+        Value(iVal=2),
+        Value(iVal=3),
+    ]))
     expected['{1,2,3}'] = Value(
-        uVal=NSet(set([Value(
-            iVal=1), Value(
-                iVal=2), Value(iVal=3)])))
+        uVal=NSet(set([
+            Value(iVal=1),
+            Value(iVal=2),
+            Value(iVal=3),
+        ])))
     expected['{}'] = Value(mVal=NMap({}))
     expected['{k1:1,"k2":true}'] = Value(mVal=NMap({
         'k1': Value(iVal=1),
@@ -565,8 +572,10 @@ if __name__ == '__main__':
     expected['("vid")'] = Value(vVal=Vertex(vid='vid'))
     expected['("vid":t)'] = Value(vVal=Vertex(vid='vid', tags=[Tag(name='t')]))
     expected['("vid":t:t)'] = Value(
-        vVal=Vertex(vid='vid', tags=[Tag(
-            name='t'), Tag(name='t')]))
+        vVal=Vertex(vid='vid', tags=[
+            Tag(name='t'),
+            Tag(name='t'),
+        ]))
     expected['("vid":t{p1:0,p2:" "})'] = Value(vVal=Vertex(
         vid='vid',
         tags=[
@@ -590,28 +599,44 @@ if __name__ == '__main__':
     expected['["1"->"2"]'] = Value(eVal=Edge(src='1', dst='2'))
     expected['[:e{}]'] = Value(eVal=Edge(name='e', props={}))
     expected['[:e@123{}]'] = Value(eVal=Edge(name='e', ranking=123, props={}))
-    expected['[:e"1"->"2"@123{}]'] = Value(
-        eVal=Edge(name='e', ranking=123, src='1', dst='2', props={}))
+    expected['[:e"1"->"2"@123{}]'] = Value(eVal=Edge(
+        name='e',
+        ranking=123,
+        src='1',
+        dst='2',
+        props={},
+    ))
     expected['<()>'] = Value(pVal=Path(src=Vertex()))
     expected['<("vid")>'] = Value(pVal=Path(src=Vertex(vid='vid')))
-    expected['<()-->()>'] = Value(
-        pVal=Path(src=Vertex(), steps=[Step(type=1, dst=Vertex())]))
-    expected['<()<--()>'] = Value(
-        pVal=Path(src=Vertex(), steps=[Step(type=-1, dst=Vertex())]))
+    expected['<()-->()>'] = Value(pVal=Path(
+        src=Vertex(),
+        steps=[Step(type=1, dst=Vertex())],
+    ))
+    expected['<()<--()>'] = Value(pVal=Path(
+        src=Vertex(),
+        steps=[Step(type=-1, dst=Vertex())],
+    ))
     expected['<()-->()-->()>'] = Value(pVal=Path(
         src=Vertex(),
-        steps=[Step(type=1, dst=Vertex()),
-               Step(type=1, dst=Vertex())]))
+        steps=[
+            Step(type=1, dst=Vertex()),
+            Step(type=1, dst=Vertex()),
+        ],
+    ))
     expected['<()-->()<--()>'] = Value(pVal=Path(
         src=Vertex(),
-        steps=[Step(type=1, dst=Vertex()),
-               Step(type=-1, dst=Vertex())]))
-    expected['<("v1")-[:e1]->()<-[:e2]-("v2")>'] = Value(
-        pVal=Path(src=Vertex(vid='v1'),
-                  steps=[
-                      Step(name='e1', type=1, dst=Vertex()),
-                      Step(name='e2', type=-1, dst=Vertex(vid='v2'))
-                  ]))
+        steps=[
+            Step(type=1, dst=Vertex()),
+            Step(type=-1, dst=Vertex()),
+        ],
+    ))
+    expected['<("v1")-[:e1]->()<-[:e2]-("v2")>'] = Value(pVal=Path(
+        src=Vertex(vid='v1'),
+        steps=[
+            Step(name='e1', type=1, dst=Vertex()),
+            Step(name='e2', type=-1, dst=Vertex(vid='v2'))
+        ],
+    ))
     for item in expected.items():
         v = parse(item[0])
         assert v is not None, "Failed to parse %s" % item[0]

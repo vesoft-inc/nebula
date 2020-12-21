@@ -19,7 +19,7 @@ def _parse_value(cell: str) -> Value:
 def table(text):
     lines = list(csv.reader(io.StringIO(text), delimiter="|"))
     header = lines[0][1:-1]
-    column_names = list(map(lambda x: bytes(x.strip(), 'utf8'), header))
+    column_names = list(map(lambda x: x.strip(), header))
     table = [{
         column_name: cell.strip()
         for (column_name, cell) in zip(column_names, line[1:-1])

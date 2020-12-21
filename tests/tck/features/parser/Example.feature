@@ -24,12 +24,11 @@ Feature: Feature examples
       | "Tim Duncan" |
     When executing query:
       """
-      MATCH (v:player{name: "Tim Duncan"})
-      RETURN v.name AS Name
+      SHOW HOSTS
       """
     Then the result should include:
-      | Name         |
-      | "Tim Duncan" |
+      | Host  | Port  | Status   | Leader count | Leader distribution | Partition distribution |
+      | /\w+/ | /\d+/ | "ONLINE" | /\d+/        | /.*/                | /.*/                   |
     When executing query:
       """
       SHOW HOSTS

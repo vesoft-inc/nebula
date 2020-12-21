@@ -8,7 +8,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")-[:like]->("Tony Parker")> |
 
@@ -17,7 +17,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker", "Manu Ginobili" OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                 |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                            |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")>                          |
@@ -28,7 +28,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
@@ -38,7 +38,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                         |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                                    |
       | <("Tim Duncan")-[:serve]->("Spurs")>                                                         |
@@ -53,7 +53,7 @@ Feature: Path Without Same Vertices
       GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
       | FIND NOLOOP PATH FROM $-.src TO $-.dst OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
       | <("Tony Parker")-[:like]->("Tim Duncan")>                                |
@@ -66,7 +66,7 @@ Feature: Path Without Same Vertices
       $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
       FIND NOLOOP PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
       | <("Tony Parker")-[:like]->("Tim Duncan")>                                |
@@ -79,7 +79,7 @@ Feature: Path Without Same Vertices
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
       | ORDER BY $-.path | LIMIT 3
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                            |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")> |
       | <("Tim Duncan")-[:serve]->("Spurs")>                            |
@@ -92,7 +92,7 @@ Feature: Path Without Same Vertices
       FIND NOLOOP PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS
       | ORDER BY $-.path | LIMIT 5
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")> |
@@ -104,7 +104,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like REVERSELY UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path |
 
   Scenario: [2] NOLOOP Path REVERSELY
@@ -112,7 +112,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like REVERSELY UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")<-[:like]-("Tony Parker")>                                |
       | <("Tim Duncan")<-[:like]-("LaMarcus Aldridge")<-[:like]-("Tony Parker")> |
@@ -123,7 +123,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like REVERSELY UPTO 3 STEPS
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                                |
       | <("Tim Duncan")<-[:like]-("Tony Parker")>                                                           |
       | <("Tim Duncan")<-[:like]-("LaMarcus Aldridge")>                                                     |
@@ -137,7 +137,7 @@ Feature: Path Without Same Vertices
       """
       FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like BIDIRECT UPTO 3 STEPS
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | path                                                                                                |
       | <("Tim Duncan")<-[:like]-("Tony Parker")>                                                           |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                                           |

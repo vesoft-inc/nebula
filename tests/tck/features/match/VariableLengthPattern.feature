@@ -16,7 +16,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name:"Tim Duncan"})-[e:like*2..3{likeness: 90}]-(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                  | v                  |
       | [[:like "Tim Duncan"<-"Manu Ginobili"], [:like "Manu Ginobili"<-"Tiago Splitter"]] | ("Tiago Splitter") |
 
@@ -40,7 +40,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name:"Tim Duncan"})<-[e:like*2..3{likeness: 90}]-(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                  | v                  |
       | [[:like "Tim Duncan"<-"Manu Ginobili"], [:like "Manu Ginobili"<-"Tiago Splitter"]] | ("Tiago Splitter") |
 
@@ -50,7 +50,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name:"Tim Duncan"})-[e:serve*2..3]-(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                                                      | v                     |
       | [[:serve "Tim Duncan"->"Spurs"], [:serve "Spurs"<-"Dejounte Murray"]]                                                  | ("Dejounte Murray")   |
       | [[:serve "Tim Duncan"->"Spurs"], [:serve "Spurs"<-"Marco Belinelli"]]                                                  | ("Marco Belinelli")   |
@@ -142,7 +142,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]->(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                                                             | v                     |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"]]                                                    | ("Tim Duncan")        |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"], [:like "Tim Duncan"->"Manu Ginobili"]]             | ("Manu Ginobili")     |
@@ -160,7 +160,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name: "Tim Duncan"})-[e:serve|like*2..3{likeness: 90}]-(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                  | v                  |
       | [[:like "Tim Duncan"<-"Manu Ginobili"], [:like "Manu Ginobili"<-"Tiago Splitter"]] | ("Tiago Splitter") |
     When executing query:
@@ -184,7 +184,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name:"Tim Duncan"})<-[e:serve|like*2..3{likeness: 90}]-(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                  | v                  |
       | [[:like "Tim Duncan"<-"Manu Ginobili"], [:like "Manu Ginobili"<-"Tiago Splitter"]] | ("Tiago Splitter") |
 
@@ -205,7 +205,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name: "Tim Duncan"})-[e:serve|like*2..3]->(v)
       RETURN e, v
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                                                                | v                     |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"]]                                                       | ("Tim Duncan")        |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"], [:like "Tim Duncan"->"Manu Ginobili"]]                | ("Manu Ginobili")     |
@@ -231,7 +231,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (:player{name:"Tim Duncan"})-[e:like*2..3]->()
       RETURN *
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                                                             |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"]]                                                    |
       | [[:like "Tim Duncan"->"Tony Parker"], [:like "Tony Parker"->"Tim Duncan"], [:like "Tim Duncan"->"Manu Ginobili"]]             |
@@ -249,7 +249,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*1]-()
       RETURN e
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                           |
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
@@ -270,7 +270,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*1..1]-()
       RETURN e
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                           |
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
@@ -292,7 +292,7 @@ Feature: Variable length Pattern match (m to n)
       WHERE e[1].likeness>95 AND e[2].likeness==100
       RETURN e
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e                                                                                                                         |
       | [[:like "Tim Duncan"<-"Dejounte Murray"], [:like "Dejounte Murray"->"LeBron James"], [:like "LeBron James"->"Ray Allen"]] |
 
@@ -302,7 +302,7 @@ Feature: Variable length Pattern match (m to n)
       MATCH (v:player{name: 'Tim Duncan'})-[e1:like*1..2]-(v2{name: 'Tony Parker'})-[e2:serve]-(v3{name: 'Spurs'})
       RETURN e1, e2
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | e1                                                                                      | e2                              |
       | [[:like "Tim Duncan"<-"Dejounte Murray"], [:like "Dejounte Murray"->"Tony Parker"]]     | [:serve "Tony Parker"->"Spurs"] |
       | [[:like "Tim Duncan"->"Manu Ginobili"], [:like "Manu Ginobili"<-"Tony Parker"]]         | [:serve "Tony Parker"->"Spurs"] |
