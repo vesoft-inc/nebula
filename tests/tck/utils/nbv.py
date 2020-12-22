@@ -7,6 +7,7 @@
 import re
 import ply.lex as lex
 import ply.yacc as yacc
+from tests.tck.utils.mmh2 import mmh2
 
 from nebula2.common.ttypes import (
     Value,
@@ -315,17 +316,31 @@ def p_map_items(p):
         p[0] = p[1]
 
 
+def p_vid(p):
+    '''
+        vid : STRING
+            | INT
+            | function
+    '''
+    p[0] = p[1]
+    if isinstance(p[0], Value):
+        if p[0].getType() == Value.SVAL:
+            p[0] = p[0].get_sVal()
+        else:
+            p[0] = p[0].get_iVal()
+
+
 def p_vertex(p):
     '''
         vertex : '(' tag_list ')'
-               | '(' STRING tag_list ')'
+               | '(' vid tag_list ')'
     '''
     vid = None
     tags = None
     if len(p) == 4:
         tags = p[2]
     else:
-        vid = p[2].get_sVal()
+        vid = p[2]
         tags = p[3]
     v = Vertex(vid=vid, tags=tags)
     p[0] = Value(vVal=v)
@@ -359,14 +374,14 @@ def p_edge_spec(p):
         edge : '[' edge_rank edge_props ']'
              | '[' ':' LABEL edge_props ']'
              | '[' ':' LABEL edge_rank edge_props ']'
-             | '[' STRING '-' '>' STRING edge_props ']'
-             | '[' STRING '-' '>' STRING edge_rank edge_props ']'
-             | '[' ':' LABEL STRING '-' '>' STRING edge_props ']'
-             | '[' ':' LABEL STRING '-' '>' STRING edge_rank edge_props ']'
-             | '[' STRING '<' '-' STRING edge_props ']'
-             | '[' STRING '<' '-' STRING edge_rank edge_props ']'
-             | '[' ':' LABEL STRING '<' '-' STRING edge_props ']'
-             | '[' ':' LABEL STRING '<' '-' STRING edge_rank edge_props ']'
+             | '[' vid '-' '>' vid edge_props ']'
+             | '[' vid '-' '>' vid edge_rank edge_props ']'
+             | '[' ':' LABEL vid '-' '>' vid edge_props ']'
+             | '[' ':' LABEL vid '-' '>' vid edge_rank edge_props ']'
+             | '[' vid '<' '-' vid edge_props ']'
+             | '[' vid '<' '-' vid edge_rank edge_props ']'
+             | '[' ':' LABEL vid '<' '-' vid edge_props ']'
+             | '[' ':' LABEL vid '<' '-' vid edge_rank edge_props ']'
     '''
     e = Edge()
     name = None
@@ -387,29 +402,29 @@ def p_edge_spec(p):
         rank = p[4]
         props = p[5]
     elif len(p) == 8:
-        src = p[2].get_sVal()
-        dst = p[5].get_sVal()
+        src = p[2]
+        dst = p[5]
         if p[3] == '<' and p[4] == '-':
             etype = -1
         props = p[6]
     elif len(p) == 9:
-        src = p[2].get_sVal()
-        dst = p[5].get_sVal()
+        src = p[2]
+        dst = p[5]
         if p[3] == '<' and p[4] == '-':
             etype = -1
         rank = p[6]
         props = p[7]
     elif len(p) == 10:
         name = p[3]
-        src = p[4].get_sVal()
-        dst = p[7].get_sVal()
+        src = p[4]
+        dst = p[7]
         if p[5] == '<' and p[6] == '-':
             etype = -1
         props = p[8]
     elif len(p) == 11:
         name = p[3]
-        src = p[4].get_sVal()
-        dst = p[7].get_sVal()
+        src = p[4]
+        dst = p[7]
         if p[5] == '<' and p[6] == '-':
             etype = -1
         rank = p[8]
@@ -513,10 +528,19 @@ lexer = lex.lex()
 parser = yacc.yacc()
 functions = {}
 
+def murmurhash2(v):
+    if isinstance(v, Value):
+        v = v.get_sVal()
+    else:
+        assert isinstance(v, str)
+    return mmh2(bytes(v, 'utf-8'))
+
 
 def register_function(name, func):
     functions[name] = func
 
+
+register_function('hash', murmurhash2)
 
 def parse(s):
     return parser.parse(s)
@@ -550,6 +574,8 @@ if __name__ == '__main__':
     expected['''"string'string'"'''] = Value(sVal="string'string'")
     expected['''/^[_a-z][-_a-z0-9]*$/'''] = re.compile(r'^[_a-z][-_a-z0-9]*$')
     expected['''/\\//'''] = re.compile(r'/')
+    expected['''hash("hello")'''] = 2762169579135187400
+    expected['''hash("World")'''] = -295471233978816215
     expected['[]'] = Value(lVal=NList([]))
     expected['[{}]'] = Value(lVal=NList([Value(mVal=NMap({}))]))
     expected['[1,2,3]'] = Value(lVal=NList([
@@ -570,6 +596,9 @@ if __name__ == '__main__':
     }))
     expected['()'] = Value(vVal=Vertex())
     expected['("vid")'] = Value(vVal=Vertex(vid='vid'))
+    expected['(123)'] = Value(vVal=Vertex(vid=123))
+    expected['(-123)'] = Value(vVal=Vertex(vid=-123))
+    expected['(hash("vid"))'] = Value(vVal=Vertex(vid=murmurhash2('vid')))
     expected['("vid":t)'] = Value(vVal=Vertex(vid='vid', tags=[Tag(name='t')]))
     expected['("vid":t:t)'] = Value(
         vVal=Vertex(vid='vid', tags=[
@@ -597,6 +626,9 @@ if __name__ == '__main__':
     expected['[@1]'] = Value(eVal=Edge(ranking=1))
     expected['[@-1]'] = Value(eVal=Edge(ranking=-1))
     expected['["1"->"2"]'] = Value(eVal=Edge(src='1', dst='2'))
+    expected['[1->2]'] = Value(eVal=Edge(src=1, dst=2))
+    expected['[-1->-2]'] = Value(eVal=Edge(src=-1, dst=-2))
+    expected['[hash("1")->hash("2")]'] = Value(eVal=Edge(src=murmurhash2('1'), dst=murmurhash2('2')))
     expected['[:e{}]'] = Value(eVal=Edge(name='e', props={}))
     expected['[:e@123{}]'] = Value(eVal=Edge(name='e', ranking=123, props={}))
     expected['[:e"1"->"2"@123{}]'] = Value(eVal=Edge(

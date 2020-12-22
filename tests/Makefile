@@ -12,7 +12,7 @@ gherkin_fmt = ~/.local/bin/reformat-gherkin
 RM_DIR ?= true
 
 install-deps:
-	pip3 install --user -U setuptools -i $(PYPI_MIRROR)
+	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
 	pip3 install --user -r $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
 
 install-nebula-py: install-deps
