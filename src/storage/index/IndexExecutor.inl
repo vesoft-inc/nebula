@@ -210,8 +210,180 @@ IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field,
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) {
-    std::unique_ptr<kvstore::KVIterator> iter;
     std::vector<std::string> keys;
+    auto ret = getIndexKey(part, keys);
+    if (ret != nebula::kvstore::SUCCEEDED) {
+        return ret;
+    }
+    for (auto& item : keys) {
+        ret = getDataRow(part, item);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanConcurrently(
+    const std::vector<PartitionID>& parts) {
+    if (isEdgeIndex_) {
+        return executeExecutionPlanForEdge(parts);
+    }
+    return executeExecutionPlanForVertex(parts);
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanForEdge(
+    const std::vector<PartitionID>& parts) {
+    std::vector<folly::Future<std::tuple<PartitionID, EdgeRows>>> results;
+    for (auto& part : parts) {
+        folly::Promise<std::tuple<PartitionID, EdgeRows>> pro;
+        auto f = pro.getFuture();
+        executor_->add([this, p = std::move(pro), &part] () mutable {
+            std::tuple<PartitionID, EdgeRows> partEdgeRows;
+            std::vector<std::string> keys;
+            auto code = getIndexKey(part, keys);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Execute execution plan for edge concurrently! "
+                           << "getIndexKey error, ret = "
+                           << static_cast<int32_t>(code)
+                           << ", spaceId = " << spaceId_
+                           << ", partId =  " << part;
+                partEdgeRows = std::make_tuple(part, code);
+                p.setValue(partEdgeRows);
+                return;
+            }
+
+            std::vector<cpp2::Edge> edgeDatas;
+            for (auto& key : keys) {
+                cpp2::Edge data;
+                code = getEdgeRow(part, key, &data);
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "execute execution plan for edge concurrently! "
+                               << "getDataRow error, ret = "
+                               << static_cast<int32_t>(code)
+                               << ", spaceId = " << spaceId_
+                               << ", partId =  " << part;
+                    partEdgeRows = std::make_tuple(part, code);
+                    p.setValue(partEdgeRows);
+                    return;
+                }
+                edgeDatas.emplace_back(std::move(data));
+            }
+
+            partEdgeRows = std::make_tuple(part, edgeDatas);
+            p.setValue(std::move(partEdgeRows));
+        });
+        results.emplace_back(std::move(f));
+    }
+    folly::Promise<std::unordered_map<PartitionID, kvstore::ResultCode>> resultPro;
+    auto result = resultPro.getFuture();
+    folly::collect(results).via(executor_).then([this, pro = std::move(resultPro)](
+        const std::vector<std::tuple<PartitionID, EdgeRows>>& partEdgeRows) mutable {
+        std::unordered_map<PartitionID, kvstore::ResultCode> res;
+        for (const auto& partEdgeRow : partEdgeRows) {
+            auto part = std::get<0>(partEdgeRow);
+            auto keysOr = std::get<1>(partEdgeRow);
+            if (!nebula::ok(keysOr)) {
+                auto code = nebula::error(keysOr);
+                res.emplace(part, code);
+            }
+        }
+        if (!res.empty()) {
+            pro.setValue(res);
+            return;
+        }
+
+        for (const auto& partEdgeRow : partEdgeRows) {
+            auto keysOr = std::get<1>(partEdgeRow);
+            std::vector<cpp2::Edge> edgeRows = nebula::value(keysOr);
+            edgeRows_.insert(edgeRows_.end(), edgeRows.begin(), edgeRows.end());
+        }
+        pro.setValue(res);
+    });
+    return result;
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanForVertex(
+    const std::vector<PartitionID>& parts) {
+    std::vector<folly::Future<std::tuple<PartitionID, VertexRows>>> results;
+    for (auto& part : parts) {
+        folly::Promise<std::tuple<PartitionID, VertexRows>> pro;
+        auto f = pro.getFuture();
+        executor_->add([this, p = std::move(pro), &part] () mutable {
+            std::tuple<PartitionID, VertexRows> partVertexRows;
+            std::vector<std::string> keys;
+            auto code = getIndexKey(part, keys);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "execute execution plan for vertex concurrently! "
+                           << "getIndexKey error, ret = "
+                           << static_cast<int32_t>(code)
+                           << ", spaceId = " << spaceId_
+                           << ", partId =  " << part;
+                partVertexRows = std::make_tuple(part, code);
+                p.setValue(partVertexRows);
+                return;
+            }
+
+            std::vector<cpp2::VertexIndexData> vertexDatas;
+            for (auto& key : keys) {
+                cpp2::VertexIndexData data;
+                code = getVertexRow(part, key, &data);
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "execute execution plan for vertex concurrently! "
+                               << "getDataRow error, ret = "
+                               << static_cast<int32_t>(code)
+                               << ", spaceId = " << spaceId_
+                               << ", partId =  " << part;
+                    partVertexRows = std::make_tuple(part, code);
+                    p.setValue(partVertexRows);
+                    return;
+                }
+                vertexDatas.emplace_back(std::move(data));
+            }
+
+            partVertexRows = std::make_tuple(part, vertexDatas);
+            p.setValue(std::move(partVertexRows));
+        });
+        results.emplace_back(std::move(f));
+    }
+    folly::Promise<std::unordered_map<PartitionID, kvstore::ResultCode>> resultPro;
+    auto result = resultPro.getFuture();
+    folly::collect(results).via(executor_).then([this, pro = std::move(resultPro)](
+        const std::vector<std::tuple<PartitionID, VertexRows>>& partVertexRows) mutable {
+        std::unordered_map<PartitionID, kvstore::ResultCode> res;
+        for (const auto& partVertexRow : partVertexRows) {
+            auto part = std::get<0>(partVertexRow);
+            auto keysOr = std::get<1>(partVertexRow);
+            if (!nebula::ok(keysOr)) {
+                auto code = nebula::error(keysOr);
+                res.emplace(part, code);
+            }
+        }
+        if (!res.empty()) {
+            pro.setValue(res);
+            return;
+        }
+
+        for (const auto& partVertexRow : partVertexRows) {
+            auto keysOr = std::get<1>(partVertexRow);
+            std::vector<cpp2::VertexIndexData> vertexDatas = nebula::value(keysOr);
+            vertexRows_.insert(vertexRows_.end(), vertexDatas.begin(), vertexDatas.end());
+        }
+        pro.setValue(res);
+    });
+    return result;
+}
+
+template <typename RESP>
+kvstore::ResultCode IndexExecutor<RESP>::getIndexKey(PartitionID part,
+                                                     std::vector<std::string>& keys) {
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto pair = makeScanPair(part, index_->get_index_id());
     if (pair.first.empty() || pair.second.empty()) {
         return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
@@ -234,12 +406,6 @@ kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) 
         }
         keys.emplace_back(key);
         iter->next();
-    }
-    for (auto& item : keys) {
-        ret = getDataRow(part, item);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return ret;
-        }
     }
     return ret;
 }
