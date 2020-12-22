@@ -200,6 +200,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::INT, Value::Type::INT, Value::Type::INT}, Value::Type::LIST)}},
     {"hasSameEdgeInPath", { TypeSignature({Value::Type::PATH}, Value::Type::BOOL), }},
     {"hasSameVertexInPath", {TypeSignature({Value::Type::PATH}, Value::Type::BOOL), }},
+    {"reversePath", {TypeSignature({Value::Type::PATH}, Value::Type::PATH), }},
 };
 
 // static
@@ -1446,6 +1447,20 @@ FunctionManager::FunctionManager() {
             }
             auto &path = args[0].getPath();
             return path.hasDuplicateVertices();
+        };
+    }
+    {
+        auto &attr = functions_["reversePath"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[0].isPath()) {
+                return Value::kNullBadType;
+            }
+            auto path = args[0].getPath();
+            path.reverse();
+            return path;
         };
     }
 }   // NOLINT

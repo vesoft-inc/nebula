@@ -15,10 +15,10 @@ namespace plugin {
 class ESGraphAdapter final : public FTGraphAdapter {
     FRIEND_TEST(FulltextPluginTest, ESIndexCheckTest);
     FRIEND_TEST(FulltextPluginTest, ESResultTest);
-    FRIEND_TEST(FulltextPluginTest, ESPrefixTest);
-    FRIEND_TEST(FulltextPluginTest, ESWildcardTest);
-    FRIEND_TEST(FulltextPluginTest, ESRegexpTest);
-    FRIEND_TEST(FulltextPluginTest, ESFuzzyTest);
+    FRIEND_TEST(FulltextPluginTest, DISABLED_ESPrefixTest);
+    FRIEND_TEST(FulltextPluginTest, DISABLED_ESWildcardTest);
+    FRIEND_TEST(FulltextPluginTest, DISABLED_ESRegexpTest);
+    FRIEND_TEST(FulltextPluginTest, DISABLED_ESFuzzyTest);
     FRIEND_TEST(FulltextPluginTest, ESCreateIndexTest);
     FRIEND_TEST(FulltextPluginTest, ESDropIndexTest);
 

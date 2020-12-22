@@ -1565,6 +1565,19 @@ TEST_F(FunctionManagerTest, duplicateEdgesORVerticesInPath) {
     }
 }
 
+TEST_F(FunctionManagerTest, ReversePath) {
+    {
+        Path path = createPath("0", {"1", "2", "3"});
+        std::vector<Value> args = {path};
+        Path expected;
+        expected.src = Vertex("3", {});
+        expected.steps.emplace_back(Step(Vertex("2", {}), -1, "edge1", 0, {}));
+        expected.steps.emplace_back(Step(Vertex("1", {}), -1, "edge1", 0, {}));
+        expected.steps.emplace_back(Step(Vertex("0", {}), -1, "edge1", 0, {}));
+        TEST_FUNCTION(reversePath, args, expected);
+    }
+}
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {
