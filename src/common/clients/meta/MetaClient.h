@@ -12,6 +12,7 @@
 #include <folly/RWSpinLock.h>
 #include <gtest/gtest_prod.h>
 #include "common/interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "common/interface/gen-cpp2/meta_types.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
@@ -407,6 +408,19 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::FTClient>>> listFTClients();
 
     StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
+
+    // session
+    folly::Future<StatusOr<cpp2::CreateSessionResp>> createSession(
+            const std::string &userName, const HostAddr& graphAddr, const std::string &clientIp);
+
+    folly::Future<StatusOr<cpp2::ExecResp>>
+    updateSessions(const std::vector<cpp2::Session>& sessions);
+
+    folly::Future<StatusOr<cpp2::ListSessionsResp>> listSessions();
+
+    folly::Future<StatusOr<cpp2::GetSessionResp>> getSession(SessionID sessionId);
+
+    folly::Future<StatusOr<cpp2::ExecResp>> removeSession(SessionID sessionId);
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);

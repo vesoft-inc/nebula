@@ -48,6 +48,8 @@ typedef i32 (cpp.type = "nebula::IndexID") IndexID
 
 typedef i32 (cpp.type = "nebula::Port") Port
 
+typedef i64 (cpp.type = "nebula::SessionID") SessionID
+
 // !! Struct Date has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
 struct Date {

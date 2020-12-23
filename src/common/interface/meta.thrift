@@ -1070,6 +1070,57 @@ struct ListFTClientsResp {
     3: list<FTClient>      clients,
 }
 
+struct Session {
+    1: common.SessionID session_id,
+    2: common.Timestamp create_time,
+    3: common.Timestamp update_time,
+    4: binary user_name,
+    5: binary space_name,
+    6: common.HostAddr graph_addr,
+    7: i32 timezone,
+    8: binary client_ip,
+    9: map<binary, common.Value>(cpp.template = "std::unordered_map") configs,
+}
+
+struct CreateSessionReq {
+    1: binary               user,
+    2: common.HostAddr      graph_addr,
+    3: binary               client_ip,
+}
+
+struct CreateSessionResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: Session              session,
+}
+
+struct UpdateSessionsReq {
+    1: list<Session>        sessions,
+}
+
+struct ListSessionsReq {
+}
+
+struct ListSessionsResp {
+    1: ErrorCode             code,
+    2: common.HostAddr       leader,
+    3: list<Session>         sessions,
+}
+
+struct GetSessionReq {
+    1: common.SessionID  session_id,
+}
+
+struct GetSessionResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: Session              session,
+}
+
+struct RemoveSessionReq {
+    1: common.SessionID      session_id,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -1162,4 +1213,10 @@ service MetaService {
     ExecResp signInFTService(1: SignInFTServiceReq req);
     ExecResp signOutFTService(1: SignOutFTServiceReq req);
     ListFTClientsResp listFTClients(1: ListFTClientsReq req);
+
+    CreateSessionResp createSession(1: CreateSessionReq req);
+    ExecResp updateSessions(1: UpdateSessionsReq req);
+    ListSessionsResp listSessions(1: ListSessionsReq req);
+    GetSessionResp getSession(1: GetSessionReq req);
+    ExecResp removeSession(1: RemoveSessionReq req);
 }

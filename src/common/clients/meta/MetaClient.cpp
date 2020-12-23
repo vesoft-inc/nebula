@@ -3285,5 +3285,95 @@ StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
     }
     return fulltextClientList_;
 }
+
+folly::Future<StatusOr<cpp2::CreateSessionResp>>
+MetaClient::createSession(const std::string &userName,
+                          const HostAddr& graphAddr,
+                          const std::string &clientIp) {
+    cpp2::CreateSessionReq req;
+    req.set_user(userName);
+    req.set_graph_addr(graphAddr);
+    req.set_client_ip(clientIp);
+    folly::Promise<StatusOr<cpp2::CreateSessionResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_createSession(request);
+                },
+                [] (cpp2::CreateSessionResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::ExecResp>>
+MetaClient::updateSessions(const std::vector<cpp2::Session>& sessions) {
+    cpp2::UpdateSessionsReq req;
+    req.set_sessions(sessions);
+    folly::Promise<StatusOr<cpp2::ExecResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_updateSessions(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::ListSessionsResp>> MetaClient::listSessions() {
+    cpp2::ListSessionsReq req;
+    folly::Promise<StatusOr<cpp2::ListSessionsResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_listSessions(request);
+                },
+                [] (cpp2::ListSessionsResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID sessionId) {
+    cpp2::GetSessionReq req;
+    req.set_session_id(sessionId);
+    folly::Promise<StatusOr<cpp2::GetSessionResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_getSession(request);
+                },
+                [] (cpp2::GetSessionResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sessionId) {
+    cpp2::RemoveSessionReq req;
+    req.set_session_id(sessionId);
+    folly::Promise<StatusOr<cpp2::ExecResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_removeSession(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
 }  // namespace meta
 }  // namespace nebula
+

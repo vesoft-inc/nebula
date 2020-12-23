@@ -44,5 +44,7 @@ using BalanceID = int64_t;
 using GroupID = int32_t;
 using ZoneID = int32_t;
 
+using SessionID = int64_t;
+
 }  // namespace nebula
 #endif  // COMMON_THRIFT_THRIFTTYPES_H_

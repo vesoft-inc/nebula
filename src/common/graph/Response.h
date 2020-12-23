@@ -30,6 +30,7 @@ enum class ErrorCode {
     E_USER_NOT_FOUND = -10,
     E_BAD_PERMISSION = -11,
     E_SEMANTIC_ERROR = -12,
+    E_TOO_MANY_CONNECTIONS = -13,
 };
 
 template <typename T>
