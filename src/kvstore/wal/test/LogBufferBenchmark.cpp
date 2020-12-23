@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include <folly/Benchmark.h>
 #include "kvstore/wal/AtomicLogBuffer.h"
-#include "kvstore/wal/InMemoryLogBufferList.h"
+#include "kvstore/wal/test/InMemoryLogBufferList.h"
 
 DEFINE_bool(only_seek, false, "Only seek in read test");
 

@@ -7,8 +7,8 @@
 #include "common/base/Base.h"
 #include <utility>
 #include <gtest/gtest.h>
-#include "kvstore/wal/InMemoryLogBuffer.h"
-#include "kvstore/wal/InMemoryLogBufferList.h"
+#include "kvstore/wal/test/InMemoryLogBuffer.h"
+#include "kvstore/wal/test/InMemoryLogBufferList.h"
 
 namespace nebula {
 namespace wal {

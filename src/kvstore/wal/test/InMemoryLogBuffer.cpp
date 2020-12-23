@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "kvstore/wal/InMemoryLogBuffer.h"
+#include "kvstore/wal/test/InMemoryLogBuffer.h"
 
 namespace nebula {
 namespace wal {

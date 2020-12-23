@@ -94,6 +94,8 @@ struct Node {
  * cases, the seeking log is in the head node, so it equals o(1)
  * */
 class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
+    FRIEND_TEST(AtomicLogBufferTest, ResetThenPushExceedLimit);
+
 public:
     /**
      * The iterator once created, it could just see the snapshot of current list.
@@ -239,36 +241,43 @@ public:
             newNode->firstLogId_ = logId;
             newNode->next_ = head;
             newNode->push_back(std::move(record));
-            if (head != nullptr) {
-                head->prev_.store(newNode, std::memory_order_release);
-            } else {
-                // It is the first Node in current list.
+            if (head == nullptr || head->markDeleted_.load(std::memory_order_relaxed)) {
+                // It is the first Node in current list, or head has been marked as deleted
                 firstLogId_.store(logId, std::memory_order_relaxed);
                 tail_.store(newNode, std::memory_order_relaxed);
+            } else if (head != nullptr) {
+                head->prev_.store(newNode, std::memory_order_release);
             }
-            size_ += recSize;
+            size_.fetch_add(recSize, std::memory_order_relaxed);
             head_.store(newNode, std::memory_order_relaxed);
             return;
         }
-        if (size_ + recSize > capacity_ && head != nullptr) {
+        if (size_ + recSize > capacity_) {
             auto* tail = tail_.load(std::memory_order_relaxed);
+            // todo(doodle): there is a potential problem is that: since Node::isFull is judeged by
+            // log count, we can only add new node when previous node has enough logs. So when tail
+            // is equal to head, we need to wait tail is full, after head moves forward, at then
+            // tail can be marked as deleted. So the log buffer would takes up more memory than its
+            // capacity. Since it does not affect correctness, we could fix it later if necessary.
             if (tail != head) {
                 // We have more than one nodes in current list.
                 // So we mark the tail to be deleted.
                 bool expected = false;
                 VLOG(3) << "Mark node " << tail->firstLogId_ << " to be deleted!";
-                if (!tail->markDeleted_.compare_exchange_strong(expected, true)) {
-                    LOG(FATAL) << "The tail has been marked to be deleted?";
-                }
-                size_.fetch_sub(tail->size_, std::memory_order_relaxed);
-                firstLogId_.store(tail->firstLogId_, std::memory_order_relaxed);
+                auto marked = tail->markDeleted_.compare_exchange_strong(
+                    expected, true, std::memory_order_relaxed);
+                auto* prev = tail->prev_.load(std::memory_order_relaxed);
+                firstLogId_.store(prev->firstLogId_, std::memory_order_relaxed);
                 // All operations above SHOULD NOT be reordered.
                 tail_.store(tail->prev_, std::memory_order_release);
-                // dirtyNodes_ changes SHOUlD after the tail move.
-                dirtyNodes_.fetch_add(1,  std::memory_order_release);
+                if (marked) {
+                    size_.fetch_sub(tail->size_, std::memory_order_relaxed);
+                    // dirtyNodes_ changes SHOULD after the tail move.
+                    dirtyNodes_.fetch_add(1, std::memory_order_release);
+                }
             }
         }
-        size_ += recSize;
+        size_.fetch_add(recSize, std::memory_order_relaxed);
         head->push_back(std::move(record));
     }
 
@@ -287,19 +296,27 @@ public:
     /**
      * For reset operation, users should keep it thread-safe with push operation.
      * Just mark all nodes to be deleted.
+     *
+     * Actually, we don't follow the invariant strictly (node in range [head, tail] are valid),
+     * head and tail are not modified. But once an log is pushed after reset, everything will obey
+     * the invariant.
      * */
     void reset() {
         auto* p = head_.load(std::memory_order_relaxed);
+        int32_t count = 0;
         while (p != nullptr) {
             bool expected = false;
-            if (!p->markDeleted_.compare_exchange_strong(expected, true)) {
+            if (!p->markDeleted_.compare_exchange_strong(
+                    expected, true, std::memory_order_relaxed)) {
                 // The rest nodes has been mark deleted.
                 break;
             }
             p = p->next_;
+            ++count;
         }
-        size_ = 0;
-        firstLogId_  = 0;
+        size_.store(0, std::memory_order_relaxed);
+        firstLogId_.store(0, std::memory_order_relaxed);
+        dirtyNodes_.fetch_add(count, std::memory_order_release);
     }
 
     std::unique_ptr<Iterator> iterator(LogID start, LogID end) {
@@ -368,7 +385,7 @@ private:
         bool gcRunning = false;
 
         if (dirtyNodes > dirtyNodesLimit_) {
-            if (gcOnGoing_.compare_exchange_strong(gcRunning, true)) {
+            if (gcOnGoing_.compare_exchange_strong(gcRunning, true, std::memory_order_acquire)) {
                 VLOG(1) << "GC begins!";
                 // It means no readers on the deleted nodes.
                 // Cut-off the list.
@@ -384,11 +401,11 @@ private:
                     auto* del = curr;
                     curr = curr->next_;
                     delete del;
-                    dirtyNodes_--;
+                    dirtyNodes_.fetch_sub(1, std::memory_order_release);
                     CHECK_GE(dirtyNodes_, 0);
                 }
 
-                gcOnGoing_.store(false);
+                gcOnGoing_.store(false, std::memory_order_release);
                 VLOG(1) << "GC finished!";
             } else {
                 VLOG(1) << "Current list is in gc now!";

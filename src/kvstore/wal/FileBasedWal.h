@@ -148,10 +148,6 @@ private:
     // Rollback to logId in given file
     void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
-    // Return the last buffer.
-    // If the last buffer is big enough, create a new one
-    BufferPtr getLastBuffer(LogID id, size_t expectedToWrite);
-
     // Implementation of appendLog()
     bool appendLogInternal(LogID id,
                            TermID term,

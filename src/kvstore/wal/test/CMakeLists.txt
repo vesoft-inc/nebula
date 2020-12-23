@@ -18,6 +18,7 @@ nebula_add_test(
         inmemory_log_buffer_test
     SOURCES
         InMemoryLogBufferTest.cpp
+        InMemoryLogBuffer.cpp
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:common_base_obj>
@@ -43,7 +44,7 @@ nebula_add_executable(
         log_bufferr_bm
     SOURCES
         LogBufferBenchmark.cpp
-        ../InMemoryLogBuffer.cpp
+        InMemoryLogBuffer.cpp
     OBJECTS
         $<TARGET_OBJECTS:common_base_obj>
     LIBRARIES

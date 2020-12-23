@@ -111,6 +111,40 @@ TEST(AtomicLogBufferTest, SingleWriterMultiReadersTest) {
     }
 }
 
+TEST(AtomicLogBufferTest, ResetThenPushExceedLimit) {
+    int32_t capacity = 24 * (kMaxLength + 1);
+    auto logBuffer = AtomicLogBuffer::instance(capacity);
+    // One node would save at most kMaxLength logs, so there will be 2 node.
+    LogID logId = 0;
+    for (; logId <= kMaxLength; logId++) {
+        // The actual size of one record would be sizeof(ClusterID) + sizeof(TermID) + msg_.size(),
+        // in this case, it would be 8 + 8 + 8 = 24, total size would be 24 * (kMaxLength + 1)
+        logBuffer->push(logId, Record(0, 0, std::string(8, 'a')));
+    }
+
+    // Mark all two node as deleted, log buffer size would be reset to 0
+    logBuffer->reset();
+    CHECK(logBuffer->seek(0) == nullptr);
+    CHECK(logBuffer->seek(kMaxLength) == nullptr);
+
+    // Because head has been marked as deleted, this would save in a new node.
+    // The record size will be exactly same with capacity of log buffer.
+    std::string logMakeBufferFull(capacity - sizeof(ClusterID) - sizeof(TermID), 'a');
+    logBuffer->push(logId, Record(0, 0, std::move(logMakeBufferFull)));
+
+    // Before this PR, the logId will be 0 when buffer has been reset, and push a new log
+    CHECK_EQ(logId, logBuffer->firstLogId_);
+    CHECK_EQ(capacity, logBuffer->size_);
+    CHECK(logBuffer->seek(logId) != nullptr);
+
+    logId++;
+
+    // At this point, buffer will have three node, head contain the logMakeBufferFull, others
+    // are marked as deleted, tail != head. Let's push another log
+    logBuffer->push(logId, Record(0, 0, std::string(8, 'a')));
+    CHECK(logBuffer->seek(logId) != nullptr);
+}
+
 }  // namespace wal
 }  // namespace nebula
 
