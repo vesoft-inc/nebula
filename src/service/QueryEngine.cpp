@@ -7,6 +7,8 @@
 #include "service/QueryEngine.h"
 
 #include "common/base/Base.h"
+#include "common/meta/ServerBasedIndexManager.h"
+#include "common/meta/ServerBasedSchemaManager.h"
 #include "context/QueryContext.h"
 #include "optimizer/OptRule.h"
 #include "planner/PlannersRegister.h"
@@ -42,9 +44,8 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
         LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
-    schemaManager_ = meta::SchemaManager::create(metaClient_.get());
-    indexManager_ = meta::IndexManager::create();
-    indexManager_->init(metaClient_.get());
+    schemaManager_ = meta::ServerBasedSchemaManager::create(metaClient_.get());
+    indexManager_ = meta::ServerBasedIndexManager::create(metaClient_.get());
 
     // gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
