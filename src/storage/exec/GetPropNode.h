@@ -28,16 +28,23 @@ public:
         , vertexCache_(vertexCache) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
-        auto ret = RelNode::execute(partId, vId);
+        // todo(doodle): revert to previous behavior, here is an extra io, will be deleted asap
+        // check is vertex exists
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId);
+        auto ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
+                                                        partId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
-
-        // if none of the tag node valid, do not emplace the row
-        if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [] (const auto& tagNode) {
-            return tagNode->valid();
-        })) {
+        if (iter == nullptr || !iter->valid()) {
+            // not emplace row when vertex not exists
             return kvstore::ResultCode::SUCCEEDED;
+        }
+
+        ret = RelNode::execute(partId, vId);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
         }
 
         List row;
