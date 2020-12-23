@@ -17,6 +17,8 @@ public:
     ServerBasedIndexManager() = default;
     ~ServerBasedIndexManager();
 
+    static std::unique_ptr<ServerBasedIndexManager> create(MetaClient *client);
+
     StatusOr<std::shared_ptr<IndexItem>>
     getTagIndex(GraphSpaceID space, IndexID index) override;
 
@@ -39,7 +41,7 @@ public:
 
     Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override;
 
-    void init(MetaClient *client) override;
+    void init(MetaClient *client);
 
 private:
     MetaClient             *metaClient_{nullptr};

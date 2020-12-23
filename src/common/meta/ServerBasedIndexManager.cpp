@@ -16,6 +16,12 @@ ServerBasedIndexManager::~ServerBasedIndexManager() {
     }
 }
 
+std::unique_ptr<ServerBasedIndexManager> ServerBasedIndexManager::create(MetaClient *client) {
+    auto mgr = std::make_unique<ServerBasedIndexManager>();
+    mgr->init(client);
+    return mgr;
+}
+
 void ServerBasedIndexManager::init(MetaClient *client) {
     CHECK_NOTNULL(client);
     metaClient_ = client;

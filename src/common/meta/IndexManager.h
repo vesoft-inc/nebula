@@ -19,10 +19,6 @@ class IndexManager {
 public:
     virtual ~IndexManager() = default;
 
-    static std::unique_ptr<IndexManager> create();
-
-    virtual void init(MetaClient *client) = 0;
-
     virtual StatusOr<std::shared_ptr<IndexItem>>
     getTagIndex(GraphSpaceID space, IndexID index) = 0;
 

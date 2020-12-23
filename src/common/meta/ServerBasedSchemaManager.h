@@ -62,6 +62,8 @@ public:
 
     void init(MetaClient *client);
 
+    static std::unique_ptr<ServerBasedSchemaManager> create(MetaClient *client);
+
 private:
     MetaClient             *metaClient_{nullptr};
 };

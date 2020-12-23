@@ -10,9 +10,6 @@
 namespace nebula {
 namespace meta {
 
-std::unique_ptr<IndexManager> IndexManager::create() {
-    return std::make_unique<ServerBasedIndexManager>();
-}
 
 }   // namespace meta
 }   // namespace nebula

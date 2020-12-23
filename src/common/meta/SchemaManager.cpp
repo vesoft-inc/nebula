@@ -10,12 +10,6 @@
 namespace nebula {
 namespace meta {
 
-std::unique_ptr<SchemaManager> SchemaManager::create(MetaClient *client) {
-    auto mgr = std::make_unique<ServerBasedSchemaManager>();
-    mgr->init(client);
-    return mgr;
-}
-
 StatusOr<std::pair<bool, int32_t>>
 SchemaManager::getSchemaIDByName(GraphSpaceID space, folly::StringPiece schemaName) {
     auto ret = toEdgeType(space, schemaName);

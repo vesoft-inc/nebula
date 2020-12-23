@@ -27,8 +27,6 @@ class SchemaManager {
 public:
     virtual ~SchemaManager() = default;
 
-    static std::unique_ptr<SchemaManager> create(MetaClient *client);
-
     virtual StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) = 0;
 
     virtual StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {

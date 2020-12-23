@@ -143,5 +143,13 @@ StatusOr<std::vector<nebula::meta::cpp2::FTClient>> ServerBasedSchemaManager::ge
     }
     return std::move(ret).value();
 }
+
+std::unique_ptr<ServerBasedSchemaManager> ServerBasedSchemaManager::create(MetaClient *client) {
+    auto mgr = std::make_unique<ServerBasedSchemaManager>();
+    mgr->init(client);
+    return mgr;
+}
+
+
 }  // namespace meta
 }  // namespace nebula
