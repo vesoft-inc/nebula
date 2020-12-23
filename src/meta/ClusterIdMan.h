@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "fs/FileUtils.h"
 #include "kvstore/Common.h"
-#include "kvstore/KVStore.h"
+#include "kvstore/NebulaStore.h"
 #include "meta/processors/Common.h"
 #include <folly/synchronization/Baton.h>
 
@@ -76,10 +76,16 @@ public:
         return clusterId;
     }
 
-    static ClusterID getClusterIdFromKV(kvstore::KVStore* kv, const std::string& key) {
+    static ClusterID getClusterIdFromKV(kvstore::NebulaStore* kv, const std::string& key) {
         CHECK_NOTNULL(kv);
+        // follower need to read from kv engine directly
+        auto ret = kv->part(kDefaultSpaceId, kDefaultPartId);
+        if (!ok(ret)) {
+            return error(ret);
+        }
+        auto part = nebula::value(ret);
         std::string value;
-        auto code = kv->get(0, 0, key, &value);
+        auto code = part->engine()->get(key, &value);
         if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
             LOG(INFO) << "There is no clusterId existed in kvstore!";
             return 0;
