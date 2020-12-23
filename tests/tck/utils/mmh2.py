@@ -1,7 +1,13 @@
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+
 def __bytes2ul(b):
     return int.from_bytes(b, byteorder='little', signed=False)
 
-def mmh2(bstr, seed = 0xc70f6907, signed = True):
+
+def mmh2(bstr, seed=0xc70f6907, signed=True):
     MASK = 2 ** 64 - 1
     size = len(bstr)
     m = 0xc6a4a7935bd1e995
@@ -41,6 +47,7 @@ def mmh2(bstr, seed = 0xc70f6907, signed = True):
         h = h | (-(h & 0x8000000000000000))
 
     return h
+
 
 if __name__ == '__main__':
     assert mmh2(b'hello') == 2762169579135187400

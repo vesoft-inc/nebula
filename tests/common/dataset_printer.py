@@ -27,10 +27,11 @@ class DataSetPrinter:
         return str(v)
 
     def ds_to_string(self, ds: DataSet) -> str:
-        col_names = '[' + ','.join(self.sstr(col)
-                                   for col in ds.column_names) + ']'
-        data_rows = '\n'.join('[' + self.list_to_string(row.values) + ']'
-                              for row in ds.rows)
+        col_names = '|' + '|'.join(self.sstr(col)
+                                   for col in ds.column_names) + '|'
+        data_rows = '\n'.join(
+            f'{i}: |' + self.list_to_string(row.values, delimiter='|') + '|'
+            for (i, row) in enumerate(ds.rows))
         return '\n'.join([col_names, data_rows])
 
     def to_string(self, val: Value):
@@ -74,19 +75,19 @@ class DataSetPrinter:
             return self.ds_to_string(val.get_gVal())
         return ""
 
-    def list_to_string(self, lst: List[Value]) -> str:
-        return ','.join(self.to_string(val) for val in lst)
+    def list_to_string(self, lst: List[Value], delimiter: str = ",") -> str:
+        return delimiter.join(self.to_string(val) for val in lst)
 
     def vertex_to_string(self, v: Vertex):
         if v.vid is None:
             return "()"
         if v.tags is None:
-            return f'("{self.vid(v.vid)}")'
+            return f'({self.vid(v.vid)})'
         tags = []
         for tag in v.tags:
             name = self.sstr(tag.name)
             tags.append(f":{name}{self.map_to_string(tag.props)}")
-        return f'("{self.vid(v.vid)}"{"".join(tags)})'
+        return f'({self.vid(v.vid)}{"".join(tags)})'
 
     def map_to_string(self, m: dict) -> str:
         if m is None:
@@ -97,7 +98,7 @@ class DataSetPrinter:
     def edge_to_string(self, e: Edge) -> str:
         name = "" if e.name is None else ":" + self.sstr(e.name)
         arrow = "->" if e.type is None or e.type > 0 else "<-"
-        direct = f'"{self.vid(e.src)}"{arrow}"{self.vid(e.dst)}"'
+        direct = f'{self.vid(e.src)}{arrow}{self.vid(e.dst)}'
         rank = "" if e.ranking is None else f"@{e.ranking}"
         return f"[{name} {direct}{rank}{self.map_to_string(e.props)}]"
 

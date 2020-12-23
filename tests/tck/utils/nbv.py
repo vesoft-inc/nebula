@@ -7,7 +7,11 @@
 import re
 import ply.lex as lex
 import ply.yacc as yacc
-from tests.tck.utils.mmh2 import mmh2
+
+if __name__ == "__main__":
+    from mmh2 import mmh2
+else:
+    from tests.tck.utils.mmh2 import mmh2
 
 from nebula2.common.ttypes import (
     Value,
@@ -528,12 +532,15 @@ lexer = lex.lex()
 parser = yacc.yacc()
 functions = {}
 
+
 def murmurhash2(v):
     if isinstance(v, Value):
         v = v.get_sVal()
-    else:
-        assert isinstance(v, str)
-    return mmh2(bytes(v, 'utf-8'))
+    if type(v) is str:
+        return mmh2(bytes(v, 'utf-8'))
+    if type(v) is bytes:
+        return mmh2(v)
+    raise ValueError(f"Invalid value type: {type(v)}")
 
 
 def register_function(name, func):

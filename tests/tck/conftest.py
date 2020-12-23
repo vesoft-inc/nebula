@@ -20,6 +20,7 @@ from tests.common.configs import DATA_DIR
 from tests.common.types import SpaceDesc
 from tests.common.utils import create_space, load_csv_data, space_generator
 from tests.tck.utils.table import dataset, table
+from tests.tck.utils.nbv import murmurhash2
 
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
@@ -31,10 +32,18 @@ def graph_spaces():
 
 
 @given(parse('a graph with space named "{space}"'))
-def preload_space(space, load_nba_data, load_student_data, session,
-                  graph_spaces):
+def preload_space(
+    space,
+    load_nba_data,
+    # load_nba_int_vid_data,
+    load_student_data,
+    session,
+    graph_spaces,
+):
     if space == "nba":
         graph_spaces["space_desc"] = load_nba_data
+    # elif space == "nba_int_vid":
+    #     graph_spaces["space_desc"] = load_nba_int_vid_data
     elif space == "student":
         graph_spaces["space_desc"] = load_student_data
     else:
@@ -74,21 +83,24 @@ def new_space(options, session, graph_spaces):
     graph_spaces["drop_space"] = True
 
 
-@given(parse('import "{data}" csv data'))
+@given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(data, graph_spaces, session, pytestconfig):
     data_dir = os.path.join(DATA_DIR, data)
-    space_desc = graph_spaces["space_desc"]
+    space_desc = load_csv_data(
+        pytestconfig,
+        session,
+        data_dir,
+        "I" + space_generator(),
+    )
     assert space_desc is not None
-    resp = session.execute(space_desc.use_stmt())
-    assert resp.is_succeeded(), \
-        f"Fail to use {space_desc.name}, {resp.error_msg()}"
-    load_csv_data(pytestconfig, session, data_dir)
+    graph_spaces["space_desc"] = space_desc
 
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session):
     ngql = " ".join(query.splitlines())
     graph_spaces['result_set'] = session.execute(ngql)
+    graph_spaces['ngql'] = ngql
 
 
 @given(parse("wait {secs:d} seconds"))
@@ -103,16 +115,36 @@ def cmp_dataset(graph_spaces,
                 strict: bool,
                 included=False) -> None:
     rs = graph_spaces['result_set']
+    ngql = graph_spaces['ngql']
+    space_desc = graph_spaces['space_desc']
     assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
+    vid_fn = murmurhash2 if space_desc.vid_type == 'int' else None
     ds = dataset(table(result))
     dscmp = DataSetComparator(strict=strict,
                               order=order,
                               included=included,
-                              decode_type=rs._decode_type)
-    dsp = DataSetPrinter(rs._decode_type)
-    resp_ds = rs._data_set_wrapper._data_set
-    assert dscmp(resp_ds, ds), \
-        f"Response: {dsp.ds_to_string(resp_ds)} vs. Expected: {dsp.ds_to_string(ds)}"
+                              decode_type=rs._decode_type,
+                              vid_fn=vid_fn)
+
+    def dsp(ds):
+        printer = DataSetPrinter(rs._decode_type)
+        return printer.ds_to_string(ds)
+
+    def rowp(ds, i):
+        if i is None or i < 0:
+            return ""
+        assert i < len(ds.rows), f"{i} out of range {len(ds.rows)}"
+        row = ds.rows[i].values
+        printer = DataSetPrinter(rs._decode_type)
+        ss = printer.list_to_string(row, delimiter='|')
+        return f'{i}: |' + ss + '|'
+
+    if rs._data_set_wrapper is None:
+        assert not ds.column_names and not ds.rows, f"Expected result must be empty table: ||"
+
+    rds = rs._data_set_wrapper._data_set
+    res, i = dscmp(rds, ds)
+    assert res, f"Fail to exec: {ngql}\nResponse: {dsp(rds)}\nExpected: {dsp(ds)}\nNotFoundRow: {rowp(ds, i)}"
 
 
 @then(parse("the result should be, in order:\n{result}"))
@@ -151,10 +183,9 @@ def execution_should_be_succ(graph_spaces):
     assert rs is not None, "Please execute a query at first"
     assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
 
-@then(
-    rparse("a (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time):(?P<msg>.*)")
-)
-def raised_type_error(err_type, time, msg, graph_spaces):
+
+@then(rparse(r"a (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
+def raised_type_error(err_type, time, sym, msg, graph_spaces):
     res = graph_spaces["result_set"]
     assert not res.is_succeeded(), "Response should be failed"
     err_type = err_type.strip()

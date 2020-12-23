@@ -19,6 +19,17 @@ class SpaceDesc:
         self.charset = charset
         self.collate = collate
 
+    @staticmethod
+    def from_json(obj: dict):
+        return SpaceDesc(
+            name=obj.get('name', None),
+            vid_type=obj.get('vidType', 'FIXED_STRING(32)'),
+            partition_num=obj.get('partitionNum', 7),
+            replica_factor=obj.get('replicaFactor', 1),
+            charset=obj.get('charset', 'utf8'),
+            collate=obj.get('collate', 'utf8_bin'),
+        )
+
     def create_stmt(self) -> str:
         return f"""CREATE SPACE IF NOT EXISTS `{self.name}`( \
             partition_num={self.partition_num}, \

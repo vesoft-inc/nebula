@@ -9,10 +9,9 @@ import os
 import random
 import string
 import time
-from pathlib import Path
+import yaml
 from typing import Pattern
 
-import yaml
 from nebula2.common import ttypes as CommonTtypes
 from nebula2.gclient.net import Session
 
@@ -322,10 +321,15 @@ def space_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
+def check_resp(resp, stmt):
+    msg = f"Fail to exec: {stmt}, error: {resp.error_msg()}"
+    assert resp.is_succeeded(), msg
+
+
 def create_space(space_desc: SpaceDesc, sess: Session):
     def exec(stmt):
         resp = sess.execute(stmt)
-        assert resp.is_succeeded(), f"Fail to exec: {stmt}, {resp.error_msg()}"
+        check_resp(resp, stmt)
 
     exec(space_desc.drop_stmt())
     exec(space_desc.create_stmt())
@@ -336,11 +340,15 @@ def create_space(space_desc: SpaceDesc, sess: Session):
 def _load_data_from_file(sess, data_dir, fd):
     for stmt in CSVImporter(fd, data_dir):
         rs = sess.execute(stmt)
-        assert rs.is_succeeded(), \
-            f"fail to exec: {stmt}, error: {rs.error_msg()}"
+        check_resp(rs, stmt)
 
 
-def load_csv_data(pytestconfig, sess: Session, data_dir: str):
+def load_csv_data(
+    pytestconfig,
+    sess: Session,
+    data_dir: str,
+    space_name: str = "",
+):
     """
     Before loading CSV data files, you must create and select a graph
     space. The `config.yaml' file only create schema about tags and
@@ -350,12 +358,30 @@ def load_csv_data(pytestconfig, sess: Session, data_dir: str):
 
     with open(config_path, 'r') as f:
         config = yaml.full_load(f)
+
+        space = config.get('space', None)
+        assert space is not None
+        if not space_name:
+            space_name = space.get('name', "A" + space_generator())
+        space_desc = SpaceDesc(
+            name=space_name,
+            vid_type=space.get('vidType', 'FIXED_STRING(32)'),
+            partition_num=space.get('partitionNum', 7),
+            replica_factor=space.get('replicaFactor', 1),
+            charset=space.get('charset', 'utf8'),
+            collate=space.get('collate', 'utf8_bin'),
+        )
+
+        create_space(space_desc, sess)
+
         schemas = config['schema']
         stmts = ' '.join(map(lambda x: x.strip(), schemas.splitlines()))
         rs = sess.execute(stmts)
-        assert rs.is_succeeded()
+        check_resp(rs, stmts)
 
         time.sleep(3)
 
         for fd in config["files"]:
             _load_data_from_file(sess, data_dir, fd)
+
+        return space_desc

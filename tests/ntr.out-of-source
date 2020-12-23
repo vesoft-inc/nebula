@@ -1,6 +1,0 @@
-#!@PYTHON_EXECUTABLE@
-# Call ntr in out-of-source build
-import os, sys
-os.environ['NEBULA_BUILD_DIR'] = '@CMAKE_BINARY_DIR@'
-os.environ['NEBULA_SOURCE_DIR'] = '@CMAKE_SOURCE_DIR@'
-exec(open("@CMAKE_SOURCE_DIR@/tests/nebula-test-run.py").read())

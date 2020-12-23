@@ -18,7 +18,7 @@ from nebula2.gclient.net import ConnectionPool
 from tests.common.configs import all_configs
 from tests.common.nebula_service import NebulaService
 from tests.common.types import SpaceDesc
-from tests.common.utils import create_space, load_csv_data
+from tests.common.utils import load_csv_data
 
 tests_collected = set()
 tests_executed = set()
@@ -152,46 +152,73 @@ def session(conn_pool, pytestconfig):
     sess.release()
 
 
-def load_csv_data_once(tmp_path_factory, pytestconfig, worker_id, conn_pool,
-                       space_desc: SpaceDesc):
-    space_name = space_desc.name
+def load_csv_data_once(
+    tmp_path_factory,
+    pytestconfig,
+    worker_id,
+    conn_pool: ConnectionPool,
+    space: str,
+):
     root_tmp_dir = tmp_path_factory.getbasetemp().parent
-    fn = root_tmp_dir / f"csv-data-{space_name}"
+    fn = root_tmp_dir / f"csv-data-{space}"
     is_file = True
     with FileLock(str(fn) + ".lock"):
         if not fn.is_file():
-            data_dir = os.path.join(CURR_PATH, "data", space_name)
+            data_dir = os.path.join(CURR_PATH, "data", space)
             user = pytestconfig.getoption("user")
             password = pytestconfig.getoption("password")
             sess = conn_pool.get_session(user, password)
-            create_space(space_desc, sess)
-            load_csv_data(pytestconfig, sess, data_dir)
+            space_desc = load_csv_data(pytestconfig, sess, data_dir)
             sess.release()
-            fn.write_text(space_name)
+            fn.write_text(json.dumps(space_desc.__dict__))
             is_file = False
+        else:
+            space_desc = SpaceDesc.from_json(json.loads(fn.read_text()))
     if is_file:
-        logging.info(
-            f"session-{worker_id} need not to load {space_name} csv data")
+        logging.info(f"session-{worker_id} need not to load {space} csv data")
         yield space_desc
     else:
-        logging.info(f"session-{worker_id} load {space_name} csv data")
+        logging.info(f"session-{worker_id} load {space} csv data")
         yield space_desc
         os.remove(str(fn))
 
 
-# TODO(yee): optimize data load fixtures
 @pytest.fixture(scope="session")
 def load_nba_data(conn_pool, pytestconfig, tmp_path_factory, worker_id):
-    space_desc = SpaceDesc(name="nba", vid_type="FIXED_STRING(30)")
-    yield from load_csv_data_once(tmp_path_factory, pytestconfig, worker_id,
-                                  conn_pool, space_desc)
+    yield from load_csv_data_once(
+        tmp_path_factory,
+        pytestconfig,
+        worker_id,
+        conn_pool,
+        "nba",
+    )
+
+
+# @pytest.fixture(scope="session")
+# def load_nba_int_vid_data(
+#     conn_pool,
+#     pytestconfig,
+#     tmp_path_factory,
+#     worker_id,
+# ):
+#     yield from load_csv_data_once(
+#         tmp_path_factory,
+#         pytestconfig,
+#         worker_id,
+#         conn_pool,
+#         "nba_int_vid",
+#     )
 
 
 @pytest.fixture(scope="session")
 def load_student_data(conn_pool, pytestconfig, tmp_path_factory, worker_id):
-    space_desc = SpaceDesc(name="student", vid_type="FIXED_STRING(8)")
-    yield from load_csv_data_once(tmp_path_factory, pytestconfig, worker_id,
-                                  conn_pool, space_desc)
+    yield from load_csv_data_once(
+        tmp_path_factory,
+        pytestconfig,
+        worker_id,
+        conn_pool,
+        "student",
+    )
 
 
 # TODO(yee): Delete this when we migrate all test cases
