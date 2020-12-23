@@ -5,9 +5,49 @@
  */
 
 #include "planner/Algo.h"
-
+#include "util/ToJson.h"
 namespace nebula {
 namespace graph {
+
+
+std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
+    auto desc = BiInputNode::explain();
+    switch (pathKind_) {
+        case PathKind::kBiBFS: {
+            addDescription("kind", "BFS", desc.get());
+            break;
+        }
+        case PathKind::kBiDijkstra: {
+            addDescription("kind", "Dijkstra", desc.get());
+            break;
+        }
+        case PathKind::kFloyd: {
+            addDescription("kind", "Floyd", desc.get());
+            break;
+        }
+        case PathKind::kAllPaths: {
+            addDescription("kind", "AllPath", desc.get());
+            break;
+        }
+    }
+    addDescription("conditionalVar", util::toJson(conditionalVar_), desc.get());
+    addDescription("noloop", util::toJson(noLoop_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    addDescription("noloop ", util::toJson(noLoop_), desc.get());
+    return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> CartesianProduct::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    for (size_t i = 0; i < inputVars_.size(); ++i) {
+        addDescription("var", folly::toJson(util::toJson(inputVars_[i])), desc.get());
+    }
+    return desc;
+}
 
 Status CartesianProduct::addVar(std::string varName) {
     auto checkName = [&varName](auto var) { return var->name == varName; };

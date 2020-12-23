@@ -75,6 +75,7 @@ public:
     void setNoLoop(bool noLoop) {
         noLoop_ = noLoop;
     }
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
     ConjunctPath(QueryContext* qctx,
@@ -106,6 +107,7 @@ public:
     void setNoLoop(bool noLoop) {
         noLoop_ = noLoop;
     }
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
     ProduceAllPaths(QueryContext* qctx, PlanNode* input)
@@ -128,6 +130,7 @@ public:
     std::vector<std::vector<std::string>> allColNames() const {
         return allColNames_;
     }
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
     CartesianProduct(QueryContext* qctx, PlanNode* input)
