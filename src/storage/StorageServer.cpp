@@ -9,6 +9,7 @@
 #include "common/webservice/WebService.h"
 #include "common/webservice/Router.h"
 #include "common/meta/ServerBasedSchemaManager.h"
+#include "common/meta/ServerBasedIndexManager.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/clients/storage/InternalStorageClient.h"
@@ -136,11 +137,10 @@ bool StorageServer::start() {
     }
 
     LOG(INFO) << "Init schema manager";
-    schemaMan_ = meta::SchemaManager::create(metaClient_.get());
+    schemaMan_ = meta::ServerBasedSchemaManager::create(metaClient_.get());
 
     LOG(INFO) << "Init index manager";
-    indexMan_ = meta::IndexManager::create();
-    indexMan_->init(metaClient_.get());
+    indexMan_ = meta::ServerBasedIndexManager::create(metaClient_.get());
 
     LOG(INFO) << "Init kvstore";
     kvstore_ = getStoreInstance();

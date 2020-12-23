@@ -9,6 +9,7 @@
 #include "mock/MockData.h"
 #include "meta/MetaServiceHandler.h"
 #include "common/meta/ServerBasedSchemaManager.h"
+#include "common/meta/ServerBasedIndexManager.h"
 #include "common/clients/meta/MetaClient.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
@@ -129,7 +130,7 @@ void MockCluster::initListener(const char* dataPath, const HostAddr& addr) {
     KVOpt.listenerPath_ = folly::stringPrintf("%s/listener", dataPath);
     KVOpt.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(addr,
                                                                            lMetaClient_.get());
-    lSchemaMan_ = meta::SchemaManager::create(lMetaClient_.get());
+    lSchemaMan_ = meta::ServerBasedSchemaManager::create(lMetaClient_.get());
     KVOpt.schemaMan_ = lSchemaMan_.get();
     esListener_ = std::make_unique<kvstore::NebulaStore>(std::move(KVOpt),
                                                          ioThreadPool,
@@ -191,9 +192,8 @@ void MockCluster::initStorageKV(const char* dataPath,
         options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                             addr,
                                             metaClient_.get());
-        schemaMan_ = meta::SchemaManager::create(metaClient_.get());
-        indexMan_ = meta::IndexManager::create();
-        indexMan_->init(metaClient_.get());
+        schemaMan_ = meta::ServerBasedSchemaManager::create(metaClient_.get());
+        indexMan_ = meta::ServerBasedIndexManager::create(metaClient_.get());
     } else {
         LOG(INFO) << "Use meta in memory!";
         options.partMan_ = memPartMan(1, parts);;

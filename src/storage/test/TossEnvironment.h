@@ -8,6 +8,8 @@
 
 #include "TossTestUtils.h"
 
+#include "common/meta/ServerBasedSchemaManager.h"
+
 #define FLOG_FMT(...) LOG(INFO) << folly::sformat(__VA_ARGS__)
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -35,7 +37,7 @@ struct TossEnvironment {
         mClient_ = setupMetaClient(metaName, metaPort);
         sClient_ = std::make_unique<StorageClient>(executor_, mClient_.get());
         interClient_ = std::make_unique<storage::InternalStorageClient>(executor_, mClient_.get());
-        schemaMan_ = meta::SchemaManager::create(mClient_.get());
+        schemaMan_ = meta::ServerBasedSchemaManager::create(mClient_.get());
     }
 
     std::unique_ptr<meta::MetaClient>
