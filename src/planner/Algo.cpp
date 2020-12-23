@@ -16,7 +16,7 @@ Status CartesianProduct::addVar(std::string varName) {
     }
     auto* varPtr = qctx_->symTable()->getVar(varName);
     DCHECK(varPtr != nullptr);
-    allColNames_.emplace_back(std::move(varPtr->colNames));
+    allColNames_.emplace_back(varPtr->colNames);
     inputVars_.emplace_back(varPtr);
     return Status::OK();
 }
