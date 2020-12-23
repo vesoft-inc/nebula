@@ -81,7 +81,8 @@ public:
         // follower need to read from kv engine directly
         auto ret = kv->part(kDefaultSpaceId, kDefaultPartId);
         if (!ok(ret)) {
-            return error(ret);
+            LOG(ERROR) << "Part not found";
+            return 0;
         }
         auto part = nebula::value(ret);
         std::string value;
