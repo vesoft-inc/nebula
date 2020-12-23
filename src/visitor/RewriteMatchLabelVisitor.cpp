@@ -141,7 +141,7 @@ RewriteMatchLabelVisitor::rewriteExprList(const std::vector<std::unique_ptr<Expr
     auto iter = std::find_if(list.cbegin(), list.cend(), [] (auto &expr) {
             return isLabel(expr.get());
     });
-    if (iter != list.cend()) {
+    if (iter == list.cend()) {
         std::for_each(list.cbegin(), list.cend(), [this] (auto &expr) {
             const_cast<Expression*>(expr.get())->accept(this);
         });
