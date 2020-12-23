@@ -79,6 +79,7 @@ public:
 
     folly::Future<cpp2::LookupIndexResp>
     future_lookupIndex(const cpp2::LookupIndexRequest& req) override;
+
     folly::Future<cpp2::ExecResponse>
     future_addEdgesAtomic(const cpp2::AddEdgesRequest& req) override;
 
@@ -87,6 +88,9 @@ public:
 
     folly::Future<cpp2::ScanEdgeResponse>
     future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
+
+    folly::Future<cpp2::GetUUIDResp>
+    future_getUUID(const cpp2::GetUUIDReq& req) override;
 
 private:
     StorageEnv*                                     env_{nullptr};

@@ -276,7 +276,7 @@ private:
 
     void addVidToRow(VertexIDSlice vId, Row& row) {
         if (planContext_->isIntId_) {
-            row.emplace_back(vId.toString());
+            row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
             row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
         }

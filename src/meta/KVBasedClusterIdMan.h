@@ -79,7 +79,7 @@ public:
     static ClusterID getClusterIdFromKV(kvstore::KVStore* kv, const std::string& key) {
         CHECK_NOTNULL(kv);
         std::string value;
-        auto code = kv->get(0, 0, key, &value);
+        auto code = kv->get(0, 0, key, &value, true);
         if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
             LOG(INFO) << "There is no clusterId existed in kvstore!";
             return 0;

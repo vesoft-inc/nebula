@@ -49,7 +49,11 @@ public:
 
         std::vector<Value> row;
         // vertexId is the first column
-        row.emplace_back(vId);
+        if (planContext_->isIntId_) {
+            row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
+        } else {
+            row.emplace_back(vId);
+        }
         // second column is reserved for stat
         row.emplace_back(Value());
 

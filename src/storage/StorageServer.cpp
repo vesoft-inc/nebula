@@ -298,6 +298,9 @@ void StorageServer::stop() {
     if (adminServer_) {
         adminServer_->stop();
     }
+    if (internalStorageServer_) {
+        internalStorageServer_->stop();
+    }
     if (storageServer_) {
         storageServer_->stop();
     }

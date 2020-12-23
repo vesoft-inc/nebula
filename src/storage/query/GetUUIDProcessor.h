@@ -18,21 +18,20 @@ namespace storage {
 
 class GetUUIDProcessor : public BaseProcessor<cpp2::GetUUIDResp> {
 public:
-    static GetUUIDProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetUUIDProcessor(kvstore);
+    static GetUUIDProcessor* instance(StorageEnv* env) {
+        return new GetUUIDProcessor(env);
     }
 
     void process(const cpp2::GetUUIDReq& req) {
         constexpr size_t hashMask = 0xFFFFFFFF00000000;
         constexpr size_t timeMask = 0x00000000FFFFFFFF;
-        CHECK_NOTNULL(kvstore_);
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
         auto name = req.get_name();
         auto key = NebulaKeyUtils::uuidKey(partId, name.c_str());
         std::string val;
         VertexID vId;
-        auto ret = kvstore_->get(spaceId, partId, key, &val);
+        auto ret = env_->kvstore_->get(spaceId, partId, key, &val);
         // try to get the corresponding vertex id
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             // need to generate new vertex id of this uuid
@@ -44,8 +43,8 @@ public:
             std::vector<kvstore::KV> data;
             data.emplace_back(std::move(key), std::move(val));
 
-            kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                    [vId, spaceId, partId, this] (kvstore::ResultCode code) {
+            env_->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
+                                          [vId, spaceId, partId, this] (kvstore::ResultCode code) {
                 if (code == kvstore::ResultCode::SUCCEEDED) {
                     resp_.set_id(vId);
                 } else {
@@ -62,8 +61,8 @@ public:
     }
 
 private:
-    explicit GetUUIDProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetUUIDResp>(kvstore, nullptr) {}
+    explicit GetUUIDProcessor(StorageEnv* env)
+        : BaseProcessor<cpp2::GetUUIDResp>(env) {}
 };
 
 }  // namespace storage

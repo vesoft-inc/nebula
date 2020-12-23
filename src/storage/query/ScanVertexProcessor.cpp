@@ -42,7 +42,7 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
     auto kvRet = env_->kvstore_->rangeWithPrefix(
         spaceId_, partId_, start, prefix, &iter, req.get_enable_read_from_follower());
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        pushResultCode(to(kvRet), partId_);
+        handleErrorCode(kvRet, spaceId_, partId_);
         onFinished();
         return;
     }

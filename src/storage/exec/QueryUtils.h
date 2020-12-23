@@ -73,9 +73,11 @@ public:
             }
             case PropContext::PropInKeyType::SRC: {
                 auto srcId = NebulaKeyUtils::getSrcId(vIdLen, key);
-                return isIntId ?
-                    srcId.toString() :
-                    srcId.subpiece(0, srcId.find_first_of('\0')).toString();
+                if (isIntId) {
+                    return *reinterpret_cast<const int64_t*>(srcId.data());
+                } else {
+                    return srcId.subpiece(0, srcId.find_first_of('\0')).toString();
+                }
             }
             case PropContext::PropInKeyType::TYPE: {
                 auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
@@ -87,9 +89,11 @@ public:
             }
             case PropContext::PropInKeyType::DST: {
                 auto dstId = NebulaKeyUtils::getDstId(vIdLen, key);
-                return isIntId ?
-                    dstId.toString() :
-                    dstId.subpiece(0, dstId.find_first_of('\0')).toString();
+                if (isIntId) {
+                    return *reinterpret_cast<const int64_t*>(dstId.data());
+                } else {
+                    return dstId.subpiece(0, dstId.find_first_of('\0')).toString();
+                }
             }
             default:
                 LOG(FATAL) << "Should not read here";
@@ -108,10 +112,12 @@ public:
                 return readValue(reader, prop.name_, prop.field_);
             }
             case PropContext::PropInKeyType::VID: {
-                auto srcId = NebulaKeyUtils::getVertexId(vIdLen, key);
-                return isIntId ?
-                    srcId.toString() :
-                    srcId.subpiece(0, srcId.find_first_of('\0')).toString();
+                auto vId = NebulaKeyUtils::getVertexId(vIdLen, key);
+                if (isIntId) {
+                    return *reinterpret_cast<const int64_t*>(vId.data());
+                } else {
+                    return vId.subpiece(0, vId.find_first_of('\0')).toString();
+                }
             }
             case PropContext::PropInKeyType::TAG: {
                 auto tag = NebulaKeyUtils::getTagId(vIdLen, key);

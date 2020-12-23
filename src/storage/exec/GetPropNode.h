@@ -28,27 +28,25 @@ public:
         , vertexCache_(vertexCache) {}
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
-        // check is vertex exists
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId, vId);
-        auto ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
-                                                        partId, prefix, &iter);
+        auto ret = RelNode::execute(partId, vId);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
-        }
-        if (iter == nullptr || !iter->valid()) {
-            // not emplace row when vertex not exists
-            return kvstore::ResultCode::SUCCEEDED;
         }
 
-        ret = RelNode::execute(partId, vId);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return ret;
+        // if none of the tag node valid, do not emplace the row
+        if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [] (const auto& tagNode) {
+            return tagNode->valid();
+        })) {
+            return kvstore::ResultCode::SUCCEEDED;
         }
 
         List row;
         // vertexId is the first column
-        row.emplace_back(vId);
+        if (planContext_->isIntId_) {
+            row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
+        } else {
+            row.emplace_back(vId);
+        }
         auto vIdLen = planContext_->vIdLen_;
         auto isIntId = planContext_->isIntId_;
         for (auto* tagNode : tagNodes_) {

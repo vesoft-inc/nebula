@@ -16,6 +16,7 @@
 #include "storage/query/GetPropProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
+#include "storage/query/GetUUIDProcessor.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/transaction/TransactionProcessor.h"
 
@@ -96,6 +97,13 @@ GraphStorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
     auto* processor = ScanEdgeProcessor::instance(env_, &scanEdgeQpsStat_);
     RETURN_FUTURE(processor);
 }
+
+folly::Future<cpp2::GetUUIDResp>
+GraphStorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
+    auto* processor = GetUUIDProcessor::instance(env_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addEdgesAtomic(const cpp2::AddEdgesRequest& req) {
     auto* processor = AddEdgesAtomicProcessor::instance(env_, &addEdgesQpsStat_);
