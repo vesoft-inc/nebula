@@ -14,13 +14,13 @@ namespace py nebula2.graph
 
 include "common.thrift"
 
-cpp_include "common/graph/PairOps.h"
-cpp_include "common/graph/ProfilingStatsOps.h"
-cpp_include "common/graph/PlanNodeBranchInfoOps.h"
-cpp_include "common/graph/PlanNodeDescriptionOps.h"
-cpp_include "common/graph/PlanDescriptionOps.h"
-cpp_include "common/graph/ExecutionResponseOps.h"
-cpp_include "common/graph/AuthResponseOps.h"
+cpp_include "common/graph/PairOps.inl"
+cpp_include "common/graph/ProfilingStatsOps.inl"
+cpp_include "common/graph/PlanNodeBranchInfoOps.inl"
+cpp_include "common/graph/PlanNodeDescriptionOps.inl"
+cpp_include "common/graph/PlanDescriptionOps.inl"
+cpp_include "common/graph/ExecutionResponseOps.inl"
+cpp_include "common/graph/AuthResponseOps.inl"
 
 /*
  *

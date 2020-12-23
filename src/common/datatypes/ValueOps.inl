@@ -15,14 +15,14 @@
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/Value.h"
-#include "common/datatypes/DataSetOps.h"
-#include "common/datatypes/DateOps.h"
-#include "common/datatypes/PathOps.h"
-#include "common/datatypes/VertexOps.h"
-#include "common/datatypes/EdgeOps.h"
-#include "common/datatypes/ListOps.h"
-#include "common/datatypes/MapOps.h"
-#include "common/datatypes/SetOps.h"
+#include "common/datatypes/DataSetOps.inl"
+#include "common/datatypes/DateOps.inl"
+#include "common/datatypes/PathOps.inl"
+#include "common/datatypes/VertexOps.inl"
+#include "common/datatypes/EdgeOps.inl"
+#include "common/datatypes/ListOps.inl"
+#include "common/datatypes/MapOps.inl"
+#include "common/datatypes/SetOps.inl"
 
 namespace apache {
 namespace thrift {
