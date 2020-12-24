@@ -154,7 +154,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER
+%token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
@@ -477,6 +477,8 @@ unreserved_keyword
     | KW_SIGN               { $$ = new std::string("sign"); }
     | KW_SERVICE            { $$ = new std::string("service"); }
     | KW_TEXT_SEARCH        { $$ = new std::string("text_search"); }
+    | KW_RESET              { $$ = new std::string("reset"); }
+    | KW_PLAN               { $$ = new std::string("plan"); }
     ;
 
 agg_function
@@ -2879,6 +2881,9 @@ balance_sentence
     }
     | KW_BALANCE KW_DATA KW_STOP {
         $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
+    }
+    | KW_BALANCE KW_DATA KW_RESET KW_PLAN {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kDataReset);
     }
     | KW_BALANCE KW_DATA KW_REMOVE host_list {
         $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);

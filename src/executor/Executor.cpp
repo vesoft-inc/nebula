@@ -32,6 +32,7 @@
 #include "executor/admin/ListenerExecutor.h"
 #include "executor/admin/SpaceExecutor.h"
 #include "executor/admin/StopBalanceExecutor.h"
+#include "executor/admin/ResetBalanceExecutor.h"
 #include "executor/admin/SubmitJobExecutor.h"
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
@@ -361,6 +362,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kStopBalance: {
             return pool->add(new StopBalanceExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kResetBalance: {
+            return pool->add(new ResetBalanceExecutor(node, qctx));
         }
         case PlanNode::Kind::kShowBalance: {
             return pool->add(new ShowBalanceExecutor(node, qctx));

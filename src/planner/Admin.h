@@ -812,6 +812,17 @@ private:
         : SingleDependencyNode(qctx, Kind::kStopBalance, dep) {}
 };
 
+class ResetBalance final : public SingleDependencyNode {
+public:
+    static ResetBalance* make(QueryContext* qctx, PlanNode* dep) {
+        return qctx->objPool()->add(new ResetBalance(qctx, dep));
+    }
+
+private:
+    explicit ResetBalance(QueryContext* qctx, PlanNode* dep)
+        : SingleDependencyNode(qctx, Kind::kResetBalance, dep) {}
+};
+
 class ShowBalance final : public SingleDependencyNode {
 public:
     static ShowBalance* make(QueryContext* qctx, PlanNode* dep, int64_t jobId) {

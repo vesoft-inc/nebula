@@ -4,20 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/admin/BalanceExecutor.h"
+#include "executor/admin/ResetBalanceExecutor.h"
 #include "planner/Admin.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> BalanceExecutor::execute() {
+folly::Future<Status> ResetBalanceExecutor::execute() {
     SCOPED_TIMER(&execTime_);
-    return balance();
+    return resetBalance();
 }
 
-folly::Future<Status> BalanceExecutor::balance() {
-    auto *bNode = asNode<Balance>(node());
-    return qctx()->getMetaClient()->balance(bNode->deleteHosts(), false, false)
+folly::Future<Status> ResetBalanceExecutor::resetBalance() {
+    return qctx()->getMetaClient()->balance({}, false, true)
         .via(runner())
         .then([this](StatusOr<int64_t> resp) {
             SCOPED_TIMER(&execTime_);

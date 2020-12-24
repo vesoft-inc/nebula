@@ -1970,6 +1970,12 @@ TEST(Parser, BalanceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA RESET PLAN";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, CrashByFuzzer) {
@@ -2921,6 +2927,30 @@ TEST(Parser, FullText) {
 }
 
 TEST(Parser, FullTextServiceTest) {
+    {
+        GQLParser parser;
+        std::string query = "ADD LISTENER ELASTICSEARCH 127.0.0.1:12000";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ADD LISTENER ELASTICSEARCH 127.0.0.1:12000, 127.0.0.1:12001";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "REMOVE LISTENER ELASTICSEARCH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW LISTENER";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         GQLParser parser;
         std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";

@@ -234,6 +234,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "SIGN"                      { return TokenType::KW_SIGN; }
 "SERVICE"                   { return TokenType::KW_SERVICE; }
 "TEXT_SEARCH"               { return TokenType::KW_TEXT_SEARCH; }
+"RESET"                     { return TokenType::KW_RESET; }
+"PLAN"                      { return TokenType::KW_PLAN; }
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 

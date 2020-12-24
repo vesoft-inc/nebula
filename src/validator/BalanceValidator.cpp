@@ -36,6 +36,9 @@ Status BalanceValidator::toPlan() {
     case BalanceSentence::SubType::kDataStop:
         current = StopBalance::make(qctx_, nullptr);
         break;
+    case BalanceSentence::SubType::kDataReset:
+        current = ResetBalance::make(qctx_, nullptr);
+        break;
     case BalanceSentence::SubType::kShowBalancePlan:
         current = ShowBalance::make(qctx_, nullptr, sentence->balanceId());
         break;

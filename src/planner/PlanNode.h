@@ -79,6 +79,7 @@ public:
         kBalanceLeaders,
         kBalance,
         kStopBalance,
+        kResetBalance,
         kShowBalance,
         kSubmitJob,
         kShowHosts,
