@@ -18,7 +18,13 @@ from tests.common.dataset_printer import DataSetPrinter
 from tests.common.comparator import DataSetComparator
 from tests.common.configs import DATA_DIR
 from tests.common.types import SpaceDesc
-from tests.common.utils import create_space, load_csv_data, space_generator
+from tests.common.utils import (
+    create_space,
+    load_csv_data,
+    space_generator,
+    check_resp,
+    response,
+)
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
@@ -48,8 +54,8 @@ def preload_space(
         graph_spaces["space_desc"] = load_student_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
-    rs = session.execute(f'USE {space};')
-    assert rs.is_succeeded(), f"Fail to use space `{space}': {rs.error_msg()}"
+    stmt = f'USE {space};'
+    response(session, stmt)
 
 
 @given("an empty graph")
@@ -60,9 +66,7 @@ def empty_graph(session, graph_spaces):
 @given(parse("having executed:\n{query}"))
 def having_executed(query, session):
     ngql = " ".join(query.splitlines())
-    resp = session.execute(ngql)
-    assert resp.is_succeeded(), \
-        f"Fail to execute {ngql}, error: {resp.error_msg()}"
+    response(session, ngql)
 
 
 @given(parse("create a space with following options:\n{options}"))
@@ -94,6 +98,7 @@ def import_csv_data(data, graph_spaces, session, pytestconfig):
     )
     assert space_desc is not None
     graph_spaces["space_desc"] = space_desc
+    graph_spaces["drop_space"] = True
 
 
 @when(parse("executing query:\n{query}"))
@@ -116,10 +121,12 @@ def cmp_dataset(graph_spaces,
                 included=False) -> None:
     rs = graph_spaces['result_set']
     ngql = graph_spaces['ngql']
-    space_desc = graph_spaces['space_desc']
-    assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
-    vid_fn = murmurhash2 if space_desc.vid_type == 'int' else None
-    ds = dataset(table(result))
+    check_resp(rs, ngql)
+    space_desc = graph_spaces.get('space_desc', None)
+    vid_fn = None
+    if space_desc is not None:
+        vid_fn = murmurhash2 if space_desc.vid_type == 'int' else None
+    ds = dataset(table(result), graph_spaces.get("variables", {}))
     dscmp = DataSetComparator(strict=strict,
                               order=order,
                               included=included,
@@ -145,6 +152,17 @@ def cmp_dataset(graph_spaces,
     rds = rs._data_set_wrapper._data_set
     res, i = dscmp(rds, ds)
     assert res, f"Fail to exec: {ngql}\nResponse: {dsp(rds)}\nExpected: {dsp(ds)}\nNotFoundRow: {rowp(ds, i)}"
+
+
+@then(parse("define some list variables:\n{text}"))
+def define_list_var_alias(text, graph_spaces):
+    tbl = table(text)
+    graph_spaces["variables"] = {
+        column: "[" +
+        ",".join(filter(lambda x: x, [row.get(column)
+                                      for row in tbl['rows']])) + "]"
+        for column in tbl['column_names']
+    }
 
 
 @then(parse("the result should be, in order:\n{result}"))
@@ -180,8 +198,8 @@ def no_side_effects():
 @then("the execution should be successful")
 def execution_should_be_succ(graph_spaces):
     rs = graph_spaces["result_set"]
-    assert rs is not None, "Please execute a query at first"
-    assert rs.is_succeeded(), f"Response failed: {rs.error_msg()}"
+    stmt = graph_spaces["ngql"]
+    check_resp(rs, stmt)
 
 
 @then(rparse(r"a (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
@@ -205,6 +223,7 @@ def drop_used_space(session, graph_spaces):
     drop_space = graph_spaces.get("drop_space", False)
     if not drop_space:
         return
-    space_desc = graph_spaces["space_desc"]
-    resp = session.execute(space_desc.drop_stmt())
-    assert resp.is_succeeded(), f"Fail to drop space {space_desc.name}"
+    space_desc = graph_spaces.get("space_desc", None)
+    if space_desc is not None:
+        stmt = space_desc.drop_stmt()
+        response(session, stmt)

@@ -322,14 +322,23 @@ def space_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 
 def check_resp(resp, stmt):
+    assert resp is not None, "response is None"
     msg = f"Fail to exec: {stmt}, error: {resp.error_msg()}"
     assert resp.is_succeeded(), msg
 
 
-def create_space(space_desc: SpaceDesc, sess: Session):
-    def exec(stmt):
+def response(sess, stmt):
+    try:
         resp = sess.execute(stmt)
         check_resp(resp, stmt)
+        return resp
+    except Exception as ex:
+        assert not ex, f"Fail to exec: {stmt}, exception: {ex}"
+
+
+def create_space(space_desc: SpaceDesc, sess: Session):
+    def exec(stmt):
+        response(sess, stmt)
 
     exec(space_desc.drop_stmt())
     exec(space_desc.create_stmt())
@@ -339,8 +348,7 @@ def create_space(space_desc: SpaceDesc, sess: Session):
 
 def _load_data_from_file(sess, data_dir, fd):
     for stmt in CSVImporter(fd, data_dir):
-        rs = sess.execute(stmt)
-        check_resp(rs, stmt)
+        response(sess, stmt)
 
 
 def load_csv_data(
@@ -376,8 +384,7 @@ def load_csv_data(
 
         schemas = config['schema']
         stmts = ' '.join(map(lambda x: x.strip(), schemas.splitlines()))
-        rs = sess.execute(stmts)
-        check_resp(rs, stmts)
+        response(sess, stmts)
 
         time.sleep(3)
 

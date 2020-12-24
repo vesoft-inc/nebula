@@ -5,14 +5,24 @@
 
 import csv
 import io
+import re
 
 from tests.tck.utils.nbv import parse
 from nebula2.common.ttypes import DataSet, Row, Value
 
+pattern = re.compile(r"^<\[(\w+)\]>$")
 
-def _parse_value(cell: str) -> Value:
+
+def _parse_value(cell: str, variables: dict) -> Value:
+    m = pattern.match(cell)
+    if m:
+        var = m.group(1)
+        assert var in variables, f"Invalid expect variable usages: {cell}"
+        cell = variables.get(var, None)
+        assert cell is not None
+
     value = parse(cell)
-    assert value is not None, f'parse error: column is {cell}'
+    assert value is not None, f"parse error: column is {cell}"
     return value
 
 
@@ -31,11 +41,12 @@ def table(text):
     }
 
 
-def dataset(string_table):
+def dataset(string_table, variables: dict):
     ds = DataSet()
     ds.column_names = string_table['column_names']
     ds.rows = [
-        Row(values=[_parse_value(row[column]) for column in ds.column_names])
-        for row in string_table['rows']
+        Row(values=[
+            _parse_value(row[column], variables) for column in ds.column_names
+        ]) for row in string_table['rows']
     ]
     return ds
