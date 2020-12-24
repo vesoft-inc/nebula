@@ -350,7 +350,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance(std::vector<HostAddr> hostDel, bool isStop = false);
+    balance(std::vector<HostAddr> hostDel, bool isStop, bool isReset);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
