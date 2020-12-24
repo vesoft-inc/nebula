@@ -520,8 +520,9 @@ public:
 
         if (planContext_->env_->txnMan_ &&
             planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
+            LOG(INFO) << "before update edge atomic" << TransactionUtils::dumpKey(edgeKey);
             auto f = planContext_->env_->txnMan_->updateEdgeAtomic(
-                planContext_->vIdLen_, planContext_->spaceId_, key_, std::move(op));
+                planContext_->vIdLen_, planContext_->spaceId_, partId, edgeKey, std::move(op));
             f.wait();
 
             if (f.valid()) {

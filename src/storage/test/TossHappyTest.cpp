@@ -15,7 +15,7 @@ namespace storage {
 using StorageClient = storage::GraphStorageClient;
 
 constexpr bool kUseToss = true;
-constexpr bool kNotToss = false;
+constexpr bool kNotUseToss = false;
 
 static int32_t b_ = 1;
 static int32_t gap = 1000;
@@ -111,7 +111,7 @@ TEST_F(TossTest, NO_TOSS) {
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     LOG(INFO) << "going to add edge:" << edges.back().props.back();
-    auto code = env_->syncAddMultiEdges(edges, kNotToss);
+    auto code = env_->syncAddMultiEdges(edges, kNotUseToss);
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
     props = env_->getNeiProps(startWith);
@@ -590,21 +590,96 @@ TEST_F(TossTest, neighbors_test_4) {
     ASSERT_TRUE(env_->keyExist(rawKey1));
 
     // step 3rd: reverse edge key exist
-    // auto reversedEdgeKey = env_->reverseEdgeKey(lockEdge.key);
-    // auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
-    // ASSERT_FALSE(env_->keyExist(reversedRawKey.first));
+    auto reversedEdgeKey = env_->reverseEdgeKey(lockEdge.key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_FALSE(env_->keyExist(reversedRawKey.first));
 
     // TossTestUtils::print_svec(svec);
     LOG(INFO) << "edges[0]=" << edges[0].props[1].toString();
-    // LOG(INFO) << "edges[1]=" << edges[1].props[1].toString();
-    // LOG(INFO) << "lockEdge=" << lockEdge.props[1].toString();
-
-    // LOG(INFO) << "lockEdge.size()=" << lockEdge.props[1].toString().size();
 
     // step 4th: the get neighbors result is from lock
     auto strProps = env_->extractStrVals(svec);
     decltype(strProps) expect{edges[0].props[1].toString()};
     ASSERT_EQ(strProps, expect);
+}
+
+/**
+ * @brief neighbor edge + bad lock + edge
+ */
+TEST_F(TossTest, neighbors_test_5) {
+    LOG(INFO) << "b_=" << b_;
+    auto num = 2;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+    ASSERT_EQ(edges.size(), 2);
+
+    auto lockEdge = env_->dupEdge(edges[1]);
+
+    auto rawKey0 = env_->insertEdge(edges[0]);
+    auto rawKey1 = env_->insertEdge(edges[1]);
+    auto lockKey = env_->insertLock(lockEdge, false);
+    LOG(INFO) << "lock_test_1 lock hexlify = " << folly::hexlify(lockKey);
+
+    auto props = env_->getNeiProps(edges);
+    auto svec = TossTestUtils::splitNeiResults(props);
+
+    // step 1st: lock key not exist
+    ASSERT_FALSE(env_->keyExist(lockKey));
+
+    // step 2nd: edge key exist
+    ASSERT_TRUE(env_->keyExist(rawKey1));
+
+    // step 3rd: reverse edge key exist
+    auto reversedEdgeKey = env_->reverseEdgeKey(lockEdge.key);
+    auto reversedRawKey = env_->makeRawKey(reversedEdgeKey);
+    ASSERT_FALSE(env_->keyExist(reversedRawKey.first));
+
+    LOG(INFO) << "edges[0]=" << edges[0].props[1].toString();
+
+    // step 4th: the get neighbors result is from lock
+    auto strProps = env_->extractStrVals(svec);
+    decltype(strProps) expect{edges[0].props[1].toString()};
+    ASSERT_EQ(strProps, expect);
+
+    ASSERT_TRUE(TossTestUtils::compareSize(svec, num-1));
+}
+
+/**
+ * @brief
+ */
+TEST_F(TossTest, get_props_test_0) {
+    LOG(INFO) << "getProps_test_0 b_=" << b_;
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+
+    LOG(INFO) << "going to add edge:" << edges.back().props.back();
+    auto code = env_->syncAddMultiEdges(edges, kNotUseToss);
+    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+
+    auto vvec = env_->getProps(edges[0]);
+    LOG(INFO) << "vvec.size()=" << vvec.size();
+    for (auto& val : vvec) {
+        LOG(INFO) << "val.toString()=" << val.toString();
+    }
+}
+
+
+/**
+ * @brief
+ */
+TEST_F(TossTest, get_props_test_1) {
+    LOG(INFO) << __func__ << " b_=" << b_;
+    auto num = 1;
+    std::vector<cpp2::NewEdge> edges = env_->generateMultiEdges(num, b_);
+
+    LOG(INFO) << "going to add edge:" << edges.back().props.back();
+    auto code = env_->syncAddMultiEdges(edges, kUseToss);
+    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+
+    auto vvec = env_->getProps(edges[0]);
+    LOG(INFO) << "vvec.size()=" << vvec.size();
+    for (auto& val : vvec) {
+        LOG(INFO) << "val.toString()=" << val.toString();
+    }
 }
 
 }  // namespace storage

@@ -11,6 +11,10 @@
 namespace nebula {
 namespace storage {
 
+std::string TransactionUtils::dumpKey(const cpp2::EdgeKey& key) {
+    return folly::sformat("dumpKey(): src={}, dst={}", key.src.toString(), key.dst.toString());
+}
+
 // debug only
 std::string TransactionUtils::dumpEdge(size_t vIdLen,
                                        folly::StringPiece key,

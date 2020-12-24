@@ -8,6 +8,7 @@
 #define STORAGE_TRANSACTION_TOSSEDGEITERATOR_H_
 
 #include <folly/String.h>
+#include <folly/ScopeGuard.h>
 
 #include "common/base/Base.h"
 #include "kvstore/KVIterator.h"
@@ -73,6 +74,9 @@ public:
                     val = data.second;
                 });
             }
+            LOG(INFO) << "TossEdgeIterator::valid() = " << ret
+                << ", key=" << folly::hexlify(key)
+                << ", val=" << val;
         }
         return ret;
     }
@@ -98,7 +102,9 @@ public:
             if (!calledByCtor_) {
                 iter_->next();
             }
-            calledByCtor_ = false;
+            SCOPE_EXIT {
+                calledByCtor_ = false;
+            };
             if (!iter_->valid()) {
                 break;
             }
@@ -106,14 +112,15 @@ public:
                 LOG_IF(INFO, FLAGS_trace_toss)
                     << "TossEdgeIterator::next(), found an edge, hex="
                     << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
+
+                if (stopAtFirstEdge_ && !calledByCtor_) {
+                    stopSearching_ = true;
+                }
                 if (isLatestEdge(iter_->key()) && setReader(iter_->val())) {
                     lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, iter_->key());
                     lastDstId_ = NebulaKeyUtils::
                                     getDstId(planContext_->vIdLen_, iter_->key()).str();
                     lastIsLock_ = false;
-                    if (stopAtFirstEdge_) {
-                        stopSearching_ = true;
-                    }
                     LOG_IF(INFO, FLAGS_trace_toss)
                         << "TossEdgeIterator::next(), return edge hex="
                         << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
@@ -134,6 +141,8 @@ public:
                         << ", hex=" << folly::hexlify(iter_->key());
                     auto tryLockData = recoverEdges_.back()->tryWLock();
                     if (tryLockData && tryLockData->first.empty()) {
+                        LOG_IF(INFO, FLAGS_trace_toss)
+                            << "set edge val for key=" << folly::hexlify(iter_->key());
                         tryLockData->first = iter_->key().str();
                         tryLockData->second = iter_->val().str();
                     }
@@ -189,7 +198,7 @@ public:
             auto data = (*recoverEdgesIter_)->copy();
             if (!data.second.empty()) {
                 if (setReader(data.second)) {
-                    LOG_IF(INFO, FLAGS_trace_toss) << "valid lock, break";
+                    LOG_IF(INFO, FLAGS_trace_toss) << "setReader succeed, break";
                     break;
                 } else {
                     LOG_IF(INFO, FLAGS_trace_toss) << "setReader failed, continue";
@@ -246,7 +255,6 @@ private:
      * use stopSearching_ to judge inside.
      */
     bool                                                 stopAtFirstEdge_{false};
-    bool                                                 stopSearching_{false};
     bool                                                 calledByCtor_{true};
     std::list<folly::SemiFuture<cpp2::ErrorCode>>        resumeTasks_;
     std::list<TResultsItem>                              recoverEdges_;

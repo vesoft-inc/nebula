@@ -19,6 +19,8 @@ class TransactionUtils {
 public:
     static std::string dumpEdge(size_t vIdLen, folly::StringPiece key, folly::StringPiece val);
 
+    static std::string dumpKey(const cpp2::EdgeKey& key);
+
     // join hex of src & dst as en edge id
     static std::string hexEdgeId(size_t vIdLen, folly::StringPiece key);
 

@@ -68,7 +68,8 @@ public:
      * */
     folly::Future<cpp2::ErrorCode> updateEdgeAtomic(size_t vIdLen,
                                                     GraphSpaceID spaceId,
-                                                    const std::string& rawKeyOut,
+                                                    PartitionID partId,
+                                                    const cpp2::EdgeKey& edgeKey,
                                                     GetBatchFunc batchGetter);
 
     /*
@@ -103,10 +104,6 @@ protected:
                                                          std::string&& key,
                                                          std::string&& props);
 
-    folly::SemiFuture<kvstore::ResultCode> multiPut(GraphSpaceID spaceId,
-                                                    PartitionID partId,
-                                                    std::vector<kvstore::KV>&& data);
-
     folly::SemiFuture<kvstore::ResultCode> commitEdge(GraphSpaceID spaceId,
                                                       PartitionID partId,
                                                       std::string& key,
@@ -117,17 +114,9 @@ protected:
 
     void eraseMemoryLock(const std::string& rawKey, int64_t ver);
 
-    void cleanMemoryLocks(RawKeys& rawKeys, size_t nLocks, int64_t ver);
-
     std::string reverseKey(size_t vIdLen, GraphSpaceID spaceId, std::string& rawKey, int64_t ver);
 
     nebula::meta::cpp2::IsolationLevel getSpaceIsolationLvel(GraphSpaceID spaceId);
-
-    folly::SemiFuture<kvstore::ResultCode> writeLock(size_t vIdLen,
-                                                     GraphSpaceID spaceId,
-                                                     PartitionID partId,
-                                                     folly::StringPiece rawKey,
-                                                     folly::StringPiece val);
 
     std::string encodeBatch(std::vector<KV>&& data);
 
