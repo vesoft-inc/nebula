@@ -66,11 +66,18 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     ctx->setRunner(getThreadManager());
     auto future = ctx->future();
     {
+        // When the sessionId is 0, it means the clients to ping the connection is ok
+        if (sessionId == 0) {
+            ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
+            ctx->resp().errorMsg = std::make_unique<std::string>("The Session id is not valid");
+            ctx->finish();
+            return future;
+        }
         auto result = sessionManager_->findSession(sessionId);
         if (!result.ok()) {
             FLOG_ERROR("Session not found, id[%ld]", sessionId);
             ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-            // ctx->resp().set_error_msg(result.status().toString());
+            ctx->resp().errorMsg = std::make_unique<std::string>(result.status().toString());
             ctx->finish();
             return future;
         }
