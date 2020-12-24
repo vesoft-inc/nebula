@@ -38,6 +38,8 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
     FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
     FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
     FRIEND_TEST(GetStatisTest, StatisJob);
+    FRIEND_TEST(GetStatisTest, MockSingleMachineTest);
+    FRIEND_TEST(GetStatisTest, MockMultiMachineTest);
 
 public:
     ~JobManager();

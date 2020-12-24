@@ -6,10 +6,12 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
+#include "meta/test/MockAdminClient.h"
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 
 DECLARE_uint32(task_concurrency);
@@ -19,26 +21,38 @@ DECLARE_double(leader_balance_deviation);
 namespace nebula {
 namespace meta {
 
-class TestFaultInjectorWithSleep : public TestFaultInjector {
-public:
-    explicit TestFaultInjectorWithSleep(std::vector<Status> sts)
-        : TestFaultInjector(std::move(sts)) {}
-
-    folly::Future<Status> waitingForCatchUpData() override {
-        sleep(3);
-        return response(3);
-    }
-};
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::ByMove;
+using ::testing::Return;
+using ::testing::DefaultValue;
+using ::testing::NiceMock;
+using ::testing::NaggyMock;
+using ::testing::StrictMock;
+using ::testing::SetArgPointee;
 
 TEST(BalanceTaskTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}});
+    HostAddr src("0", 0);
+    HostAddr dst("1", 1);
+    TestUtils::registerHB(kv.get(), {src, dst});
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
     {
-        std::vector<Status> sts(9, Status::OK());
-        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-        auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr("0", 0), HostAddr("1", 1), kv.get(), client.get());
+        StrictMock<MockAdminClient> client;
+        EXPECT_CALL(client, checkPeers(0, 0)).Times(2);
+        EXPECT_CALL(client, transLeader(0, 0, src, _)).Times(1);
+        EXPECT_CALL(client, addPart(0, 0, dst, true)).Times(1);
+        EXPECT_CALL(client, addLearner(0, 0, dst)).Times(1);
+        EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst)).Times(1);
+        EXPECT_CALL(client, memberChange(0, 0, dst, true)).Times(1);
+        EXPECT_CALL(client, memberChange(0, 0, src, false)).Times(1);
+        EXPECT_CALL(client, updateMeta(0, 0, src, dst)).Times(1);
+        EXPECT_CALL(client, removePart(0, 0, src)).Times(1);
+        BalanceTask task(0, 0, 0, src, dst, kv.get(), &client);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = [&]() {
             LOG(INFO) << "Task finished!";
@@ -53,18 +67,11 @@ TEST(BalanceTaskTest, SimpleTest) {
         b.wait();
     }
     {
-        std::vector<Status> sts{Status::Error("transLeader failed!"),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK()};
-        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-        auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr("0", 0), HostAddr("1", 1), kv.get(), client.get());
+        NiceMock<MockAdminClient> client;
+        EXPECT_CALL(client, transLeader(_, _, _, _))
+            .Times(1)
+            .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
+        BalanceTask task(0, 0, 0, src, dst, kv.get(), &client);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = []() {
             LOG(FATAL) << "We should not reach here!";
@@ -263,17 +270,19 @@ TEST(BalanceTest, BalancePlanTest) {
         hosts.emplace_back(std::to_string(i), 0);
         hosts.emplace_back(std::to_string(i), 1);
     }
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
     {
         LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
-        std::vector<Status> sts(9, Status::OK());
-        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-        auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalancePlan plan(0L, kv.get(), client.get());
+        NiceMock<MockAdminClient> client;
+        BalancePlan plan(0L, kv.get(), &client);
         TestUtils::registerHB(kv.get(), hosts);
 
         for (int i = 0; i < 10; i++) {
             BalanceTask task(0, 0, 0, HostAddr(std::to_string(i), 0),
-                             HostAddr(std::to_string(i), 1), kv.get(), client.get());
+                             HostAddr(std::to_string(i), 1), kv.get(), &client);
             plan.addTask(std::move(task));
         }
         folly::Baton<true, std::atomic> b;
@@ -291,15 +300,13 @@ TEST(BalanceTest, BalancePlanTest) {
     }
     {
         LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
-        std::vector<Status> sts(9, Status::OK());
-        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-        auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalancePlan plan(0L, kv.get(), client.get());
+        NiceMock<MockAdminClient> client;
+        BalancePlan plan(0L, kv.get(), &client);
         TestUtils::registerHB(kv.get(), hosts);
 
         for (int i = 0; i < 10; i++) {
             BalanceTask task(0, 0, i, HostAddr(std::to_string(i), 0),
-                             HostAddr(std::to_string(i), 1), kv.get(), client.get());
+                             HostAddr(std::to_string(i), 1), kv.get(), &client);
             plan.addTask(std::move(task));
         }
         folly::Baton<true, std::atomic> b;
@@ -320,31 +327,19 @@ TEST(BalanceTest, BalancePlanTest) {
     {
         LOG(INFO) << "Test with one task failed, 10 buckets";
         BalancePlan plan(0L, kv.get(), nullptr);
-        std::unique_ptr<AdminClient> client1, client2;
+        NiceMock<MockAdminClient> client1, client2;
         {
-            std::vector<Status> sts(9, Status::OK());
-            std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-            client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
                 BalanceTask task(0, 0, i, HostAddr(std::to_string(i), 0),
-                                 HostAddr(std::to_string(i), 1), kv.get(), client1.get());
+                                 HostAddr(std::to_string(i), 1), kv.get(), &client1);
                 plan.addTask(std::move(task));
             }
         }
         {
-            std::vector<Status> sts {
-                                Status::Error("transLeader failed!"),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK()};
-            std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-            client2 = std::make_unique<AdminClient>(std::move(injector));
-            BalanceTask task(0, 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv.get(), client2.get());
+            EXPECT_CALL(client2, transLeader(_, _, _, _))
+                .Times(1)
+                .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
+            BalanceTask task(0, 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv.get(), &client2);
             plan.addTask(std::move(task));
         }
         TestUtils::registerHB(kv.get(), hosts);
@@ -365,10 +360,12 @@ TEST(BalanceTest, NormalTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     TestUtils::assembleSpace(kv.get(), 1, 8, 3, 4);
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    Balancer balancer(kv.get(), &client);
     auto ret = balancer.balance();
     ASSERT_EQ(cpp2::ErrorCode::E_BALANCED, error(ret));
 
@@ -437,10 +434,12 @@ TEST(BalanceTest, SpecifyHostTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     TestUtils::assembleSpace(kv.get(), 1, 8, 3, 4);
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    Balancer balancer(kv.get(), &client);
 
     sleep(1);
     LOG(INFO) << "Now, we remove host {3, 3}";
@@ -512,10 +511,12 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     for (int32_t i = 0; i < 6; i++) {
         partCount[HostAddr(std::to_string(i), i)] = 6;
     }
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    Balancer balancer(kv.get(), &client);
 
     sleep(1);
     LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
@@ -596,11 +597,14 @@ TEST(BalanceTest, MockReplaceMachineTest) {
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
     TestUtils::assembleSpace(kv.get(), 1, 12, 3, 3);
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
 
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    Balancer balancer(kv.get(), &client);
+
+    // add a new machine
     TestUtils::createSomeHosts(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     LOG(INFO) << "Now, we want to replace host {2, 2} with {3, 3}";
     // Because for all parts majority hosts still alive, we could balance
@@ -675,10 +679,12 @@ TEST(BalanceTest, SingleReplicaTest) {
     for (int32_t i = 0; i < 6; i++) {
         partCount[HostAddr(std::to_string(i), i)] = 2;
     }
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    Balancer balancer(kv.get(), &client);
 
     sleep(1);
     LOG(INFO) << "Now, we want to remove host {2, 2} and {3, 3}";
@@ -747,7 +753,7 @@ TEST(BalanceTest, SingleReplicaTest) {
     ASSERT_EQ(3, partCount[HostAddr("5", 5)]);
 }
 
-TEST(BalanceTest, RecoveryTest) {
+TEST(BalanceTest, TryToRecoveryTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     FLAGS_expired_threshold_sec = 1;
@@ -757,20 +763,22 @@ TEST(BalanceTest, RecoveryTest) {
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
-    std::vector<Status> sts {
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::Error("catch up data failed!"),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK(),
-                                Status::OK()};
 
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    // first 6 call is the failed case, since we can't recover the plan, so only 6 call
+    EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+        .Times(6)
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
+
+    Balancer balancer(kv.get(), &client);
     auto ret = balancer.balance();
     CHECK(ok(ret));
     auto balanceId = value(ret);
@@ -824,9 +832,149 @@ TEST(BalanceTest, RecoveryTest) {
         }
         ASSERT_EQ(6, num);
     }
-    LOG(INFO) << "Now let's recovery it.";
-    std::vector<Status> normalSts(7, Status::OK());
-    static_cast<TestFaultInjector*>(balancer.client_->faultInjector())->reset(std::move(normalSts));
+
+    LOG(INFO) << "Now let's try to recovery it. Since the the host will expired in 1 second, "
+              << "the src host would be regarded as offline, so all task will be invalid";
+    ret = balancer.balance();
+    CHECK(ok(ret));
+    balanceId = value(ret);
+    sleep(1);
+    {
+        const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            auto id = MetaServiceUtils::parseBalanceID(iter->key());
+            auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
+            ASSERT_EQ(balanceId, id);
+            ASSERT_EQ(BalanceStatus::FAILED, status);
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(1, num);
+    }
+    {
+        const auto& prefix = MetaServiceUtils::balanceTaskPrefix(balanceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int32_t num = 0;
+        while (iter->valid()) {
+            BalanceTask task;
+            {
+                auto tup = MetaServiceUtils::parseBalanceTaskKey(iter->key());
+                task.balanceId_ = std::get<0>(tup);
+                ASSERT_EQ(balanceId, task.balanceId_);
+                task.spaceId_ = std::get<1>(tup);
+                ASSERT_EQ(1, task.spaceId_);
+                task.src_ = std::get<3>(tup);
+                ASSERT_EQ(HostAddr("3", 3), task.src_);
+            }
+            {
+                auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+                task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTaskStatus::START, task.status_);
+                task.ret_ = std::get<1>(tup);
+                // all task is invalid because src is offline
+                ASSERT_EQ(BalanceTaskResult::INVALID, task.ret_);
+                task.startTimeMs_ = std::get<2>(tup);
+                ASSERT_GT(task.startTimeMs_, 0);
+                task.endTimeMs_ = std::get<3>(tup);
+                ASSERT_GT(task.endTimeMs_, 0);
+            }
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(6, num);
+    }
+}
+
+TEST(BalanceTest, RecoveryTest) {
+    FLAGS_task_concurrency = 1;
+    fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 1;
+    TestUtils::createSomeHosts(kv.get());
+    TestUtils::assembleSpace(kv.get(), 1, 8, 3, 4);
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    // first 6 call is the failed case, the later call will return default value
+    // In gtest release 1.8.0 we can only write as follows:
+    EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+        .Times(AtLeast(12))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
+
+    sleep(1);
+    LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    Balancer balancer(kv.get(), &client);
+    auto ret = balancer.balance();
+    CHECK(ok(ret));
+    auto balanceId = value(ret);
+    sleep(1);
+    {
+        const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            auto id = MetaServiceUtils::parseBalanceID(iter->key());
+            auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
+            ASSERT_EQ(balanceId, id);
+            ASSERT_EQ(BalanceStatus::FAILED, status);
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(1, num);
+    }
+    {
+        const auto& prefix = MetaServiceUtils::balanceTaskPrefix(balanceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int32_t num = 0;
+        while (iter->valid()) {
+            BalanceTask task;
+            {
+                auto tup = MetaServiceUtils::parseBalanceTaskKey(iter->key());
+                task.balanceId_ = std::get<0>(tup);
+                ASSERT_EQ(balanceId, task.balanceId_);
+                task.spaceId_ = std::get<1>(tup);
+                ASSERT_EQ(1, task.spaceId_);
+                task.src_ = std::get<3>(tup);
+                ASSERT_EQ(HostAddr("3", 3), task.src_);
+            }
+            {
+                auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+                task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTaskStatus::CATCH_UP_DATA, task.status_);
+                task.ret_ = std::get<1>(tup);
+                ASSERT_EQ(BalanceTaskResult::FAILED, task.ret_);
+                task.startTimeMs_ = std::get<2>(tup);
+                ASSERT_GT(task.startTimeMs_, 0);
+                task.endTimeMs_ = std::get<3>(tup);
+                ASSERT_GT(task.endTimeMs_, 0);
+            }
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(6, num);
+    }
+
+    // register hb again to prevent from regarding src as offline
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    LOG(INFO) << "Now let's try to recovery it.";
     ret = balancer.balance();
     CHECK(ok(ret));
     balanceId = value(ret);
@@ -867,8 +1015,9 @@ TEST(BalanceTest, RecoveryTest) {
             {
                 auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
                 task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTaskStatus::END, task.status_);
                 task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTaskResult::INVALID, task.ret_);
+                ASSERT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
                 task.startTimeMs_ = std::get<2>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
                 task.endTimeMs_ = std::get<3>(tup);
@@ -881,7 +1030,7 @@ TEST(BalanceTest, RecoveryTest) {
     }
 }
 
-TEST(BalanceTest, StopBalanceDataTest) {
+TEST(BalanceTest, StopAndRecoverTest) {
     FLAGS_task_concurrency = 1;
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
@@ -889,12 +1038,19 @@ TEST(BalanceTest, StopBalanceDataTest) {
     TestUtils::createSomeHosts(kv.get());
     TestUtils::assembleSpace(kv.get(), 1, 8, 3, 4);
 
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> delayClient;
+    EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
+        // first task in first plan will be blocked, all other tasks will be skipped,
+        .Times(1)
+        .WillOnce(Return(
+            ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
+
     sleep(1);
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjectorWithSleep(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+    Balancer balancer(kv.get(), &delayClient);
     auto ret = balancer.balance();
     CHECK(ok(ret));
     auto balanceId = value(ret);
@@ -955,9 +1111,15 @@ TEST(BalanceTest, StopBalanceDataTest) {
     }
 
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    NiceMock<MockAdminClient> normalClient;
+    EXPECT_CALL(normalClient, waitingForCatchUpData(_, _, _))
+        // there are 5 stopped task need to recover
+        .Times(5);
+
+    balancer.client_ = &normalClient;
     ret = balancer.balance();
     CHECK(ok(ret));
-    ASSERT_NE(value(ret), balanceId);
+    ASSERT_EQ(value(ret), balanceId);
     // resume stopped plan
     sleep(1);
     {
@@ -966,28 +1128,98 @@ TEST(BalanceTest, StopBalanceDataTest) {
         auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
         int32_t num = 0;
-        int32_t taskStarted = 0;
-        int32_t taskEnded = 0;
         while (iter->valid()) {
             BalanceTask task;
             {
                 auto tup = MetaServiceUtils::parseBalancePlanVal(iter->val());
                 task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTaskStatus::END, task.status_);
                 task.ret_ = std::get<1>(tup);
+                ASSERT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
                 task.startTimeMs_ = std::get<2>(tup);
                 task.endTimeMs_ = std::get<3>(tup);
-                if (task.status_ == BalanceTaskStatus::END) {
-                    ++taskEnded;
-                } else if (task.status_ == BalanceTaskStatus::START) {
-                    ++taskStarted;
-                }
             }
             num++;
             iter->next();
         }
         ASSERT_EQ(6, num);
-        EXPECT_EQ(5, taskStarted);
-        EXPECT_EQ(1, taskEnded);
+    }
+}
+
+TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
+    FLAGS_task_concurrency = 1;
+    fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 1;
+    TestUtils::createSomeHosts(kv.get());
+    TestUtils::assembleSpace(kv.get(), 1, 8, 3, 4);
+
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+
+    // concurrency = 1, we could only block first task
+    EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+        // first task in first plan will be blocked, all rest task will be skipped,
+        // then start an new balance plan including 6 tasks, total 7
+        .Times(AtLeast(7))
+        .WillOnce(Return(
+            ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
+
+    sleep(1);
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    Balancer balancer(kv.get(), &client);
+    auto ret = balancer.balance();
+    CHECK(ok(ret));
+    auto balanceId = value(ret);
+
+    sleep(1);
+    // stop the running plan
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    auto stopRet = balancer.stop();
+    CHECK(stopRet.ok());
+    ASSERT_EQ(stopRet.value(), balanceId);
+
+    // wait until the plan finished, no running plan for now, only one task has been executed,
+    // so the task will be failed, try to clean the invalid plan
+    sleep(5);
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    auto cleanRet = balancer.cleanLastInValidPlan();
+    CHECK(ok(cleanRet));
+    ASSERT_EQ(value(cleanRet), balanceId);
+
+    {
+        const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(0, num);
+    }
+
+    // start a new balance plan
+    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
+    ret = balancer.balance();
+    CHECK(ok(ret));
+    ASSERT_NE(balanceId, value(ret));
+    sleep(1);
+
+    {
+        const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(1, num);
     }
 }
 
@@ -1051,8 +1283,8 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
     // 9 partition in space 1, 3 replica, 3 hosts
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
 
-    auto client = std::make_unique<AdminClient>(kv.get());
-    auto balancer = Balancer::instance(kv.get());
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     {
         HostLeaderMap hostLeaderMap;
         hostLeaderMap[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
@@ -1124,7 +1356,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
     TestUtils::assembleSpace(kv.get(), 1, 7, 3, 6);
 
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
-    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     {
         HostLeaderMap hostLeaderMap;
         hostLeaderMap[HostAddr("0", 0)][1] = {4, 5, 6};
@@ -1223,7 +1455,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     int32_t maxLoad = std::ceil(avgLoad * (1 + FLAGS_leader_balance_deviation));
 
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
-    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     // chcek several times if they are balanced
     for (int count = 0; count < 1; count++) {
         HostLeaderMap hostLeaderMap;
@@ -1254,10 +1486,19 @@ TEST(BalanceTest, LeaderBalanceTest) {
     TestUtils::createSomeHosts(kv.get(), hosts);
     TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
 
-    std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
-    Balancer balancer(kv.get(), std::move(client));
+    DefaultValue<folly::Future<Status>>::SetFactory([] {
+        return folly::Future<Status>(Status::OK());
+    });
+    NiceMock<MockAdminClient> client;
+    HostLeaderMap dist;
+    dist[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
+    dist[HostAddr("1", 1)][1] = {6, 7, 8};
+    dist[HostAddr("2", 2)][1] = {9};
+    EXPECT_CALL(client, getLeaderDist(_))
+        .WillOnce(
+            DoAll(SetArgPointee<0>(dist), Return(ByMove(folly::Future<Status>(Status::OK())))));
+
+    Balancer balancer(kv.get(), &client);
     auto ret = balancer.leaderBalance();
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, ret);
 }
@@ -1303,7 +1544,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
 
     sleep(1);
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
-    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     {
         HostLeaderMap hostLeaderMap;
         hostLeaderMap[HostAddr("0", 0)][1] = {1, 3, 5, 7};
@@ -1379,7 +1620,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
 
     sleep(1);
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
-    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     {
         HostLeaderMap hostLeaderMap;
         hostLeaderMap[HostAddr("0", 0)][1] = {1, 5, 8};
@@ -1513,7 +1754,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     }
     sleep(1);
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
-    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), client.get()));
     {
         HostLeaderMap hostLeaderMap;
         hostLeaderMap[HostAddr("0", 0)][3] = {};

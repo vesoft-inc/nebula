@@ -31,6 +31,8 @@ class JobDescription {
     FRIEND_TEST(JobManagerTest, backupJob);
     FRIEND_TEST(JobManagerTest, recoverJob);
     FRIEND_TEST(GetStatisTest, StatisJob);
+    FRIEND_TEST(GetStatisTest, MockSingleMachineTest);
+    FRIEND_TEST(GetStatisTest, MockMultiMachineTest);
 
     using Status = cpp2::JobStatus;
 

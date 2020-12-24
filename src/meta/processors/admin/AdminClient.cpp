@@ -20,9 +20,6 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                PartitionID partId,
                                                const HostAddr& leader,
                                                const HostAddr& dst) {
-    if (injector_) {
-        return injector_->transLeader();
-    }
     storage::cpp2::TransLeaderReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -70,9 +67,6 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host,
                                            bool asLearner) {
-    if (injector_) {
-        return injector_->addPart();
-    }
     storage::cpp2::AddPartReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -100,9 +94,6 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& learner) {
-    if (injector_) {
-        return injector_->addLearner();
-    }
     storage::cpp2::AddLearnerReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -126,9 +117,6 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
                                                          PartitionID partId,
                                                          const HostAddr& target) {
-    if (injector_) {
-        return injector_->waitingForCatchUpData();
-    }
     storage::cpp2::CatchUpDataReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -153,9 +141,6 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
                                                 PartitionID partId,
                                                 const HostAddr& peer,
                                                 bool added) {
-    if (injector_) {
-        return injector_->memberChange();
-    }
     storage::cpp2::MemberChangeReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -181,9 +166,6 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& src,
                                               const HostAddr& dst) {
-    if (injector_) {
-        return injector_->updateMeta();
-    }
     CHECK_NOTNULL(kv_);
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
@@ -246,9 +228,6 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& host) {
-    if (injector_) {
-        return injector_->removePart();
-    }
     storage::cpp2::RemovePartReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -266,9 +245,6 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
 }
 
 folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID partId) {
-    if (injector_) {
-        return injector_->checkPeers();
-    }
     storage::cpp2::CheckPeersReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -560,9 +536,6 @@ void AdminClient::getLeaderDist(const HostAddr& host,
 }
 
 folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
-    if (injector_) {
-        return injector_->getLeaderDist(result);
-    }
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
@@ -604,10 +577,6 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 folly::Future<StatusOr<std::string>> AdminClient::createSnapshot(GraphSpaceID spaceId,
                                                                  const std::string& name,
                                                                  const HostAddr& host) {
-    if (injector_) {
-        return injector_->createSnapshot();
-    }
-
     folly::Promise<StatusOr<std::string>> pro;
     auto f = pro.getFuture();
 
@@ -644,10 +613,6 @@ folly::Future<StatusOr<std::string>> AdminClient::createSnapshot(GraphSpaceID sp
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
                                                 const std::string& name,
                                                 const HostAddr& host) {
-    if (injector_) {
-        return injector_->dropSnapshot();
-    }
-
     storage::cpp2::DropCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);

@@ -24,7 +24,7 @@ void BalanceTask::invoke() {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
         LOG(ERROR) << taskIdStr_ << "Task invalid, status " << static_cast<int32_t>(status_);
-        onFinished_();
+        onError_();
         return;
     } else if (ret_ == BalanceTaskResult::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();

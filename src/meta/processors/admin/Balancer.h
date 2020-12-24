@@ -49,8 +49,10 @@ class Balancer {
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
     FRIEND_TEST(BalanceTest, SingleReplicaTest);
+    FRIEND_TEST(BalanceTest, TryToRecoveryTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
-    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
+    FRIEND_TEST(BalanceTest, StopAndRecoverTest);
+    FRIEND_TEST(BalanceTest, CleanLastInvalidBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
@@ -65,7 +67,7 @@ class Balancer {
 public:
     static Balancer* instance(kvstore::KVStore* kv) {
         static std::unique_ptr<AdminClient> client(new AdminClient(kv));
-        static std::unique_ptr<Balancer> balancer(new Balancer(kv, std::move(client)));
+        static std::unique_ptr<Balancer> balancer(new Balancer(kv, client.get()));
         return balancer.get();
     }
 
@@ -85,6 +87,11 @@ public:
      * Stop balance plan by canceling all waiting balance task.
      * */
     StatusOr<BalanceID> stop();
+
+    /**
+     * Clean invalid plan, return the invalid plan key if any
+     * */
+    ErrorOr<cpp2::ErrorCode, BalanceID> cleanLastInValidPlan();
 
     /**
      * TODO(heng): rollback some balance plan.
@@ -123,9 +130,9 @@ public:
     }
 
 private:
-    Balancer(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
+    Balancer(kvstore::KVStore* kv, AdminClient* client)
         : kv_(kv)
-        , client_(std::move(client)) {
+        , client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
     /*
@@ -201,9 +208,8 @@ private:
 
 private:
     std::atomic_bool running_{false};
-    kvstore::KVStore* kv_{nullptr};
-    std::unique_ptr<AdminClient> client_{nullptr};
-
+    kvstore::KVStore* kv_ = nullptr;
+    AdminClient* client_{nullptr};
     // Current running plan.
     std::shared_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;

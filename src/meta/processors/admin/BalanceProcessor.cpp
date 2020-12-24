@@ -35,6 +35,23 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
+    if (req.get_reset() != nullptr) {
+        if (!(*req.get_reset())) {
+            handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
+            onFinished();
+            return;
+        }
+        auto plan = Balancer::instance(kvstore_)->cleanLastInValidPlan();
+        if (!ok(plan)) {
+            handleErrorCode(error(plan));
+            onFinished();
+            return;
+        }
+        resp_.set_id(value(plan));
+        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        onFinished();
+        return;
+    }
     if (req.get_id() != nullptr) {
         auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
         if (!ret.ok()) {

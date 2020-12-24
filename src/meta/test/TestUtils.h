@@ -36,101 +36,6 @@ using mock::MockCluster;
 using ZoneInfo  = std::unordered_map<std::string, std::vector<HostAddr>>;
 using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
 
-class TestFaultInjector : public FaultInjector {
-public:
-    explicit TestFaultInjector(std::vector<Status> sts)
-        : statusArray_(std::move(sts)) {
-        executor_.reset(new folly::CPUThreadPoolExecutor(1));
-    }
-
-    ~TestFaultInjector() {
-    }
-
-    folly::Future<Status> response(int index) {
-        folly::Promise<Status> pro;
-        auto f = pro.getFuture();
-        LOG(INFO) << "Response " << index;
-        executor_->add([this, p = std::move(pro), index]() mutable {
-            LOG(INFO) << "Call callback";
-            p.setValue(this->statusArray_[index]);
-        });
-        return f;
-    }
-
-    folly::Future<Status> transLeader() override {
-        return response(0);
-    }
-
-    folly::Future<Status> addPart() override {
-        return response(1);
-    }
-
-    folly::Future<Status> addLearner() override {
-        return response(2);
-    }
-
-    folly::Future<Status> waitingForCatchUpData() override {
-        return response(3);
-    }
-
-    folly::Future<Status> memberChange() override {
-        return response(4);
-    }
-
-    folly::Future<Status> updateMeta() override {
-        return response(5);
-    }
-
-    folly::Future<Status> removePart() override {
-        return response(6);
-    }
-
-    folly::Future<Status> checkPeers() override {
-        return response(7);
-    }
-
-    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
-        (*hostLeaderMap)[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
-        (*hostLeaderMap)[HostAddr("1", 1)][1] = {6, 7, 8};
-        (*hostLeaderMap)[HostAddr("2", 2)][1] = {9};
-        return response(8);
-    }
-
-
-    folly::Future<StatusOr<std::string>> createSnapshot() override {
-        return response(9);
-    }
-
-    folly::Future<Status> dropSnapshot() override {
-        return response(10);
-    }
-
-    folly::Future<Status> blockingWrites() override {
-        return response(11);
-    }
-
-    folly::Future<Status> rebuildTagIndex() override {
-        return response(12);
-    }
-
-    folly::Future<Status> rebuildEdgeIndex() override {
-        return response(13);
-    }
-
-    folly::Future<Status> addTask() override {
-        return response(14);
-    }
-
-    void reset(std::vector<Status> sts) {
-        statusArray_ = std::move(sts);
-    }
-
-private:
-    std::vector<Status> statusArray_;
-    std::unique_ptr<folly::Executor> executor_;
-};
-
-
 class TestUtils {
 public:
     static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type,
@@ -153,7 +58,7 @@ public:
 
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
         return setupHB(kv, hosts, cpp2::HostRole::STORAGE, NEBULA_STRINGIFY(GIT_INFO_SHA));
-     }
+    }
 
     static void setupHB(kvstore::KVStore* kv,
                         const std::vector<HostAddr>& hosts,

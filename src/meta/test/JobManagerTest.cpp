@@ -11,6 +11,7 @@
 #include <folly/synchronization/Baton.h>
 #include "meta/ActiveHostsMan.h"
 #include "meta/test/TestUtils.h"
+#include "meta/test/MockAdminClient.h"
 #include "kvstore/Common.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
@@ -21,6 +22,9 @@ using ResultCode = nebula::kvstore::ResultCode;
 
 namespace nebula {
 namespace meta {
+
+using ::testing::DefaultValue;
+using ::testing::NiceMock;
 
 class JobManagerTest : public ::testing::Test {
 protected:
@@ -39,9 +43,10 @@ protected:
         TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21,
                                  "edge_index_name", columns);
 
-        std::vector<Status> sts(14, Status::OK());
-        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-        adminClient_ = std::make_unique<AdminClient>(std::move(injector));
+        adminClient_ = std::make_unique<NiceMock<MockAdminClient>>();
+        DefaultValue<folly::Future<Status>>::SetFactory([] {
+            return folly::Future<Status>(Status::OK());
+        });
 
         jobMgr = JobManager::getInstance();
         jobMgr->status_ = JobManager::Status::NOT_START;
