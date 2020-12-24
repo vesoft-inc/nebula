@@ -1,21 +1,22 @@
-Feature: Path Without Same Vertices
+@skip
+Feature: Integer Vid NoLoop Path
 
   Background: Prepare space
-    Given a graph with space named "nba"
+    Given a graph with space named "nba_int_vid"
 
-  Scenario: [1] NOLOOP Path
+  Scenario: Integer Vid [1] NOLOOP Path
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                      |
       | <("Tim Duncan")-[:like]->("Tony Parker")> |
 
-  Scenario: [2] NOLOOP Path
+  Scenario: Integer Vid [2] NOLOOP Path
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker", "Manu Ginobili" OVER like UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker"), hash("Manu Ginobili") OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                 |
@@ -23,20 +24,20 @@ Feature: Path Without Same Vertices
       | <("Tim Duncan")-[:like]->("Manu Ginobili")>                          |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Manu Ginobili")> |
 
-  Scenario: [3] NOLOOP Path
+  Scenario: Integer Vid [3] NOLOOP Path
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker"), hash("LaMarcus Aldridge") OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                     |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
 
-  Scenario: [4] NOLOOP Path
+  Scenario: Integer Vid [4] NOLOOP Path
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker"), hash("Spurs") OVER like,serve UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                                         |
@@ -47,10 +48,10 @@ Feature: Path Without Same Vertices
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:serve]->("Spurs")> |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>     |
 
-  Scenario: [1] NOLOOP Path Run Time Input
+  Scenario: Integer Vid [1] NOLOOP Path Run Time Input
     When executing query:
       """
-      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
+      GO FROM hash("Tim Duncan") over * YIELD like._dst AS src, serve._src AS dst
       | FIND NOLOOP PATH FROM $-.src TO $-.dst OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
@@ -60,10 +61,10 @@ Feature: Path Without Same Vertices
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>     |
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")> |
 
-  Scenario: [2] NOLOOP Path Run Time Input
+  Scenario: Integer Vid [2] NOLOOP Path Run Time Input
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+      $a = GO FROM hash("Tim Duncan") over * YIELD like._dst AS src, serve._src AS dst;
       FIND NOLOOP PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
@@ -73,10 +74,10 @@ Feature: Path Without Same Vertices
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>     |
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")> |
 
-  Scenario: [1] NOLOOP Path With Limit
+  Scenario: Integer Vid [1] NOLOOP Path With Limit
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker"), hash("Spurs") OVER like,serve UPTO 3 STEPS
       | ORDER BY $-.path | LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
@@ -85,10 +86,10 @@ Feature: Path Without Same Vertices
       | <("Tim Duncan")-[:serve]->("Spurs")>                            |
       | <("Tim Duncan")-[:like]->("Tony Parker")>                       |
 
-  Scenario: [2] NOLOOP Path With Limit
+  Scenario: Integer Vid [2] NOLOOP Path With Limit
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+      $a = GO FROM hash("Tim Duncan") over * YIELD like._dst AS src, serve._src AS dst;
       FIND NOLOOP PATH FROM $a.src TO $a.dst OVER like UPTO 3 STEPS
       | ORDER BY $-.path | LIMIT 5
       """
@@ -99,18 +100,18 @@ Feature: Path Without Same Vertices
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>     |
       | <("Tony Parker")-[:like]->("Tim Duncan")>                                |
 
-  Scenario: [1] NOLOOP Path REVERSELY
+  Scenario: Integer Vid [1] NOLOOP Path REVERSELY
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like REVERSELY UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Nobody"), hash("Spur") OVER like REVERSELY UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path |
 
-  Scenario: [2] NOLOOP Path REVERSELY
+  Scenario: Integer Vid [2] NOLOOP Path REVERSELY
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like REVERSELY UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like REVERSELY UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                     |
@@ -118,10 +119,10 @@ Feature: Path Without Same Vertices
       | <("Tim Duncan")<-[:like]-("LaMarcus Aldridge")<-[:like]-("Tony Parker")> |
       | <("Tim Duncan")<-[:like]-("Manu Ginobili")<-[:like]-("Tony Parker")>     |
 
-  Scenario: [3] NOLOOP Path REVERSELY
+  Scenario: Integer Vid [3] NOLOOP Path REVERSELY
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like REVERSELY UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker"), hash("LaMarcus Aldridge") OVER like REVERSELY UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                                                |
@@ -132,10 +133,10 @@ Feature: Path Without Same Vertices
       | <("Tim Duncan")<-[:like]-("Manu Ginobili")<-[:like]-("Tony Parker")>                                |
       | <("Tim Duncan")<-[:like]-("Manu Ginobili")<-[:like]-("Tony Parker")<-[:like]-("LaMarcus Aldridge")> |
 
-  Scenario: [2] NOLOOP Path BIDIRECT
+  Scenario: Integer Vid [2] NOLOOP Path BIDIRECT
     When executing query:
       """
-      FIND NOLOOP PATH FROM "Tim Duncan" TO "Tony Parker" OVER like BIDIRECT UPTO 3 STEPS
+      FIND NOLOOP PATH FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like BIDIRECT UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                                                |
