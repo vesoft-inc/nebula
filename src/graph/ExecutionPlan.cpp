@@ -8,6 +8,9 @@
 #include "graph/ExecutionPlan.h"
 #include "stats/StatsManager.h"
 
+DEFINE_uint32(slow_query_threshold_us, 1000*1000,
+        "Slow query's threshold in us, default: 1000*1000us(1s)");
+
 namespace nebula {
 namespace graph {
 
@@ -66,6 +69,14 @@ void ExecutionPlan::onFinish() {
         rctx->resp().set_warning_msg(
                 folly::stringPrintf("%s.", folly::join(", ", ectx()->getWarningMsg()).c_str()));
     }
+
+    // slow query
+    if (latency >= static_cast<uint32_t>(FLAGS_slow_query_threshold_us)) {
+        stats::Stats::addStatsValue(slowQueryStats_.get(), true, latency);
+        LOG(WARNING) << "Slow query: exec succ, cost=" << latency
+            << "us, space=" << spaceName
+            << ", query="<< rctx->query().c_str();
+    }
     rctx->finish();
 
     // The `ExecutionPlan' is the root node holding all resources during the execution.
@@ -77,7 +88,6 @@ void ExecutionPlan::onFinish() {
 
 
 void ExecutionPlan::onError(Status status) {
-    LOG(ERROR) << "Execute failed: " << status.toString();
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
@@ -92,6 +102,22 @@ void ExecutionPlan::onError(Status status) {
     auto latency = rctx->duration().elapsedInUSec();
     stats::Stats::addStatsValue(allStats_.get(), false, latency);
     rctx->resp().set_latency_in_us(latency);
+
+    LOG(ERROR) << "Execute failed! code=" << int32_t(rctx->resp().get_error_code())
+        << ", cost=" << latency
+        << "us, space=" << (rctx->session()->spaceName())
+        << ", query=" << (rctx->query().c_str())
+        << ", errmsg="<< status.toString();
+
+    // slow query
+    if (latency >= static_cast<uint32_t>(FLAGS_slow_query_threshold_us)) {
+        stats::Stats::addStatsValue(slowQueryStats_.get(), false, latency);
+        LOG(WARNING) << "Slow query: exec failed! cost=" << latency
+            << "us, errcode="<< int32_t(rctx->resp().get_error_code())
+            << ", space=" << (rctx->session()->spaceName())
+            << ", query="<< (rctx->query().c_str());
+    }
+
     rctx->finish();
     delete this;
 }

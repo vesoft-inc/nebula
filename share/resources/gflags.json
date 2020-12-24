@@ -10,7 +10,8 @@
         "wal_ttl",
         "enable_reservoir_sampling",
         "custom_filter_interval_secs",
-        "enable_multi_versions"
+        "enable_multi_versions",
+        "slow_query_threshold_us"
     ],
     "NESTED": [
         "rocksdb_db_options",

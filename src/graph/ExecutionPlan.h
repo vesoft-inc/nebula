@@ -29,6 +29,7 @@ public:
         ectx_ = std::move(ectx);
         allStats_ = std::make_unique<stats::Stats>("graph", "all");
         parseStats_ = std::make_unique<stats::Stats>("graph", "parse");
+        slowQueryStats_ = std::make_unique<stats::Stats>("graph", "slow_query");
     }
 
     ~ExecutionPlan() = default;
@@ -58,6 +59,7 @@ private:
     std::unique_ptr<SequentialExecutor>         executor_;
     std::unique_ptr<stats::Stats>               allStats_;
     std::unique_ptr<stats::Stats>               parseStats_;
+    std::unique_ptr<stats::Stats>               slowQueryStats_;
 };
 
 }   // namespace graph
