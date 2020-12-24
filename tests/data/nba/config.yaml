@@ -15,6 +15,7 @@ schema: |
   CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));
   CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
   CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));
+  CREATE EDGE INDEX IF NOT EXISTS serve_start_end_index ON serve(start_year, end_year);
 files:
   - path: ./player.csv
     withHeader: true

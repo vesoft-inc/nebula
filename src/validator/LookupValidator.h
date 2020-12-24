@@ -16,9 +16,9 @@
 namespace nebula {
 namespace graph {
 
-class IndexScanValidator final : public Validator {
+class LookupValidator final : public Validator {
 public:
-    IndexScanValidator(Sentence* sentence, QueryContext* context)
+    LookupValidator(Sentence* sentence, QueryContext* context)
         : Validator(sentence, context) {}
 
 private:
@@ -68,7 +68,11 @@ private:
     bool                              textSearchReady_{false};
     std::string                       from_;
     std::vector<nebula::plugin::HttpClient> esClients_;
+    std::vector<std::string>          idxScanColNames_;
     std::vector<std::string>          colNames_;
+    bool                              withProject_{false};
+    bool                              dedup_{false};
+    YieldColumns                     *newYieldColumns_{nullptr};
 };
 
 }   // namespace graph

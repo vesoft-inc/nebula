@@ -38,7 +38,7 @@
 #include "validator/GroupByValidator.h"
 #include "validator/MatchValidator.h"
 #include "visitor/EvaluableExprVisitor.h"
-#include "validator/IndexScanValidator.h"
+#include "validator/LookupValidator.h"
 
 namespace nebula {
 namespace graph {
@@ -194,7 +194,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kDropEdgeIndex:
             return std::make_unique<DropEdgeIndexValidator>(sentence, context);
         case Sentence::Kind::kLookup:
-            return std::make_unique<IndexScanValidator>(sentence, context);
+            return std::make_unique<LookupValidator>(sentence, context);
         case Sentence::Kind::kAddGroup:
             return std::make_unique<AddGroupValidator>(sentence, context);
         case Sentence::Kind::kDropGroup:

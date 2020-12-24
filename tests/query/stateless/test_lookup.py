@@ -17,7 +17,6 @@ class TestIndex(NebulaTestSuite):
                     replica_factor=self.replica_factor))
         self.check_resp_succeeded(resp)
 
-    def test_edge_index(self):
         time.sleep(self.delay)
         resp = self.execute('USE nbaLookup')
         self.check_resp_succeeded(resp)
@@ -60,30 +59,6 @@ class TestIndex(NebulaTestSuite):
         resp = self.execute('INSERT EDGE serve(start_year, end_year) VALUES "121" -> "201":(1999, 2018)')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('LOOKUP ON serve where serve.start_year > 0')
-        self.check_resp_succeeded(resp)
-        assert resp.row_size() == 6
-
-        resp = self.execute('LOOKUP ON serve where serve.start_year > 1997 and serve.end_year < 2020')
-        self.check_resp_succeeded(resp)
-        assert resp.row_size() == 3
-
-        resp = self.execute('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
-        self.check_resp_succeeded(resp)
-        self.check_empty_result(resp)
-
-        resp = self.execute('LOOKUP ON like where like.likeness > 89')
-        self.check_resp_succeeded(resp)
-        assert resp.row_size() == 3
-
-        resp = self.execute('LOOKUP ON like where like.likeness < 39')
-        self.check_resp_succeeded(resp)
-        self.check_empty_result(resp)
-
-    def test_tag_index(self):
-        time.sleep(self.delay)
-        resp = self.execute('USE nbaLookup')
-        self.check_resp_succeeded(resp)
         resp = self.execute("CREATE TAG player (name FIXED_STRING(30), age INT)")
         self.check_resp_succeeded(resp)
         resp = self.execute("CREATE TAG team (name FIXED_STRING(30))")
@@ -127,33 +102,113 @@ class TestIndex(NebulaTestSuite):
         resp = self.execute('INSERT VERTEX team(name) VALUES "204":("opl")')
         self.check_resp_succeeded(resp)
 
+
+    def test_edge_index(self):
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 0')
+        self.check_resp_succeeded(resp)
+        col_names = ['SrcVID', 'DstVID', 'Ranking']
+        self.check_column_names(resp, col_names)
+        expected_result = [['100', '200', 0],
+                           ['101', '201', 0],
+                           ['102', '202', 0],
+                           ['103', '203', 0],
+                           ['105', '204', 0],
+                           ['121', '201', 0]]
+        self.check_out_of_order_result(resp, expected_result)
+
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 1997 and serve.end_year < 2020')
+        self.check_resp_succeeded(resp)
+        col_names = ['SrcVID', 'DstVID', 'Ranking']
+        self.check_column_names(resp, col_names)
+        expected_result = [['101', '201', 0],
+                           ['103', '203', 0],
+                           ['121', '201', 0]]
+        self.check_out_of_order_result(resp, expected_result)
+
+        resp = self.execute('LOOKUP ON serve where serve.start_year > 2000 and serve.end_year < 2020')
+        self.check_resp_succeeded(resp)
+        col_names = ['SrcVID', 'DstVID', 'Ranking']
+        self.check_column_names(resp, col_names)
+        self.check_empty_result(resp)
+
+        resp = self.execute('LOOKUP ON like where like.likeness > 89')
+        self.check_resp_succeeded(resp)
+        col_names = ['SrcVID', 'DstVID', 'Ranking']
+        self.check_column_names(resp, col_names)
+        expected_result = [['100', '101', 0],
+                           ['101', '102', 0],
+                           ['105', '106', 0]]
+        self.check_out_of_order_result(resp, expected_result)
+
+        resp = self.execute('LOOKUP ON like where like.likeness < 39')
+        self.check_resp_succeeded(resp)
+        col_names = ['SrcVID', 'DstVID', 'Ranking']
+        self.check_column_names(resp, col_names)
+        self.check_empty_result(resp)
+
+    def test_tag_index(self):
         resp = self.execute('LOOKUP ON player where player.age == 35')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 1
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['103']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON player where player.age > 0')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 8
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['100'],
+                           ['101'],
+                           ['102'],
+                           ['103'],
+                           ['104'],
+                           ['105'],
+                           ['106'],
+                           ['121']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON player where player.age < 100')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 8
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['100'],
+                           ['101'],
+                           ['102'],
+                           ['103'],
+                           ['104'],
+                           ['105'],
+                           ['106'],
+                           ['121']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON player where player.name == "Useless"')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 1
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['121']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON player where player.name == "Useless" and player.age < 30')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 1
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['121']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON team where team.name == "Warriors"')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 1
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['200']]
+        self.check_out_of_order_result(resp, expected_result)
 
         resp = self.execute('LOOKUP ON team where team.name == "oopp"')
         self.check_resp_succeeded(resp)
-        assert resp.row_size() == 1
+        col_names = ['VertexID']
+        self.check_column_names(resp, col_names)
+        expected_result = [['202']]
+        self.check_out_of_order_result(resp, expected_result)
 
     @classmethod
     def cleanup(self):

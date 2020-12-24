@@ -313,6 +313,14 @@ public:
 
     std::string toString() const;
 
+    const YieldColumn* back() const {
+        return columns_.back().get();
+    }
+
+    YieldColumn* back() {
+        return columns_.back().get();
+    }
+
 private:
     std::vector<std::unique_ptr<YieldColumn>>   columns_;
 };
