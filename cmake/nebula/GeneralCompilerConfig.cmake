@@ -53,9 +53,8 @@ if(ENABLE_TESTING AND ENABLE_COVERAGE)
     add_compile_options(-O0)
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    add_compile_options(-Wsuggest-override)
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+# TODO(doodle) Add option suggest-override for gnu
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # Here we need to specify the path of libstdc++ used by Clang
     if(NOT ${NEBULA_CLANG_USE_GCC_TOOLCHAIN} STREQUAL "")
         print_config(NEBULA_CLANG_USE_GCC_TOOLCHAIN)
