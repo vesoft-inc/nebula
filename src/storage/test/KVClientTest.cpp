@@ -39,12 +39,10 @@ TEST(KVClientTest, SimpleTest) {
     auto storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr{storageName, storagePort};
 
-    auto metaName = network::NetworkUtils::getHostname();
     int32_t metaPort = 0;
-    cluster.startMeta(metaPort, metaPath.path(), metaName);
+    cluster.startMeta(metaPort, metaPath.path());
     meta::MetaClientOptions options;
     options.localHost_ = storageAddr;
-    // options.inStoraged_ = true;
     options.role_ = meta::cpp2::HostRole::STORAGE;
     cluster.initMetaClient(options);
     cluster.startStorage(storageAddr, stoagePath.path(), true);

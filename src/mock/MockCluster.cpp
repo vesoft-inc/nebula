@@ -59,7 +59,7 @@ MockCluster::memPartMan(GraphSpaceID spaceId, const std::vector<PartitionID>& pa
 
 // static
 std::string MockCluster::localIP() {
-    return network::NetworkUtils::getHostname();
+    return "127.0.0.1";
 }
 
 // static
@@ -104,7 +104,8 @@ void MockCluster::startMeta(int32_t port,
     metaServer_ = std::make_unique<RpcServer>();
     auto handler = std::make_shared<meta::MetaServiceHandler>(metaKV_.get(),
                                                               clusterId_);
-    metaServer_->start("meta", port, handler);
+    // initKV would replace hostname and port if necessary, so we need to change to the real addr
+    metaServer_->start("meta", metaKV_->address().port, handler);
     LOG(INFO) << "The Meta Daemon started on port " << metaServer_->port_;
 }
 

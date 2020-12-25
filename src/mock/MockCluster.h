@@ -52,7 +52,7 @@ public:
 
     void startAll();
 
-    void startMeta(int32_t port, const std::string& rootPath, std::string hostname = "");
+    void startMeta(int32_t port, const std::string& rootPath, std::string hostname = "127.0.0.1");
 
     void startStorage(HostAddr addr,
                       const std::string& rootPath,

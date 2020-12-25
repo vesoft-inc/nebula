@@ -76,7 +76,6 @@ private:
     std::unique_ptr<meta::IndexManager> indexMan_;
     std::unique_ptr<storage::StorageEnv> env_;
 
-    std::atomic_bool stopped_{false};
     HostAddr localHost_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;

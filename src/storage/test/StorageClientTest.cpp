@@ -49,7 +49,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     meta::MetaClientOptions options;
     options.localHost_ = localHost;
     options.clusterId_ = kClusterId;
-    // options.inStoraged_ = true;
     options.role_ = meta::cpp2::HostRole::STORAGE;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
