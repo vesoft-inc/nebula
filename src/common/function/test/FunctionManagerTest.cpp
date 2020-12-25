@@ -30,7 +30,7 @@ protected:
         EXPECT_EQ(result.value()(args), expect);
     }
 
-    Path createPath(const std::string& src, const std::vector<std::string>& steps) {
+    Path createPath(const Value& src, const std::vector<Value>& steps) {
         Path path;
         path.src = Vertex(src, {});
         for (auto& i : steps) {
@@ -1145,11 +1145,6 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.value(), Value::Type::DATETIME);
     }
     {
-        auto result = FunctionManager::getReturnType("id", {Value::Type::VERTEX});
-        ASSERT_TRUE(result.ok()) << result.status();
-        EXPECT_EQ(Value::Type::STRING, result.value());
-    }
-    {
         auto result = FunctionManager::getReturnType("tags", {Value::Type::VERTEX});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::LIST, result.value());
@@ -1171,16 +1166,6 @@ TEST_F(FunctionManagerTest, returnType) {
     }
     {
         auto result = FunctionManager::getReturnType("type", {Value::Type::EDGE});
-        ASSERT_TRUE(result.ok()) << result.status();
-        EXPECT_EQ(Value::Type::STRING, result.value());
-    }
-    {
-        auto result = FunctionManager::getReturnType("src", {Value::Type::EDGE});
-        ASSERT_TRUE(result.ok()) << result.status();
-        EXPECT_EQ(Value::Type::STRING, result.value());
-    }
-    {
-        auto result = FunctionManager::getReturnType("dst", {Value::Type::EDGE});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::STRING, result.value());
     }
@@ -1316,6 +1301,30 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
         {"p4", false},
     };
 
+    Vertex vertex1;
+    Edge edge1;
+
+    vertex1.vid = 0;
+    vertex1.tags.resize(1);
+    vertex1.tags[0].name = "tag1";
+    vertex1.tags[0].props = {
+        {"p1", 123},
+        {"p2", "123"},
+        {"p3", true},
+        {"p4", false},
+    };
+    edge1.src = 0;
+    edge1.dst = 1;
+    edge1.type = 0;
+    edge1.name = "type";
+    edge1.ranking = 123;
+    edge1.props = {
+        {"p1", 123},
+        {"p2", 456},
+        {"p3", true},
+        {"p4", false},
+    };
+
 #define TEST_SCHEMA_FUNCTION(fun, arg, expected)        \
     do {                                                \
         auto result = FunctionManager::get(fun, 1);     \
@@ -1341,6 +1350,18 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
     TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
     TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
     TEST_SCHEMA_FUNCTION("properties", edge, Value(Map({
+                    {"p1", 123},
+                    {"p2", 456},
+                    {"p3", true},
+                    {"p4", false},
+                    })));
+    TEST_SCHEMA_FUNCTION("id", vertex1, 0);
+    TEST_SCHEMA_FUNCTION("tags", vertex1, Value(List({"tag1"})));
+    TEST_SCHEMA_FUNCTION("labels", vertex1, Value(List({"tag1"})));
+    TEST_SCHEMA_FUNCTION("src", edge1, 0);
+    TEST_SCHEMA_FUNCTION("dst", edge1, 1);
+    TEST_SCHEMA_FUNCTION("rank", edge1, Value(123));
+    TEST_SCHEMA_FUNCTION("properties", edge1, Value(Map({
                     {"p1", 123},
                     {"p2", 456},
                     {"p3", true},
@@ -1559,6 +1580,40 @@ TEST_F(FunctionManagerTest, duplicateEdgesORVerticesInPath) {
         path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
         path.steps.emplace_back(Step(v0, 1, "like", 0, {}));
         path.steps.emplace_back(Step(v1, 1, "like", 1, {}));
+
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        Path path = createPath(0, {1});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, false);
+        TEST_FUNCTION(hasSameEdgeInPath, args, false);
+    }
+    {
+        Path path = createPath(0, {1, 2, 3, 0, 1});
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameVertexInPath, args, true);
+        TEST_FUNCTION(hasSameEdgeInPath, args, true);
+    }
+    {
+        auto v0 = Vertex(0, {});
+        auto v1 = Vertex(1, {});
+        Path path;
+        path.src = v0;
+        path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v0, -1, "like", 0, {}));
+
+        std::vector<Value> args = {path};
+        TEST_FUNCTION(hasSameEdgeInPath, args, true);
+    }
+    {
+        auto v0 = Vertex(0, {});
+        auto v1 = Vertex(1, {});
+        Path path;
+        path.src = v0;
+        path.steps.emplace_back(Step(v1, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v0, 1, "like", 0, {}));
 
         std::vector<Value> args = {path};
         TEST_FUNCTION(hasSameEdgeInPath, args, false);

@@ -517,7 +517,7 @@ struct GetUUIDReq {
 
 struct GetUUIDResp {
     1: required ResponseCommon result,
-    2: common.VertexID id,
+    2: common.Value id,
 }
 /*
  * End of GetUUID section

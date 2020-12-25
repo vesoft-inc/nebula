@@ -11,7 +11,6 @@
 #include <string>
 
 namespace nebula {
-
 // Raft related types
 using ClusterID = int64_t;
 using GraphSpaceID = int32_t;

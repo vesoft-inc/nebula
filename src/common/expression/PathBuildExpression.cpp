@@ -70,8 +70,8 @@ const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
 }
 
 bool PathBuildExpression::getVertex(const Value& value, Vertex& vertex) const {
-    if (value.isStr()) {
-        vertex = Vertex(value.getStr(), {});
+    if (value.isStr() || value.isInt()) {
+        vertex = Vertex(value, {});
         return true;
     }
     if (value.isVertex()) {
@@ -81,9 +81,6 @@ bool PathBuildExpression::getVertex(const Value& value, Vertex& vertex) const {
     if (value.isPath()) {
         vertex = value.getPath().src;
         return true;
-    }
-    if (value.isInt()) {
-        // TODO:
     }
     return false;
 }

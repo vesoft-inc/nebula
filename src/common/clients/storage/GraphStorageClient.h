@@ -127,7 +127,7 @@ public:
 
 private:
     StatusOr<std::function<const VertexID&(const Row&)>>
-        getIdFromRow(GraphSpaceID space) const;
+        getIdFromRow(GraphSpaceID space, bool isEdgeProps) const;
 
     StatusOr<std::function<const VertexID&(const cpp2::NewVertex&)>>
         getIdFromNewVertex(GraphSpaceID space) const;

@@ -38,8 +38,8 @@ namespace std {
 
 // Inject a customized hash function
 std::size_t hash<nebula::Edge>::operator()(const nebula::Edge& h) const noexcept {
-    size_t hv = folly::hash::fnv64(h.src);
-    hv = folly::hash::fnv64(h.dst, hv);
+    size_t hv = folly::hash::fnv64(h.src.toString());
+    hv = folly::hash::fnv64(h.dst.toString(), hv);
     hv = folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.type), sizeof(h.type), hv);
     return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.ranking), sizeof(h.ranking), hv);
 }

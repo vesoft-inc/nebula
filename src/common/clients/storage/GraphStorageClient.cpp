@@ -26,7 +26,7 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
                                  int64_t limit,
                                  std::string filter,
                                  folly::EventBase* evb) {
-    auto cbStatus = getIdFromRow(space);
+    auto cbStatus = getIdFromRow(space, false);
     if (!cbStatus.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
             std::runtime_error(cbStatus.status().toString()));
@@ -174,7 +174,7 @@ GraphStorageClient::getProps(GraphSpaceID space,
                              int64_t limit,
                              std::string filter,
                              folly::EventBase* evb) {
-    auto cbStatus = getIdFromRow(space);
+    auto cbStatus = getIdFromRow(space, edgeProps != nullptr);
     if (!cbStatus.ok()) {
         return folly::makeFuture<StorageRpcResponse<cpp2::GetPropResponse>>(
             std::runtime_error(cbStatus.status().toString()));
@@ -504,7 +504,7 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFromRow(
-    GraphSpaceID space) const {
+    GraphSpaceID space, bool isEdgeProps) const {
     auto vidTypeStatus = metaClient_->getSpaceVidType(space);
     if (!vidTypeStatus) {
         return vidTypeStatus.status();
@@ -513,7 +513,20 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
 
     std::function<const VertexID&(const Row&)> cb;
     if (vidType == meta::cpp2::PropertyType::INT64) {
-        cb = [](const Row& r) -> const VertexID& {
+        if (isEdgeProps) {
+            cb = [](const Row& r) -> const VertexID& {
+                // The first column has to be the src, the thrid column has to be the dst
+                DCHECK_EQ(Value::Type::INT, r.values[0].type());
+                DCHECK_EQ(Value::Type::INT, r.values[3].type());
+                auto& mutableR = const_cast<Row&>(r);
+                mutableR.values[0] = Value(
+                        std::string(reinterpret_cast<const char*>(&r.values[0].getInt()), 8));
+                mutableR.values[3] = Value(
+                        std::string(reinterpret_cast<const char*>(&r.values[3].getInt()), 8));
+                return mutableR.values[0].getStr();
+            };
+        } else {
+            cb = [](const Row& r) -> const VertexID& {
                 // The first column has to be the vid
                 DCHECK_EQ(Value::Type::INT, r.values[0].type());
                 auto& mutableR = const_cast<Row&>(r);
@@ -521,6 +534,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
                         std::string(reinterpret_cast<const char*>(&r.values[0].getInt()), 8));
                 return mutableR.values[0].getStr();
             };
+        }
     } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
         cb = [](const Row& r) -> const VertexID& {
                 // The first column has to be the vid

@@ -15,8 +15,8 @@
 namespace nebula {
 
 struct Edge {
-    VertexID src;
-    VertexID dst;
+    Value src;
+    Value dst;
     EdgeType type;
     std::string name;
     EdgeRanking ranking;
@@ -37,8 +37,8 @@ struct Edge {
         , name(v.name)
         , ranking(v.ranking)
         , props(v.props) {}
-    Edge(VertexID s,
-         VertexID d,
+    Edge(Value s,
+         Value d,
          EdgeType t,
          std::string n,
          EdgeRanking r,

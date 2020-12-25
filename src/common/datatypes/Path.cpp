@@ -40,7 +40,7 @@ bool Path::hasDuplicateVertices() const {
     if (steps.empty()) {
         return false;
     }
-    std::unordered_set<std::string> uniqueVid;
+    std::unordered_set<Value> uniqueVid;
     auto srcVid = src.vid;
     uniqueVid.emplace(srcVid);
     for (const auto& step : steps) {
@@ -61,8 +61,11 @@ bool Path::hasDuplicateEdges() const {
     for (const auto& step : steps) {
         auto edgeSrc = step.type > 0 ? srcVid : step.dst.vid;
         auto edgeDst = step.type > 0 ? step.dst.vid : srcVid;
-        auto edgeKey = folly::stringPrintf(
-            "%s%s%s%ld", edgeSrc.c_str(), edgeDst.c_str(), step.name.c_str(), step.ranking);
+        auto edgeKey = folly::stringPrintf("%s%s%s%ld",
+                                           edgeSrc.toString().c_str(),
+                                           edgeDst.toString().c_str(),
+                                           step.name.c_str(),
+                                           step.ranking);
         auto res = uniqueSet.emplace(std::move(edgeKey));
         if (!res.second) {
             return true;

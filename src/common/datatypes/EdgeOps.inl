@@ -28,10 +28,10 @@ struct TccStructTraits<nebula::Edge> {
             MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "src") {
             fid = 1;
-            _ftype = apache::thrift::protocol::T_STRING;
+            _ftype = apache::thrift::protocol::T_STRUCT;
         } else if (_fname == "dst") {
             fid = 2;
-            _ftype = apache::thrift::protocol::T_STRING;
+            _ftype = apache::thrift::protocol::T_STRUCT;
         } else if (_fname == "type") {
             fid = 3;
             _ftype = apache::thrift::protocol::T_I32;
@@ -69,12 +69,12 @@ uint32_t Cpp2Ops<nebula::Edge>::write(Protocol* proto, nebula::Edge const* obj) 
     uint32_t xfer = 0;
     xfer += proto->writeStructBegin("Edge");
 
-    xfer += proto->writeFieldBegin("src", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->writeBinary(obj->src);
+    xfer += proto->writeFieldBegin("src", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::write(proto, &obj->src);
     xfer += proto->writeFieldEnd();
 
-    xfer += proto->writeFieldBegin("dst", apache::thrift::protocol::T_STRING, 2);
-    xfer += proto->writeBinary(obj->dst);
+    xfer += proto->writeFieldBegin("dst", apache::thrift::protocol::T_STRUCT, 2);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::write(proto, &obj->dst);
     xfer += proto->writeFieldEnd();
 
     xfer += proto->writeFieldBegin("type", apache::thrift::protocol::T_I32, 3);
@@ -117,23 +117,22 @@ void Cpp2Ops<nebula::Edge>::read(Protocol* proto, nebula::Edge* obj) {
     readState.readStructBegin(proto);
 
     using apache::thrift::protocol::TProtocolException;
-
-    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRING))) {
+    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRUCT))) {
         goto _loop;
     }
 
 _readField_src:
     {
-        proto->readBinary(obj->src);
+        ::apache::thrift::Cpp2Ops<nebula::Value>::read(proto, &obj->src);
     }
 
-    if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_STRING))) {
+    if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_STRUCT))) {
         goto _loop;
     }
 
 _readField_dst:
     {
-        proto->readBinary(obj->dst);
+        ::apache::thrift::Cpp2Ops<nebula::Value>::read(proto, &obj->dst);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 2, 3, protocol::T_I32))) {
@@ -201,7 +200,7 @@ _loop:
     switch (readState.fieldId) {
         case 1:
         {
-            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRING)) {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRUCT)) {
                 goto _readField_src;
             } else {
                 goto _skip;
@@ -209,7 +208,7 @@ _loop:
         }
         case 2:
         {
-            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRING)) {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRUCT)) {
                 goto _readField_dst;
             } else {
                 goto _skip;
@@ -266,11 +265,11 @@ uint32_t Cpp2Ops<nebula::Edge>::serializedSize(Protocol const* proto,
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("Edge");
 
-    xfer += proto->serializedFieldSize("src", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->serializedSizeBinary(obj->src);
+    xfer += proto->serializedFieldSize("src", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSize(proto, &obj->src);
 
-    xfer += proto->serializedFieldSize("dst", apache::thrift::protocol::T_STRING, 2);
-    xfer += proto->serializedSizeBinary(obj->dst);
+    xfer += proto->serializedFieldSize("dst", apache::thrift::protocol::T_STRUCT, 2);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSize(proto, &obj->dst);
 
     xfer += proto->serializedFieldSize("type", apache::thrift::protocol::T_I32, 3);
     xfer += detail::pm::protocol_methods<type_class::integral, nebula::EdgeType>
@@ -301,11 +300,11 @@ uint32_t Cpp2Ops<nebula::Edge>::serializedSizeZC(Protocol const* proto,
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("Edge");
 
-    xfer += proto->serializedFieldSize("src", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->serializedSizeZCBinary(obj->src);
+    xfer += proto->serializedFieldSize("src", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSizeZC(proto, &obj->src);
 
-    xfer += proto->serializedFieldSize("dst", apache::thrift::protocol::T_STRING, 2);
-    xfer += proto->serializedSizeZCBinary(obj->dst);
+    xfer += proto->serializedFieldSize("dst", apache::thrift::protocol::T_STRUCT, 2);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSizeZC(proto, &obj->dst);
 
     xfer += proto->serializedFieldSize("type", apache::thrift::protocol::T_I32, 3);
     xfer += detail::pm::protocol_methods<type_class::integral, nebula::EdgeType>

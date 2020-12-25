@@ -38,7 +38,6 @@ typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
-typedef binary (cpp.type = "nebula::VertexID") VertexID
 typedef i64 (cpp.type = "nebula::LogID") LogID
 typedef i64 (cpp.type = "nebula::TermID") TermID
 
@@ -149,14 +148,14 @@ struct Tag {
 
 
 struct Vertex {
-    1: VertexID vid,
+    1: Value     vid,
     2: list<Tag> tags,
 } (cpp.type = "nebula::Vertex")
 
 
 struct Edge {
-    1: VertexID src,
-    2: VertexID dst,
+    1: Value src,
+    2: Value dst,
     3: EdgeType type,
     4: binary name,
     5: EdgeRanking ranking,

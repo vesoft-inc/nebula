@@ -763,8 +763,17 @@ TEST(Value, DecodeEncode) {
             Tag("tagName1", {{"prop1", Value(2)}, {"prop2", Value(NullType::__NULL__)}}),
         }})),
 
+        // integerID vertex
+        Value(Vertex({001, {
+            Tag("tagName", {{"prop", Value(2)}}),
+            Tag("tagName1", {{"prop1", Value(2)}, {"prop2", Value(NullType::__NULL__)}}),
+        }})),
+
         // edge
         Value(Edge("Src", "Dst", 1, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}})),
+
+        // integerID edge
+        Value(Edge(001, 002, 1, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}})),
 
         // Path
         Value(Path()),

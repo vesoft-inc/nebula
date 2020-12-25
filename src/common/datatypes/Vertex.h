@@ -61,7 +61,7 @@ struct Tag {
 
 
 struct Vertex {
-    VertexID vid;
+    Value vid;
     std::vector<Tag> tags;
 
     Vertex() = default;
@@ -69,7 +69,7 @@ struct Vertex {
     Vertex(Vertex&& v) noexcept
         : vid(std::move(v.vid))
         , tags(std::move(v.tags)) {}
-    Vertex(VertexID id, std::vector<Tag> t)
+    Vertex(Value id, std::vector<Tag> t)
         : vid(std::move(id))
         , tags(std::move(t)) {}
 

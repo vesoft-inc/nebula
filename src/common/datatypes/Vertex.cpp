@@ -36,7 +36,7 @@ std::size_t hash<nebula::Tag>::operator()(const nebula::Tag& h) const noexcept {
 }
 
 std::size_t hash<nebula::Vertex>::operator()(const nebula::Vertex& h) const noexcept {
-    size_t hv = folly::hash::fnv64(h.vid);
+    size_t hv = folly::hash::fnv64(h.vid.toString());
     for (auto& t : h.tags) {
         hv += (hv << 1) + (hv << 4) + (hv << 5) + (hv << 7) + (hv << 8) + (hv << 40);
         hv ^= hash<nebula::Tag>()(t);

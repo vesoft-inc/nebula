@@ -216,7 +216,7 @@ struct TccStructTraits<nebula::Vertex> {
             MAYBE_UNUSED apache::thrift::protocol::TType& _ftype) {
         if (_fname == "vid") {
             fid = 1;
-            _ftype = apache::thrift::protocol::T_STRING;
+            _ftype = apache::thrift::protocol::T_STRUCT;
         } else if (_fname == "tags") {
             fid = 2;
             _ftype = apache::thrift::protocol::T_LIST;
@@ -244,8 +244,8 @@ template<class Protocol>
 uint32_t Cpp2Ops<nebula::Vertex>::write(Protocol* proto, nebula::Vertex const* obj) {
     uint32_t xfer = 0;
     xfer += proto->writeStructBegin("Vertex");
-    xfer += proto->writeFieldBegin("vid", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->writeBinary(obj->vid);
+    xfer += proto->writeFieldBegin("vid", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::write(proto, &obj->vid);
     xfer += proto->writeFieldEnd();
     xfer += proto->writeFieldBegin("tags", apache::thrift::protocol::T_LIST, 2);
     xfer += detail::pm::protocol_methods<
@@ -269,13 +269,13 @@ void Cpp2Ops<nebula::Vertex>::read(Protocol* proto, nebula::Vertex* obj) {
     using apache::thrift::protocol::TProtocolException;
 
 
-    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRING))) {
+    if (UNLIKELY(!readState.advanceToNextField(proto, 0, 1, protocol::T_STRUCT))) {
         goto _loop;
     }
 
 _readField_vid:
     {
-        proto->readBinary(obj->vid);
+        ::apache::thrift::Cpp2Ops<nebula::Value>::read(proto, &obj->vid);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_LIST))) {
@@ -314,7 +314,7 @@ _loop:
     switch (readState.fieldId) {
         case 1:
         {
-            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRING)) {
+            if (LIKELY(readState.fieldType == apache::thrift::protocol::T_STRUCT)) {
                 goto _readField_vid;
             } else {
                 goto _skip;
@@ -346,8 +346,8 @@ uint32_t Cpp2Ops<nebula::Vertex>::serializedSize(Protocol const* proto,
                                                  nebula::Vertex const* obj) {
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("Vertex");
-    xfer += proto->serializedFieldSize("vid", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->serializedSizeBinary(obj->vid);
+    xfer += proto->serializedFieldSize("vid", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSize(proto, &obj->vid);
     xfer += proto->serializedFieldSize("tags", apache::thrift::protocol::T_LIST, 2);
     xfer += detail::pm::protocol_methods<
             type_class::list<type_class::structure>,
@@ -364,8 +364,8 @@ uint32_t Cpp2Ops<nebula::Vertex>::serializedSizeZC(Protocol const* proto,
                                                    nebula::Vertex const* obj) {
     uint32_t xfer = 0;
     xfer += proto->serializedStructSize("Vertex");
-    xfer += proto->serializedFieldSize("vid", apache::thrift::protocol::T_STRING, 1);
-    xfer += proto->serializedSizeZCBinary(obj->vid);
+    xfer += proto->serializedFieldSize("vid", apache::thrift::protocol::T_STRUCT, 1);
+    xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSizeZC(proto, &obj->vid);
     xfer += proto->serializedFieldSize("tags", apache::thrift::protocol::T_LIST, 2);
     xfer += detail::pm::protocol_methods<
             type_class::list<type_class::structure>,

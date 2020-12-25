@@ -135,6 +135,106 @@ TEST(Path, Base) {
         EXPECT_EQ(expected, path2);
     }
 }
+
+TEST(PATH, BaseIntegerID) {
+    {
+        Path path;
+        path.src = Vertex(1, {});
+        path.addStep(Step(Vertex(2, {}), 1, "", 0, {}));
+        path.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        path.reverse();
+
+        Path path2;
+        path2.src = Vertex(5, {});
+        path2.addStep(Step(Vertex(4, {}), 1, "", 0, {}));
+        path2.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        path2.append(std::move(path));
+
+        Path expected;
+        expected.src = Vertex(5, {});
+        expected.addStep(Step(Vertex(4, {}), 1, "", 0, {}));
+        expected.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        expected.addStep(Step(Vertex(2, {}), -1, "", 0, {}));
+        expected.addStep(Step(Vertex(1, {}), -1, "", 0, {}));
+
+        EXPECT_EQ(expected, path2);
+    }
+    {
+        Path path;
+        path.src = Vertex(1, {});
+        path.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        path.reverse();
+
+        Path path2;
+        path2.src = Vertex(5, {});
+        path2.addStep(Step(Vertex(4, {}), 1, "", 0, {}));
+        path2.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        path2.append(std::move(path));
+
+        Path expected;
+        expected.src = Vertex(5, {});
+        expected.addStep(Step(Vertex(4, {}), 1, "", 0, {}));
+        expected.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        expected.addStep(Step(Vertex(1, {}), -1, "", 0, {}));
+
+        EXPECT_EQ(expected, path2);
+    }
+}
+
+TEST(Path, removePathIntegerID) {
+    {
+        Path path;
+        path.src = Vertex(1, {});
+        path.addStep(Step(Vertex(2, {}), 1, "", 0, {}));
+        path.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+
+        Path path2;
+        path2.src = Vertex(5, {});
+        path2.addStep(Step(Vertex(4, {}), 1, "", 0, {}));
+        path2.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+
+        std::vector<Path> paths;
+        paths.push_back(path);
+        paths.push_back(path2);
+
+        paths.erase(paths.begin());
+
+        std::vector<Path> expected;
+        expected.push_back(path2);
+        EXPECT_EQ(expected, paths);
+        EXPECT_EQ(expected.size(), paths.size());
+    }
+}
+
+TEST(Path, ReverseIntegerID) {
+    {
+        Path path;
+        path.src = Vertex(1, {});
+        path.addStep(Step(Vertex(2, {}), 1, "", 0, {}));
+        path.addStep(Step(Vertex(3, {}), 1, "", 0, {}));
+        path.reverse();
+
+        Path expected;
+        expected.src = Vertex(3, {});
+        expected.addStep(Step(Vertex(2, {}), -1, "", 0, {}));
+        expected.addStep(Step(Vertex(1, {}), -1, "", 0, {}));
+
+        EXPECT_EQ(expected, path);
+    }
+    {
+        Path path;
+        path.src = Vertex(1, {});
+        path.addStep(Step(Vertex(2, {}), 1, "", 0, {}));
+        path.reverse();
+
+        Path expected;
+        expected.src = Vertex(2, {});
+        expected.addStep(Step(Vertex(1, {}), -1, "", 0, {}));
+
+        EXPECT_EQ(expected, path);
+    }
+}
+
 }  // namespace nebula
 
 
