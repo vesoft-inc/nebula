@@ -123,6 +123,11 @@ set(THRIFT_LIBRARIES
     wangle
 )
 
+set(PROXYGEN_LIBRARIES
+    proxygenlib
+    proxygenhttpserver
+)
+
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
