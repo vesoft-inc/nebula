@@ -19,8 +19,8 @@ DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600,
              "interval to trigger custom compaction, < 0 means always do default minor compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
-DEFINE_bool(check_leader, true, "Check leader or not");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
+DEFINE_bool(auto_remove_invalid_space, false, "whether remove data of invalid space when restart");
 
 DECLARE_bool(rocksdb_disable_wal);
 
@@ -72,14 +72,16 @@ bool NebulaStore::init() {
                     }
 
                     if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
-                        // TODO We might want to have a second thought here.
-                        // Removing the data directly feels a little strong
-                        LOG(INFO) << "Space " << spaceId
-                                  << " does not exist any more, remove the data!";
-                        auto dataPath = folly::stringPrintf("%s/%s",
-                                                            rootPath.c_str(),
-                                                            dir.c_str());
-                        CHECK(fs::FileUtils::remove(dataPath.c_str(), true));
+                        if (FLAGS_auto_remove_invalid_space) {
+                            // TODO We might want to have a second thought here.
+                            // Removing the data directly feels a little strong
+                            LOG(INFO) << "Space " << spaceId
+                                      << " does not exist any more, remove the data!";
+                            auto dataPath = folly::stringPrintf("%s/%s",
+                                                                rootPath.c_str(),
+                                                                dir.c_str());
+                            CHECK(fs::FileUtils::remove(dataPath.c_str(), true));
+                        }
                         continue;
                     }
 
@@ -872,7 +874,7 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
-    return !FLAGS_check_leader || (part->isLeader() && part->leaseValid());
+    return part->isLeader() && part->leaseValid();
 }
 
 void NebulaStore::cleanWAL() {

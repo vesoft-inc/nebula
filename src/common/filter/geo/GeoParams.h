@@ -65,7 +65,7 @@ public:
     uint32_t minCellLevel_ = FLAGS_min_cell_level;
     // maxCellLevel_ indicates the max level that used by covering. [0, 30]
     uint32_t maxCellLevel_ = FLAGS_max_cell_level;
-    // maxCoverCellNum_ indicates the max number cells that covering the regin.
+    // maxCoverCellNum_ indicates the max number cells that covering the region.
     uint32_t maxCoverCellNum_ = FLAGS_max_cover_cell_num;
 };
 
