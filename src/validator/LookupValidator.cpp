@@ -172,7 +172,7 @@ Status LookupValidator::prepareFilter() {
     if (needTextSearch(filter)) {
         NG_RETURN_IF_ERROR(checkTSService());
         if (!textSearchReady_) {
-            return Status::Error("Text search service not ready");
+            return Status::SemanticError("Text search service not ready");
         }
         auto retFilter = rewriteTSFilter(filter);
         if (!retFilter.ok()) {
@@ -198,7 +198,7 @@ StatusOr<std::string> LookupValidator::rewriteTSFilter(Expression* expr) {
     auto tsExpr = static_cast<TextSearchExpression*>(expr);
     auto vRet = textSearch(tsExpr);
     if (!vRet.ok()) {
-        return Status::Error("Text search error.");
+        return Status::SemanticError("Text search error.");
     }
     if (vRet.value().empty()) {
         isEmptyResultSet_ = true;
@@ -270,18 +270,18 @@ StatusOr<std::vector<std::string>> LookupValidator::textSearch(TextSearchExpress
                 break;
             }
             default:
-                return Status::Error("text search expression error");
+                return Status::SemanticError("text search expression error");
         }
         if (!ret.ok()) {
             continue;
-        } else if (ret.value()) {
-            return result;
-        } else {
-            return Status::Error("External index error. "
-                                 "please check the status of fulltext cluster");
         }
+        if (ret.value()) {
+            return result;
+        }
+        return Status::SemanticError("External index error. "
+                                     "please check the status of fulltext cluster");
     }
-    return Status::Error("scan external index failed");
+    return Status::SemanticError("scan external index failed");
 }
 
 bool LookupValidator::needTextSearch(Expression* expr) {
@@ -405,7 +405,7 @@ Status LookupValidator::checkTSService() {
         return tcs.status();
     }
     if (tcs.value().empty()) {
-        return Status::Error("No full text client found");
+        return Status::SemanticError("No full text client found");
     }
     textSearchReady_ = true;
     for (const auto& c : tcs.value()) {
@@ -428,11 +428,11 @@ Status LookupValidator::checkTSIndex() {
         ret = nebula::plugin::ESGraphAdapter::kAdapter->indexExists(randomFTClient(), ftIndex);
         if (!ret.ok()) {
             continue;
-        } else if (ret.value()) {
-            return Status::OK();
-        } else {
-            return Status::Error("fulltext index not found : %s", ftIndex.c_str());
         }
+        if (ret.value()) {
+            return Status::OK();
+        }
+        return Status::SemanticError("fulltext index not found : %s", ftIndex.c_str());
     }
     return ret.status();
 }

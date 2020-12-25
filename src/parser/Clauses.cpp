@@ -25,19 +25,6 @@ std::string StepClause::toString() const {
 }
 
 
-std::string SourceNodeList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto id : nodes_) {
-        buf += std::to_string(id);
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
 std::string VertexIDList::toString() const {
     std::string buf;
     buf.reserve(256);

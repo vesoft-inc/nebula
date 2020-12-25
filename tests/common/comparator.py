@@ -232,7 +232,7 @@ class DataSetComparator:
     def bstr(self, vid) -> bytes:
         return self.b(vid) if type(vid) == str else vid
 
-    def compare_vid(
+    def _compare_vid(
             self,
             lid: Union[int, bytes],
             rid: Union[int, bytes, str],
@@ -245,6 +245,19 @@ class DataSetComparator:
             if type(rid) not in [str, bytes] or self._vid_fn is None:
                 return False
             return lid == self._vid_fn(rid)
+        return False
+
+    def compare_vid(self, lid: Value, rid: Value) -> bool:
+        if lid.getType() == Value.IVAL:
+            if rid.getType() == Value.IVAL:
+                return self._compare_vid(lid.get_iVal(), rid.get_iVal())
+            if rid.getType() == Value.SVAL:
+                return self._compare_vid(lid.get_iVal(), rid.get_sVal())
+            return False
+        if lid.getType() == Value.SVAL:
+            if rid.getType() == Value.SVAL:
+                return self._compare_vid(lid.get_sVal(), rid.get_sVal())
+            return False
         return False
 
     def compare_node(self, lhs: Vertex, rhs: Vertex):

@@ -225,7 +225,7 @@ def edge_to_string(edge):
 
 
 def vertex_to_string(vertex):
-    vid = vertex.vid.decode('utf-8')
+    vid = vertex.vid.get_sVal().decode('utf-8')
     tags = list_to_string(vertex.tags)
     return f'({vid} {tags})'
 

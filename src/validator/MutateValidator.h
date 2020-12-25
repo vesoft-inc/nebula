@@ -82,7 +82,7 @@ private:
 private:
     GraphSpaceID                                  spaceId_{-1};
     // From ConstantExpression
-    std::vector<VertexID>                         vertices_;
+    std::vector<Value>                            vertices_;
     // From InputPropertyExpression or InputPropertyExpression
     Expression*                                   vidRef_{nullptr};
     std::vector<EdgeType>                         edgeTypes_;
@@ -168,7 +168,7 @@ private:
     Status toPlan() override;
 
 private:
-    std::string               vId_;
+    Value                     vId_;
     TagID                     tagId_{-1};
 };
 
@@ -184,8 +184,8 @@ private:
     Status toPlan() override;
 
 private:
-    std::string                                       srcId_;
-    std::string                                       dstId_;
+    Value                                             srcId_;
+    Value                                             dstId_;
     EdgeRanking                                       rank_{0};
     EdgeType                                          edgeType_{-1};
 };

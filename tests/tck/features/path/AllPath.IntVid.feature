@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
 Feature: Integer Vid All Path
 
   Background: Prepare space
@@ -102,10 +101,10 @@ Feature: Integer Vid All Path
       | ORDER BY $-.path | LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                         |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>                              |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>      |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
+      | path                                                                                              |
+      | <("Tim Duncan")-[:like]->("Tony Parker")>                                                         |
+      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
+      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:serve]->("Spurs")>      |
 
   Scenario: Integer Vid [2] ALL Path With Limit
     When executing query:
@@ -115,12 +114,12 @@ Feature: Integer Vid All Path
       | ORDER BY $-.path | LIMIT 5
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                              |
-      | <("Manu Ginobili")-[:like]->("Tim Duncan")>                                                       |
-      | <("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")>      |
-      | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")>                          |
-      | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")> |
-      | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
+      | path                                                                                                    |
+      | <("Tony Parker")-[:like@0]->("LaMarcus Aldridge")-[:like@0]->("Tim Duncan")>                            |
+      | <("Tony Parker")-[:like@0]->("LaMarcus Aldridge")-[:like@0]->("Tony Parker")-[:like@0]->("Tim Duncan")> |
+      | <("Tony Parker")-[:like@0]->("Manu Ginobili")-[:like@0]->("Tim Duncan")>                                |
+      | <("Tony Parker")-[:like@0]->("Tim Duncan")>                                                             |
+      | <("Tony Parker")-[:like@0]->("Tim Duncan")-[:like@0]->("Manu Ginobili")-[:like@0]->("Tim Duncan")>      |
 
   Scenario: Integer Vid [1] ALL PATH REVERSELY
     When executing query:

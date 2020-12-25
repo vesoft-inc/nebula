@@ -156,6 +156,8 @@ protected:
     ExpressionProps                 exprProps_;
     // user define Variable name list
     std::set<std::string>           userDefinedVarNameList_;
+    // vid's Type
+    Value::Type                     vidType_;
 };
 
 }  // namespace graph

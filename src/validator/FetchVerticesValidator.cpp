@@ -101,7 +101,7 @@ Status FetchVerticesValidator::prepareVertices() {
     // from ref, eval when execute
     if (sentence->isRef()) {
         srcRef_ = sentence->ref();
-        auto result = checkRef(srcRef_, Value::Type::STRING);
+        auto result = checkRef(srcRef_, vidType_);
         NG_RETURN_IF_ERROR(result);
         inputVar_ = std::move(result).value();
         return Status::OK();
@@ -115,10 +115,13 @@ Status FetchVerticesValidator::prepareVertices() {
     for (const auto vid : vids) {
         DCHECK(ExpressionUtils::isConstExpr(vid));
         auto v = vid->eval(dummy);
-        if (!SchemaUtil::isValidVid(v, space_.spaceDesc.vid_type)) {
-            return Status::NotSupported("Not a vertex id");
+        if (v.type() != vidType_) {
+            std::stringstream ss;
+            ss << "`" << vid->toString() << "', the vid should be type of " << vidType_
+               << ", but was`" << v.type() << "'";
+            return Status::SemanticError(ss.str());
         }
-        srcVids_.emplace_back(nebula::Row({std::move(v).getStr()}));
+        srcVids_.emplace_back(nebula::Row({std::move(v)}));
     }
     return Status::OK();
 }
@@ -142,7 +145,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     outputs_.reserve(yieldSize + 1);
     colNames_.emplace_back(VertexID);
     gvColNames_.emplace_back(colNames_.back());
-    outputs_.emplace_back(VertexID, Value::Type::STRING);   // kVid
+    outputs_.emplace_back(VertexID, vidType_);   // kVid
 
     dedup_ = yield->isDistinct();
     ExpressionProps exprProps;
@@ -220,7 +223,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 Status FetchVerticesValidator::preparePropertiesWithoutYield() {
     // empty for all tag and properties
     props_.clear();
-    outputs_.emplace_back(VertexID, Value::Type::STRING);
+    outputs_.emplace_back(VertexID, vidType_);
     colNames_.emplace_back(VertexID);
     gvColNames_.emplace_back(colNames_.back());
     for (const auto &tagSchema : tagsSchema_) {

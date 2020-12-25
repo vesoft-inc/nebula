@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
 Feature: Integer Vid NoLoop Path
 
   Background: Prepare space
@@ -85,10 +84,10 @@ Feature: Integer Vid NoLoop Path
       | ORDER BY $-.path | LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                            |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")> |
-      | <("Tim Duncan")-[:serve]->("Spurs")>                            |
-      | <("Tim Duncan")-[:like]->("Tony Parker")>                       |
+      | path                                                                                         |
+      | <("Tim Duncan")-[:like]->("Tony Parker")>                                                    |
+      | < ("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>    |
+      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:serve]->("Spurs")> |
 
   Scenario: Integer Vid [2] NOLOOP Path With Limit
     When executing query:

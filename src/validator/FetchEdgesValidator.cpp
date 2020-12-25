@@ -99,7 +99,7 @@ Status FetchEdgesValidator::prepareEdges() {
     // from ref, eval in execute
     if (sentence->isRef()) {
         srcRef_ = sentence->ref()->srcid();
-        auto result = checkRef(srcRef_, Value::Type::STRING);
+        auto result = checkRef(srcRef_, vidType_);
         NG_RETURN_IF_ERROR(result);
         inputVar_ = std::move(result).value();
         rankRef_ = sentence->ref()->rank();
@@ -112,7 +112,7 @@ Status FetchEdgesValidator::prepareEdges() {
             }
         }
         dstRef_ = sentence->ref()->dstid();
-        result = checkRef(dstRef_, Value::Type::STRING);
+        result = checkRef(dstRef_, vidType_);
         NG_RETURN_IF_ERROR(result);
         if (inputVar_ != result.value()) {
             return Status::SemanticError("Can't refer to different variable as key at same time.");
@@ -130,17 +130,20 @@ Status FetchEdgesValidator::prepareEdges() {
         for (const auto &key : keys) {
             DCHECK(ExpressionUtils::isConstExpr(key->srcid()));
             auto src = key->srcid()->eval(dummy);
-            if (!SchemaUtil::isValidVid(src, space_.spaceDesc.vid_type)) {
-                return Status::NotSupported("src is not a vertex id");
+            if (src.type() != vidType_) {
+                std::stringstream ss;
+                ss << "the src should be type of " << vidType_ << ", but was`" << src.type() << "'";
+                return Status::SemanticError(ss.str());
             }
             auto ranking = key->rank();
             DCHECK(ExpressionUtils::isConstExpr(key->dstid()));
             auto dst = key->dstid()->eval(dummy);
-            if (!SchemaUtil::isValidVid(dst, space_.spaceDesc.vid_type)) {
-                return Status::NotSupported("dst is not a vertex id");
+            if (dst.type() != vidType_) {
+                std::stringstream ss;
+                ss << "the dst should be type of " << vidType_ << ", but was`" << dst.type() << "'";
+                return Status::SemanticError(ss.str());
             }
-            edgeKeys_.emplace_back(nebula::Row(
-                {std::move(src).getStr(), ranking, std::move(dst).getStr()}));
+            edgeKeys_.emplace_back(nebula::Row({std::move(src), ranking, std::move(dst)}));
         }
     }
     return Status::OK();
@@ -238,11 +241,11 @@ Status FetchEdgesValidator::preparePropertiesWithoutYield() {
     // insert the reserved properties be compatible with 1.0
     propNames.emplace_back(kSrc);
     colNames_.emplace_back(edgeTypeName_ + "." + kSrc);
-    outputs_.emplace_back(colNames_.back(), Value::Type::STRING);
+    outputs_.emplace_back(colNames_.back(), vidType_);
     geColNames_.emplace_back(colNames_.back());
     propNames.emplace_back(kDst);
     colNames_.emplace_back(edgeTypeName_ + "." + kDst);
-    outputs_.emplace_back(colNames_.back(), Value::Type::STRING);
+    outputs_.emplace_back(colNames_.back(), vidType_);
     geColNames_.emplace_back(colNames_.back());
     propNames.emplace_back(kRank);
     colNames_.emplace_back(edgeTypeName_ + "." + kRank);

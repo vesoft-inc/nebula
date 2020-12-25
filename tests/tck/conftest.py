@@ -41,15 +41,15 @@ def graph_spaces():
 def preload_space(
     space,
     load_nba_data,
-    # load_nba_int_vid_data,
+    load_nba_int_vid_data,
     load_student_data,
     session,
     graph_spaces,
 ):
     if space == "nba":
         graph_spaces["space_desc"] = load_nba_data
-    # elif space == "nba_int_vid":
-    #     graph_spaces["space_desc"] = load_nba_int_vid_data
+    elif space == "nba_int_vid":
+        graph_spaces["space_desc"] = load_nba_int_vid_data
     elif space == "student":
         graph_spaces["space_desc"] = load_student_data
     else:
@@ -205,17 +205,18 @@ def execution_should_be_succ(graph_spaces):
 @then(rparse(r"a (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
 def raised_type_error(err_type, time, sym, msg, graph_spaces):
     res = graph_spaces["result_set"]
+    ngql = graph_spaces['ngql']
     assert not res.is_succeeded(), "Response should be failed"
     err_type = err_type.strip()
-    msg = msg.strip().replace('$', r'\$').replace('^', r"\^")
+    msg = msg.strip()
     res_msg = res.error_msg()
     if res.error_code() == ErrorCode.E_EXECUTION_ERROR:
         assert err_type == "ExecutionError"
-        expect_msg = r"{}".format(msg)
+        expect_msg = "{}".format(msg)
     else:
-        expect_msg = r"{}: {}".format(err_type, msg)
-    m = re.search(expect_msg, res_msg)
-    assert m, f'Could not find "{expect_msg}" in "{res_msg}"'
+        expect_msg = "{}: {}".format(err_type, msg)
+    m = res_msg.startswith(expect_msg)
+    assert m, f'Could not find "{expect_msg}" in "{res_msg}, ngql:{ngql}"'
 
 
 @then("drop the used space")

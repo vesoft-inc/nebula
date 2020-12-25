@@ -97,6 +97,7 @@ private:
     GraphSpaceID space_;
     Status status_;
     Value::Type type_;
+    Value::Type vidType_;
 };
 
 }   // namespace graph

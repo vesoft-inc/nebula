@@ -15,14 +15,16 @@ from tests.query.v2.utils import check_subgraph
 
 
 def edgekey(edge):
-    return utf8s(edge.src) + utf8s(edge.dst) + utf8s(edge.name) \
+    return utf8s(edge.src.get_sVal()) + utf8s(edge.dst.get_sVal()) + utf8s(edge.name) \
         + str(edge.ranking)
 
 
 def create_vertex_team(line):
     assert len(line) == 2
     vertex = ttypes.Vertex()
-    vertex.vid = utf8b(line[0])
+    vid = ttypes.Value()
+    vid.set_sVal(utf8b(line[0]))
+    vertex.vid = vid
     tags = []
     tag = ttypes.Tag()
     tag.name = utf8b('team')
@@ -40,7 +42,9 @@ def create_vertex_team(line):
 def create_vertex_player(line):
     assert len(line) == 3
     vertex = ttypes.Vertex()
-    vertex.vid = utf8b(line[0])
+    vid = ttypes.Value()
+    vid.set_sVal(utf8b(line[0]))
+    vertex.vid = vid
     tags = []
     tag = ttypes.Tag()
     tag.name = utf8b('player')
@@ -61,7 +65,9 @@ def create_vertex_player(line):
 def create_vertex_bachelor(line):
     assert len(line) == 3
     vertex = ttypes.Vertex()
-    vertex.vid = utf8b(line[0])
+    vid = ttypes.Value()
+    vid.set_sVal(utf8b(line[0]))
+    vertex.vid = vid
     tags = []
     tag = ttypes.Tag()
     tag.name = utf8b('bachelor')
@@ -82,13 +88,18 @@ def create_vertex_bachelor(line):
 def create_edge_serve(line):
     assert len(line) == 4
     edge = ttypes.Edge()
-    edge.src = utf8b(line[0])
+    src = ttypes.Value()
+    src.set_sVal(utf8b(line[0]))
+    edge.src = src
+    dst = ttypes.Value()
     if '@' in line[1]:
         temp = list(map(lambda i: i.strip('"'), re.split('@', line[1])))
-        edge.dst = utf8b(temp[0])
+        dst.set_sVal(utf8b(temp[0]))
+        edge.dst = dst
         edge.ranking = int(temp[1])
     else:
-        edge.dst = utf8b(line[1])
+        dst.set_sVal(utf8b(line[1]))
+        edge.dst = dst
         edge.ranking = 0
     edge.type = 1
     edge.name = utf8b('serve')
@@ -106,9 +117,12 @@ def create_edge_serve(line):
 def create_edge_like(line):
     assert len(line) == 3
     edge = ttypes.Edge()
-
-    edge.src = utf8b(line[0])
-    edge.dst = utf8b(line[1])
+    src = ttypes.Value()
+    src.set_sVal(utf8b(line[0]))
+    dst = ttypes.Value()
+    dst.set_sVal(utf8b(line[1]))
+    edge.src = src
+    edge.dst = dst
     edge.type = 1
     edge.ranking = 0
     edge.name = utf8b('like')
@@ -123,8 +137,12 @@ def create_edge_like(line):
 def create_edge_teammate(line):
     assert len(line) == 4
     edge = ttypes.Edge()
-    edge.src = utf8b(line[0])
-    edge.dst = utf8b(line[1])
+    src = ttypes.Value()
+    src.set_sVal(utf8b(line[0]))
+    dst = ttypes.Value()
+    dst.set_sVal(utf8b(line[1]))
+    edge.src = src
+    edge.dst = dst
     edge.type = 1
     edge.ranking = 0
     edge.name = utf8b('teammate')
@@ -162,7 +180,7 @@ def fill_vertices_and_edges(line, datatype: str, VERTEXS, EDGES):
     assert datatype != 'none'
     if datatype == 'player':
         vertex = create_vertex_player(line)
-        key = utf8s(vertex.vid)
+        key = utf8s(vertex.vid.get_sVal())
         if key in VERTEXS:
             temp = VERTEXS[key].get_vVal()
             temp.tags.append(vertex.tags[0])
@@ -175,11 +193,11 @@ def fill_vertices_and_edges(line, datatype: str, VERTEXS, EDGES):
     elif datatype == 'team':
         vertex = create_vertex_team(line)
         value.set_vVal(vertex)
-        key = utf8s(vertex.vid)
+        key = utf8s(vertex.vid.get_sVal())
         VERTEXS[key] = value
     elif datatype == 'bachelor':
         vertex = create_vertex_bachelor(line)
-        key = utf8s(vertex.vid)
+        key = utf8s(vertex.vid.get_sVal())
         if key in VERTEXS:
             temp = VERTEXS[key].get_vVal()
             temp.tags.append(vertex.tags[0])

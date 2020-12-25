@@ -91,7 +91,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
             newCols->addColumn(col);
             auto colName = deduceColName(col);
             colNames_.emplace_back(colName);
-            outputs_.emplace_back(colName, Value::Type::STRING);
+            outputs_.emplace_back(colName, vidType_);
             NG_RETURN_IF_ERROR(deduceProps(col->expr(), exprProps_));
         }
 
@@ -115,7 +115,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
             }
             auto colName = deduceColName(col);
             colNames_.emplace_back(colName);
-
+            // check input var expression
             auto typeStatus = deduceExprType(col->expr());
             NG_RETURN_IF_ERROR(typeStatus);
             auto type = typeStatus.value();
@@ -142,14 +142,13 @@ Status GoValidator::toPlan() {
             tail_ = passThrough;
             root_ = tail_;
             return Status::OK();
-        } else if (steps_.steps == 1) {
-            return buildOneStepPlan();
-        } else {
-            return buildNStepsPlan();
         }
-    } else {
-        return buildMToNPlan();
+        if (steps_.steps == 1) {
+            return buildOneStepPlan();
+        }
+        return buildNStepsPlan();
     }
+    return buildMToNPlan();
 }
 
 Status GoValidator::oneStep(PlanNode* dependencyForGn,
@@ -802,8 +801,7 @@ Status GoValidator::buildColumns() {
                          ? nullptr
                          : new std::string(*(yield->alias()));
         if (rewriteCol != nullptr) {
-            newYieldCols_->addColumn(
-                new YieldColumn(rewriteCol.release(), alias));
+            newYieldCols_->addColumn(new YieldColumn(rewriteCol.release(), alias));
         } else {
             newYieldCols_->addColumn(new YieldColumn(newCol.release(), alias));
         }

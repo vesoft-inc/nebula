@@ -194,20 +194,20 @@ def load_nba_data(conn_pool, pytestconfig, tmp_path_factory, worker_id):
     )
 
 
-# @pytest.fixture(scope="session")
-# def load_nba_int_vid_data(
-#     conn_pool,
-#     pytestconfig,
-#     tmp_path_factory,
-#     worker_id,
-# ):
-#     yield from load_csv_data_once(
-#         tmp_path_factory,
-#         pytestconfig,
-#         worker_id,
-#         conn_pool,
-#         "nba_int_vid",
-#     )
+@pytest.fixture(scope="session")
+def load_nba_int_vid_data(
+    conn_pool,
+    pytestconfig,
+    tmp_path_factory,
+    worker_id,
+):
+    yield from load_csv_data_once(
+        tmp_path_factory,
+        pytestconfig,
+        worker_id,
+        conn_pool,
+        "nba_int_vid",
+    )
 
 
 @pytest.fixture(scope="session")

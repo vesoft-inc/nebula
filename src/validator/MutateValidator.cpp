@@ -98,7 +98,7 @@ Status InsertVerticesValidator::prepareVertices() {
             return Status::SemanticError("Wrong vid expression `%s'",
                                          row->id()->toString().c_str());
         }
-        auto idStatus = SchemaUtil::toVertexID(row->id());
+        auto idStatus = SchemaUtil::toVertexID(row->id(), vidType_);
         NG_RETURN_IF_ERROR(idStatus);
         auto vertexId = std::move(idStatus).value();
 
@@ -188,7 +188,7 @@ Status InsertEdgesValidator::check() {
     return Status::OK();
 }
 
-Status InsertEdgesValidator::prepareEdges() {;
+Status InsertEdgesValidator::prepareEdges() {
     edges_.reserve(rows_.size()*2);
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
@@ -207,10 +207,10 @@ Status InsertEdgesValidator::prepareEdges() {;
                                          row->dstid()->toString().c_str());
         }
 
-        auto idStatus = SchemaUtil::toVertexID(row->srcid());
+        auto idStatus = SchemaUtil::toVertexID(row->srcid(), vidType_);
         NG_RETURN_IF_ERROR(idStatus);
         auto srcId = std::move(idStatus).value();
-        idStatus = SchemaUtil::toVertexID(row->dstid());
+        idStatus = SchemaUtil::toVertexID(row->dstid(), vidType_);
         NG_RETURN_IF_ERROR(idStatus);
         auto dstId = std::move(idStatus).value();
 
@@ -273,7 +273,7 @@ Status DeleteVerticesValidator::validateImpl() {
     } else {
         auto vIds = sentence->vidList()->vidList();
         for (auto vId : vIds) {
-            auto idStatus = SchemaUtil::toVertexID(vId);
+            auto idStatus = SchemaUtil::toVertexID(vId, vidType_);
             NG_RETURN_IF_ERROR(idStatus);
             vertices_.emplace_back(std::move(idStatus).value());
         }
@@ -405,9 +405,9 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKe
     for (auto &edgeKey : edgeKeys) {
         Row row;
         storage::cpp2::EdgeKey key;
-        auto srcIdStatus = SchemaUtil::toVertexID(edgeKey->srcid());
+        auto srcIdStatus = SchemaUtil::toVertexID(edgeKey->srcid(), vidType_);
         NG_RETURN_IF_ERROR(srcIdStatus);
-        auto dstIdStatus = SchemaUtil::toVertexID(edgeKey->dstid());
+        auto dstIdStatus = SchemaUtil::toVertexID(edgeKey->dstid(), vidType_);
         NG_RETURN_IF_ERROR(dstIdStatus);
 
         auto srcId = std::move(srcIdStatus).value();
@@ -603,7 +603,7 @@ std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression *expr,
 
 Status UpdateVertexValidator::validateImpl() {
     auto sentence = static_cast<UpdateVertexSentence*>(sentence_);
-    auto idRet = SchemaUtil::toVertexID(sentence->getVid());
+    auto idRet = SchemaUtil::toVertexID(sentence->getVid(), vidType_);
     if (!idRet.ok()) {
         LOG(ERROR) << idRet.status();
         return idRet.status();
@@ -638,13 +638,13 @@ Status UpdateVertexValidator::toPlan() {
 
 Status UpdateEdgeValidator::validateImpl() {
     auto sentence = static_cast<UpdateEdgeSentence*>(sentence_);
-    auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId());
+    auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId(), vidType_);
     if (!srcIdRet.ok()) {
         LOG(ERROR) << srcIdRet.status();
         return srcIdRet.status();
     }
     srcId_ = std::move(srcIdRet).value();
-    auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId());
+    auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId(), vidType_);
     if (!dstIdRet.ok()) {
         LOG(ERROR) << dstIdRet.status();
         return dstIdRet.status();

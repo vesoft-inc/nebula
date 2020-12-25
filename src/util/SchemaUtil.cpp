@@ -159,14 +159,14 @@ Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& sch
 }
 
 // static
-StatusOr<VertexID> SchemaUtil::toVertexID(Expression *expr) {
+StatusOr<Value> SchemaUtil::toVertexID(Expression *expr, Value::Type vidType) {
     QueryExpressionContext ctx;
-    auto vertexId = expr->eval(ctx(nullptr));
-    if (vertexId.type() != Value::Type::STRING) {
-        LOG(ERROR) << "Wrong vertex id type";
-        return Status::Error("Wrong vertex id type");
+    auto vidVal = expr->eval(ctx(nullptr));
+    if (vidVal.type() != vidType) {
+        LOG(ERROR) << expr->toString() << " is the wrong vertex id type: " << vidVal.typeName();
+        return Status::Error("Wrong vertex id type: %s", expr->toString().c_str());
     }
-    return vertexId.getStr();
+    return vidVal;
 }
 
 // static
@@ -178,8 +178,8 @@ SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
     for (auto *expr : exprs) {
         auto value = expr->eval(ctx(nullptr));
          if (value.isNull() && value.getNull() != NullType::__NULL__) {
-            LOG(ERROR) << "Wrong value type: " << value.type();;
-            return Status::Error("Wrong value type");
+            LOG(ERROR) <<  expr->toString() << " is the wrong value type: " << value.typeName();
+            return Status::Error("Wrong value type: %s", expr->toString().c_str());
         }
         values.emplace_back(std::move(value));
     }

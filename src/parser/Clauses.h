@@ -48,23 +48,6 @@ private:
 };
 
 
-class SourceNodeList final {
-public:
-    void addNodeId(int64_t id) {
-        nodes_.emplace_back(id);
-    }
-
-    const std::vector<int64_t>& nodeIds() const {
-        return nodes_;
-    }
-
-    std::string toString() const;
-
-private:
-    std::vector<int64_t>                        nodes_;
-};
-
-
 class VertexIDList final {
 public:
     void add(Expression *expr) {

@@ -1,4 +1,3 @@
-@skip
 Feature: Fetch Int Vid Vertices
 
   Background: Prepare space
@@ -44,7 +43,7 @@ Feature: Fetch Int Vid Vertices
       """
       $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name, player.age
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID            | player.name   | player.age |
       | hash("Tony Parker") | "Tony Parker" | 36         |
       | hash("Tim Duncan")  | "Tim Duncan"  | 42         |
@@ -54,7 +53,7 @@ Feature: Fetch Int Vid Vertices
       """
       $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name as name, player.age | ORDER BY name
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID            | name          | player.age |
       | hash("Tim Duncan")  | "Tim Duncan"  | 42         |
       | hash("Tony Parker") | "Tony Parker" | 36         |
@@ -64,16 +63,17 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD player.name, player.age
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID           | player.name  | player.age |
       | hash("Boris Diaw") | "Boris Diaw" | 36         |
 
+  @skip
   Scenario: [8] Fetch Vertices works with uuid() and YIELD
     When executing query:
       """
       FETCH PROP ON player uuid('Boris Diaw') YIELD player.name, player.age
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID             | player.name  | player.age |
       | -7391649757168799460 | "Boris Diaw" | 36         |
 
@@ -82,16 +82,17 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw')
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID           | player.name  | player.age |
       | hash("Boris Diaw") | "Boris Diaw" | 36         |
 
+  @skip
   Scenario: [10] Fetch Vertices works with uuid(), without YIELD
     When executing query:
       """
       FETCH PROP ON player uuid('Boris Diaw')
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID             | player.name  | player.age |
       | -7391649757168799460 | "Boris Diaw" | 36         |
 
@@ -100,7 +101,7 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw'), hash('Boris Diaw') YIELD DISTINCT player.name, player.age
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID           | player.name  | player.age |
       | hash("Boris Diaw") | "Boris Diaw" | 36         |
 
@@ -109,7 +110,7 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw'), hash('Boris Diaw') YIELD DISTINCT player.age
       """
-    Then the result should be, in any order, with relax comparision:
+    Then the result should be, in any order, with relax comparison:
       | VertexID           | player.age |
       | hash("Boris Diaw") | 36         |
 

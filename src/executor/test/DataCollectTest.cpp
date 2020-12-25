@@ -144,8 +144,8 @@ TEST_F(DataCollectTest, CollectSubgraph) {
     auto iter = input.iter();
     auto* gNIter = static_cast<GetNeighborsIter*>(iter.get());
     Row row;
-    std::unordered_set<std::string> vids;
-    std::unordered_set<std::tuple<std::string, int64_t, int64_t, std::string>> edgeKeys;
+    std::unordered_set<Value> vids;
+    std::unordered_set<std::tuple<Value, int64_t, int64_t, Value>> edgeKeys;
     List vertices;
     List edges;
     auto originVertices = gNIter->getVertices();

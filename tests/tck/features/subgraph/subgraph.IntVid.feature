@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
 Feature: Integer Vid subgraph
 
   Background: Prepare space
@@ -21,27 +20,27 @@ Feature: Integer Vid subgraph
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH FROM $-.id
+      GO FROM hash("Tim Duncan") OVER like YIELD $$.player.name AS id | GET SUBGRAPH FROM $-.id
       """
-    Then a SemanticError should be raised at runtime: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'
+    Then a SemanticError should be raised at runtime: `$-.id', the srcs should be type of INT64, but was`STRING'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS ID; GET SUBGRAPH FROM $a.ID
+      $a = GO FROM hash("Tim Duncan") OVER like YIELD $$.player.name AS ID; GET SUBGRAPH FROM $a.ID
       """
-    Then a SemanticError should be raised at runtime: `$a.ID', the srcs should be type of FIXED_STRING, but was`INT'
+    Then a SemanticError should be raised at runtime: `$a.ID', the srcs should be type of INT64, but was`STRING'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD like._src AS src; GET SUBGRAPH FROM $b.src
+      $a = GO FROM hash("Tim Duncan") OVER like YIELD like._src AS src; GET SUBGRAPH FROM $b.src
       """
     Then a SemanticError should be raised at runtime: `$b.src', not exist variable `b'
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH FROM $-.id
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH FROM $-.id
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH FROM $a.id
+      $a = GO FROM hash("Tim Duncan") OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH FROM $a.id
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
 

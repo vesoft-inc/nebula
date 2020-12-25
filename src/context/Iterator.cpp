@@ -265,7 +265,7 @@ Value GetNeighborsIter::getVertex() const {
         return Value::kNullBadType;
     }
     Vertex vertex;
-    vertex.vid = vidVal.getStr();
+    vertex.vid = vidVal;
     auto& tagPropMap = dsIndices_[segment].tagPropsMap;
     for (auto& tagProp : tagPropMap) {
         auto& row = *(iter_->row_);
@@ -304,17 +304,17 @@ Value GetNeighborsIter::getEdge() const {
     }
     edge.type = type.getInt();
 
-    auto& src = getColumn(kVid);
-    if (!SchemaUtil::isValidVid(src)) {
+    auto& srcVal = getColumn(kVid);
+    if (!SchemaUtil::isValidVid(srcVal)) {
         return Value::kNullBadType;
     }
-    edge.src = src.getStr();
+    edge.src = srcVal;
 
-    auto& dst = getEdgeProp(edgeName, kDst);
-    if (!SchemaUtil::isValidVid(dst)) {
+    auto& dstVal = getEdgeProp(edgeName, kDst);
+    if (!SchemaUtil::isValidVid(dstVal)) {
         return Value::kNullBadType;
     }
-    edge.dst = dst.getStr();
+    edge.dst = dstVal;
 
     auto& rank = getEdgeProp(edgeName, kRank);
     if (!rank.isInt()) {
@@ -530,7 +530,7 @@ Value PropIter::getVertex() const {
         return Value::kNullValue;
     }
     Vertex vertex;
-    vertex.vid = vidVal.getStr();
+    vertex.vid = vidVal;
     auto& tagPropsMap = dsIndex_.propsMap;
     bool isVertexProps = true;
     auto& row = *(iter_->row_);
@@ -585,17 +585,17 @@ Value PropIter::getEdge() const {
         }
         edge.type = type.getInt();
 
-        auto& src = getEdgeProp(edgeName, kSrc);
-        if (!SchemaUtil::isValidVid(src)) {
+        auto& srcVal = getEdgeProp(edgeName, kSrc);
+        if (!SchemaUtil::isValidVid(srcVal)) {
             return Value::kNullBadType;
         }
-        edge.src = src.getStr();
+        edge.src = srcVal;
 
-        auto& dst = getEdgeProp(edgeName, kDst);
-        if (!SchemaUtil::isValidVid(dst)) {
+        auto& dstVal = getEdgeProp(edgeName, kDst);
+        if (!SchemaUtil::isValidVid(dstVal)) {
             return Value::kNullBadType;
         }
-        edge.dst = dst.getStr();
+        edge.dst = dstVal;
 
         auto rank = getEdgeProp(edgeName, kRank);
         if (!rank.isInt()) {

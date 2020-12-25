@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
 Feature: Integer Vid Shortest Path
 
   Background: Prepare space
@@ -319,7 +318,7 @@ Feature: Integer Vid Shortest Path
       """
     Then the result should be, in any order, with relax comparison:
       | path                                        |
-      | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
+      | <("Tony Parker")-[:like@0]->("Tim Duncan")> |
 
   Scenario: Integer Vid [4] Shortest Path With Limit
     When executing query:

@@ -1,4 +1,3 @@
-@skip
 Feature: Fetch Int Vid Edges
 
   Background: Prepare space
@@ -76,6 +75,7 @@ Feature: Fetch Int Vid Edges
       | serve._src         | serve._dst    | serve._rank | serve.start_year | serve.end_year |
       | hash("Boris Diaw") | hash("Hawks") | 0           | 2003             | 2005           |
 
+  @skip
   Scenario: [8] Fetch prop works with uuid
     When executing query:
       """
@@ -112,6 +112,7 @@ Feature: Fetch Int Vid Edges
       | serve._src         | serve._dst    | serve._rank | serve.start_year | serve.end_year |
       | hash("Boris Diaw") | hash("Hawks") | 0           | 2003             | 2005           |
 
+  @skip
   Scenario: [12] Fetch prop works with uuid, but without YIELD
     When executing query:
       """
@@ -212,6 +213,7 @@ Feature: Fetch Int Vid Edges
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year |
 
+  @skip
   Scenario: [23] Fetch prop Semantic Error
     When executing query:
       """

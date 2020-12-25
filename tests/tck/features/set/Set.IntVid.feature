@@ -2,11 +2,12 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
-Feature: Set Test
+Feature: Integer Vid Set Test
 
-  Scenario: Union All
-    Given a graph with space named "nba"
+  Background: Prepare space
+    Given a graph with space named "nba_int_vid"
+
+  Scenario: Integer Vid Union All
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER serve YIELD $^.player.name, serve.start_year, $$.team.name
@@ -126,8 +127,7 @@ Feature: Set Test
       | "Tony Parker" | 1999  |
       | "Tony Parker" | 2018  |
 
-  Scenario: Union Distinct
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Union Distinct
     When executing query:
       """
       (GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
@@ -155,8 +155,7 @@ Feature: Set Test
       | "Tony Parker"   | 1999             | "Spurs"      |
       | "Tony Parker"   | 2018             | "Hornets"    |
 
-  Scenario: Minus
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Minus
     When executing query:
       """
       (GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
@@ -168,8 +167,7 @@ Feature: Set Test
       | $^.player.name  | serve.start_year | $$.team.name |
       | "Manu Ginobili" | 2002             | "Spurs"      |
 
-  Scenario: Intersect
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Intersect
     When executing query:
       """
       (GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
@@ -182,8 +180,7 @@ Feature: Set Test
       | "Tony Parker"  | 1999             | "Spurs"      |
       | "Tony Parker"  | 2018             | "Hornets"    |
 
-  Scenario: Mix
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Mix
     When executing query:
       """
       (GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
@@ -199,8 +196,7 @@ Feature: Set Test
       | $^.player.name  | serve.start_year | $$.team.name |
       | "Manu Ginobili" | 2002             | "Spurs"      |
 
-  Scenario: Assign
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Assign
     When executing query:
       """
       $var = GO FROM hash("Tim Duncan") OVER serve YIELD $^.player.name, serve.start_year, $$.team.name
@@ -249,8 +245,7 @@ Feature: Set Test
       | "Tony Parker"       | 1999                  | "Spurs"           |
       | "Tony Parker"       | 2018                  | "Hornets"         |
 
-  Scenario: Empty Input
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Empty Input
     When executing query:
       """
       GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve.start_year, $$.team.name
@@ -277,8 +272,7 @@ Feature: Set Test
     Then the result should be, in any order:
       | $var.serve.start_year | $var.$$.team.name |
 
-  Scenario: Diffrent column
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Diffrent column
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER serve YIELD $^.player.name as name, $$.team.name as player
@@ -288,8 +282,7 @@ Feature: Set Test
       """
     Then a SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
 
-  Scenario: Pipe to a set op
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Pipe to a set op
     When executing query:
       """
       GO FROM 123 OVER like YIELD like._src as src, like._dst as dst
@@ -297,8 +290,7 @@ Feature: Set Test
       """
     Then a SemanticError should be raised at runtime: `$-.src', not exist prop `src'
 
-  Scenario: Non-existent props
-    Given a graph with space named "nba"
+  Scenario: Integer Vid Non-existent props
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER serve YIELD $^.player.name, serve.start_year, $$.team.name

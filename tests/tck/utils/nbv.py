@@ -27,6 +27,7 @@ from nebula2.common.ttypes import (
 )
 
 Value.__hash__ = lambda self: self.value.__hash__()
+Pattern = type(re.compile(r"^"))
 
 states = (
     ('sstr', 'exclusive'),
@@ -250,7 +251,18 @@ def p_expr(p):
              | path
              | function
     '''
-    p[0] = p[1]
+    if isinstance(p[1], Value) or isinstance(p[1], Pattern):
+        p[0] = p[1]
+    elif type(p[1]) in [str, bytes]:
+        p[0] = Value(sVal=p[1])
+    elif type(p[1]) is int:
+        p[0] = Value(iVal=p[1])
+    elif type(p[1]) is bool:
+        p[0] = Value(bVal=p[1])
+    elif type(p[1]) is float:
+        p[0] = Value(fVal=p[1])
+    else:
+        raise ValueError(f"Invalid value type: {type(p[1])}")
 
 
 def p_list(p):
@@ -327,11 +339,13 @@ def p_vid(p):
             | function
     '''
     p[0] = p[1]
-    if isinstance(p[0], Value):
-        if p[0].getType() == Value.SVAL:
-            p[0] = p[0].get_sVal()
+    if not isinstance(p[0], Value):
+        if type(p[0]) in [str, bytes]:
+            p[0] = Value(sVal=p[0])
+        elif type(p[0]) is int:
+            p[0] = Value(iVal=p[0])
         else:
-            p[0] = p[0].get_iVal()
+            raise ValueError(f"Invalid vid type: {type(p[0])}")
 
 
 def p_vertex(p):

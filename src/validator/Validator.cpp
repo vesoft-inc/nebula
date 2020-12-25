@@ -306,6 +306,9 @@ Status Validator::validate() {
         VLOG(1) << "Space chosen, name: " << space_.spaceDesc.space_name << " id: " << space_.id;
     }
 
+    auto vidType = space_.spaceDesc.vid_type.get_type();
+    vidType_ = SchemaUtil::propTypeToValueType(vidType);
+
     NG_RETURN_IF_ERROR(validateImpl());
 
     // Check for duplicate reference column names in pipe or var statement
