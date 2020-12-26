@@ -13,6 +13,7 @@
 #include "common/hdfs/HdfsHelper.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
+#include "common/time/TimeUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -265,6 +266,14 @@ int main(int argc, char *argv[]) {
 
     // Setup the signal handlers
     status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    // Initialize the global timezone, it's only used for datetime type compute
+    // won't affect the process timezone.
+    status = nebula::time::TimeUtils::initializeGlobalTimezone();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
