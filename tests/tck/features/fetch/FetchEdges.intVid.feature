@@ -1,6 +1,6 @@
 Feature: Fetch Int Vid Edges
 
-  Background: Prepare space
+  Background:
     Given a graph with space named "nba_int_vid"
 
   Scenario: [1] Base fetch prop on an edge and return the specific properties

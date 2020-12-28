@@ -57,4 +57,11 @@ Feature: Feature examples
       SHOW SPACES
       """
     Then the execution should be successful
+    When executing query:
+      """
+      YIELD 1 AS id, 2 AS id
+      """
+    Then the result should be, in any order:
+      | id | id |
+      | 1  | 2  |
     Then drop the used space

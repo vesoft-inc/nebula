@@ -1,6 +1,6 @@
 Feature: Lookup with yield
 
-  Background: Prepare space
+  Background:
     Given a graph with space named "nba"
 
   Scenario: [1] tag with yield

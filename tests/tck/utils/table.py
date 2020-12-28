@@ -29,11 +29,8 @@ def _parse_value(cell: str, variables: dict) -> Value:
 def table(text):
     lines = list(csv.reader(io.StringIO(text), delimiter="|"))
     header = lines[0][1:-1]
-    column_names = list(map(lambda x: x.strip(), header))
-    table = [{
-        column_name: cell.strip()
-        for (column_name, cell) in zip(column_names, line[1:-1])
-    } for line in lines[1:]]
+    column_names = [column.strip() for column in header]
+    table = [[cell.strip() for cell in line[1:-1]] for line in lines[1:]]
 
     return {
         "column_names": column_names,
@@ -43,10 +40,11 @@ def table(text):
 
 def dataset(string_table, variables: dict):
     ds = DataSet()
-    ds.column_names = string_table['column_names']
+    column_names = string_table['column_names']
+    ds.column_names = column_names
     ds.rows = [
         Row(values=[
-            _parse_value(row[column], variables) for column in ds.column_names
+            _parse_value(row[i], variables) for i in range(len(column_names))
         ]) for row in string_table['rows']
     ]
     return ds

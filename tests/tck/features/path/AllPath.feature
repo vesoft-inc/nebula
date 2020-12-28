@@ -4,7 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: All Path
 
-  Background: Prepare space
+  Background:
     Given a graph with space named "nba"
 
   Scenario: [1] ALL Path

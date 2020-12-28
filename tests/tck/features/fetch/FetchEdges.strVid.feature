@@ -1,6 +1,6 @@
 Feature: Fetch String Vid Edges
 
-  Background: Prepare space
+  Background:
     Given a graph with space named "nba"
 
   Scenario: [1] Base fetch prop on an edge and return the specific properties

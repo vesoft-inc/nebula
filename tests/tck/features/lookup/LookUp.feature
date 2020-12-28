@@ -1,14 +1,14 @@
 Feature: LookUpTest_Vid_String
 
-  Scenario: LookupTest SimpleVertex
+  Background:
     Given an empty graph
     And create a space with following options:
       | partition_num  | 9                |
       | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+      | vid_type       | FIXED_STRING(32) |
+
+  Scenario: LookupTest SimpleVertex
+    Given having executed:
       """
       CREATE TAG lookup_tag_1(col1 int, col2 int, col3 int);
       CREATE TAG INDEX t_index_1 ON lookup_tag_1(col1, col2, col3);
@@ -50,14 +50,7 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest SimpleEdge
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE EDGE lookup_edge_1(col1 int, col2 int, col3 int);
       CREATE EDGE INDEX e_index_1 ON lookup_edge_1(col1, col2, col3);
@@ -99,14 +92,7 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest VertexIndexHint
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE TAG lookup_tag_1(col1 int, col2 int, col3 int);
       CREATE TAG lookup_tag_2(col1 bool, col2 int, col3 double, col4 bool);
@@ -140,14 +126,7 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest EdgeIndexHint
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE EDGE lookup_edge_1(col1 int, col2 int, col3 int);
       CREATE EDGE lookup_edge_2(col1 bool,col2 int, col3 double, col4 bool);
@@ -180,14 +159,7 @@ Feature: LookUpTest_Vid_String
 
   @skip
   Scenario: LookupTest VertexConditionScan
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE TAG lookup_tag_2(col1 bool, col2 int, col3 double, col4 bool);
       CREATE TAG INDEX t_index_2 ON lookup_tag_2(col2, col3, col4);
@@ -333,14 +305,7 @@ Feature: LookUpTest_Vid_String
 
   @skip
   Scenario: LookupTest EdgeConditionScan
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE EDGE lookup_edge_2(col1 bool,col2 int, col3 double, col4 bool);
       CREATE EDGE INDEX e_index_2 ON lookup_edge_2(col2, col3, col4);
@@ -480,14 +445,7 @@ Feature: LookUpTest_Vid_String
 
   @skip
   Scenario: LookupTest FunctionExprTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And having executed:
+    Given having executed:
       """
       CREATE TAG lookup_tag_2(col1 bool, col2 int, col3 double, col4 bool);
       CREATE TAG INDEX t_index_2 ON lookup_tag_2(col2, col3, col4);
@@ -559,13 +517,13 @@ Feature: LookUpTest_Vid_String
       | VertexID |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 != (true and true)
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 != (true AND true)
       """
     Then the result should be, in any order:
       | VertexID |
     When executing query:
       """
-      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == (true and true)
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col4 == (true AND true)
       """
     Then the result should be, in any order:
       | VertexID |
@@ -613,32 +571,19 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest YieldClauseTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    And wait 6 seconds
-    When executing query:
+    Given having executed:
       """
       CREATE TAG student(number int, age int)
       """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX student_index ON student(number, age)
       """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG teacher(number int, age int)
       """
     And wait 6 seconds
-    Then the execution should be successful
     When executing query:
       """
       INSERT VERTEX student(number, age), teacher(number, age)  VALUES
@@ -650,17 +595,17 @@ Feature: LookUpTest_Vid_String
       """
       LOOKUP ON student WHERE student.number == 1 YIELD teacher.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime.
     When executing query:
       """
-      LOOKUP ON student WHERE student.number == 1 YIELD teacher.age as student_name
+      LOOKUP ON student WHERE student.number == 1 YIELD teacher.age AS student_name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime.
     When executing query:
       """
       LOOKUP ON student WHERE teacher.number == 1 YIELD student.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime.
     When executing query:
       """
       LOOKUP ON student WHERE student.number == 1 YIELD student.age
@@ -671,209 +616,169 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest OptimizerTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    When executing query:
+    Given having executed:
       """
       CREATE TAG t1(c1 int, c2 int, c3 int, c4 int, c5 int)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i1 ON t1(c1, c2)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i2 ON t1(c2, c1)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i3 ON t1(c3)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i4 ON t1(c1, c2, c3, c4)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i5 ON t1(c1, c2, c3, c5)
       """
     And wait 6 seconds
-    Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c1 == 1
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      LOOKUP ON t1 where t1.c1 == 1 and t1.c2 > 1
+      LOOKUP ON t1 WHERE t1.c1 == 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c1 > 1 and t1.c2 == 1
+      LOOKUP ON t1 WHERE t1.c1 == 1 AND t1.c2 > 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c1 > 1 and t1.c2 == 1 and  t1.c3 == 1
+      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 == 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c3 > 1
+      LOOKUP ON t1 WHERE t1.c1 > 1 AND t1.c2 == 1 AND  t1.c3 == 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c3 > 1 and t1.c1 >1
+      LOOKUP ON t1 WHERE t1.c3 > 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1 WHERE t1.c4 > 1
+      LOOKUP ON t1 WHERE t1.c3 > 1 AND t1.c1 >1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.c4 > 1
       """
     Then a ExecutionError should be raised at runtime: IndexNotFound: No valid index found
     When executing query:
       """
-      LOOKUP on t1 WHERE t1.c2 > 1 and t1.c3 > 1
+      LOOKUP ON t1 WHERE t1.c2 > 1 AND t1.c3 > 1
       """
     Then a ExecutionError should be raised at runtime: IndexNotFound: No valid index found
     When executing query:
       """
-      LOOKUP ON t1 where t1.c2 > 1 and t1.c1 != 1
+      LOOKUP ON t1 WHERE t1.c2 > 1 AND t1.c1 != 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP ON t1 where t1.c2 != 1
+      LOOKUP ON t1 WHERE t1.c2 != 1
       """
     Then the execution should be successful
     Then drop the used space
 
   Scenario: LookupTest OptimizerWithStringFieldTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    When executing query:
+    Given having executed:
       """
       CREATE TAG t1_str(c1 int, c2 int, c3 string, c4 string)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i1_str ON t1_str(c1, c2)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i2_str ON t1_str(c4(30))
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i3_str ON t1_str(c3(30), c1)
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i4_str ON t1_str(c3(30), c4(30))
       """
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i5_str ON t1_str(c1, c2, c3(30), c4(30))
       """
     And wait 6 seconds
-    Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE  t1_str.c1 == 1
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      LOOKUP on t1_str WHERE  t1_str.c1 == 1 and t1_str.c2 >1
+      LOOKUP ON t1_str WHERE t1_str.c1 == 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE  t1_str.c3 == "a"
+      LOOKUP ON t1_str WHERE t1_str.c1 == 1 AND t1_str.c2 >1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE  t1_str.c4 == "a"
+      LOOKUP ON t1_str WHERE t1_str.c3 == "a"
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE t1_str.c3 == "a"  and t1_str.c4 == "a"
+      LOOKUP ON t1_str WHERE t1_str.c4 == "a"
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE t1_str.c3 == "a"  and t1_str.c1 == 1
+      LOOKUP ON t1_str WHERE t1_str.c3 == "a"  AND t1_str.c4 == "a"
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE t1_str.c3 == "a" and t1_str.c2 == 1  and t1_str.c1 == 1
+      LOOKUP ON t1_str WHERE t1_str.c3 == "a"  AND t1_str.c1 == 1
       """
     Then the execution should be successful
     When executing query:
       """
-      LOOKUP on t1_str WHERE t1_str.c4 == "a" and t1_str.c3 == "a" and t1_str.c2 == 1  and t1_str.c1 == 1
+      LOOKUP ON t1_str WHERE t1_str.c3 == "a" AND t1_str.c2 == 1  AND t1_str.c1 == 1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1_str WHERE t1_str.c4 == "a" AND t1_str.c3 == "a" AND t1_str.c2 == 1  AND t1_str.c1 == 1
       """
     Then the execution should be successful
     Then drop the used space
 
   Scenario: LookupTest StringFieldTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
-    When executing query:
+    Given having executed:
       """
       CREATE TAG tag_with_str(c1 int, c2 string, c3 string)
       """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i1_with_str ON tag_with_str(c1, c2(30))
       """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i2_with_str ON tag_with_str(c2(30), c3(30))
       """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
+    And having executed:
       """
       CREATE TAG INDEX i3_with_str ON tag_with_str(c1, c2(30), c3(30))
       """
     And wait 6 seconds
-    Then the execution should be successful
     When executing query:
       """
       INSERT VERTEX tag_with_str(c1, c2, c3) VALUES
@@ -894,27 +799,27 @@ Feature: LookUpTest_Vid_String
       | "1"      |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 and tag_with_str.c2 == "ccc"
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 AND tag_with_str.c2 == "ccc"
       """
     Then the result should be, in any order:
       | VertexID |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 and tag_with_str.c2 == "c1_row1"
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 1 AND tag_with_str.c2 == "c1_row1"
       """
     Then the result should be, in any order:
       | VertexID |
       | "1"      |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 and tag_with_str.c2 == "ab"
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 AND tag_with_str.c2 == "ab"
       """
     Then the result should be, in any order:
       | VertexID |
       | "5"      |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c2 == "abc" and tag_with_str.c3 == "abc"
+      LOOKUP ON tag_with_str WHERE tag_with_str.c2 == "abc" AND tag_with_str.c3 == "abc"
       """
     Then the result should be, in any order:
       | VertexID |
@@ -922,7 +827,7 @@ Feature: LookUpTest_Vid_String
       | "4"      |
     When executing query:
       """
-      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 and tag_with_str.c2 == "abca" and tag_with_str.c3 == "bc"
+      LOOKUP ON tag_with_str WHERE tag_with_str.c1 == 5 AND tag_with_str.c2 == "abca" AND tag_with_str.c3 == "bc"
       """
     Then the result should be, in any order:
       | VertexID |
@@ -930,30 +835,16 @@ Feature: LookUpTest_Vid_String
     Then drop the used space
 
   Scenario: LookupTest ConditionTest
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 9                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(30) |
-      | charset        | utf8             |
-      | collate        | utf8_bin         |
+    Given having executed:
+      """
+      CREATE TAG identity (BIRTHDAY int, NATION string, BIRTHPLACE_CITY string)
+      """
     And having executed:
-      """
-      CREATE SPACE IF NOT EXISTS lookup_space12(partition_num=3, replica_factor=1,vid_type=FIXED_STRING(30));
-      """
-    When executing query:
-      """
-      create tag identity (BIRTHDAY int, NATION string, BIRTHPLACE_CITY string)
-      """
-    And wait 6 seconds
-    Then the execution should be successful
-    When executing query:
       """
       CREATE TAG INDEX idx_identity_cname_birth_gender_nation_city
                     ON identity(BIRTHDAY, NATION(30), BIRTHPLACE_CITY(30))
       """
     And wait 6 seconds
-    Then the execution should be successful
     When executing query:
       """
       INSERT VERTEX identity (BIRTHDAY, NATION, BIRTHPLACE_CITY)
@@ -962,11 +853,8 @@ Feature: LookUpTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      lookup on identity where
-                     identity.NATION == "汉族" and
-                     identity.BIRTHDAY > 19620101 and
-                     identity.BIRTHDAY < 20021231 and
-                     identity.BIRTHPLACE_CITY == "bbb";
+      LOOKUP ON identity
+      WHERE identity.NATION == "汉族" AND identity.BIRTHDAY > 19620101 AND identity.BIRTHDAY < 20021231 AND identity.BIRTHPLACE_CITY == "bbb";
       """
     Then the result should be, in any order:
       | VertexID |

@@ -1,6 +1,6 @@
 Feature: Fetch String Vertices
 
-  Background: Prepare space
+  Background:
     Given a graph with space named "nba"
 
   Scenario: [1] Fetch prop on one tag of a vertex and return the specific properties

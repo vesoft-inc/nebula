@@ -4,9 +4,13 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Value parsing
 
-  Scenario: Parsing from text
-    Given A set of string:
-      | format                                               | type         |
+  Scenario Outline: Parsing from text
+    Given a string: <format>
+    When They are parsed as Nebula Value
+    Then The type of the parsed value should be <_type>
+
+    Examples:
+      | format                                               | _type        |
       | EMPTY                                                | EMPTY        |
       | NULL                                                 | NULL         |
       | NaN                                                  | NaN          |
@@ -52,5 +56,3 @@ Feature: Value parsing
       | <()-->()<--()>                                       | pVal         |
       | <('v1':t{})>                                         | pVal         |
       | <('v1':t{})-[:e1{}]->('v2':t{})<-[:e2{}]-('v3':t{})> | pVal         |
-    When They are parsed as Nebula Value
-    Then The type of the parsed value should be as expected

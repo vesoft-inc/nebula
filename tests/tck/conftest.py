@@ -30,6 +30,14 @@ from tests.tck.utils.nbv import murmurhash2
 
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
+example_pattern = re.compile(r"<(\w+)>")
+
+
+def normalize_ngql_for_outline_scenario(request, ngql):
+    for group in example_pattern.findall(ngql):
+        fixval = request.getfixturevalue(group)
+        ngql = ngql.replace(f"<{group}>", fixval)
+    return ngql
 
 
 @pytest.fixture
@@ -64,8 +72,9 @@ def empty_graph(session, graph_spaces):
 
 
 @given(parse("having executed:\n{query}"))
-def having_executed(query, session):
+def having_executed(query, session, request):
     ngql = " ".join(query.splitlines())
+    ngql = normalize_ngql_for_outline_scenario(request, ngql)
     response(session, ngql)
 
 
@@ -102,8 +111,9 @@ def import_csv_data(data, graph_spaces, session, pytestconfig):
 
 
 @when(parse("executing query:\n{query}"))
-def executing_query(query, graph_spaces, session):
+def executing_query(query, graph_spaces, session, request):
     ngql = " ".join(query.splitlines())
+    ngql = normalize_ngql_for_outline_scenario(request, ngql)
     graph_spaces['result_set'] = session.execute(ngql)
     graph_spaces['ngql'] = ngql
 
@@ -158,10 +168,8 @@ def cmp_dataset(graph_spaces,
 def define_list_var_alias(text, graph_spaces):
     tbl = table(text)
     graph_spaces["variables"] = {
-        column: "[" +
-        ",".join(filter(lambda x: x, [row.get(column)
-                                      for row in tbl['rows']])) + "]"
-        for column in tbl['column_names']
+        column: "[" + ",".join(row[i] for row in tbl['rows'] if row[i]) + "]"
+        for i, column in enumerate(tbl['column_names'])
     }
 
 
