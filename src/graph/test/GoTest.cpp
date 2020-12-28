@@ -3066,6 +3066,48 @@ TEST_P(GoTest, issueBackTrackOverlap) {
     }
 }
 
+TEST_P(GoTest, NStepQueryHangAndOOM) {
+    {
+        std::vector<std::tuple<VertexID>> expected = {
+                {players_["Tony Parker"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["LaMarcus Aldridge"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tony Parker"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tony Parker"].vid()},
+        };
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "GO 1 TO 3 STEPS FROM %ld OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "YIELD %ld as id "
+                        "| GO 1 TO 3 STEPS FROM $-.id OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "GO 1 TO 40 STEPS FROM %ld OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+    }
+}
+
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 
 }   // namespace graph

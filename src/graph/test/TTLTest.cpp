@@ -115,7 +115,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 100, ttl_col = row_timestamp";
+                               ") ttl_duration = 100, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"man", createTagStr},
         };
@@ -160,7 +160,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 0, ttl_col = row_timestamp";
+                               ") ttl_duration = 0, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
@@ -186,7 +186,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 0, ttl_col = row_timestamp";
+                               ") ttl_duration = 0, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"only_ttl_col", createTagStr},
         };
@@ -210,7 +210,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 50, ttl_col = row_timestamp";
+                               ") ttl_duration = 50, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
@@ -241,11 +241,16 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 200, ttl_col = row_timestamp";
+                               ") ttl_duration = 200, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+
+        // check the createTagStr can be execute
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, client->execute("DROP TAG woman", resp));
+
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, client->execute(createTagStr, resp));
     }
     // When the column is as TTL column, droping column
     {
@@ -288,7 +293,7 @@ TEST_F(TTLTest, schematest) {
                                "  `email` string,\n"
                                "  `age` int,\n"
                                "  `gender` string\n"
-                               ") ttl_duration = 100, ttl_col = age";
+                               ") ttl_duration = 100, ttl_col = \"age\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"woman", createTagStr},
         };
@@ -399,11 +404,16 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 100, ttl_col = row_timestamp";
+                               ") ttl_duration = 100, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work1", createEdgeStr},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+
+        // check the createEdgeStr can be execute
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, client->execute("DROP EDGE work1", resp));
+
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, client->execute(createEdgeStr, resp));
     }
 
     // Disable implicit ttl mode
@@ -442,7 +452,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `start_time` timestamp\n"
-                               ") ttl_duration = 0, ttl_col = start_time";
+                               ") ttl_duration = 0, ttl_col = \"start_time\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work2", createEdgeStr},
         };
@@ -468,7 +478,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `row_timestamp` timestamp\n"
-                               ") ttl_duration = 0, ttl_col = row_timestamp";
+                               ") ttl_duration = 0, ttl_col = \"row_timestamp\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"edge_only_ttl_col", createEdgeStr},
         };
@@ -493,7 +503,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `start_time` timestamp\n"
-                               ") ttl_duration = 50, ttl_col = start_time";
+                               ") ttl_duration = 50, ttl_col = \"start_time\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work2", createEdgeStr},
         };
@@ -524,7 +534,7 @@ TEST_F(TTLTest, schematest) {
                                "  `age` int,\n"
                                "  `gender` string,\n"
                                "  `start_time` timestamp\n"
-                               ") ttl_duration = 200, ttl_col = start_time";
+                               ") ttl_duration = 200, ttl_col = \"start_time\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work2", createEdgeStr},
         };
@@ -570,7 +580,7 @@ TEST_F(TTLTest, schematest) {
                                "  `email` string,\n"
                                "  `age` int,\n"
                                "  `gender` string\n"
-                               ") ttl_duration = 100, ttl_col = age";
+                               ") ttl_duration = 100, ttl_col = \"age\"";
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"work2", createTagStr},
         };
@@ -1124,3 +1134,4 @@ TEST_F(TTLTest, Datatest) {
 
 }   // namespace graph
 }   // namespace nebula
+

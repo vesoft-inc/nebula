@@ -114,13 +114,6 @@ Status FetchVerticesExecutor::prepareTags() {
             return tagsStatus.status();
         }
         for (auto& tagName : std::move(tagsStatus).value()) {
-            auto tagIdStatus = ectx()->schemaManager()->toTagID(spaceId_, tagName);
-            if (!tagIdStatus.ok()) {
-                return tagIdStatus.status();
-            }
-            auto tagId = tagIdStatus.value();
-            tagNames_.push_back(tagName);
-            tagIds_.push_back(tagId);
             auto result = tagNameSet_.emplace(tagName);
             if (!result.second) {
                 return Status::Error(folly::sformat("tag({}) was dup", tagName));
@@ -344,7 +337,7 @@ void FetchVerticesExecutor::fetchVertices() {
             ectx()->addWarningMsg("Fetch vertices executor was partially performed");
         }
         processResult(std::move(result));
-   };
+    };
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Get tag props exception: %s.", e.what().c_str());
         LOG(ERROR) << msg;
@@ -435,7 +428,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 yieldColsHolder_.addColumn(column);
                 yields_.emplace_back(column);
                 colNames_.emplace_back(expr->toString());
-                colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+                colTypes_.emplace_back(iter->getType().type);
             }
         }
     }

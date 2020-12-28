@@ -117,7 +117,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER
-%token KW_SHORTEST KW_PATH
+%token KW_SHORTEST KW_PATH KW_NOLOOP
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
@@ -310,6 +310,7 @@ unreserved_keyword
      | KW_STORAGE            { $$ = new std::string("storage"); }
      | KW_ALL                { $$ = new std::string("all"); }
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
+     | KW_NOLOOP             { $$ = new std::string("noloop"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
      | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
@@ -797,8 +798,13 @@ group_clause
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
-		s->setWhereClause($3);
-		$$ = s;
+        s->setWhereClause($3);
+        $$ = s;
+    }
+    | KW_YIELD KW_DISTINCT yield_columns where_clause {
+        auto *s = new YieldSentence($3, true);
+        s->setWhereClause($4);
+        $$ = s;
     }
     ;
 
@@ -945,7 +951,7 @@ fetch_sentence
 find_path_sentence
     : KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(false);
+        auto *s = new FindPathSentence(false, false);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
@@ -955,7 +961,7 @@ find_path_sentence
     }
     | KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(true);
+        auto *s = new FindPathSentence(true, true);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
@@ -963,6 +969,16 @@ find_path_sentence
         /* s->setWhere($8); */
         $$ = s;
     }
+    | KW_FIND KW_NOLOOP KW_PATH from_clause to_clause over_clause find_path_upto_clause
+        /* where_clause */ {
+            auto *s = new FindPathSentence(false, true);
+            s->setFrom($4);
+            s->setTo($5);
+            s->setOver($6);
+            s->setStep($7);
+            /* s->setWhere($8); */
+            $$ = s;
+        }
     ;
 
 find_path_upto_clause
