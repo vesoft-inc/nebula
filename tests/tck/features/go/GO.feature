@@ -1593,3 +1593,12 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | COUNT($-.id) |
       | 4            |
+
+  Scenario: Bugfix filter not pushdown
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like WHERE like._dst == "Tony Parker" | limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst     |
+      | "Tony Parker" |

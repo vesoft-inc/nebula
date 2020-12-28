@@ -90,6 +90,15 @@ protected:
         : SingleInputNode(qctx, kind, input), space_(space) {}
 
 protected:
+    void clone(const Explore& e) {
+        SingleInputNode::clone(e);
+        space_ = e.space_;
+        dedup_ = e.dedup_;
+        limit_ = e.limit_;
+        filter_ = e.filter_;
+        orderBy_ = e.orderBy_;
+    }
+
     GraphSpaceID space_;
     bool dedup_{false};
     int64_t limit_{std::numeric_limits<int64_t>::max()};
@@ -215,6 +224,8 @@ private:
         : Explore(qctx, Kind::kGetNeighbors, input, space) {}
 
 private:
+    void clone(const GetNeighbors& g);
+
     Expression*                                  src_{nullptr};
     std::vector<EdgeType>                        edgeTypes_;
     storage::cpp2::EdgeDirection edgeDirection_{storage::cpp2::EdgeDirection::OUT_EDGE};
@@ -502,6 +513,8 @@ private:
         isEmptyResultSet_ = isEmptyResultSet;
     }
 
+    void clone(const IndexScan &g);
+
 private:
     IndexQueryCtx                                 contexts_;
     IndexReturnCols                               returnCols_;
@@ -617,6 +630,8 @@ private:
     Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
       : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) { }
 
+    void clone(const Project &p);
+
 private:
     YieldColumns*               cols_{nullptr};
 };
@@ -693,6 +708,8 @@ private:
         offset_ = offset;
         count_ = count;
     }
+
+    void clone(const Limit &l);
 
 private:
     int64_t     offset_{-1};

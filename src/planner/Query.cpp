@@ -29,39 +29,7 @@ std::unique_ptr<PlanNodeDescription> Explore::explain() const {
 
 GetNeighbors* GetNeighbors::clone(QueryContext* qctx) const {
     auto newGN = GetNeighbors::make(qctx, nullptr, space_);
-    newGN->setSrc(qctx->objPool()->add(src_->clone().release()));
-    newGN->setEdgeTypes(edgeTypes_);
-    newGN->setEdgeDirection(edgeDirection_);
-    newGN->setDedup(dedup_);
-    newGN->setRandom(random_);
-    newGN->setLimit(limit_);
-    newGN->setOrderBy(orderBy_);
-    newGN->setInputVar(inputVar());
-    newGN->setOutputVar(outputVar());
-
-    if (vertexProps_) {
-        auto vertexProps = *vertexProps_;
-        auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
-        newGN->setVertexProps(std::move(vertexPropsPtr));
-    }
-
-    if (edgeProps_) {
-        auto edgeProps = *edgeProps_;
-        auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-        newGN->setEdgeProps(std::move(edgePropsPtr));
-    }
-
-    if (statProps_) {
-        auto statProps = *statProps_;
-        auto statPropsPtr = std::make_unique<decltype(statProps)>(std::move(statProps));
-        newGN->setStatProps(std::move(statPropsPtr));
-    }
-
-    if (exprs_) {
-        auto exprs = *exprs_;
-        auto exprsPtr = std::make_unique<decltype(exprs)>(exprs);
-        newGN->setExprs(std::move(exprsPtr));
-    }
+    newGN->clone(*this);
     return newGN;
 }
 
@@ -83,6 +51,38 @@ std::unique_ptr<PlanNodeDescription> GetNeighbors::explain() const {
     return desc;
 }
 
+void GetNeighbors::clone(const GetNeighbors& g) {
+    Explore::clone(g);
+    setSrc(qctx_->objPool()->add(g.src_->clone().release()));
+    setEdgeTypes(g.edgeTypes_);
+    setEdgeDirection(g.edgeDirection_);
+    setRandom(g.random_);
+    if (g.vertexProps_) {
+        auto vertexProps = *g.vertexProps_;
+        auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+        setVertexProps(std::move(vertexPropsPtr));
+    }
+
+    if (g.edgeProps_) {
+        auto edgeProps = *g.edgeProps_;
+        auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+        setEdgeProps(std::move(edgePropsPtr));
+    }
+
+    if (g.statProps_) {
+        auto statProps = *g.statProps_;
+        auto statPropsPtr = std::make_unique<decltype(statProps)>(std::move(statProps));
+        setStatProps(std::move(statPropsPtr));
+    }
+
+    if (g.exprs_) {
+        auto exprs = *g.exprs_;
+        auto exprsPtr = std::make_unique<decltype(exprs)>(exprs);
+        setExprs(std::move(exprsPtr));
+    }
+}
+
+
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
     auto desc = Explore::explain();
     addDescription("src", src_ ? src_->toString() : "", desc.get());
@@ -103,12 +103,23 @@ std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
 }
 
 IndexScan* IndexScan::clone(QueryContext* qctx) const {
-    auto ctx = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
-    auto returnCols = std::make_unique<std::vector<std::string>>(*returnColumns());
     auto* scan = IndexScan::make(
-        qctx, nullptr, space(), std::move(ctx), std::move(returnCols), isEdge(), schemaId());
-    scan->setOutputVar(this->outputVar());
+        qctx, nullptr, space(), nullptr, nullptr, isEdge(), schemaId());
+    scan->clone(*this);
     return scan;
+}
+
+void IndexScan::clone(const IndexScan &g) {
+    Explore::clone(g);
+    if (g.contexts_ != nullptr) {
+        contexts_ = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>(*g.contexts_);
+    }
+    if (g.returnCols_ != nullptr) {
+        returnCols_ = std::make_unique<std::vector<std::string>>(*g.returnCols_);
+    }
+    isEdge_ = g.isEdge_;
+    schemaId_ = g.schemaId_;
+    isEmptyResultSet_ = g.isEmptyResultSet_;
 }
 
 std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
@@ -127,15 +138,17 @@ std::unique_ptr<PlanNodeDescription> Filter::explain() const {
 }
 
 Project* Project::clone(QueryContext* qctx) const {
-    auto cols = qctx->objPool()->add(new YieldColumns());
-    for (auto col : columns()->columns()) {
-        cols->addColumn((col->clone()).release());
-    }
-
-    auto newProj = Project::make(qctx, nullptr, cols);
-    newProj->setInputVar(inputVar());
-    newProj->setOutputVar(outputVar());
+    auto newProj = Project::make(qctx, nullptr, nullptr);
+    newProj->clone(*this);
     return newProj;
+}
+
+void Project::clone(const Project &p) {
+    SingleInputNode::clone(p);
+    cols_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    for (const auto &col : p.columns()->columns()) {
+        cols_->addColumn(col->clone().release());
+    }
 }
 
 std::unique_ptr<PlanNodeDescription> Project::explain() const {
@@ -152,9 +165,14 @@ std::unique_ptr<PlanNodeDescription> Sort::explain() const {
 
 Limit* Limit::clone(QueryContext* qctx) const {
     auto newLimit = Limit::make(qctx, nullptr, offset_, count_);
-    newLimit->setInputVar(inputVar());
-    newLimit->setOutputVar(outputVar());
+    newLimit->clone(*this);
     return newLimit;
+}
+
+void Limit::clone(const Limit &l) {
+    SingleInputNode::clone(l);
+    offset_ = l.offset_;
+    count_ = l.count_;
 }
 
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
