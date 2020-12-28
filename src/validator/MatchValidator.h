@@ -41,7 +41,8 @@ private:
     Status validateStepRange(const MatchStepRange *range) const;
 
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
-                                        const MapExpression *map) const;
+                                        const MapExpression *map,
+                                        const std::string &label = "") const;
 
     template <typename T>
     T* saveObject(T *obj) const {

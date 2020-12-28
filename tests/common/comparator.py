@@ -292,13 +292,20 @@ class DataSetComparator:
                 return False
         return True
 
+    def _get_map_value_by_key(self, key: bytes,
+                             kv: Dict[Union[str, bytes], Value]):
+        for k, v in kv.items():
+            if key == self.bstr(k):
+                return True, v
+        return False, None
+
     def compare_map(self, lhs: Dict[bytes, Value], rhs: KV):
         if len(lhs) != len(rhs):
             return False
         for lkey, lvalue in lhs.items():
-            if lkey not in rhs:
+            found, rvalue = self._get_map_value_by_key(lkey, rhs)
+            if not found:
                 return False
-            rvalue = rhs[lkey]
             if not self.compare_value(lvalue, rvalue):
                 return False
         return True

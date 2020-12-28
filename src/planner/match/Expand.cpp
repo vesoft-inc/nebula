@@ -127,10 +127,18 @@ Status Expand::expandStep(const EdgeInfo& edge,
 
     if (nodeFilter != nullptr) {
         auto filter = qctx->objPool()->add(nodeFilter->clone().release());
-        RewriteMatchLabelVisitor visitor([](const Expression* expr) {
-            DCHECK_EQ(expr->kind(), Expression::Kind::kLabelAttribute);
-            auto la = static_cast<const LabelAttributeExpression*>(expr);
-            return new AttributeExpression(new VertexExpression(), la->right()->clone().release());
+        RewriteMatchLabelVisitor visitor(
+            [](const Expression* expr) -> Expression *{
+            DCHECK(expr->kind() == Expression::Kind::kLabelAttribute ||
+                expr->kind() == Expression::Kind::kLabel);
+            // filter prop
+            if (expr->kind() == Expression::Kind::kLabelAttribute) {
+                auto la = static_cast<const LabelAttributeExpression*>(expr);
+                return new AttributeExpression(
+                    new VertexExpression(), la->right()->clone().release());
+            }
+            // filter tag
+            return new VertexExpression();
         });
         filter->accept(&visitor);
         auto filterNode = Filter::make(matchCtx_->qctx, root, filter);

@@ -126,6 +126,10 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
             auto result = makeSubFilter(*alias, props);
             NG_RETURN_IF_ERROR(result);
             filter = result.value();
+        } else if (label != nullptr) {
+            auto result = makeSubFilter(*alias, props, *label);
+            NG_RETURN_IF_ERROR(result);
+            filter = result.value();
         }
         nodeInfos[i].anonymous = anonymous;
         nodeInfos[i].label = label;
@@ -384,18 +388,32 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 
 StatusOr<Expression*>
 MatchValidator::makeSubFilter(const std::string &alias,
-                              const MapExpression *map) const {
+                              const MapExpression *map,
+                              const std::string& label) const {
+    // Node has tag without property
+    if (!label.empty() && map == nullptr) {
+        auto *left = new ConstantExpression(label);
+
+        auto* args = new ArgumentList();
+        args->addArgument(std::make_unique<LabelExpression>(alias));
+        auto *right = new FunctionCallExpression(
+                    new std::string("tags"),
+                    args);
+        Expression *root = new RelationalExpression(Expression::Kind::kRelIn, left, right);
+
+        return saveObject(root);
+    }
+
     DCHECK(map != nullptr);
     auto &items = map->items();
     DCHECK(!items.empty());
-    Expression *root = nullptr;
 
     // TODO(dutor) Check if evaluable and evaluate
     if (items[0].second->kind() != Expression::Kind::kConstant) {
         return Status::SemanticError("Props must be constant: `%s'",
                 items[0].second->toString().c_str());
     }
-    root = new RelationalExpression(Expression::Kind::kRelEQ,
+    Expression *root = new RelationalExpression(Expression::Kind::kRelEQ,
             new LabelAttributeExpression(
                 new LabelExpression(alias),
                 new ConstantExpression(*items[0].first)),
@@ -414,9 +432,7 @@ MatchValidator::makeSubFilter(const std::string &alias,
         root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
     }
 
-    saveObject(root);
-
-    return root;
+    return saveObject(root);
 }
 }   // namespace graph
 }   // namespace nebula
