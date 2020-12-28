@@ -290,7 +290,8 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
     auto offset = headerLen_ + numNullBytes_ + field->offset();
     switch (field->type()) {
         case meta::cpp2::PropertyType::INT8: {
-            if (v > 127 || v < static_cast<int8_t>(0x80)) {
+            if (v > std::numeric_limits<int8_t>::max() ||
+                v < std::numeric_limits<int8_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int8_t iv = v;
@@ -298,7 +299,8 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT16: {
-            if (v > 0x7FFF || v < static_cast<int16_t>(0x8000)) {
+            if (v > std::numeric_limits<int16_t>::max() ||
+                v < std::numeric_limits<int16_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int16_t iv = v;
@@ -306,7 +308,8 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT32: {
-            if (v > 0x7FFFFFFF || v < static_cast<int32_t>(0x80000000)) {
+            if (v > std::numeric_limits<int32_t>::max() ||
+                v < std::numeric_limits<int32_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int32_t iv = v;
@@ -314,7 +317,8 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT64: {
-            if (v > 0x7FFFFFFFFFFFFFFFL || v < static_cast<int64_t>(0x8000000000000000L)) {
+            if (v > std::numeric_limits<int64_t>::max() ||
+                v < std::numeric_limits<int64_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int64_t iv = v;
@@ -346,7 +350,8 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
     auto offset = headerLen_ + numNullBytes_ + field->offset();
     switch (field->type()) {
         case meta::cpp2::PropertyType::INT8: {
-            if (v > 127 || v < static_cast<int8_t>(0x80)) {
+            if (v > std::numeric_limits<int8_t>::max() ||
+                v < std::numeric_limits<int8_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int8_t iv = v;
@@ -354,7 +359,8 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT16: {
-            if (v > 0x7FFF || v < static_cast<int16_t>(0x8000)) {
+            if (v > std::numeric_limits<int16_t>::max() ||
+                v < std::numeric_limits<int16_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int16_t iv = v;
@@ -362,7 +368,8 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT32: {
-            if (v > 0x7FFFFFFF || v < static_cast<int32_t>(0x80000000)) {
+            if (v > std::numeric_limits<int32_t>::max() ||
+                v < std::numeric_limits<int32_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int32_t iv = v;
@@ -370,7 +377,8 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT64: {
-            if (v > 0x7FFFFFFFFFFFFFFFL || v < static_cast<int64_t>(0x8000000000000000L)) {
+            if (v > std::numeric_limits<int64_t>::max() ||
+                v < std::numeric_limits<int64_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int64_t iv = v;
@@ -378,6 +386,10 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::FLOAT: {
+            if (v > std::numeric_limits<float>::max() ||
+                v < std::numeric_limits<float>::lowest()) {
+                return WriteResult::OUT_OF_RANGE;
+            }
             float fv = v;
             memcpy(&buf_[offset], reinterpret_cast<void*>(&fv), sizeof(float));
             break;
@@ -464,7 +476,8 @@ WriteResult RowWriterV2::write(ssize_t index, int16_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT8: {
-            if (v > 0x7F || v < -0x7F) {
+            if (v > std::numeric_limits<int8_t>::max() ||
+                v < std::numeric_limits<int8_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int8_t iv = v;
@@ -520,7 +533,8 @@ WriteResult RowWriterV2::write(ssize_t index, int32_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT8: {
-            if (v > 0x7F || v < -0x7F) {
+            if (v > std::numeric_limits<int8_t>::max() ||
+                v < std::numeric_limits<int8_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int8_t iv = v;
@@ -528,7 +542,8 @@ WriteResult RowWriterV2::write(ssize_t index, int32_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT16: {
-            if (v > 0x7FFF || v < -0x7FFF) {
+            if (v > std::numeric_limits<int16_t>::max() ||
+                v < std::numeric_limits<int16_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int16_t iv = v;
@@ -589,7 +604,8 @@ WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT8: {
-            if (v > 0x7F || v < -0x7F) {
+            if (v > std::numeric_limits<int8_t>::max() ||
+                v < std::numeric_limits<int8_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int8_t iv = v;
@@ -597,7 +613,8 @@ WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT16: {
-            if (v > 0x7FFF || v < -0x7FFF) {
+            if (v > std::numeric_limits<int16_t>::max() ||
+                v < std::numeric_limits<int16_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int16_t iv = v;
@@ -605,7 +622,8 @@ WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
             break;
         }
         case meta::cpp2::PropertyType::INT32: {
-            if (v > 0x7FFFFFFF || v < -0x7FFFFFFF) {
+            if (v > std::numeric_limits<int32_t>::max() ||
+                v < std::numeric_limits<int32_t>::min()) {
                 return WriteResult::OUT_OF_RANGE;
             }
             int32_t iv = v;
