@@ -973,6 +973,14 @@ TEST_F(YieldTest, WithComment) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, FIX_BUG) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD !(1/0)", resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 
