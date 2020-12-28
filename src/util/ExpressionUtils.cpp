@@ -125,6 +125,7 @@ std::unique_ptr<Expression> ExpressionUtils::expandExpr(const Expression *expr) 
             return expr->clone();
         }
     }
+    DCHECK_GT(target.size(), 0);
     if (target.size() == 1) {
         if (target[0]->kind() == Expression::Kind::kLogicalAnd) {
             const auto *logic = static_cast<const LogicalExpression*>(target[0].get());
@@ -164,6 +165,8 @@ std::unique_ptr<Expression> ExpressionUtils::expandImplAnd(const Expression *exp
         subR.emplace_back(expandExpr(std::move(ops[1]).get()));
     }
 
+    DCHECK_GT(subL.size(), 0);
+    DCHECK_GT(subR.size(), 0);
     std::vector<std::unique_ptr<Expression>> target;
     for (auto& le : subL) {
         for (auto& re : subR) {
@@ -173,6 +176,7 @@ std::unique_ptr<Expression> ExpressionUtils::expandImplAnd(const Expression *exp
             target.emplace_back(std::move(l));
         }
     }
+    DCHECK_GT(target.size(), 0);
     if (target.size() == 1) {
         return std::move(target[0]);
     }
