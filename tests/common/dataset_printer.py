@@ -5,7 +5,7 @@
 
 from typing import List
 
-from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex
+from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex, Value
 
 
 class DataSetPrinter:
@@ -24,6 +24,8 @@ class DataSetPrinter:
             return f'"{self.sstr(v)}"'
         if type(v) == int:
             return f'{v}'
+        if isinstance(v, Value):
+            return self.vid(self.to_string(v))
         return str(v)
 
     def ds_to_string(self, ds: DataSet) -> str:

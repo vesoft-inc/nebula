@@ -158,6 +158,8 @@ class DataSetComparator:
         return False
 
     def compare_path(self, lhs: Path, rhs: Path):
+        if rhs.steps is None or len(rhs.steps) == 0:
+            return self.compare_node(lhs.src, rhs.src)
         if len(lhs.steps) != len(rhs.steps):
             return False
         lsrc, rsrc = lhs.src, rhs.src
