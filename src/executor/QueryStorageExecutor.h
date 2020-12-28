@@ -47,8 +47,15 @@ protected:
 
     Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) const {
         switch (code) {
-            case storage::cpp2::ErrorCode::E_INVALID_VID:
-                return Status::Error("Storage Error: Invalid vid.");
+            case storage::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
+                std::string error = "Storage Error: The data type does not meet the requirements. "
+                                    "Use the correct type of data.";
+                return Status::Error(std::move(error));
+            }
+            case storage::cpp2::ErrorCode::E_INVALID_VID: {
+                std::string error = "Storage Error: The VID must be a 64-bit interger or a string.";
+                return Status::Error(std::move(error));
+            }
             case storage::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
                 std::string error = "Storage Error: Invalid field value: "
                                     "may be the filed is not NULL "
@@ -56,7 +63,7 @@ protected:
                 return Status::Error(std::move(error));
             }
             case storage::cpp2::ErrorCode::E_LEADER_CHANGED:
-                return Status::Error("Storage Error: Leader changed.");
+                return Status::Error("Storage Error: The leader has changed. Try again later");
             case storage::cpp2::ErrorCode::E_INVALID_FILTER:
                 return Status::Error("Storage Error: Invalid filter.");
             case storage::cpp2::ErrorCode::E_INVALID_UPDATER:

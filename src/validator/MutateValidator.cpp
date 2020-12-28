@@ -123,10 +123,7 @@ Status InsertVerticesValidator::prepareVertices() {
             std::vector<Value> props;
             props.reserve(propNames.size());
             for (auto index = 0u; index < propNames.size(); index++) {
-                auto schemaType = schema->getFieldType(propNames[index]);
-                auto valueStatus = SchemaUtil::toSchemaValue(schemaType, values[handleValueNum]);
-                NG_RETURN_IF_ERROR(valueStatus);
-                props.emplace_back(std::move(valueStatus).value());
+                props.emplace_back(std::move(values[handleValueNum]));
                 handleValueNum++;
             }
             auto &tag = tags[count];
@@ -227,15 +224,7 @@ Status InsertEdgesValidator::prepareEdges() {
 
         auto valsRet = SchemaUtil::toValueVec(row->values());
         NG_RETURN_IF_ERROR(valsRet);
-        auto values = std::move(valsRet).value();
-        std::vector<Value> props;
-        for (auto index = 0u; index < propNames_.size(); index++) {
-            auto schemaType = schema_->getFieldType(propNames_[index]);
-            auto valueStatus = SchemaUtil::toSchemaValue(schemaType, values[index]);
-            NG_RETURN_IF_ERROR(valueStatus);
-            props.emplace_back(std::move(valueStatus).value());
-        }
-
+        auto props = std::move(valsRet).value();
         // outbound
         storage::cpp2::NewEdge edge;
         edge.key.set_src(srcId);

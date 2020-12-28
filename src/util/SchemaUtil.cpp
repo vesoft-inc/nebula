@@ -67,57 +67,6 @@ SchemaUtil::generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema
 }
 
 // static
-StatusOr<nebula::Value> SchemaUtil::toSchemaValue(const meta::cpp2::PropertyType type,
-                                                  const Value &v) {
-    switch (type) {
-        case meta::cpp2::PropertyType::TIMESTAMP: {
-            if (v.type() != Value::Type::INT && v.type() != Value::Type::STRING) {
-                LOG(ERROR) << "ValueType is wrong, input type "
-                           << static_cast<int32_t>(type)
-                           << ", v type " <<  v.type();
-                return Status::Error("Wrong type");
-            }
-            auto timestamp = TimeFunction::toTimestamp(v);
-            if (!timestamp.ok()) {
-                return timestamp.status();
-            }
-            return Value(timestamp.value());
-        }
-        case meta::cpp2::PropertyType::DATE: {
-            if (v.type() != Value::Type::DATE) {
-                LOG(ERROR) << "ValueType is wrong, input type "
-                           << static_cast<int32_t>(type)
-                           << ", v type " <<  v.type();
-                return Status::Error("Wrong type");
-            }
-            return v;
-        }
-        case meta::cpp2::PropertyType::TIME: {
-            if (v.type() != Value::Type::TIME) {
-                LOG(ERROR) << "ValueType is wrong, input type "
-                           << static_cast<int32_t>(type)
-                           << ", v type " <<  v.type();
-                return Status::Error("Wrong type");
-            }
-            return v;
-        }
-        case meta::cpp2::PropertyType::DATETIME: {
-            if (v.type() != Value::Type::DATETIME) {
-                LOG(ERROR) << "ValueType is wrong, input type "
-                           << static_cast<int32_t>(type)
-                           << ", v type " <<  v.type();
-                return Status::Error("Wrong type");
-            }
-            return v;
-        }
-        default: {
-            return v;
-        }
-    }
-}
-
-
-// static
 Status SchemaUtil::setTTLDuration(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {
     auto ret = schemaProp->getTtlDuration();
     if (!ret.ok()) {

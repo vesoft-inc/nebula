@@ -32,7 +32,7 @@ class TestInsert2(NebulaTestSuite):
     def test_insert_out_of_range_id_size(self):
         resp = self.execute('INSERT VERTEX student(name, age) VALUES "12345678901":("Tom", 2)')
         self.check_resp_failed(resp)
-        self.check_error_msg(resp, 'Storage Error: Invalid vid.')
+        self.check_error_msg(resp, 'Storage Error: The VID must be a 64-bit interger or a string.')
 
     def test_insert_not_null_prop(self):
         resp = self.execute('INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)')
