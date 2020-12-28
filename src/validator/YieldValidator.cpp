@@ -18,9 +18,15 @@ namespace nebula {
 namespace graph {
 
 YieldValidator::YieldValidator(Sentence *sentence, QueryContext *qctx)
-    : Validator(sentence, qctx) {}
+    : Validator(sentence, qctx) {
+        setNoSpaceRequired();
+    }
 
 Status YieldValidator::validateImpl() {
+    if (qctx_->vctx()->spaceChosen()) {
+        space_ = vctx_->whichSpace();
+    }
+
     auto yield = static_cast<YieldSentence *>(sentence_);
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
     NG_RETURN_IF_ERROR(validateWhere(yield->where()));

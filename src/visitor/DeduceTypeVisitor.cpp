@@ -101,8 +101,13 @@ DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
     : qctx_(qctx), vctx_(vctx), inputs_(inputs), space_(space) {
     DCHECK(qctx != nullptr);
     DCHECK(vctx != nullptr);
-    auto vidType = vctx_->whichSpace().spaceDesc.vid_type.get_type();
-    vidType_ = SchemaUtil::propTypeToValueType(vidType);
+    // stand alone YIELD queries can be run without a space
+    if (!vctx->spaceChosen()) {
+        vidType_ = Value::Type::__EMPTY__;
+    } else {
+        auto vidType = vctx_->whichSpace().spaceDesc.vid_type.get_type();
+        vidType_ = SchemaUtil::propTypeToValueType(vidType);
+    }
 }
 
 void DeduceTypeVisitor::visit(ConstantExpression *expr) {
