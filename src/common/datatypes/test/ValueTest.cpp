@@ -31,6 +31,11 @@ TEST(Value, Arithmetics) {
     Value vBool2(true);
     Value vDate1(Date(2020, 1, 1));
     Value vDate2(Date(2019, 12, 1));
+    Value vList1(List({1, 3, 2}));
+    Value vList2(List({6, 4, 5}));
+    Value vSet(Set({8, 7}));
+    Value vMap(Map({{"a", 9}, {"b", 10}}));
+
 
     // +
     {
@@ -89,6 +94,26 @@ TEST(Value, Arithmetics) {
         v = vStr1 + vDate1;
         EXPECT_EQ(Value::Type::STRING, v.type());
         EXPECT_EQ(std::string("Hello 2020-01-01"), v.getStr());
+
+        v = vList1 + vList2;
+        EXPECT_EQ(Value::Type::LIST, v.type());
+        EXPECT_EQ(List({1, 3, 2, 6, 4, 5}), v.getList());
+
+        v = vList1 + vBool2;
+        EXPECT_EQ(Value::Type::LIST, v.type());
+        EXPECT_EQ(List({1, 3, 2, true}), v.getList());
+
+        v = vStr1 + vList2;
+        EXPECT_EQ(Value::Type::LIST, v.type());
+        EXPECT_EQ(List({std::string("Hello "), 6, 4, 5}), v.getList());
+
+        v = vMap + vList1;
+        EXPECT_EQ(Value::Type::LIST, v.type());
+        EXPECT_EQ(List({Map({{"a", 9}, {"b", 10}}), 1, 3, 2 }), v.getList());
+
+        v = vList2 + vSet;
+        EXPECT_EQ(Value::Type::LIST, v.type());
+        EXPECT_EQ(List({6, 4, 5, Set({8, 7})}), v.getList());
     }
     // -
     {

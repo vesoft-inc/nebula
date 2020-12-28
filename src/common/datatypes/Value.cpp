@@ -1724,6 +1724,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                                                lhs.getBool() ? "true" : "false",
                                                rhs.getStr().c_str());
                 }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
                 default: {
                     return Value::kNullBadType;
                 }
@@ -1745,6 +1750,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 case Value::Type::DATE: {
                     return rhs.getDate() + lhs.getInt();
                 }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
                 default: {
                     return Value::kNullBadType;
                 }
@@ -1762,6 +1772,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                     return folly::stringPrintf("%lf%s",
                                                lhs.getFloat(),
                                                rhs.getStr().c_str());
+                }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1797,6 +1812,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 case Value::Type::DATETIME: {
                     return lhs.getStr() + rhs.getDateTime().toString();
                 }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
                 default: {
                     return Value::kNullBadType;
                 }
@@ -1810,6 +1830,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 case Value::Type::STRING: {
                     return lhs.getDate().toString() + rhs.getStr();
                 }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
                 default: {
                     return Value::kNullBadType;
                 }
@@ -1820,6 +1845,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
                 case Value::Type::STRING: {
                     return lhs.getTime().toString() + rhs.getStr();
                 }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
                 default: {
                     return Value::kNullBadType;
                 }
@@ -1829,6 +1859,107 @@ Value operator+(const Value& lhs, const Value& rhs) {
             switch (rhs.type()) {
                 case Value::Type::STRING: {
                     return lhs.getDateTime().toString() + rhs.getStr();
+                }
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::LIST: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = lhs.getList();
+                    auto& list = rhs.getList();
+                    ret.values.insert(ret.values.end(), list.values.begin(), list.values.end());
+                    return ret;
+                }
+                case Value::Type::BOOL:
+                case Value::Type::INT:
+                case Value::Type::FLOAT:
+                case Value::Type::STRING:
+                case Value::Type::DATE:
+                case Value::Type::TIME:
+                case Value::Type::DATETIME:
+                case Value::Type::VERTEX:
+                case Value::Type::EDGE:
+                case Value::Type::PATH:
+                case Value::Type::MAP:
+                case Value::Type::SET: {
+                    auto ret = lhs.getList();
+                    ret.emplace_back(rhs);
+                    return ret;
+                }
+                case Value::Type::DATASET: {
+                    return Value::kNullBadType;
+                }
+                case Value::Type::__EMPTY__: {
+                    return Value::kEmpty;
+                }
+                case Value::Type::NULLVALUE: {
+                    return Value::kNullValue;
+                }
+            }
+            LOG(FATAL) << "Unknown type: " << rhs.type();
+        }
+        case Value::Type::VERTEX: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::EDGE: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::PATH: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::MAP: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
+                }
+                default: {
+                    return Value::kNullBadType;
+                }
+            }
+        }
+        case Value::Type::SET: {
+            switch (rhs.type()) {
+                case Value::Type::LIST: {
+                    auto ret = rhs.getList();
+                    ret.values.insert(ret.values.begin(), lhs);
+                    return ret;
                 }
                 default: {
                     return Value::kNullBadType;
