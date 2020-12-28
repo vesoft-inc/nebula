@@ -36,9 +36,9 @@ private:
                     case meta::cpp2::AdminCmd::REBUILD_TAG_INDEX:
                     case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
                     case meta::cpp2::AdminCmd::STATS:
-                        return true;
                     case meta::cpp2::AdminCmd::COMPACT:
                     case meta::cpp2::AdminCmd::FLUSH:
+                        return true;
                     case meta::cpp2::AdminCmd::DATA_BALANCE:
                     case meta::cpp2::AdminCmd::UNKNOWN:
                         return false;
