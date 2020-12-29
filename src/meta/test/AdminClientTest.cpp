@@ -51,6 +51,7 @@ DECLARE_int32(max_retry_times_admin_op);
 namespace nebula {
 namespace meta {
 
+// todo(doodle): replace with gmock
 class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
 public:
     folly::Future<storage::cpp2::AdminExecResp>
@@ -121,12 +122,9 @@ public:
 
 class TestStorageServiceRetry : public TestStorageService {
 public:
-    TestStorageServiceRetry(int ip, Port port) {
-        leader_ = HostAddr(std::to_string(ip), port);
-    }
-
-    TestStorageServiceRetry(std::string addr, Port port) {
-        leader_ = HostAddr(addr, port);
+    TestStorageServiceRetry(std::string addr, Port adminPort) {
+        // when leader change returned, the port is always data port
+        leader_ = Utils::getStoreAddrFromAdminAddr(HostAddr(addr, adminPort));
     }
 
     folly::Future<storage::cpp2::AdminExecResp>

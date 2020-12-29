@@ -43,7 +43,6 @@ public:
         if (part->isLeader() && part->address() == host) {
             LOG(INFO) << "I am already leader of space " << spaceId
                       << " part " << partId << ", skip transLeader";
-            this->pushResultCode(cpp2::ErrorCode::E_NO_TRANSFORMED, partId);
             onFinished();
             return;
         }
@@ -90,7 +89,6 @@ public:
                         if (leader != HostAddr("", 0) && leader != store->address()) {
                             LOG(INFO) << "Found new leader of space " << spaceId
                                       << " part " << partId << ": " << leader;
-                            this->pushResultCode(cpp2::ErrorCode::E_NO_TRANSFORMED, partId);
                             onFinished();
                             return;
                         } else if (leader != HostAddr("", 0)) {

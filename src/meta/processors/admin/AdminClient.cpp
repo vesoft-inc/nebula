@@ -417,6 +417,8 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                                         std::move(respGen));
                             return;
                         }
+                        // convert to admin addr
+                        leader = Utils::getAdminAddrFromStoreAddr(leader);
                         int32_t leaderIndex = 0;
                         for (auto& h : hosts) {
                             if (h == leader) {
