@@ -27,7 +27,9 @@ protected:
     void testFunction(const char *expr, std::vector<Value> &args, Value expect) {
         auto result = FunctionManager::get(expr, args.size());
         ASSERT_TRUE(result.ok());
-        EXPECT_EQ(result.value()(args), expect);
+        auto res = result.value()(args);
+        EXPECT_EQ(res.type(), expect.type()) << "function return type check failed: " << expr;
+        EXPECT_EQ(res, expect) << "function return value check failed: " << expr;
     }
 
     Path createPath(const Value& src, const std::vector<Value>& steps) {
@@ -92,23 +94,23 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(abs, args_["float"], 1.1);
     }
     {
-        TEST_FUNCTION(floor, args_["neg_int"], -1);
-        TEST_FUNCTION(floor, args_["float"], 1);
-        TEST_FUNCTION(floor, args_["neg_float"], -2);
-        TEST_FUNCTION(floor, args_["int"], 4);
+        TEST_FUNCTION(floor, args_["neg_int"], -1.0);
+        TEST_FUNCTION(floor, args_["float"], 1.0);
+        TEST_FUNCTION(floor, args_["neg_float"], -2.0);
+        TEST_FUNCTION(floor, args_["int"], 4.0);
     }
     {
-        TEST_FUNCTION(sqrt, args_["int"], 2);
+        TEST_FUNCTION(sqrt, args_["int"], 2.0);
         TEST_FUNCTION(sqrt, args_["float"], std::sqrt(1.1));
     }
 
     {
         TEST_FUNCTION(pow, args_["pow"], 8);
         TEST_FUNCTION(exp, args_["int"], std::exp(4));
-        TEST_FUNCTION(exp2, args_["int"], 16);
+        TEST_FUNCTION(exp2, args_["int"], 16.0);
 
         TEST_FUNCTION(log, args_["int"], std::log(4));
-        TEST_FUNCTION(log2, args_["int"], 2);
+        TEST_FUNCTION(log2, args_["int"], 2.0);
     }
     {
         TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));

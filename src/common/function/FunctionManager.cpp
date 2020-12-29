@@ -237,7 +237,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::abs(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::abs(args[0].getInt());
+                } else {
+                    return std::abs(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -250,7 +254,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::floor(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::floor(args[0].getInt());
+                } else {
+                    return std::floor(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -263,7 +271,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::ceil(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::ceil(args[0].getInt());
+                } else {
+                    return std::ceil(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -276,7 +288,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::round(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::round(args[0].getInt());
+                } else {
+                    return std::round(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -289,7 +305,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::sqrt(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::sqrt(args[0].getInt());
+                } else {
+                    return std::sqrt(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -350,7 +370,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::exp(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::exp(args[0].getInt());
+                } else {
+                    return std::exp(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -363,7 +387,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::exp2(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::exp2(args[0].getInt());
+                } else {
+                    return std::exp2(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -376,7 +404,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::log(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::log(args[0].getInt());
+                } else {
+                    return std::log(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
@@ -389,7 +421,11 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             if (args[0].isNumeric()) {
-                return std::log2(args[0].isInt() ? args[0].getInt() : args[0].getFloat());
+                if (args[0].isInt()) {
+                    return std::log2(args[0].getInt());
+                } else {
+                    return std::log2(args[0].getFloat());
+                }
             }
             return Value::kNullBadType;
         };
