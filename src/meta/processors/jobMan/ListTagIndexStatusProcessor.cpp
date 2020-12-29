@@ -36,9 +36,7 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
                 auto spaceName = paras[1];
                 auto ret = getSpaceId(spaceName);
                 if (!ret.ok()) {
-                    handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-                    onFinished();
-                    return;
+                    continue;
                 }
                 auto spaceId = ret.value();
                 if (spaceId != curSpaceId) {
