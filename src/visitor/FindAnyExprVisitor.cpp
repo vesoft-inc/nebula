@@ -153,6 +153,21 @@ void FindAnyExprVisitor::visit(ColumnExpression *expr) {
     findExpr(expr);
 }
 
+void FindAnyExprVisitor::visit(ListComprehensionExpression* expr) {
+    findExpr(expr);
+    if (found_) return;
+    expr->collection()->accept(this);
+    if (found_) return;
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (found_) return;
+    }
+    if (expr->hasMapping()) {
+        expr->mapping()->accept(this);
+        if (found_) return;
+    }
+}
+
 void FindAnyExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
     findExpr(expr);
     if (found_) return;

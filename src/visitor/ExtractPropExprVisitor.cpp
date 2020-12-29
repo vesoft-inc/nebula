@@ -34,7 +34,7 @@ void ExtractPropExprVisitor::visit(EdgeExpression* expr) {
 }
 
 void ExtractPropExprVisitor::visit(VariableExpression* expr) {
-    reportError(expr);
+    UNUSED(expr);
 }
 
 void ExtractPropExprVisitor::visit(SubscriptExpression* expr) {

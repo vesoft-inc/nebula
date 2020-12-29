@@ -56,7 +56,7 @@ void QueryInstance::execute() {
 Status QueryInstance::validateAndOptimize() {
     auto *rctx = qctx()->rctx();
     VLOG(1) << "Parsing query: " << rctx->query();
-    auto result = GQLParser().parse(rctx->query());
+    auto result = GQLParser(qctx()).parse(rctx->query());
     NG_RETURN_IF_ERROR(result);
     sentence_ = std::move(result).value();
 

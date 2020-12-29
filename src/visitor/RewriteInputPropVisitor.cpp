@@ -204,6 +204,25 @@ void RewriteInputPropVisitor::visit(CaseExpression* expr) {
     }
 }
 
+void RewriteInputPropVisitor::visit(ListComprehensionExpression *expr) {
+    expr->collection()->accept(this);
+    if (ok()) {
+        expr->setCollection(result_.release());
+    }
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (ok()) {
+            expr->setFilter(result_.release());
+        }
+    }
+    if (expr->hasMapping()) {
+        expr->mapping()->accept(this);
+        if (ok()) {
+            expr->setMapping(result_.release());
+        }
+    }
+}
+
 void RewriteInputPropVisitor::visitBinaryExpr(BinaryExpression* expr) {
     expr->left()->accept(this);
     if (ok()) {

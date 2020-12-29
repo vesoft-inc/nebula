@@ -33,6 +33,8 @@ public:
     void visit(CaseExpression *expr) override;
     // path build expression
     void visit(PathBuildExpression *expr) override;
+    // list comprehension expression
+    void visit(ListComprehensionExpression *expr) override;
 
 protected:
     using ExprVisitor::visit;

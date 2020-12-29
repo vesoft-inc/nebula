@@ -59,7 +59,7 @@ Feature: Yield
       """
       YIELD $-.dummyTag.p
       """
-    Then a SemanticError should be raised at runtime: Not supported expression `$-.dummyTag.p' for props deduction.
+    Then a SemanticError should be raised at runtime: `$-.dummyTag', not exist prop `dummyTag'
 
   Scenario: label expr
     When executing query:

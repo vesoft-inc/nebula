@@ -139,5 +139,20 @@ void ExprVisitorImpl::visit(PathBuildExpression *expr) {
         }
     }
 }
+
+void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
+    DCHECK(ok());
+    expr->collection()->accept(this);
+    if (!ok()) return;
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (!ok()) return;
+    }
+    if (expr->hasMapping()) {
+        expr->mapping()->accept(this);
+        if (!ok()) return;
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

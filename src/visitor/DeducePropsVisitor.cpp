@@ -184,7 +184,7 @@ void DeducePropsVisitor::visit(UUIDExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(VariableExpression *expr) {
-    reportError(expr);
+    UNUSED(expr);
 }
 
 void DeducePropsVisitor::visit(VersionedVariableExpression *expr) {
@@ -196,7 +196,7 @@ void DeducePropsVisitor::visit(LabelExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(AttributeExpression *expr) {
-    reportError(expr);
+    UNUSED(expr);
 }
 
 void DeducePropsVisitor::visit(LabelAttributeExpression *expr) {

@@ -259,5 +259,25 @@ void RewriteSymExprVisitor::visit(PathBuildExpression *expr) {
         }
     }
 }
+
+void RewriteSymExprVisitor::visit(ListComprehensionExpression *expr) {
+    expr->collection()->accept(this);
+    if (expr_) {
+        expr->setCollection(expr_.release());
+    }
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (expr_) {
+            expr->setFilter(expr_.release());
+        }
+    }
+    if (expr->hasMapping()) {
+        expr->mapping()->accept(this);
+        if (expr_) {
+            expr->setMapping(expr_.release());
+        }
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
