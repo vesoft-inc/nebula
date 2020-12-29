@@ -47,6 +47,8 @@ protected:
 
     Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) const {
         switch (code) {
+            case storage::cpp2::ErrorCode::E_KEY_NOT_FOUND:
+                return Status::Error("Storage Error: Vertex or edge not found.");
             case storage::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
                 std::string error = "Storage Error: The data type does not meet the requirements. "
                                     "Use the correct type of data.";

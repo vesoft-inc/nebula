@@ -815,6 +815,9 @@ function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
+    | KW_TIMESTAMP L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("timestamp"), $3);
+    }
     | KW_DATE L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression(new std::string("date"), $3);
     }
