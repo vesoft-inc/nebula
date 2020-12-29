@@ -92,12 +92,18 @@ add_custom_command(
   COMMENT "Generating thrift files for ${file_name}"
 )
 
-bypass_source_check(${file_name}_cpp2-SOURCES)
+bypass_source_check(${${file_name}-cpp2-SOURCES})
+add_custom_target(
+    ${file_name}_thrift_generator
+    DEPENDS ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
+)
+
 add_library(
   "${file_name}_thrift_obj"
   OBJECT
   ${${file_name}-cpp2-SOURCES}
 )
+add_dependencies(${file_name}_thrift_obj ${file_name}_thrift_generator)
 
 set_target_properties(
     "${file_name}_thrift_obj"
@@ -113,11 +119,17 @@ export(
   FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
 )
 
-add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(
-        "${file_name}_thrift_obj"
-        "common_thrift_obj"
+        ${file_name}_thrift_obj
+        common_thrift_generator
+    )
+endif()
+
+if("${file_name}" STREQUAL "storage")
+    add_dependencies(
+        ${file_name}_thrift_obj
+        meta_thrift_generator
     )
 endif()
 endmacro()
