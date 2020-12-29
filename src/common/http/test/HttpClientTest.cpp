@@ -50,6 +50,7 @@ public:
 class HttpClientTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
+        FLAGS_ws_ip = "127.0.0.1";
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         LOG(INFO) << "Starting web service...";

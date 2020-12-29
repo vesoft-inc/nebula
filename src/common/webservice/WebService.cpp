@@ -20,7 +20,7 @@
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
-DEFINE_string(ws_ip, "127.0.0.1", "IP/Hostname to bind to");
+DEFINE_string(ws_ip, "0.0.0.0", "IP/Hostname to bind to");
 DEFINE_int32(ws_threads, 4, "Number of threads for the web service.");
 
 namespace nebula {
