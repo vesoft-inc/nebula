@@ -18,7 +18,6 @@
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
-#include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/MetaServiceUtils.h"
 
 DEFINE_int32(dispatch_thread_num, 10, "Number of job dispatch http thread");
@@ -119,29 +118,28 @@ void JobManager::scheduleThread() {
 
 // @return: true if succeed, false if any task failed
 bool JobManager::runJobInternal(const JobDescription& jobDesc) {
-    auto jobExecutor = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc,
-                                                                     kvStore_,
-                                                                     adminClient_);
-    if (jobExecutor == nullptr) {
+    currJob_ = MetaJobExecutorFactory::createMetaJobExecutor(jobDesc, kvStore_, adminClient_);
+
+    if (currJob_ == nullptr) {
         LOG(ERROR) << "unreconized job cmd " << static_cast<int>(jobDesc.getCmd());
         return false;
     }
     if (jobDesc.getStatus() == cpp2::JobStatus::STOPPED) {
-        jobExecutor->stop();
+        currJob_->stop();
         return true;
     }
 
-    if (!jobExecutor->check()) {
+    if (!currJob_->check()) {
         LOG(ERROR) << "Job Executor check failed";
         return false;
     }
 
-    if (jobExecutor->prepare() != cpp2::ErrorCode::SUCCEEDED) {
+    if (currJob_->prepare() != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Job Executor prepare failed";
         return false;
     }
 
-    auto results = jobExecutor->execute();
+    auto results = currJob_->execute();
     if (!nebula::ok(results)) {
         LOG(ERROR) << "Job executor running failed";
         return false;
@@ -162,7 +160,8 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
         ++taskId;
     }
 
-    jobExecutor->finish(jobSuccess);
+    currJob_->finish(jobSuccess);
+
     return jobSuccess;
 }
 
@@ -333,6 +332,12 @@ cpp2::ErrorCode JobManager::stopJob(JobID iJob) {
     auto it = inFlightJobs_.find(jobDesc->getJobId());
     if (it != inFlightJobs_.end()) {
         inFlightJobs_.erase(it);
+    }
+
+    if (currJob_) {
+        LOG(INFO) << folly::sformat("begin interrupt execution, job={}", iJob);
+        currJob_->interruptExecution(iJob);
+        LOG(INFO) << folly::sformat("end interrupt execution, job={}", iJob);
     }
 
     return jobExecutor->stop();

@@ -131,6 +131,17 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
     return hosts;
 }
 
+void MetaJobExecutor::interruptExecution(JobID jobId) {
+    if (jobId == jobId_) {
+        std::unique_lock<std::mutex> lk(muInterrupt_);
+        stopped_ = true;
+        condInterrupt_.notify_one();
+        lk.unlock();
+
+        LOG(INFO) << folly::sformat("cancel job {}", jobId);
+    }
+}
+
 ExecuteRet MetaJobExecutor::execute() {
     ErrOrHosts addressesRet;
     if (toLeader_) {
@@ -145,42 +156,33 @@ ExecuteRet MetaJobExecutor::execute() {
     }
 
     std::vector<PartitionID> parts;
-    std::vector<folly::SemiFuture<Status>> futures;
+
     auto addresses = nebula::value(addressesRet);
-    for (auto& address : addresses) {
-        // transform to the admin host
-        auto future = executeInternal(Utils::getAdminAddrFromStoreAddr(address.first),
-                                      std::move(address.second));
-        futures.emplace_back(std::move(future));
-    }
-
-    std::vector<Status> results;
-    nebula::Status errorStatus;
-    folly::collectAll(std::move(futures))
-        .thenValue([&](const std::vector<folly::Try<Status>>& tries) {
-            for (const auto& t : tries) {
-                if (t.hasException()) {
-                    LOG(ERROR) << "Admin Failed: " << t.exception();
-                    results.emplace_back(nebula::Status::Error());
-                } else {
-                    results.emplace_back(t.value());
-                }
-            }
-        }).thenError([&](auto&& e) {
-            LOG(ERROR) << "Admin Failed: " << e.what();
-            errorStatus = Status::Error(e.what());
-        }).wait();
-
-    if (addresses.size() != results.size()) {
-        LOG(ERROR) << "hosts.size: " << addresses.size()
-                   << ", results.size: " << results.size();
-        return cpp2::ErrorCode::E_INVALID_PARM;
-    }
+    auto unfinishedTask = addresses.size();
 
     std::unordered_map<HostAddr, Status> ret;
-    for (size_t i = 0; i != addresses.size(); ++i) {
-        ret.emplace(addresses[i].first, results[i]);
+    for (auto& address : addresses) {
+        // transform to the admin host
+        auto& host = address.first;
+        auto fut = executeInternal(Utils::getAdminAddrFromStoreAddr(host),
+                                      std::move(address.second));
+        std::move(fut).thenTry([&](auto&& t) {
+            std::lock_guard<std::mutex> lk(muInterrupt_);
+            --unfinishedTask;
+            if (t.hasValue()) {
+                ret[host] = t.value();
+            } else {
+                ret[host] = nebula::Status::Error();
+            }
+            condInterrupt_.notify_one();
+        });
     }
+
+    {
+        std::unique_lock<std::mutex> lk(muInterrupt_);
+        condInterrupt_.wait(lk, [&]{ return unfinishedTask == 0 || stopped_; });
+    }
+
     return ret;
 }
 

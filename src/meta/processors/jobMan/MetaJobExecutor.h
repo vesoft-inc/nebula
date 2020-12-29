@@ -43,6 +43,8 @@ public:
     // You should rewrite the executeInternal to trigger the calling.
     ExecuteRet execute();
 
+    void interruptExecution(JobID jobId);
+
     // Stop the job when the user cancel it.
     virtual cpp2::ErrorCode stop() = 0;
 
@@ -68,6 +70,9 @@ protected:
     std::vector<std::string>    paras_;
     bool                        toLeader_{false};
     int32_t                     concurrency_{INT_MAX};
+    bool                        stopped_{false};
+    std::mutex                  muInterrupt_;
+    std::condition_variable     condInterrupt_;
 };
 
 class MetaJobExecutorFactory {

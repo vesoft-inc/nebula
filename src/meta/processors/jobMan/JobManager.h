@@ -17,6 +17,7 @@
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/jobMan/MetaJobExecutor.h"
 
 namespace nebula {
 namespace meta {
@@ -118,6 +119,7 @@ private:
     nebula::kvstore::KVStore*                          kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
     AdminClient*                                       adminClient_{nullptr};
+    std::unique_ptr<meta::MetaJobExecutor>             currJob_{nullptr};
 };
 
 }  // namespace meta
