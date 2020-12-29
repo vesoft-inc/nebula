@@ -157,6 +157,12 @@ std::unique_ptr<PlanNodeDescription> Project::explain() const {
     return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("unwind", cols_? cols_->toString() : "", desc.get());
+    return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());

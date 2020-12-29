@@ -63,6 +63,7 @@ nebula_add_test(
         TestMain.cpp
         LogicExecutorsTest.cpp
         ProjectTest.cpp
+        UnwindTest.cpp
         GetNeighborsTest.cpp
         DataCollectTest.cpp
         SetExecutorTest.cpp

@@ -7,6 +7,8 @@
 #ifndef PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_
 #define PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_
 
+#include "planner/match/CypherClausePlanner.h"
+
 namespace nebula {
 namespace graph {
 /*
@@ -16,11 +18,11 @@ class UnwindClausePlanner final : public CypherClausePlanner {
 public:
     UnwindClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override {
-        UNUSED(clauseCtx);
-        return Status::Error("TODO");
-    }
+    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+
+    Status buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan);
 };
-}  // namespace graph
-}  // namespace nebula
-#endif  // PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_
+
+}   // namespace graph
+}   // namespace nebula
+#endif   // PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_

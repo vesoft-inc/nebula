@@ -148,7 +148,7 @@ Status MatchSolver::buildFilter(const MatchClauseContext* mctx, SubPlan* plan) {
     }
     auto newFilter = mctx->where->filter->clone();
     auto rewriter = [mctx](const Expression* expr) {
-        return MatchSolver::doRewrite(mctx->aliases, expr);
+        return MatchSolver::doRewrite(mctx->aliasesGenerated, expr);
     };
     RewriteMatchLabelVisitor visitor(std::move(rewriter));
     newFilter->accept(&visitor);

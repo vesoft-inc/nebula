@@ -9,9 +9,8 @@
 namespace nebula {
 namespace graph {
 PlanNode* AddDependencyStrategy::connect(const PlanNode* left, const PlanNode* right) {
-    DCHECK(left->isSingleInput());
     auto* mutableLeft = const_cast<PlanNode*>(left);
-    auto* siLeft = static_cast<SingleInputNode*>(mutableLeft);
+    auto* siLeft = static_cast<SingleDependencyNode*>(mutableLeft);
     siLeft->dependsOn(const_cast<PlanNode*>(right));
     // siLeft->setColNames(right->colNames());
     return nullptr;

@@ -7,6 +7,8 @@
 #ifndef PLANNER_MATCH_WITHCLAUSEPLANNER_H_
 #define PLANNER_MATCH_WITHCLAUSEPLANNER_H_
 
+#include "planner/match/CypherClausePlanner.h"
+
 namespace nebula {
 namespace graph {
 /*
@@ -16,10 +18,10 @@ class WithClausePlanner final : public CypherClausePlanner {
 public:
     WithClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override {
-        UNUSED(clauseCtx);
-        return Status::Error("TODO");
-    }
+    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+
+private:
+    Status buildWith(WithClauseContext* wctx, SubPlan& subPlan);
 };
 }  // namespace graph
 }  // namespace nebula

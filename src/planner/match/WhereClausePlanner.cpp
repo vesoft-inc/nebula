@@ -27,9 +27,10 @@ Status WhereClausePlanner::buildFilter(WhereClauseContext* wctx, SubPlan& subpla
     if (wctx->filter == nullptr) {
         return Status::OK();
     }
+
     auto newFilter = wctx->filter->clone();
     auto rewriter = [wctx](const Expression* expr) {
-        return MatchSolver::doRewrite(*wctx->aliases, expr);
+        return MatchSolver::doRewrite(*wctx->aliasesUsed, expr);
     };
     RewriteMatchLabelVisitor visitor(std::move(rewriter));
     newFilter->accept(&visitor);

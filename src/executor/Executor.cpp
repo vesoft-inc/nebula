@@ -71,6 +71,7 @@
 #include "executor/query/LimitExecutor.h"
 #include "executor/query/MinusExecutor.h"
 #include "executor/query/ProjectExecutor.h"
+#include "executor/query/UnwindExecutor.h"
 #include "executor/query/SortExecutor.h"
 #include "executor/query/TopNExecutor.h"
 #include "executor/query/UnionExecutor.h"
@@ -179,6 +180,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kProject: {
             return pool->add(new ProjectExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUnwind: {
+            return pool->add(new UnwindExecutor(node, qctx));
         }
         case PlanNode::Kind::kIndexScan: {
             return pool->add(new IndexScanExecutor(node, qctx));

@@ -21,12 +21,15 @@ nebula_add_library(
     match/InnerJoinStrategy.cpp
     match/AddDependencyStrategy.cpp
     match/AddInputStrategy.cpp
+    match/CartesianProductStrategy.cpp
     match/MatchPlanner.cpp
     match/MatchClausePlanner.cpp
+    match/UnwindClausePlanner.cpp
     match/ReturnClausePlanner.cpp
     match/OrderByClausePlanner.cpp
     match/PaginationPlanner.cpp
     match/WhereClausePlanner.cpp
+    match/WithClausePlanner.cpp
     match/StartVidFinder.cpp
     match/PropIndexSeek.cpp
     match/VertexIdSeek.cpp

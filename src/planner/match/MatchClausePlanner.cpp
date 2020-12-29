@@ -203,7 +203,7 @@ Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClau
     DCHECK(!nodeInfos.empty());
     addNode(nodeInfos.size() - 1);
 
-    const auto& aliases = matchClauseCtx->aliases;
+    const auto& aliases = matchClauseCtx->aliasesGenerated;
     auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
         return alias.second == AliasType::kPath;
     });
