@@ -67,6 +67,7 @@ public:
         dt.minute = tm.tm_min;
         dt.sec = tm.tm_sec;
         dt.microsec = 0;
+        NG_RETURN_IF_ERROR(validateDate(dt));
         return dt;
     }
 
@@ -142,6 +143,7 @@ public:
         d.year = tm.tm_year + 1900;
         d.month = tm.tm_mon + 1;
         d.day = tm.tm_mday;
+        NG_RETURN_IF_ERROR(validateDate(d));
         return d;
     }
 
@@ -261,6 +263,8 @@ public:
     static Timezone &getGlobalTimezone() {
         return globalTimezone;
     }
+
+    static StatusOr<Value> toTimestamp(const Value &val);
 
 private:
     static constexpr int kDayOfLeapYear = 366;

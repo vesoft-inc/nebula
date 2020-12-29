@@ -20,6 +20,9 @@ DEFINE_string(timezone_name,
 namespace nebula {
 namespace time {
 
+// The mainstream Linux kernel's implementation constrains this
+constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
+
 const DateTime TimeUtils::kEpoch(1970, 1, 1, 0, 0, 0, 0);
 /*static*/ Timezone TimeUtils::globalTimezone;
 
@@ -246,5 +249,28 @@ const DateTime TimeUtils::kEpoch(1970, 1, 1, 0, 0, 0, 0);
     return t;
 }
 
+StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
+    Timestamp timestamp;
+    if (val.isStr()) {
+        auto status = parseDateTime(val.getStr());
+        if (!status.ok()) {
+            return status.status();
+        }
+        auto dateTime = std::move(status).value();
+        if (dateTime.microsec != 0) {
+            return Status::Error("The timestamp  only supports seconds unit.");
+        }
+        timestamp = time::TimeUtils::dateTimeToUnixSeconds(dateTime);
+    } else if (val.isInt()) {
+        timestamp = val.getInt();
+    } else {
+        return Status::Error("Incorrect timestamp type: `%s'", val.toString().c_str());
+    }
+
+    if (timestamp < 0 || (timestamp > kMaxTimestamp)) {
+        return Status::Error("Incorrect timestamp value: `%s'", val.toString().c_str());
+    }
+    return timestamp;
+}
 }   // namespace time
 }   // namespace nebula

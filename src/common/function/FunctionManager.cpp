@@ -165,6 +165,10 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"datetime", {TypeSignature({}, Value::Type::DATETIME),
               TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
               TypeSignature({Value::Type::MAP}, Value::Type::DATETIME)}},
+    {"timestamp", {TypeSignature({Value::Type::STRING}, Value::Type::INT),
+                   TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+    {"id", {TypeSignature({Value::Type::VERTEX}, Value::Type::STRING),
+             }},
     {"tags", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
              }},
     {"labels", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
@@ -1117,6 +1121,18 @@ FunctionManager::FunctionManager() {
                 default:
                     LOG(FATAL) << "Unexpected arguments count " << args.size();
             }
+        };
+    }
+    {
+        auto &attr = functions_["timestamp"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [](const auto &args) -> Value {
+            auto status = time::TimeUtils::toTimestamp(args[0]);
+            if (!status.ok()) {
+                return Value::kNullBadData;
+            }
+            return status.value();
         };
     }
     {

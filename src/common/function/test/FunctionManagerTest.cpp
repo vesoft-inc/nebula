@@ -649,6 +649,13 @@ TEST_F(FunctionManagerTest, functionCall) {
                                                    {"second", 60}})});
         EXPECT_EQ(res, Value::kNullBadData);
     }
+    // timestamp
+    {
+        auto result = FunctionManager::get("timestamp", 1);
+        ASSERT_TRUE(result.ok());
+        auto res = std::move(result).value()({"2020-10-10T10:00:00"});
+        EXPECT_EQ(res, 1602324000);
+    }
 }
 
 TEST_F(FunctionManagerTest, returnType) {

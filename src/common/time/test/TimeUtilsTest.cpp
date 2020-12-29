@@ -92,6 +92,24 @@ TEST(Time, secondsTimeCovertion) {
                       timeSeconds[i].first);
         }
     }
+    // Timestamp
+    {
+        // incorrect type
+        EXPECT_FALSE(time::TimeUtils::toTimestamp(Value(10.0)).ok());
+        // incorrect int value
+        EXPECT_FALSE(time::TimeUtils::toTimestamp(std::numeric_limits<int64_t>::max()-10).ok());
+        // incorrect string value
+        EXPECT_FALSE(time::TimeUtils::toTimestamp(Value("2001-02-29T10:00:10")).ok());
+        // incorrect string value
+        EXPECT_FALSE(time::TimeUtils::toTimestamp(Value("2001-04-31T10:00:10")).ok());
+        // correct int
+        EXPECT_TRUE(time::TimeUtils::toTimestamp(Value(0)).ok());
+        // correct int
+        EXPECT_TRUE(time::TimeUtils::toTimestamp(
+                Value(std::numeric_limits<int64_t>::max() / 1000000000)).ok());
+        // correct string
+        EXPECT_TRUE(time::TimeUtils::toTimestamp("2020-08-01T09:00:00").ok());
+    }
 }
 
 }   // namespace nebula
