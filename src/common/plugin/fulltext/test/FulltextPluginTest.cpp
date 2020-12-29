@@ -46,13 +46,19 @@ TEST(FulltextPluginTest, ESPutTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
     DocItem item("index1", "col1", 1, 2, "aaaa");
-    auto ret = ESStorageAdapter().putCmd(hc, item);
-    auto expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                    "-XPUT \"http://127.0.0.1:9200/index1/_doc/"
-                    "000000000100000000028c43de7b01bca674276c43e09b3ec5baYWFhYQ==\" "
-                    "-d'{\"value\":\"aaaa\",\"schema_id\":2,\"column_id\""
-                    ":\"8c43de7b01bca674276c43e09b3ec5ba\"}'";
-    ASSERT_EQ(expected, ret);
+    auto header = ESStorageAdapter().putHeader(hc, item);
+    std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
+                           "-XPUT \"http://127.0.0.1:9200/index1/_doc/"
+                           "000000000100000000028c43de7b01bca674276c43e09b3ec5baYWFhYQ==\"";
+    ASSERT_EQ(expected, header);
+
+    auto body = ESStorageAdapter().putBody(item);
+
+    folly::dynamic d = folly::dynamic::object("schema_id", item.schema)
+                                             ("column_id", DocIDTraits::column(item.column))
+                                             ("value", DocIDTraits::val(item.val));
+    expected = " -d'" + DocIDTraits::normalizedJson(folly::toJson(d)) + "'";
+    ASSERT_EQ(expected, body);
 }
 
 TEST(FulltextPluginTest, ESBulkTest) {
@@ -66,18 +72,24 @@ TEST(FulltextPluginTest, ESBulkTest) {
     std::vector<DocItem> items;
     items.emplace_back(DocItem("index1", "col1", 1, 2, "aaaa"));
     items.emplace_back(DocItem("index1", "col1", 1, 2, "bbbb"));
-    auto ret = ESStorageAdapter().bulkCmd(hc, items);
-    auto expected = "/usr/bin/curl -H \"Content-Type: application/x-ndjson; "
-                    "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\" "
-                    "-d '\n{\"index\":{\"_index\":\"index1\",\"_id\":"
-                    "\"000000000100000000028c43de7b01bca674276c43e09b3ec5baYWFhYQ==\"}}"
-                    "\n{\"schema_id\":2,\"value\":\"aaaa\",\"column_id\":"
-                    "\"8c43de7b01bca674276c43e09b3ec5ba\"}\n{\"index\":"
-                    "{\"_index\":\"index1\",\"_id\":"
-                    "\"000000000100000000028c43de7b01bca674276c43e09b3ec5baYmJiYg=="
-                    "\"}}\n{\"schema_id\":2,\"value\":\"bbbb\",\"column_id\":"
-                    "\"8c43de7b01bca674276c43e09b3ec5ba\"}\n'";
-    ASSERT_EQ(expected, ret);
+    auto header = ESStorageAdapter().bulkHeader(hc);
+    std::string expected = "/usr/bin/curl -H \"Content-Type: application/x-ndjson; "
+                           "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
+    ASSERT_EQ(expected, header);
+
+    expected = " -d '\n";
+    for (const auto& item : items) {
+        folly::dynamic meta = folly::dynamic::object("_id", DocIDTraits::docId(item))
+                                                    ("_index", item.index);
+        folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))
+                                                    ("column_id", DocIDTraits::column(item.column))
+                                                    ("schema_id", item.schema);
+        expected.append(folly::toJson(folly::dynamic::object("index", meta))).append("\n");
+        expected.append(DocIDTraits::normalizedJson(folly::toJson(data))).append("\n");
+    }
+    expected.append("'");
+    auto body = ESStorageAdapter().bulkBody(items);
+    ASSERT_EQ(expected, body);
 }
 
 TEST(FulltextPluginTest, ESPutToTest) {
@@ -206,140 +218,36 @@ TEST(FulltextPluginTest, ESResultTest) {
 }
 
 // TODO: The json string is not comparable.
-TEST(FulltextPluginTest, DISABLED_ESPrefixTest) {
+TEST(FulltextPluginTest, ESPrefixTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient client(localHost_);
     DocItem item("index1", "col1", 1, 2, "aa");
     LimitItem limit(10, 100);
-    std::string cmd = ESGraphAdapter().header(client, item, limit) +
-                      ESGraphAdapter().body(item, limit.maxRows_, FT_SEARCH_OP::kPrefix);
+    auto header = ESGraphAdapter().header(client, item, limit);
     std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                           "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\" "
-                           "-d'{\"query\":{\"bool\":{\"must\":[{\"term\":{\"schema_id\":2}},"
-                           "{\"term\":{\"column_id\":\"8c43de7b01bca674276c43e09b3ec5ba\"}},"
-                           "{\"prefix\":{\"value\":\"aa\"}}]}},\"from\":0,\"size\":100,"
-                           "\"_source\":\"value\"}'";
-    ASSERT_EQ(expected , cmd);
+                           "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\"";
+    ASSERT_EQ(expected, header);
+
+    auto body = ESGraphAdapter().prefixBody("aa");
+    ASSERT_EQ("{\"prefix\":{\"value\":\"aa\"}}", folly::toJson(body));
 }
 
-TEST(FulltextPluginTest, DISABLED_ESWildcardTest) {
-    HostAddr localHost_{"127.0.0.1", 9200};
-    HttpClient client(localHost_);
-    DocItem item("index1", "col1", 1, 2, "a?a");
-    LimitItem limit(10, 100);
-    std::string cmd = ESGraphAdapter().header(client, item, limit) +
-                      ESGraphAdapter().body(item, limit.maxRows_, FT_SEARCH_OP::kWildcard);
-    std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                           "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\" "
-                           "-d'{\"query\":{\"bool\":{\"must\":[{\"term\":{\"schema_id\":2}},"
-                           "{\"term\":{\"column_id\":\"8c43de7b01bca674276c43e09b3ec5ba\"}},"
-                           "{\"wildcard\":{\"value\":\"a?a\"}}]}},\"from\":0,\"size\":100,"
-                           "\"_source\":\"value\"}'";
-    ASSERT_EQ(expected , cmd);
+TEST(FulltextPluginTest, ESWildcardTest) {
+    auto body = ESGraphAdapter().wildcardBody("a?a");
+    ASSERT_EQ("{\"wildcard\":{\"value\":\"a?a\"}}", folly::toJson(body));
 }
 
-TEST(FulltextPluginTest, DISABLED_ESRegexpTest) {
-    HostAddr localHost_{"127.0.0.1", 9200};
-    HttpClient client(localHost_);
-    DocItem item("index1", "col1", 1, 2, "+a");
-    LimitItem limit(10, 100);
-    std::string cmd = ESGraphAdapter().header(client, item, limit) +
-                      ESGraphAdapter().body(item, limit.maxRows_, FT_SEARCH_OP::kRegexp);
-    std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                           "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\" "
-                           "-d'{\"query\":{\"bool\":{\"must\":[{\"term\":{\"schema_id\":2}},"
-                           "{\"term\":{\"column_id\":\"8c43de7b01bca674276c43e09b3ec5ba\"}},"
-                           "{\"regexp\":{\"value\":\"+a\"}}]}},\"from\":0,\"size\":100,"
-                           "\"_source\":\"value\"}'";
-    ASSERT_EQ(expected , cmd);
+TEST(FulltextPluginTest, ESRegexpTest) {
+    auto body = ESGraphAdapter().regexpBody("+a");
+    ASSERT_EQ("{\"regexp\":{\"value\":\"+a\"}}", folly::toJson(body));
 }
 
-TEST(FulltextPluginTest, DISABLED_ESFuzzyTest) {
-    HostAddr localHost_{"127.0.0.1", 9200};
-    HttpClient client(localHost_);
-    DocItem item("index1", "col1", 1, 2, "+a");
-    LimitItem limit(10, 100);
-    {
-        std::string cmd = ESGraphAdapter().header(client, item, limit) +
-                          ESGraphAdapter().body(item,
-                                                limit.maxRows_,
-                                                FT_SEARCH_OP::kFuzzy,
-                                                "AUTO",
-                                                "and");
-        std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                               "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\" "
-                               "-d'{\"query\":{\"bool\":{\"must\":[{\"term\":{\"schema_id\":2}},"
-                               "{\"term\":{\"column_id\":\"8c43de7b01bca674276c43e09b3ec5ba\"}},"
-                               "{\"match\":{\"value\":{\"operator\":\"and\",\"query\":\"+a\","
-                               "\"fuzziness\":\"AUTO\"}}}]}},"
-                               "\"from\":0,\"size\":100,\"_source\":\"value\"}'";
-        ASSERT_EQ(expected , cmd);
-    }
-    {
-        std::string cmd = ESGraphAdapter().header(client, item, limit) +
-                          ESGraphAdapter().body(item,
-                                                limit.maxRows_,
-                                                FT_SEARCH_OP::kFuzzy,
-                                                2,
-                                                "and");
-        std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
-                               "-XGET \"http://127.0.0.1:9200/index1/_search?timeout=10ms\" "
-                               "-d'{\"query\":{\"bool\":{\"must\":[{\"term\":{\"schema_id\":2}},"
-                               "{\"term\":{\"column_id\":\"8c43de7b01bca674276c43e09b3ec5ba\"}},"
-                               "{\"match\":{\"value\":{\"operator\":\"and\",\"query\":\"+a\","
-                               "\"fuzziness\":2}}}]}},"
-                               "\"from\":0,\"size\":100,\"_source\":\"value\"}'";
-        ASSERT_EQ(expected , cmd);
-    }
+TEST(FulltextPluginTest, ESFuzzyTest) {
+    auto body = ESGraphAdapter().fuzzyBody("+a", "AUTO", "OR");
+    auto expected = "{\"match\":{\"value\":{\"operator\":\"OR\","
+                    "\"query\":\"+a\",\"fuzziness\":\"AUTO\"}}}";
+    ASSERT_EQ(expected, folly::toJson(body));
 }
-
-std::string esJsonDoc = R"({"query":{"bool":{"must":[{"match":{"schema_id":2}},{"match":{"column_id":"col2"}},{"prefix":{"value":"c"}}]}},"from":0,"size":1})";  // NOLINT
-
-folly::dynamic mockJson() {
-    //    {
-    //        "query": {
-    //            "bool": {
-    //                "must": [
-    //                {
-    //                    "match": {
-    //                        "schema_id": 2
-    //                    }
-    //                },
-    //                {
-    //                    "match": {
-    //                        "column_id": "col2"
-    //                    }
-    //                },
-    //                {
-    //                    "prefix": {
-    //                        "value": "c"
-    //                    }
-    //                }
-    //                ]
-    //            }
-    //        },
-    //        "from": 0,
-    //        "size": 1
-    //    }
-
-    folly::dynamic itemValue = folly::dynamic::object("value", "c");
-    folly::dynamic itemPrefix = folly::dynamic::object("prefix", itemValue);
-    folly::dynamic itemColumn = folly::dynamic::object("column_id", "col2");
-    folly::dynamic itemMatchCol = folly::dynamic::object("match", itemColumn);
-    folly::dynamic itemTag = folly::dynamic::object("schema_id", 2);
-    folly::dynamic itemMatchTag = folly::dynamic::object("match", itemTag);
-    auto itemArray = folly::dynamic::array(itemMatchTag, itemMatchCol, itemPrefix);
-    folly::dynamic itemMust = folly::dynamic::object("must", itemArray);
-    folly::dynamic itemBool = folly::dynamic::object("bool", itemMust);
-    folly::dynamic itemQuery = folly::dynamic::object("query", itemBool)("size", 1)("from", 0);
-    return itemQuery;
-}
-
-TEST(FulltextPluginTest, DISABLED_jsonGenTest) {
-    auto str = folly::toJson(mockJson());
-    ASSERT_EQ(str, esJsonDoc);
-}
-
 }   // namespace plugin
 }   // namespace nebula
 
