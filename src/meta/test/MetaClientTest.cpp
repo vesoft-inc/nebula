@@ -12,6 +12,7 @@
 #include "common/meta/GflagsManager.h"
 #include "common/conf/Configuration.h"
 #include "common/expression/ArithmeticExpression.h"
+#include "common/expression/FunctionCallExpression.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "meta/test/TestUtils.h"
@@ -607,6 +608,130 @@ TEST(MetaClientTest, TagTest) {
     {
         auto result = client->getTagSchema(spaceId, "test_tag", version).get();
         ASSERT_FALSE(result.ok());
+    }
+    auto genSchema = [] (Value value, PropertyType type, bool isFunction = false) -> auto {
+        std::vector<cpp2::ColumnDef> columns;
+        columns.emplace_back();
+        columns.back().set_name("colName");
+        ConstantExpression valueExpr(std::move(value));
+        if (isFunction) {
+            ArgumentList *argList = new ArgumentList();
+            argList->addArgument(std::make_unique<ConstantExpression>(std::move(valueExpr)));
+            FunctionCallExpression fExpr(new std::string("timestamp"), argList);
+            columns.back().set_default_value(Expression::encode(fExpr));
+        } else {
+            columns.back().set_default_value(Expression::encode(valueExpr));
+        }
+        columns.back().type.set_type(type);
+
+        cpp2::Schema schema;
+        schema.set_columns(std::move(columns));
+        return schema;
+    };
+    // Test wrong format timestamp in default value
+    {
+        cpp2::Schema schema = genSchema(-10L, PropertyType::TIMESTAMP);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_wrong_default_timestamp1", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test wrong format timestamp in default value
+    {
+        cpp2::Schema schema = genSchema("2010-10-10 10:00:00", PropertyType::TIMESTAMP, true);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_wrong_default_timestamp2", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test right format timestamp in default value
+    {
+        cpp2::Schema schema = genSchema("2010-10-10T10:00:00", PropertyType::TIMESTAMP, true);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_right_default_timestamp2", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test out of range of int8
+    {
+        cpp2::Schema schema = genSchema(-129, PropertyType::INT8);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_less_min_in8", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test out of range of int8
+    {
+        cpp2::Schema schema = genSchema(128, PropertyType::INT8);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_large_max_in8", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test border of int8
+    {
+        cpp2::Schema schema = genSchema(-128, PropertyType::INT8);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_min_int8", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test border of int8
+    {
+        cpp2::Schema schema = genSchema(127, PropertyType::INT8);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_max_int8", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test out of range of int16
+    {
+        cpp2::Schema schema = genSchema(32768, PropertyType::INT16);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_large_max_int16", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test out of range of int16
+    {
+        cpp2::Schema schema = genSchema(-32769, PropertyType::INT16);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_less_min_int16", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test border of int16
+    {
+        cpp2::Schema schema = genSchema(32767, PropertyType::INT16);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_max_int16", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test border of int16
+    {
+        cpp2::Schema schema = genSchema(-32768, PropertyType::INT16);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_min_int16", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test out of range of int32
+    {
+        cpp2::Schema schema = genSchema(2147483648, PropertyType::INT32);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_large_max_int32", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test out of range of int32
+    {
+        cpp2::Schema schema = genSchema(-2147483649, PropertyType::INT32);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_less_min_int32", std::move(schema)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    // Test border of int32
+    {
+        cpp2::Schema schema = genSchema(2147483647, PropertyType::INT32);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_max_int32", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    // Test border of int32
+    {
+        cpp2::Schema schema = genSchema(-2147483648, PropertyType::INT32);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_min_int32", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
     }
 }
 
@@ -2070,3 +2195,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
+

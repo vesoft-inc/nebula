@@ -5,6 +5,7 @@
  */
 
 #include "common/expression/ConstantExpression.h"
+#include "common/time/TimeUtils.h"
 
 #include "meta/processors/schemaMan/SchemaUtil.h"
 #include "utils/DefaultValueContext.h"
@@ -33,14 +34,14 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
             }
             switch (column.get_type().get_type()) {
                 case cpp2::PropertyType::BOOL:
-                    if (value.type() != nebula::Value::Type::BOOL) {
+                    if (!value.isBool()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
                     break;
                 case cpp2::PropertyType::INT8: {
-                    if (value.type() != nebula::Value::Type::INT) {
+                    if (!value.isInt()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
@@ -55,7 +56,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     break;
                 }
                 case cpp2::PropertyType::INT16: {
-                    if (value.type() != nebula::Value::Type::INT) {
+                    if (!value.isInt()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
@@ -70,7 +71,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     break;
                 }
                 case cpp2::PropertyType::INT32: {
-                    if (value.type() != nebula::Value::Type::INT) {
+                    if (!value.isInt()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
@@ -85,7 +86,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     break;
                 }
                 case cpp2::PropertyType::INT64:
-                    if (value.type() != nebula::Value::Type::INT) {
+                    if (!value.isInt()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
@@ -93,26 +94,26 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     break;
                 case cpp2::PropertyType::FLOAT:
                 case cpp2::PropertyType::DOUBLE:
-                    if (value.type() != nebula::Value::Type::FLOAT) {
+                    if (!value.isFloat()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
                     break;
                 case cpp2::PropertyType::STRING:
-                    if (value.type() != nebula::Value::Type::STRING) {
+                    if (!value.isStr()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
                     break;
                 case cpp2::PropertyType::FIXED_STRING: {
-                    if (value.type() != nebula::Value::Type::STRING) {
+                    if (!value.isStr()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
-                    auto& colType = column.get_type();
+                    auto &colType = column.get_type();
                     size_t typeLen = colType.__isset.type_length ? *colType.get_type_length() : 0;
                     if (value.getStr().size() > typeLen) {
                         const auto trimStr = value.getStr().substr(0, typeLen);
@@ -122,30 +123,35 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     }
                     break;
                 }
-                case cpp2::PropertyType::TIMESTAMP:
-                    if (value.type() != nebula::Value::Type::INT &&
-                        value.type() != nebula::Value::Type::STRING) {
+                case cpp2::PropertyType::TIMESTAMP: {
+                    if (!value.isInt()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
+                    auto ret = time::TimeUtils::toTimestamp(value);
+                    if (!ret.ok()) {
+                        LOG(ERROR) << ret.status();
+                        return false;
+                    }
                     break;
+                }
                 case cpp2::PropertyType::DATE:
-                    if (value.type() != nebula::Value::Type::DATE) {
+                    if (!value.isDate()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
                     break;
                 case cpp2::PropertyType::TIME:
-                    if (value.type() != nebula::Value::Type::TIME) {
+                    if (!value.isTime()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
                     }
                     break;
                 case cpp2::PropertyType::DATETIME:
-                    if (value.type() != nebula::Value::Type::DATETIME) {
+                    if (!value.isDateTime()) {
                         LOG(ERROR) << "Invalid default value for ` " << name
                                    << "', value type is " << value.type();
                         return false;
@@ -161,3 +167,4 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
 }
 }  // namespace meta
 }  // namespace nebula
+
