@@ -122,7 +122,7 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
     plan.root = passThrough;
     plan.tail = passThrough;
 
-    nodeCtx->initialExpr = vidsResult.second;
+    nodeCtx->initialExpr = std::unique_ptr<Expression>(vidsResult.second);
     VLOG(1) << "root: " << plan.root->kind() << " tail: " << plan.tail->kind();
     return plan;
 }

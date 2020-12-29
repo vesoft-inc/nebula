@@ -19,21 +19,36 @@ namespace graph {
  */
 class Expand final {
 public:
-    Expand(MatchClauseContext* matchCtx, Expression** initialExpr)
-        : matchCtx_(matchCtx), initialExpr_(initialExpr) {}
+    Expand(MatchClauseContext* matchCtx, std::unique_ptr<Expression> initialExpr)
+        : matchCtx_(matchCtx), initialExpr_(std::move(initialExpr)) {}
+
+    Expand* reversely() {
+        reversely_ = true;
+        return this;
+    }
+
+    Expand* depends(PlanNode* dep) {
+        dependency_ = dep;
+        return this;
+    }
+
+    Expand* inputVar(const std::string& inputVar) {
+        inputVar_ = inputVar;
+        return this;
+    }
 
     Status doExpand(const NodeInfo& node,
                     const EdgeInfo& edge,
-                    const PlanNode* input,
                     SubPlan* plan);
 
+private:
     Status expandSteps(const NodeInfo& node,
                        const EdgeInfo& edge,
-                       const PlanNode* input,
                        SubPlan* plan);
 
     Status expandStep(const EdgeInfo& edge,
-                      const PlanNode* input,
+                      PlanNode* dep,
+                      const std::string& inputVar,
                       const Expression* nodeFilter,
                       bool needPassThrough,
                       SubPlan* plan);
@@ -46,22 +61,18 @@ public:
 
     Status filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, SubPlan* plan);
 
-    Expression* initialExprOrEdgeDstExpr(const PlanNode* node);
-
-    PlanNode* joinDataSet(const PlanNode* right, const PlanNode* left);
-
     template <typename T>
     T* saveObject(T* obj) const {
         return matchCtx_->qctx->objPool()->add(obj);
     }
 
-private:
     std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo &edge);
 
-    StatusOr<std::vector<storage::cpp2::EdgeProp>> buildAllEdgeProp();
-
-    MatchClauseContext* matchCtx_;
-    Expression**        initialExpr_;
+    MatchClauseContext*                 matchCtx_;
+    std::unique_ptr<Expression>         initialExpr_;
+    bool                                reversely_{false};
+    PlanNode*                           dependency_{nullptr};
+    std::string                         inputVar_;
 };
 }   // namespace graph
 }   // namespace nebula

@@ -231,6 +231,16 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
                 edgeInfos[i].edgeTypes.emplace_back(etype.value());
                 edgeInfos[i].types.emplace_back(*type);
             }
+        } else {
+            const auto allEdgesResult =
+                matchCtx_->qctx->schemaMng()->getAllVerEdgeSchema(space_.id);
+            NG_RETURN_IF_ERROR(allEdgesResult);
+            const auto allEdges = std::move(allEdgesResult).value();
+            for (const auto &edgeSchema : allEdges) {
+                edgeInfos[i].edgeTypes.emplace_back(edgeSchema.first);
+                // TODO:
+                // edgeInfos[i].types.emplace_back(*type);
+            }
         }
         auto *stepRange = edge->range();
         if (stepRange != nullptr) {

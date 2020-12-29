@@ -162,33 +162,33 @@ Status MatchSolver::buildFilter(const MatchClauseContext* mctx, SubPlan* plan) {
 }
 
 void MatchSolver::extractAndDedupVidColumn(QueryContext* qctx,
-                                           Expression** initialExpr,
-                                           SubPlan* plan) {
+                                           Expression* initialExpr,
+                                           PlanNode* dep,
+                                           const std::string& inputVar,
+                                           SubPlan& plan) {
     auto columns = qctx->objPool()->add(new YieldColumns);
-    auto input = plan->root;
-    Expression* vidExpr = initialExprOrEdgeDstExpr(input, initialExpr);
+    auto* var = qctx->symTable()->getVar(inputVar);
+    Expression* vidExpr = initialExprOrEdgeDstExpr(initialExpr, var->colNames.back());
     columns->addColumn(new YieldColumn(vidExpr));
-    auto project = Project::make(qctx, input, columns);
+    auto project = Project::make(qctx, dep, columns);
+    project->setInputVar(inputVar);
     project->setColNames({kVid});
     auto dedup = Dedup::make(qctx, project);
     dedup->setColNames({kVid});
 
-    plan->root = dedup;
-    // plan->tail = dedup;
+    plan.root = dedup;
 }
 
-Expression* MatchSolver::initialExprOrEdgeDstExpr(const PlanNode* node, Expression** initialExpr) {
-    Expression* vidExpr = *initialExpr;
-    if (vidExpr != nullptr) {
-        VLOG(1) << vidExpr->toString();
-        *initialExpr = nullptr;
+Expression* MatchSolver::initialExprOrEdgeDstExpr(Expression* initialExpr,
+                                                  const std::string& vidCol) {
+    if (initialExpr != nullptr) {
+        return initialExpr;
     } else {
-        vidExpr = getLastEdgeDstExprInLastPath(node->colNamesRef().back());
+        return getEndVidInPath(vidCol);
     }
-    return vidExpr;
 }
 
-Expression* MatchSolver::getLastEdgeDstExprInLastPath(const std::string& colName) {
+Expression* MatchSolver::getEndVidInPath(const std::string& colName) {
     // expr: __Project_2[-1] => path
     auto columnExpr = ExpressionUtils::inputPropExpr(colName);
     // expr: endNode(path) => vn
@@ -201,7 +201,7 @@ Expression* MatchSolver::getLastEdgeDstExprInLastPath(const std::string& colName
     return new AttributeExpression(endNode.release(), vidExpr.release());
 }
 
-Expression* MatchSolver::getFirstVertexVidInFistPath(const std::string& colName) {
+Expression* MatchSolver::getStartVidInPath(const std::string& colName) {
     // expr: __Project_2[0] => path
     auto columnExpr = ExpressionUtils::inputPropExpr(colName);
     // expr: startNode(path) => v1

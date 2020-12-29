@@ -686,28 +686,20 @@ std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind) {
 }
 
 std::ostream& operator<<(std::ostream& os, const LogicalRow& row) {
-    switch (row.kind()) {
-        case nebula::graph::LogicalRow::Kind::kSequential:
-        case nebula::graph::LogicalRow::Kind::kJoin: {
-            std::stringstream ss;
-            size_t cnt = 0;
-            for (auto* seg : row.segments()) {
-                if (seg == nullptr) {
-                    ss << "nullptr";
-                } else {
-                    ss << *seg;
-                }
-                if (cnt < row.size() - 1) {
-                    ss << ",";
-                }
-                ++cnt;
-            }
-            os << ss.str();
-            break;
+    std::stringstream ss;
+    size_t cnt = 0;
+    for (auto* seg : row.segments()) {
+        if (seg == nullptr) {
+            ss << "nullptr";
+        } else {
+            ss << *seg;
         }
-        default:
-            LOG(FATAL) << "Not support streaming for " << row.kind();
+        if (cnt < row.size() - 1) {
+            ss << ",";
+        }
+        ++cnt;
     }
+    os << ss.str();
     return os;
 }
 }  // namespace graph

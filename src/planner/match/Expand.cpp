@@ -26,26 +26,35 @@ static std::unique_ptr<std::vector<VertexProp>> genVertexProps() {
 }
 
 std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> Expand::genEdgeProps(const EdgeInfo &edge) {
-    if (edge.edgeTypes.empty()) {
-        return std::make_unique<std::vector<storage::cpp2::EdgeProp>>(
-            buildAllEdgeProp().value());
-    }
-
     auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
     for (auto edgeType : edge.edgeTypes) {
         auto edgeSchema = matchCtx_->qctx->schemaMng()->getEdgeSchema(
             matchCtx_->space.id, edgeType);
-        if (edge.direction == Direction::IN_EDGE) {
-            edgeType = -edgeType;
-        } else if (edge.direction == Direction::BOTH) {
-            EdgeProp edgeProp;
-            edgeProp.set_type(-edgeType);
-            std::vector<std::string> props{kSrc, kType, kRank, kDst};
-            for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-                props.emplace_back(edgeSchema->getFieldName(i));
+
+        switch (edge.direction) {
+            case Direction::OUT_EDGE: {
+                if (reversely_) {
+                    edgeType = -edgeType;
+                }
+                break;
             }
-            edgeProp.set_props(std::move(props));
-            edgeProps->emplace_back(std::move(edgeProp));
+            case Direction::IN_EDGE: {
+                if (!reversely_) {
+                    edgeType = -edgeType;
+                }
+                break;
+            }
+            case Direction::BOTH: {
+                EdgeProp edgeProp;
+                edgeProp.set_type(-edgeType);
+                std::vector<std::string> props{kSrc, kType, kRank, kDst};
+                for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+                    props.emplace_back(edgeSchema->getFieldName(i));
+                }
+                edgeProp.set_props(std::move(props));
+                edgeProps->emplace_back(std::move(edgeProp));
+                break;
+            }
         }
         EdgeProp edgeProp;
         edgeProp.set_type(edgeType);
@@ -75,25 +84,24 @@ static Expression* buildPathExpr() {
 
 Status Expand::doExpand(const NodeInfo& node,
                         const EdgeInfo& edge,
-                        const PlanNode* input,
-                        SubPlan*plan) {
-    NG_RETURN_IF_ERROR(expandSteps(node, edge, input, plan));
+                        SubPlan* plan) {
+    NG_RETURN_IF_ERROR(expandSteps(node, edge, plan));
     NG_RETURN_IF_ERROR(filterDatasetByPathLength(edge, plan->root, plan));
     return Status::OK();
 }
 
 Status Expand::expandSteps(const NodeInfo& node,
                            const EdgeInfo& edge,
-                           const PlanNode* input,
                            SubPlan* plan) {
     SubPlan subplan;
-    NG_RETURN_IF_ERROR(expandStep(edge, input, node.filter, true, &subplan));
+    NG_RETURN_IF_ERROR(expandStep(edge, dependency_, inputVar_, node.filter, true, &subplan));
     // plan->tail = subplan.tail;
     PlanNode* passThrough = subplan.root;
     auto maxHop = edge.range ? edge.range->max() : 1;
     for (int64_t i = 1; i < maxHop; ++i) {
         SubPlan curr;
-        NG_RETURN_IF_ERROR(expandStep(edge, passThrough, nullptr, false, &curr));
+        NG_RETURN_IF_ERROR(
+            expandStep(edge, passThrough, passThrough->outputVar(), nullptr, false, &curr));
         auto rNode = subplan.root;
         DCHECK(rNode->kind() == PNKind::kUnion || rNode->kind() == PNKind::kPassThrough);
         NG_RETURN_IF_ERROR(collectData(passThrough, curr.root, rNode, &passThrough, &subplan));
@@ -104,17 +112,17 @@ Status Expand::expandSteps(const NodeInfo& node,
 
 // build subplan: Project->Dedup->GetNeighbors->[Filter]->Project
 Status Expand::expandStep(const EdgeInfo& edge,
-                          const PlanNode* input,
+                          PlanNode* dep,
+                          const std::string& inputVar,
                           const Expression* nodeFilter,
                           bool needPassThrough,
                           SubPlan* plan) {
-    DCHECK(input != nullptr);
     auto qctx = matchCtx_->qctx;
 
     // Extract dst vid from input project node which output dataset format is: [v1,e1,...,vn,en]
     SubPlan curr;
-    curr.root = const_cast<PlanNode*>(input);
-    MatchSolver::extractAndDedupVidColumn(qctx, initialExpr_, &curr);
+    curr.root = dep;
+    MatchSolver::extractAndDedupVidColumn(qctx, initialExpr_.release(), dep, inputVar, curr);
 
     auto gn = GetNeighbors::make(qctx, curr.root, matchCtx_->space.id);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
@@ -152,7 +160,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
             auto la = static_cast<const LabelAttributeExpression*>(expr);
             return new AttributeExpression(new EdgeExpression(), la->right()->clone().release());
         });
-        auto filter = edge.filter->clone().release();
+        auto filter = saveObject(edge.filter->clone().release());
         filter->accept(&visitor);
         auto filterNode = Filter::make(qctx, root, filter);
         filterNode->setColNames(root->colNames());
@@ -230,30 +238,5 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge,
     // plan->tail = curr.tail;
     return Status::OK();
 }
-
-StatusOr<std::vector<storage::cpp2::EdgeProp>> Expand::buildAllEdgeProp() {
-    // list all edge properties
-    std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> edgesSchema;
-    const auto allEdgesResult = matchCtx_->qctx->schemaMng()->getAllVerEdgeSchema(
-        matchCtx_->space.id);
-    NG_RETURN_IF_ERROR(allEdgesResult);
-    const auto allEdges = std::move(allEdgesResult).value();
-    for (const auto &edge : allEdges) {
-        edgesSchema.emplace(edge.first, edge.second.back());
-    }
-    std::vector<storage::cpp2::EdgeProp> eProps;
-    for (const auto &edgeSchema : edgesSchema) {
-        storage::cpp2::EdgeProp eProp;
-        eProp.set_type(edgeSchema.first);
-        std::vector<std::string> props{kSrc, kType, kRank, kDst};
-        for (std::size_t i = 0; i < edgeSchema.second->getNumFields(); ++i) {
-            props.emplace_back(edgeSchema.second->getFieldName(i));
-        }
-        eProp.set_props(std::move(props));
-        eProps.emplace_back(std::move(eProp));
-    }
-    return eProps;
-}
-
 }  // namespace graph
 }  // namespace nebula

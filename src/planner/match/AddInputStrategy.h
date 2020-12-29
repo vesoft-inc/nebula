@@ -8,7 +8,7 @@
 #define PLANNER_MATCH_ADDINPUTSTRATEGY_H_
 
 #include "planner/PlanNode.h"
-#include "planner/match/SegmentsConnector.h"
+#include "planner/match/SegmentsConnectStrategy.h"
 
 namespace nebula {
 namespace graph {

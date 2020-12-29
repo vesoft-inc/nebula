@@ -88,6 +88,7 @@ Feature: Integer Vid Match By Id
       """
     Then the result should be, in any order, with relax comparison:
       | start           | e                                          | end                   |
+      | ("Paul George") | [:like "Paul George"<-"Russell Westbrook"] | ("Russell Westbrook") |
       | ("Paul George") | [:like "Paul George"->"Russell Westbrook"] | ("Russell Westbrook") |
       | ("Paul George") | [:serve "Paul George"->"Pacers"]           | ("Pacers")            |
       | ("Paul George") | [:serve "Paul George"->"Thunders"]         | ("Thunders")          |

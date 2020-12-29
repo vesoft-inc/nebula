@@ -1359,6 +1359,81 @@ TEST_F(QueryValidatorTest, TestMatch) {
         };
         EXPECT_TRUE(checkResult(query, expected));
     }
+    {
+        std::string query = "MATCH (v1)-[e:serve*2..3{start_year: 2000}]-(v2) "
+                            "WHERE id(v1) == \"LeBron James\""
+                            "RETURN v1, v2";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kUnion,
+            PK::kPassThrough,
+            PK::kUnion,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kGetNeighbors,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDedup,
+            PK::kGetNeighbors,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDedup,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kDedup,
+            PK::kStart,
+            PK::kProject,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "MATCH p = (n)-[]-(m:person{name:\"LeBron James\"}) RETURN p";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kProject,
+            PK::kFilter,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kFilter,
+            PK::kPassThrough,
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kDedup,
+            PK::kProject,
+            PK::kDataJoin,
+            PK::kProject,
+            PK::kFilter,
+            PK::kGetVertices,
+            PK::kDedup,
+            PK::kProject,
+            PK::kIndexScan,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
 }
 
 

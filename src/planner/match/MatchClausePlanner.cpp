@@ -18,6 +18,7 @@
 
 namespace nebula {
 namespace graph {
+
 StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseCtx) {
     if (clauseCtx->kind != CypherClauseKind::kMatch) {
         return Status::Error("Not a valid context for MatchClausePlanner.");
@@ -27,34 +28,39 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     auto& nodeInfos = matchClauseCtx->nodeInfos;
     auto& edgeInfos = matchClauseCtx->edgeInfos;
     SubPlan matchClausePlan;
-    int64_t startIndex = -1;
+    size_t startIndex = 0;
+    bool startFromEdge = false;
 
-    NG_RETURN_IF_ERROR(findStarts(matchClauseCtx, startIndex, matchClausePlan));
-    NG_RETURN_IF_ERROR(expand(nodeInfos, edgeInfos, matchClauseCtx, startIndex, matchClausePlan));
-    NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, &matchClausePlan));
+    NG_RETURN_IF_ERROR(findStarts(matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
+    NG_RETURN_IF_ERROR(
+        expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
+    NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, startIndex, matchClausePlan));
     NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
     return matchClausePlan;
 }
 
 Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
-                                      int64_t& startIndex,
+                                      bool& startFromEdge,
+                                      size_t& startIndex,
                                       SubPlan& matchClausePlan) {
     auto& nodeInfos = matchClauseCtx->nodeInfos;
     auto& edgeInfos = matchClauseCtx->edgeInfos;
     auto& startVidFinders = StartVidFinder::finders();
+    bool foundStart = false;
     // Find the start plan node
-    for (size_t i = 0; i < nodeInfos.size(); ++i) {
-        for (auto& finder : startVidFinders) {
+    for (auto& finder : startVidFinders) {
+        for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
             auto nodeCtx = NodeContext(matchClauseCtx, &nodeInfos[i]);
-            auto finderObj = finder();
-            if (finderObj->match(&nodeCtx)) {
-                auto plan = finderObj->transform(&nodeCtx);
+            auto nodeFinder = finder();
+            if (nodeFinder->match(&nodeCtx)) {
+                auto plan = nodeFinder->transform(&nodeCtx);
                 if (!plan.ok()) {
                     return plan.status();
                 }
                 matchClausePlan = std::move(plan).value();
                 startIndex = i;
-                initialExpr_ = nodeCtx.initialExpr;
+                foundStart = true;
+                initialExpr_ = nodeCtx.initialExpr->clone();
                 VLOG(1) << "Find starts: " << startIndex
                     << " node: " << matchClausePlan.root->outputVar()
                     << " colNames: " << folly::join(",", matchClausePlan.root->colNames());
@@ -63,22 +69,25 @@ Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
 
             if (i != nodeInfos.size() - 1) {
                 auto edgeCtx = EdgeContext(matchClauseCtx, &edgeInfos[i]);
-                if (finderObj->match(&edgeCtx)) {
-                    auto plan = finderObj->transform(&edgeCtx);
+                auto edgeFinder = finder();
+                if (edgeFinder->match(&edgeCtx)) {
+                    auto plan = edgeFinder->transform(&edgeCtx);
                     if (!plan.ok()) {
                         return plan.status();
                     }
                     matchClausePlan = std::move(plan).value();
+                    startFromEdge = true;
                     startIndex = i;
+                    foundStart = true;
                     break;
                 }
             }
         }
-        if (startIndex != -1) {
+        if (foundStart) {
             break;
         }
     }
-    if (startIndex < 0) {
+    if (!foundStart) {
         return Status::Error("Can't solve the start vids from the sentence: %s",
                              matchClauseCtx->sentence->toString().c_str());
     }
@@ -89,23 +98,121 @@ Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
 Status MatchClausePlanner::expand(const std::vector<NodeInfo>& nodeInfos,
                                   const std::vector<EdgeInfo>& edgeInfos,
                                   MatchClauseContext* matchClauseCtx,
-                                  int64_t startIndex,
+                                  bool startFromEdge,
+                                  size_t startIndex,
                                   SubPlan& subplan) {
-    // Do expand from startIndex and connect the the subplans.
-    // TODO: Only support start from the head node now.
-    if (startIndex != 0) {
-        return Status::Error("Only support start from the head node parttern.");
+    if (startFromEdge) {
+        return expandFromEdge(nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan);
+    } else {
+        return expandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan);
     }
+}
 
-    std::vector<std::string> joinColNames = {folly::stringPrintf("%s_%d", kPathStr, 0)};
-    for (size_t i = 0; i < edgeInfos.size(); ++i) {
+Status MatchClausePlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos,
+                                          const std::vector<EdgeInfo>& edgeInfos,
+                                          MatchClauseContext* matchClauseCtx,
+                                          size_t startIndex,
+                                          SubPlan& subplan) {
+    SubPlan rightExpandPlan = subplan;
+    NG_RETURN_IF_ERROR(
+        rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, rightExpandPlan));
+
+    if (startIndex > 0) {
+        auto left = rightExpandPlan.root;
+        SubPlan leftExpandPlan = rightExpandPlan;
+        NG_RETURN_IF_ERROR(leftExpandFromNode(nodeInfos,
+                                              edgeInfos,
+                                              matchClauseCtx,
+                                              startIndex,
+                                              subplan.root->outputVar(),
+                                              leftExpandPlan));
+        rightExpandPlan.root = leftExpandPlan.root;
+        if (startIndex < nodeInfos.size() - 1) {
+            // Connect the left expand and right expand part.
+            auto right = leftExpandPlan.root;
+            rightExpandPlan.root =
+                SegmentsConnector::innerJoinSegments(matchClauseCtx->qctx,
+                                                     left,
+                                                     right,
+                                                     InnerJoinStrategy::JoinPos::kStart,
+                                                     InnerJoinStrategy::JoinPos::kStart);
+        }
+    }
+    subplan = rightExpandPlan;
+    return Status::OK();
+}
+
+Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
+                                              const std::vector<EdgeInfo>& edgeInfos,
+                                              MatchClauseContext* matchClauseCtx,
+                                              size_t startIndex,
+                                              std::string inputVar,
+                                              SubPlan& subplan) {
+    std::vector<std::string> joinColNames = {
+        folly::stringPrintf("%s_%lu", kPathStr, nodeInfos.size())};
+    for (size_t i = startIndex; i > 0; --i) {
         auto left = subplan.root;
-        auto status = std::make_unique<Expand>(matchClauseCtx, &initialExpr_)
-                          ->doExpand(nodeInfos[i], edgeInfos[i], subplan.root, &subplan);
+        auto status = std::make_unique<Expand>(matchClauseCtx,
+                                               i == startIndex ? initialExpr_->clone() : nullptr)
+                          ->depends(subplan.root)
+                          ->inputVar(inputVar)
+                          ->reversely()
+                          ->doExpand(nodeInfos[i], edgeInfos[i - 1], &subplan);
         if (!status.ok()) {
             return status;
         }
-        if (i > 0) {
+        if (i < startIndex) {
+            auto right = subplan.root;
+            VLOG(1) << "left: " << folly::join(",", left->colNames())
+                << " right: " << folly::join(",", right->colNames());
+            subplan.root = SegmentsConnector::innerJoinSegments(matchClauseCtx->qctx, left, right);
+            joinColNames.emplace_back(
+                folly::stringPrintf("%s_%lu", kPathStr, nodeInfos.size() + i));
+            subplan.root->setColNames(joinColNames);
+        }
+        inputVar = subplan.root->outputVar();
+    }
+
+    VLOG(1) << "root: " << subplan.root->outputVar() << " tail: " << subplan.tail->outputVar();
+    auto left = subplan.root;
+    NG_RETURN_IF_ERROR(
+        appendFetchVertexPlan(nodeInfos.front().filter,
+                              matchClauseCtx->space,
+                              matchClauseCtx->qctx,
+                              edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
+                              subplan));
+    if (!edgeInfos.empty()) {
+        auto right = subplan.root;
+        VLOG(1) << "left: " << folly::join(",", left->colNames())
+            << " right: " << folly::join(",", right->colNames());
+        subplan.root = SegmentsConnector::innerJoinSegments(matchClauseCtx->qctx, left, right);
+        joinColNames.emplace_back(
+            folly::stringPrintf("%s_%lu", kPathStr, nodeInfos.size() + startIndex));
+        subplan.root->setColNames(joinColNames);
+    }
+
+    VLOG(1) << "root: " << subplan.root->outputVar() << " tail: " << subplan.tail->outputVar();
+    return Status::OK();
+}
+
+Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
+                                               const std::vector<EdgeInfo>& edgeInfos,
+                                               MatchClauseContext* matchClauseCtx,
+                                               size_t startIndex,
+                                               SubPlan& subplan) {
+    std::vector<std::string> joinColNames = {folly::stringPrintf("%s_%lu", kPathStr, startIndex)};
+    for (size_t i = startIndex; i < edgeInfos.size(); ++i) {
+        auto left = subplan.root;
+        auto status =
+            std::make_unique<Expand>(matchClauseCtx,
+                                     i == startIndex ? initialExpr_->clone() : nullptr)
+                ->depends(subplan.root)
+                ->inputVar(subplan.root->outputVar())
+                ->doExpand(nodeInfos[i], edgeInfos[i], &subplan);
+        if (!status.ok()) {
+            return status;
+        }
+        if (i > startIndex) {
             auto right = subplan.root;
             VLOG(1) << "left: " << folly::join(",", left->colNames())
                 << " right: " << folly::join(",", right->colNames());
@@ -117,8 +224,12 @@ Status MatchClausePlanner::expand(const std::vector<NodeInfo>& nodeInfos,
 
     VLOG(1) << "root: " << subplan.root->outputVar() << " tail: " << subplan.tail->outputVar();
     auto left = subplan.root;
-    NG_RETURN_IF_ERROR(appendFetchVertexPlan(
-        nodeInfos.back().filter, matchClauseCtx->qctx, matchClauseCtx->space, &subplan));
+    NG_RETURN_IF_ERROR(
+        appendFetchVertexPlan(nodeInfos.back().filter,
+                              matchClauseCtx->space,
+                              matchClauseCtx->qctx,
+                              edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
+                              subplan));
     if (!edgeInfos.empty()) {
         auto right = subplan.root;
         VLOG(1) << "left: " << folly::join(",", left->colNames())
@@ -132,14 +243,29 @@ Status MatchClausePlanner::expand(const std::vector<NodeInfo>& nodeInfos,
     return Status::OK();
 }
 
+Status MatchClausePlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
+                                          const std::vector<EdgeInfo>& edgeInfos,
+                                          MatchClauseContext* matchClauseCtx,
+                                          size_t startIndex,
+                                          SubPlan& subplan) {
+    UNUSED(nodeInfos);
+    UNUSED(edgeInfos);
+    UNUSED(matchClauseCtx);
+    UNUSED(startIndex);
+    UNUSED(subplan);
+    return Status::Error("Expand from edge has not been implemented yet.");
+}
+
 Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
+                                                 const SpaceInfo& space,
                                                  QueryContext* qctx,
-                                                 SpaceInfo& space,
-                                                 SubPlan* plan) {
-    MatchSolver::extractAndDedupVidColumn(qctx, &initialExpr_, plan);
+                                                 Expression* initialExpr,
+                                                 SubPlan& plan) {
+    MatchSolver::extractAndDedupVidColumn(
+        qctx, initialExpr, plan.root, plan.root->outputVar(), plan);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
     auto gv = GetVertices::make(
-        qctx, plan->root, space.id, qctx->objPool()->add(srcExpr.release()), {}, {});
+        qctx, plan.root, space.id, qctx->objPool()->add(srcExpr.release()), {}, {});
 
     PlanNode* root = gv;
     if (nodeFilter != nullptr) {
@@ -158,6 +284,7 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
             return new VertexExpression();
         });
         filter->accept(&visitor);
+        qctx->objPool()->add(filter);
         root = Filter::make(qctx, root, filter);
     }
 
@@ -166,35 +293,54 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
     auto pathExpr = std::make_unique<PathBuildExpression>();
     pathExpr->add(std::make_unique<VertexExpression>());
     columns->addColumn(new YieldColumn(pathExpr.release()));
-    plan->root = Project::make(qctx, root, columns);
-    plan->root->setColNames({kPathStr});
+    plan.root = Project::make(qctx, root, columns);
+    plan.root->setColNames({kPathStr});
     return Status::OK();
 }
 
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
-                                                   SubPlan* plan) {
+                                                   size_t startIndex,
+                                                   SubPlan& plan) {
     auto qctx = matchClauseCtx->qctx;
     auto& nodeInfos = matchClauseCtx->nodeInfos;
     auto& edgeInfos = matchClauseCtx->edgeInfos;
-    auto columns = qctx->objPool()->add(new YieldColumns);
-    auto input = plan->root;
+    auto input = plan.root;
     const auto& inColNames = input->colNamesRef();
-    DCHECK_EQ(inColNames.size(), nodeInfos.size());
+    auto columns = qctx->objPool()->add(new YieldColumns);
     std::vector<std::string> colNames;
 
     auto addNode = [&, this](size_t i) {
         auto& nodeInfo = nodeInfos[i];
         if (nodeInfo.alias != nullptr && !nodeInfo.anonymous) {
-            columns->addColumn(buildVertexColumn(inColNames[i], *nodeInfo.alias));
+            if (i >= startIndex) {
+                columns->addColumn(
+                    buildVertexColumn(inColNames[i - startIndex], *nodeInfo.alias));
+            } else if (startIndex == (nodeInfos.size() - 1)) {
+                columns->addColumn(buildVertexColumn(
+                    inColNames[startIndex - i], *nodeInfo.alias));
+            } else {
+                columns->addColumn(buildVertexColumn(
+                    inColNames[nodeInfos.size() - i], *nodeInfo.alias));
+            }
             colNames.emplace_back(*nodeInfo.alias);
         }
     };
 
     for (size_t i = 0; i < edgeInfos.size(); i++) {
+        VLOG(1) << "colSize: " << inColNames.size() << "i: " << i
+                << " nodesize: " << nodeInfos.size() << " start: " << startIndex;
         addNode(i);
         auto& edgeInfo = edgeInfos[i];
         if (edgeInfo.alias != nullptr && !edgeInfo.anonymous) {
-            columns->addColumn(buildEdgeColumn(inColNames[i], edgeInfo));
+            if (i >= startIndex) {
+                columns->addColumn(buildEdgeColumn(inColNames[i - startIndex], edgeInfo));
+            } else if (startIndex == (nodeInfos.size() - 1)) {
+                columns->addColumn(
+                    buildEdgeColumn(inColNames[edgeInfos.size() - 1 - i], edgeInfo));
+            } else {
+                columns->addColumn(
+                    buildEdgeColumn(inColNames[edgeInfos.size() - i], edgeInfo));
+            }
             colNames.emplace_back(*edgeInfo.alias);
         }
     }
@@ -207,15 +353,16 @@ Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClau
     auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
         return alias.second == AliasType::kPath;
     });
-    std::string alias = iter != aliases.end() ? iter->first : qctx->vctx()->anonColGen()->getCol();
-    columns->addColumn(buildPathColumn(alias, input));
+    std::string alias =
+        iter != aliases.end() ? iter->first : qctx->vctx()->anonColGen()->getCol();
+    columns->addColumn(buildPathColumn(alias, startIndex, inColNames, nodeInfos.size()));
     colNames.emplace_back(alias);
 
     auto project = Project::make(qctx, input, columns);
     project->setColNames(std::move(colNames));
 
-    plan->root = MatchSolver::filtPathHasSameEdge(project, alias, qctx);
-    VLOG(1) << "root: " << plan->root->outputVar() << " tail: " << plan->tail->outputVar();
+    plan.root = MatchSolver::filtPathHasSameEdge(project, alias, qctx);
+    VLOG(1) << "root: " << plan.root->outputVar() << " tail: " << plan.tail->outputVar();
     return Status::OK();
 }
 
@@ -250,12 +397,45 @@ YieldColumn* MatchClausePlanner::buildEdgeColumn(const std::string& colName, Edg
 }
 
 YieldColumn* MatchClausePlanner::buildPathColumn(const std::string& alias,
-                                                 const PlanNode* input) const {
-    auto pathExpr = std::make_unique<PathBuildExpression>();
-    for (const auto& colName : input->colNamesRef()) {
-        pathExpr->add(ExpressionUtils::inputPropExpr(colName));
+                                                 size_t startIndex,
+                                                 const std::vector<std::string> colNames,
+                                                 size_t nodeInfoSize) const {
+    auto colSize = colNames.size();
+    DCHECK((nodeInfoSize == colSize) || (nodeInfoSize + 1 == colSize));
+    size_t bound = 0;
+    if (colSize > nodeInfoSize) {
+        bound = colSize - startIndex - 1;
+    } else if (startIndex == (nodeInfoSize - 1)) {
+        bound = 0;
+    } else {
+        bound = colSize - startIndex;
     }
-    return new YieldColumn(pathExpr.release(), new std::string(alias));
+
+    auto rightExpandPath = std::make_unique<PathBuildExpression>();
+    for (size_t i = 0; i < bound; ++i) {
+        rightExpandPath->add(ExpressionUtils::inputPropExpr(colNames[i]));
+    }
+
+    auto leftExpandPath = std::make_unique<PathBuildExpression>();
+    for (size_t i = bound; i < colNames.size(); ++i) {
+        leftExpandPath->add(ExpressionUtils::inputPropExpr(colNames[i]));
+    }
+
+    auto finalPath = std::make_unique<PathBuildExpression>();
+    if (leftExpandPath->size() != 0) {
+        auto args = new ArgumentList();
+        args->addArgument(std::move(leftExpandPath));
+        auto reversePath =
+            std::make_unique<FunctionCallExpression>(new std::string("reversePath"), args);
+        if (rightExpandPath->size() == 0) {
+            return new YieldColumn(reversePath.release(), new std::string(alias));
+        }
+        finalPath->add(std::move(reversePath));
+    }
+    if (rightExpandPath->size() != 0) {
+        finalPath->add(std::move(rightExpandPath));
+    }
+    return new YieldColumn(finalPath.release(), new std::string(alias));
 }
 
 Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan) {

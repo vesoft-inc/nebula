@@ -74,7 +74,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
     plan.root = scan;
 
     // initialize start expression in project node
-    nodeCtx->initialExpr = ExpressionUtils::newVarPropExpr(kVid);
+    nodeCtx->initialExpr = std::unique_ptr<Expression>(ExpressionUtils::newVarPropExpr(kVid));
     return plan;
 }
 
