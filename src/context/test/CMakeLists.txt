@@ -23,7 +23,6 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_common_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_storage_thrift_obj>
-    $<TARGET_OBJECTS:common_time_function_obj>
     $<TARGET_OBJECTS:common_http_client_obj>
     $<TARGET_OBJECTS:common_process_obj>
     $<TARGET_OBJECTS:common_time_utils_obj>

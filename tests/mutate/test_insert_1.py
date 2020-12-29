@@ -33,7 +33,7 @@ class TestInsert1(NebulaTestSuite):
                             'BMI double DEFAULT 18.5, '
                             'department string DEFAULT "engineering",'
                             'birthday timestamp DEFAULT '
-                            '"2020-01-10 10:00:00")')
+                            '`timestamp`("2020-01-10T10:00:00"))')
         self.check_resp_succeeded(resp)
 
         resp = self.execute('CREATE TAG student(grade string, number int)')
@@ -128,7 +128,7 @@ class TestInsert1(NebulaTestSuite):
 
         # insert vertex with timestamp succeeded, timestamp not supported, TODO
         resp = self.execute('INSERT VERTEX school(name, create_time) VALUES '
-                            '"sun_school":("sun_school", "2010-01-01 10:00:00")')
+                            '"sun_school":("sun_school", `timestamp`("2010-01-01T10:00:00"))')
         self.check_resp_succeeded(resp)
 
         # insert vertex with timestamp succeeded uuid
@@ -160,7 +160,7 @@ class TestInsert1(NebulaTestSuite):
         # insert edge with timestamp succeed
         resp = self.execute('INSERT EDGE study(start_time, end_time) '
                             'VALUES "Laura"->"sun_school":'
-                            '("2019-01-01 10:00:00", now()+3600*24*365*3)')
+                            '(`timestamp`("2019-01-01T10:00:00"), now()+3600*24*365*3)')
         self.check_resp_succeeded(resp)
 
         # insert edge with timestamp succeed by uuid, does not support
@@ -188,7 +188,7 @@ class TestInsert1(NebulaTestSuite):
         # fetch sun_school
         resp = self.execute('FETCH PROP ON school "sun_school"')
         self.check_resp_succeeded(resp)
-        expect_result = [["sun_school", "sun_school", 1262311200]]
+        expect_result = [["sun_school", "sun_school", 1262340000]]
         self.check_result(resp, expect_result)
 
         # fetch sun_school by uuid
@@ -488,8 +488,8 @@ class TestInsert1(NebulaTestSuite):
                                   '$$.personWithDefault.birthday, $$.personWithDefault.department,'
                                   '$$.studentWithDefault.grade, $$.studentWithDefault.number')
         self.check_resp_succeeded(resp)
-        expect_result = [[80, 'Laura', 1578621600, 'engineering', 'one', 20190901008],
-                         [80, 'Amber', 1578621600, 'engineering', 'one', 20180901003]]
+        expect_result = [[80, 'Laura', 1578650400, 'engineering', 'one', 20190901008],
+                         [80, 'Amber', 1578650400, 'engineering', 'one', 20180901003]]
         self.check_out_of_order_result(resp, expect_result)
 
     def test_multi_version(self):

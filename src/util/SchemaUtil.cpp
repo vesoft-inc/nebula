@@ -5,7 +5,6 @@
 */
 
 #include "common/base/Base.h"
-#include "common/function/TimeFunction.h"
 #include "util/SchemaUtil.h"
 #include "context/QueryExpressionContext.h"
 

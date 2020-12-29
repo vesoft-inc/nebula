@@ -32,22 +32,22 @@ class TestIndex(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
-        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '101':('Tom', 18, 35.4, '2010-09-01 08:00:00')")
+        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '101':('Tom', 18, 35.4, `timestamp`('2010-09-01T08:00:00'))")
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '102':('Jerry', 22, 38.4, '2011-09-01 08:00:00')")
+        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '102':('Jerry', 22, 38.4, `timestamp`('2011-09-01T08:00:00'))")
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '103':('Bob', 19, 36.4, '2010-09-01 12:00:00')")
+        resp = self.client.execute("INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES '103':('Bob', 19, 36.4, `timestamp`('2010-09-01T12:00:00'))")
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '101'->'102':('Red', 81, 45.3, '2010-09-01 08:00:00')")
+        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '101'->'102':('Red', 81, 45.3, `timestamp`('2010-09-01T08:00:00'))")
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '102'->'103':('Yellow', 22, 423.8, '2011-09-01 08:00:00')")
+        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '102'->'103':('Yellow', 22, 423.8, `timestamp`('2011-09-01T08:00:00'))")
         self.check_resp_succeeded(resp)
 
-        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '103'->'101':('Blue', 91, 43.1, '2010-09-01 12:00:00')")
+        resp = self.client.execute("INSERT EDGE edge_1(col1, col2, col3, col4) VALUES '103'->'101':('Blue', 91, 43.1, `timestamp`('2010-09-01T12:00:00'))")
         self.check_resp_succeeded(resp)
 
     @classmethod

@@ -8,7 +8,6 @@ nebula_add_test(
     SOURCES
         ExecutionPlanTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:common_time_function_obj>
         $<TARGET_OBJECTS:common_conf_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_http_client_obj>

@@ -22,7 +22,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:context_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
-        $<TARGET_OBJECTS:common_time_function_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_network_obj>
         $<TARGET_OBJECTS:common_fs_obj>
