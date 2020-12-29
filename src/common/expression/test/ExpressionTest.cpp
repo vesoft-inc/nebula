@@ -34,6 +34,7 @@
 #include "common/expression/VertexExpression.h"
 #include "common/expression/CaseExpression.h"
 #include "common/expression/ColumnExpression.h"
+#include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
@@ -2830,6 +2831,120 @@ TEST_F(ExpressionTest, CaseEvaluate) {
     }
 }
 
+TEST_F(ExpressionTest, ListComprehensionExprToString) {
+    {
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<ConstantExpression>(1));
+        argList->addArgument(std::make_unique<ConstantExpression>(5));
+        ListComprehensionExpression expr(
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("range"), argList),
+            new RelationalExpression(
+                Expression::Kind::kRelGE,
+                new LabelExpression(new std::string("n")),
+                new ConstantExpression(2)));
+        ASSERT_EQ("[n IN range(1,5) WHERE (n>=2)]", expr.toString());
+    }
+    {
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<LabelExpression>(new std::string("p")));
+        ListComprehensionExpression expr(
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("nodes"), argList),
+            nullptr,
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new LabelAttributeExpression(new LabelExpression(new std::string("n")),
+                                             new ConstantExpression("age")),
+                new ConstantExpression(10)));
+        ASSERT_EQ("[n IN nodes(p) | (n.age+10)]", expr.toString());
+    }
+    {
+        auto *listItems = new ExpressionList();
+        (*listItems)
+            .add(new ConstantExpression(0))
+            .add(new ConstantExpression(1))
+            .add(new ConstantExpression(2));
+        ListComprehensionExpression expr(
+            new std::string("n"),
+            new ListExpression(listItems),
+            new RelationalExpression(
+                Expression::Kind::kRelGE,
+                new LabelExpression(new std::string("n")),
+                new ConstantExpression(2)),
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new LabelExpression(new std::string("n")),
+                new ConstantExpression(10)));
+        ASSERT_EQ("[n IN [0,1,2] WHERE (n>=2) | (n+10)]", expr.toString());
+    }
+}
+
+TEST_F(ExpressionTest, ListComprehensionEvaluate) {
+    {
+        // [n IN [0, 1, 2, 4, 5] WHERE n >= 2 | n + 10]
+        auto *listItems = new ExpressionList();
+        (*listItems)
+            .add(new ConstantExpression(0))
+            .add(new ConstantExpression(1))
+            .add(new ConstantExpression(2))
+            .add(new ConstantExpression(4))
+            .add(new ConstantExpression(5));
+        ListComprehensionExpression expr(
+            new std::string("n"),
+            new ListExpression(listItems),
+            new RelationalExpression(
+                Expression::Kind::kRelGE,
+                new VariableExpression(new std::string("n")),
+                new ConstantExpression(2)),
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new VariableExpression(new std::string("n")),
+                new ConstantExpression(10)));
+
+        auto value = Expression::eval(&expr, gExpCtxt);
+        List expected;
+        expected.reserve(3);
+        expected.emplace_back(12);
+        expected.emplace_back(14);
+        expected.emplace_back(15);
+        ASSERT_TRUE(value.isList());
+        ASSERT_EQ(expected, value.getList());
+    }
+    {
+        // [n IN nodes(p) | n.age + 5]
+        auto v1 = Vertex("101", {Tag("player", {{"name", "joe"}, {"age", 18}})});
+        auto v2 = Vertex("102", {Tag("player", {{"name", "amber"}, {"age", 19}})});
+        auto v3 = Vertex("103", {Tag("player", {{"name", "shawdan"}, {"age", 20}})});
+        Path path;
+        path.src = v1;
+        path.steps.emplace_back(Step(v2, 1, "like", 0, {}));
+        path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
+        gExpCtxt.setVar("p", path);
+
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<VariableExpression>(new std::string("p")));
+        ListComprehensionExpression expr(
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("nodes"), argList),
+            nullptr,
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new AttributeExpression(new VariableExpression(new std::string("n")),
+                                        new ConstantExpression("age")),
+                new ConstantExpression(5)));
+
+        auto value = Expression::eval(&expr, gExpCtxt);
+        List expected;
+        expected.reserve(3);
+        expected.emplace_back(23);
+        expected.emplace_back(24);
+        expected.emplace_back(25);
+        ASSERT_TRUE(value.isList());
+        ASSERT_EQ(expected, value.getList());
+    }
+}
+
 TEST_F(ExpressionTest, TestExprClone) {
     ConstantExpression expr(1);
     auto clone = expr.clone();
@@ -2930,6 +3045,17 @@ TEST_F(ExpressionTest, TestExprClone) {
         .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
                                                               new std::string("path_v1")));
     ASSERT_EQ(pathBuild, *pathBuild.clone());
+
+    ArgumentList *argList = new ArgumentList();
+    argList->addArgument(std::make_unique<ConstantExpression>(1));
+    argList->addArgument(std::make_unique<ConstantExpression>(5));
+    ListComprehensionExpression lcExpr(
+        new std::string("n"),
+        new FunctionCallExpression(new std::string("range"), argList),
+        new RelationalExpression(Expression::Kind::kRelGE,
+                                 new LabelExpression(new std::string("n")),
+                                 new ConstantExpression(2)));
+    ASSERT_EQ(lcExpr, *lcExpr.clone());
 }
 
 TEST_F(ExpressionTest, PathBuild) {

@@ -37,6 +37,8 @@ private:
 };
 
 class CaseExpression final : public Expression {
+    friend class Expression;
+
 public:
     CaseExpression() : Expression(Kind::kCase), isGeneric_(true) {}
 
