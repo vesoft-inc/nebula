@@ -64,7 +64,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     }
 
     for (auto& tagItem : tagItems) {
-        auto cols = tagItem.get_schema().get_columns();
+        auto &cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
@@ -74,11 +74,12 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
                 return;
             }
         }
-        if (!SchemaUtil::checkType(cols)) {
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
-            onFinished();
-            return;
-        }
+    }
+
+    if (!SchemaUtil::checkType(columns)) {
+        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
     }
 
     // Update schema property if tag not index
