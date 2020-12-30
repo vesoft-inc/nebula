@@ -109,6 +109,10 @@ Status PermissionManager::canWriteUser(Session *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
+    // Cloud auth user cannot create user
+    if (FLAGS_auth_type == "cloud") {
+        return Status::PermissionError("Cloud authenticate user can't write user.");
+    }
     if (session->isGod()) {
         return Status::OK();
     } else {
@@ -122,6 +126,10 @@ Status PermissionManager::canWriteRole(Session *session,
                                      const std::string& targetUser) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
+    }
+    // Cloud auth user cannot grant role
+    if (FLAGS_auth_type == "cloud") {
+        return Status::PermissionError("Cloud authenticate user can't write role.");
     }
     /**
      * Reject grant or revoke to himself.

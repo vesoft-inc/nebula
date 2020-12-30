@@ -64,10 +64,13 @@ public:
     }
 
     bool isGod() const {
-        /**
-         * Only have one user as GOD, the user name is "root".
-         */
-        return user() == "root";
+        // Cloud may have multiple God accounts
+        for (auto &role : roles_) {
+            if (role.second == meta::cpp2::RoleType::GOD) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void setRole(GraphSpaceID space, meta::cpp2::RoleType role) {
