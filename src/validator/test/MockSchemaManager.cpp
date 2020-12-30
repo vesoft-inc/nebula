@@ -5,6 +5,7 @@
 */
 
 #include "validator/test/MockSchemaManager.h"
+#include <memory>
 
 namespace nebula {
 namespace graph {
@@ -12,6 +13,8 @@ namespace graph {
 // space: test_space
 // tag:
 //     person(name string, age int8)
+//     book(name string)
+//     room(number int8)
 // edge:
 //     like(start timestamp, end timestamp, likeness int64)
 void MockSchemaManager::init() {
@@ -24,6 +27,8 @@ void MockSchemaManager::init() {
     edgeIdNames_.emplace(4, "serve");
     tagNameIds_.emplace("book", 5);
     tagIdNames_.emplace(5, "book");
+    tagNameIds_.emplace("room", 6);
+    tagIdNames_.emplace(6, "room");
 
     Tags tagSchemas;
     // person {name : string, age : int8}
@@ -35,6 +40,10 @@ void MockSchemaManager::init() {
     std::shared_ptr<meta::NebulaSchemaProvider> bookSchema(new meta::NebulaSchemaProvider(0));
     bookSchema->addField("name", meta::cpp2::PropertyType::STRING);
     tagSchemas.emplace(5, bookSchema);
+    // room {number : int8}
+    std::shared_ptr<meta::NebulaSchemaProvider> roomSchema(new meta::NebulaSchemaProvider(0));
+    roomSchema->addField("number", meta::cpp2::PropertyType::INT8);
+    tagSchemas.emplace(5, roomSchema);
 
     tagSchemas_.emplace(1, std::move(tagSchemas));
 

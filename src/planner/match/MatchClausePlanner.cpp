@@ -269,7 +269,7 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
 
     PlanNode* root = gv;
     if (nodeFilter != nullptr) {
-        auto filter = nodeFilter->clone().release();
+        auto filter = qctx->objPool()->add(nodeFilter->clone().release());
         RewriteMatchLabelVisitor visitor(
             [](const Expression* expr) -> Expression *{
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute ||
@@ -284,7 +284,6 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
             return new VertexExpression();
         });
         filter->accept(&visitor);
-        qctx->objPool()->add(filter);
         root = Filter::make(qctx, root, filter);
     }
 

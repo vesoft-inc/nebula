@@ -21,6 +21,7 @@
 #include "common/base/ObjectPool.h"
 #include "validator/Validator.h"
 #include "validator/test/MockSchemaManager.h"
+#include "validator/test/MockIndexManager.h"
 
 namespace nebula {
 namespace graph {
@@ -35,6 +36,7 @@ protected:
         spaceInfo.spaceDesc.space_name = "test_space";
         session_->setSpace(std::move(spaceInfo));
         schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
+        indexMng_ = CHECK_NOTNULL(MockIndexManager::makeUnique());
         pool_ = std::make_unique<ObjectPool>();
         PlannersRegister::registPlanners();
     }
@@ -57,6 +59,7 @@ protected:
         auto qctx = pool_->add(new QueryContext());
         qctx->setRCtx(std::move(rctx));
         qctx->setSchemaManager(schemaMng_.get());
+        qctx->setIndexManager(indexMng_.get());
         qctx->setCharsetInfo(CharsetInfo::instance());
         return qctx;
     }
@@ -116,6 +119,7 @@ protected:
 protected:
     std::shared_ptr<Session>              session_;
     std::unique_ptr<MockSchemaManager>    schemaMng_;
+    std::unique_ptr<MockIndexManager>     indexMng_{nullptr};
     std::unique_ptr<Sentence>             sentences_;
     std::unique_ptr<ObjectPool>           pool_;
 };

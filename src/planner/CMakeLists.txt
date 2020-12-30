@@ -34,4 +34,5 @@ nebula_add_library(
     match/PropIndexSeek.cpp
     match/VertexIdSeek.cpp
     match/Expand.cpp
+    match/LabelIndexSeek.cpp
 )

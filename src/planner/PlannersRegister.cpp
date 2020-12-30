@@ -12,6 +12,7 @@
 #include "planner/match/StartVidFinder.h"
 #include "planner/match/PropIndexSeek.h"
 #include "planner/match/VertexIdSeek.h"
+#include "planner/match/LabelIndexSeek.h"
 
 namespace nebula {
 namespace graph {
@@ -39,8 +40,10 @@ void PlannersRegister::registMatch() {
     // MATCH(n:Tag) WHERE n.prop = value RETURN n
     startVidFinders.emplace_back(&PropIndexSeek::make);
 
-    // MATCH(n:Tag) RETURN n;
-    // planners.emplace_back(&MatchTagScanPlanner::match, &MatchTagScanPlanner::make);
+    // seek by tag or edge(index)
+    // MATCH(n: tag) RETURN n
+    // MATCH(s)-[:edge]->(e) RETURN e
+    startVidFinders.emplace_back(&LabelIndexSeek::make);
 }
 }  // namespace graph
 }  // namespace nebula

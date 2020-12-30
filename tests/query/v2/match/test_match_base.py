@@ -601,9 +601,9 @@ class TestMatchBase(NebulaTestSuite):
         self.check_resp_failed(resp)
 
         # Scan by label
-        stmt = 'MATCH (v:player) return v'
-        resp = self.execute(stmt)
-        self.check_resp_failed(resp)
+        # stmt = 'MATCH (v:player) return v'
+        # resp = self.execute(stmt)
+        # self.check_resp_failed(resp)
 
         # Scan by label
         stmt = 'MATCH (v:player:person) return v'

@@ -60,6 +60,8 @@ struct ScanInfo {
     Expression                             *filter{nullptr};
     int32_t                                 schemaId{0};
     const std::string                      *schemaName{nullptr};
+    // use for seek by index itself
+    IndexID                                 indexId{-1};
 };
 
 struct CypherClauseContextBase : AstContext {
