@@ -98,7 +98,7 @@ public:
 
     void addFTClient(const nebula::meta::cpp2::FTClient& client);
 
-    StatusOr<int32_t> getPartsNum(GraphSpaceID) {
+    StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
         return 1;
     }
 

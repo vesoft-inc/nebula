@@ -57,7 +57,7 @@ kvstore::ResultCode RebuildIndexTask::invoke(GraphSpaceID space,
         LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
         return kvstore::ResultCode::ERR_BUILD_INDEX_FAILED;
     } else {
-        LOG(INFO) << "Remove legacy logs at part: " << part << " successful";
+        VLOG(1) << "Remove legacy logs at part: " << part << " successful";
     }
 
     // todo(doodle): this place has potential bug is that we'd better lock the part at first,
@@ -70,25 +70,26 @@ kvstore::ResultCode RebuildIndexTask::invoke(GraphSpaceID space,
         LOG(ERROR) << "Building index failed";
         return kvstore::ResultCode::ERR_BUILD_INDEX_FAILED;
     } else {
-        LOG(INFO) << "Building index successful";
+        LOG(INFO) << folly::sformat("Building index successful, space={}, part={}", space, part);
     }
 
-    LOG(INFO) << "Processing operation logs";
+    LOG(INFO) << folly::sformat("Processing operation logs, space={}, part={}", space, part);
     result = buildIndexOnOperations(space, part);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Building index with operation logs failed";
+        LOG(ERROR) << folly::sformat(
+            "Building index with operation logs failed, space={}, part={}", space, part);
         return kvstore::ResultCode::ERR_INVALID_OPERATION;
     }
 
     env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::FINISHED);
-    LOG(INFO) << "RebuildIndexTask Finished";
+    LOG(INFO) << folly::sformat("RebuildIndexTask Finished, space={}, part={}", space, part);
     return result;
 }
 
 kvstore::ResultCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space,
                                                              PartitionID part) {
     if (canceled_) {
-        LOG(ERROR) << "Rebuild index canceled";
+        LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
         return kvstore::ResultCode::SUCCEEDED;
     }
 

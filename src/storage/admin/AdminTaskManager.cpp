@@ -129,6 +129,13 @@ void AdminTaskManager::schedule() {
         subTaskConcurrency = std::min(subTaskConcurrency, subTasks.size());
         task->unFinishedSubTask_ = subTasks.size();
 
+        if (0 == subTasks.size()) {
+            FLOG_INFO("task(%d, %d) finished, no subtask", task->getJobId(), task->getTaskId());
+            task->finish();
+            tasks_.erase(handle);
+            return;
+        }
+
         FLOG_INFO("run task(%d, %d), %zu subtasks in %zu thread",
                   handle.first, handle.second,
                   task->unFinishedSubTask_.load(),
@@ -166,8 +173,12 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
             task->subTaskFinish(rc);
         }
 
-        if (0 == --task->unFinishedSubTask_) {
-            FLOG_INFO("task(%d, %d) finished", task->getJobId(), task->getTaskId());
+        auto unFinishedSubTask = --task->unFinishedSubTask_;
+        FLOG_INFO("subtask of task(%d, %d) finished, unfinished task %zu",
+                  task->getJobId(),
+                  task->getTaskId(),
+                  unFinishedSubTask);
+        if (0 == unFinishedSubTask) {
             task->finish();
             tasks_.erase(handle);
         } else {
