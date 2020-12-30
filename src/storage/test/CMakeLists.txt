@@ -211,9 +211,9 @@ nebula_add_executable(
 
 nebula_add_executable(
     NAME
-        toss_happy_test
+        toss_test
     SOURCES
-        TossHappyTest.cpp
+        TossTest.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES
@@ -224,23 +224,6 @@ nebula_add_executable(
         gtest
         boost_regex
 )
-
-# nebula_add_executable(
-#     NAME
-#         toss_err_test
-#     SOURCES
-#         TossErrorTest.cpp
-#     OBJECTS
-#         ${storage_test_deps}
-#         $<TARGET_OBJECTS:common_graph_storage_client_obj>
-#         $<TARGET_OBJECTS:common_storage_client_base_obj>
-#     LIBRARIES
-#         ${ROCKSDB_LIBRARIES}
-#         ${THRIFT_LIBRARIES}
-#         wangle
-#         gtest
-#         boost_regex
-# )
 
 nebula_add_executable(
     NAME

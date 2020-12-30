@@ -246,8 +246,8 @@ struct TossEnvironment {
         row.values.emplace_back(edge.key.src);
         row.values.emplace_back(edge.key.edge_type);
         row.values.emplace_back(edge.key.ranking);
-        auto sDst = std::string(reinterpret_cast<const char*>(&edge.key.dst.getInt()), 8);
-        row.values.emplace_back(sDst);
+        // auto sDst = std::string(reinterpret_cast<const char*>(&edge.key.dst.getInt()), 8);
+        row.values.emplace_back(edge.key.dst);
 
         nebula::DataSet ds;
         ds.rows.emplace_back(std::move(row));
