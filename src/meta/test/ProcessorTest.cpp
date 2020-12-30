@@ -1842,6 +1842,30 @@ TEST(ProcessorTest, AlterTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
+    // Add col with wrong default value type
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        cpp2::Schema schema;
+        cpp2::ColumnDef column;
+        column.name = "add_col_mismatch_type";
+        column.type.set_type(PropertyType::INT64);
+        ConstantExpression strValue("default value");
+        column.set_default_value(Expression::encode(strValue));
+        schema.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(schema));
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+    }
 }
 
 
@@ -2263,6 +2287,30 @@ TEST(ProcessorTest, AlterEdgeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    // Add col with wrong default value type
+    {
+        cpp2::AlterEdgeReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        cpp2::Schema schema;
+        cpp2::ColumnDef column;
+        column.name = "add_col_mismatch_type";
+        column.type.set_type(PropertyType::INT64);
+        ConstantExpression strValue("default value");
+        column.set_default_value(Expression::encode(strValue));
+        schema.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(schema));
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_edge_items(items);
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
     }
 }
 
@@ -3891,3 +3939,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
+
