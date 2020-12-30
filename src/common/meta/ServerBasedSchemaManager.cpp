@@ -31,6 +31,11 @@ StatusOr<cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpac
     return metaClient_->getSpaceVidType(space);
 }
 
+StatusOr<int32_t> ServerBasedSchemaManager::getPartsNum(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->partsNum(space);
+}
+
 std::shared_ptr<const NebulaSchemaProvider>
 ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver) {
     VLOG(3) << "Get Tag Schema Space " << space << ", TagID " << tag << ", Version " << ver;

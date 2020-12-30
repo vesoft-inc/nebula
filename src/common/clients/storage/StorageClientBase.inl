@@ -135,10 +135,7 @@ template<typename ClientType>
 void StorageClientBase<ClientType>::updateLeader(GraphSpaceID spaceId,
                                                  PartitionID partId,
                                                  const HostAddr& leader) {
-    LOG(INFO) << "Update the leader for [" << spaceId
-              << ", " << partId
-              << "] to " << leader;
-
+    LOG(INFO) << "Update the leader for [" << spaceId << ", " << partId << "] to " << leader;
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     leaders_[std::make_pair(spaceId, partId)] = leader;
 }
@@ -146,7 +143,7 @@ void StorageClientBase<ClientType>::updateLeader(GraphSpaceID spaceId,
 
 template<typename ClientType>
 void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
-                                                   PartitionID partId) {
+                                                  PartitionID partId) {
     LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     auto it = leaders_.find(std::make_pair(spaceId, partId));
@@ -157,7 +154,7 @@ void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
 
 template<typename ClientType>
 void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
-                                                 std::vector<PartitionID> &partsId) {
+                                                  std::vector<PartitionID> &partsId) {
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     for (const auto &partId : partsId) {
         LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
@@ -252,15 +249,13 @@ StorageClientBase<ClientType>::collectResponse(
                                                     start, retry, retryLimit,
                                                     portOffsetIfRetry] (){
                                     getResponse(evb,
-                                                std::pair<HostAddr, Request>(leader,
-                                                                            std::move(r)),
+                                                std::pair<HostAddr, Request>(leader, std::move(r)),
                                                 std::move(remoteFunc),
                                                 portOffsetIfRetry,
                                                 folly::Promise<StatusOr<Response>>(),
                                                 retry + 1,
                                                 retryLimit)
-                                        .thenValue([leader = leader,
-                                                            context, start](auto &&retryResult) {
+                                        .thenValue([leader, context, start](auto &&retryResult) {
                                             if (retryResult.ok()) {
                                                 // Adjust the latency
                                                 auto latency = retryResult.value()
@@ -286,8 +281,8 @@ StorageClientBase<ClientType>::collectResponse(
                                 // retry failed
                                 context->resp.markFailure();
                             }
-                        } else if (code.get_code() == cpp2::ErrorCode::E_PART_NOT_FOUND
-                                || code.get_code() == cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
+                        } else if (code.get_code() == cpp2::ErrorCode::E_PART_NOT_FOUND ||
+                                   code.get_code() == cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result

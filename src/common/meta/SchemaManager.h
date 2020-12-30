@@ -33,6 +33,8 @@ public:
         return Status::Error("Not implemented");
     }
 
+    virtual StatusOr<int32_t> getPartsNum(GraphSpaceID space) = 0;
+
     virtual std::shared_ptr<const NebulaSchemaProvider>
     getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
 
