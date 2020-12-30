@@ -98,6 +98,10 @@ public:
 
     void addFTClient(const nebula::meta::cpp2::FTClient& client);
 
+    StatusOr<int32_t> getPartsNum(GraphSpaceID) {
+        return 1;
+    }
+
 protected:
     folly::RWSpinLock tagLock_;
 
