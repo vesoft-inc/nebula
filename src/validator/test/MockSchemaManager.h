@@ -92,6 +92,10 @@ public:
 
     StatusOr<std::vector<nebula::meta::cpp2::FTClient> > getFTClients() override;
 
+    StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
+        LOG(FATAL) << "Unimplemented.";
+    }
+
 private:
     std::unordered_map<std::string, GraphSpaceID>        spaceNameIds_;
     std::unordered_map<std::string, TagID>               tagNameIds_;
