@@ -73,9 +73,9 @@ void ExecutionPlan::onFinish() {
     // slow query
     if (latency >= static_cast<uint32_t>(FLAGS_slow_query_threshold_us)) {
         stats::Stats::addStatsValue(slowQueryStats_.get(), true, latency);
-        LOG(WARNING) << "Slow query: exec succ, cost=" << latency
-            << "us, space=" << spaceName
-            << ", query="<< rctx->query().c_str();
+        LOG(WARNING) << "Slow query: exec succ, cost: " << latency
+            << "us, space: " << spaceName
+            << ", query: " << rctx->query().c_str();
     }
     rctx->finish();
 
@@ -103,19 +103,26 @@ void ExecutionPlan::onError(Status status) {
     stats::Stats::addStatsValue(allStats_.get(), false, latency);
     rctx->resp().set_latency_in_us(latency);
 
-    LOG(ERROR) << "Execute failed! code=" << int32_t(rctx->resp().get_error_code())
-        << ", cost=" << latency
-        << "us, space=" << (rctx->session()->spaceName())
-        << ", query=" << (rctx->query().c_str())
-        << ", errmsg="<< status.toString();
+    auto errorCodeIt = cpp2::_ErrorCode_VALUES_TO_NAMES.find(rctx->resp().get_error_code());
+    LOG(ERROR) << "Execute failed! errcode: "
+        << (errorCodeIt != cpp2::_ErrorCode_VALUES_TO_NAMES.end()
+                ? errorCodeIt->second
+                : std::to_string(int32_t(rctx->resp().get_error_code())))
+        << ", cost: " << latency
+        << "us, space: " << (rctx->session()->spaceName())
+        << ", query: " << (rctx->query().c_str())
+        << ", errmsg: " << status.toString();
 
     // slow query
     if (latency >= static_cast<uint32_t>(FLAGS_slow_query_threshold_us)) {
         stats::Stats::addStatsValue(slowQueryStats_.get(), false, latency);
-        LOG(WARNING) << "Slow query: exec failed! cost=" << latency
-            << "us, errcode="<< int32_t(rctx->resp().get_error_code())
-            << ", space=" << (rctx->session()->spaceName())
-            << ", query="<< (rctx->query().c_str());
+        LOG(WARNING) << "Slow query: exec failed! cost: " << latency
+            << "us, errcode: "
+            << (errorCodeIt != cpp2::_ErrorCode_VALUES_TO_NAMES.end()
+                    ? errorCodeIt->second
+                    : std::to_string(int32_t(rctx->resp().get_error_code())))
+            << ", space: " << (rctx->session()->spaceName())
+            << ", query: " << (rctx->query().c_str());
     }
 
     rctx->finish();
