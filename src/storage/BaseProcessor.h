@@ -91,8 +91,7 @@ protected:
 
     void handleAsync(GraphSpaceID spaceId,
                      PartitionID partId,
-                     kvstore::ResultCode code,
-                     bool processFlyingRequest = true);
+                     kvstore::ResultCode code);
 
     StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                        const std::vector<std::string>& propNames,

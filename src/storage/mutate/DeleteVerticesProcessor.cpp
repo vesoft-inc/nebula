@@ -103,7 +103,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
 folly::Optional<std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                         const std::vector<Value>& vertices) {
-    env_->onFlyingRequest_.fetch_add(1);
+    IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
@@ -173,7 +173,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                                                       std::move(valuesRet).value());
 
                         // Check the index is building for the specified partition or not
-                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        auto indexState = env_->getIndexState(spaceId_, partId);
                         if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(indexKey));

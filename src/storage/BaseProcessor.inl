@@ -85,8 +85,7 @@ cpp2::ErrorCode BaseProcessor<RESP>::writeResultTo(WriteResult code, bool isEdge
 template <typename RESP>
 void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
                                       PartitionID partId,
-                                      kvstore::ResultCode code,
-                                      bool processFlyingRequest) {
+                                      kvstore::ResultCode code) {
     VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
 
     bool finished = false;
@@ -97,10 +96,6 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
         if (this->callingNum_ == 0) {
             finished = true;
         }
-    }
-
-    if (processFlyingRequest) {
-        env_->onFlyingRequest_.fetch_sub(1);
     }
 
     if (finished) {
@@ -173,7 +168,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 std::vector<kvstore::KV> data) {
     this->env_->kvstore_->asyncMultiPut(
         spaceId, partId, std::move(data), [spaceId, partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId, partId, code, false);
+            handleAsync(spaceId, partId, code);
     });
 }
 
@@ -202,7 +197,7 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    std::vector<std::string> keys) {
     this->env_->kvstore_->asyncMultiRemove(
         spaceId, partId, std::move(keys), [spaceId, partId, this](kvstore::ResultCode code) {
-        handleAsync(spaceId, partId, code, false);
+        handleAsync(spaceId, partId, code);
     });
 }
 

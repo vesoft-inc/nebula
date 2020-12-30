@@ -105,7 +105,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
 folly::Optional<std::string>
 DeleteEdgesProcessor::deleteEdges(PartitionID partId,
                                   const std::vector<cpp2::EdgeKey>& edges) {
-    env_->onFlyingRequest_.fetch_add(1);
+    IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
@@ -152,7 +152,7 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
                                                                 dstId,
                                                                 std::move(valuesRet).value());
 
-                    auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                    auto indexState = env_->getIndexState(spaceId_, partId);
                     if (env_->checkRebuilding(indexState)) {
                         auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                         batchHolder->put(std::move(deleteOpKey), std::move(indexKey));

@@ -92,7 +92,6 @@ folly::Future<cpp2::ErrorCode> TransactionManager::addSamePartEdges(
                 processor->spaceVidLen_ = vIdLen;
                 std::vector<KV> data{std::make_pair(kv.first, kv.second)};
                 auto optVal = processor->addEdges(localPart, data);
-                env_->onFlyingRequest_.fetch_sub(1);
                 if (optVal) {
                     return std::make_pair(NebulaKeyUtils::toLockKey(kv.first), *optVal);
                 } else {

@@ -17,10 +17,9 @@ RebuildEdgeIndexTask::getIndexes(GraphSpaceID space) {
     return env_->indexMan_->getEdgeIndexes(space);
 }
 
-kvstore::ResultCode
-RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
-                                       PartitionID part,
-                                       std::shared_ptr<meta::cpp2::IndexItem> item) {
+kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
+                                                           PartitionID part,
+                                                           const IndexItems& items) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild Edge Index is Canceled";
         return kvstore::ResultCode::SUCCEEDED;
@@ -30,6 +29,11 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
     if (!vidSizeRet.ok()) {
         LOG(ERROR) << "Get VID Size Failed";
         return kvstore::ResultCode::ERR_IO_ERROR;
+    }
+
+    std::unordered_set<EdgeType> edgeTypes;
+    for (const auto& item : items) {
+        edgeTypes.emplace(item->get_schema_id().get_edge_type());
     }
 
     auto vidSize = vidSizeRet.value();
@@ -76,7 +80,7 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
         }
 
         // Check whether this record contains the index of indexId
-        if (item->get_schema_id().get_edge_type() != edgeType) {
+        if (edgeTypes.find(edgeType) == edgeTypes.end()) {
             VLOG(3) << "This record is not built index.";
             iter->next();
             continue;
@@ -105,21 +109,24 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                           item->get_fields());
-        if (!valuesRet.ok()) {
-            LOG(WARNING) << "Collect index value failed";
-            iter->next();
-            continue;
+        for (const auto& item : items) {
+            if (item->get_schema_id().get_edge_type() == edgeType) {
+                auto valuesRet =
+                    IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+                if (!valuesRet.ok()) {
+                    LOG(WARNING) << "Collect index value failed";
+                    continue;
+                }
+                auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
+                                                            part,
+                                                            item->get_index_id(),
+                                                            source.toString(),
+                                                            ranking,
+                                                            destination.toString(),
+                                                            std::move(valuesRet).value());
+                data.emplace_back(std::move(indexKey), "");
+            }
         }
-        auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
-                                                    part,
-                                                    item->get_index_id(),
-                                                    source.toString(),
-                                                    ranking,
-                                                    destination.toString(),
-                                                    std::move(valuesRet).value());
-        data.emplace_back(std::move(indexKey), "");
         iter->next();
     }
 

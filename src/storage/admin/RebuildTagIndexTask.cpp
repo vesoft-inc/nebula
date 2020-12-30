@@ -17,11 +17,9 @@ RebuildTagIndexTask::getIndexes(GraphSpaceID space) {
     return env_->indexMan_->getTagIndexes(space);
 }
 
-
-kvstore::ResultCode
-RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
-                                      PartitionID part,
-                                      std::shared_ptr<meta::cpp2::IndexItem> item) {
+kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
+                                                          PartitionID part,
+                                                          const IndexItems& items) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild Tag Index is Canceled";
         return kvstore::ResultCode::SUCCEEDED;
@@ -31,6 +29,11 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
     if (!vidSizeRet.ok()) {
         LOG(ERROR) << "Get VID Size Failed";
         return kvstore::ResultCode::ERR_IO_ERROR;
+    }
+
+    std::unordered_set<TagID> tagIds;
+    for (const auto& item : items) {
+        tagIds.emplace(item->get_schema_id().get_tag_id());
     }
 
     auto vidSize = vidSizeRet.value();
@@ -72,7 +75,7 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
         auto tagID = NebulaKeyUtils::getTagId(vidSize, key);
 
         // Check whether this record contains the index of indexId
-        if (item->get_schema_id().get_tag_id() != tagID) {
+        if (tagIds.find(tagID) == tagIds.end()) {
             VLOG(3) << "This record is not built index.";
             iter->next();
             continue;
@@ -93,19 +96,22 @@ RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                           item->get_fields());
-        if (!valuesRet.ok()) {
-            LOG(WARNING) << "Collect index value failed";
-            iter->next();
-            continue;
+        for (const auto& item : items) {
+            if (item->get_schema_id().get_tag_id() == tagID) {
+                auto valuesRet =
+                    IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+                if (!valuesRet.ok()) {
+                    LOG(WARNING) << "Collect index value failed";
+                    continue;
+                }
+                auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
+                                                              part,
+                                                              item->get_index_id(),
+                                                              vertex.toString(),
+                                                              std::move(valuesRet).value());
+                data.emplace_back(std::move(indexKey), "");
+            }
         }
-        auto indexKey = IndexKeyUtils::vertexIndexKey(vidSize,
-                                                      part,
-                                                      item->get_index_id(),
-                                                      vertex.toString(),
-                                                      std::move(valuesRet).value());
-        data.emplace_back(std::move(indexKey), "");
         iter->next();
     }
 

@@ -28,7 +28,7 @@ enum class IndexState {
 };
 
 using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
-using IndexKey    = std::tuple<GraphSpaceID, IndexID, PartitionID>;
+using IndexKey    = std::tuple<GraphSpaceID, PartitionID>;
 using IndexGuard  = folly::ConcurrentHashMap<IndexKey, IndexState>;
 
 
@@ -48,8 +48,8 @@ public:
     meta::MetaClient*                               metaClient_{nullptr};
     TransactionManager*                             txnMan_{nullptr};
 
-    IndexState getIndexState(GraphSpaceID space, PartitionID part, IndexID indexID) {
-        auto key = std::make_tuple(space, indexID, part);
+    IndexState getIndexState(GraphSpaceID space, PartitionID part) {
+        auto key = std::make_tuple(space, part);
         auto iter = rebuildIndexGuard_->find(key);
         if (iter != rebuildIndexGuard_->cend()) {
             return iter->second;
@@ -64,6 +64,21 @@ public:
     bool checkIndexLocked(IndexState indexState) {
         return indexState == IndexState::LOCKED;
     }
+};
+
+class IndexCountWrapper {
+public:
+    explicit IndexCountWrapper(StorageEnv* env)
+        : count_(&env->onFlyingRequest_) {
+        count_->fetch_add(1, std::memory_order_release);
+    }
+
+    ~IndexCountWrapper() {
+        count_->fetch_sub(1, std::memory_order_release);
+    }
+
+private:
+    std::atomic<int32_t>* count_;
 };
 
 enum class ResultStatus {
@@ -115,6 +130,7 @@ public:
                                        RowReader* reader,
                                        const std::string& ttlCol,
                                        int64_t ttlDuration);
+
     static cpp2::ErrorCode to(const Status& status);
 
     static cpp2::ErrorCode to(kvstore::ResultCode rc);

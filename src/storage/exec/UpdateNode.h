@@ -167,13 +167,13 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
-        planContext_->env_->onFlyingRequest_.fetch_add(1);
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
         planContext_->env_->kvstore_->asyncAtomicOp(planContext_->spaceId_, partId,
             [&partId, &vId, this] ()
             -> folly::Optional<std::string> {
+                IndexCountWrapper wrapper(planContext_->env_);
                 this->exeResult_ = RelNode::execute(partId, vId);
 
                 if (this->exeResult_ == kvstore::ResultCode::SUCCEEDED) {
@@ -219,7 +219,6 @@ public:
                 baton.post();
             });
         baton.wait();
-        planContext_->env_->onFlyingRequest_.fetch_sub(1);
         return ret;
     }
 
@@ -358,7 +357,6 @@ public:
         if (!indexes_.empty()) {
             RowReaderWrapper nReader;
             for (auto& index : indexes_) {
-                auto indexId = index->get_index_id();
                 if (tagId_ == index->get_schema_id().get_tag_id()) {
                     // step 1, delete old version index if exists.
                     if (!val_.empty()) {
@@ -369,8 +367,7 @@ public:
                         auto oi = indexKey(partId, vId, reader_, index);
                         if (!oi.empty()) {
                             auto iState = planContext_->env_->getIndexState(planContext_->spaceId_,
-                                                                            partId,
-                                                                            indexId);
+                                                                            partId);
                             if (planContext_->env_->checkRebuilding(iState)) {
                                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                                 batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -396,8 +393,7 @@ public:
                     auto ni = indexKey(partId, vId, nReader.get(), index);
                     if (!ni.empty()) {
                         auto indexState = planContext_->env_->getIndexState(planContext_->spaceId_,
-                                                                            partId,
-                                                                            indexId);
+                                                                            partId);
                         if (planContext_->env_->checkRebuilding(indexState)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
                                                                                    std::move(ni));
@@ -463,12 +459,12 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
-        planContext_->env_->onFlyingRequest_.fetch_add(1);
 
         folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
         // folly::Function<folly::Optional<std::string>(void)>
         auto op = [&partId, &edgeKey, this]() -> folly::Optional<std::string> {
+            IndexCountWrapper wrapper(planContext_->env_);
             this->exeResult_ = RelNode::execute(partId, edgeKey);
             if (this->exeResult_ == kvstore::ResultCode::SUCCEEDED) {
                 if (edgeKey.edge_type != this->edgeType_) {
@@ -535,7 +531,6 @@ public:
                 planContext_->spaceId_, partId, std::move(op), std::move(cb));
             baton.wait();
         }
-        planContext_->env_->onFlyingRequest_.fetch_sub(1);
         return ret;
     }
 
@@ -687,7 +682,6 @@ public:
         if (!indexes_.empty()) {
             RowReaderWrapper nReader;
             for (auto& index : indexes_) {
-                auto indexId = index->get_index_id();
                 if (edgeType_ == index->get_schema_id().get_edge_type()) {
                     // step 1, delete old version index if exists.
                     if (!val_.empty()) {
@@ -698,8 +692,7 @@ public:
                         auto oi = indexKey(partId, reader_, edgeKey, index);
                         if (!oi.empty()) {
                             auto iState = planContext_->env_->getIndexState(planContext_->spaceId_,
-                                                                            partId,
-                                                                            indexId);
+                                                                            partId);
                             if (planContext_->env_->checkRebuilding(iState)) {
                                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                                 batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -726,8 +719,7 @@ public:
                     auto ni = indexKey(partId, nReader.get(), edgeKey, index);
                     if (!ni.empty()) {
                         auto indexState = planContext_->env_->getIndexState(planContext_->spaceId_,
-                                                                            partId,
-                                                                            indexId);
+                                                                            partId);
                         if (planContext_->env_->checkRebuilding(indexState)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
                                                                                    std::move(ni));

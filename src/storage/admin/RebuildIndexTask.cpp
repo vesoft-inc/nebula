@@ -40,25 +40,18 @@ RebuildIndexTask::genSubTasks() {
     }
 
     for (const auto& part : parts) {
-        for (const auto& item : items) {
-            env_->rebuildIndexGuard_->insert_or_assign(std::make_tuple(space_,
-                                                                       item->get_index_id(),
-                                                                       part),
-                                                       IndexState::STARTING);
-            std::function<kvstore::ResultCode()> task = std::bind(&RebuildIndexTask::genSubTask,
-                                                                  this, space_, part,
-                                                                  item);
-            tasks.emplace_back(std::move(task));
-        }
+        env_->rebuildIndexGuard_->insert_or_assign(std::make_tuple(space_, part),
+                                                   IndexState::STARTING);
+        std::function<kvstore::ResultCode()> task =
+            std::bind(&RebuildIndexTask::invoke, this, space_, part, items);
+        tasks.emplace_back(std::move(task));
     }
     return tasks;
 }
 
-kvstore::ResultCode
-RebuildIndexTask::genSubTask(GraphSpaceID space,
-                             PartitionID part,
-                             std::shared_ptr<meta::cpp2::IndexItem> item) {
-    auto indexID = item->get_index_id();
+kvstore::ResultCode RebuildIndexTask::invoke(GraphSpaceID space,
+                                             PartitionID part,
+                                             const IndexItems& items) {
     auto result = removeLegacyLogs(space, part);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
@@ -67,11 +60,12 @@ RebuildIndexTask::genSubTask(GraphSpaceID space,
         LOG(INFO) << "Remove legacy logs at part: " << part << " successful";
     }
 
-    env_->rebuildIndexGuard_->assign(std::make_tuple(space, indexID, part),
-                                     IndexState::BUILDING);
+    // todo(doodle): this place has potential bug is that we'd better lock the part at first,
+    // then switch to BUILDING, otherwise some data won't build index in worst case.
+    env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::BUILDING);
 
     LOG(INFO) << "Start building index";
-    result = buildIndexGlobal(space, part, item);
+    result = buildIndexGlobal(space, part, items);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Building index failed";
         return kvstore::ResultCode::ERR_BUILD_INDEX_FAILED;
@@ -80,20 +74,18 @@ RebuildIndexTask::genSubTask(GraphSpaceID space,
     }
 
     LOG(INFO) << "Processing operation logs";
-    result = buildIndexOnOperations(space, indexID, part);
+    result = buildIndexOnOperations(space, part);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Building index with operation logs failed";
         return kvstore::ResultCode::ERR_INVALID_OPERATION;
     }
 
-    env_->rebuildIndexGuard_->assign(std::make_tuple(space, indexID, part),
-                                     IndexState::FINISHED);
+    env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::FINISHED);
     LOG(INFO) << "RebuildIndexTask Finished";
     return result;
 }
 
 kvstore::ResultCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space,
-                                                             IndexID indexID,
                                                              PartitionID part) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild index canceled";
@@ -164,7 +156,7 @@ kvstore::ResultCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space,
         // a short piece of time.
         if (static_cast<int32_t>(operations.size()) < FLAGS_rebuild_index_locked_threshold) {
             // lock the part
-            auto key = std::make_tuple(space, indexID, part);
+            auto key = std::make_tuple(space, part);
             auto stateIter = env_->rebuildIndexGuard_->find(key);
             // If the state is LOCKED, we should wait the on flying request process finished.
             if (stateIter != env_->rebuildIndexGuard_->cend() &&

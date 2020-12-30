@@ -126,7 +126,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
 folly::Optional<std::string>
 AddVerticesProcessor::addVertices(PartitionID partId,
                                   const std::vector<kvstore::KV>& vertices) {
-    env_->onFlyingRequest_.fetch_add(1);
+    IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     /*
      * Define the map newVertices to avoid inserting duplicate vertex.
@@ -156,8 +156,6 @@ AddVerticesProcessor::addVertices(PartitionID partId,
 
         for (auto& index : indexes_) {
             if (tagId == index->get_schema_id().get_tag_id()) {
-                auto indexId = index->get_index_id();
-
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -184,7 +182,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                     auto oi = indexKey(partId, vId, oReader.get(), index);
                     if (!oi.empty()) {
                         // Check the index is building for the specified partition or not.
-                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        auto indexState = env_->getIndexState(spaceId_, partId);
                         if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -213,7 +211,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
                 auto ni = indexKey(partId, vId, nReader.get(), index);
                 if (!ni.empty()) {
                     // Check the index is building for the specified partition or not.
-                    auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                    auto indexState = env_->getIndexState(spaceId_, partId);
                     if (env_->checkRebuilding(indexState)) {
                         auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, ni);
                         batchHolder->put(std::move(modifyOpKey), "");

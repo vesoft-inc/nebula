@@ -35,14 +35,13 @@ protected:
     virtual kvstore::ResultCode
     buildIndexGlobal(GraphSpaceID space,
                      PartitionID part,
-                     std::shared_ptr<meta::cpp2::IndexItem> item) = 0;
+                     const IndexItems& items) = 0;
 
     void cancel() override {
         canceled_ = true;
     }
 
     kvstore::ResultCode buildIndexOnOperations(GraphSpaceID space,
-                                               IndexID indexID,
                                                PartitionID part);
 
 
@@ -62,9 +61,9 @@ protected:
                                              PartitionID part,
                                              std::vector<std::string> keys);
 
-    kvstore::ResultCode genSubTask(GraphSpaceID space,
-                                   PartitionID part,
-                                   std::shared_ptr<meta::cpp2::IndexItem> item);
+    kvstore::ResultCode invoke(GraphSpaceID space,
+                               PartitionID part,
+                               const IndexItems& items);
 
 protected:
     std::atomic<bool>   canceled_{false};

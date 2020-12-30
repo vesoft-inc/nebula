@@ -118,7 +118,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 folly::Optional<std::string>
 AddEdgesProcessor::addEdges(PartitionID partId,
                             const std::vector<kvstore::KV>& edges) {
-    env_->onFlyingRequest_.fetch_add(1);
+    IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
 
     /*
@@ -147,8 +147,6 @@ AddEdgesProcessor::addEdges(PartitionID partId,
         auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, e.first);
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
-                auto indexId = index->get_index_id();
-
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -174,7 +172,7 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                     auto oi = indexKey(partId, oReader.get(), e.first, index);
                     if (!oi.empty()) {
                         // Check the index is building for the specified partition or not.
-                        auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                        auto indexState = env_->getIndexState(spaceId_, partId);
                         if (env_->checkRebuilding(indexState)) {
                             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                             batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -204,7 +202,7 @@ AddEdgesProcessor::addEdges(PartitionID partId,
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
                 if (!ni.empty()) {
                     // Check the index is building for the specified partition or not.
-                    auto indexState = env_->getIndexState(spaceId_, partId, indexId);
+                    auto indexState = env_->getIndexState(spaceId_, partId);
                     if (env_->checkRebuilding(indexState)) {
                         auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId,
                                                                                  std::move(ni));
