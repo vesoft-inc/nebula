@@ -101,8 +101,6 @@ find_package(Libunwind REQUIRED)
 find_package(BISON 3.0.5 REQUIRED)
 include(MakeBisonRelocatable)
 find_package(FLEX REQUIRED)
-find_package(Readline REQUIRED)
-find_package(NCURSES REQUIRED)
 find_package(LibLZMA REQUIRED)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
