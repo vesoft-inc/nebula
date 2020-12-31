@@ -75,6 +75,9 @@ TEST_F(JobManagerTest, addJob) {
 
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
+    // For preventting job schedule in JobManager
+    jobMgr->status_ = JobManager::Status::STOPPED;
+
     std::vector<std::string> paras{"tag_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
@@ -85,6 +88,9 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
 
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
+    // For preventting job schedule in JobManager
+    jobMgr->status_ = JobManager::Status::STOPPED;
+
     std::vector<std::string> paras{"edge_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
@@ -94,6 +100,9 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
 }
 
 TEST_F(JobManagerTest, StatisJob) {
+    // For preventting job schedule in JobManager
+    jobMgr->status_ = JobManager::Status::STOPPED;
+
     std::vector<std::string> paras{"test_space"};
     JobDescription job(12, cpp2::AdminCmd::STATS, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
