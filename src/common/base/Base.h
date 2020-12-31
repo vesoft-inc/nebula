@@ -159,8 +159,6 @@ static constexpr auto is_constructible_v = std::is_constructible<T, Args...>::va
 template <typename U, typename T>
 static constexpr auto is_convertible_v = std::is_constructible<U, T>::value;
 
-std::string versionString();
-
 std::string toHexStr(folly::StringPiece str);
 
 }  // namespace nebula
