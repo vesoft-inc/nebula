@@ -29,6 +29,8 @@ Status FetchEdgesExecutor::prepareClauses() {
 
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
+        expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
+
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         auto edgeLabelNames = sentence_->edges()->labels();

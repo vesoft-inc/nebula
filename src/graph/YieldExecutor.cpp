@@ -20,6 +20,8 @@ YieldExecutor::YieldExecutor(Sentence *sentence, ExecutionContext *ectx)
 Status YieldExecutor::prepare() {
     Status status = Status::OK();
     expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
+
     do {
         status = prepareWhere();
         if (!status.ok()) {

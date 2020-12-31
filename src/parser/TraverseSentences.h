@@ -204,14 +204,19 @@ private:
 
 class AssignmentSentence final : public Sentence {
 public:
-    AssignmentSentence(std::string *variable, Sentence *sentence) {
+    AssignmentSentence(std::string *variable, Sentence *sentence, bool global = false) {
         kind_ = Kind::kAssignment;
         variable_.reset(variable);
         sentence_.reset(sentence);
+        global_ = global;
     }
 
     const std::string* var() const {
         return variable_.get();
+    }
+
+    bool global() const {
+        return global_;
     }
 
     Sentence* sentence() const {
@@ -223,6 +228,7 @@ public:
 private:
     std::unique_ptr<std::string>                variable_;
     std::unique_ptr<Sentence>                   sentence_;
+    bool                                        global_{false};
 };
 
 class OrderFactor final {

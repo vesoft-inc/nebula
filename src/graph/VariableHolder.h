@@ -8,26 +8,40 @@
 #define GRAPH_VARIABLEHOLDER_H_
 
 #include "base/Base.h"
+#include "graph/InterimResult.h"
 
 namespace nebula {
+namespace session {
+class Session;
+}
+
 namespace graph {
 
 class InterimResult;
 class VariableHolder final {
 public:
-    VariableHolder();
-    ~VariableHolder();
-    VariableHolder(const VariableHolder&) = delete;
-    VariableHolder& operator=(const VariableHolder&) = delete;
-    VariableHolder(VariableHolder &&) noexcept;
-    VariableHolder& operator=(VariableHolder &&) noexcept;
+    explicit VariableHolder(session::Session* session)
+        : session_(session) { }
 
-    void add(const std::string &var, std::unique_ptr<InterimResult> result);
+    void add(const std::string &var, std::unique_ptr<InterimResult> result, bool global = false);
 
     const InterimResult* get(const std::string &var, bool *existing = nullptr) const;
 
 private:
     std::unordered_map<std::string, std::unique_ptr<InterimResult>> holder_;
+    mutable std::unordered_set<std::shared_ptr<const InterimResult>> gHolder_;
+    session::Session* session_;
+};
+
+class GlobalVariableHolder final {
+public:
+    void add(const std::string &var, std::unique_ptr<InterimResult> result);
+
+    std::shared_ptr<const InterimResult> get(const std::string &var, bool *existing = nullptr) const;
+
+private:
+    mutable folly::RWSpinLock lock_;
+    std::unordered_map<std::string, std::shared_ptr<const InterimResult>> holder_;
 };
 
 }   // namespace graph

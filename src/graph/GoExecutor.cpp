@@ -40,6 +40,7 @@ Status GoExecutor::prepareClauses() {
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     do {
         status = checkIfGraphSpaceChosen();

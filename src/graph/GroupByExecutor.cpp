@@ -19,6 +19,7 @@ GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 Status GroupByExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
     Status status;
     do {
         status = prepareYield();

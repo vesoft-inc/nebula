@@ -23,8 +23,10 @@ Status FindPathExecutor::prepareClauses() {
     spaceId_ = ectx()->rctx()->session()->space();
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
-    expCtx_->setStorageClient(ectx()->getStorageClient());
     expCtx_->setSpace(spaceId_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
+
     do {
         if (sentence_->from() != nullptr) {
             sentence_->from()->setContext(expCtx_.get());

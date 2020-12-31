@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/SessionManager.h"
 #include "graph/GraphFlags.h"
+#include "graph/VariableHolder.h"
 
 namespace nebula {
 namespace graph {
@@ -52,6 +53,7 @@ std::shared_ptr<session::Session> SessionManager::createSession() {
     }
     DCHECK_NE(sid, 0L);
     auto session = session::Session::create(sid);
+    session->setGlobalVariableHolder(std::make_unique<GlobalVariableHolder>());
     activeSessions_[sid] = session;
     session->charge();
     return session;

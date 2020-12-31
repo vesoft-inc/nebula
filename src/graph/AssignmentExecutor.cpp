@@ -22,6 +22,7 @@ AssignmentExecutor::AssignmentExecutor(Sentence *sentence,
 
 Status AssignmentExecutor::prepare() {
     var_ = sentence_->var();
+    global_ = sentence_->global();
     executor_ = TraverseExecutor::makeTraverseExecutor(sentence_->sentence(), ectx());
 
     auto onError = [this] (Status s) {
@@ -31,7 +32,7 @@ Status AssignmentExecutor::prepare() {
         doFinish(ctr);
     };
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
-        ectx()->variableHolder()->add(*var_, std::move(result));
+        ectx()->variableHolder()->add(*var_, std::move(result), global_);
     };
     executor_->setOnError(onError);
     executor_->setOnFinish(onFinish);

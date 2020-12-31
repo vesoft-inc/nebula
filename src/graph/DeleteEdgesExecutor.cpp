@@ -33,6 +33,7 @@ void DeleteEdgesExecutor::execute() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(space);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setOnVariableVariantGet(onVariableVariantGet_);
 
     auto edgeStatus = ectx()->schemaManager()->toEdgeType(space, *sentence_->edge());
     if (!edgeStatus.ok()) {

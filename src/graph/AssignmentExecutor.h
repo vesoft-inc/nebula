@@ -30,6 +30,7 @@ private:
     AssignmentSentence                         *sentence_{nullptr};
     std::unique_ptr<TraverseExecutor>           executor_;
     const std::string                          *var_{nullptr};
+    bool                                        global_{false};
 };
 
 
