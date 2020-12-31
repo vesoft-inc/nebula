@@ -1525,7 +1525,6 @@ void RaftPart::processAppendLogRequest(
     }
 
     // Reset the timeout timer
-    lastMsgRecvDur_.reset();
     helper.setLastMsgRecvDur(&lastMsgRecvDur_);
 
     if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
