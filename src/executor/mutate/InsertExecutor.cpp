@@ -49,7 +49,9 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
     return qctx()->getStorageClient()->addEdges(ieNode->getSpace(),
                                                 ieNode->getEdges(),
                                                 ieNode->getPropNames(),
-                                                ieNode->getOverwritable())
+                                                ieNode->getOverwritable(),
+                                                nullptr,
+                                                ieNode->useChainInsert())
             .via(runner())
             .ensure([addEdgeTime]() {
                 VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us";

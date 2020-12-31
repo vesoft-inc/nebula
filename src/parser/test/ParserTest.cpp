@@ -227,6 +227,20 @@ TEST(Parser, SpaceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "atomic_edge=true)";
+        auto result = parser.parse(query);
+        EXPECT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "atomic_edge=FALSE)";
+        auto result = parser.parse(query);
+        EXPECT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, TagOperation) {

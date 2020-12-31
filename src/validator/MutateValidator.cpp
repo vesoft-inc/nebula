@@ -147,12 +147,14 @@ Status InsertEdgesValidator::validateImpl() {
 }
 
 Status InsertEdgesValidator::toPlan() {
+    auto useChainInsert = space_.spaceDesc.isolation_level == meta::cpp2::IsolationLevel::TOSS;
     auto doNode = InsertEdges::make(qctx_,
                                     nullptr,
                                     spaceId_,
                                     std::move(edges_),
                                     std::move(propNames_),
-                                    overwritable_);
+                                    overwritable_,
+                                    useChainInsert);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -186,7 +188,9 @@ Status InsertEdgesValidator::check() {
 }
 
 Status InsertEdgesValidator::prepareEdges() {
-    edges_.reserve(rows_.size()*2);
+    auto useToss = space_.spaceDesc.isolation_level == meta::cpp2::IsolationLevel::TOSS;
+    auto size = useToss ? rows_.size() : rows_.size() * 2;
+    edges_.reserve(size);
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         if (propNames_.size() != row->values().size()) {
@@ -236,11 +240,13 @@ Status InsertEdgesValidator::prepareEdges() {
         edge.__isset.props = true;
         edges_.emplace_back(edge);
 
-        // inbound
-        edge.key.set_src(dstId);
-        edge.key.set_dst(srcId);
-        edge.key.set_edge_type(-edgeType_);
-        edges_.emplace_back(std::move(edge));
+        if (!useToss) {
+            // inbound
+            edge.key.set_src(dstId);
+            edge.key.set_dst(srcId);
+            edge.key.set_edge_type(-edgeType_);
+            edges_.emplace_back(std::move(edge));
+        }
     }
 
     return Status::OK();
@@ -664,22 +670,27 @@ Status UpdateEdgeValidator::toPlan() {
                                      {},
                                      condition_,
                                      {});
-
-    auto *inNode = UpdateEdge::make(qctx_,
-                                    outNode,
-                                    spaceId_,
-                                    std::move(name_),
-                                    std::move(dstId_),
-                                    std::move(srcId_),
-                                    -edgeType_,
-                                    rank_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_));
-    root_ = inNode;
-    tail_ = outNode;
+    auto useToss = space_.spaceDesc.isolation_level == meta::cpp2::IsolationLevel::TOSS;
+    if (useToss) {
+        root_ = outNode;
+        tail_ = root_;
+    } else {
+        auto *inNode = UpdateEdge::make(qctx_,
+                                        outNode,
+                                        spaceId_,
+                                        std::move(name_),
+                                        std::move(dstId_),
+                                        std::move(srcId_),
+                                        -edgeType_,
+                                        rank_,
+                                        insertable_,
+                                        std::move(updatedProps_),
+                                        std::move(returnProps_),
+                                        std::move(condition_),
+                                        std::move(yieldColNames_));
+        root_ = inNode;
+        tail_ = outNode;
+    }
     return Status::OK();
 }
 

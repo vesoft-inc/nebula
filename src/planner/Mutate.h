@@ -78,13 +78,15 @@ public:
                              GraphSpaceID spaceId,
                              std::vector<storage::cpp2::NewEdge> edges,
                              std::vector<std::string> propNames,
-                             bool overwritable) {
+                             bool overwritable,
+                             bool useChainInsert = false) {
         return qctx->objPool()->add(new InsertEdges(qctx,
                                                     input,
                                                     spaceId,
                                                     std::move(edges),
                                                     std::move(propNames),
-                                                    overwritable));
+                                                    overwritable,
+                                                    useChainInsert));
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -105,24 +107,33 @@ public:
         return spaceId_;
     }
 
+    bool useChainInsert() const {
+        return useChainInsert_;
+    }
+
 private:
     InsertEdges(QueryContext* qctx,
                 PlanNode* input,
                 GraphSpaceID spaceId,
                 std::vector<storage::cpp2::NewEdge> edges,
                 std::vector<std::string> propNames,
-                bool overwritable)
+                bool overwritable,
+                bool useChainInsert)
         : SingleInputNode(qctx, Kind::kInsertEdges, input),
           spaceId_(spaceId),
           edges_(std::move(edges)),
           propNames_(std::move(propNames)),
-          overwritable_(overwritable) {}
+          overwritable_(overwritable),
+          useChainInsert_(useChainInsert) {}
 
 private:
     GraphSpaceID spaceId_{-1};
     std::vector<storage::cpp2::NewEdge> edges_;
     std::vector<std::string> propNames_;
     bool overwritable_;
+    // if this enabled, add edge request will only sent to
+    // outbound edges. (toss)
+    bool useChainInsert_{false};
 };
 
 class Update : public SingleInputNode {

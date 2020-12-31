@@ -153,7 +153,8 @@ public:
         REPLICA_FACTOR,
         VID_TYPE,
         CHARSET,
-        COLLATE
+        COLLATE,
+        ATOMIC_EDGE
     };
 
     SpaceOptItem(OptionType op, std::string val) {
@@ -169,6 +170,11 @@ public:
     SpaceOptItem(OptionType op, meta::cpp2::ColumnTypeDef val) {
         optType_ = op;
         optValue_ = std::move(val);
+    }
+
+    SpaceOptItem(OptionType op, bool val) {
+        optType_ = op;
+        optValue_ = val ? 1 : 0;
     }
 
     int64_t asInt() const {
@@ -244,6 +250,15 @@ public:
 
     OptionType getOptType() const {
         return optType_;
+    }
+
+    int64_t getAtomicEdge() const {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "atomic_edge value illegal.";
+            return 0;
+        }
     }
 
     std::string toString() const;

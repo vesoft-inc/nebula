@@ -82,6 +82,13 @@ Status CreateSpaceValidator::validateImpl() {
                 spaceDesc_.collate_name = std::move(result);
                 break;
             }
+            case SpaceOptItem::ATOMIC_EDGE: {
+                if (item->getAtomicEdge()) {
+                    spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::TOSS);
+                } else {
+                    spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::DEFAULT);
+                }
+            }
         }
     }
 
