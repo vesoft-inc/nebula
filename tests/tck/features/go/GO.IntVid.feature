@@ -1594,7 +1594,6 @@ Feature: IntegerVid Go  Sentence
       | COUNT($-.id) |
       | 4            |
 
-  @skip
   Scenario: Integer Vid Bugfix filter not pushdown
     When executing query:
       """
