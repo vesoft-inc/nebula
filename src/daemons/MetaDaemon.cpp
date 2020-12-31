@@ -26,6 +26,7 @@
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/RootUserMan.h"
 #include "meta/MetaServiceUtils.h"
+#include "version/Version.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -169,6 +170,7 @@ Status initWebService(nebula::WebService* svc,
 }
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::storage::versionString());
     // Detect if the server has already been started
     // Check pid before glog init, in case of user may start daemon twice
     // the 2nd will make the 1st failed to output log anymore
@@ -180,7 +182,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";

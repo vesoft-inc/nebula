@@ -4,6 +4,7 @@ nebula_add_executable(
     SOURCES
         SimpleKVVerifyTool.cpp
     OBJECTS
+        $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:storage_admin_service_handler>
         $<TARGET_OBJECTS:graph_storage_service_handler>
@@ -52,4 +53,3 @@ install(
     COMPONENT
         tool
 )
-

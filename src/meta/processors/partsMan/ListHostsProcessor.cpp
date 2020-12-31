@@ -7,6 +7,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "version/Version.h"
 
 DECLARE_int32(expired_threshold_sec);
 DECLARE_int32(heartbeat_interval_secs);
@@ -76,7 +77,7 @@ Status ListHostsProcessor::allMetaHostsStatus() {
         cpp2::HostItem item;
         item.set_hostAddr(std::move(host));
         item.set_role(cpp2::HostRole::META);
-        item.set_git_info_sha(NEBULA_STRINGIFY(GIT_INFO_SHA));
+        item.set_git_info_sha(nebula::storage::gitInfoSha());
         item.set_status(cpp2::HostStatus::ONLINE);
         hostItems_.emplace_back(item);
     }
@@ -248,4 +249,3 @@ ListHostsProcessor::getLeaderPartsWithSpaceName(const LeaderParts& leaderParts) 
 
 }  // namespace meta
 }  // namespace nebula
-

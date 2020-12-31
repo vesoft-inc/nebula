@@ -18,6 +18,7 @@
 #include "meta/test/TestUtils.h"
 #include "meta/MetaServiceUtils.h"
 #include "mock/MockCluster.h"
+#include "version/Version.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
@@ -2077,7 +2078,7 @@ TEST(MetaClientTest, ListenerTest) {
     std::vector<HostAddr> listenerHosts = {{"1", 0}, {"1", 1}, {"1", 2}, {"1", 3}};
     {
         TestUtils::setupHB(
-            kv, listenerHosts, cpp2::HostRole::LISTENER, NEBULA_STRINGIFY(GIT_INFO_SHA));
+            kv, listenerHosts, cpp2::HostRole::LISTENER, nebula::storage::gitInfoSha());
         auto addRet =
             client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, listenerHosts).get();
         ASSERT_TRUE(addRet.ok()) << addRet.status();
@@ -2195,4 +2196,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-

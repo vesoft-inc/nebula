@@ -20,6 +20,7 @@
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "utils/DefaultValueContext.h"
+#include "version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <folly/synchronization/Baton.h>
@@ -57,7 +58,7 @@ public:
     }
 
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
-        return setupHB(kv, hosts, cpp2::HostRole::STORAGE, NEBULA_STRINGIFY(GIT_INFO_SHA));
+        return setupHB(kv, hosts, cpp2::HostRole::STORAGE, nebula::storage::gitInfoSha());
     }
 
     static void setupHB(kvstore::KVStore* kv,

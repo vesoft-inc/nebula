@@ -15,6 +15,7 @@
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/processors/jobMan/GetStatisProcessor.h"
+#include "version/Version.h"
 
 namespace nebula {
 namespace meta {
@@ -270,7 +271,7 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
         auto ret = ActiveHostsMan::updateHostInfo(
             kv_.get(),
             entry.first,
-            HostInfo(now, cpp2::HostRole::STORAGE, NEBULA_STRINGIFY(GIT_INFO_SHA)),
+            HostInfo(now, cpp2::HostRole::STORAGE, nebula::storage::gitInfoSha()),
             &entry.second);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
     }
@@ -389,7 +390,7 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
         auto ret = ActiveHostsMan::updateHostInfo(
             kv_.get(),
             entry.first,
-            HostInfo(now, cpp2::HostRole::STORAGE, NEBULA_STRINGIFY(GIT_INFO_SHA)),
+            HostInfo(now, cpp2::HostRole::STORAGE, nebula::storage::gitInfoSha()),
             &entry.second);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
     }
@@ -466,4 +467,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
