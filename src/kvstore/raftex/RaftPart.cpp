@@ -240,6 +240,9 @@ RaftPart::RaftPart(ClusterID clusterId,
                                                                log);
                                 });
     logs_.reserve(FLAGS_max_batch_size);
+    leaderHeartbeatWorker_.start(1, std::string("part[")
+            .append(std::to_string(partId))
+            .append("] heartbeat"));
     CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
 
@@ -247,6 +250,8 @@ RaftPart::RaftPart(ClusterID clusterId,
 RaftPart::~RaftPart() {
     std::lock_guard<std::mutex> g(raftLock_);
 
+    leaderHeartbeatWorker_.stop();
+    leaderHeartbeatWorker_.wait();
     // Make sure the partition has stopped
     CHECK(status_ == Status::STOPPED);
     LOG(INFO) << idStr_ << " The part has been destroyed...";
@@ -324,6 +329,11 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
 void RaftPart::stop() {
     VLOG(2) << idStr_ << "Stopping the partition";
+
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        leaderHeartbeatWorker_.stop();
+    }
 
     decltype(hosts_) hosts;
     {
@@ -990,7 +1000,8 @@ bool RaftPart::needToStartElection() {
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInMSec()
-                  << ", term " << term_;
+                  << ", term " << term_
+                  << ", last leader is " << leader_ << " and reset it to empty";
         role_ = Role::CANDIDATE;
         leader_ = HostAddr(0, 0);
     }
@@ -1250,11 +1261,19 @@ void RaftPart::statusPolling(int64_t startTime) {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
             VLOG(3) << idStr_ << "Schedule new task";
-            bgWorkers_->addDelayTask(
-                delay,
-                [self = shared_from_this(), startTime] {
-                    self->statusPolling(startTime);
-                });
+            if (role_ == Role::LEADER) {
+                leaderHeartbeatWorker_.addDelayTask(
+                    delay,
+                    [self = shared_from_this(), startTime] {
+                        self->statusPolling(startTime);
+                    });
+            } else {
+                bgWorkers_->addDelayTask(
+                    delay,
+                    [self = shared_from_this(), startTime] {
+                        self->statusPolling(startTime);
+                    });
+            }
         }
     }
 }
@@ -1441,7 +1460,41 @@ void RaftPart::processAppendLogRequest(
                   << ", local committedLogId = " << committedLogId_
                   << ", local current term = " << term_;
     }
-    std::lock_guard<std::mutex> g(raftLock_);
+
+    /**
+     * Use class Helper to delay the call to lastMsgRecvDur_.reset() as much as possible.
+     *
+     * When the disk IO Util is high, processAppendLogRequest() may take longer to process
+     * wal after calling lastMsgRecvDur_.reset(), which makes it easier to trigger the follower
+     * to initiate an election, so Here try to delay the call to lastMsgRecvDur_.reset() to
+     * improve the stability of the leader.
+     */
+    class Helper {
+      public:
+        explicit Helper(std::mutex* lock, const std::string& idStr)
+            : dirt_(nullptr), lock_(lock), idStr_(idStr) {
+            lock_->lock();
+        }
+
+        ~Helper() {
+            if (dirt_ != nullptr) {
+                dirt_->reset();
+                VLOG(2) << idStr_ << " reset lastMsgRecvDur_, lastMsgRecvDur_="
+                    <<  dirt_->elapsedInMSec() << "ms";
+            }
+            lock_->unlock();
+        }
+
+        void setLastMsgRecvDur(time::Duration* dirt) {
+            dirt_ = dirt;
+        }
+
+      private:
+        time::Duration* dirt_;
+        std::mutex* lock_;
+        std::string idStr_;
+    };
+    Helper helper(&raftLock_, idStr_);
 
     resp.set_current_term(term_);
     resp.set_leader_ip(leader_.first);
@@ -1473,6 +1526,7 @@ void RaftPart::processAppendLogRequest(
 
     // Reset the timeout timer
     lastMsgRecvDur_.reset();
+    helper.setLastMsgRecvDur(&lastMsgRecvDur_);
 
     if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
         LOG(INFO) << idStr_ << "Begin to wait for the snapshot"
