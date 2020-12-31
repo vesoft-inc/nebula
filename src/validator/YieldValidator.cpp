@@ -48,9 +48,13 @@ Status YieldValidator::validateImpl() {
         NG_RETURN_IF_ERROR(checkAggFunAndBuildGroupItems(yield->yield()));
     }
 
-    if (exprProps_.inputProps().empty() && exprProps_.varProps().empty()) {
+    if (exprProps_.inputProps().empty() && exprProps_.varProps().empty() && inputVarName_.empty()) {
         // generate constant expression result into querycontext
         genConstantExprValues();
+    }
+
+    if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
+        userDefinedVarName_ = *userDefinedVarNameList_.begin();
     }
 
     return Status::OK();
@@ -187,6 +191,13 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
 Status YieldValidator::toPlan() {
     auto yield = static_cast<const YieldSentence *>(sentence_);
 
+    std::string inputVar;
+    if (!userDefinedVarName_.empty()) {
+        inputVar = userDefinedVarName_;
+    } else if (!constantExprVar_.empty()) {
+        inputVar = constantExprVar_;
+    }
+
     Filter *filter = nullptr;
     if (yield->where()) {
         filter = Filter::make(qctx_, nullptr, filterCondition_);
@@ -194,9 +205,6 @@ Status YieldValidator::toPlan() {
         std::transform(
             inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });
         filter->setColNames(std::move(colNames));
-        if (!constantExprVar_.empty()) {
-            filter->setInputVar(constantExprVar_);
-        }
     }
 
     SingleInputNode *dedupDep = nullptr;
@@ -205,6 +213,9 @@ Status YieldValidator::toPlan() {
     } else {
         // We do not use group items later, so move it is safe
         dedupDep = Aggregate::make(qctx_, filter, {}, std::move(groupItems_));
+    }
+    if (filter == nullptr && !inputVar.empty()) {
+        dedupDep->setInputVar(inputVar);
     }
 
     dedupDep->setColNames(std::move(outputColumnNames_));
@@ -215,10 +226,9 @@ Status YieldValidator::toPlan() {
         tail_ = dedupDep;
     }
 
-    if (!exprProps_.varProps().empty()) {
-        DCHECK_EQ(exprProps_.varProps().size(), 1u);
-        auto var = exprProps_.varProps().cbegin()->first;
-        static_cast<SingleInputNode *>(tail_)->setInputVar(var);
+    // Otherwise the input of tail_ would be set by pipe.
+    if (!inputVar.empty()) {
+        static_cast<SingleInputNode *>(tail_)->setInputVar(inputVar);
     }
 
     if (yield->yield()->isDistinct()) {

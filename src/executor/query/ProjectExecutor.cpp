@@ -26,7 +26,6 @@ folly::Future<Status> ProjectExecutor::execute() {
     DataSet ds;
     ds.colNames = project->colNames();
     for (; iter->valid(); iter->next()) {
-        VLOG(1) << "row: " << *iter->row();
         Row row;
         for (auto& col : columns) {
             Value val = col->expr()->eval(ctx(iter.get()));

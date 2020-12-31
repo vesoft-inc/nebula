@@ -5,6 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+import pytest
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -79,6 +80,24 @@ class TestConfigs(NebulaTestSuite):
                            ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size":"8192"}]]
         self.check_out_of_order_result(resp, expected_result)
 
+        # update rocksdb
+        resp = self.client.execute('''
+                                   UPDATE CONFIGS storage:rocksdb_column_family_options={
+                                   max_bytes_for_level_base=1024,
+                                   write_buffer_size=1024,
+                                   max_write_buffer_number=4}
+                                   ''')
+        self.check_resp_succeeded(resp)
+
+        # get result
+        resp = self.client.execute('GET CONFIGS storage:rocksdb_column_family_options')
+        self.check_resp_succeeded(resp)
+        value = {"max_bytes_for_level_base": 1024, "write_buffer_size": 1024, "max_write_buffer_number": 4}
+        expected_result = [['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE', value]]
+        self.check_result(resp, expected_result)
+
+    @pytest.mark.skip("The change of minloglevel will infulence the whole test.")
+    def test_update_configs(self):
         # set and get a config of all module
         resp = self.client.execute('UPDATE CONFIGS minloglevel={}'.format(2))
         self.check_resp_succeeded(resp)
@@ -101,18 +120,4 @@ class TestConfigs(NebulaTestSuite):
                            ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 3]]
         self.check_result(resp, expected_result)
 
-        # update rocksdb
-        resp = self.client.execute('''
-                                   UPDATE CONFIGS storage:rocksdb_column_family_options={
-                                   max_bytes_for_level_base=1024,
-                                   write_buffer_size=1024,
-                                   max_write_buffer_number=4}
-                                   ''')
-        self.check_resp_succeeded(resp)
 
-        # get result
-        resp = self.client.execute('GET CONFIGS storage:rocksdb_column_family_options')
-        self.check_resp_succeeded(resp)
-        value = {"max_bytes_for_level_base": 1024, "write_buffer_size": 1024, "max_write_buffer_number": 4}
-        expected_result = [['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE', value]]
-        self.check_result(resp, expected_result)

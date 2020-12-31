@@ -47,6 +47,7 @@ private:
     std::vector<std::string> outputColumnNames_;
     std::vector<Aggregate::GroupItem> groupItems_;
     std::string constantExprVar_;
+    std::string userDefinedVarName_;
     Expression *filterCondition_{nullptr};
 };
 
