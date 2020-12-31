@@ -11,7 +11,7 @@
 #cmakedefine NEBULA_BUILD_VERSION
 
 namespace nebula {
-namespace storage {
+namespace graph {
 
 std::string gitInfoSha() {
     return "@GIT_INFO_SHA@";
@@ -29,5 +29,5 @@ std::string versionString() {
     return version;
 }
 
-}   // namespace storage
+}   // namespace graph
 }   // namespace nebula

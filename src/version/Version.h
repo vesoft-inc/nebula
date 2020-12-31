@@ -10,12 +10,12 @@
 #include <string>
 
 namespace nebula {
-namespace storage {
+namespace graph {
 
 std::string gitInfoSha();
 std::string versionString();
 
-}   // namespace storage
+}   // namespace graph
 }   // namespace nebula
 
 #endif   // VERSION_VERSION_H_

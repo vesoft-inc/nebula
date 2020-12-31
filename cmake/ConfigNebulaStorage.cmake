@@ -19,6 +19,11 @@ macro(config_nebula_storage)
         file(MAKE_DIRECTORY ${storage_build_dir})
     endif()
 
+    if (NEBULA_BUILD_VERSION)
+        message(STATUS "NEBULA_BUILD_VERSION: " ${NEBULA_BUILD_VERSION})
+        set(storage_build_version -DNEBULA_BUILD_VERSION=${NEBULA_BUILD_VERSION})
+    endif()
+
     execute_process(
         COMMAND
             ${CMAKE_COMMAND}
@@ -40,6 +45,7 @@ macro(config_nebula_storage)
                 -DENABLE_COMPRESSED_DEBUG_INFO=${ENABLE_COMPRESSED_DEBUG_INFO}
                 -DNEBULA_USE_LINKER=${NEBULA_USE_LINKER}
                 -DENABLE_GDB_SCRIPT_SECTION=${ENABLE_GDB_SCRIPT_SECTION}
+                ${storage_build_version}
                 ${storage_source_dir}
         WORKING_DIRECTORY ${storage_build_dir}
         RESULT_VARIABLE cmake_status

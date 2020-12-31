@@ -18,6 +18,7 @@
 #include "service/GraphFlags.h"
 #include "common/webservice/WebService.h"
 #include "common/time/TimeUtils.h"
+#include "version/Version.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -34,7 +35,7 @@ static void printHelp(const char *prog);
 DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
-    google::SetVersionString(nebula::versionString());
+    google::SetVersionString(nebula::graph::versionString());
     if (argc == 1) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
