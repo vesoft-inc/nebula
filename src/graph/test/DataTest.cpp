@@ -10,6 +10,7 @@
 #include "meta/test/TestUtils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace graph {
@@ -17,6 +18,7 @@ namespace graph {
 class DataTest : public TestBase {
 protected:
     void SetUp() override {
+        FLAGS_max_edge_returned_per_vertex = 4;
         TestBase::SetUp();
         // ...
     }
@@ -989,6 +991,34 @@ TEST_F(DataTest, MatchTest) {
     }
 }
 
+// fix get dst with pushdown filter and max_edge_returned_per_vertex
+TEST_F(DataTest, DstWithFilterAndMax) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness, nickname) VALUES "
+                          "111->111:(81, \"222\"),"
+                          "111->222:(81, \"222\"),"
+                          "111->333:(81, \"333\"),"
+                          "111->444:(81, \"444\"),"
+                          "111->555:(81, \"555\"),"
+                          "111->666:(81, \"666\"),"
+                          "111->777:(81, \"777\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "GO FROM 111 OVER schoolmate "
+                                 "WHERE schoolmate._dst == 222 "
+                                 "YIELD schoolmate._dst";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            222
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 
 static inline void execute(GraphClient* client, const std::string& nGQL) {
     cpp2::ExecutionResponse resp;
