@@ -196,7 +196,6 @@ StorageClientBase<ClientType>::collectResponse(
                          host,
                          spaceId,
                          res,
-                         remoteFunc = std::move(remoteFunc),
                          retry,
                          retryLimit,
                          portOffsetIfRetry] () mutable {
@@ -216,7 +215,6 @@ StorageClientBase<ClientType>::collectResponse(
                             spaceId,
                             start,
                             evb,
-                            remoteFunc = std::move(remoteFunc),
                             retry,
                             retryLimit,
                             portOffsetIfRetry] (folly::Try<Response>&& val) {
@@ -245,12 +243,12 @@ StorageClientBase<ClientType>::collectResponse(
                             }
                             if (retry < retryLimit && isValidHostPtr(leader)) {
                                 evb->runAfterDelay([this, evb, leader = *leader, r = std::move(r),
-                                                    remoteFunc = std::move(remoteFunc), context,
+                                                    context,
                                                     start, retry, retryLimit,
                                                     portOffsetIfRetry] (){
                                     getResponse(evb,
                                                 std::pair<HostAddr, Request>(leader, std::move(r)),
-                                                std::move(remoteFunc),
+                                                context->serverMethod,
                                                 portOffsetIfRetry,
                                                 folly::Promise<StatusOr<Response>>(),
                                                 retry + 1,
@@ -361,7 +359,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
         auto spaceId = request.second.get_space_id();
         auto partsId = getReqPartsId(request.second);
         LOG(INFO) << "Send request to storage " << host;
-        remoteFunc(client.get(), std::move(request.second)).via(evb)
+        remoteFunc(client.get(), request.second).via(evb)
              .then([spaceId,
                     partsId = std::move(partsId),
                     p = std::move(pro),
