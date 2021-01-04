@@ -111,7 +111,7 @@ GraphStorageClient::addVertices(GraphSpaceID space,
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
-        req.set_prop_names(std::move(propNames));
+        req.set_prop_names(propNames);
     }
 
     VLOG(3) << "requests size " << requests.size();
@@ -152,7 +152,7 @@ GraphStorageClient::addEdges(GraphSpaceID space,
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
-        req.set_prop_names(std::move(propNames));
+        req.set_prop_names(propNames);
     }
     return collectResponse(
         evb,
