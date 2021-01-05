@@ -119,8 +119,9 @@ Status MatchValidator::validateImpl() {
             }
         }
     }
-    matchCtx_->clauses.emplace_back(std::move(retClauseCtx));
 
+    NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yieldColumns));
+    matchCtx_->clauses.emplace_back(std::move(retClauseCtx));
     return Status::OK();
 }
 
@@ -625,6 +626,17 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
         }
     }
 
+    return Status::OK();
+}
+
+Status MatchValidator::buildOutputs(const YieldColumns* yields) {
+    for (auto* col : yields->columns()) {
+        auto colName = deduceColName(col);
+        auto typeStatus = deduceExprType(col->expr());
+        NG_RETURN_IF_ERROR(typeStatus);
+        auto type = typeStatus.value();
+        outputs_.emplace_back(colName, type);
+    }
     return Status::OK();
 }
 }   // namespace graph

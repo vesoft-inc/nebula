@@ -544,21 +544,33 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 
 void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
     expr->collection()->accept(this);
-    if (!ok()) return;
+    if (!ok()) {
+        return;
+    }
+
+    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
+        return;
+    }
+
     if (type_ != Value::Type::LIST) {
-        status_ = Status::SemanticError(
-            "`%s': Invalid colletion type, expected type of LIST",
-            expr->toString().c_str());
+        std::stringstream ss;
+        ss << "`" << expr->toString().c_str()
+           << "': Invalid colletion type, expected type of LIST, but was:" << type_;
+        status_ = Status::SemanticError(ss.str());
         return;
     }
 
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
-        if (!ok()) return;
+        if (!ok()) {
+            return;
+        }
     }
     if (expr->hasMapping()) {
         expr->mapping()->accept(this);
-        if (!ok()) return;
+        if (!ok()) {
+            return;
+        }
     }
 
     type_ = Value::Type::LIST;
