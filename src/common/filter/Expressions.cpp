@@ -669,6 +669,10 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
                 return OptVariantType(-asInt(value.value()));
             } else if (isDouble(value.value())) {
                 return OptVariantType(-asDouble(value.value()));
+            } else {
+                return OptVariantType(
+                    Status::Error(folly::sformat("attempt to perform unary arithmetic on a `{}'",
+                                                 VARIANT_TYPE_NAME[value.value().which()])));
             }
             return Status::Error("Wrong value type for !");
         } else {
@@ -676,7 +680,7 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
         }
     }
 
-    return value.status();
+    return value;
 }
 
 Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor) const {

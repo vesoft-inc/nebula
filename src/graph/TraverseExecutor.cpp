@@ -451,7 +451,7 @@ Status WhereWrapper::prepare(ExpressionContext *ectx) {
     if (!rewrite(filterRewrite_.get())) {
         filterRewrite_ = nullptr;
     }
-    if (filterRewrite_ != nullptr) {
+    if (filterRewrite_ != nullptr && canPushdown(filterRewrite_.get())) {
         VLOG(1) << "Filter pushdown: " << filterRewrite_->toString();
         filterPushdown_ = Expression::encode(filterRewrite_.get());
     }
@@ -531,7 +531,8 @@ bool WhereWrapper::canPushdown(Expression *expr) const {
         LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
         return false;
     }
-    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
+    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp() ||
+        ectx->edgeNamesInExpr().size() > 1) {
         return false;
     }
     return true;
