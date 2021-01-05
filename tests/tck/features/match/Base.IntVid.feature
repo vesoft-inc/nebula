@@ -5,7 +5,7 @@
 Feature: Basic match
 
   Background:
-    Given a graph with space named "nba"
+    Given a graph with space named "nba_int_vid"
 
   Scenario: Single node
     When executing query:
