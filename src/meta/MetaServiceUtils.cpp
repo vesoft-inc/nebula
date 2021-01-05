@@ -33,7 +33,7 @@ static const std::unordered_map<
         {"parts", {"__parts__", MetaServiceUtils::parsePartKeySpaceId}},
         {"tags", {"__tags__", MetaServiceUtils::parseTagsKeySpaceID}},
         {"edges", {"__edges__", MetaServiceUtils::parseEdgesKeySpaceID}},
-        {"indexes", {"__indexes__", nullptr}},
+        {"indexes", {"__indexes__", MetaServiceUtils::parseIndexesKeySpaceID}},
         // Index tables are handled separately.
         {"index", {"__index__", nullptr}},
         {"index_status", {"__index_status__", MetaServiceUtils::parseIndexStatusKeySpaceID}},
@@ -41,7 +41,7 @@ static const std::unordered_map<
         {"last_update_time", {"__last_update_time__", nullptr}},
         {"leaders", {"__leaders__", nullptr}},
         {"listener", {"__listener__", nullptr}},
-        {"statis", {"__statis__", nullptr}},
+        {"statis", {"__statis__", MetaServiceUtils::parseStatisSpace}},
         {"balance_task", {"__balance_task__", nullptr}},
         {"balance_plan", {"__balance_plan__", nullptr}},
         {"ft_index", {"__ft_index__", nullptr}}};
@@ -1474,6 +1474,11 @@ cpp2::StatisItem MetaServiceUtils::parseStatisVal(folly::StringPiece rawData) {
     cpp2::StatisItem statisItem;
     apache::thrift::CompactSerializer::deserialize(rawData, statisItem);
     return statisItem;
+}
+
+GraphSpaceID MetaServiceUtils::parseStatisSpace(folly::StringPiece rawData) {
+    auto offset = kStatisTable.size();
+    return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
 }
 
 const std::string& MetaServiceUtils::statisKeyPrefix() {

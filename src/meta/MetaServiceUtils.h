@@ -304,6 +304,8 @@ public:
 
     static const std::string& statisKeyPrefix();
 
+    static GraphSpaceID parseStatisSpace(folly::StringPiece rawData);
+
     static std::string fulltextServiceKey();
 
     static std::string fulltextServiceVal(cpp2::FTServiceType type,
