@@ -27,5 +27,5 @@ storage_nodes:
     user: "nebula"
 
 backend: "s3://nebulabackup"
-SpaceNames: ["nba"]
+space_names: ["nba"]
 
