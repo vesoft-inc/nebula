@@ -750,6 +750,7 @@ list_comprehension_expression
         auto *expr = new ListComprehensionExpression(new std::string(innerVar), $4, $6, nullptr);
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
+        delete $2;
     }
     | L_BRACKET expression KW_IN expression PIPE expression R_BRACKET {
         if ($2->kind() != Expression::Kind::kLabel) {
@@ -759,6 +760,7 @@ list_comprehension_expression
         auto *expr = new ListComprehensionExpression(new std::string(innerVar), $4, nullptr, $6);
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
+        delete $2;
     }
     | L_BRACKET expression KW_IN expression KW_WHERE expression PIPE expression R_BRACKET {
         if ($2->kind() != Expression::Kind::kLabel) {
@@ -768,6 +770,7 @@ list_comprehension_expression
         auto *expr = new ListComprehensionExpression(new std::string(innerVar), $4, $6, $8);
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
+        delete $2;
     }
     ;
 
