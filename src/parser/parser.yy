@@ -1772,6 +1772,9 @@ limit_sentence
         $$ = new LimitSentence($2, $4);
     }
     | KW_LIMIT legal_integer KW_OFFSET legal_integer {
+        $$ = new LimitSentence($4, $2);
+    }
+    | KW_OFFSET legal_integer KW_LIMIT legal_integer  {
         $$ = new LimitSentence($2, $4);
     }
     ;
