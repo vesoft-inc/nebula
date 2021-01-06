@@ -44,6 +44,7 @@ public:
         kSwitchSpace,
         kDedup,
         kPassThrough,
+        kAssign,
         // schema related
         kCreateSpace,
         kCreateTag,

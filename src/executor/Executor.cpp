@@ -75,6 +75,7 @@
 #include "executor/query/SortExecutor.h"
 #include "executor/query/TopNExecutor.h"
 #include "executor/query/UnionExecutor.h"
+#include "executor/query/AssignExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Logic.h"
 #include "planner/Maintain.h"
@@ -207,6 +208,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kDedup: {
             return pool->add(new DedupExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kAssign: {
+            return pool->add(new AssignExecutor(node, qctx));
         }
         case PlanNode::Kind::kSwitchSpace: {
             return pool->add(new SwitchSpaceExecutor(node, qctx));

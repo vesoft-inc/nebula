@@ -78,6 +78,7 @@ nebula_add_test(
         ProduceSemiShortestPathTest.cpp
         ProduceAllPathsTest.cpp
         CartesianProductTest.cpp
+        AssignTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES
