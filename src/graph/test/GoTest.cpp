@@ -92,6 +92,26 @@ TEST_P(GoTest, OneStepOutBound) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name"
+                    " | LIMIT 1 OFFSET 2";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2012, 2016, "Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto &player = players_["Rajon Rondo"];
         auto *fmt = "GO FROM %ld OVER serve WHERE "
                     "serve.start_year >= 2013 && serve.end_year <= 2018 YIELD "

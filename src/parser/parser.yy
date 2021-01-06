@@ -1011,7 +1011,7 @@ limit_sentence
     | KW_LIMIT INTEGER KW_OFFSET INTEGER {
         ifOutOfRange($2, @2);
         ifOutOfRange($4, @4);
-        $$ = new LimitSentence($2, $4);
+        $$ = new LimitSentence($4, $2);
     }
     ;
 
