@@ -19,13 +19,16 @@ class SpaceDesc:
         self.charset = charset
         self.collate = collate
 
+    def __str__(self):
+        return str(self.__dict__)
+
     @staticmethod
     def from_json(obj: dict):
         return SpaceDesc(
             name=obj.get('name', None),
-            vid_type=obj.get('vidType', 'FIXED_STRING(32)'),
-            partition_num=obj.get('partitionNum', 7),
-            replica_factor=obj.get('replicaFactor', 1),
+            vid_type=obj.get('vid_type', 'FIXED_STRING(32)'),
+            partition_num=obj.get('partition_num', 7),
+            replica_factor=obj.get('replica_factor', 1),
             charset=obj.get('charset', 'utf8'),
             collate=obj.get('collate', 'utf8_bin'),
         )

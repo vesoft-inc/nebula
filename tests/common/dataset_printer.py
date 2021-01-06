@@ -5,12 +5,13 @@
 
 from typing import List
 
-from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex, Value
+from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex
 
 
 class DataSetPrinter:
-    def __init__(self, decode_type='utf-8'):
+    def __init__(self, decode_type='utf-8', vid_fn=None):
         self._decode_type = decode_type
+        self._vid_fn = vid_fn
 
     def sstr(self, b) -> str:
         if not type(b) == bytes:
@@ -18,11 +19,13 @@ class DataSetPrinter:
         return b.decode(self._decode_type)
 
     def vid(self, v) -> str:
-        if type(v) == str:
-            return f'"{v}"'
-        if type(v) == bytes:
-            return f'"{self.sstr(v)}"'
-        if type(v) == int:
+        if type(v) is str:
+            return f'"{v}"' if self._vid_fn is None else f"{self._vid_fn(v)}"
+        if type(v) is bytes:
+            if self._vid_fn is None:
+                return f'"{self.sstr(v)}"'
+            return f"{self._vid_fn(v)}"
+        if type(v) is int:
             return f'{v}'
         if isinstance(v, Value):
             return self.vid(self.to_string(v))

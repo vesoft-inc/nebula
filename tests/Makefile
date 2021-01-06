@@ -11,6 +11,7 @@ gherkin_fmt = ~/.local/bin/reformat-gherkin
 
 RM_DIR ?= true
 TEST_DIR ?= $(CURR_DIR)
+J ?= 8
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
@@ -39,10 +40,18 @@ check:
 	@find $(CURR_DIR)/tck/features -type f -iname "*.feature" -print | xargs $(gherkin_fmt) --check
 
 test:
-	cd $(CURR_DIR) && python3 -m pytest -n8 --dist=loadfile --rm_dir=$(RM_DIR) -m "not skip" $(TEST_DIR)
+	cd $(CURR_DIR) && python3 -m pytest -n$(J) --dist=loadfile --rm_dir=$(RM_DIR) -m "not skip" -k "not tck" $(TEST_DIR)
 
 tck:
-	cd $(CURR_DIR) && python3 -m pytest --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
+	cd $(CURR_DIR) && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
+
+report:
+	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json
+	@jq . $(CURR_DIR)/tck-report-bak.json > tck-report.json
+	@rm -rf $(CURR_DIR)/tck-report-bak.json
 
 clean:
 	@rm -rf $(CURR_DIR)/nebula-python $(CURR_DIR)/reformat-gherkin $(CURR_DIR)/.pytest/* $(CURR_DIR)/.pytest_cache
+
+kill:
+	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9
