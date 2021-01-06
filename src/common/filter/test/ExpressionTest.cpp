@@ -765,6 +765,7 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR_FAILED("abc" CONTAINS 1.0);
     TEST_EXPR_FAILED("abc" CONTAINS true);
     TEST_EXPR_FAILED(0 CONTAINS 0);
+    TEST_EXPR_FAILED(-(1/0));
 }
 
 

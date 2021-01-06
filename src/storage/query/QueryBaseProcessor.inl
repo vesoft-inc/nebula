@@ -517,7 +517,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
         RowReader reader = RowReader::getEmptyRowReader();
-        if ((!onlyStructure || retTTL.has_value()) && !val.empty()) {
+        if ((!onlyStructure || exp_ != nullptr|| retTTL.has_value()) && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   val,
                                                   spaceId_,
