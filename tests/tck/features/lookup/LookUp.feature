@@ -25,7 +25,7 @@ Feature: LookUpTest_Vid_String
       """
       LOOKUP ON lookup_tag_1 WHERE col1 == 200;
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a SemanticError should be raised at runtime:
     When executing query:
       """
       LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 300
@@ -68,7 +68,7 @@ Feature: LookUpTest_Vid_String
       """
       LOOKUP ON lookup_edge_1 WHERE col1 == 201
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a SemanticError should be raised at runtime:
     When executing query:
       """
       LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 300

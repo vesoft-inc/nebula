@@ -321,8 +321,8 @@ Status LookupValidator::checkFilter(Expression* expr) {
             return checkRelExpr(rExpr);
         }
         default: {
-            return Status::NotSupported("Expression %s not supported yet",
-                                        expr->toString().c_str());
+            return Status::SemanticError("Expression %s not supported yet",
+                                         expr->toString().c_str());
         }
     }
     return Status::OK();
@@ -334,13 +334,13 @@ Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
     // Does not support filter : schema.col1 > schema.col2
     if (left->kind() == Expression::Kind::kLabelAttribute &&
         right->kind() == Expression::Kind::kLabelAttribute) {
-        return Status::NotSupported("Expression %s not supported yet", expr->toString().c_str());
+        return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
     } else if (left->kind() == Expression::Kind::kLabelAttribute ||
                right->kind() == Expression::Kind::kLabelAttribute) {
         auto ret = rewriteRelExpr(expr);
         NG_RETURN_IF_ERROR(ret);
     } else {
-        return Status::NotSupported("Expression %s not supported yet", expr->toString().c_str());
+        return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
     }
     return Status::OK();
 }

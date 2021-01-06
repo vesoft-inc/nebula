@@ -77,6 +77,28 @@ Feature: Lookup by index itself in integer vid
       | hash('Trail Blazers') | 'Trail Blazers' |
       | hash('Bulls')         | 'Bulls'         |
 
+  Scenario: [1] Tag TODO
+    When executing query:
+      """
+      LOOKUP ON team WHERE 1 + 1 == 2
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON team WHERE 1 + 1 == 2 YIELD team.name AS Name
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON team WHERE team.name CONTAINS 'Jazz'
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON team WHERE team.name CONTAINS 'Jazz' YIELD team.name AS Name
+      """
+    Then a SemanticError should be raised at runtime:
+
   Scenario: [2] edge index
     When executing query:
       """
@@ -394,3 +416,25 @@ Feature: Lookup by index itself in integer vid
       | hash('Dwight Howard')         | hash('Hawks')         | 0       | 2016      |
       | hash('Dwight Howard')         | hash('Hornets')       | 0       | 2017      |
       | hash('Dwight Howard')         | hash('Wizards')       | 0       | 2018      |
+
+  Scenario: [2] Edge TODO
+    When executing query:
+      """
+      LOOKUP ON serve WHERE 1 + 1 == 2
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON serve WHERE 1 + 1 == 2 YIELD serve.start_year AS startYear
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON serve WHERE serve.start_year == serve.end_year
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year AS startYear
+      """
+    Then a SemanticError should be raised at runtime:
