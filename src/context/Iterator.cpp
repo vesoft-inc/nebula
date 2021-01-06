@@ -85,7 +85,7 @@ StatusOr<GetNeighborsIter::DataSetIndex> GetNeighborsIter::makeDataSetIndex(cons
     int64_t edgeStartIndex = std::move(buildResult).value();
     if (edgeStartIndex < 0) {
         for (auto& row : dsIndex.ds->rows) {
-            logicalRows_.emplace_back(GetNbrLogicalRow{idx, &row, "", nullptr});
+            logicalRows_.emplace_back(idx, &row, "", nullptr);
         }
     } else {
         makeLogicalRowByEdge(edgeStartIndex, idx, dsIndex);
@@ -111,7 +111,7 @@ void GetNeighborsIter::makeLogicalRowByEdge(int64_t edgeStartIndex,
                 auto edgeName = dsIndex.tagEdgeNameIndices.find(column);
                 DCHECK(edgeName != dsIndex.tagEdgeNameIndices.end());
                 logicalRows_.emplace_back(
-                    GetNbrLogicalRow{idx, &row, edgeName->second, &edge.getList()});
+                    idx, &row, edgeName->second, &edge.getList());
             }
         }
     }

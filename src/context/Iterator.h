@@ -139,8 +139,7 @@ public:
         if (static_cast<size_t>(std::abs(index)) >= size) {
             return Value::kNullBadType;
         }
-        auto currentRow = *iter;
-        return currentRow[(size + index) % size];
+        return iter->operator[]((size + index) % size);
     }
 
     virtual const Value& getTagProp(const std::string&,
@@ -374,6 +373,26 @@ private:
         GetNbrLogicalRow(size_t dsIdx, const Row* row, std::string edgeName, const List* edgeProps)
             : dsIdx_(dsIdx), row_(row), edgeName_(std::move(edgeName)), edgeProps_(edgeProps) {}
 
+        GetNbrLogicalRow(const GetNbrLogicalRow &) = default;
+        GetNbrLogicalRow& operator=(const GetNbrLogicalRow &) = default;
+
+        GetNbrLogicalRow(GetNbrLogicalRow &&r) {
+            *this = std::move(r);
+        }
+        GetNbrLogicalRow& operator=(GetNbrLogicalRow &&r) {
+            dsIdx_ = r.dsIdx_;
+            r.dsIdx_ = 0;
+
+            row_ = r.row_;
+            r.row_ = nullptr;
+
+            edgeName_ = std::move(r.edgeName_);
+
+            edgeProps_ = r.edgeProps_;
+            r.edgeProps_ = nullptr;
+            return *this;
+        }
+
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
                 return (*row_)[idx];
@@ -424,6 +443,18 @@ public:
     class SeqLogicalRow final : public LogicalRow {
     public:
         explicit SeqLogicalRow(const Row* row) : row_(row) {}
+
+        SeqLogicalRow(const SeqLogicalRow &r) = default;
+        SeqLogicalRow& operator=(const SeqLogicalRow &r) = default;
+
+        SeqLogicalRow(SeqLogicalRow &&r) {
+            *this = std::move(r);
+        }
+        SeqLogicalRow& operator=(SeqLogicalRow &&r) {
+            row_ = r.row_;
+            r.row_ = nullptr;
+            return *this;
+        }
 
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
@@ -603,6 +634,24 @@ public:
             const std::unordered_map<size_t, std::pair<size_t, size_t>>* colIdxIndices)
             : values_(std::move(values)), size_(size), colIdxIndices_(colIdxIndices) {}
 
+        JoinLogicalRow(const JoinLogicalRow &r) = default;
+        JoinLogicalRow& operator=(const JoinLogicalRow &r) = default;
+
+        JoinLogicalRow(JoinLogicalRow &&r) {
+            *this = std::move(r);
+        }
+
+        JoinLogicalRow& operator=(JoinLogicalRow &&r) {
+            values_ = std::move(r.values_);
+
+            size_ = r.size_;
+            r.size_ = 0;
+
+            colIdxIndices_ = r.colIdxIndices_;
+            r.colIdxIndices_ = nullptr;
+            return *this;
+        }
+
         const Value& operator[](size_t idx) const override {
             if (idx < size_) {
                 auto index = colIdxIndices_->find(idx);
@@ -768,6 +817,19 @@ public:
     class PropLogicalRow final : public LogicalRow {
     public:
         explicit PropLogicalRow(const Row* row) : row_(row) {}
+
+        PropLogicalRow(const PropLogicalRow &r) = default;
+        PropLogicalRow& operator=(const PropLogicalRow &r) = default;
+
+        PropLogicalRow(PropLogicalRow &&r) {
+            *this = std::move(r);
+        }
+
+        PropLogicalRow& operator=(PropLogicalRow &&r) {
+            row_ = r.row_;
+            r.row_ = nullptr;
+            return *this;
+        }
 
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
