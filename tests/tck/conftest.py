@@ -243,12 +243,12 @@ def execution_should_be_succ(graph_spaces):
 def raised_type_error(err_type, time, sym, msg, graph_spaces):
     res = graph_spaces["result_set"]
     ngql = graph_spaces['ngql']
-    assert not res.is_succeeded(), "Response should be failed"
+    assert not res.is_succeeded(), f"Response should be failed: ngql:{ngql}"
     err_type = err_type.strip()
     msg = msg.strip()
     res_msg = res.error_msg()
     if res.error_code() == ErrorCode.E_EXECUTION_ERROR:
-        assert err_type == "ExecutionError"
+        assert err_type == "ExecutionError", f'Error code mismatch, ngql:{ngql}"'
         expect_msg = "{}".format(msg)
     else:
         expect_msg = "{}: {}".format(err_type, msg)
