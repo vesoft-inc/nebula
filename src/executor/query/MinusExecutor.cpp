@@ -34,7 +34,7 @@ folly::Future<Status> MinusExecutor::execute() {
             if (iter == hashSet.end()) {
                 lIter->next();
             } else {
-                lIter->erase();
+                lIter->unstableErase();
             }
         }
     }

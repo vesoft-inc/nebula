@@ -290,7 +290,7 @@ void ConjunctPathExecutor::delPathFromConditionalVar(const Value& start, const V
         auto startVid = iter->getColumn(0);
         auto endVid = iter->getColumn(1);
         if (startVid == endVid || (startVid == start && endVid == end)) {
-            iter->erase();
+            iter->unstableErase();
         } else {
             iter->next();
         }

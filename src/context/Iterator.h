@@ -42,6 +42,15 @@ public:
     template <typename T>
     using RowsIter = typename RowsType<T>::iterator;
 
+    // Warning this will break the origin order of elements!
+    template <typename T>
+    static RowsIter<T> eraseBySwap(RowsType<T> &rows, RowsIter<T> i) {
+        DCHECK(!rows.empty());
+        std::swap(rows.back(), *i);
+        rows.pop_back();
+        return i;
+    }
+
     enum class Kind : uint8_t {
         kDefault,
         kGetNeighbors,
@@ -67,6 +76,9 @@ public:
 
     // erase current iter
     virtual void erase() = 0;
+
+    // Warning this will break the origin order of elements!
+    virtual void unstableErase() = 0;
 
     virtual const LogicalRow* row() const = 0;
 
@@ -179,6 +191,11 @@ public:
         counter_--;
     }
 
+    void unstableErase() override {
+        DLOG(ERROR) << "Unimplemented default iterator.";
+        counter_--;
+    }
+
     void eraseRange(size_t, size_t) override {
         return;
     }
@@ -243,6 +260,12 @@ public:
     void erase() override {
         if (valid()) {
             iter_ = logicalRows_.erase(iter_);
+        }
+    }
+
+    void unstableErase() override {
+        if (valid()) {
+            iter_ = eraseBySwap(logicalRows_, iter_);
         }
     }
 
@@ -478,6 +501,10 @@ public:
         iter_ = rows_.erase(iter_);
     }
 
+    void unstableErase() override {
+        iter_ = eraseBySwap(rows_, iter_);
+    }
+
     void eraseRange(size_t first, size_t last) override {
         if (first >= last || first >= size()) {
             return;
@@ -646,6 +673,10 @@ public:
         iter_ = rows_.erase(iter_);
     }
 
+    void unstableErase() override {
+        iter_ = eraseBySwap(rows_, iter_);
+    }
+
     void eraseRange(size_t first, size_t last) override {
         if (first >= last || first >= size()) {
             return;
@@ -785,6 +816,10 @@ public:
 
     void erase() override {
         iter_ = rows_.erase(iter_);
+    }
+
+    void unstableErase() override {
+        iter_ = eraseBySwap(rows_, iter_);
     }
 
     void eraseRange(size_t first, size_t last) override {

@@ -41,7 +41,7 @@ folly::Future<Status> IntersectExecutor::execute() {
     while (lIter->valid()) {
         auto iter = hashSet.find(lIter->row());
         if (iter == hashSet.end()) {
-            lIter->erase();
+            lIter->unstableErase();
         } else {
             lIter->next();
         }

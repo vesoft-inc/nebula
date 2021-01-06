@@ -38,7 +38,7 @@ folly::Future<Status> FilterExecutor::execute() {
                                  "the type should be NULL,EMPTY or BOOL");
         }
         if (val.empty() || val.isNull() || !val.getBool()) {
-            iter->erase();
+            iter->unstableErase();
         } else {
             iter->next();
         }

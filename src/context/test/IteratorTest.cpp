@@ -399,6 +399,66 @@ TEST(IteratorTest, GetNeighbor) {
         EXPECT_EQ(result.values.size(), 40);
         EXPECT_EQ(result.values, expected);
     }
+    // unstableErase
+    {
+        GetNeighborsIter iter(val);
+        size_t i = 0;
+        while (iter.valid()) {
+            ++i;
+            if (i % 2 == 0) {
+                iter.unstableErase();
+            } else {
+                iter.next();
+            }
+        }
+        std::vector<Value> result;
+
+        int count = 0;
+        for (iter.reset(); iter.valid(); iter.next()) {
+            result.emplace_back(iter.getColumn(kVid));
+            count++;
+        }
+        EXPECT_EQ(result.size(), 20);
+
+        for (iter.reset(10); iter.valid(); iter.next()) {
+            count--;
+        }
+        EXPECT_EQ(count, 10);
+    }
+    {
+        GetNeighborsIter iter(val);
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            auto v = iter.getVertex();
+            result.emplace_back(std::move(v));
+        }
+        EXPECT_EQ(result.size(), 40);
+    }
+    {
+        GetNeighborsIter iter(val);
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            auto e = iter.getEdge();
+            result.emplace_back(std::move(e));
+        }
+        EXPECT_EQ(result.size(), 40);
+    }
+    {
+        GetNeighborsIter iter(val);
+        List result = iter.getVertices();
+        EXPECT_EQ(result.values.size(), 40);
+
+        result = iter.getVertices();
+        EXPECT_EQ(result.values.size(), 40);
+    }
+    {
+        GetNeighborsIter iter(val);
+        List result = iter.getEdges();
+        EXPECT_EQ(result.values.size(), 40);
+
+        result = iter.getEdges();
+        EXPECT_EQ(result.values.size(), 40);
+    }
 }
 
 TEST(IteratorTest, TestHead) {
