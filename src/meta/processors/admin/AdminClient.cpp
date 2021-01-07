@@ -31,7 +31,6 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
     auto peers = std::move(ret).value();
     auto it = std::find(peers.begin(), peers.end(), leader);
     if (it == peers.end()) {
-        LOG(ERROR) << "Can't find part " << partId << " on " << leader;
         return Status::PartNotFound();
     }
     auto target = dst;
@@ -185,22 +184,17 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     auto it = std::find(peers.begin(), peers.end(), src);
     if (it == peers.end()) {
         LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
-        // In this case, the dst should be existed in peers.
-        if (std::find(peers.begin(), peers.end(), dst) == peers.end()) {
-            LOG(ERROR) << "[space:" << spaceId << ", part:" << partId << "] dst "
-                       << dst << "should be existed in peers!";
-            return Status::Error("dst not exist in peers");
-        }
-        return Status::OK();
+    } else {
+        LOG(INFO) << "remove [" << spaceId << ", " << partId << "] from " << src;
+        peers.erase(it);
     }
-    peers.erase(it);
 
     if (std::find(peers.begin(), peers.end(), dst) != peers.end()) {
-        LOG(ERROR) << "[space:" << spaceId << ", part:" << partId << "] dst "
-                   << dst << " has been existed!";
-        return Status::Error("dst has been existed in peers");
+        LOG(INFO) << "dst " << dst << " has been added to [" << spaceId << ", " << partId << "]";
+    } else {
+        LOG(INFO) << "add [" << spaceId << ", " << partId << "] to " << dst;
+        peers.emplace_back(dst);
     }
-    peers.emplace_back(dst);
 
     auto partRet = kv_->part(kDefaultSpaceId, kDefaultPartId);
     CHECK(ok(partRet));

@@ -184,8 +184,10 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
             task.startTimeMs_ = std::get<2>(tup);
             task.endTimeMs_ = std::get<3>(tup);
             if (resume && task.ret_ != BalanceTaskResult::SUCCEEDED) {
-                // Resume any task not finished
-                task.ret_ = BalanceTaskResult::IN_PROGRESS;
+                // Resume the failed task, skip the in-progress and invalid tasks
+                if (task.ret_ == BalanceTaskResult::FAILED) {
+                    task.ret_ = BalanceTaskResult::IN_PROGRESS;
+                }
                 task.status_ = BalanceTaskStatus::START;
                 if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
                     LOG(ERROR) << "The destination is not lived";

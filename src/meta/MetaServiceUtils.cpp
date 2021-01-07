@@ -1269,10 +1269,13 @@ std::string MetaServiceUtils::balanceTaskPrefix(BalanceID balanceId) {
 }
 
 std::string MetaServiceUtils::balancePlanKey(BalanceID id) {
+    CHECK_GE(id, 0);
+    // make the balance id is stored in decend order
+    auto encode = folly::Endian::big(std::numeric_limits<BalanceID>::max() - id);
     std::string key;
     key.reserve(sizeof(BalanceID) + kBalancePlanTable.size());
     key.append(reinterpret_cast<const char*>(kBalancePlanTable.data()), kBalancePlanTable.size())
-       .append(reinterpret_cast<const char*>(&id), sizeof(BalanceID));
+       .append(reinterpret_cast<const char*>(&encode), sizeof(BalanceID));
     return key;
 }
 
@@ -1315,34 +1318,6 @@ MetaServiceUtils::parseBalanceTaskVal(const folly::StringPiece& rawVal) {
     return std::make_tuple(status, ret, start, end);
 }
 
-std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
-MetaServiceUtils::parseBalancePlanKey(const folly::StringPiece& rawKey) {
-    uint32_t offset = 0;
-    auto balanceId = *reinterpret_cast<const BalanceID*>(rawKey.begin() + offset);
-    offset += sizeof(balanceId);
-    auto spaceId = *reinterpret_cast<const GraphSpaceID*>(rawKey.begin() + offset);
-    offset += sizeof(GraphSpaceID);
-    auto partId = *reinterpret_cast<const PartitionID*>(rawKey.begin() + offset);
-    offset += sizeof(PartitionID);
-    auto src = deserializeHostAddr({rawKey, offset});
-    offset += src.host.size() + sizeof(size_t) + sizeof(uint32_t);
-    auto dst = deserializeHostAddr({rawKey, offset});
-    return std::make_tuple(balanceId, spaceId, partId, src, dst);
-}
-
-std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t>
-MetaServiceUtils::parseBalancePlanVal(const folly::StringPiece& rawVal) {
-    int32_t offset = 0;
-    auto status = *reinterpret_cast<const BalanceTaskStatus*>(rawVal.begin() + offset);
-    offset += sizeof(BalanceTaskStatus);
-    auto ret = *reinterpret_cast<const BalanceTaskResult*>(rawVal.begin() + offset);
-    offset += sizeof(BalanceTaskResult);
-    auto start = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
-    offset += sizeof(int64_t);
-    auto end = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
-    return std::make_tuple(status, ret, start, end);
-}
-
 std::string MetaServiceUtils::groupKey(const std::string& group) {
     std::string key;
     key.reserve(kGroupsTable.size() + group.size());
@@ -1352,7 +1327,10 @@ std::string MetaServiceUtils::groupKey(const std::string& group) {
 }
 
 BalanceID MetaServiceUtils::parseBalanceID(const folly::StringPiece& rawKey) {
-    return *reinterpret_cast<const BalanceID*>(rawKey.begin() + kBalancePlanTable.size());
+    auto decode = *reinterpret_cast<const BalanceID*>(rawKey.begin() + kBalancePlanTable.size());
+    auto id = std::numeric_limits<BalanceID>::max() - folly::Endian::big(decode);
+    CHECK_GE(id, 0);
+    return id;
 }
 
 BalanceStatus MetaServiceUtils::parseBalanceStatus(const folly::StringPiece& rawVal) {

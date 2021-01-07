@@ -834,7 +834,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
     }
 
     LOG(INFO) << "Now let's try to recovery it. Since the the host will expired in 1 second, "
-              << "the src host would be regarded as offline, so all task will be invalid";
+              << "all host would be regarded as offline, so all task will be invalid";
     ret = balancer.balance();
     CHECK(ok(ret));
     balanceId = value(ret);
@@ -849,7 +849,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
             auto id = MetaServiceUtils::parseBalanceID(iter->key());
             auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
             ASSERT_EQ(balanceId, id);
-            ASSERT_EQ(BalanceStatus::FAILED, status);
+            ASSERT_EQ(BalanceStatus::SUCCEEDED, status);
             num++;
             iter->next();
         }
@@ -877,7 +877,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
                 task.status_ = std::get<0>(tup);
                 ASSERT_EQ(BalanceTaskStatus::START, task.status_);
                 task.ret_ = std::get<1>(tup);
-                // all task is invalid because src is offline
+                // all task is invalid because dst is offline
                 ASSERT_EQ(BalanceTaskResult::INVALID, task.ret_);
                 task.startTimeMs_ = std::get<2>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
@@ -1030,7 +1030,7 @@ TEST(BalanceTest, RecoveryTest) {
     }
 }
 
-TEST(BalanceTest, StopAndRecoverTest) {
+TEST(BalanceTest, StopPlanTest) {
     FLAGS_task_concurrency = 1;
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
@@ -1092,7 +1092,7 @@ TEST(BalanceTest, StopAndRecoverTest) {
             BalanceTask task;
             // PartitionID partId = std::get<2>(BalanceTask::MetaServiceUtils(iter->key()));
             {
-                auto tup = MetaServiceUtils::parseBalancePlanVal(iter->val());
+                auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
                 task.startTimeMs_ = std::get<2>(tup);
@@ -1112,38 +1112,12 @@ TEST(BalanceTest, StopAndRecoverTest) {
 
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
     NiceMock<MockAdminClient> normalClient;
-    EXPECT_CALL(normalClient, waitingForCatchUpData(_, _, _))
-        // there are 5 stopped task need to recover
-        .Times(5);
 
     balancer.client_ = &normalClient;
     ret = balancer.balance();
     CHECK(ok(ret));
-    ASSERT_EQ(value(ret), balanceId);
-    // resume stopped plan
+    ASSERT_NE(value(ret), balanceId);
     sleep(1);
-    {
-        const auto& prefix = MetaServiceUtils::balanceTaskPrefix(balanceId);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
-        int32_t num = 0;
-        while (iter->valid()) {
-            BalanceTask task;
-            {
-                auto tup = MetaServiceUtils::parseBalancePlanVal(iter->val());
-                task.status_ = std::get<0>(tup);
-                ASSERT_EQ(BalanceTaskStatus::END, task.status_);
-                task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
-            }
-            num++;
-            iter->next();
-        }
-        ASSERT_EQ(6, num);
-    }
 }
 
 TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
@@ -1161,11 +1135,8 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
 
     // concurrency = 1, we could only block first task
     EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
-        // first task in first plan will be blocked, all rest task will be skipped,
-        // then start an new balance plan including 6 tasks, total 7
-        .Times(AtLeast(7))
-        .WillOnce(Return(
-            ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
+        .Times(AtLeast(12))
+        .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
     sleep(1);
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
@@ -1174,16 +1145,9 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
     CHECK(ok(ret));
     auto balanceId = value(ret);
 
-    sleep(1);
-    // stop the running plan
-    TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
-    auto stopRet = balancer.stop();
-    CHECK(stopRet.ok());
-    ASSERT_EQ(stopRet.value(), balanceId);
-
     // wait until the plan finished, no running plan for now, only one task has been executed,
     // so the task will be failed, try to clean the invalid plan
-    sleep(5);
+    sleep(3);
     TestUtils::registerHB(kv.get(), {{"0", 0}, {"1", 1}, {"2", 2}});
     auto cleanRet = balancer.cleanLastInValidPlan();
     CHECK(ok(cleanRet));

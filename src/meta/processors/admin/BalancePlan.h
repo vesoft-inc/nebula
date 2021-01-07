@@ -24,7 +24,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, TryToRecoveryTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
-    FRIEND_TEST(BalanceTest, StopAndRecoverTest);
+    FRIEND_TEST(BalanceTest, StopPlanTest);
 
 public:
     BalancePlan(BalanceID id, kvstore::KVStore* kv, AdminClient* client)

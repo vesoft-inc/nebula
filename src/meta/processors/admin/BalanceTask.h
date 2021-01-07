@@ -27,7 +27,7 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, TryToRecoveryTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
-    FRIEND_TEST(BalanceTest, StopAndRecoverTest);
+    FRIEND_TEST(BalanceTest, StopPlanTest);
 
 public:
     BalanceTask() = default;

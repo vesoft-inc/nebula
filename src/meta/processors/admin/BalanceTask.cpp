@@ -19,12 +19,15 @@ namespace meta {
     }
 
 void BalanceTask::invoke() {
+    // All steps in BalanceTask should work even if the task is executed more than once.
     CHECK_NOTNULL(client_);
     if (ret_ == BalanceTaskResult::INVALID) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
         LOG(ERROR) << taskIdStr_ << "Task invalid, status " << static_cast<int32_t>(status_);
-        onError_();
+        // When a plan is stopped or dst is not alive any more, a task will be marked as INVALID,
+        // the task will not be executed again. Balancer will start a new plan instead.
+        onFinished_();
         return;
     } else if (ret_ == BalanceTaskResult::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
@@ -61,10 +64,12 @@ void BalanceTask::invoke() {
             if (srcLived) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
-                        LOG(ERROR) << taskIdStr_ << "Transfer leader failed, status " << resp;
                         if (resp == nebula::Status::PartNotFound()) {
-                            ret_ = BalanceTaskResult::INVALID;
+                            // if the partition has been removed before, regard as succeeded
+                            LOG(WARNING) << "Can't find part " << partId_ << " on " << src_;
+                            status_ = BalanceTaskStatus::ADD_PART_ON_DST;
                         } else {
+                            LOG(ERROR) << taskIdStr_ << "Transfer leader failed, status " << resp;
                             ret_ = BalanceTaskResult::FAILED;
                         }
                     } else {

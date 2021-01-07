@@ -94,7 +94,7 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
         return MetaCommon::to(ret);
     }
     // There should be at most one invalid plan, and it must be the latest one
-    while (iter->valid()) {
+    if (iter->valid()) {
         auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
         if (status == BalanceStatus::FAILED) {
             auto balanceId = MetaServiceUtils::parseBalanceID(iter->key());
@@ -114,7 +114,6 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
             }
             return balanceId;
         }
-        break;
     }
     return cpp2::ErrorCode::E_NO_INVALID_BALANCE_PLAN;
 }
@@ -136,14 +135,15 @@ cpp2::ErrorCode Balancer::recovery() {
             return MetaCommon::to(ret);
         }
         std::vector<int64_t> corruptedPlans;
-        while (iter->valid()) {
+        // The balance plan is stored with balance id desc order, there should be at most one
+        // failed or in_progress plan, and it must be the latest one
+        if (iter->valid()) {
             auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
             if (status == BalanceStatus::IN_PROGRESS ||
                 status == BalanceStatus::FAILED) {
                 auto balanceId = MetaServiceUtils::parseBalanceID(iter->key());
                 corruptedPlans.emplace_back(balanceId);
             }
-            iter->next();
         }
         if (corruptedPlans.empty()) {
             LOG(INFO) << "No corrupted plan need to recovery!";

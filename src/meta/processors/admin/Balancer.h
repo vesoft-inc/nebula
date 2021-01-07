@@ -51,7 +51,7 @@ class Balancer {
     FRIEND_TEST(BalanceTest, SingleReplicaTest);
     FRIEND_TEST(BalanceTest, TryToRecoveryTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
-    FRIEND_TEST(BalanceTest, StopAndRecoverTest);
+    FRIEND_TEST(BalanceTest, StopPlanTest);
     FRIEND_TEST(BalanceTest, CleanLastInvalidBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
