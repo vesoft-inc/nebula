@@ -376,10 +376,10 @@ private:
         GetNbrLogicalRow(const GetNbrLogicalRow &) = default;
         GetNbrLogicalRow& operator=(const GetNbrLogicalRow &) = default;
 
-        GetNbrLogicalRow(GetNbrLogicalRow &&r) {
+        GetNbrLogicalRow(GetNbrLogicalRow &&r) noexcept {
             *this = std::move(r);
         }
-        GetNbrLogicalRow& operator=(GetNbrLogicalRow &&r) {
+        GetNbrLogicalRow& operator=(GetNbrLogicalRow &&r) noexcept {
             dsIdx_ = r.dsIdx_;
             r.dsIdx_ = 0;
 
@@ -447,10 +447,10 @@ public:
         SeqLogicalRow(const SeqLogicalRow &r) = default;
         SeqLogicalRow& operator=(const SeqLogicalRow &r) = default;
 
-        SeqLogicalRow(SeqLogicalRow &&r) {
+        SeqLogicalRow(SeqLogicalRow &&r) noexcept {
             *this = std::move(r);
         }
-        SeqLogicalRow& operator=(SeqLogicalRow &&r) {
+        SeqLogicalRow& operator=(SeqLogicalRow &&r) noexcept {
             row_ = r.row_;
             r.row_ = nullptr;
             return *this;
@@ -637,11 +637,11 @@ public:
         JoinLogicalRow(const JoinLogicalRow &r) = default;
         JoinLogicalRow& operator=(const JoinLogicalRow &r) = default;
 
-        JoinLogicalRow(JoinLogicalRow &&r) {
+        JoinLogicalRow(JoinLogicalRow &&r) noexcept {
             *this = std::move(r);
         }
 
-        JoinLogicalRow& operator=(JoinLogicalRow &&r) {
+        JoinLogicalRow& operator=(JoinLogicalRow &&r) noexcept {
             values_ = std::move(r.values_);
 
             size_ = r.size_;
@@ -821,11 +821,11 @@ public:
         PropLogicalRow(const PropLogicalRow &r) = default;
         PropLogicalRow& operator=(const PropLogicalRow &r) = default;
 
-        PropLogicalRow(PropLogicalRow &&r) {
+        PropLogicalRow(PropLogicalRow &&r) noexcept {
             *this = std::move(r);
         }
 
-        PropLogicalRow& operator=(PropLogicalRow &&r) {
+        PropLogicalRow& operator=(PropLogicalRow &&r) noexcept {
             row_ = r.row_;
             r.row_ = nullptr;
             return *this;
