@@ -164,9 +164,7 @@ std::string MapExpression::toString() const {
 
     buf += '{';
     for (auto &kv : items_) {
-        buf += "\"";
         buf += *kv.first;
-        buf += "\"";
         buf += ":";
         buf += kv.second->toString();
         buf += ",";

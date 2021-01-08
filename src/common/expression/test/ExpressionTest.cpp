@@ -1268,10 +1268,10 @@ TEST_F(ExpressionTest, MapTostring) {
             .add(new std::string("key4"), new ConstantExpression(true));
     auto expr = std::make_unique<MapExpression>(items);
     auto expected = "{"
-                        "\"key1\":12345,"
-                        "\"key2\":12345,"
-                        "\"key3\":Hello,"
-                        "\"key4\":true"
+                        "key1:12345,"
+                        "key2:12345,"
+                        "key3:Hello,"
+                        "key4:true"
                     "}";
     ASSERT_EQ(expected, expr->toString());
 }
