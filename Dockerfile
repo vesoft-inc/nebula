@@ -18,6 +18,6 @@ RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
 
-EXPOSE 3699 13000 13002
+EXPOSE 9669 19669 19670
 
 ENTRYPOINT ["./bin/nebula-graphd", "--flagfile=./etc/nebula-graphd.conf", "--daemonize=false"]
