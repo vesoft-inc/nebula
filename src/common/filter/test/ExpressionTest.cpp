@@ -424,6 +424,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(3.14 * 3 * 3 / 2 > 3.14 * 1.5 * 1.5 / 2, true);
     TEST_EXPR(3.14 * 3 * 3 / 2 < 3.14 * 1.5 * 1.5 / 2, false);
 
+    TEST_EXPR_FAILED(!(1/0));
+
     {
         std::string query = "GO FROM 1 OVER follow WHERE 3.14 * 3 * 3 / 2 == 14.13";
         auto parsed = parser_->parse(query);
@@ -763,6 +765,7 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR_FAILED("abc" CONTAINS 1.0);
     TEST_EXPR_FAILED("abc" CONTAINS true);
     TEST_EXPR_FAILED(0 CONTAINS 0);
+    TEST_EXPR_FAILED(-(1/0));
 }
 
 

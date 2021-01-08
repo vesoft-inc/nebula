@@ -193,19 +193,18 @@ TEST_F(GroupByLimitTest, LimitTest) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
         auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | "
-                    "ORDER BY $-.name | LIMIT 2,2";
+                    "ORDER BY $-.name | LIMIT 2,1";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string>> expected = {
                 {"Hawks"},
-                {"Hornets"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
 
         // use OFFSET
         auto *fmt1 = "GO FROM %ld OVER serve YIELD $$.team.name AS name | "
-                     "ORDER BY $-.name | LIMIT 2 OFFSET 2";
+                     "ORDER BY $-.name | LIMIT 1 OFFSET 2";
         query = folly::stringPrintf(fmt1, player.vid());
         code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -232,7 +231,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Danny Green"];
-        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | LIMIT 1 OFFSET 0";
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | LIMIT 0 OFFSET 1";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
