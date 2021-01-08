@@ -48,7 +48,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
-    nebula::StepClause                     *find_path_upto_clause;
+    nebula::StepClause                     *find_path_step_clause;
     nebula::FromClause                     *from_clause;
     nebula::ToClause                       *to_clause;
     nebula::VertexIDList                   *vid_list;
@@ -103,7 +103,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_OFFLINE
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_WITHIN KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_REBUILD
 %token KW_INT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION
@@ -117,7 +117,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER
-%token KW_SHORTEST KW_PATH KW_NOLOOP
+%token KW_SHORTEST KW_PATH KW_NOLOOP KW_SINGLE
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
@@ -193,7 +193,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <edge_keys> edge_keys
 %type <edge_key_ref> edge_key_ref
 %type <to_clause> to_clause
-%type <find_path_upto_clause> find_path_upto_clause
+%type <find_path_step_clause> find_path_step_clause
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
@@ -311,6 +311,8 @@ unreserved_keyword
      | KW_ALL                { $$ = new std::string("all"); }
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
      | KW_NOLOOP             { $$ = new std::string("noloop"); }
+     | KW_WITHIN             { $$ = new std::string("within"); }
+     | KW_SINGLE             { $$ = new std::string("single"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
      | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
@@ -949,43 +951,78 @@ fetch_sentence
     ;
 
 find_path_sentence
-    : KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause
-    /* where_clause */ {
-        auto *s = new FindPathSentence(false, false);
+    : KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause where_clause find_path_step_clause {
+        auto *s = new FindPathSentence(false, false, false, false);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
-        s->setStep($7);
-        /* s->setWhere($8); */
+        s->setWhere($7);
+        s->setStep($8);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause
-    /* where_clause */ {
-        auto *s = new FindPathSentence(true, true);
+    | KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause where_clause find_path_step_clause {
+        auto *s = new FindPathSentence(true, false, true, false);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
-        s->setStep($7);
-        /* s->setWhere($8); */
+        s->setWhere($7);
+        s->setStep($8);
         $$ = s;
     }
-    | KW_FIND KW_NOLOOP KW_PATH from_clause to_clause over_clause find_path_upto_clause
-        /* where_clause */ {
-            auto *s = new FindPathSentence(false, true);
+    | KW_FIND KW_SINGLE KW_SHORTEST KW_PATH from_clause to_clause over_clause where_clause find_path_step_clause {
+            auto *s = new FindPathSentence(true, true, true, false);
+            s->setFrom($5);
+            s->setTo($6);
+            s->setOver($7);
+            s->setWhere($8);
+            s->setStep($9);
+            $$ = s;
+        }
+    | KW_FIND KW_NOLOOP KW_PATH from_clause to_clause over_clause where_clause find_path_step_clause {
+            auto *s = new FindPathSentence(false, false, true, false);
             s->setFrom($4);
             s->setTo($5);
             s->setOver($6);
+            s->setWhere($7);
+            s->setStep($8);
+            $$ = s;
+        }
+    | KW_FIND KW_SHORTEST KW_PATH from_clause over_clause where_clause find_path_step_clause {
+            auto *s = new FindPathSentence(true, false, true, true);
+            s->setFrom($4);
+            s->setOver($5);
+            s->setWhere($6);
             s->setStep($7);
-            /* s->setWhere($8); */
+            $$ = s;
+        }
+    | KW_FIND KW_SINGLE KW_SHORTEST KW_PATH from_clause over_clause where_clause find_path_step_clause {
+            auto *s = new FindPathSentence(true, true, true, true);
+            s->setFrom($5);
+            s->setOver($6);
+            s->setWhere($7);
+            s->setStep($8);
+            $$ = s;
+        }
+    | KW_FIND KW_NOLOOP KW_PATH from_clause over_clause where_clause find_path_step_clause {
+            auto *s = new FindPathSentence(false, false, true, true);
+            s->setFrom($4);
+            s->setOver($5);
+            s->setWhere($6);
+            s->setStep($7);
             $$ = s;
         }
     ;
 
-find_path_upto_clause
-    : %empty { $$ = new StepClause(5); }
+find_path_step_clause
+    : %empty { $$ = new StepClause(0, 5); }
     | KW_UPTO INTEGER KW_STEPS {
+            ifOutOfRange($2, @2);
+            $$ = new StepClause(0, $2);
+        }
+    | KW_WITHIN INTEGER KW_TO INTEGER KW_STEPS {
         ifOutOfRange($2, @2);
-        $$ = new StepClause($2);
+        ifOutOfRange($4, @4);
+        $$ = new StepClause($2, $4);
     }
     ;
 

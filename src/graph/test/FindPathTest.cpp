@@ -163,6 +163,355 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
     }
 }
 
+TEST_F(FindPathTest, SingleEdgeShortestWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "like.likeness < 100 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "70 < like.likeness and like.likeness < 100 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "$^.player.name != 'Player C1' UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {};
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "$$.player.name != 'Player C3' UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "$^.player.age != 22 OR $^.bachelor.speciality == 'maths' UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like WHERE "
+                    "like.likeness < 100 OR $$.player.name != 'Player C3' UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeSingleShortest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            "5662213458193308137<like,0>-7579316172763586624",
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld TO %ld,%ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto &manu = players_["Manu Ginobili"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            "5662213458193308137<like,0>3394245602834314645",
+            "5662213458193308137<like,0>-7579316172763586624"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        // we only find one shortest path for each dest
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld,%ld TO %ld,%ld,%ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto &tiago = players_["Tiago Splitter"];
+        auto &tony = players_["Tony Parker"];
+        auto &manu = players_["Manu Ginobili"];
+        auto &al = players_["LaMarcus Aldridge"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tiago.vid(),
+                                         tony.vid(), manu.vid(), al.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            "5662213458193308137<like,0>3394245602834314645",
+            "5662213458193308137<like,0>-7579316172763586624",
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeOneWayShortestWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld OVER like WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto &c5 = players_["Player C5"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid(), c5.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid(), c5.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld OVER like WHERE "
+                    "$^.player.age != 22 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto &c5 = players_["Player C5"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid(), c5.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeOneWaySingleShortestWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto &c5 = players_["Player C5"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid(), c5.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like WHERE "
+                    "$$.player.age < 24 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeOneWaySingleShortestWhereReversely) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like REVERSELY WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld<-like,0>%ld",
+                                c4.vid(), c3.vid(), c1.vid()),
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                c4.vid(), c2.vid()),
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                c4.vid(), c3.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like REVERSELY WHERE "
+                    "$^.player.age != 23 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<-like,0>%ld<-like,0>%ld",
+                                c4.vid(), c2.vid(), c1.vid()),
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                c4.vid(), c2.vid()),
+            folly::stringPrintf("%ld<-like,0>%ld",
+                                c4.vid(), c3.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeOneWaySingleShortestWhereBidirect) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like BIDIRECT WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto &c5 = players_["Player C5"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid(), c5.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SINGLE SHORTEST PATH FROM %ld OVER like BIDIRECT WHERE "
+                    "$^.player.age != 23 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto &c5 = players_["Player C5"];
+        auto query = folly::stringPrintf(fmt, c1.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c2.vid()),
+            folly::stringPrintf("%ld<like,0>%ld",
+                                c1.vid(), c3.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid(), c5.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
 TEST_F(FindPathTest, SingleEdgeShortestReversely) {
     {
         cpp2::ExecutionResponse resp;
@@ -562,6 +911,245 @@ TEST_F(FindPathTest, SingleEdgeNoLoop) {
     }
 }
 
+TEST_F(FindPathTest, SingleEdgeNoloopWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "like.likeness > 70 and like.likeness < 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "$$.player.age != 23 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "(like.likeness > 70 and like.likeness < 100) OR $$.player.age != 23 "
+                    "UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeNoloopWhereBidirect) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "like.likeness <= 100 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c2.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "like.likeness <= 70 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "$^.player.age != 22 UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid())
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "(like.likeness <= 70) AND ($^.player.age != 22) UPTO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeNoloopWhereWithIn) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "like.likeness <= 100 WITHIN 3 TO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like WHERE "
+                    "$^.player.age < 24  WITHIN 3 TO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
+TEST_F(FindPathTest, SingleEdgeNoloopWhereWithInBidirect) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "like.likeness <= 100 WITHIN 3 TO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c2.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND NOLOOP PATH FROM %ld TO %ld OVER like BIDIRECT WHERE "
+                    "$^.player.age < 24 WITHIN 3 TO 3 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c2.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
+
 TEST_F(FindPathTest, SingleEdgeNoLoopReversely) {
     {
         cpp2::ExecutionResponse resp;
@@ -673,6 +1261,146 @@ TEST_F(FindPathTest, SingleEdgeNoLoopBidirect) {
     }
 }
 
+TEST_F(FindPathTest, MultiEdgesShortestWhereBidirect) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "teammate.start_year == 2000 or like.likeness == 70 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "teammate.start_year == 1999 or like.likeness == 70 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "teammate.start_year < 2000 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "teammate.start_year <= 2000 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c2.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "teammate.start_year == 2000 or $^.player.age == 23 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<teammate,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,serve BIDIRECT WHERE "
+                    "$^.player.age == 21 OR $^.team.name == 'Suns' OR $$.team.name == 'Suns' "
+                    "UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c2 = players_["Player C2"];
+        auto &c4 = players_["Player C4"];
+        auto &sun = teams_["Suns"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<serve,0>%ld<-serve,0>%ld",
+                                c1.vid(), c2.vid(), sun.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,teammate BIDIRECT WHERE "
+                    "$$.player.age == 23 or $^.player.age == 23 UPTO 5 STEPS";
+        auto &c1 = players_["Player C1"];
+        auto &c3 = players_["Player C3"];
+        auto &c4 = players_["Player C4"];
+        auto query = folly::stringPrintf(fmt, c1.vid(), c4.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected = {
+            folly::stringPrintf("%ld<like,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<like,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<-like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+            folly::stringPrintf("%ld<teammate,0>%ld<like,0>%ld",
+                                c1.vid(), c3.vid(), c4.vid()),
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
 
 TEST_F(FindPathTest, MultiEdgesShortest) {
     {

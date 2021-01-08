@@ -179,8 +179,9 @@ std::string OverClause::toString() const {
 }
 
 Status WhereClause::prepare(Where &where) const {
+    Status status = Status::OK();
     where.filter_ = filter_.get();
-    return Status::OK();
+    return status;
 }
 
 std::string WhereClause::toString() const {

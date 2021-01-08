@@ -54,6 +54,7 @@ ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
 UPTO                        ([Uu][Pp][Tt][Oo])
+WITHIN                      ([Ww][Ii][Tt][Hh][Ii][Nn])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
@@ -131,6 +132,7 @@ UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
 STOP                        ([Ss][Tt][Oo][Pp])
+SINGLE                      ([Ss][Ii][Nn][Gg][Ll][Ee])
 SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
 NOLOOP                      ([Nn][Oo][Ll][Oo][Oo][Pp])
 PATH                        ([Pp][Aa][Tt][Hh])
@@ -201,6 +203,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
 {UPTO}                      { return TokenType::KW_UPTO; }
+{WITHIN}                    { return TokenType::KW_WITHIN; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
@@ -308,6 +311,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {META}                      { return TokenType::KW_META; }
 {STORAGE}                   { return TokenType::KW_STORAGE; }
 {NOLOOP}                    { return TokenType::KW_NOLOOP; }
+{SINGLE}                    { return TokenType::KW_SINGLE; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 

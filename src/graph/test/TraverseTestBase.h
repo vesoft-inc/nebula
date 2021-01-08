@@ -375,6 +375,15 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Player> TraverseTestBase::playe
         Player{"Justin Anderson", 27},
         Player{"OG Anunoby", 23},
 
+        Player{"Player C1", 21},
+        Player{"Player C2", 22},
+        Player{"Player C3", 23},
+        Player{"Player C4", 24},
+        Player{"Player C5", 25},
+        Player{"Player C6", 26},
+        Player{"Player C7", 27},
+        Player{"Player C8", 28},
+
         Player{"Nobody", 0},
     }
 };
@@ -418,6 +427,8 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Team> TraverseTestBase::teams_ 
 TraverseTestBase::VertexHolder<TraverseTestBase::Bachelor> TraverseTestBase::bachelors_ = {
     [] (const auto &bachelor) {return bachelor.name();}, {
         Bachelor{"Tim Duncan", "psychology"},
+        Bachelor{"Player C1", "maths"},
+        Bachelor{"Player C2", "maths"},
     }
 };
 
@@ -803,6 +814,22 @@ AssertionResult TraverseTestBase::initData() {
     players_["Jarrett Allen"].like("Justin Anderson", 95);
     players_["Justin Anderson"].like("OG Anunoby", 95);
     players_["OG Anunoby"].like("Jarrett Allen", 95);
+
+    players_["Player C1"].like("Player C2", 80)
+                         .like("Player C3", 70)
+                         .teammate("Player C3", 2000, 2010);
+    players_["Player C2"].serve("Suns", 0, 2005, 2012)
+                         .like("Player C3", 90)
+                         .like("Player C4", 100);
+    players_["Player C3"].like("Player C4", 80);
+    players_["Player C4"].serve("Suns", 0, 2006, 2013)
+                         .like("Player C5", 80)
+                         .like("Player C3", 70);
+    players_["Player C5"].like("Player C6", 100);
+    players_["Player C6"].like("Player C7", 90);
+    players_["Player C7"].like("Player C8", 90);
+    players_["Player C8"].like("Player C6", 80);
+
     return TestOK();
 }
 
