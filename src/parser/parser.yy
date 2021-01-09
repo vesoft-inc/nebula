@@ -798,8 +798,13 @@ group_clause
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
-		s->setWhereClause($3);
-		$$ = s;
+        s->setWhereClause($3);
+        $$ = s;
+    }
+    | KW_YIELD KW_DISTINCT yield_columns where_clause {
+        auto *s = new YieldSentence($3, true);
+        s->setWhereClause($4);
+        $$ = s;
     }
     ;
 
@@ -1006,7 +1011,7 @@ limit_sentence
     | KW_LIMIT INTEGER KW_OFFSET INTEGER {
         ifOutOfRange($2, @2);
         ifOutOfRange($4, @4);
-        $$ = new LimitSentence($2, $4);
+        $$ = new LimitSentence($4, $2);
     }
     ;
 

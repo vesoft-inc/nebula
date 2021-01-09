@@ -1634,12 +1634,12 @@ MetaClient::getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
     const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
     auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
     if (spaceIt == threadLocalInfo.localCache_.end()) {
-        LOG(ERROR) << "Space " << spaceId << " not found!";
+        VLOG(3) << "Space " << spaceId << " not found!";
         return Status::SpaceNotFound();
     } else {
         auto iter = spaceIt->second->tagIndexes_.find(indexID);
         if (iter == spaceIt->second->tagIndexes_.end()) {
-            LOG(ERROR) << "Space " << spaceId << ", Tag Index " << indexID << " not found!";
+            VLOG(3) << "Space " << spaceId << ", Tag Index " << indexID << " not found!";
             return Status::IndexNotFound();
         } else {
             return iter->second;

@@ -577,8 +577,14 @@ class YieldSentence final : public Sentence {
 public:
     explicit YieldSentence(YieldColumns *fields) {
         DCHECK(fields != nullptr);
-        yieldClause_ = std::make_unique<YieldClause>(fields);
         kind_ = Kind::kYield;
+        yieldClause_.reset(new YieldClause(fields));
+    }
+
+    explicit YieldSentence(YieldColumns *fields, bool distinct) {
+        DCHECK(fields != nullptr);
+        kind_ = Kind::kYield;
+        yieldClause_.reset(new YieldClause(fields, distinct));
     }
 
     std::vector<YieldColumn*> columns() const {
