@@ -18,6 +18,6 @@ RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
 
-EXPOSE 45500 45501 11000 11002
+EXPOSE 9559 9560 19559 19560
 
 ENTRYPOINT ["./bin/nebula-metad", "--flagfile=./etc/nebula-metad.conf", "--daemonize=false"]

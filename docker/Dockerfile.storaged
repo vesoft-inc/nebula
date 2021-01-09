@@ -18,6 +18,6 @@ RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
 
-EXPOSE 44500 44501 12000 12002
+EXPOSE 9777 9778 9779 9780 19779 19780
 
 ENTRYPOINT ["./bin/nebula-storaged", "--flagfile=./etc/nebula-storaged.conf", "--daemonize=false"]
