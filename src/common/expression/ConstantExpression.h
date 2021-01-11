@@ -31,6 +31,10 @@ public:
         return val_;
     }
 
+    void setValue(Value val) {
+        val_ = std::move(val);
+    }
+
     void accept(ExprVisitor* visitor) override;
 
     std::string toString() const override;

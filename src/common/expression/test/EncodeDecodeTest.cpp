@@ -10,6 +10,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/AggregateExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PathBuildExpression.h"
@@ -143,6 +144,15 @@ TEST(ExpressionEncodeDecode, FunctionCallExpression) {
     std::string encoded = Expression::encode(fcEx);
     auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
     EXPECT_EQ(fcEx, *decoded);
+}
+
+
+TEST(ExpressionEncodeDecode, AggregateExpression) {
+    auto arg = std::make_unique<ConstantExpression>(123);
+    AggregateExpression aggEx(new std::string("COUNT"), arg.release(), true);
+    std::string encoded = Expression::encode(aggEx);
+    auto decoded = Expression::decode(folly::StringPiece(encoded.data(), encoded.size()));
+    EXPECT_EQ(aggEx, *decoded);
 }
 
 

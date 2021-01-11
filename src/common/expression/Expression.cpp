@@ -15,6 +15,7 @@
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/EdgeExpression.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/AggregateExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "common/expression/LogicalExpression.h"
@@ -377,6 +378,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kAggregate: {
+            exp = std::make_unique<AggregateExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kInputProperty: {
             LOG(FATAL) << "Should not decode input property expression";
             return exp;
@@ -602,6 +608,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kFunctionCall:
             os << "FunctionCall";
+            break;
+        case Expression::Kind::kAggregate:
+            os << "Aggregate";
             break;
         case Expression::Kind::kEdgeProperty:
             os << "EdgeProp";

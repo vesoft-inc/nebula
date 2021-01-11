@@ -94,7 +94,10 @@ public:
         kTSWildcard,
         kTSRegexp,
         kTSFuzzy,
+
+        kAggregate,
     };
+
 
     explicit Expression(Kind kind) : kind_(kind) {}
 

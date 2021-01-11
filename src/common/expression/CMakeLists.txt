@@ -14,6 +14,7 @@ nebula_add_library(
     LogicalExpression.cpp
     TypeCastingExpression.cpp
     FunctionCallExpression.cpp
+    AggregateExpression.cpp
     PropertyExpression.cpp
     UUIDExpression.cpp
     VariableExpression.cpp
