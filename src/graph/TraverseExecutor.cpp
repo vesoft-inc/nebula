@@ -138,7 +138,15 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
             }
             return nebula::cpp2::SupportedType::UNKNOWN;
         }
-        case Expression::kVariableProp:
+        case Expression::kVariableProp: {
+            auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = propExp->prop();
+            auto variable = ectx()->variableHolder()->get(*propExp->alias());
+            if (variable == nullptr || !variable->hasData()) {
+                return nebula::cpp2::SupportedType::UNKNOWN;
+            }
+            return variable->getColumnType(*propName);
+        }
         case Expression::kInputProp: {
             auto* propExp = static_cast<const AliasPropertyExpression*>(exp);
             const auto* propName = propExp->prop();
@@ -229,8 +237,12 @@ Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
                                   const std::string &prop,
                                   const RowReader *reader) {
-    DCHECK(reader != nullptr);
-    DCHECK(schema != nullptr);
+    if (schema == nullptr) {
+        return Status::Error("Schema is nullptr when getProp.");
+    }
+    if (reader == nullptr) {
+        return Status::Error("reader is nullptr when getProp.");
+    }
     using nebula::cpp2::SupportedType;
     auto type = schema->getFieldType(prop).type;
     switch (type) {
@@ -273,7 +285,9 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
         }
         default:
             std::string errMsg =
-                folly::stringPrintf("Unknown type: %d", static_cast<int32_t>(type));
+                folly::stringPrintf(
+                    "Unknown type: %d, prop: %s",
+                    static_cast<int32_t>(type), prop.c_str());
             LOG(ERROR) << errMsg;
             return Status::Error(errMsg);
     }
@@ -283,9 +297,15 @@ Status Collector::getSchema(const std::vector<VariantType> &vals,
                             const std::vector<std::string> &colNames,
                             const std::vector<nebula::cpp2::SupportedType> &colTypes,
                             SchemaWriter *outputSchema) {
-    DCHECK(outputSchema != nullptr);
-    DCHECK_EQ(vals.size(), colNames.size());
-    DCHECK_EQ(vals.size(), colTypes.size());
+    if (outputSchema == nullptr) {
+        return Status::Error("Schema is nullptr.");
+    }
+    if (vals.size() != colNames.size() || vals.size() != colTypes.size()) {
+        return Status::Error("column size not match, %ld vs. %ld vs. %ld",
+                             vals.size(),
+                             colNames.size(),
+                             colTypes.size());
+    }
     using nebula::cpp2::SupportedType;
     auto index = 0u;
     for (auto &it : colTypes) {
@@ -431,7 +451,7 @@ Status WhereWrapper::prepare(ExpressionContext *ectx) {
     if (!rewrite(filterRewrite_.get())) {
         filterRewrite_ = nullptr;
     }
-    if (filterRewrite_ != nullptr) {
+    if (filterRewrite_ != nullptr && canPushdown(filterRewrite_.get())) {
         VLOG(1) << "Filter pushdown: " << filterRewrite_->toString();
         filterPushdown_ = Expression::encode(filterRewrite_.get());
     }
@@ -511,7 +531,8 @@ bool WhereWrapper::canPushdown(Expression *expr) const {
         LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
         return false;
     }
-    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
+    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp() ||
+        ectx->edgeNamesInExpr().size() > 1) {
         return false;
     }
     return true;

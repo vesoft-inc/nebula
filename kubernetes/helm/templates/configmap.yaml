@@ -156,7 +156,6 @@ data:
     --engine_type=rocksdb
 
     ############## rocksdb Options ##############
-    --rocksdb_disable_wal=true
     # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
     --rocksdb_db_options={}
     # rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma

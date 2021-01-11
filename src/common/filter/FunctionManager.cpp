@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
+#include "filter/Expressions.h"
 #include "time/WallClock.h"
 #include "filter/geo/GeoFilter.h"
 
@@ -193,18 +194,34 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand32"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args) -> OptVariantType {
             if (args.empty()) {
                 auto value = folly::Random::rand32();
                 return static_cast<int64_t>(static_cast<int32_t>(value));
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
+                if (max < 0) {
+                    return Status::InvalidParameter("Invalid negative number");
+                }
+                if (max > std::numeric_limits<uint32_t>::max()) {
+                    return Status::InvalidParameter("Too large operand");
+                }
                 auto value = folly::Random::rand32(max);
                 return static_cast<int64_t>(static_cast<int32_t>(value));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);
             auto max = Expression::asInt(args[1]);
+            if (max < 0 || min < 0) {
+                return Status::InvalidParameter("Invalid negative number");
+            }
+            if (max > std::numeric_limits<uint32_t>::max() ||
+                min > std::numeric_limits<uint32_t>::max()) {
+                return Status::InvalidParameter("Too large operand");
+            }
+            if (min >= max) {
+                return Status::InvalidParameter("Invalid number range");
+            }
             return static_cast<int64_t>(folly::Random::rand32(min, max));
         };
     }
@@ -213,16 +230,25 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand64"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args) -> OptVariantType {
             if (args.empty()) {
                 return static_cast<int64_t>(folly::Random::rand64());
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
+                if (max < 0) {
+                    return Status::InvalidParameter("Invalid negative number");
+                }
                 return static_cast<int64_t>(folly::Random::rand64(max));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);
             auto max = Expression::asInt(args[1]);
+            if (max < 0 || min < 0) {
+                return Status::InvalidParameter("Invalid negative number");
+            }
+            if (min >= max) {
+                return Status::InvalidParameter("Invalid number range");
+            }
             return static_cast<int64_t>(folly::Random::rand64(min, max));
         };
     }
@@ -345,7 +371,7 @@ FunctionManager::FunctionManager() {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
 
-            if (size < 0) {
+            if (size == 0) {
                 return std::string("");
             } else if (size < value.size()) {
                 return value.substr(0, static_cast<int32_t>(size));
@@ -370,7 +396,7 @@ FunctionManager::FunctionManager() {
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
-            if (size < 0) {
+            if (size == 0) {
                 return std::string("");
             } else if (size < value.size()) {
                 return value.substr(0, static_cast<int32_t>(size));
@@ -527,7 +553,7 @@ FunctionManager::FunctionManager() {
             }
         };
     }
-}
+}  // NOLINT
 
 
 // static
@@ -540,7 +566,6 @@ FunctionManager::get(const std::string &func, size_t arity) {
 StatusOr<FunctionManager::Function>
 FunctionManager::getInternal(const std::string &func, size_t arity) const {
     auto status = Status::OK();
-    folly::RWSpinLock::ReadHolder holder(lock_);
     // check existence
     auto iter = functions_.find(func);
     if (iter == functions_.end()) {

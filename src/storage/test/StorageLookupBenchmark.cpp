@@ -149,7 +149,7 @@ bool processLookup(kvstore::KVStore* kv,
     req.set_parts(std::move(parts));
     req.set_index_id(indexId);
     req.set_filter(filter);
-    auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr);
+    auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();

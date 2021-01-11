@@ -21,7 +21,7 @@ fi
 }
 
 version=7.5.0
-url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/toolset
+url_base=https://oss-cdn.nebula-graph.com.cn/toolset
 this_dir=$(dirname $(readlink -f $0))
 
 # We consider two derivatives: Red Hat and Debian
@@ -102,7 +102,7 @@ esac
     exit 1
 }
 
-selected_archive=vesoft-gcc-$version-$selected_distro-x86_64-glibc-$selected_libc_version.sh
+selected_archive=vesoft-gcc-$version-$selected_distro-$(uname -m)-glibc-$selected_libc_version.sh
 
 url=$url_base/$selected_archive
 $download_cmd $url

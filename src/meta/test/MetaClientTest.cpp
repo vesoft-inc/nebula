@@ -639,6 +639,14 @@ TEST(MetaClientTest, TagIndexTest) {
         singleFieldIndexID = result.value();
     }
     {
+        std::vector<std::string>&& fields {"tag_0_col_0"};
+        auto result = client->createTagIndex(space,
+                                             "tag_duplicate_field_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
         std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
         auto result = client->createTagIndex(space,
                                              "tag_multi_field_index",
@@ -646,6 +654,30 @@ TEST(MetaClientTest, TagIndexTest) {
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
         multiFieldIndexID = result.value();
+    }
+    {
+        std::vector<std::string>&& fields {"tag_0_col_1",  "tag_0_col_0"};
+        auto result = client->createTagIndex(space,
+                                             "tag_disorder_field_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields {"tag_0_col_0",  "tag_0_col_1"};
+        auto result = client->createTagIndex(space,
+                                             "tag_duplicate_field_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields {"tag_0_col_0"};
+        auto result = client->createTagIndex(space,
+                                             "tag_duplicate_field_index",
+                                             "tag_0",
+                                             std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         std::vector<std::string>&& fields {"tag_0_col_0",  "not_exist_field"};
@@ -677,7 +709,7 @@ TEST(MetaClientTest, TagIndexTest) {
     {
         auto result = client->listTagIndexes(space).get();
         auto values = result.value();
-        ASSERT_EQ(2, values.size());
+        ASSERT_EQ(3, values.size());
 
         {
             nebula::cpp2::ColumnDef singleColumn;
@@ -711,6 +743,26 @@ TEST(MetaClientTest, TagIndexTest) {
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
         }
+
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("tag_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            auto disorderFieldResult = values[2].get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
     // Test Tag Index Properties Cache
@@ -735,7 +787,7 @@ TEST(MetaClientTest, TagIndexTest) {
     {
         auto tagIndexes = client->getTagIndexesFromCache(space);
         ASSERT_TRUE(tagIndexes.ok());
-        ASSERT_EQ(2, tagIndexes.value().size());
+        ASSERT_EQ(3, tagIndexes.value().size());
     }
     {
         GraphSpaceID spaceNotExist = 99;
@@ -815,6 +867,14 @@ TEST(MetaClientTest, EdgeIndexTest) {
         singleFieldIndexID = result.value();
     }
     {
+        std::vector<std::string>&& fields {"edge_0_col_0"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_duplicate_field_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
         std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
         auto result = client->createEdgeIndex(space,
                                               "edge_multi_field_index",
@@ -822,6 +882,30 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
         multiFieldIndexID = result.value();
+    }
+    {
+        std::vector<std::string>&& fields {"edge_0_col_1",  "edge_0_col_0"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_disorder_field_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_duplicate_field_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::vector<std::string>&& fields {"edge_0_col_0"};
+        auto result = client->createEdgeIndex(space,
+                                              "edge_duplicate_field_index",
+                                              "edge_0",
+                                              std::move(fields)).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         std::vector<std::string>&& fields {"edge_0_col_0",  "edge_0_col_1"};
@@ -853,7 +937,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     {
         auto result = client->listEdgeIndexes(space).get();
         auto values = result.value();
-        ASSERT_EQ(2, values.size());
+        ASSERT_EQ(3, values.size());
 
         {
             nebula::cpp2::ColumnDef column;
@@ -885,6 +969,23 @@ TEST(MetaClientTest, EdgeIndexTest) {
             auto multiFieldResult = values[1].get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
         }
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("edge_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+            auto disorderFieldResult = values[2].get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs * 5);
     // Test Edge Index Properties Cache
@@ -912,7 +1013,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     {
         auto edgeIndexes = client->getEdgeIndexesFromCache(space);
         ASSERT_TRUE(edgeIndexes.ok());
-        ASSERT_EQ(2, edgeIndexes.value().size());
+        ASSERT_EQ(3, edgeIndexes.value().size());
     }
     {
         GraphSpaceID spaceNotExist = 99;
@@ -1048,7 +1149,9 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -1062,8 +1165,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     options.clusterId_ = kClusterId;
     options.inStoraged_ = true;
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
-                                               options);
+            std::vector<HostAddr>{HostAddr(localIp, sc->port_)}, options);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {

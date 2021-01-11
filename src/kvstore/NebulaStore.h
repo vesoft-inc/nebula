@@ -183,6 +183,12 @@ public:
 
     ResultCode ingest(GraphSpaceID spaceId) override;
 
+    ResultCode ingestTag(GraphSpaceID spaceId, TagID tagId) override;
+
+    ResultCode ingestEdge(GraphSpaceID spaceId, EdgeType edgeType) override;
+
+    ResultCode ingest(GraphSpaceID spaceId, const std::string& subdir);
+
     ResultCode setOption(GraphSpaceID spaceId,
                          const std::string& configKey,
                          const std::string& configValue);
@@ -210,7 +216,10 @@ public:
      * */
     void addSpace(GraphSpaceID spaceId) override;
 
-    void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) override;
+    void addPart(GraphSpaceID spaceId,
+                 PartitionID partId,
+                 bool asLearner,
+                 const std::vector<HostAddr>& peers = {}) override;
 
     void removeSpace(GraphSpaceID spaceId) override;
 
@@ -229,11 +238,14 @@ private:
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,
                                   KVEngine* engine,
-                                  bool asLearner);
+                                  bool asLearner,
+                                  const std::vector<HostAddr>& defaultPeers);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkLeader(std::shared_ptr<Part> part) const;
+
+    void cleanWAL();
 
 private:
     // The lock used to protect spaces_

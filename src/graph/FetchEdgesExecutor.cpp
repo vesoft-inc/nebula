@@ -31,7 +31,12 @@ Status FetchEdgesExecutor::prepareClauses() {
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
-        labelName_ = sentence_->edge();
+        auto edgeLabelNames = sentence_->edges()->labels();
+        if (edgeLabelNames.size() != 1) {
+            status = Status::Error("fetch prop on edge support only one edge label now.");
+            break;
+        }
+        labelName_ = edgeLabelNames[0];
         auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
         if (!result.ok()) {
             status = result.status();
@@ -303,18 +308,12 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     }
 
-    if (props.empty()) {
-        LOG(WARNING) << "Empty props of tag " << labelName_;
-        doEmptyResp();
-        return;
-    }
-
     auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get edge `%s' props failed", sentence_->edge()->c_str()));
+            doError(Status::Error("Get edge `%s' props failed", labelName_->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -322,13 +321,14 @@ void FetchEdgesExecutor::fetchEdges() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            ectx()->addWarningMsg("Fetch edges executor was partially performed");
         }
         processResult(std::move(result));
         return;
     };
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
-                sentence_->edge()->c_str(), e.what().c_str());
+                labelName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
         doError(Status::Error(std::move(msg)));
     };
@@ -372,11 +372,14 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
             outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
-            auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
-            if (!status.ok()) {
-                LOG(ERROR) << "Get output schema failed: " << status;
-                doError(Status::Error("Get output schema failed: %s.", status.toString().c_str()));
-                return;
+            if ((eschema != nullptr) && !resultColNames_.empty()) {
+                auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Get output schema failed: " << status;
+                    doError(Status::Error("Get output schema failed: %s.",
+                                status.toString().c_str()));
+                    return;
+                }
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }

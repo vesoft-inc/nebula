@@ -12,6 +12,8 @@
 #include "kvstore/RocksEngineConfig.h"
 #include <rocksdb/convenience.h>
 
+DEFINE_bool(enable_auto_repair, false, "True for auto repair db.");
+
 namespace nebula {
 namespace kvstore {
 
@@ -100,7 +102,19 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         options.compaction_filter_factory = cfFactory;
     }
     status = rocksdb::DB::Open(options, path, &db);
-    CHECK(status.ok()) << status.ToString();
+    if (status.IsNoSpace()) {
+        LOG(WARNING) << status.ToString();
+    } else if (status.IsCorruption() || status.IsIncomplete() || status.IsTryAgain()) {
+        if (FLAGS_enable_auto_repair && !status.ok()) {
+            LOG(ERROR) << "try repair db. [" << status.ToString() << "] -> ["
+                       << rocksdb::RepairDB(path, options).ToString() << "]";
+            status = rocksdb::DB::Open(options, path, &db);
+        }
+        CHECK(status.ok()) << status.ToString();
+    } else {
+        CHECK(status.ok()) << status.ToString();
+    }
+
     db_.reset(db);
     partsNum_ = allParts().size();
     LOG(INFO) << "open rocksdb on " << path;
@@ -119,9 +133,12 @@ std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
 }
 
 
-ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch, bool disableWAL) {
+ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                         bool disableWAL,
+                                         bool sync) {
     rocksdb::WriteOptions options;
     options.disableWAL = disableWAL;
+    options.sync = sync;
     auto* b = static_cast<RocksWriteBatch*>(batch.get());
     rocksdb::Status status = db_->Write(options, b->data());
     if (status.ok()) {
@@ -175,6 +192,7 @@ ResultCode RocksEngine::range(const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.total_order_seek = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
@@ -187,6 +205,7 @@ ResultCode RocksEngine::range(const std::string& start,
 ResultCode RocksEngine::prefix(const std::string& prefix,
                                std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
@@ -200,6 +219,7 @@ ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
                                         const std::string& prefix,
                                         std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
+    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
@@ -337,6 +357,13 @@ int32_t RocksEngine::totalPartsNum() {
 
 ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
+    options.move_files = true;
+    options.failed_move_fall_back_to_copy = true;
+    options.verify_checksums_before_ingest = true;
+    options.verify_checksums_readahead_size = 2U << 20;
+    options.write_global_seqno = false;
+    options.snapshot_consistency = true;
+    options.allow_global_seqno = true;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -425,9 +452,10 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
     auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
                                               dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Target checkpoint path : " << checkpointPath;
-    if (fs::FileUtils::exist(checkpointPath)) {
-        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
-        return ResultCode::ERR_CHECKPOINT_ERROR;
+    if (fs::FileUtils::exist(checkpointPath) &&
+        !fs::FileUtils::remove(checkpointPath.data(), true)) {
+            LOG(ERROR) << "Remove exist dir failed of checkpoint : " << checkpointPath;
+            return ResultCode::ERR_IO_ERROR;
     }
 
     auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));

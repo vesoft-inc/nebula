@@ -9,7 +9,11 @@ set(CXX_STANDARD_REQUIRED ON)
 include(ExternalProject)
 
 # Get number of physical CPU cores and megabytes of available memory
-cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_PHYSICAL_CORES)
+if ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+    cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_PHYSICAL_CORES)
+elseif ("${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
+    cmake_host_system_information(RESULT num_cores QUERY NUMBER_OF_LOGICAL_CORES)
+endif()
 cmake_host_system_information(RESULT available_memory_mb QUERY AVAILABLE_PHYSICAL_MEMORY)
 
 execute_process(
@@ -49,7 +53,7 @@ set(BUILD_INFO_DIR ${CMAKE_CURRENT_BINARY_DIR}/build-info)
 set(BUILDING_PATH "${CMAKE_INSTALL_PREFIX}/bin:${CMAKE_INSTALL_PREFIX}/sbin:$ENV{PATH}")
 set(ACLOCAL_PATH "${CMAKE_INSTALL_PREFIX}/share/aclocal:${CMAKE_INSTALL_PREFIX}/share/aclocal-1.15")
 
-set(extra_link_libs "-static-libstdc++ -static-libgcc")
+set(extra_link_libs "-static-libstdc++ -static-libgcc -pthread -ldl")
 if (${DISABLE_CXX11_ABI})
     set(extra_cpp_flags "-D_GLIBCXX_USE_CXX11_ABI=0")
 else()
@@ -64,8 +68,8 @@ set(common_cmake_args
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fPIC ${extra_cpp_flags}"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fPIC"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fPIC ${extra_cpp_flags}"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fPIC"
     "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_libs}"
     "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_libs}"
     -DCMAKE_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include
@@ -80,8 +84,8 @@ set(common_configure_envs
     "env"
     "CC=${CMAKE_C_COMPILER}"
     "CXX=${CMAKE_CXX_COMPILER}"
-    "CFLAGS=${CMAKE_C_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
-    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CFLAGS=${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
     "CPPFLAGS=-isystem ${CMAKE_INSTALL_PREFIX}/include ${extra_cpp_flags}"
     "LDFLAGS=-L${CMAKE_INSTALL_PREFIX}/lib -L${CMAKE_INSTALL_PREFIX}/lib64 ${extra_link_libs}"
     "PATH=${BUILDING_PATH}"
@@ -205,7 +209,11 @@ maybe_add_dependencies(folly glog boost double-conversion openssl libevent lzma 
 maybe_add_dependencies(wangle folly)
 maybe_add_dependencies(fbthrift folly krb5 bison flex mstch zlib zstd wangle fatal)
 maybe_add_dependencies(proxygen wangle libunwind gperf)
-maybe_add_dependencies(rocksdb snappy zlib zstd bzip2 lzma libunwind)
+maybe_add_dependencies(rocksdb snappy zlib zstd bzip2 lz4 lzma libunwind)
+
+# RocksDB has its own copy of gtest, which may conflict with ours
+# Here we build gtest after rocksdb intentionally
+maybe_add_dependencies(googletest rocksdb gflags)
 
 add_custom_command(
     TARGET zstd POST_BUILD

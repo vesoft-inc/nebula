@@ -46,12 +46,12 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -78,17 +78,17 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : manu.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    manu.name(), std::get<1>(serve), std::get<0>(serve));
+                    manu.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -116,13 +116,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -150,13 +150,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -184,13 +184,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -218,13 +218,13 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -252,7 +252,7 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -260,7 +260,7 @@ TEST_F(SetTest, UnionAllTest) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -293,7 +293,7 @@ TEST_F(SetTest, UnionAllTest) {
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, std::string> record(
                     tony.name(),
-                    folly::to<std::string>(std::get<1>(serve)));
+                    folly::to<std::string>(std::get<2>(serve)));
             expected.emplace_back(std::move(record));
         }
     }
@@ -311,7 +311,7 @@ TEST_F(SetTest, UnionAllTest) {
         std::vector<std::tuple<std::string, int64_t>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t> record(
-                    tony.name(), std::get<1>(serve));
+                    tony.name(), std::get<2>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -352,7 +352,7 @@ TEST_F(SetTest, UnionDistinct) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -381,7 +381,7 @@ TEST_F(SetTest, UnionDistinct) {
             auto &player = players_[std::get<0>(like)];
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -416,7 +416,7 @@ TEST_F(SetTest, Minus) {
             }
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -446,7 +446,7 @@ TEST_F(SetTest, Intersect) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -480,7 +480,7 @@ TEST_F(SetTest, Mix) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : manu.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                manu.name(), std::get<1>(serve), std::get<0>(serve));
+                manu.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -509,12 +509,12 @@ TEST_F(SetTest, AssignSet) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -540,12 +540,12 @@ TEST_F(SetTest, AssignSet) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tim.name(), std::get<1>(serve), std::get<0>(serve));
+                    tim.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -577,7 +577,7 @@ TEST_F(SetTest, AssignSet) {
             }
             for (auto &serve : player.serves()) {
                 std::tuple<std::string, int64_t, std::string> record(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
                 expected.emplace_back(std::move(record));
             }
         }
@@ -605,7 +605,7 @@ TEST_F(SetTest, AssignSet) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
-                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+                    tony.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(record));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -717,6 +717,57 @@ TEST_F(SetTest, ExecutionError) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(SetTest, CatchExceptionInSetOp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt =
+            "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+            "$var2 = YIELD left($var1.dst, 4) + \"x\" UNION YIELD left($var1.dst, 4) + \"y\";"
+            "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left((string)$var1.dst, 4) + \"x\" UNION YIELD left($var1.dst, "
+                    "4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left($var1.dst, 4) + \"x\" UNION YIELD left((string)$var1.dst, "
+                    "4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$var1 = GO FROM %ld OVER like YIELD like._dst as dst;"
+                    "$var2 = YIELD left((string)$var1.dst, 4) + \"x\" UNION YIELD "
+                    "left((string)$var1.dst, 4) + \"y\";"
+                    "YIELD $var2.*;";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::tuple<std::string>> expected = {
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "x"},
+            {folly::to<std::string>(players_["Tony Parker"].vid()).substr(0, 4) + "y"},
+            {folly::to<std::string>(players_["Manu Ginobili"].vid()).substr(0, 4) + "y"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }  // namespace graph

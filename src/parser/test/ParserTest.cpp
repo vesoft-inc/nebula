@@ -15,6 +15,18 @@ namespace nebula {
 TEST(Parser, Go) {
     {
         GQLParser parser;
+        std::string query = "GO 0 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO -1 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -33,9 +45,21 @@ TEST(Parser, Go) {
     }
     {
         GQLParser parser;
-        std::string query = "GO UPTO 2 STEPS FROM 1 OVER friend";
+        std::string query = "GO 2 TO 3 STEPS FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO 2 TO 2 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO 3 TO 2 STEPS FROM 1 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
@@ -928,6 +952,30 @@ TEST(Parser, FetchVertex) {
     }
     {
         GQLParser parser;
+        std::string query = "FETCH PROP ON person 1, 2, 3 yield person.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield 1 as id | FETCH PROP ON person $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield 1 as id | FETCH PROP ON person $-.id yield person.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person, another 1, 2, 3";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "FETCH PROP ON person hash(\"dutor\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1005,12 +1053,42 @@ TEST(Parser, FetchVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * 1, 2";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield 1 as id | FETCH PROP ON * $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "yield 1 as id | FETCH PROP ON * $-.id yield friend.id, person.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, FetchEdge) {
     {
         GQLParser parser;
         std::string query = "FETCH PROP ON transfer 12345 -> -54321";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON transfer, another 12345 -> -54321";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1398,6 +1476,13 @@ TEST(Parser, Annotation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isStatementEmpty());
     }
+    // need use space after "--"
+    {
+        GQLParser parser;
+        std::string query = "--test comment....";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
     {
         GQLParser parser;
         std::string query = "-- test comment....";
@@ -1451,7 +1536,31 @@ TEST(Parser, DownloadAndIngest) {
     }
     {
         GQLParser parser;
+        std::string query = "DOWNLOAD edge e HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DOWNLOAD tag t HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "INGEST";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST edge e";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST tag t";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

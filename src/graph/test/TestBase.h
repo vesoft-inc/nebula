@@ -200,6 +200,10 @@ protected:
             return TestOK();
         }
 
+        if (resp.get_rows() == nullptr) {
+            return TestError() << "No response data";
+        }
+
         std::vector<Tuple> rows;
         try {
             rows = rowsToTuples<Tuple>(respToRecords(resp, std::move(ignoreColIndex)));
@@ -222,6 +226,7 @@ protected:
             std::sort(rows.begin(), rows.end());
             std::sort(expected.begin(), expected.end());
         }
+
         for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
             if (rows[i] != expected[i]) {
                 return TestError() << rows[i] << " vs. " << expected[i];

@@ -408,7 +408,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             Collector* collector) {
     auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-        auto result = vertexCache_->get(std::make_pair(vId, tagId), partId);
+        auto result = vertexCache_->get(std::make_pair(vId, tagId));
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
@@ -465,7 +465,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),
-                                 iter->val().str(), partId);
+                                 iter->val().str());
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
         }
     } else {
@@ -511,10 +511,13 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
         }
+        if (firstLoop) {
+            firstLoop = false;
+        }
         lastRank = rank;
         lastDstId = dstId;
-        std::unique_ptr<RowReader> reader;
-        if ((!onlyStructure || retTTL.has_value()) && !val.empty()) {
+        RowReader reader = RowReader::getEmptyRowReader();
+        if ((!onlyStructure || exp_ != nullptr|| retTTL.has_value()) && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   val,
                                                   spaceId_,
@@ -541,7 +544,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
                     if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
+                        return Status::Error("Ignore this edge : %s", edgeFound->first.c_str());
                     }
 
                     if (prop == _SRC) {
@@ -572,7 +575,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
                     if (std::abs(edgeType) != edgeFound->second) {
-                        return Status::Error("Ignore this edge");
+                        return Status::Error("Ignore this edge : %s", edgeFound->first.c_str());
                     }
                     return dstId;
                 };
@@ -587,6 +590,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     return it->second;
                 };
                 auto value = exp_->eval(getters);
+                if (!value.ok()) {
+                    VLOG(3) << value.status();
+                    continue;
+                }
                 if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
@@ -597,9 +604,6 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
 
         proc(std::move(reader), key);
         ++cnt;
-        if (firstLoop) {
-            firstLoop = false;
-        }
     }
 
     return ret;
@@ -607,16 +611,18 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
 
 template<typename REQ, typename RESP>
 folly::Future<std::vector<OneVertexResp>>
-QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
+QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(
+    BucketIdx bucketIdx, Bucket bucket) {
     folly::Promise<std::vector<OneVertexResp>> pro;
     auto f = pro.getFuture();
-    executor_->add([this, p = std::move(pro), b = std::move(bucket)] () mutable {
+    executor_->add([this, p = std::move(pro), bucketIdx, b = std::move(bucket)] () mutable {
         std::vector<OneVertexResp> codes;
         codes.reserve(b.vertices_.size());
         for (auto& pv : b.vertices_) {
-            codes.emplace_back(pv.first,
-                               pv.second,
-                               processVertex(pv.first, pv.second));
+            codes.emplace_back(
+                pv.first,
+                pv.second,
+                processVertex(bucketIdx, pv.first, pv.second));
         }
         p.setValue(std::move(codes));
     });
@@ -817,9 +823,10 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
 
     // const auto& filter = req.get_filter();
     auto buckets = genBuckets(req);
+    beforeProcess(buckets);
     std::vector<folly::Future<std::vector<OneVertexResp>>> results;
-    for (auto& bucket : buckets) {
-        results.emplace_back(asyncProcessBucket(std::move(bucket)));
+    for (unsigned i = 0; i < buckets.size(); i++) {
+        results.emplace_back(asyncProcessBucket(i, std::move(buckets[i])));
     }
     folly::collectAll(results).via(executor_).thenTry([
                      this,

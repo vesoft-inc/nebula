@@ -113,6 +113,13 @@ std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     return prefix;
 }
 
+std::string MetaServiceUtils::partPrefix() {
+    std::string prefix;
+    prefix.reserve(kPartsTable.size() + sizeof(GraphSpaceID));
+    prefix.append(kPartsTable.data(), kPartsTable.size());
+    return prefix;
+}
+
 std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
     std::vector<nebula::cpp2::HostAddr> hosts;
     static const size_t unitSize = sizeof(int32_t) * 2;
@@ -366,6 +373,13 @@ std::string MetaServiceUtils::rebuildIndexStatusPrefix(GraphSpaceID space,
     return key;
 }
 
+std::string MetaServiceUtils::rebuildIndexStatusPrefix() {
+    std::string key;
+    key.reserve(kIndexStatusTable.size());
+    key.append(kIndexStatusTable.data(), kIndexStatusTable.size());
+    return key;
+}
+
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     EntryType type = EntryType::SPACE;
     std::string key;
@@ -423,8 +437,68 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                   nebula::cpp2::SchemaProp&  prop,
+                                                  std::vector<kvstore::KV>& defaultKVs,
+                                                  std::vector<std::string>& removeDefaultKeys,
+                                                  const GraphSpaceID spaceId,
+                                                  const TagID Id,
                                                   const nebula::cpp2::ColumnDef col,
                                                   const cpp2::AlterSchemaOp op) {
+    static_assert(std::is_same<TagID, EdgeType>::value, "");
+    auto name = col.get_name();
+    auto dKey = MetaServiceUtils::defaultKey(spaceId, Id, name);
+    std::string defaultValue;
+    if (col.__isset.default_value) {
+        auto value = col.get_default_value();
+        switch (col.get_type().get_type()) {
+            case nebula::cpp2::SupportedType::BOOL:
+                if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
+                    LOG(ERROR) << "Handle Column Failed: " << name
+                                << " type mismatch";
+                    return cpp2::ErrorCode::E_CONFLICT;
+                }
+                defaultValue = folly::to<std::string>(value->get_bool_value());
+                break;
+            case nebula::cpp2::SupportedType::INT:
+                if (value->getType() != nebula::cpp2::Value::Type::int_value) {
+                    LOG(ERROR) << "Handle Column Failed: " << name
+                                << " type mismatch";
+                    return cpp2::ErrorCode::E_CONFLICT;
+                }
+                defaultValue = folly::to<std::string>(value->get_int_value());
+                break;
+            case nebula::cpp2::SupportedType::DOUBLE:
+                if (value->getType() != nebula::cpp2::Value::Type::double_value) {
+                    LOG(ERROR) << "Handle Column Failed: " << name
+                                << " type mismatch";
+                    return  cpp2::ErrorCode::E_CONFLICT;
+                }
+                defaultValue = folly::to<std::string>(value->get_double_value());
+                break;
+            case nebula::cpp2::SupportedType::STRING:
+                if (value->getType() != nebula::cpp2::Value::Type::string_value) {
+                    LOG(ERROR) << "Handle Column Failed: " << name
+                                << " type mismatch";
+                    return cpp2::ErrorCode::E_CONFLICT;
+                }
+                defaultValue = folly::to<std::string>(value->get_string_value());
+                break;
+            case nebula::cpp2::SupportedType::TIMESTAMP:
+                if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
+                    LOG(ERROR) << "Handle Column Failed: " << name
+                                << " type mismatch";
+                    return cpp2::ErrorCode::E_CONFLICT;
+                }
+                defaultValue = folly::to<std::string>(value->get_timestamp());
+                break;
+            default:
+                LOG(ERROR) << "Unsupported type";
+                return cpp2::ErrorCode::E_CONFLICT;
+        }
+
+        LOG(INFO) << "Get Tag Default value: Property Name " << name
+                << ", Value " << defaultValue;
+    }
+
     switch (op) {
         case cpp2::AlterSchemaOp::ADD:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
@@ -434,6 +508,9 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 }
             }
             cols.emplace_back(std::move(col));
+            if (col.__isset.default_value) {
+                defaultKVs.emplace_back(std::move(dKey), std::move(defaultValue));
+            }
             return cpp2::ErrorCode::SUCCEEDED;
         case cpp2::AlterSchemaOp::CHANGE:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
@@ -445,6 +522,11 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                         return cpp2::ErrorCode::E_UNSUPPORTED;
                     }
                     *it = col;
+                    if (col.__isset.default_value) {
+                        defaultKVs.emplace_back(std::move(dKey), std::move(defaultValue));
+                    } else {
+                        removeDefaultKeys.emplace_back(std::move(dKey));
+                    }
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
@@ -459,6 +541,9 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                         prop.set_ttl_col("");
                     }
                     cols.erase(it);
+                    if (it->__isset.default_value) {
+                        removeDefaultKeys.emplace_back(std::move(dKey));
+                    }
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
@@ -613,26 +698,16 @@ std::string MetaServiceUtils::parseRoleStr(folly::StringPiece key) {
     return role;
 }
 
-std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,
-                                            TagID tag,
-                                            const std::string& field) {
+std::string MetaServiceUtils::defaultKey(GraphSpaceID spaceId,
+                                         TagID id,
+                                         const std::string& field) {
+    // Assume edge/tag default value key is same formated
+    static_assert(std::is_same<TagID, EdgeType>::value, "");
     std::string key;
     key.reserve(kDefaultTable.size() + sizeof(GraphSpaceID) + sizeof(TagID));
     key.append(kDefaultTable.data(), kDefaultTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&tag), sizeof(TagID))
-       .append(field);
-    return key;
-}
-
-std::string MetaServiceUtils::edgeDefaultKey(GraphSpaceID spaceId,
-                                             EdgeType edge,
-                                             const std::string& field) {
-    std::string key;
-    key.reserve(kDefaultTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType));
-    key.append(kDefaultTable.data(), kDefaultTable.size())
-       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&edge), sizeof(EdgeType))
+       .append(reinterpret_cast<const char*>(&id), sizeof(TagID))
        .append(field);
     return key;
 }

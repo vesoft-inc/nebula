@@ -40,6 +40,10 @@ void DropSpaceExecutor::execute() {
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace("", -1);
         }
+        ectx()->addWarningMsg("If auto_remove_invalid_space is true, data will be deleted "
+                              "completely after restarting the storage services, else you "
+                              "need to remove data by manual");
+
         doFinish(Executor::ProcessControl::kNext);
     };
 
@@ -53,6 +57,5 @@ void DropSpaceExecutor::execute() {
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
-
 }   // namespace graph
 }   // namespace nebula

@@ -10,6 +10,8 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/Common.h"
+#include "common/base/ThriftTypes.h"
 
 namespace nebula {
 namespace meta {
@@ -53,7 +55,7 @@ public:
 
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
-    static const std::string& partPrefix();
+    static std::string partPrefix();
 
     static std::string partPrefix(GraphSpaceID spaceId);
 
@@ -115,6 +117,8 @@ public:
 
     static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
 
+    static std::string rebuildIndexStatusPrefix();
+
     static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
         return rebuildIndexStatusPrefix(spaceId, 'T');
     }
@@ -135,8 +139,12 @@ public:
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  prop,
-                                           const nebula::cpp2::ColumnDef col,
-                                           const cpp2::AlterSchemaOp op);
+                                           std::vector<kvstore::KV>& defaultKVs,
+                                           std::vector<std::string>& removeDefaultKeys,
+                                           GraphSpaceID spaceId,
+                                           TagID/*EdgeType*/ id,
+                                           nebula::cpp2::ColumnDef col,
+                                           cpp2::AlterSchemaOp op);
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
@@ -165,13 +173,9 @@ public:
 
     static std::string parseRoleStr(folly::StringPiece key);
 
-    static std::string tagDefaultKey(GraphSpaceID spaceId,
-                                     TagID tag,
-                                     const std::string& field);
-
-    static std::string edgeDefaultKey(GraphSpaceID spaceId,
-                                      EdgeType edge,
-                                      const std::string& field);
+    static std::string defaultKey(GraphSpaceID spaceId,
+                                  TagID/*EdgeType*/ id,
+                                  const std::string& field);
 
     static const std::string& defaultPrefix();
 

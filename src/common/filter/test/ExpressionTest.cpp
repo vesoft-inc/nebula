@@ -19,10 +19,112 @@ public:
 
 protected:
     Expression* getFilterExpr(SequentialSentences *sentences);
+
+#define TEST_EXPR_IMPL(OP, exprSymbol, expected)                     \
+    std::string query = "GO FROM 1 OVER follow WHERE " + exprSymbol; \
+    auto parsed = parser_->parse(query);                             \
+    ASSERT_TRUE(parsed.ok()) << parsed.status();                     \
+    Getters getters;                                                 \
+    auto *expr = getFilterExpr(parsed.value().get());                \
+    ASSERT_NE(nullptr, expr);                                        \
+    auto ctx = std::make_unique<ExpressionContext>();                \
+    expr->setContext(ctx.get());                                     \
+    auto status = expr->prepare();                                   \
+    ASSERT_TRUE(status.ok()) << status;                              \
+    auto value = expr->eval(getters);                                \
+    ASSERT_TRUE(value.ok());                                         \
+    auto v = value.value();                                          \
+    ASSERT_##OP(Expression::as<decltype(expected)>(v), expected);    \
+    auto decoded = Expression::decode(Expression::encode(expr));     \
+    ASSERT_TRUE(decoded.ok()) << decoded.status();                   \
+    decoded.value()->setContext(ctx.get());                          \
+    status = decoded.value()->prepare();                             \
+    ASSERT_TRUE(status.ok()) << status;                              \
+    value = decoded.value()->eval(getters);                          \
+    ASSERT_TRUE(value.ok());                                         \
+    v = value.value();                                               \
+    ASSERT_##OP(Expression::as<decltype(expected)>(v), expected);    \
+
+
+    template <typename T>
+    void testExpr(const std::string& exprSymbol, T expected) {
+        TEST_EXPR_IMPL(EQ, exprSymbol, expected);
+    }
+
+    void testExpr(const std::string& exprSymbol, double expected) {
+        TEST_EXPR_IMPL(DOUBLE_EQ, exprSymbol, expected);
+    }
+
+    void testExpr(const std::string& exprSymbol, int expected) {
+        testExpr(exprSymbol, static_cast<int64_t>(expected));
+    }
+
+    void testExpr(const std::string& exprSymbol, const char* expected) {
+        testExpr(exprSymbol, std::string(expected));
+    }
+
+    template <typename T>
+    void testExprGT(const std::string& exprSymbol, T expected) {
+        TEST_EXPR_IMPL(GT, exprSymbol, expected);
+    }
+
+    void testExprGT(const std::string& exprSymbol, int expected) {
+        testExprGT(exprSymbol, static_cast<int64_t>(expected));
+    }
+
+    template <typename T>
+    void testExprGE(const std::string& exprSymbol, T expected) {
+        TEST_EXPR_IMPL(GE, exprSymbol, expected);
+    }
+
+    void testExprGE(const std::string& exprSymbol, int expected) {
+        testExprGE(exprSymbol, static_cast<int64_t>(expected));
+    }
+
+    template <typename T>
+    void testExprLT(const std::string& exprSymbol, T expected) {
+        TEST_EXPR_IMPL(LT, exprSymbol, expected);
+    }
+
+    void testExprLT(const std::string& exprSymbol, int expected) {
+        testExprLT(exprSymbol, static_cast<int64_t>(expected));
+    }
+
+    template <typename T>
+    void testExprLE(const std::string& exprSymbol, T expected) {
+        TEST_EXPR_IMPL(LE, exprSymbol, expected);
+    }
+
+    void testExprLE(const std::string& exprSymbol, int expected) {
+        testExprLE(exprSymbol, static_cast<int64_t>(expected));
+    }
+
+    void testExprFailed(const std::string& exprSymbol) {
+        std::string query = "GO FROM 1 OVER follow WHERE " + exprSymbol;
+        auto parsed = parser_->parse(query);
+        ASSERT_TRUE(parsed.ok()) << parsed.status();
+        Getters getters;
+        auto *expr = getFilterExpr(parsed.value().get());
+        ASSERT_NE(nullptr, expr);
+        auto decoded = Expression::decode(Expression::encode(expr));
+        ASSERT_TRUE(decoded.ok()) << decoded.status();
+        auto ctx = std::make_unique<ExpressionContext>();
+        decoded.value()->setContext(ctx.get());
+        auto status = decoded.value()->prepare();
+        ASSERT_TRUE(status.ok()) << status;
+        auto value = decoded.value()->eval(getters);
+        ASSERT_TRUE(!value.ok());
+    }
+
+    std::unique_ptr<GQLParser> parser_{nullptr};
 };
+
+#undef TEST_EXPR_IMPL
 
 
 void ExpressionTest::SetUp() {
+    parser_.reset(new(std::nothrow) GQLParser());
+    ASSERT_NE(parser_, nullptr);
 }
 
 
@@ -35,57 +137,33 @@ Expression* ExpressionTest::getFilterExpr(SequentialSentences *sentences) {
     return go->whereClause()->filter();
 }
 
+// expr -- the expression can evaluate by nGQL parser may not evaluated by c++
+// expected -- the expected value of expression must evaluated by c++
+#define TEST_EXPR(expr, expected) do { testExpr(#expr, expected); } while (0);
+#define TEST_EXPR_GT(expr, expected) do { testExprGT(#expr, expected); } while (0);
+#define TEST_EXPR_GE(expr, expected) do { testExprGE(#expr, expected); } while (0);
+#define TEST_EXPR_LT(expr, expected) do { testExprLT(#expr, expected); } while (0);
+#define TEST_EXPR_LE(expr, expected) do { testExprLE(#expr, expected); } while (0);
+#define TEST_EXPR_FAILED(expr) do { testExprFailed(#expr); } while (0);
 
 TEST_F(ExpressionTest, LiteralConstants) {
-    GQLParser parser;
-#define TEST_EXPR(expr_arg, type)                                       \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-        }                                                               \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-        }                                                               \
-    } while (false)
+    TEST_EXPR(true, true);
+    TEST_EXPR(!true, false);
+    TEST_EXPR(false, false);
+    TEST_EXPR(!false, true);
+    TEST_EXPR(!123, false);
+    TEST_EXPR(!0, true);
 
-    TEST_EXPR(true, Bool);
-    TEST_EXPR(!true, Bool);
-    TEST_EXPR(false, Bool);
-    TEST_EXPR(!false, Bool);
-    TEST_EXPR(!123, Bool);
-    TEST_EXPR(!0, Bool);
+    TEST_EXPR(123, 123);
+    TEST_EXPR(-123, -123);
+    TEST_EXPR(0x123, 0x123);
 
-    TEST_EXPR(123, Int);
-    TEST_EXPR(-123, Int);
-    TEST_EXPR(0x123, Int);
+    TEST_EXPR(3.14, 3.14);
 
-    TEST_EXPR(3.14, Double);
-
-#undef TEST_EXPR
     // string
     {
         std::string query = "GO FROM 1 OVER follow WHERE \"string_literal\"";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
@@ -111,101 +189,105 @@ TEST_F(ExpressionTest, LiteralConstants) {
 
 
 TEST_F(ExpressionTest, LiteralContantsArithmetic) {
-    GQLParser parser;
-#define TEST_EXPR(expr_arg, expected, type)                             \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-            ASSERT_EQ((expected), Expression::as##type(v));             \
-        }                                                               \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-            ASSERT_EQ((expected), Expression::as##type(v));             \
-        }                                                               \
-    } while (false)
-
-    TEST_EXPR(8 + 16, 24, Int);
-    TEST_EXPR(8 - 16, -8, Int);
-    TEST_EXPR(8 * 16, 128, Int);
-    TEST_EXPR(8 / 16, 0, Int);
-    TEST_EXPR(16 / 8, 2, Int);
-    TEST_EXPR(8 % 16, 8, Int);
-    TEST_EXPR(16 % 8, 0, Int);
+    TEST_EXPR(8 + 16, 24);
+    TEST_EXPR(8 - 16, -8);
+    TEST_EXPR(8 * 16, 128);
+    TEST_EXPR(8 / 16, 0);
+    TEST_EXPR(16 / 8, 2);
+    TEST_EXPR(8 % 16, 8);
+    TEST_EXPR(16 % 8, 0);
 
 
-    TEST_EXPR(16 + 4 + 2, 22, Int);
-    TEST_EXPR(16+4+2, 22, Int);
-    TEST_EXPR(16 - 4 - 2, 10, Int);
-    TEST_EXPR(16-4-2, 10, Int);
-    TEST_EXPR(16 - (4 - 2), 14, Int);
-    TEST_EXPR(16 * 4 * 2, 128, Int);
-    TEST_EXPR(16 / 4 / 2, 2, Int);
-    TEST_EXPR(16 / (4 / 2), 8, Int);
-    TEST_EXPR(16 / 4 % 2, 0, Int);
+    TEST_EXPR(16 + 4 + 2, 22);
+    TEST_EXPR(16+4+2, 22);
+    TEST_EXPR(16 - 4 - 2, 10);
+    TEST_EXPR(16-4-2, 10);
+    TEST_EXPR(16 - (4 - 2), 14);
+    TEST_EXPR(16 * 4 * 2, 128);
+    TEST_EXPR(16 / 4 / 2, 2);
+    TEST_EXPR(16 / (4 / 2), 8);
+    TEST_EXPR(16 / 4 % 2, 0);
 
 
-    TEST_EXPR(16 * 8 + 4 - 2, 130, Int);
-    TEST_EXPR(16 * (8 + 4) - 2, 190, Int);
-    TEST_EXPR(16 + 8 * 4 - 2, 46, Int);
-    TEST_EXPR(16 + 8 * (4 - 2), 32, Int);
-    TEST_EXPR(16 + 8 + 4 * 2, 32, Int);
+    TEST_EXPR(16 * 8 + 4 - 2, 130);
+    TEST_EXPR(16 * (8 + 4) - 2, 190);
+    TEST_EXPR(16 + 8 * 4 - 2, 46);
+    TEST_EXPR(16 + 8 * (4 - 2), 32);
+    TEST_EXPR(16 + 8 + 4 * 2, 32);
 
-    TEST_EXPR(16 / 8 + 4 - 2, 4, Int);
-    TEST_EXPR(16 / (8 + 4) - 2, -1, Int);
-    TEST_EXPR(16 + 8 / 4 - 2, 16, Int);
-    TEST_EXPR(16 + 8 / (4 - 2), 20, Int);
-    TEST_EXPR(16 + 8 + 4 / 2, 26, Int);
+    TEST_EXPR(16 / 8 + 4 - 2, 4);
+    TEST_EXPR(16 / (8 + 4) - 2, -1);
+    TEST_EXPR(16 + 8 / 4 - 2, 16);
+    TEST_EXPR(16 + 8 / (4 - 2), 20);
+    TEST_EXPR(16 + 8 + 4 / 2, 26);
 
-    TEST_EXPR(17 % 7 + 4 - 2, 5, Int);
-    TEST_EXPR(17 + 7 % 4 - 2, 18, Int);
-    TEST_EXPR(17 + 7 + 4 % 2, 24, Int);
+    TEST_EXPR(17 % 7 + 4 - 2, 5);
+    TEST_EXPR(17 + 7 % 4 - 2, 18);
+    TEST_EXPR(17 + 7 + 4 % 2, 24);
 
 
-    TEST_EXPR(16. + 8, 24., Double);
-    TEST_EXPR(16 + 8., 24., Double);
-    TEST_EXPR(16. - 8, 8., Double);
-    TEST_EXPR(16 - 8., 8., Double);
-    TEST_EXPR(16. * 8, 128., Double);
-    TEST_EXPR(16 * 8., 128., Double);
-    TEST_EXPR(16. / 8, 2., Double);
-    TEST_EXPR(16 / 8., 2., Double);
+    TEST_EXPR(16. + 8, 24.);
+    TEST_EXPR(16 + 8., 24.);
+    TEST_EXPR(16. - 8, 8.);
+    TEST_EXPR(16 - 8., 8.);
+    TEST_EXPR(16. * 8, 128.);
+    TEST_EXPR(16 * 8., 128.);
+    TEST_EXPR(16. / 8, 2.);
+    TEST_EXPR(16 / 8., 2.);
 
-    TEST_EXPR(16. * 8 + 4 - 2, 130., Double);
-    TEST_EXPR(16 + 8. * 4 - 2, 46., Double);
-    TEST_EXPR(16 + 8 + 4. * 2, 32., Double);
+    TEST_EXPR(16. * 8 + 4 - 2, 130.);
+    TEST_EXPR(16 + 8. * 4 - 2, 46.);
+    TEST_EXPR(16 + 8 + 4. * 2, 32.);
 
-    TEST_EXPR(16. / 8 + 4 - 2, 4., Double);
-    TEST_EXPR(16 + 8 / 4. - 2, 16., Double);
-    TEST_EXPR(16 + 8 + 4 / 2., 26., Double);
+    TEST_EXPR(16. / 8 + 4 - 2, 4.);
+    TEST_EXPR(16 + 8 / 4. - 2, 16.);
+    TEST_EXPR(16 + 8 + 4 / 2., 26.);
 
-    TEST_EXPR(3.14 * 3 * 3 / 2, 14.13, Double);
+    TEST_EXPR(3.14 * 3 * 3 / 2, 14.13);
 
-#undef TEST_EXPR
+    static int64_t minInt = std::numeric_limits<int64_t>::min();
+    // test add
+    TEST_EXPR(1 + 9223372036854775806, 9223372036854775807);
+    TEST_EXPR(9223372036854775806 + 1, 9223372036854775807);
+    TEST_EXPR(-9223372036854775806 + -2, minInt);
+    TEST_EXPR(-2 + (-9223372036854775806), minInt);
+    TEST_EXPR(2 + (-9223372036854775806), -9223372036854775804);
+    TEST_EXPR_FAILED((-9223372036854775808) + (-1));
+    TEST_EXPR_FAILED(-1 + (-9223372036854775808));
+    TEST_EXPR_FAILED(1 + 9223372036854775807);
+    TEST_EXPR_FAILED(9223372036854775807 + 1);
+
+    // test sub
+    TEST_EXPR(9223372036854775806 - (-1), 9223372036854775807);
+    TEST_EXPR(-1 - 9223372036854775807, minInt);
+    TEST_EXPR(1 - 9223372036854775807, -9223372036854775806);
+    TEST_EXPR(9223372036854775807 - 1, 9223372036854775806);
+    TEST_EXPR_FAILED(-2 - 9223372036854775807);
+    TEST_EXPR_FAILED(9223372036854775807 - (-1));
+
+
+    // test multiplication
+    TEST_EXPR(1*1, 1);
+    TEST_EXPR(-1*-1, 1);
+    TEST_EXPR(1*-1, -1);
+    TEST_EXPR(-1*1, -1);
+    TEST_EXPR(-4611686018427387904*2, minInt);
+    TEST_EXPR(2*-4611686018427387904, minInt);
+    TEST_EXPR(-4611686018427387903*-2, 9223372036854775806);
+    TEST_EXPR(2*4611686018427387903, 9223372036854775806);
+    TEST_EXPR_FAILED(9223372036854775807*2);
+    TEST_EXPR_FAILED(9223372036854775807*-2);
+    TEST_EXPR_FAILED(-9223372036854775807*2);
+    TEST_EXPR_FAILED(-9223372036854775808*-1);
+
+    // test division
+    TEST_EXPR(1/-1, -1);
+    TEST_EXPR(9223372036854775807/-1, -9223372036854775807);
+    TEST_EXPR_FAILED(-9223372036854775808/-1);
+
     {
         std::string query = "GO FROM 1 OVER follow WHERE 16 + 8 / 4 - 2";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
@@ -231,31 +313,6 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
 
 
 TEST_F(ExpressionTest, LiteralConstantsRelational) {
-    GQLParser parser;
-#define TEST_EXPR(expr_arg, expected)                                   \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-    } while (false)
-
     TEST_EXPR(!-1, false);
     TEST_EXPR(!!-1, true);
     TEST_EXPR(1 == 1, true);
@@ -341,6 +398,20 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(false < 0.0, false);
     TEST_EXPR(false <= 0.0, true);
 
+    TEST_EXPR(abcd CONTAINS a, true)
+    TEST_EXPR(abcd CONTAINS bc, true)
+    TEST_EXPR(abcd CONTAINS cd, true)
+    TEST_EXPR(bcd CONTAINS a, false)
+    TEST_EXPR("abcd" CONTAINS "a", true)
+    TEST_EXPR("abcd" CONTAINS "bc", true)
+    TEST_EXPR("abcd" CONTAINS "cd", true)
+    TEST_EXPR("bcd" CONTAINS "a", false)
+    TEST_EXPR("Abcd" CONTAINS "A", true)
+    TEST_EXPR("Abcd" CONTAINS "a", false)
+    TEST_EXPR("abcd" CONTAINS "", true)
+    TEST_EXPR("" CONTAINS "abcd", false)
+    TEST_EXPR("" CONTAINS "", true)
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -353,9 +424,11 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(3.14 * 3 * 3 / 2 > 3.14 * 1.5 * 1.5 / 2, true);
     TEST_EXPR(3.14 * 3 * 3 / 2 < 3.14 * 1.5 * 1.5 / 2, false);
 
+    TEST_EXPR_FAILED(!(1/0));
+
     {
         std::string query = "GO FROM 1 OVER follow WHERE 3.14 * 3 * 3 / 2 == 14.13";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
@@ -375,7 +448,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     }
     {
         std::string query = "GO FROM 1 OVER follow WHERE 3.14 * 3 * 3 / 2 != 3.14 * 1.5 * 1.5 / 2";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
@@ -393,37 +466,10 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(Expression::isBool(v));
         ASSERT_TRUE(Expression::asBool(v));
     }
-
-#undef TEST_EXPR
 }
 
 
 TEST_F(ExpressionTest, LiteralConstantsLogical) {
-    GQLParser parser;
-#define TEST_EXPR(expr_arg, expected)                                   \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-    } while (false)
-
     // AND
     TEST_EXPR(true && true, true);
     TEST_EXPR(true && false, false);
@@ -480,16 +526,13 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
     TEST_EXPR(2 <= 1 && 3 > 2, false);
     TEST_EXPR(2 > 1 && 3 < 2, false);
     TEST_EXPR(2 < 1 && 3 < 2, false);
-
-#undef TEST_EXPR
 }
 
 
 TEST_F(ExpressionTest, InputReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE $-.name";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -511,7 +554,7 @@ TEST_F(ExpressionTest, InputReference) {
     }
     {
         std::string query = "GO FROM 1 OVER follow WHERE $-.age >= 18";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -535,10 +578,9 @@ TEST_F(ExpressionTest, InputReference) {
 
 
 TEST_F(ExpressionTest, SourceTagReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE $^.person.name == \"dutor\"";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -561,12 +603,11 @@ TEST_F(ExpressionTest, SourceTagReference) {
 
 
 TEST_F(ExpressionTest, EdgeReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE follow._src == 1 "
                                                         "|| follow.cur_time < 1545798791"
                                                         "&& follow._dst == 2";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok());
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -595,208 +636,136 @@ TEST_F(ExpressionTest, EdgeReference) {
 
 
 TEST_F(ExpressionTest, FunctionCall) {
-    GQLParser parser;
-#define TEST_EXPR(expected, op, expr_arg, type)                         \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        auto ctx = std::make_unique<ExpressionContext>();               \
-        decoded.value()->setContext(ctx.get());                         \
-        auto status = decoded.value()->prepare();                       \
-        ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval(getters);                    \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            if (#op != std::string("EQ")) {                             \
-                ASSERT_##op(expected, Expression::as##type(v));         \
-            } else {                                                    \
-                ASSERT_DOUBLE_EQ(expected, Expression::as##type(v));    \
-            }                                                           \
-        } else {                                                        \
-            ASSERT_##op(expected, Expression::as##type(v));             \
-        }                                                               \
-    } while (false)
+    TEST_EXPR(abs(5), 5.0);
+    TEST_EXPR(abs(-5), 5.0);
 
-    TEST_EXPR(5.0, EQ, abs(5), Double);
-    TEST_EXPR(5.0, EQ, abs(-5), Double);
+    TEST_EXPR(floor(3.14), 3.0);
+    TEST_EXPR(floor(-3.14), -4.0);
 
-    TEST_EXPR(3.0, EQ, floor(3.14), Double);
-    TEST_EXPR(-4.0, EQ, floor(-3.14), Double);
+    TEST_EXPR(ceil(3.14), 4.0);
+    TEST_EXPR(ceil(-3.14), -3.0);
 
-    TEST_EXPR(4.0, EQ, ceil(3.14), Double);
-    TEST_EXPR(-3.0, EQ, ceil(-3.14), Double);
+    TEST_EXPR(round(3.14), 3.0);
+    TEST_EXPR(round(-3.14), -3.0);
+    TEST_EXPR(round(3.5), 4.0);
+    TEST_EXPR(round(-3.5), -4.0);
 
-    TEST_EXPR(3.0, EQ, round(3.14), Double);
-    TEST_EXPR(-3.0, EQ, round(-3.14), Double);
-    TEST_EXPR(4.0, EQ, round(3.5), Double);
-    TEST_EXPR(-4.0, EQ, round(-3.5), Double);
-
-    TEST_EXPR(3.0, EQ, cbrt(27), Double);
+    TEST_EXPR(cbrt(27), 3.0);
 
     constexpr auto euler = 2.7182818284590451;
-    TEST_EXPR(euler, EQ, exp(1), Double);
-    TEST_EXPR(1024, EQ, exp2(10), Double);
+    TEST_EXPR(exp(1), euler);
+    TEST_EXPR(exp2(10), 1024.);
 
-    TEST_EXPR(2, EQ, log(pow(2.7182818284590451, 2)), Double);
-    TEST_EXPR(10, EQ, log2(1024), Double);
-    TEST_EXPR(3, EQ, log10(1000), Double);
+    TEST_EXPR(log(pow(2.7182818284590451, 2)), 2.);
+    TEST_EXPR(log2(1024), 10.);
+    TEST_EXPR(log10(1000), 3.);
 
-    TEST_EXPR(5.0, EQ, hypot(3, 4), Double);
-    TEST_EXPR(5.0, EQ, sqrt(pow(3, 2) + pow(4, 2)), Double);
+    TEST_EXPR(hypot(3, 4), 5.0);
+    TEST_EXPR(sqrt(pow(3, 2) + pow(4, 2)), 5.0);
 
-    TEST_EXPR(1.0, EQ, hypot(sin(0.5), cos(0.5)), Double);
-    TEST_EXPR(1.0, EQ, (sin(0.5) / cos(0.5)) / tan(0.5), Double);
+    TEST_EXPR(hypot(sin(0.5), cos(0.5)), 1.0);
+    TEST_EXPR((sin(0.5) / cos(0.5)) / tan(0.5), 1.0);
 
-    TEST_EXPR(0.3, EQ, sin(asin(0.3)), Double);
-    TEST_EXPR(0.3, EQ, cos(acos(0.3)), Double);
-    TEST_EXPR(0.3, EQ, tan(atan(0.3)), Double);
+    TEST_EXPR(sin(asin(0.3)), 0.3);
+    TEST_EXPR(cos(acos(0.3)), 0.3);
+    TEST_EXPR(tan(atan(0.3)), 0.3);
 
-    TEST_EXPR(1024, GT, rand32(1024), Int);
-    TEST_EXPR(0, LE, rand32(1024), Int);
-    TEST_EXPR(4096, GT, rand64(1024, 4096), Int);
-    TEST_EXPR(1024, LE, rand64(1024, 4096), Int);
+    TEST_EXPR_LT(rand32(1024), 1024);
+    TEST_EXPR_GE(rand32(1024), 0);
+    TEST_EXPR_FAILED(rand32(-1));
+    TEST_EXPR_FAILED(rand32(-1, -2));
+    TEST_EXPR_FAILED(rand32(3, 2));
+    TEST_EXPR_FAILED(rand32(2, 2));
+    TEST_EXPR_LT(rand64(1024, 4096), 4096);
+    TEST_EXPR_GE(rand64(1024, 4096), 1024);
+    TEST_EXPR_FAILED(rand64(-1));
+    TEST_EXPR_FAILED(rand64(-1, -2));
+    TEST_EXPR_FAILED(rand64(3, 2));
+    TEST_EXPR_FAILED(rand64(2, 2));
 
-    TEST_EXPR(1554716753, LT, now(), Int);
-    TEST_EXPR(4773548753, GE, now(), Int);  // failed 102 years later
+    TEST_EXPR_GT(now(), 1554716753);
+    TEST_EXPR_LE(now(), 4773548753);  // failed 102 years later
 
-    TEST_EXPR(0, EQ, strcasecmp("HelLo", "hello"), Int);
-    TEST_EXPR(0, LT, strcasecmp("HelLo", "hell"), Int);
-    TEST_EXPR(0, GT, strcasecmp("HelLo", "World"), Int);
+    TEST_EXPR(strcasecmp("HelLo", "hello"), 0);
+    TEST_EXPR_GT(strcasecmp("HelLo", "hell"), 0);
+    TEST_EXPR_LT(strcasecmp("HelLo", "World"), 0);
 
-    TEST_EXPR(5, EQ, length("hello"), Int);
-    TEST_EXPR(0, EQ, length(""), Int);
-
-#undef TEST_EXPR
+    TEST_EXPR(length("hello"), 5);
+    TEST_EXPR(length(""), 0);
 }
 
 TEST_F(ExpressionTest, StringFunctionCall) {
-    GQLParser parser;
-#define TEST_EXPR(expected, op, expr_arg, type)                         \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        auto ctx = std::make_unique<ExpressionContext>();               \
-        decoded.value()->setContext(ctx.get());                         \
-        auto status = decoded.value()->prepare();                       \
-        ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval(getters);                    \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("String")) {                           \
-            if (#op != std::string("EQ")) {                             \
-                ASSERT_##op(expected, Expression::as##type(v));         \
-            } else {                                                    \
-                ASSERT_EQ(expected, Expression::as##type(v));    \
-            }                                                           \
-        } else {                                                        \
-            ASSERT_##op(expected, Expression::as##type(v));             \
-        }                                                               \
-    } while (false)
+    TEST_EXPR(lower("HelLo"), std::string("hello"));
+    TEST_EXPR(lower("HELLO"), "hello");
+    TEST_EXPR(lower("hello"), "hello");
 
-    TEST_EXPR("hello", EQ, lower("HelLo"), String);
-    TEST_EXPR("hello", EQ, lower("HELLO"), String);
-    TEST_EXPR("hello", EQ, lower("hello"), String);
+    TEST_EXPR(upper("HelLo"), "HELLO");
+    TEST_EXPR(upper("HELLO"), "HELLO");
+    TEST_EXPR(upper("hello"), "HELLO");
 
-    TEST_EXPR("HELLO", EQ, upper("HelLo"), String);
-    TEST_EXPR("HELLO", EQ, upper("HELLO"), String);
-    TEST_EXPR("HELLO", EQ, upper("hello"), String);
+    TEST_EXPR(trim(" hello "), "hello");
+    TEST_EXPR(trim(" hello"), "hello");
+    TEST_EXPR(trim("hello "), "hello");
 
-    TEST_EXPR("hello", EQ, trim(" hello "), String);
-    TEST_EXPR("hello", EQ, trim(" hello"),  String);
-    TEST_EXPR("hello", EQ, trim("hello "),  String);
+    TEST_EXPR(ltrim(" hello "), "hello ");
+    TEST_EXPR(ltrim(" hello"), "hello");
+    TEST_EXPR(ltrim("hello "), "hello ");
 
-    TEST_EXPR("hello ", EQ, ltrim(" hello "), String);
-    TEST_EXPR("hello",  EQ, ltrim(" hello"),  String);
-    TEST_EXPR("hello ", EQ, ltrim("hello "),  String);
+    TEST_EXPR(rtrim(" hello "), " hello");
+    TEST_EXPR(rtrim(" hello"), " hello");
+    TEST_EXPR(rtrim("hello "), "hello");
 
-    TEST_EXPR(" hello", EQ, rtrim(" hello "), String);
-    TEST_EXPR(" hello", EQ, rtrim(" hello"),  String);
-    TEST_EXPR("hello",  EQ, rtrim("hello "),  String);
+    TEST_EXPR(left("hello world", 5), "hello");
+    TEST_EXPR(left("hello world", 0), "");
+    TEST_EXPR(left("hello world", -1), "");
 
-    TEST_EXPR("hello", EQ, left("hello world", 5),  String);
-    TEST_EXPR("",      EQ, left("hello world", 0),  String);
-    TEST_EXPR("",      EQ, left("hello world", -1), String);
+    TEST_EXPR(right("hello world", 5), "world");
+    TEST_EXPR(right("hello world", 0), "");
+    TEST_EXPR(right("hello world", -1), "");
 
-    TEST_EXPR("world", EQ, right("hello world", 5),  String);
-    TEST_EXPR("",      EQ, right("hello world", 0),  String);
-    TEST_EXPR("",      EQ, right("hello world", -1), String);
+    TEST_EXPR(lpad("Hello", 8, "1"), "111Hello");
+    TEST_EXPR(lpad("Hello", 8, "we"), "wewHello");
+    TEST_EXPR(lpad("Hello", 4, "1"), "Hell");
+    TEST_EXPR(lpad("Hello", 0, "1"), "");
 
-    TEST_EXPR("111Hello", EQ, lpad("Hello", 8, "1"),  String);
-    TEST_EXPR("wewHello", EQ, lpad("Hello", 8, "we"), String);
-    TEST_EXPR("Hell",     EQ, lpad("Hello", 4, "1"),  String);
-    TEST_EXPR("",         EQ, lpad("Hello", 0, "1"),  String);
+    TEST_EXPR(rpad("Hello", 8, "1"), "Hello111");
+    TEST_EXPR(rpad("Hello", 8, "we"), "Hellowew");
+    TEST_EXPR(rpad("Hello", 4, "1"), "Hell");
+    TEST_EXPR(rpad("Hello", 0, "1"), "");
 
-    TEST_EXPR("Hello111", EQ, rpad("Hello", 8, "1"),  String);
-    TEST_EXPR("Hellowew", EQ, rpad("Hello", 8, "we"), String);
-    TEST_EXPR("Hell",     EQ, rpad("Hello", 4, "1"),  String);
-    TEST_EXPR("",         EQ, rpad("Hello", 0, "1"),  String);
-
-    TEST_EXPR("1", EQ, substr("123", 1, 1),   String);
-    TEST_EXPR("",  EQ, substr("123", 1, 0),   String);
-    TEST_EXPR("",  EQ, substr("123", 1, -1),  String);
-    TEST_EXPR("3", EQ, substr("123", -1, 1),  String);
-    TEST_EXPR("",  EQ, substr("123", -1, 0),  String);
-    TEST_EXPR("",  EQ, substr("123", -1, -1), String);
-    TEST_EXPR("",  EQ, substr("123", 5, 1),   String);
-    TEST_EXPR("",  EQ, substr("123", -5, 1),  String);
-
-#undef TEST_EXPR
+    TEST_EXPR(substr("123", 1, 1), "1");
+    TEST_EXPR(substr("123", 1, 0), "");
+    TEST_EXPR(substr("123", 1, -1), "");
+    TEST_EXPR(substr("123", -1, 1), "3");
+    TEST_EXPR(substr("123", -1, 0), "");
+    TEST_EXPR(substr("123", -1, -1), "");
+    TEST_EXPR(substr("123", 5, 1), "");
+    TEST_EXPR(substr("123", -5, 1), "");
 }
 
 TEST_F(ExpressionTest, InvalidExpressionTest) {
-    GQLParser parser;
-
-#define TEST_EXPR(expr_arg)                                           \
-    do {                                                              \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg; \
-        auto parsed = parser.parse(query);                            \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                  \
-        Getters getters;                                              \
-        auto *expr = getFilterExpr(parsed.value().get());             \
-        ASSERT_NE(nullptr, expr);                                     \
-        auto decoded = Expression::decode(Expression::encode(expr));  \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                \
-        auto ctx = std::make_unique<ExpressionContext>();             \
-        decoded.value()->setContext(ctx.get());                       \
-        auto status = decoded.value()->prepare();                     \
-        ASSERT_TRUE(status.ok()) << status;                           \
-        auto value = decoded.value()->eval(getters);                  \
-        ASSERT_TRUE(!value.ok());                                     \
-    } while (false)
-
-    TEST_EXPR("a" + 1);
-    TEST_EXPR(3.14 + "a");
-    TEST_EXPR("ab" - "c");
-    TEST_EXPR(1 - "a");
-    TEST_EXPR("a" * 1);
-    TEST_EXPR(1.0 * "a");
-    TEST_EXPR(1 / "a");
-    TEST_EXPR("a" / "b");
-    TEST_EXPR(1.0 % "a");
-    TEST_EXPR(-"A");
-    TEST_EXPR(TRUE + FALSE);
-    TEST_EXPR("123" > 123);
-    TEST_EXPR("123" < 123);
-    TEST_EXPR("123" >= 123);
-    TEST_EXPR("123" <= 123);
-    TEST_EXPR("123" == 123);
-    TEST_EXPR("123" != 123);
-#undef TEST_EXPR
+    TEST_EXPR_FAILED("a" + 1);
+    TEST_EXPR_FAILED(3.14 + "a");
+    TEST_EXPR_FAILED("ab" - "c");
+    TEST_EXPR_FAILED(1 - "a");
+    TEST_EXPR_FAILED("a" * 1);
+    TEST_EXPR_FAILED(1.0 * "a");
+    TEST_EXPR_FAILED(1 / "a");
+    TEST_EXPR_FAILED("a" / "b");
+    TEST_EXPR_FAILED(1.0 % "a");
+    TEST_EXPR_FAILED(-"A");
+    TEST_EXPR_FAILED(TRUE + FALSE);
+    TEST_EXPR_FAILED("123" > 123);
+    TEST_EXPR_FAILED("123" < 123);
+    TEST_EXPR_FAILED("123" >= 123);
+    TEST_EXPR_FAILED("123" <= 123);
+    TEST_EXPR_FAILED("123" == 123);
+    TEST_EXPR_FAILED("123" != 123);
+    TEST_EXPR_FAILED("abc" CONTAINS 0);
+    TEST_EXPR_FAILED("abc" CONTAINS 1.0);
+    TEST_EXPR_FAILED("abc" CONTAINS true);
+    TEST_EXPR_FAILED(0 CONTAINS 0);
+    TEST_EXPR_FAILED(-(1/0));
 }
 
 
@@ -806,21 +775,19 @@ TEST_F(ExpressionTest, StringLengthLimitTest) {
 
     // double quote
     {
-        GQLParser parser;
         auto *fmt = "GO FROM 1 OVER follow WHERE \"%s\"";
         {
             auto query = folly::stringPrintf(fmt, str.c_str());
-            auto parsed = parser.parse(query);
+            auto parsed = parser_->parse(query);
             ASSERT_TRUE(parsed.ok()) << parsed.status();
         }
     }
     // single quote
     {
-        GQLParser parser;
         auto *fmt = "GO FROM 1 OVER follow WHERE '%s'";
         {
             auto query = folly::stringPrintf(fmt, str.c_str());
-            auto parsed = parser.parse(query);
+            auto parsed = parser_->parse(query);
             ASSERT_TRUE(parsed.ok()) << parsed.status();
         }
     }

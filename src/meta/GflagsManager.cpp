@@ -29,7 +29,21 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
 
 std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>>
 GflagsManager::parseConfigJson(const std::string& path) {
-    std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> configModeMap;
+    // The default conf for gflags flags mode
+    std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> configModeMap {
+        {"max_edge_returned_per_vertex", {cpp2::ConfigMode::MUTABLE, false}},
+        {"minloglevel", {cpp2::ConfigMode::MUTABLE, false}},
+        {"v", {cpp2::ConfigMode::MUTABLE, false}},
+        {"heartbeat_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
+        {"meta_client_retry_times", {cpp2::ConfigMode::MUTABLE, false}},
+        {"slow_op_threshhold_ms", {cpp2::ConfigMode::MUTABLE, false}},
+        {"wal_ttl", {cpp2::ConfigMode::MUTABLE, false}},
+        {"enable_reservoir_sampling", {cpp2::ConfigMode::MUTABLE, false}},
+
+        {"rocksdb_db_options", {cpp2::ConfigMode::MUTABLE, true}},
+        {"rocksdb_column_family_options", {cpp2::ConfigMode::MUTABLE, true}},
+        {"rocksdb_block_based_table_options", {cpp2::ConfigMode::MUTABLE, true}},
+    };
     Configuration conf;
     if (!conf.parseFromFile(path).ok()) {
         LOG(ERROR) << "Load gflags json failed";

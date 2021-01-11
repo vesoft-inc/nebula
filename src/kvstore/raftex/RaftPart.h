@@ -65,7 +65,7 @@ class AppendLogsIterator;
 
 /**
  * The operation will be atomic, if the operation failed, empty string will be returned,
- * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * otherwise it will return the new operation's encoded string which should be applied atomically.
  * You could implement CAS, READ-MODIFY-WRITE operations though it.
  * */
 using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
@@ -211,6 +211,8 @@ public:
 
     bool leaseValid();
 
+    bool needToCleanWal();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -326,13 +328,11 @@ private:
 
     bool needToStartElection();
 
-    void statusPolling();
+    void statusPolling(int64_t startTime);
 
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
-
-    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -347,7 +347,8 @@ private:
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results,
-                                  std::vector<std::shared_ptr<Host>> hosts);
+                                  std::vector<std::shared_ptr<Host>> hosts,
+                                  TermID proposedTerm);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -491,15 +492,27 @@ protected:
     // When the partition is the leader, the leader_ is same as addr_
     HostAddr leader_;
 
+    // After voted for somebody, it will not be empty anymore.
+    // And it will be reset to empty after current election finished.
+    HostAddr votedAddr_{0, 0};
+
     // The current term id
-    //
-    // When the partition voted for someone, termId will be set to
     // the term id proposed by that candidate
     TermID term_{0};
     // During normal operation, proposedTerm_ is equal to term_,
     // when the partition becomes a candidate, proposedTerm_ will be
     // bumped up by 1 every time when sending out the AskForVote
     // Request
+
+    // If voted for somebody, the proposeTerm will be reset to the candidate
+    // propose term. So we could use it to prevent revote if someone else ask for
+    // vote for current proposedTerm.
+
+    // TODO(heng) We should persist it on the disk in the future
+    // Otherwise, after restart the whole cluster, maybe the stale
+    // leader still has the unsend log with larger term, and after other
+    // replicas elected the new leader, the stale one will not join in the
+    // Raft group any more.
     TermID proposedTerm_{0};
 
     // The id and term of the last-sent log
@@ -516,6 +529,8 @@ protected:
     uint64_t lastMsgAcceptedTime_{0};
     // How long between last message was sent and was accepted by majority peers
     uint64_t lastMsgAcceptedCostMs_{0};
+    // Make sure only one election is in progress
+    std::atomic_bool inElection_{false};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;

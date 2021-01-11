@@ -36,6 +36,13 @@ enum class NebulaSystemKeyType : uint32_t {
     kSystemPart        = 0x00000002,
 };
 
+enum class NebulaBoundValueType : uint8_t {
+    kMax                = 0x0001,
+    kMin                = 0x0002,
+    kSubtraction        = 0x0003,
+    kAddition           = 0x0004,
+};
+
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */
@@ -104,6 +111,8 @@ public:
 
     static std::string prefix(PartitionID partId);
 
+    static std::string snapshotPrefix(PartitionID partId);
+
     static PartitionID getPart(const folly::StringPiece& rawKey) {
         return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
     }
@@ -135,11 +144,8 @@ public:
             msg << " rawKey.size() != kVertexLen."
                 << "\nrawKey.size()=" << rawKey.size()
                 << "\nkVertexLen=" << kVertexLen
-                << "\nrawkey string format=" << rawKey
-                << "\nrawkey dec format:";
-            for (auto i = 0U; i != rawKey.size(); ++i) {
-                msg << "\nrawKey[" << i << "]=" << static_cast<int>(rawKey[i]);
-            }
+                << "\nhexDump:\n"
+                << folly::hexDump(rawKey.data(), rawKey.size());
             LOG(FATAL) << msg.str();
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
@@ -247,6 +253,107 @@ public:
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
+    }
+
+    // Only int and double are supported
+    static std::string boundVariant(nebula::cpp2::SupportedType type,
+                                    NebulaBoundValueType op,
+                                    const VariantType& v = 0L) {
+        switch (op) {
+            case NebulaBoundValueType::kMax : {
+                return std::string(8, '\377');
+            }
+            case NebulaBoundValueType::kMin : {
+                return std::string(8, '\0');
+            }
+            case NebulaBoundValueType::kSubtraction : {
+                std::string str;
+                if (type == nebula::cpp2::SupportedType::INT) {
+                    str = encodeInt64(boost::get<int64_t>(v));
+                } else {
+                    str = encodeDouble(boost::get<double>(v));
+                }
+                std::vector<unsigned char> bytes(str.begin(), str.end());
+
+                for (size_t i = bytes.size();; i--) {
+                    if (i > 0) {
+                        if (bytes[i-1]-- != 0) break;
+                    } else {
+                        return std::string(bytes.size(), '\0');
+                    }
+                }
+                return std::string(bytes.begin(), bytes.end());
+            }
+            case NebulaBoundValueType::kAddition : {
+                std::string str;
+                if (type == nebula::cpp2::SupportedType::INT) {
+                    str = encodeInt64(boost::get<int64_t>(v));
+                } else {
+                    str = encodeDouble(boost::get<double>(v));
+                }
+                std::vector<unsigned char> bytes(str.begin(), str.end());
+                for (size_t i = bytes.size();; i--) {
+                    if (i > 0) {
+                        if (bytes[i-1]++ != 255) break;
+                    } else {
+                        return std::string(bytes.size(), '\377');
+                    }
+                }
+                return std::string(bytes.begin(), bytes.end());
+            }
+        }
+        return "";
+    }
+
+    static bool checkAndCastVariant(nebula::cpp2::SupportedType sType,
+                                    VariantType& v) {
+        nebula::cpp2::SupportedType type = nebula::cpp2::SupportedType::UNKNOWN;
+        switch (v.which()) {
+            case VAR_INT64: {
+                type = nebula::cpp2::SupportedType::INT;
+                break;
+            }
+            case VAR_DOUBLE: {
+                type = nebula::cpp2::SupportedType::DOUBLE;
+                break;
+            }
+            case VAR_BOOL: {
+                type = nebula::cpp2::SupportedType::BOOL;
+                break;
+            }
+            case VAR_STR: {
+                type = nebula::cpp2::SupportedType::STRING;
+                break;
+            }
+            default:
+                return false;
+        }
+        if (sType != type) {
+            switch (sType) {
+                case nebula::cpp2::SupportedType::INT:
+                case nebula::cpp2::SupportedType::TIMESTAMP: {
+                    v = Expression::toInt(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::BOOL: {
+                    v = Expression::toBool(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::FLOAT:
+                case nebula::cpp2::SupportedType::DOUBLE: {
+                    v = Expression::toDouble(v);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::STRING: {
+                    v = Expression::toString(v);
+                    break;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     static std::string encodeVariant(const VariantType& v)  {
@@ -413,15 +520,15 @@ private:
     // See KeyType enum
     static constexpr uint32_t kTypeMask     = 0x000000FF;
 
-    // The Tag/Edge type bit Mask
+    // The most significant bit is sign bit, tag is always 0
+    // The second most significant bit is tag/edge type bit Mask
     // 0 for Tag, 1 for Edge
-    // 0x40 - 0b0100,0000
     static constexpr uint32_t kTagEdgeMask      = 0x40000000;
     // For extract Tag/Edge value
     static constexpr uint32_t kTagEdgeValueMask = ~kTagEdgeMask;
-    // Write edge by &=
+    // Write edge by |= 0x40000000
     static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
-    // Write Tag by |=
+    // Write Tag by &= 0xbfffffff
     static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
 };
 

@@ -14,8 +14,8 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     spaceId_ = req.get_space_id();
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    auto version = FLAGS_enable_multi_versions ?
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() : 0L;
     // Switch version to big-endian, make sure the key is in ordered.
     version = folly::Endian::big(version);
 
@@ -87,7 +87,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
     });
     for (auto& e : newEdges) {
         std::string val;
-        std::unique_ptr<RowReader> nReader;
+        RowReader nReader = RowReader::getEmptyRowReader();
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
@@ -125,7 +125,9 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                     }
                 }
                 auto ni = indexKey(partId, nReader.get(), e.first, index);
-                batchHolder->put(std::move(ni), "");
+                if (!ni.empty()) {
+                    batchHolder->put(std::move(ni), "");
+                }
             }
         }
         /*
@@ -146,15 +148,10 @@ std::string AddEdgesProcessor::findObsoleteIndex(PartitionID partId,
                                              NebulaKeyUtils::getEdgeType(rawKey),
                                              NebulaKeyUtils::getRank(rawKey),
                                              NebulaKeyUtils::getDstId(rawKey));
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
-                   << ", spaceId " << this->spaceId_;
-        return "";
-    }
-    if (iter && iter->valid()) {
-        return iter->val().str();
+    std::string value;
+    auto ret = doGetFirstRecord(spaceId_, partId, prefix, &value);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return value;
     }
     return "";
 }
@@ -164,12 +161,15 @@ std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         const folly::StringPiece& rawKey,
                                         std::shared_ptr<nebula::cpp2::IndexItem> index) {
     auto values = collectIndexValues(reader, index->get_fields());
+    if (!values.ok()) {
+        return "";
+    }
     return NebulaKeyUtils::edgeIndexKey(partId,
                                         index->get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
-                                        values);
+                                        values.value());
 }
 
 }  // namespace storage

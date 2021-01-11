@@ -54,6 +54,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     nebula::VertexIDList                   *vid_list;
     nebula::OverEdge                       *over_edge;
     nebula::OverEdges                      *over_edges;
+    nebula::FetchLabels                    *fetch_labels;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
     nebula::WhenClause                     *when_clause;
@@ -116,7 +117,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER
-%token KW_SHORTEST KW_PATH
+%token KW_SHORTEST KW_PATH KW_NOLOOP
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
@@ -124,6 +125,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_CONTAINS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -158,6 +160,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <vid_list> vid_list
 %type <over_edge> over_edge
 %type <over_edges> over_edges
+%type <fetch_labels> fetch_labels
 %type <over_clause> over_clause
 %type <where_clause> where_clause
 %type <when_clause> when_clause
@@ -307,7 +310,9 @@ unreserved_keyword
      | KW_STORAGE            { $$ = new std::string("storage"); }
      | KW_ALL                { $$ = new std::string("all"); }
      | KW_SHORTEST           { $$ = new std::string("shortest"); }
+     | KW_NOLOOP             { $$ = new std::string("noloop"); }
      | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
+     | KW_CONTAINS           { $$ = new std::string("contains"); }
      ;
 
 agg_function
@@ -531,6 +536,9 @@ relational_expression
     | relational_expression GE additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::GE, $3);
     }
+    | relational_expression KW_CONTAINS additive_expression {
+        $$ = new RelationalExpression($1, RelationalExpression::CONTAINS, $3);
+    }
     ;
 
 equality_expression
@@ -605,9 +613,13 @@ step_clause
         ifOutOfRange($1, @1);
         $$ = new StepClause($1);
     }
-    | KW_UPTO INTEGER KW_STEPS {
-        ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+    | INTEGER KW_TO INTEGER KW_STEPS {
+        ifOutOfRange($1, @2);
+        ifOutOfRange($3, @2);
+        if ($1 > $3) {
+            throw nebula::GraphParser::syntax_error(@1, "Invalid step range");
+        }
+        $$ = new StepClause($1, $3);
     }
     ;
 
@@ -786,8 +798,13 @@ group_clause
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
-		s->setWhereClause($3);
-		$$ = s;
+        s->setWhereClause($3);
+        $$ = s;
+    }
+    | KW_YIELD KW_DISTINCT yield_columns where_clause {
+        auto *s = new YieldSentence($3, true);
+        s->setWhereClause($4);
+        $$ = s;
     }
     ;
 
@@ -847,14 +864,32 @@ order_by_sentence
     ;
 
 fetch_vertices_sentence
-    : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
+    : KW_FETCH KW_PROP KW_ON fetch_labels vid_list yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
+    | KW_FETCH KW_PROP KW_ON fetch_labels vid_ref_expression yield_clause {
         $$ = new FetchVerticesSentence($4, $5, $6);
     }
-    | KW_FETCH KW_PROP KW_ON MUL vid {
-        $$ = new FetchVerticesSentence($5);
+    | KW_FETCH KW_PROP KW_ON MUL vid_list yield_clause {
+        auto labels = new nebula::FetchLabels();
+        labels->addLabel(new std::string("*"));
+        $$ = new FetchVerticesSentence(labels, $5, $6);
+    }
+    | KW_FETCH KW_PROP KW_ON MUL vid_ref_expression yield_clause {
+        auto labels = new nebula::FetchLabels();
+        labels->addLabel(new std::string("*"));
+        $$ = new FetchVerticesSentence(labels, $5, $6);
+    }
+    ;
+
+fetch_labels
+    : name_label {
+        $$ = new FetchLabels();
+        $$->addLabel($1);
+    }
+    | fetch_labels COMMA name_label {
+        $$ = $1;
+        $$->addLabel($3);
     }
     ;
 
@@ -898,11 +933,11 @@ edge_key_ref:
     ;
 
 fetch_edges_sentence
-    : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
+    : KW_FETCH KW_PROP KW_ON fetch_labels edge_keys yield_clause {
         auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
-    | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
+    | KW_FETCH KW_PROP KW_ON fetch_labels edge_key_ref yield_clause {
         auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
@@ -916,7 +951,7 @@ fetch_sentence
 find_path_sentence
     : KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(false);
+        auto *s = new FindPathSentence(false, false);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
@@ -926,7 +961,7 @@ find_path_sentence
     }
     | KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause
     /* where_clause */ {
-        auto *s = new FindPathSentence(true);
+        auto *s = new FindPathSentence(true, true);
         s->setFrom($4);
         s->setTo($5);
         s->setOver($6);
@@ -934,13 +969,23 @@ find_path_sentence
         /* s->setWhere($8); */
         $$ = s;
     }
+    | KW_FIND KW_NOLOOP KW_PATH from_clause to_clause over_clause find_path_upto_clause
+        /* where_clause */ {
+            auto *s = new FindPathSentence(false, true);
+            s->setFrom($4);
+            s->setTo($5);
+            s->setOver($6);
+            s->setStep($7);
+            /* s->setWhere($8); */
+            $$ = s;
+        }
     ;
 
 find_path_upto_clause
-    : %empty { $$ = new StepClause(5, true); }
+    : %empty { $$ = new StepClause(5); }
     | KW_UPTO INTEGER KW_STEPS {
         ifOutOfRange($2, @2);
-        $$ = new StepClause($2, true);
+        $$ = new StepClause($2);
     }
     ;
 
@@ -966,7 +1011,7 @@ limit_sentence
     | KW_LIMIT INTEGER KW_OFFSET INTEGER {
         ifOutOfRange($2, @2);
         ifOutOfRange($4, @4);
-        $$ = new LimitSentence($2, $4);
+        $$ = new LimitSentence($4, $2);
     }
     ;
 
@@ -1539,6 +1584,18 @@ download_sentence
         sentence->setUrl($3);
         $$ = sentence;
     }
+    | KW_DOWNLOAD KW_EDGE name_label KW_HDFS STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setEdge($3);
+        sentence->setUrl($5);
+        $$ = sentence;
+    }
+    | KW_DOWNLOAD KW_TAG name_label KW_HDFS STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setTag($3);
+        sentence->setUrl($5);
+        $$ = sentence;
+    }
     ;
 
 delete_edge_sentence
@@ -1553,12 +1610,23 @@ ingest_sentence
         auto sentence = new IngestSentence();
         $$ = sentence;
     }
+    | KW_INGEST KW_EDGE name_label {
+        auto sentence = new IngestSentence();
+        sentence->setEdge($3);
+        $$ = sentence;
+    }
+    | KW_INGEST KW_TAG name_label {
+        auto sentence = new IngestSentence();
+        sentence->setTag($3);
+        $$ = sentence;
+    }
     ;
 
 admin_sentence
     : KW_SUBMIT KW_JOB admin_operation {
         auto sentence = new AdminSentence("add_job");
         sentence->addPara(*$3);
+        delete $3;
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {

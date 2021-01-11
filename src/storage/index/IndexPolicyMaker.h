@@ -22,6 +22,40 @@ namespace storage {
  */
 using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::Operator>;
 
+enum RelationType : uint8_t {
+    kGTRel,
+    kGERel,
+    kLTRel,
+    kLERel,
+    kEQRel,
+    kNull,
+};
+
+struct Bound {
+    RelationType rel_;
+    VariantType  val_;
+    Bound() {
+        rel_ = RelationType::kNull;
+    }
+    Bound(RelationType rel, const VariantType& val) {
+        rel_ = rel;
+        val_ = val;
+    }
+};
+
+struct ScanBound {
+    Bound beginBound_;
+    Bound endBound_;
+    ScanBound() {
+        beginBound_ = Bound();
+        endBound_ = Bound();
+    }
+    ScanBound(const Bound& begin, const Bound& end) {
+        beginBound_ = begin;
+        endBound_ = end;
+    }
+};
+
 class IndexPolicyMaker {
 public:
     virtual ~IndexPolicyMaker() = default;
@@ -48,12 +82,14 @@ protected:
      *         execution policy according to PolicyType.
      *         In this method, it is best to use as many index columns as possible.
      **/
-    void buildPolicy();
+    bool buildPolicy();
 
     /**
      * Details Evaluate filter conditions.
      */
     bool exprEval(Getters &getters);
+
+    static RelationType toRel(RelationalExpression::Operator op);
 
 private:
     cpp2::ErrorCode decodeExpression(const std::string &filter);
@@ -64,16 +100,20 @@ private:
 
     cpp2::ErrorCode traversalExpression(const Expression *expr);
 
+    RelationalExpression::Operator reversalRelationalExprOP(RelationalExpression::Operator op);
+
+    bool writeScanItem(const std::string& prop, const OperatorItem& item);
+
 protected:
     meta::SchemaManager*                     schemaMan_{nullptr};
     meta::IndexManager*                      indexMan_{nullptr};
     std::unique_ptr<ExpressionContext>       expCtx_{nullptr};
     std::unique_ptr<Expression>              exp_{nullptr};
-    std::string                              prefix_;
     std::shared_ptr<nebula::cpp2::IndexItem> index_{nullptr};
-    bool                                     optimizedPolicy_{true};
-    bool                                     requiredFilter_{true};
+    bool                                     requiredFilter_{false};
     std::vector<OperatorItem>                operatorList_;
+    // map<field_name, scan_item>
+    std::map<std::string, ScanBound>         scanItems_;
 };
 }  // namespace storage
 }  // namespace nebula

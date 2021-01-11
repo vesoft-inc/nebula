@@ -28,12 +28,11 @@
 # HTTP2 service port
 --ws_h2_port=11002
 
+--heartbeat_interval_secs=10
+
 ########## storage ##########
 # Root data path, here should be only single path for metad
 --data_path=data/meta
 
-########## Misc #########
-# The default number of parts when a space is created
---default_parts_num=100
-# The default replica factor when a space is created
---default_replica_factor=1
+############## rocksdb Options ##############
+--rocksdb_wal_sync=true

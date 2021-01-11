@@ -37,6 +37,9 @@
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
+DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cpu,io");
+DEFINE_bool(lookup_concurrently, false,
+            "whether to traversal partitions concurrently in lookup processor");
 
 namespace nebula {
 namespace storage {
@@ -248,10 +251,15 @@ StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& 
 
 folly::Future<cpp2::LookUpIndexResp>
 StorageServiceHandler::future_lookUpIndex(const cpp2::LookUpIndexRequest& req) {
+    folly::Executor* executor = nullptr;
+    if (FLAGS_lookup_concurrently) {
+        executor = readerPool_.get();
+    }
     auto* processor = LookUpIndexProcessor::instance(kvstore_,
                                                      schemaMan_,
                                                      indexMan_,
                                                      &lookupVerticesQpsStat_,
+                                                     executor,
                                                      &vertexCache_);
     RETURN_FUTURE(processor);
 }

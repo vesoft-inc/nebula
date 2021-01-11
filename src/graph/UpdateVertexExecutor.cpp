@@ -68,7 +68,7 @@ Status UpdateVertexExecutor::prepareData() {
         }
     } while (false);
 
-    if (status.ok()) {
+    if (!status.ok()) {
         stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec());
     }
     return status;
@@ -214,7 +214,7 @@ void UpdateVertexExecutor::execute() {
                     doError(Status::Error("Maybe invalid tag or property in WHEN clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                    doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
+                    doError(Status::Error("Maybe invalid tag or property in SET/YIELD clause!"));
                     return;
                 case nebula::storage::cpp2::ErrorCode::E_FILTER_OUT:
                     // Treat as Ok so do nothing

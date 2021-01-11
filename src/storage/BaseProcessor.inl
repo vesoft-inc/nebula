@@ -55,6 +55,25 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 }
 
 template <typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doGetFirstRecord(GraphSpaceID spaceId,
+                                                          PartitionID partId,
+                                                          std::string& key,
+                                                          std::string* value) {
+    if (!FLAGS_enable_multi_versions) {
+        int64_t version = folly::Endian::big(0L);
+        key.append(reinterpret_cast<const char*>(&version), sizeof(int64_t));
+        return kvstore_->get(spaceId, partId, key, value);
+    } else {
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(spaceId, partId, key, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {
+            *value = iter->val().str();
+        }
+        return ret;
+    }
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV> data) {
@@ -93,6 +112,17 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         });
 }
 
+template <typename RESP>
+void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const std::string& start,
+                                        const std::string& end) {
+    this->kvstore_->asyncRemoveRange(
+        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
                                                  PartitionID partId,
@@ -118,20 +148,30 @@ kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
 }
 
 template <typename RESP>
-IndexValues
+StatusOr<IndexValues>
 BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
                                         const std::vector<nebula::cpp2::ColumnDef>& cols) {
     IndexValues values;
     if (reader == nullptr) {
-        return values;
+        return Status::Error("Invalid row reader");
     }
     for (auto& col : cols) {
         auto res = RowReader::getPropByName(reader, col.get_name());
-        if (!ok(res)) {
-            LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        if (ok(res)) {
+            auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+            values.emplace_back(col.get_type().get_type(), std::move(val));
+        } else {
+            VLOG(1) << "Bad value for prop: " << col.get_name();
+            // TODO: Should return NULL
+            auto defaultVal = RowReader::getDefaultProp(col.get_type().get_type());
+            if (!defaultVal.ok()) {
+                // Should never reach here.
+                return Status::Error("Skip bad type of prop : %s", col.get_name().c_str());
+            } else {
+                auto val = NebulaKeyUtils::encodeVariant(std::move(defaultVal).value());
+                values.emplace_back(col.get_type().get_type(), std::move(val));
+            }
         }
-        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
-        values.emplace_back(col.get_type().get_type(), std::move(val));
     }
     return values;
 }
@@ -144,11 +184,21 @@ void BaseProcessor<RESP>::collectProps(RowReader* reader,
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
             auto res = RowReader::getPropByName(reader, name);
+            VariantType v;
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for prop " << name;
-                continue;
+                VLOG(1) << "Bad value for prop: " << name;
+                // TODO: Should return NULL
+                auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
+                if (!defaultVal.ok()) {
+                    // Should never reach here.
+                    LOG(FATAL) << "Get default value failed for " << name;
+                    continue;
+                } else {
+                    v = std::move(defaultVal).value();
+                }
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             if (prop.returned_) {
                 switch (v.which()) {
                     case VAR_INT64:

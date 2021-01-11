@@ -5,6 +5,7 @@
  */
 
 #include "graph/LookupExecutor.h"
+#include <interface/gen-cpp2/common_types.h>
 
 namespace nebula {
 namespace graph {
@@ -39,6 +40,10 @@ Status LookupExecutor::prepareClauses() {
             break;
         }
         status = prepareYield();
+        if (!status.ok()) {
+            break;
+        }
+        status = prepareDistinct();
         if (!status.ok()) {
             break;
         }
@@ -125,20 +130,34 @@ Status LookupExecutor::prepareYield() {
                 return Status::SyntaxError("Not supported yet");
             }
             auto* prop = col->expr();
-            if (prop->kind() != Expression::kAliasProp) {
-                return Status::SyntaxError("Expressions other than AliasProp are not supported");
+            const AliasPropertyExpression* aExpr;
+            if (prop->kind() == Expression::kAliasProp ||
+                (isEdge_ && prop->kind() == Expression::kEdgeSrcId) ||
+                (isEdge_ && prop->kind() == Expression::kEdgeDstId)) {
+                aExpr = static_cast<const AliasPropertyExpression*>(prop);
+            } else {
+                return Status::SyntaxError("Expressions other than "
+                                           "AliasProp/kEdgeSrcId/kEdgeDstId are not supported");
             }
-            auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(prop);
             auto st = checkAliasProperty(aExpr);
             if (!st.ok()) {
                 return st;
             }
-            if (schema->getFieldIndex(aExpr->prop()->c_str()) < 0) {
+            if (prop->kind() == Expression::kAliasProp &&
+                schema->getFieldIndex(aExpr->prop()->c_str()) < 0) {
                 LOG(ERROR) << "Unknown column " << aExpr->prop()->c_str();
                 return Status::Error("Unknown column `%s' in schema", aExpr->prop()->c_str());
             }
             returnCols_.emplace_back(aExpr->prop()->c_str());
         }
+    }
+    return Status::OK();
+}
+
+Status LookupExecutor::prepareDistinct() {
+    auto *clause = sentence_->yieldClause();
+    if (clause != nullptr) {
+        distinct_ = clause->isDistinct();
     }
     return Status::OK();
 }
@@ -157,7 +176,7 @@ Status LookupExecutor::optimize() {
         if (!status.ok()) {
             break;
         }
-        status = findValidIndex();
+        status = findOptimalIndex();
         if (!status.ok()) {
             break;
         }
@@ -170,29 +189,43 @@ Status LookupExecutor::optimize() {
     return status;
 }
 
-Status LookupExecutor::traversalExpr(const Expression *expr) {
+Status LookupExecutor::traversalExpr(const Expression *expr, const meta::SchemaProviderIf* schema) {
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
+            Status ret = Status::OK();
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
-            if (lExpr->op() == LogicalExpression::Operator::XOR) {
-                return Status::SyntaxError("Syntax error : %s", lExpr->toString().c_str());
+            if (lExpr->op() == LogicalExpression::Operator::XOR ||
+                lExpr->op() == LogicalExpression::Operator::OR) {
+                return Status::SyntaxError("OR and XOR are not supported "
+                                           "in lookup where clause ：%s",
+                                           lExpr->toString().c_str());
             }
             auto* left = lExpr->left();
-            traversalExpr(left);
+            ret = traversalExpr(left, schema);
+            if (!ret.ok()) {
+                return ret;
+            }
             auto* right = lExpr->right();
-            traversalExpr(right);
+            ret = traversalExpr(right, schema);
+            if (!ret.ok()) {
+                return ret;
+            }
             break;
         }
         case nebula::Expression::kRelational : {
             std::string prop;
             VariantType v;
             auto* rExpr = dynamic_cast<const RelationalExpression*>(expr);
+            auto ret = relationalExprCheck(rExpr->op());
+            if (!ret.ok()) {
+                return ret;
+            }
             auto* left = rExpr->left();
             auto* right = rExpr->right();
-            /**
-             *  TODO (sky) : Does not support left expr and right expr are both kAliasProp.
-             */
-            if (left->kind() == nebula::Expression::kAliasProp) {
+            if (left->kind() == nebula::Expression::kAliasProp &&
+                right->kind() == nebula::Expression::kAliasProp) {
+                return Status::SyntaxError("Does not support left and right are both property");  
+            } else if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 auto st = checkAliasProperty(aExpr);
                 if (!st.ok()) {
@@ -212,15 +245,19 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
                 return Status::SyntaxError("Unsupported expression ：%s",
                                            rExpr->toString().c_str());
             }
+
+            if (rExpr->op() != RelationalExpression::Operator::EQ &&
+                rExpr->op() != RelationalExpression::Operator::NE) {
+                auto type = schema->getFieldType(prop).type;
+                if (!supportedDataTypeForRange(type)) {
+                    return Status::SyntaxError("Data type of field %s not support range scan",
+                                               prop.c_str());
+                }
+            }
             break;
         }
         case nebula::Expression::kFunctionCall : {
-            auto* fExpr = dynamic_cast<const FunctionCallExpression*>(expr);
-            auto* name = fExpr->name();
-            if (*name == "udf_is_in") {
-                return Status::SyntaxError("Unsupported function ： %s", name->c_str());
-            }
-            break;
+            return Status::SyntaxError("Function expressions are not supported yet");
         }
         default : {
             return Status::SyntaxError("Syntax error ： %s", expr->toString().c_str());
@@ -230,7 +267,15 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
 }
 
 Status LookupExecutor::checkFilter() {
-    auto status = traversalExpr(sentence_->whereClause()->filter());
+    auto *sm = ectx()->schemaManager();
+    auto schema = isEdge_
+                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
+                  : sm->getTagSchema(spaceId_, tagOrEdge_);
+    if (schema == nullptr) {
+        return Status::Error("No schema found %s", from_->c_str());
+    }
+
+    auto status = traversalExpr(sentence_->whereClause()->filter(), schema.get());
     if (!status.ok()) {
         return status;
     }
@@ -240,83 +285,238 @@ Status LookupExecutor::checkFilter() {
     return Status::OK();
 }
 
-Status
-LookupExecutor::findValidIndex() {
-    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes;
-    std::set<std::string> filterCols;
-    for (auto& filter : filters_) {
-        filterCols.insert(filter.first);
-    }
-    /**
-     * step 1 : found out all valid indexes. for example :
-     * tag (col1 , col2, col3)
-     * index1 on tag (col1, col2)
-     * index2 on tag (col2, col1)
-     * index3 on tag (col3)
-     *
-     * where where clause is below :
-     * col1 > 1 and col2 > 1 --> index1 and index2 are valid.
-     * col1 > 1 --> index1 is valid.
-     * col2 > 1 --> index2 is valid.
-     * col3 > 1 --> index3 is valid.
-     */
-    for (auto& index : indexes_) {
-        bool matching = true;
-        size_t filterNum = 1;
-        for (const auto& field : index->get_fields()) {
-            auto it = std::find_if(filterCols.begin(), filterCols.end(),
-                                   [field](const auto &name) {
-                                       return field.get_name() == name;
-                                   });
-            if (it == filterCols.end()) {
-                matching = false;
-                break;
-            }
-            if (filterNum++ == filterCols.size()) {
-                break;
-            }
-        }
-        if (!matching || index->get_fields().size() < filterCols.size()) {
-            continue;
-        }
-        indexes.emplace_back(index);
-    }
-
-    if (indexes.empty()) {
+Status LookupExecutor::findOptimalIndex() {
+    // The rule of priority is '==' --> '< > <= >=' --> '!='
+    // Step 1 : find out all valid indexes for where condition.
+    auto validIndexes = findValidIndex();
+    if (validIndexes.empty()) {
+        LOG(ERROR) << "No valid index found";
         return Status::IndexNotFound();
     }
+    // Step 2 : find optimal indexes for equal condition.
+    auto indexesEq = findIndexForEqualScan(validIndexes);
+    if (indexesEq.size() == 1) {
+        index_ = indexesEq[0]->get_index_id();
+        return Status::OK();
+    }
+    // Step 3 : find optimal indexes for range condition.
+    auto indexesRange = findIndexForRangeScan(indexesEq);
 
-    /**
-     * step 2 , if have multiple valid indexes, get the best one.
-     * for example : if where clause is :
-     * col1 > 1 and col2 > 1 --> index1 and index2 are valid. get one of these at random.
-     * col1 > 1 and col2 == 1 --> index1 and index2 are valid.
-     *                            but need choose one for storage layer.
-     *                            here index2 is chosen because col2 have a equivalent value.
-     */
-    std::map<int32_t, IndexID> indexHint;
+    // At this stage, all the optimizations are done.
+    // Because the storage layer only needs one. So return first one of indexesRange.
+    index_ = indexesRange[0]->get_index_id();
+    return Status::OK();
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndexWithStr() {
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
+    // Because the string type is a variable-length field,
+    // the WHERE condition must cover all fields in index for performance.
+
+    // Maybe there are duplicate fields in the WHERE condition,
+    // so need to using std::set remove duplicate field at here, for example :
+    // where col1 > 1 and col1 < 5, the field col1 will appear twice in filters_.
+    std::set<std::string> cols;
+    for (const auto& filter : filters_) {
+        cols.emplace(filter.first);
+    }
+    for (const auto& index : indexes_) {
+        if (index->get_fields().size() != cols.size()) {
+            continue;
+        }
+        bool allColsHint = true;
+        for (const auto& field : index->get_fields()) {
+            auto it = std::find_if(cols.begin(), cols.end(),
+                                   [field](const auto &col) {
+                                       return field.get_name() == col;
+                                   });
+            if (it == cols.end()) {
+                allColsHint = false;
+                break;
+            }
+        }
+        if (allColsHint) {
+            validIndexes.emplace_back(index);
+        }
+    }
+    if (validIndexes.empty()) {
+        LOG(WARNING) << "The WHERE condition contains fields of string type, "
+                     << "So the WHERE condition must cover all fields in index.";
+    }
+    return validIndexes;
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndexNoStr() {
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> validIndexes;
+    // Find indexes for match all fields by where condition.
+    // Non-string type fields do not need to involve all fields
+    for (const auto& index : indexes_) {
+        bool allColsHint = true;
+        const auto& fields = index->get_fields();
+        // If index including string type fields, skip this index.
+        auto stringField = std::find_if(fields.begin(), fields.end(), [](const auto &f) {
+            return f.get_type().get_type() == nebula::cpp2::SupportedType::STRING;
+        });
+        if (stringField != fields.end()) {
+            continue;
+        }
+        for (const auto& filter : filters_) {
+            auto it = std::find_if(fields.begin(), fields.end(),
+                                   [filter](const auto &field) {
+                                       return field.get_name() == filter.first;
+                                   });
+            if (it == fields.end()) {
+                allColsHint = false;
+                break;
+            }
+        }
+        if (allColsHint) {
+            validIndexes.emplace_back(index);
+        }
+    }
+    // If the first field of the index does not match any condition, the index is invalid.
+    // remove it from validIndexes.
+    if (!validIndexes.empty()) {
+        auto index = validIndexes.begin();
+        while (index != validIndexes.end()) {
+            const auto& fields = index->get()->get_fields();
+            auto it = std::find_if(filters_.begin(), filters_.end(),
+                                   [fields](const auto &filter) {
+                                       return filter.first == fields[0].get_name();
+                                   });
+            if (it == filters_.end()) {
+                validIndexes.erase(index);
+            } else {
+                index++;
+            }
+        }
+    }
+    return validIndexes;
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findValidIndex() {
+    // Check contains string type field from where condition
+    auto *sm = ectx()->schemaManager();
+    auto schema = isEdge_
+                  ? sm->getEdgeSchema(spaceId_, tagOrEdge_)
+                  : sm->getTagSchema(spaceId_, tagOrEdge_);
+    if (schema == nullptr) {
+        LOG(ERROR) << "No schema found : " << from_;
+        return {};
+    }
+
+    // Check conditions whether contains string type for where condition.
+    // Different optimization rules：
+    // Contains string type : Conditions need to match all the index columns. for example
+    //                         where c1 == 'a' and c2 == 'b'
+    //                         index1 (c1, c2) is valid
+    //                         index2 (c1, c2, c3) is invalid.
+    //                         so index1 should be hit.
+    //
+    // Not contains string type : Conditions only needs to match the first N columns of the index.
+    //                            for example : where c1 == 1 and c2 == 2
+    //                            index1 (c1, c2) is valid.
+    //                            index2 (c1, c2, c3) is valid too.
+    //                            so index1 and index2 should be hit.
+    bool hasStringCol = false;
+    for (const auto& filter : filters_) {
+        auto type = schema->getFieldType(filter.first);
+        if (type.get_type() == nebula::cpp2::SupportedType::STRING) {
+            hasStringCol = true;
+            break;
+        }
+    }
+    return hasStringCol ? findValidIndexWithStr() : findValidIndexNoStr();
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findIndexForEqualScan(
+    const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes) {
+    std::vector<std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>> eqIndexHint;
     for (auto& index : indexes) {
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
             auto it = std::find_if(filters_.begin(), filters_.end(),
-                                   [field](const auto &rel) {
-                                       return rel.second == RelationalExpression::EQ;
+                                   [field](const auto &filter) {
+                                       return filter.first == field.get_name();
                                    });
             if (it == filters_.end()) {
                 break;
             }
-            ++hintCount;
+            if (it->second == RelationalExpression::Operator::EQ) {
+                ++hintCount;
+            } else {
+                break;
+            }
         }
-        indexHint[hintCount] = index->get_index_id();
+        eqIndexHint.emplace_back(hintCount, index);
     }
-    index_ = indexHint.rbegin()->second;
-    return Status::OK();
+    // Sort the priorityIdxs for equivalent condition.
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
+    auto comp = [] (std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& lhs,
+                    std::pair<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>>& rhs) {
+        return lhs.first > rhs.first;
+    };
+    std::sort(eqIndexHint.begin(), eqIndexHint.end(), comp);
+    // Get the index with the highest hit rate from eqIndexHint.
+    int32_t maxHint = eqIndexHint[0].first;
+    for (const auto& hint : eqIndexHint) {
+        if (hint.first < maxHint) {
+            break;
+        }
+        priorityIdxs.emplace_back(hint.second);
+    }
+    return priorityIdxs;
+}
+
+std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> LookupExecutor::findIndexForRangeScan(
+    const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& indexes) {
+    std::map<int32_t, std::shared_ptr<nebula::cpp2::IndexItem>> rangeIndexHint;
+    for (const auto& index : indexes) {
+        int32_t hintCount = 0;
+        for (const auto& field : index->get_fields()) {
+            auto fi = std::find_if(filters_.begin(), filters_.end(),
+                                   [field](const auto &rel) {
+                                       return rel.first == field.get_name();
+                                   });
+            if (fi == filters_.end()) {
+                break;
+            }
+            if (fi->second == RelationalExpression::Operator::EQ) {
+                continue;
+            }
+            if (fi->second == RelationalExpression::Operator::GE ||
+                fi->second == RelationalExpression::Operator::GT ||
+                fi->second == RelationalExpression::Operator::LE ||
+                fi->second == RelationalExpression::Operator::LT) {
+                hintCount++;
+            } else {
+                break;
+            }
+        }
+        rangeIndexHint[hintCount] = index;
+    }
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> priorityIdxs;
+    int32_t maxHint = rangeIndexHint.rbegin()->first;
+    for (auto iter = rangeIndexHint.rbegin(); iter != rangeIndexHint.rend(); iter++) {
+        if (iter->first < maxHint) {
+            break;
+        }
+        priorityIdxs.emplace_back(iter->second);
+    }
+    return priorityIdxs;
 }
 
 void LookupExecutor::lookUp() {
     auto *sc = ectx()->getStorageClient();
     auto filter = Expression::encode(sentence_->whereClause()->filter());
-    auto future  = sc->lookUpIndex(spaceId_, index_, filter, returnCols_, isEdge_);
+    // Get the columns that really need to be requested
+    std::vector<std::string> requestCols_;
+    for (auto& column : returnCols_) {
+        if (column != _SRC && column != _DST) {
+            requestCols_.emplace_back(column);
+        }
+    }
+    auto future  = sc->lookUpIndex(spaceId_, index_, filter, requestCols_, isEdge_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -329,6 +529,7 @@ void LookupExecutor::lookUp() {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
             }
+            ectx()->addWarningMsg("Lookup executor was partially performed");
         }
         finishExecution(std::forward<decltype(result)>(result));
     };
@@ -588,6 +789,10 @@ bool LookupExecutor::processFinalEdgeResult(RpcResponse &rpcResp, const Callback
     std::vector<nebula::cpp2::SupportedType> colTypes;
     std::vector<VariantType> record;
     record.reserve(returnCols_.size() + 3);
+    // Store values specified by user within yield clause
+    std::vector<VariantType> yieldRecord;
+    yieldRecord.reserve(returnCols_.size());
+    auto uniqResult = std::make_unique<std::unordered_set<size_t>>();
     std::shared_ptr<ResultSchemaProvider> schema = nullptr;
     for (auto &resp : all) {
         if (!resp.__isset.edges || resp.get_edges() == nullptr || resp.get_edges()->empty()) {
@@ -598,10 +803,23 @@ bool LookupExecutor::processFinalEdgeResult(RpcResponse &rpcResp, const Callback
             colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
             colTypes.emplace_back(nebula::cpp2::SupportedType::INT);
             if (!returnCols_.empty()) {
-                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
-                std::for_each(returnCols_.begin(), returnCols_.end(), [&](auto& col) {
-                    colTypes.emplace_back(schema->getFieldType(col).get_type());
-                });
+                // when the columns really requested to client (in lookup())are empty,
+                // resp.get_schema() will be nullptr
+                if (resp.get_schema() != nullptr) {
+                    schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
+                }
+                for (auto& col : returnCols_) {
+                    if (col == _SRC || col == _DST) {
+                        colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
+                    } else {
+                        if (schema == nullptr) {
+                            LOG(ERROR) << "Schema is null unexpected, "
+                                          "get fieldType failed for " << col;
+                            return false;
+                        }
+                        colTypes.emplace_back(schema->getFieldType(col).get_type());
+                    }
+                }
             }
         }
         for (const auto& data : *resp.get_edges()) {
@@ -609,15 +827,36 @@ bool LookupExecutor::processFinalEdgeResult(RpcResponse &rpcResp, const Callback
             record.emplace_back(edge.get_src());
             record.emplace_back(edge.get_dst());
             record.emplace_back(edge.get_ranking());
+            yieldRecord.clear();
             for (auto& column : returnCols_) {
-                auto reader = RowReader::getRowReader(data.get_props(), schema);
-                auto res = RowReader::getPropByName(reader.get(), column);
-                if (!ok(res)) {
-                    LOG(ERROR) << "Skip the bad value for prop " << column;
+                VariantType v;
+                if (column == _SRC) {
+                    v = edge.get_src();
+                } else if (column == _DST) {
+                    v = edge.get_dst();
+                } else {
+                    if (schema == nullptr) {
+                        LOG(ERROR) << "Schema is null unexpected, get value failed for " << column;
+                        return false;
+                    }
+                    auto reader = RowReader::getRowReader(data.get_props(), schema);
+                    auto res = RowReader::getPropByName(reader.get(), column);
+                    if (!ok(res)) {
+                        LOG(ERROR) << "Skip the bad value for prop " << column;
+                        continue;
+                    }
+                    v = value(std::move(res));
+                }
+                yieldRecord.emplace_back(v);
+                record.emplace_back(std::move(v));
+            }
+            // Check if duplicate, only for user-specified columns within yield clause
+            if (distinct_) {
+                auto ret = uniqResult->emplace(boost::hash_range(yieldRecord.begin(),
+                                                                 yieldRecord.end()));
+                if (!ret.second) {
                     continue;
                 }
-                auto&& v = value(std::move(res));
-                record.emplace_back(std::move(v));
             }
             auto cbStatus = cb(std::move(record), colTypes);
             if (!cbStatus.ok()) {
@@ -636,6 +875,10 @@ bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
     std::vector<nebula::cpp2::SupportedType> colTypes;
     std::vector<VariantType> record;
     record.reserve(returnCols_.size() + 1);
+    // Store values specified by user within yield clause
+    std::vector<VariantType> yieldRecord;
+    yieldRecord.reserve(returnCols_.size());
+    auto uniqResult = std::make_unique<std::unordered_set<size_t>>();
     std::shared_ptr<ResultSchemaProvider> schema = nullptr;
     for (auto &resp : all) {
         if (!resp.__isset.vertices ||
@@ -646,16 +889,29 @@ bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
         if (colTypes.empty()) {
             colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
             if (!returnCols_.empty()) {
-                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
-                std::for_each(returnCols_.begin(), returnCols_.end(), [&](auto& col) {
+                // when the columns really requested to client (in lookup())are empty,
+                // resp.get_schema() will be nullptr
+                if (resp.get_schema() != nullptr) {
+                    schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
+                }
+                for (auto& col : returnCols_) {
+                    if (schema == nullptr) {
+                        LOG(ERROR) << "Schema is null unexpected, get fieldType failed for " << col;
+                        return false;
+                    }
                     colTypes.emplace_back(schema->getFieldType(col).get_type());
-                });
+                }
             }
         }
         for (const auto& data : *resp.get_vertices()) {
             const auto& vertexId = data.get_vertex_id();
             record.emplace_back(vertexId);
+            yieldRecord.clear();
             for (auto& column : returnCols_) {
+                if (schema == nullptr) {
+                    LOG(ERROR) << "Schema is null unexpected, get value failed for " << column;
+                    return false;
+                }
                 auto reader = RowReader::getRowReader(data.get_props(), schema);
                 auto res = RowReader::getPropByName(reader.get(), column);
                 if (!ok(res)) {
@@ -663,7 +919,16 @@ bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
                     continue;
                 }
                 auto&& v = value(std::move(res));
-                record.emplace_back(v);
+                yieldRecord.emplace_back(v);
+                record.emplace_back(std::move(v));
+            }
+            // Check if duplicate, only for user-specified columns within yield clause
+            if (distinct_) {
+                auto ret = uniqResult->emplace(boost::hash_range(yieldRecord.begin(),
+                                                                 yieldRecord.end()));
+                if (!ret.second) {
+                    continue;
+                }
             }
             auto cbStatus = cb(std::move(record), colTypes);
             if (!cbStatus.ok()) {
@@ -676,5 +941,35 @@ bool LookupExecutor::processFinalVertexResult(RpcResponse &rpcResp,
     return true;
 }
 
+Status LookupExecutor::relationalExprCheck(RelationalExpression::Operator op) const {
+    // Compile will fail after added new relational operations.
+    // Need to consider the logic in method 'traversalExpr' after new relational operation added.
+    switch (op) {
+        case RelationalExpression::Operator::EQ :
+        case RelationalExpression::Operator::GE :
+        case RelationalExpression::Operator::GT :
+        case RelationalExpression::Operator::LE :
+        case RelationalExpression::Operator::LT :
+        case RelationalExpression::Operator::NE : {
+            return Status::OK();
+        }
+        case RelationalExpression::Operator::CONTAINS : {
+            return Status::SyntaxError("Unsupported 'CONTAINS' in where clause");
+        }
+    }
+    return Status::OK();
+}
+
+bool LookupExecutor::supportedDataTypeForRange(nebula::cpp2::SupportedType type) const {
+    switch (type) {
+        case nebula::cpp2::SupportedType::INT:
+        case nebula::cpp2::SupportedType::DOUBLE:
+        case nebula::cpp2::SupportedType::FLOAT:
+        case nebula::cpp2::SupportedType::TIMESTAMP:
+            return true;
+        default:
+            return false;
+    }
+}
 }  // namespace graph
 }  // namespace nebula

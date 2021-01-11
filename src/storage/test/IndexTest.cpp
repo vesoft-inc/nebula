@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
+#include "kvstore/RocksEngineConfig.h"
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
@@ -322,9 +323,9 @@ TEST(IndexTest, UpdateVertexTest) {
         auto* left = new RelationalExpression(srcExp1,
                                               RelationalExpression::Operator::GE,
                                               priExp1);
-        // right string: $^.3003.tag_3003_col_3 == tag_string_col_3_2;
-        auto* tag2 = new std::string("3003");
-        auto* prop2 = new std::string("tag_3003_col_3");
+        // right string: $^.3001.tag_3001_col_3 == tag_string_col_3_2;
+        auto* tag2 = new std::string("3001");
+        auto* prop2 = new std::string("tag_3001_col_3");
         auto* srcExp2 = new SourcePropertyExpression(tag2, prop2);
         std::string col3("tag_string_col_3");
         auto* priExp2 = new PrimaryExpression(col3);
@@ -343,22 +344,22 @@ TEST(IndexTest, UpdateVertexTest) {
         PrimaryExpression val1(1L);
         item1.set_value(Expression::encode(&val1));
         items.emplace_back(item1);
-        // string: 3005.tag_3005_col_4 = tag_string_col_4_2_new
+        // string: 3001.tag_3001_col_4 = tag_string_col_4_2_new
         cpp2::UpdateItem item2;
-        item2.set_name("3005");
-        item2.set_prop("tag_3005_col_4");
+        item2.set_name("3001");
+        item2.set_prop("tag_3001_col_4");
         std::string col4new("tag_string_col_4_2_new");
         PrimaryExpression val2(col4new);
         item2.set_value(Expression::encode(&val2));
         items.emplace_back(item2);
         req.set_update_items(std::move(items));
         LOG(INFO) << "Build yield...";
-        // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
+        // Return tag props: 3001.tag_3001_col_0, 3001.tag_3001_col_2, 3001.tag_3001_col_4
         decltype(req.return_columns) tmpColumns;
         for (int i = 0; i < 3; i++) {
             SourcePropertyExpression sourcePropExp(
-                    new std::string(folly::to<std::string>(3001 + i * 2)),
-                    new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
+                    new std::string(folly::to<std::string>(3001)),
+                    new std::string(folly::stringPrintf("tag_%d_col_%d", 3001, i * 2)));
             tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
         }
         req.set_return_columns(std::move(tmpColumns));
@@ -372,6 +373,7 @@ TEST(IndexTest, UpdateVertexTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
 
         LOG(INFO) << "Verify index ...";
         std::vector<std::string> keys;
@@ -627,6 +629,115 @@ TEST(IndexTest, RebulidEdgeIndexWithOfflineTest) {
             EXPECT_EQ(10, rowCount);
         }
     }
+}
+
+TEST(IndexTest, VertexBloomFilterTest) {
+    // vertex bloom filter should be used when enable_multi_versions is false
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/InsertVerticesTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+
+    auto writeData = [&] (VertexID vIdFrom, VertexID vIdTo) {
+        cpp2::AddVerticesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
+        PartitionID partId = 0;
+        auto vertices = TestUtils::setupVertices(partId, vIdFrom, vIdTo, 3001, 3010);
+        req.parts.emplace(partId, std::move(vertices));
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                        schemaMan.get(),
+                                                        indexMan.get(),
+                                                        nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    };
+
+    auto statistics = kvstore::getDBStatistics();
+    // write initial data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // overwrite existed data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // write not existed data
+    writeData(100, 200);
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    auto count = statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // when enable_multi_versions is true, whole key bloom filter won't be used anymore
+    FLAGS_enable_multi_versions = true;
+    writeData(200, 300);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), count);
+    FLAGS_enable_multi_versions = false;
+
+    FLAGS_enable_rocksdb_statistics = false;
+}
+
+TEST(IndexTest, EdgeBloomFilterTest) {
+    // edge bloom filter should be used when enable_multi_versions is false
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/InsertEdgesTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+
+    auto writeData = [&] (VertexID vIdFrom, VertexID vIdTo) {
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    indexMan.get(),
+                                                    nullptr);
+        cpp2::AddEdgesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
+        PartitionID partId = 0;
+        auto edges = TestUtils::setupEdges(partId, vIdFrom, vIdTo, 101);
+        req.parts.emplace(partId, std::move(edges));
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    };
+
+    // reset stat count
+    auto statistics = kvstore::getDBStatistics();
+    statistics->getAndResetTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    // write initial data
+    writeData(0, 100);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // overwrite existed data
+    writeData(0, 100);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // write not existed data
+    writeData(100, 200);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    auto count = statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->flush(0));
+
+    // when enable_multi_versions is true, whole key bloom filter won't be used anymore
+    FLAGS_enable_multi_versions = true;
+    writeData(200, 300);
+    statistics = kvstore::getDBStatistics();
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), count);
+    FLAGS_enable_multi_versions = false;
+
+    FLAGS_enable_rocksdb_statistics = false;
 }
 
 }  // namespace storage

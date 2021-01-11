@@ -21,6 +21,13 @@ Please clarify why the changes are needed. For instance,
   2. If you fix a bug, you can clarify why it is a bug.
 -->
 
+### Will break the compatibility? How if so?
+<!--
+Please label `alert/break' if so, such as
+  1. nGQL grammar changes;
+  2. RPC protocol can't be compatible with previous, refer to https://diwakergupta.github.io/thrift-missing-guide/#_versioning_compatibility;
+  3. Storage format; etc.
+-->
 
 ### Does this PR introduce any user-facing change?
 <!--
@@ -35,3 +42,10 @@ If tests were added, say they were added here. Please make sure to add some test
 If it was tested in a way different from regular unit tests, please clarify how you tested step by step, ideally copy and paste-able, so that other reviewers can test and check, and descendants can verify in the future.
 If tests were not added, please describe why they were not added and/or why it was difficult to add.
 -->
+
+### Checklist
+<!--Tick the checkbox(es) below to choose what you have done.-->
+
+- [ ] I've run the tests to see all new and existing tests pass
+- [ ] If this Pull Request resolves an issue, I linked to the issue in the text above
+- [ ] I've informed the technical writer about the documentation change if necessary

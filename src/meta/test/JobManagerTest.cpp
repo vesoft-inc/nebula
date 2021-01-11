@@ -34,6 +34,7 @@ protected:
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
         jobMgr = JobManager::getInstance();
+        jobMgr->status_ = JobManager::Status::NOT_START;
         jobMgr->init(kv_.get());
         LOG(INFO) << "exit" << __func__;
     }

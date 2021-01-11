@@ -74,7 +74,7 @@ AssertionResult LookupTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG lookup_tag_1(col1 string, col2 string, col3 string)";
+        std::string cmd = "CREATE TAG lookup_tag_1(col1 int, col2 int, col3 int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -82,7 +82,7 @@ AssertionResult LookupTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG lookup_tag_2(col1 string, col2 int, col3 double, col4 bool)";
+        std::string cmd = "CREATE TAG lookup_tag_2(col1 bool, col2 int, col3 double, col4 bool)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -90,7 +90,7 @@ AssertionResult LookupTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE lookup_edge_1(col1 string, col2 string, col3 string)";
+        std::string cmd = "CREATE EDGE lookup_edge_1(col1 int, col2 int, col3 int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -98,7 +98,7 @@ AssertionResult LookupTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE lookup_edge_2(col1 string,"
+        std::string cmd = "CREATE EDGE lookup_edge_2(col1 bool,"
                           "col2 int, col3 double, col4 bool)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {

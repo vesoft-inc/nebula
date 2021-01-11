@@ -75,7 +75,7 @@ prefix=$1
 install_dir=${prefix:-$build_root/install}
 download_dir=$build_root/downloads
 source_tar_name=nebula-third-party-src-1.0.tgz
-source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
+source_url=https://oss-cdn.nebula-graph.com.cn/third-party/${source_tar_name}
 logfile=$build_root/build.log
 cxx_cmd=${CXX:-g++}
 gcc_version=$(${CXX:-g++} -dumpfullversion -dumpversion)
@@ -146,6 +146,8 @@ cd $OLDPWD && rm -rf $build_dir
 # Remove all libtool files
 find $install_dir -name '*.la' | xargs rm -f
 
+march=$(uname -m)
+
 # Make krb5 relocatable
 sed -i 's/^prefix=.*$/prefix=$(dirname $(dirname $(readlink -f $0)))/' $install_dir/bin/krb5-config
 sed -i 's#^LDFLAGS=.*$#LDFLAGS="-L$prefix/lib -L$prefix/lib64"#' $install_dir/bin/krb5-config
@@ -154,14 +156,14 @@ sed -i -r 's#^DEFCKTNAME=.*(/var.*keytab).*#DEFCKTNAME="FILE:$prefix\1"#' $insta
 cat > $install_dir/version-info <<EOF
 Package         : Nebula Third Party
 glibc           : $libc_version
-Arch            : x86_64
+Arch            : $march
 Compiler        : GCC $gcc_version
 C++ ABI         : $abi_version
 Vendor          : VEsoft Inc.
 EOF
 
 function make_package {
-    exec_file=$build_root/vesoft-third-party-x86_64-libc-$libc_version-gcc-$gcc_version-abi-$abi_version.sh
+    exec_file=$build_root/vesoft-third-party-$march-libc-$libc_version-gcc-$gcc_version-abi-$abi_version.sh
 
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF

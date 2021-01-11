@@ -291,37 +291,26 @@ private:
 
 class FetchVerticesSentence final : public Sentence {
 public:
-    FetchVerticesSentence(std::string  *tag,
+    FetchVerticesSentence(FetchLabels  *tags,
                           VertexIDList *vidList,
                           YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
-        tag_.reset(tag);
+        tags_.reset(tags);
         vidList_.reset(vidList);
         yieldClause_.reset(clause);
     }
 
-    FetchVerticesSentence(std::string  *tag,
+    FetchVerticesSentence(FetchLabels  *tags,
                           Expression   *ref,
                           YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
-        tag_.reset(tag);
+        tags_.reset(tags);
         vidRef_.reset(ref);
         yieldClause_.reset(clause);
     }
 
-    explicit FetchVerticesSentence(Expression *vid) {
-        kind_ = Kind::kFetchVertices;
-        tag_ = std::make_unique<std::string>("*");
-        vidList_ = std::make_unique<VertexIDList>();
-        vidList_->add(vid);
-    }
-
-    bool isAllTagProps() {
-        return *tag_ == "*";
-    }
-
-    auto tag() const {
-        return tag_.get();
+    FetchLabels* tags() const {
+        return tags_.get();
     }
 
     auto vidList() const {
@@ -340,14 +329,10 @@ public:
         return yieldClause_.get();
     }
 
-    void setYieldClause(YieldClause *clause) {
-        yieldClause_.reset(clause);
-    }
-
     std::string toString() const override;
 
 private:
-    std::unique_ptr<std::string>    tag_;
+    std::unique_ptr<FetchLabels>    tags_;
     std::unique_ptr<VertexIDList>   vidList_;
     std::unique_ptr<Expression>     vidRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
@@ -440,20 +425,20 @@ private:
 
 class FetchEdgesSentence final : public Sentence {
 public:
-    FetchEdgesSentence(std::string *edge,
+    FetchEdgesSentence(FetchLabels *edges,
                        EdgeKeys    *keys,
                        YieldClause *clause) {
         kind_ = Kind::kFetchEdges;
-        edge_.reset(edge);
+        edges_.reset(edges);
         edgeKeys_.reset(keys);
         yieldClause_.reset(clause);
     }
 
-    FetchEdgesSentence(std::string *edge,
+    FetchEdgesSentence(FetchLabels *edges,
                        EdgeKeyRef  *ref,
                        YieldClause *clause) {
         kind_ = Kind::kFetchEdges;
-        edge_.reset(edge);
+        edges_.reset(edges);
         keyRef_.reset(ref);
         yieldClause_.reset(clause);
     }
@@ -486,14 +471,14 @@ public:
         return yieldClause_.get();
     }
 
-    std::string* edge() const {
-        return edge_.get();
+    FetchLabels* edges() const {
+        return edges_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<std::string>    edge_;
+    std::unique_ptr<FetchLabels>    edges_;
     std::unique_ptr<EdgeKeys>       edgeKeys_;
     std::unique_ptr<EdgeKeyRef>     keyRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
@@ -501,9 +486,10 @@ private:
 
 class FindPathSentence final : public Sentence {
 public:
-    explicit FindPathSentence(bool isShortest) {
+    explicit FindPathSentence(bool isShortest, bool isNoLoop) {
         kind_ = Kind::kFindPath;
         isShortest_ = isShortest;
+        isNoLoop_ = isNoLoop;
     }
 
     void setFrom(FromClause *clause) {
@@ -550,10 +536,15 @@ public:
         return isShortest_;
     }
 
+    bool isNoLoop() const {
+        return isNoLoop_;
+    }
+
     std::string toString() const override;
 
 private:
     bool                            isShortest_;
+    bool                            isNoLoop_;
     std::unique_ptr<FromClause>     from_;
     std::unique_ptr<ToClause>       to_;
     std::unique_ptr<OverClause>     over_;
@@ -586,8 +577,14 @@ class YieldSentence final : public Sentence {
 public:
     explicit YieldSentence(YieldColumns *fields) {
         DCHECK(fields != nullptr);
-        yieldClause_ = std::make_unique<YieldClause>(fields);
         kind_ = Kind::kYield;
+        yieldClause_.reset(new YieldClause(fields));
+    }
+
+    explicit YieldSentence(YieldColumns *fields, bool distinct) {
+        DCHECK(fields != nullptr);
+        kind_ = Kind::kYield;
+        yieldClause_.reset(new YieldClause(fields, distinct));
     }
 
     std::vector<YieldColumn*> columns() const {

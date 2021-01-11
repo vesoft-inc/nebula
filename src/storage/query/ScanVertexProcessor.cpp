@@ -12,6 +12,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "meta/NebulaSchemaProvider.h"
+#include "storage/StorageFlags.h"
 
 
 DECLARE_int32(max_scan_block_size);
@@ -42,7 +43,7 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = doRangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        pushResultCode(to(kvRet), partId_);
+        handleErrorCode(kvRet, spaceId_, partId_);
         onFinished();
         return;
     }
@@ -63,7 +64,7 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         // only return data within time range [start, end)
         TagVersion version = folly::Endian::big(NebulaKeyUtils::getVersion(key));
         int64_t ts = std::numeric_limits<int64_t>::max() - version;
-        if (ts < startTime || ts >= endTime) {
+        if (FLAGS_enable_multi_versions && (ts < startTime || ts >= endTime)) {
             continue;
         }
 
