@@ -171,16 +171,22 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
 
     for (auto i = 0u; i <= steps; i++) {
         auto *node = path->node(i);
-        auto *label = node->label();
         auto *alias = node->alias();
         auto *props = node->props();
         auto anonymous = false;
-        if (label != nullptr) {
-            auto tid = sm->toTagID(space_.id, *label);
-            if (!tid.ok()) {
-                return Status::SemanticError("`%s': Unknown tag", label->c_str());
+        if (node->labels() != nullptr) {
+            auto &labels = node->labels()->labels();
+            for (const auto &label : labels) {
+                if (label != nullptr) {
+                    auto tid = sm->toTagID(space_.id, *label->label());
+                    if (!tid.ok()) {
+                        return Status::SemanticError("`%s': Unknown tag", label->label()->c_str());
+                    }
+                    nodeInfos[i].tids.emplace_back(tid.value());
+                    nodeInfos[i].labels.emplace_back(label->label());
+                    nodeInfos[i].labelProps.emplace_back(label->props());
+                }
             }
-            nodeInfos[i].tid = tid.value();
         }
         if (alias == nullptr) {
             anonymous = true;
@@ -191,16 +197,19 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
         }
         Expression *filter = nullptr;
         if (props != nullptr) {
-            auto result = makeSubFilter(*alias, props);
+            auto result = makeSubFilterWithoutSave(*alias, props);
             NG_RETURN_IF_ERROR(result);
             filter = result.value();
-        } else if (label != nullptr) {
-            auto result = makeSubFilter(*alias, props, *label);
-            NG_RETURN_IF_ERROR(result);
-            filter = result.value();
+        } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
+            const auto &labels = node->labels()->labels();
+            for (const auto &label : labels) {
+                auto result = makeSubFilterWithoutSave(*alias, label->props(), *label->label());
+                NG_RETURN_IF_ERROR(result);
+                filter = andConnect(filter, result.value());
+            }
         }
+        saveObject(filter);
         nodeInfos[i].anonymous = anonymous;
-        nodeInfos[i].label = label;
         nodeInfos[i].alias = alias;
         nodeInfos[i].props = props;
         nodeInfos[i].filter = filter;
@@ -481,6 +490,15 @@ StatusOr<Expression*>
 MatchValidator::makeSubFilter(const std::string &alias,
                               const MapExpression *map,
                               const std::string& label) const {
+    auto result = makeSubFilterWithoutSave(alias, map, label);
+    NG_RETURN_IF_ERROR(result);
+    return saveObject(result.value());
+}
+
+StatusOr<Expression*>
+MatchValidator::makeSubFilterWithoutSave(const std::string &alias,
+                                         const MapExpression *map,
+                                         const std::string &label) const {
     // Node has tag without property
     if (!label.empty() && map == nullptr) {
         auto *left = new ConstantExpression(label);
@@ -492,7 +510,7 @@ MatchValidator::makeSubFilter(const std::string &alias,
                     args);
         Expression *root = new RelationalExpression(Expression::Kind::kRelIn, left, right);
 
-        return saveObject(root);
+        return root;
     }
 
     DCHECK(map != nullptr);
@@ -523,7 +541,17 @@ MatchValidator::makeSubFilter(const std::string &alias,
         root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
     }
 
-    return saveObject(root);
+    return root;
+}
+
+/*static*/ Expression* MatchValidator::andConnect(Expression *left, Expression *right) {
+    if (left == nullptr) {
+        return right;
+    }
+    if (right == nullptr) {
+        return left;
+    }
+    return new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
 }
 
 Status MatchValidator::combineAliases(

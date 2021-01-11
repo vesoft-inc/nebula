@@ -120,6 +120,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
     MapItemList                            *map_item_list;
     MatchPath                              *match_path;
     MatchNode                              *match_node;
+    MatchNodeLabel                         *match_node_label;
+    MatchNodeLabelList                     *match_node_label_list;
     MatchEdge                              *match_edge;
     MatchEdgeProp                          *match_edge_prop;
     MatchEdgeTypeList                      *match_edge_type_list;
@@ -275,6 +277,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <match_path> match_path_pattern
 %type <match_path> match_path
 %type <match_node> match_node
+%type <match_node_label> match_node_label
+%type <match_node_label_list> match_node_label_list
 %type <match_edge> match_edge
 %type <match_edge_prop> match_edge_prop
 %type <match_return> match_return
@@ -1291,14 +1295,31 @@ match_node
     : L_PAREN match_alias R_PAREN {
         $$ = new MatchNode($2, nullptr, nullptr);
     }
-    | L_PAREN match_alias COLON name_label R_PAREN {
-        $$ = new MatchNode($2, $4, nullptr);
-    }
-    | L_PAREN match_alias COLON name_label map_expression R_PAREN {
-        $$ = new MatchNode($2, $4, $5);
+    | L_PAREN match_alias match_node_label_list R_PAREN {
+        $$ = new MatchNode($2, $3, nullptr);
     }
     | L_PAREN match_alias map_expression R_PAREN {
         $$ = new MatchNode($2, nullptr, $3);
+    }
+    ;
+
+match_node_label
+    : COLON name_label {
+        $$ = new MatchNodeLabel($2);
+    }
+    | COLON name_label map_expression {
+        $$ = new MatchNodeLabel($2, $3);
+    }
+    ;
+
+match_node_label_list
+    : match_node_label {
+        $$ = new MatchNodeLabelList();
+        $$->add($1);
+    }
+    | match_node_label_list match_node_label {
+        $$ = $1;
+        $1->add($2);
     }
     ;
 

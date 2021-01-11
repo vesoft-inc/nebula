@@ -142,9 +142,8 @@ std::string MatchNode::toString() const {
     if (alias_ != nullptr) {
         buf += *alias_;
     }
-    if (label_ != nullptr) {
-        buf += ':';
-        buf += *label_;
+    if (labels_ != nullptr) {
+        buf += labels_->toString();
     }
     if (props_ != nullptr) {
         buf += props_->toString();

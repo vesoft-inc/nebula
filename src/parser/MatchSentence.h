@@ -129,19 +129,11 @@ private:
     std::unique_ptr<MapExpression>                  props_;
 };
 
-
-class MatchNode final {
+class MatchNodeLabel final {
 public:
-    MatchNode(std::string *alias,
-              std::string *label = nullptr,
-              Expression *props = nullptr) {
-        alias_.reset(alias);
-        label_.reset(label);
-        props_.reset(static_cast<MapExpression*>(props));
-    }
-
-    const std::string* alias() const {
-        return alias_.get();
+    explicit MatchNodeLabel(std::string *label, Expression *props = nullptr) :
+        label_(label), props_(static_cast<MapExpression*>(props)) {
+            DCHECK(props == nullptr || props->kind() == Expression::Kind::kMap);
     }
 
     const std::string* label() const {
@@ -152,11 +144,73 @@ public:
         return props_.get();
     }
 
+    MapExpression* props() {
+        return props_.get();
+    }
+
+    std::string toString() const {
+        std::stringstream ss;
+        ss << ":" << *label_;
+        if (props_ != nullptr) {
+            ss << props_->toString();
+        }
+        return ss.str();
+    }
+
+private:
+    std::unique_ptr<std::string>                    label_;
+    std::unique_ptr<MapExpression>                  props_;
+};
+
+class MatchNodeLabelList final {
+public:
+    void add(MatchNodeLabel *label) {
+        labels_.emplace_back(label);
+    }
+
+    const auto& labels() const {
+        return labels_;
+    }
+
+    std::string toString() const {
+        std::stringstream ss;
+        for (const auto &label : labels_) {
+            ss << label->toString();
+        }
+        return ss.str();
+    }
+
+private:
+    std::vector<std::unique_ptr<MatchNodeLabel>> labels_;
+};
+
+class MatchNode final {
+public:
+    MatchNode(std::string *alias,
+              MatchNodeLabelList *labels,
+              Expression *props = nullptr) {
+        alias_.reset(alias);
+        labels_.reset(labels);
+        props_.reset(static_cast<MapExpression*>(props));
+    }
+
+    const std::string* alias() const {
+        return alias_.get();
+    }
+
+    const auto* labels() const {
+        return labels_.get();
+    }
+
+    const MapExpression* props() const {
+        return props_.get();
+    }
+
     std::string toString() const;
 
 private:
     std::unique_ptr<std::string>                    alias_;
-    std::unique_ptr<std::string>                    label_;
+    std::unique_ptr<MatchNodeLabelList>             labels_;
     std::unique_ptr<MapExpression>                  props_;
 };
 

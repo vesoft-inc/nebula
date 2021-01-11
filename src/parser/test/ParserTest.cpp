@@ -2740,6 +2740,41 @@ TEST(Parser, Match) {
     }
 }
 
+TEST(Parser, MatchMultipleTags) {
+    {
+        GQLParser parser;
+        std::string query = "MATCH (a:person:player) --> (b) RETURN *";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query =
+            "MATCH (:person {name: 'Tom'}:player {id: 233}) --> (:person {name: 'Jerry'}) RETURN *";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query =
+            "MATCH (:person:player {id: 233}) --> (:person {name: 'Jerry'}) RETURN *";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "MATCH () --> (:person {name: 'Jerry'}:player {id: 233}) RETURN *";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "MATCH () --> (:person {name: 'Jerry'}:player) RETURN *";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Zone) {
     {
         GQLParser parser;

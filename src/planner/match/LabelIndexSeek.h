@@ -32,7 +32,7 @@ private:
 
     StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
-    static StatusOr<IndexID> pickTagIndex(const NodeContext* nodeCtx);
+    static StatusOr<std::vector<IndexID>> pickTagIndex(const NodeContext* nodeCtx);
 
     static std::shared_ptr<meta::cpp2::IndexItem> selectIndex(
         const std::shared_ptr<meta::cpp2::IndexItem> candidate,

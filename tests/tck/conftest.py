@@ -262,7 +262,7 @@ def raised_type_error(err_type, time, sym, msg, graph_spaces):
     else:
         expect_msg = "{}: {}".format(err_type, msg)
     m = res_msg.startswith(expect_msg)
-    assert m, f'Could not find "{expect_msg}" in "{res_msg}, ngql:{ngql}"'
+    assert m, f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
 
 
 @then("drop the used space")

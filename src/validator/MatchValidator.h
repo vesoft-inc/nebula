@@ -55,6 +55,11 @@ private:
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
                                         const MapExpression *map,
                                         const std::string &label = "") const;
+    StatusOr<Expression*> makeSubFilterWithoutSave(const std::string &alias,
+                                                   const MapExpression *map,
+                                                   const std::string &label = "") const;
+
+    static Expression* andConnect(Expression *left, Expression *right);
 
     template <typename T>
     T* saveObject(T *obj) const {

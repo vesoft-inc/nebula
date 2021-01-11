@@ -33,9 +33,10 @@ enum class PatternKind : uint8_t {
 
 using Direction = MatchEdge::Direction;
 struct NodeInfo {
-    TagID                                   tid{0};
     bool                                    anonymous{false};
-    const std::string                      *label{nullptr};
+    std::vector<TagID>                      tids;
+    std::vector<const std::string*>         labels;
+    std::vector<MapExpression*>             labelProps;
     const std::string                      *alias{nullptr};
     const MapExpression                    *props{nullptr};
     Expression                             *filter{nullptr};
@@ -58,10 +59,10 @@ enum class AliasType : int8_t {
 
 struct ScanInfo {
     Expression                             *filter{nullptr};
-    int32_t                                 schemaId{0};
-    const std::string                      *schemaName{nullptr};
+    std::vector<int32_t>                    schemaIds;
+    std::vector<const std::string*>         schemaNames;
     // use for seek by index itself
-    IndexID                                 indexId{-1};
+    std::vector<IndexID>                    indexIds;
 };
 
 struct CypherClauseContextBase : AstContext {

@@ -24,7 +24,8 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 
 bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     auto& node = *nodeCtx->info;
-    if (node.label == nullptr) {
+    if (node.labels.size() != 1) {
+        // TODO multiple tag index seek need the IndexScan support
         return false;
     }
 
@@ -32,12 +33,16 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     Expression* filter = nullptr;
     if (matchClauseCtx->where != nullptr
             && matchClauseCtx->where->filter != nullptr) {
-        filter = MatchSolver::makeIndexFilter(
-            *node.label, *node.alias, matchClauseCtx->where->filter.get(), matchClauseCtx->qctx);
+        filter = MatchSolver::makeIndexFilter(*node.labels.back(),
+                                              *node.alias,
+                                               matchClauseCtx->where->filter.get(),
+                                               matchClauseCtx->qctx);
     }
     if (filter == nullptr) {
         if (node.props != nullptr && !node.props->items().empty()) {
-            filter = MatchSolver::makeIndexFilter(*node.label, node.props, matchClauseCtx->qctx);
+            filter = MatchSolver::makeIndexFilter(*node.labels.back(),
+                                                   node.props,
+                                                   matchClauseCtx->qctx);
         }
     }
 
@@ -46,8 +51,8 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     }
 
     nodeCtx->scanInfo.filter = filter;
-    nodeCtx->scanInfo.schemaId = node.tid;
-    nodeCtx->scanInfo.schemaName = node.label;
+    nodeCtx->scanInfo.schemaIds = node.tids;
+    nodeCtx->scanInfo.schemaNames = node.labels;
 
     return true;
 }
@@ -55,6 +60,8 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
     SubPlan plan;
     auto* matchClauseCtx = nodeCtx->matchClauseCtx;
+    DCHECK_EQ(nodeCtx->scanInfo.schemaIds.size(), 1) <<
+        "Not supported multiple tag properties seek.";
     using IQC = nebula::storage::cpp2::IndexQueryContext;
     IQC iqctx;
     iqctx.set_filter(Expression::encode(*nodeCtx->scanInfo.filter));
@@ -68,7 +75,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
                                 std::move(contexts),
                                 std::move(columns),
                                 false,
-                                nodeCtx->scanInfo.schemaId);
+                                nodeCtx->scanInfo.schemaIds.back());
     scan->setColNames({kVid});
     plan.tail = scan;
     plan.root = scan;
