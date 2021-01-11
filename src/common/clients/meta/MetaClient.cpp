@@ -6,15 +6,18 @@
 
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
-#include <folly/hash/Hash.h>
+#include "common/http/HttpClient.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/conf/Configuration.h"
 #include "common/stats/StatsManager.h"
 #include "common/clients/meta/FileBasedClusterIdMan.h"
+#include "common/webservice/Common.h"
+#include <folly/hash/Hash.h>
 #include <folly/ScopeGuard.h>
-
+#include <folly/executors/Async.h>
+#include <folly/futures/Future.h>
 
 DEFINE_int32(heartbeat_interval_secs, 3, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
@@ -24,7 +27,6 @@ DEFINE_int32(meta_client_timeout_ms, 60 * 1000,
              "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id",
               "file path saved clusterId");
-
 
 namespace nebula {
 namespace meta {
@@ -3399,6 +3401,43 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sess
                 std::move(promise),
                 true);
     return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
+                                                   int32_t hdfsPort,
+                                                   const std::string& hdfsPath,
+                                                   GraphSpaceID spaceId) {
+    auto url = folly::stringPrintf(
+            "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
+            active_.host.c_str(), FLAGS_ws_meta_http_port,
+            hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(), spaceId);
+    auto func = [url] {
+        auto result = http::HttpClient::get(url);
+        if (result.ok() && result.value() == "SSTFile dispatch successfully") {
+            LOG(INFO) << "Download Successfully";
+            return true;
+        } else {
+            LOG(ERROR) << "Download Failed: " << result.value();
+            return false;
+        }
+    };
+    return folly::async(func);
+}
+
+folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
+    auto url = folly::stringPrintf("http://%s:%d/ingest-dispatch?space=%d",
+                                   active_.host.c_str(), FLAGS_ws_meta_http_port, spaceId);
+    auto func = [url] {
+        auto result = http::HttpClient::get(url);
+        if (result.ok() && result.value() == "SSTFile ingest successfully") {
+            LOG(INFO) << "Ingest Successfully";
+            return true;
+        } else {
+            LOG(ERROR) << "Ingest Failed";
+            return false;
+        }
+    };
+    return folly::async(func);
 }
 
 }  // namespace meta
