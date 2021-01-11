@@ -101,6 +101,10 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -190,6 +194,10 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -256,6 +264,10 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
      *                             |
      *                    +--------+---------+
      *                    |  AggregateNode   |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |    DeDupNode     |
      *                    +--------+---------+
      *                       |            |
      *   +----------+-----------+     +----------+-----------+
@@ -360,6 +372,10 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -442,6 +458,10 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
      *                             |
      *                    +--------+---------+
      *                    |  AggregateNode   |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |    DeDupNode     |
      *                    +--------+---------+
      *                       |            |
      *   +----------+-----------+     +----------+-----------+
@@ -571,6 +591,10 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -647,6 +671,10 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -731,6 +759,10 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -828,6 +860,10 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -915,6 +951,10 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -999,6 +1039,10 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -1102,6 +1146,10 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
      *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
+     *              +--------+---------+
+     *                       |
      *            +----------+-----------+
      *            +   IndexOutputNode    +
      *            +----------+-----------+
@@ -1171,6 +1219,10 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -1244,6 +1296,10 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -1325,6 +1381,10 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
      *                       |
      *              +--------+---------+
      *              |  AggregateNode   |
+     *              +--------+---------+
+     *                       |
+     *              +--------+---------+
+     *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
      *            +----------+-----------+
@@ -1701,7 +1761,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         expected.rows.emplace_back(nebula::Row({"string_null"}));
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         expected.rows.emplace_back(nebula::Row({"3_c_null_null"}));
-        ASSERT_EQ(expected, *(resp.get_data()));
+        QueryTestUtils::checkResponse(resp, expected.colNames, expected.rows);
     }
     {
         LOG(INFO) << "lookup on tag where tag.col1 > 2";
@@ -1730,7 +1790,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"3_c_3_c"}));
         expected.rows.emplace_back(nebula::Row({"3_c_null_null"}));
-        ASSERT_EQ(expected, *(resp.get_data()));
+        QueryTestUtils::checkResponse(resp, expected.colNames, expected.rows);
     }
     {
         // col3 and col4 is out of index, need to pass as filter
@@ -2088,7 +2148,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"true_1_1.0_a"}));
         expected.rows.emplace_back(nebula::Row({"true_4_null_d"}));
-        ASSERT_EQ(expected, *(resp.get_data()));
+        QueryTestUtils::checkResponse(resp, expected.colNames, expected.rows);
     }
     {
         LOG(INFO) << "lookup on tag where tag.col_bool == true and tag.col_int == 1";
@@ -2471,7 +2531,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         nebula::DataSet expected({std::string("111.").append(kVid)});
         expected.rows.emplace_back(nebula::Row({"null_2_2.0_b"}));
         expected.rows.emplace_back(nebula::Row({"all_null"}));
-        ASSERT_EQ(expected, *(resp.get_data()));
+        QueryTestUtils::checkResponse(resp, expected.colNames, expected.rows);
     }
     {
         LOG(INFO) << "lookup on tag where tag.col_bool == null and tag.col_int == null";
@@ -2694,6 +2754,219 @@ TEST(LookupIndexTest, NullablePropertyTest) {
     }
 }
 
+
+TEST(LookupIndexTest, DeDupTagIndexTest) {
+    fs::TempDir rootPath("/tmp/DeDupTagIndexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    GraphSpaceID spaceId = 1;
+    auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(vIdLen.ok());
+    auto totalParts = cluster.getTotalParts();
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+
+    /**
+     * two IndexQueryContext, where player.name_ == "Rudy Gay" OR player.name_ == "Rudy Gay"
+     * lookup plan should be :
+     *                    +--------+---------+
+     *                    |       Plan       |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |  AggregateNode   |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |    DeDupNode     |
+     *                    +--------+---------+
+     *                       |            |
+     *   +----------+-----------+     +----------+-----------+
+     *   +   IndexOutputNode    +     +   IndexOutputNode    +
+     *   +----------+-----------+     +----------+-----------+
+     *              |                            |
+     *   +----------+-----------+     +----------+-----------+
+     *   +    IndexScanNode     +     +    IndexScanNode     +
+     *   +----------+-----------+     +----------+-----------+
+    **/
+    {
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        cpp2::LookupIndexRequest req;
+        decltype(req.indices) indices;
+        req.set_space_id(spaceId);
+        indices.set_tag_or_edge_id(1);
+        indices.set_is_edge(false);
+        decltype(req.parts) parts;
+        for (int32_t p = 1; p <= totalParts; p++) {
+            parts.emplace_back(p);
+        }
+        req.set_parts(std::move(parts));
+        decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kVid);
+        returnCols.emplace_back(kTag);
+        returnCols.emplace_back("age");
+        req.set_return_columns(std::move(returnCols));
+        // player.name_ == "Rudy Gay"
+        cpp2::IndexColumnHint columnHint1;
+        std::string name1 = "Rudy Gay";
+        columnHint1.set_begin_value(Value(name1));
+        columnHint1.set_column_name("name");
+        columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+        // player.name_ == "Kobe Bryant"
+        cpp2::IndexColumnHint columnHint2;
+        std::string name2 = "Rudy Gay";
+        columnHint2.set_begin_value(Value(name2));
+        columnHint2.set_column_name("name");
+        columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+        decltype(indices.contexts[0].column_hints) columnHints1;
+        columnHints1.emplace_back(std::move(columnHint1));
+        decltype(indices.contexts[0].column_hints) columnHints2;
+        columnHints2.emplace_back(std::move(columnHint2));
+        cpp2::IndexQueryContext context1;
+        context1.set_column_hints(std::move(columnHints1));
+        context1.set_filter("");
+        context1.set_index_id(1);
+        cpp2::IndexQueryContext context2;
+        context2.set_column_hints(std::move(columnHints2));
+        context2.set_filter("");
+        context2.set_index_id(1);
+        decltype(indices.contexts) contexts;
+        contexts.emplace_back(std::move(context1));
+        contexts.emplace_back(std::move(context2));
+        indices.set_contexts(std::move(contexts));
+        req.set_indices(std::move(indices));
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        std::vector<std::string> expectCols = {std::string("1.").append(kVid),
+                                               std::string("1.").append(kTag),
+                                               "1.age"};
+        decltype(resp.get_data()->rows) expectRows;
+
+        std::string vId1, vId2;
+        vId1.append(name1.data(), name1.size());
+        Row row1;
+        row1.emplace_back(Value(vId1));
+        row1.emplace_back(Value(1L));
+        row1.emplace_back(Value(34L));
+        expectRows.emplace_back(Row(row1));
+        vId2.append(name2.data(), name2.size());
+        QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+    }
+}
+
+TEST(LookupIndexTest, DedupEdgeIndexTest) {
+    fs::TempDir rootPath("/tmp/DedupEdgeIndexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    GraphSpaceID spaceId = 1;
+    auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(vIdLen.ok());
+    auto totalParts = cluster.getTotalParts();
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+    /**
+     * two IndexQueryContext
+     * where teammates.player1 == "Tony Parker" OR teammates.player1 == "Tony Parker"
+     * lookup plan should be :
+     *                    +--------+---------+
+     *                    |       Plan       |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |  AggregateNode   |
+     *                    +--------+---------+
+     *                             |
+     *                    +--------+---------+
+     *                    |    DeDupNode     |
+     *                    +--------+---------+
+     *                       |            |
+     *   +----------+-----------+     +----------+-----------+
+     *   +   IndexOutputNode    +     +   IndexOutputNode    +
+     *   +----------+-----------+     +----------+-----------+
+     *              |                            |
+     *   +----------+-----------+     +----------+-----------+
+     *   +    IndexScanNode     +     +    IndexScanNode     +
+     *   +----------+-----------+     +----------+-----------+
+    **/
+    {
+        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        cpp2::LookupIndexRequest req;
+        decltype(req.indices) indices;
+        req.set_space_id(spaceId);
+        indices.set_tag_or_edge_id(102);
+        indices.set_is_edge(true);
+        decltype(req.parts) parts;
+        for (int32_t p = 1; p <= totalParts; p++) {
+            parts.emplace_back(p);
+        }
+        req.set_parts(std::move(parts));
+        std::string tony = "Tony Parker";
+        std::string manu = "Manu Ginobili";
+        decltype(req.return_columns) returnCols;
+        returnCols.emplace_back(kSrc);
+        returnCols.emplace_back(kType);
+        returnCols.emplace_back(kRank);
+        returnCols.emplace_back(kDst);
+        returnCols.emplace_back("teamName");
+        req.set_return_columns(std::move(returnCols));
+        // teammates.player1 == "Tony Parker"
+        cpp2::IndexColumnHint columnHint1;
+        columnHint1.set_begin_value(Value(tony));
+        columnHint1.set_column_name("player1");
+        columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
+        cpp2::IndexColumnHint columnHint2;
+        columnHint2.set_begin_value(Value(tony));
+        columnHint2.set_column_name("player1");
+        columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
+        decltype(indices.contexts[0].column_hints) columnHints1;
+        columnHints1.emplace_back(std::move(columnHint1));
+        decltype(indices.contexts[0].column_hints) columnHints2;
+        columnHints2.emplace_back(std::move(columnHint2));
+        cpp2::IndexQueryContext context1;
+        context1.set_column_hints(std::move(columnHints1));
+        context1.set_filter("");
+        context1.set_index_id(102);
+        cpp2::IndexQueryContext context2;
+        context2.set_column_hints(std::move(columnHints2));
+        context2.set_filter("");
+        context2.set_index_id(102);
+        decltype(indices.contexts) contexts;
+        contexts.emplace_back(std::move(context1));
+        contexts.emplace_back(std::move(context2));
+        indices.set_contexts(std::move(contexts));
+        req.set_indices(std::move(indices));
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        std::vector<std::string> expectCols = {std::string("102.").append(kSrc),
+                                               std::string("102.").append(kType),
+                                               std::string("102.").append(kRank),
+                                               std::string("102.").append(kDst),
+                                               "102.teamName"};
+        decltype(resp.get_data()->rows) expectRows;
+
+        std::string vId1, vId2;
+        vId1.append(tony.data(), tony.size());
+        vId2.append(manu.data(), manu.size());
+        Row row1;
+        row1.emplace_back(Value(vId1));
+        row1.emplace_back(Value(102L));
+        row1.emplace_back(Value(2002L));
+        row1.emplace_back(Value(vId2));
+        row1.emplace_back(Value("Spurs"));
+        expectRows.emplace_back(Row(row1));
+        Row row2;
+        row2.emplace_back(Value(vId2));
+        row2.emplace_back(Value(102L));
+        row2.emplace_back(Value(2002L));
+        row2.emplace_back(Value(vId1));
+        row2.emplace_back(Value("Spurs"));
+        expectRows.emplace_back(Row(row2));
+        QueryTestUtils::checkResponse(resp, expectCols, expectRows);
+    }
+}
 }  // namespace storage
 }  // namespace nebula
 

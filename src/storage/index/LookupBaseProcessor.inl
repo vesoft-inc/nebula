@@ -49,8 +49,11 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         yieldCols_ = *req.get_return_columns();
     }
 
-    for (const auto& col : yieldCols_) {
-        resultDataSet_.colNames.emplace_back(col);
+    for (size_t i = 0; i < yieldCols_.size(); i++) {
+        resultDataSet_.colNames.emplace_back(yieldCols_[i]);
+        if (QueryUtils::toReturnColType(yieldCols_[i]) != QueryUtils::ReturnColType::kOther) {
+            deDupColPos_.emplace_back(i);
+        }
     }
 
     return cpp2::ErrorCode::SUCCEEDED;
@@ -126,6 +129,10 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
  *              |  AggregateNode   |
  *              +--------+---------+
  *                       |
+ *              +--------+---------+
+ *              |    DeDupNode     |
+ *              +--------+---------+
+ *                       |
  *            +----------+-----------+
  *            +  IndexOutputNode...  +
  *            +----------+-----------+
@@ -135,6 +142,7 @@ template<typename REQ, typename RESP>
 StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
     StoragePlan<IndexID> plan;
     auto IndexAggr = std::make_unique<AggregateNode<IndexID>>(&resultDataSet_);
+    auto deDup = std::make_unique<DeDupNode<IndexID>>(&resultDataSet_, deDupColPos_);
     int32_t filterId = 0;
     std::unique_ptr<IndexOutputNode<IndexID>> out;
 
@@ -231,9 +239,11 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
         if (out == nullptr) {
             return Status::Error("Index scan plan error");
         }
-        IndexAggr->addDependency(out.get());
+        deDup->addDependency(out.get());
         plan.addNode(std::move(out));
     }
+    IndexAggr->addDependency(deDup.get());
+    plan.addNode(std::move(deDup));
     plan.addNode(std::move(IndexAggr));
     return plan;
 }

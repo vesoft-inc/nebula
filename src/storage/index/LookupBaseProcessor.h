@@ -16,6 +16,7 @@
 #include "storage/exec/IndexEdgeNode.h"
 #include "storage/exec/IndexFilterNode.h"
 #include "storage/exec/IndexOutputNode.h"
+#include "storage/exec/DeDupNode.h"
 
 namespace nebula {
 namespace storage {
@@ -76,6 +77,7 @@ protected:
     IndexFilterItem                             filterItems_;
     // Save schema when column is out of index, need to read from data
     std::shared_ptr<const meta::NebulaSchemaProvider> schema_;
+    std::vector<size_t>                         deDupColPos_;
 };
 }  // namespace storage
 }  // namespace nebula

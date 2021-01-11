@@ -18,6 +18,34 @@ namespace storage {
 
 class QueryUtils final {
 public:
+    enum class ReturnColType : uint16_t {
+        kVid,
+        kTag,
+        kSrc,
+        kType,
+        kRank,
+        kDst,
+        kOther,
+    };
+
+    static ReturnColType toReturnColType(const std::string& name) {
+        if (name == kVid) {
+            return ReturnColType::kVid;
+        } else if (name == kTag) {
+            return ReturnColType::kTag;
+        } else if (name == kSrc) {
+            return ReturnColType::kSrc;
+        } else if (name == kType) {
+            return ReturnColType::kType;
+        } else if (name == kRank) {
+            return ReturnColType::kRank;
+        } else if (name == kDst) {
+            return ReturnColType::kDst;
+        } else {
+            return ReturnColType::kOther;
+        }
+    }
+
     static StatusOr<nebula::Value> readValue(RowReader* reader,
                                              const std::string& propName,
                                              const meta::SchemaProviderIf::Field* field) {
