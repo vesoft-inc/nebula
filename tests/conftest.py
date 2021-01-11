@@ -79,7 +79,7 @@ def pytest_configure(config):
 def get_conn_pool(host: str, port: int):
     config = Config()
     config.max_connection_pool_size = 20
-    config.timeout = 60000
+    config.timeout = 120000
     # init connection pool
     pool = ConnectionPool()
     if not pool.init([(host, port)], config):
