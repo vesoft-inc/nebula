@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_COLLECTALLEXPRSVISITOR_H_
-#define VISITOR_COLLECTALLEXPRSVISITOR_H_
+#ifndef VISITOR_FINDANYSUBEXPRVISITOR_H_
+#define VISITOR_FINDANYSUBEXPRVISITOR_H_
 
 #include <unordered_set>
 
@@ -15,15 +15,21 @@
 namespace nebula {
 namespace graph {
 
-class CollectAllExprsVisitor final : public ExprVisitorImpl {
+class FindAnySubExprVisitor final : public ExprVisitorImpl {
 public:
-    explicit CollectAllExprsVisitor(const std::unordered_set<Expression::Kind>& exprKinds);
+    explicit FindAnySubExprVisitor(std::unordered_set<Expression*> &subExprs,
+                                   bool needRecursiveSearch);
+
     bool ok() const override {
-        return !exprKinds_.empty();
+        return !found_;
     }
 
-    std::vector<const Expression*> exprs() && {
-        return std::move(exprs_);
+    bool found() const {
+        return found_;
+    }
+
+    const Expression* expr() const {
+        return expr_;
     }
 
 private:
@@ -36,6 +42,7 @@ private:
     void visit(ListExpression* expr) override;
     void visit(SetExpression* expr) override;
     void visit(MapExpression* expr) override;
+    void visit(CaseExpression* expr) override;
 
     void visit(ConstantExpression* expr) override;
     void visit(EdgePropertyExpression* expr) override;
@@ -52,22 +59,25 @@ private:
     void visit(VariableExpression* expr) override;
     void visit(VersionedVariableExpression* expr) override;
     void visit(LabelExpression* expr) override;
-    void visit(LabelAttributeExpression* expr) override;
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
-    void visit(CaseExpression* expr) override;
-    void visit(ListComprehensionExpression* expr) override;
-
     void visit(ColumnExpression* expr) override;
-
     void visitBinaryExpr(BinaryExpression* expr) override;
-    void collectExpr(const Expression* expr);
 
-    const std::unordered_set<Expression::Kind>& exprKinds_;
-    std::vector<const Expression*> exprs_;
+    void checkExprKind(const Expression*, const Expression*);
+
+    template <typename T>
+    void compareWithSubExprs(T* expr);
+
+    bool found_{false};
+    // need continue search
+    bool continue_{true};
+    const Expression* expr_{nullptr};
+    const std::unordered_set<Expression*> subExprs_;
+    bool needRecursiveSearch_{false};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_COLLECTALLEXPRSVISITOR_H_
+#endif   // VISITOR_FINDANYSUBEXPRVISITOR_H_

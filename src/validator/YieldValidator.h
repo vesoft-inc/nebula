@@ -12,6 +12,7 @@
 #include "common/base/Status.h"
 #include "planner/Query.h"
 #include "validator/Validator.h"
+#include "validator/GroupByValidator.h"
 
 namespace nebula {
 
@@ -37,18 +38,19 @@ public:
 private:
     Status validateYieldAndBuildOutputs(const YieldClause *clause);
     Status validateWhere(const WhereClause *clause);
-    Status checkAggFunAndBuildGroupItems(const YieldClause *clause);
     Status makeOutputColumn(YieldColumn *column);
+    Status makeImplicitGroupByValidator();
+    Status validateImplicitGroupBy();
     void genConstantExprValues();
 
 private:
-    bool hasAggFun_{false};
     YieldColumns *columns_{nullptr};
     std::vector<std::string> outputColumnNames_;
-    std::vector<Aggregate::GroupItem> groupItems_;
     std::string constantExprVar_;
     std::string userDefinedVarName_;
     Expression *filterCondition_{nullptr};
+    // validate for agg
+    std::unique_ptr<GroupByValidator> groupByValidator_{nullptr};
 };
 
 }   // namespace graph

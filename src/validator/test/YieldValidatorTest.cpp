@@ -113,19 +113,19 @@ TEST_F(YieldValidatorTest, FuncitonCall) {
         std::string query = "YIELD abs(true)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `abs(true)` is not a valid expression : Parameter's type error");
+                  "SemanticError: `abs(true)' is not a valid expression : Parameter's type error");
     }
     {
         std::string query = "YIELD abs(\"test\")";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `abs(test)` is not a valid expression : Parameter's type error");
+                  "SemanticError: `abs(test)' is not a valid expression : Parameter's type error");
     }
     {
         std::string query = "YIELD noexist(12)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `noexist(12)` is not a valid expression : Function `noexist' not "
+                  "SemanticError: `noexist(12)' is not a valid expression : Function `noexist' not "
                   "defined");
     }
 }
@@ -164,13 +164,13 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (int)\"123abc\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(INT)123abc` is not a valid expression ");
+                  "SemanticError: `(INT)123abc' is not a valid expression ");
     }
     {
         std::string query = "YIELD (int)\"abc123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(INT)abc123` is not a valid expression ");
+                  "SemanticError: `(INT)abc123' is not a valid expression ");
     }
     {
         std::string query = "YIELD (doublE)\"123\"";
@@ -184,7 +184,7 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (doublE)\".a123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(FLOAT).a123` is not a valid expression ");
+                  "SemanticError: `(FLOAT).a123' is not a valid expression ");
     }
     {
         std::string query = "YIELD (STRING)1.23";
@@ -485,12 +485,8 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "YIELD $^.person.age AS age, "
                      "like.likeness AS like"
                      "| YIELD COUNT(*), $-.age";
-        auto result = checkResult(query);
-        EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: Input columns without aggregation are not supported in YIELD "
-                  "statement without GROUP BY, near `$-.age'");
+        EXPECT_TRUE(checkResult(query));
     }
-    // Test input
     {
         auto query = "GO FROM \"1\" OVER like "
                      "YIELD $^.person.age AS age, "
@@ -537,7 +533,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "YIELD $^.person.age AS age, "
                      "like.likeness AS like"
                      "| YIELD AVG($-.age), SUM($-.like), COUNT(*), $-.age + 1";
-        EXPECT_FALSE(checkResult(query));
+        EXPECT_TRUE(checkResult(query));
     }
     {
         auto query = "GO FROM \"1\" OVER like "
@@ -546,7 +542,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "| YIELD AVG($-.*)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: could not apply aggregation function on `$-.*'");
+                  "SemanticError: Could not apply aggregation function `AVG($-.*)' on `$-.*'");
     }
     // Yield field has not input
     {
@@ -589,7 +585,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "YIELD $^.person.age AS age, "
                      "like.likeness AS like;"
                      "YIELD AVG($var.age), SUM($var.like), COUNT(*), $var.age + 1";
-        EXPECT_FALSE(checkResult(query));
+        EXPECT_TRUE(checkResult(query));
     }
     {
         auto query = "$var = GO FROM \"1\" OVER like "
@@ -626,7 +622,7 @@ TEST_F(YieldValidatorTest, AggCall) {
                      "YIELD AVG($var.*)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: could not apply aggregation function on `$var.*'");
+                  "SemanticError: Could not apply aggregation function `AVG($var.*)' on `$var.*'");
     }
 }
 

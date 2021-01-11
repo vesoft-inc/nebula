@@ -7,7 +7,7 @@
 #include "executor/query/AggregateExecutor.h"
 
 #include "common/datatypes/List.h"
-#include "common/function/AggregateFunction.h"
+#include "common/expression/AggregateExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "context/Result.h"
 #include "planner/PlanNode.h"
@@ -26,7 +26,7 @@ folly::Future<Status> AggregateExecutor::execute() {
     DCHECK(!!iter);
     QueryExpressionContext ctx(ectx_);
 
-    std::unordered_map<List, std::vector<std::unique_ptr<AggFun>>> result;
+    std::unordered_map<List, std::vector<std::unique_ptr<AggData>>, std::hash<nebula::List>> result;
     for (; iter->valid(); iter->next()) {
         List list;
         for (auto& key : groupKeys) {
@@ -35,19 +35,22 @@ folly::Future<Status> AggregateExecutor::execute() {
 
         auto it = result.find(list);
         if (it == result.end()) {
-            std::vector<std::unique_ptr<AggFun>> funs;
-            for (auto& item : groupItems) {
-                auto fun = AggFun::aggFunMap_[item.func](item.distinct);
-                auto& v = item.expr->eval(ctx(iter.get()));
-                fun->apply(v);
-                funs.emplace_back(std::move(fun));
-            }
-            result.emplace(std::make_pair(std::move(list), std::move(funs)));
+           std::vector<std::unique_ptr<AggData>> cols;
+           for (size_t i = 0; i < groupItems.size(); ++i) {
+               cols.emplace_back(new AggData());
+           }
+           result.emplace(std::make_pair(list, std::move(cols)));
         } else {
             DCHECK_EQ(it->second.size(), groupItems.size());
-            for (size_t i = 0; i < groupItems.size(); ++i) {
-                auto& v = groupItems[i].expr->eval(ctx(iter.get()));
-                it->second[i]->apply(v);
+        }
+
+        for (size_t i = 0; i < groupItems.size(); ++i) {
+            auto* item = groupItems[i];
+            if (item->kind() == Expression::Kind::kAggregate) {
+                static_cast<AggregateExpression*>(item)->setAggData(result[list][i].get());
+                item->eval(ctx(iter.get()));
+            } else {
+                result[list][i]->setResult(item->eval(ctx(iter.get())));
             }
         }
     }
@@ -57,8 +60,8 @@ folly::Future<Status> AggregateExecutor::execute() {
     ds.rows.reserve(result.size());
     for (auto& kv : result) {
         Row row;
-        for (auto& f : kv.second) {
-            row.values.emplace_back(f->getResult());
+        for (auto& v : kv.second) {
+            row.values.emplace_back(v->result());
         }
         ds.rows.emplace_back(std::move(row));
     }

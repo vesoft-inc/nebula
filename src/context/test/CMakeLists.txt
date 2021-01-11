@@ -4,7 +4,6 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 SET(CONTEXT_TEST_LIBS
-    $<TARGET_OBJECTS:common_agg_function_obj>
     $<TARGET_OBJECTS:common_charset_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_encryption_obj>

@@ -24,6 +24,8 @@
 #include "common/expression/CaseExpression.h"
 #include "common/expression/TextSearchExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
+#include "common/expression/AggregateExpression.h"
+
 #include "util/SchemaUtil.h"
 #include "util/ParserUtil.h"
 #include "context/QueryContext.h"
@@ -213,6 +215,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <expr> case_expression
 %type <expr> list_comprehension_expression
 %type <expr> compound_expression
+%type <expr> aggregate_expression
 %type <expr> text_search_expression
 %type <argument_list> argument_list opt_argument_list
 %type <type> type_spec
@@ -490,7 +493,6 @@ unreserved_keyword
 
 agg_function
     : KW_COUNT              { $$ = new std::string("COUNT"); }
-    | KW_COUNT_DISTINCT     { $$ = new std::string("COUNT_DISTINCT"); }
     | KW_SUM                { $$ = new std::string("SUM"); }
     | KW_AVG                { $$ = new std::string("AVG"); }
     | KW_MAX                { $$ = new std::string("MAX"); }
@@ -525,6 +527,9 @@ expression
         $$ = new ConstantExpression($1);
     }
     | compound_expression {
+        $$ = $1;
+    }
+    | aggregate_expression {
         $$ = $1;
     }
     | MINUS {
@@ -831,6 +836,23 @@ function_call_expression
     }
     | KW_DATETIME L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression(new std::string("datetime"), $3);
+    }
+    ;
+
+aggregate_expression
+    : agg_function L_PAREN expression R_PAREN {
+        $$ = new AggregateExpression($1, $3, false/*distinct*/);
+    }
+    | agg_function L_PAREN KW_DISTINCT expression R_PAREN {
+        $$ = new AggregateExpression($1, $4, true/*distinct*/);
+    }
+    | agg_function L_PAREN STAR R_PAREN {
+        auto star = new ConstantExpression(std::string("*"));
+        $$ = new AggregateExpression($1, star, false/*distinct*/);
+    }
+    | agg_function L_PAREN KW_DISTINCT STAR R_PAREN {
+        auto star = new ConstantExpression(std::string("*"));
+        $$ = new AggregateExpression($1, star, true/*distinct*/);
     }
     ;
 
@@ -1147,28 +1169,6 @@ yield_column
     }
     | expression KW_AS name_label {
         $$ = new YieldColumn($1, $3);
-    }
-    | agg_function L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setAggFunction($1);
-        $$ = yield;
-    }
-    | agg_function L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setAggFunction($1);
-        $$ = yield;
-    }
-    | agg_function L_PAREN STAR R_PAREN {
-        auto expr = new ConstantExpression(std::string("*"));
-        auto yield = new YieldColumn(expr);
-        yield->setAggFunction($1);
-        $$ = yield;
-    }
-    | agg_function L_PAREN STAR R_PAREN KW_AS name_label {
-        auto expr = new ConstantExpression(std::string("*"));
-        auto yield = new YieldColumn(expr, $6);
-        yield->setAggFunction($1);
-        $$ = yield;
     }
     ;
 

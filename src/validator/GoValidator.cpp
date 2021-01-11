@@ -51,7 +51,11 @@ Status GoValidator::validateWhere(WhereClause* where) {
     }
 
     filter_ = where->filter();
-
+    if (graph::ExpressionUtils::findAny(filter_, {Expression::Kind::kAggregate})) {
+        return Status::SemanticError(
+            "`%s', not support aggregate function in where sentence.",
+            filter_->toString().c_str());
+    }
     if (filter_->kind() == Expression::Kind::kLabelAttribute) {
         auto laExpr = static_cast<LabelAttributeExpression*>(filter_);
         where->setFilter(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(laExpr));
@@ -107,8 +111,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
             } else {
                 ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(col->expr());
             }
-
-            if (!col->getAggFunName().empty()) {
+            if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
                 return Status::SemanticError(
                     "`%s', not support aggregate function in go sentence.",
                     col->toString().c_str());

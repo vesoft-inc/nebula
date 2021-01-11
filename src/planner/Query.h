@@ -8,7 +8,7 @@
 #define PLANNER_QUERY_H_
 
 #include "common/base/Base.h"
-#include "common/function/AggregateFunction.h"
+#include "common/expression/AggregateExpression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "context/QueryContext.h"
 #include "parser/Clauses.h"
@@ -804,18 +804,10 @@ private:
  */
 class Aggregate final : public SingleInputNode {
 public:
-    struct GroupItem {
-        GroupItem(Expression* e, AggFun::Function f, bool d)
-            : expr(e), func(f), distinct(d) {}
-        Expression* expr;
-        AggFun::Function func;
-        bool distinct = false;
-    };
-
     static Aggregate* make(QueryContext* qctx,
                            PlanNode* input,
                            std::vector<Expression*>&& groupKeys,
-                           std::vector<GroupItem>&& groupItems) {
+                           std::vector<Expression*>&& groupItems) {
         return qctx->objPool()->add(
             new Aggregate(qctx, input, std::move(groupKeys), std::move(groupItems)));
     }
@@ -824,7 +816,7 @@ public:
         return groupKeys_;
     }
 
-    const std::vector<GroupItem>& groupItems() const {
+    const std::vector<Expression*>& groupItems() const {
         return groupItems_;
     }
 
@@ -834,7 +826,7 @@ private:
     Aggregate(QueryContext* qctx,
               PlanNode* input,
               std::vector<Expression*>&& groupKeys,
-              std::vector<GroupItem>&& groupItems)
+              std::vector<Expression*>&& groupItems)
         : SingleInputNode(qctx, Kind::kAggregate, input) {
         groupKeys_ = std::move(groupKeys);
         groupItems_ = std::move(groupItems);
@@ -842,7 +834,7 @@ private:
 
 private:
     std::vector<Expression*>    groupKeys_;
-    std::vector<GroupItem>      groupItems_;
+    std::vector<Expression*>    groupItems_;
 };
 
 class SwitchSpace final : public SingleInputNode {

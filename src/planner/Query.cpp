@@ -200,11 +200,9 @@ std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("groupKeys", folly::toJson(util::toJson(groupKeys_)), desc.get());
     folly::dynamic itemArr = folly::dynamic::array();
-    for (const auto& item : groupItems_) {
+    for (auto* item : groupItems_) {
         folly::dynamic itemObj = folly::dynamic::object();
-        itemObj.insert("distinct", util::toJson(item.distinct));
-        itemObj.insert("funcType", static_cast<uint8_t>(item.func));
-        itemObj.insert("expr", item.expr ? item.expr->toString() : "");
+        itemObj.insert("expr", item? item->toString() : "");
         itemArr.push_back(itemObj);
     }
     addDescription("groupItems", folly::toJson(itemArr), desc.get());

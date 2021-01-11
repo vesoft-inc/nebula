@@ -178,7 +178,7 @@ Feature: Groupby & limit Sentence
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name, abs(5)
+      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name
       YIELD $-.name AS name, SUM(1.5) AS sum, COUNT(*) AS count, 1+1 AS cal
       """
     Then the result should be, in any order, with relax comparison:
@@ -275,7 +275,7 @@ Feature: Groupby & limit Sentence
   Scenario: Groupby works with orderby or limit test
     When executing query:
       """
-      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name, abs(5)
+      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name
       YIELD $-.name AS name, SUM(1.5) AS sum, COUNT(*) AS count | ORDER BY $-.sum, $-.name
       """
     Then the result should be, in order, with relax comparison:
@@ -286,7 +286,7 @@ Feature: Groupby & limit Sentence
       | "LeBron James"    | 3.0 | 2     |
     When executing query:
       """
-      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name, abs(5)
+      GO FROM hash("Carmelo Anthony"),hash("Dwyane Wade") OVER like YIELD $$.player.name AS name | GROUP BY $-.name
       YIELD $-.name AS name, SUM(1.5) AS sum, COUNT(*) AS count | ORDER BY $-.sum, $-.name DESC | LIMIT 2
       """
     Then the result should be, in order, with relax comparison:
@@ -303,7 +303,7 @@ Feature: Groupby & limit Sentence
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM hash("NON EXIST VERTEX ID") OVER like YIELD $$.player.name AS name | GROUP BY $-.name, abs(5)
+      GO FROM hash("NON EXIST VERTEX ID") OVER like YIELD $$.player.name AS name | GROUP BY $-.name
       YIELD $-.name AS name, SUM(1.5) AS sum, COUNT(*) AS count | ORDER BY $-.sum | LIMIT 2
       """
     Then the result should be, in order, with relax comparison:

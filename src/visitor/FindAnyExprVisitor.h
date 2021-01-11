@@ -34,6 +34,7 @@ private:
     void visit(TypeCastingExpression* expr) override;
     void visit(UnaryExpression* expr) override;
     void visit(FunctionCallExpression* expr) override;
+    void visit(AggregateExpression* expr) override;
     void visit(ListExpression* expr) override;
     void visit(SetExpression* expr) override;
     void visit(MapExpression* expr) override;

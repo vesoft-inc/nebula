@@ -64,6 +64,11 @@ void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
     }
 }
 
+void ExprVisitorImpl::visit(AggregateExpression *expr) {
+    DCHECK(ok());
+    expr->arg()->accept(this);
+}
+
 // container expression
 void ExprVisitorImpl::visit(ListExpression *expr) {
     DCHECK(ok());

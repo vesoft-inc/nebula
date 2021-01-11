@@ -93,6 +93,14 @@ void RewriteSymExprVisitor::visit(FunctionCallExpression *expr) {
     }
 }
 
+void RewriteSymExprVisitor::visit(AggregateExpression *expr) {
+    auto* arg = expr->arg();
+    arg->accept(this);
+    if (expr_) {
+        expr->setArg(std::move(expr_).release());
+    }
+}
+
 void RewriteSymExprVisitor::visit(UUIDExpression *expr) {
     UNUSED(expr);
     hasWrongType_ = true;

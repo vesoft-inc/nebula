@@ -185,7 +185,7 @@ std::string AdminJobSentence::toString() const {
     case meta::cpp2::AdminJobOp::RECOVER:
         return "recover job";
     }
-    LOG(FATAL) << "Unkown job operation " << static_cast<uint8_t>(op_);
+    LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
 }
 
 meta::cpp2::AdminJobOp AdminJobSentence::getOp() const {

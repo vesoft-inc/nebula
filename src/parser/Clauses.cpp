@@ -115,14 +115,7 @@ std::string WhereClause::toString() const {
 std::string YieldColumn::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (aggFunName_ != nullptr) {
-        buf += *aggFunName_;
-        buf += "(";
-        buf += expr_->toString();
-        buf += ")";
-    } else {
-        buf += expr_->toString();
-    }
+    buf += expr_->toString();
 
     if (alias_ != nullptr) {
         buf += " AS ";
@@ -159,10 +152,6 @@ bool operator==(const YieldColumn &l, const YieldColumn &r) {
             return false;
         }
     } else if (l.expr() != r.expr()) {
-        return false;
-    }
-
-    if (l.getAggFunName() != r.getAggFunName()) {
         return false;
     }
 

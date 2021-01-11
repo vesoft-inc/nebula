@@ -10,6 +10,7 @@
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/FunctionCallExpression.h"
+#include "common/expression/AggregateExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"

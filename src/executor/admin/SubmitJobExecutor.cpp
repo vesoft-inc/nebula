@@ -112,7 +112,7 @@ folly::Future<Status> SubmitJobExecutor::execute() {
             // no default so the compiler will warning when lack
             }
             DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
-            return Status::Error("Unkown job job operation %d.", static_cast<int>(jobOp));
+            return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
         });
 }
 

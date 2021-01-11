@@ -30,6 +30,11 @@ void CollectAllExprsVisitor::visit(FunctionCallExpression *expr) {
     }
 }
 
+void CollectAllExprsVisitor::visit(AggregateExpression *expr) {
+    collectExpr(expr);
+    expr->arg()->accept(this);
+}
+
 void CollectAllExprsVisitor::visit(ListExpression *expr) {
     collectExpr(expr);
     for (auto &item : expr->items()) {

@@ -47,6 +47,7 @@ private:
     void visit(LogicalExpression *) override;
     // function call
     void visit(FunctionCallExpression *) override;
+    void visit(AggregateExpression *) override;
     void visit(UUIDExpression *) override;
     // variable expression
     void visit(VariableExpression *) override;

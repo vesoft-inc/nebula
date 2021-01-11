@@ -20,26 +20,35 @@ public:
     GroupByValidator(Sentence *sentence, QueryContext *context)
         : Validator(sentence, context) {}
 
-private:
     Status validateImpl() override;
 
     Status toPlan() override;
 
+private:
     Status validateGroup(const GroupClause *groupClause);
 
     Status validateYield(const YieldClause *yieldClause);
 
+    Status groupClauseSemanticCheck();
+    Status rewriteInnerAggExpr(YieldColumn* col, bool& rewrited);
+    Status checkAggExpr(AggregateExpression* aggExpr);
+
 private:
-    std::vector<YieldColumn*>                         groupCols_;
-    std::vector<YieldColumn*>                         yieldCols_;
+    std::vector<Expression*>                         yieldCols_;
+    std::vector<Expression*>                         yieldAggs_;
 
     // key: alias, value: input name
     std::unordered_map<std::string, YieldColumn*>     aliases_;
 
+    bool                                              needGenProject_{false};
     std::vector<std::string>                          outputColumnNames_;
+    std::vector<std::string>                          projOutputColumnNames_;
+
+    // used to generate Project node when there is an internally nested aggregateExpression
+    YieldColumns*                                     projCols_;
 
     std::vector<Expression*>                          groupKeys_;
-    std::vector<Aggregate::GroupItem>                 groupItems_;
+    std::vector<Expression*>                          groupItems_;
 };
 
 

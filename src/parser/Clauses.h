@@ -203,6 +203,10 @@ public:
         filter_.reset(expr);
     }
 
+    std::unique_ptr<WhereClause> clone() const {
+        return std::make_unique<WhereClause>(filter_->clone().release());
+    }
+
     std::string toString() const;
 
 private:
@@ -223,9 +227,6 @@ public:
         if (alias_ != nullptr) {
             col->setAlias(new std::string(*alias_));
         }
-        if (aggFunName_ != nullptr) {
-            col->setAggFunction(new std::string(*aggFunName_));
-        }
         return col;
     }
 
@@ -245,26 +246,11 @@ public:
         return alias_.get();
     }
 
-    void setAggFunction(std::string* fun = nullptr) {
-        if (fun == nullptr) {
-            return;
-        }
-        aggFunName_.reset(fun);
-    }
-
-    std::string getAggFunName() const {
-        if (aggFunName_ == nullptr) {
-            return "";
-        }
-        return *aggFunName_;
-    }
-
     std::string toString() const;
 
 private:
     std::unique_ptr<Expression>                 expr_;
     std::unique_ptr<std::string>                alias_;
-    std::unique_ptr<std::string>                aggFunName_{nullptr};
 };
 
 bool operator==(const YieldColumn &l, const YieldColumn &r);
@@ -292,6 +278,14 @@ public:
 
     bool empty() const {
         return columns_.empty();
+    }
+
+    std::unique_ptr<YieldColumns> clone() const {
+        auto cols = std::make_unique<YieldColumns>();
+        for (auto& col : columns_) {
+            cols->addColumn(col->clone().release());
+        }
+        return cols;
     }
 
     std::string toString() const;
@@ -326,6 +320,11 @@ public:
 
     bool isDistinct() const {
         return distinct_;
+    }
+
+    std::unique_ptr<YieldClause> clone() const {
+        auto cols = yieldColumns_->clone();
+        return std::make_unique<YieldClause>(cols.release(), distinct_);
     }
 
     std::string toString() const;

@@ -1086,8 +1086,11 @@ TEST_F(QueryValidatorTest, GoInvalid) {
         EXPECT_FALSE(checkResult(query));
     }
     {
+        // yield agg without groupBy is not supported
         std::string query = "GO FROM \"2\" OVER like YIELD COUNT(123);";
-        EXPECT_FALSE(checkResult(query));
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()), "SemanticError: `COUNT(123)', "
+                  "not support aggregate function in go sentence.");
     }
     {
         std::string query = "GO FROM \"1\" OVER like YIELD like._dst AS id, like._src AS id | GO "

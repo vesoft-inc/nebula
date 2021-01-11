@@ -404,13 +404,13 @@ class TestYield(NebulaTestSuite):
         resp = self.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
 
-        # query = '''YIELD 1+COUNT(*), 1+1'''
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
-        # columns = ["(1+count(*))", "(1+1)"]
-        # self.check_column_names(resp, columns)
-        # expect_result = [[2, 2]]
-        # self.check_result(resp, expect_result)
+        query = '''YIELD 1+COUNT(*), 1+1'''
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+        columns = ["(1+COUNT(*))", "(1+1)"]
+        self.check_column_names(resp, columns)
+        expect_result = [[2, 2]]
+        self.check_result(resp, expect_result)
 
         query = '''YIELD COUNT(*), 1+1'''
         resp = self.execute(query)
@@ -423,7 +423,7 @@ class TestYield(NebulaTestSuite):
         query = '''GO FROM "Carmelo Anthony" OVER like YIELD $$.player.age AS age, like.likeness AS like \
         | YIELD COUNT(*), $-.age'''
         resp = self.execute(query)
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+        self.check_resp_succeeded(resp)
 
         # Test input
         query = '''GO FROM "Carmelo Anthony" OVER like YIELD $$.player.age AS age, like.likeness AS like \

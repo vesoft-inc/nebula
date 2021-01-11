@@ -42,10 +42,6 @@ public:
         inputVarName_ = std::move(name);
     }
 
-    void setInputCols(ColsDef&& inputs) {
-        inputs_ = std::move(inputs);
-    }
-
     QueryContext* qctx() {
         return qctx_;
     }
@@ -62,8 +58,48 @@ public:
         return outputs_;
     }
 
+    void setOutputCols(const ColsDef&& outputCols) {
+        outputs_ = std::move(outputCols);
+    }
+
+    void setOutputCols(ColsDef& outputCols) {
+        outputs_ = outputCols;
+    }
+
     ColsDef inputCols() const {
         return inputs_;
+    }
+
+    void setInputCols(ColsDef&& inputCols) {
+        inputs_ = std::move(inputCols);
+    }
+
+    void setInputCols(const ColsDef& inputCols) {
+        inputs_ = inputCols;
+    }
+
+    ExpressionProps exprProps() const {
+        return exprProps_;
+    }
+
+    void setExprProps(ExpressionProps&& exprProps) {
+        exprProps_ = std::move(exprProps);
+    }
+
+    void setExprProps(const ExpressionProps& exprProps) {
+        exprProps_ = exprProps;
+    }
+
+    const std::set<std::string>&  userDefinedVarNameList() const {
+        return userDefinedVarNameList_;
+    }
+
+    void setUserDefinedVarNameList(std::set<std::string>&& userDefinedVarNameList) {
+        userDefinedVarNameList_ = std::move(userDefinedVarNameList);
+    }
+
+    void setUserDefinedVarNameList(const std::set<std::string>& userDefinedVarNameList) {
+        userDefinedVarNameList_ = userDefinedVarNameList;
     }
 
     void setNoSpaceRequired() {
@@ -141,19 +177,19 @@ protected:
     Sentence*                       sentence_{nullptr};
     QueryContext*                   qctx_{nullptr};
     ValidateContext*                vctx_{nullptr};
-    // The input columns and output columns of a sentence.
-    ColsDef                         outputs_;
-    ColsDef                         inputs_;
     // The variable name of the input node.
     std::string                     inputVarName_;
     // Admin sentences do not requires a space to be chosen.
     bool                            noSpaceRequired_{false};
 
+    // The input columns and output columns of a sentence.
+    ColsDef                         outputs_;
+    ColsDef                         inputs_;
+    ExpressionProps                 exprProps_;
+
     // root and tail of a subplan.
     PlanNode*                       root_{nullptr};
     PlanNode*                       tail_{nullptr};
-
-    ExpressionProps                 exprProps_;
     // user define Variable name list
     std::set<std::string>           userDefinedVarNameList_;
     // vid's Type

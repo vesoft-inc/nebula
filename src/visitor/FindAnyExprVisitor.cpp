@@ -35,6 +35,12 @@ void FindAnyExprVisitor::visit(FunctionCallExpression *expr) {
     }
 }
 
+void FindAnyExprVisitor::visit(AggregateExpression *expr) {
+    findExpr(expr);
+    if (found_) return;
+    expr->arg()->accept(this);
+}
+
 void FindAnyExprVisitor::visit(ListExpression *expr) {
     findExpr(expr);
     if (found_) return;

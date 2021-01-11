@@ -25,6 +25,7 @@ public:
     void visit(LogicalExpression *expr) override;
     // function call
     void visit(FunctionCallExpression *expr) override;
+    void visit(AggregateExpression *expr) override;
     // container expression
     void visit(ListExpression *expr) override;
     void visit(SetExpression *expr) override;

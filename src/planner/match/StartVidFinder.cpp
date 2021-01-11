@@ -33,7 +33,7 @@ StatusOr<SubPlan> StartVidFinder::transform(PatternContext* patternCtx) {
         return transformEdge(edgeCtx);
     }
 
-    return Status::Error("Unkown pattern kind.");
+    return Status::Error("Unknown pattern kind.");
 }
 
 }  // namespace graph

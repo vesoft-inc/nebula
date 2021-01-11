@@ -46,6 +46,8 @@ nebula-python
 .classpath
 cmake-build*/
 .vscode/
+core.*
+workspace.*
 
 #py
 *.egg-info

@@ -171,6 +171,14 @@ void RewriteInputPropVisitor::visit(FunctionCallExpression* expr) {
     }
 }
 
+void RewriteInputPropVisitor::visit(AggregateExpression* expr) {
+    auto* arg = expr->arg();
+    arg->accept(this);
+    if (ok()) {
+        expr->setArg(std::move(result_).release());
+    }
+}
+
 void RewriteInputPropVisitor::visit(TypeCastingExpression* expr) {
     expr->operand()->accept(this);
     if (ok()) {

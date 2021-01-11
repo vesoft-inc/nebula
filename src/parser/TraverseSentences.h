@@ -554,6 +554,7 @@ public:
         return yieldClause_.get();
     }
 
+    bool hasAgg() const;
     std::string toString() const override;
 
 private:
@@ -563,12 +564,21 @@ private:
 
 class GroupBySentence final : public Sentence {
 public:
-    GroupBySentence() {
+    GroupBySentence(YieldClause* yield = nullptr,
+                    WhereClause* having = nullptr,
+                    GroupClause* groupby = nullptr) {
         kind_ = Kind::kGroupBy;
+        yieldClause_.reset(yield);
+        havingClause_.reset(having);
+        groupClause_.reset(groupby);
     }
 
     void setGroupClause(GroupClause *clause) {
         groupClause_.reset(clause);
+    }
+
+    void setHavingClause(WhereClause *clause) {
+        havingClause_.reset(clause);
     }
 
     void setYieldClause(YieldClause *clause) {
@@ -579,6 +589,10 @@ public:
         return groupClause_.get();
     }
 
+    const WhereClause* havingClause() const {
+        return havingClause_.get();
+    }
+
     const YieldClause* yieldClause() const {
         return yieldClause_.get();
     }
@@ -586,8 +600,9 @@ public:
     std::string toString() const override;
 
 private:
-    std::unique_ptr<GroupClause>   groupClause_;
     std::unique_ptr<YieldClause>   yieldClause_;
+    std::unique_ptr<WhereClause>   havingClause_;
+    std::unique_ptr<GroupClause>   groupClause_;
 };
 
 class GetSubgraphSentence final : public Sentence {
