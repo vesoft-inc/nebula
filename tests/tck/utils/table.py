@@ -26,11 +26,14 @@ def _parse_value(cell: str, variables: dict) -> Value:
     return value
 
 
-def table(text):
+def table(text, handler=None):
     lines = list(csv.reader(io.StringIO(text), delimiter="|"))
     header = lines[0][1:-1]
     column_names = [column.strip() for column in header]
-    table = [[cell.strip() for cell in line[1:-1]] for line in lines[1:]]
+    table = [[
+        cell.strip() if handler is None else handler(cell.strip())
+        for cell in line[1:-1]
+    ] for line in lines[1:]]
 
     return {
         "column_names": column_names,

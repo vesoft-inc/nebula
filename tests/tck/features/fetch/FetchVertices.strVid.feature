@@ -51,9 +51,11 @@ Feature: Fetch String Vertices
   Scenario: [6] Fetch Vertices works with ORDER BY
     When executing query:
       """
-      $var = GO FROM 'Boris Diaw' over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name as name, player.age | ORDER BY name
+      $var = GO FROM 'Boris Diaw' over like YIELD like._dst as id;
+      FETCH PROP ON player $var.id YIELD player.name as name, player.age |
+      ORDER BY name
       """
-    Then the result should be, in any order:
+    Then the result should be, in order:
       | VertexID      | name          | player.age |
       | "Tim Duncan"  | "Tim Duncan"  | 42         |
       | "Tony Parker" | "Tony Parker" | 36         |

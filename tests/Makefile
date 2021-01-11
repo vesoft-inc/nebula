@@ -26,6 +26,7 @@ gherkin-fmt: install-deps
 	pip3 install --user poetry
 	git clone --branch master https://github.com/OneContainer/reformat-gherkin $(CURR_DIR)/reformat-gherkin
 	cd $(CURR_DIR)/reformat-gherkin && python3 -m poetry build
+	pip3 uninstall -y reformat-gherkin
 	pip3 install --user $(CURR_DIR)/reformat-gherkin/dist/reformat_gherkin*.whl
 	rm -rf $(CURR_DIR)/reformat-gherkin
 

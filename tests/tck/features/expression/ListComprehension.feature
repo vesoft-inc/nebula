@@ -39,8 +39,9 @@ Feature: ListComprehension
     Given a graph with space named "nba"
     When executing query:
       """
-      GO FROM "Tony Parker" OVER like WHERE like.likeness NOT IN
-      [x IN [95, 100] | x + $$.player.age] YIELD like._dst AS id, like.likeness AS likeness
+      GO FROM "Tony Parker" OVER like
+      WHERE like.likeness NOT IN [x IN [95, 100] | x + $$.player.age]
+      YIELD like._dst AS id, like.likeness AS likeness
       """
     Then the result should be, in any order:
       | id                  | likeness |

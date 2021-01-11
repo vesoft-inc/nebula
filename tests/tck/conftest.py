@@ -33,11 +33,11 @@ rparse = functools.partial(parsers.re)
 example_pattern = re.compile(r"<(\w+)>")
 
 
-def normalize_ngql_for_outline_scenario(request, ngql):
-    for group in example_pattern.findall(ngql):
+def normalize_outline_scenario(request, name):
+    for group in example_pattern.findall(name):
         fixval = request.getfixturevalue(group)
-        ngql = ngql.replace(f"<{group}>", fixval)
-    return ngql
+        name = name.replace(f"<{group}>", fixval)
+    return name
 
 
 @pytest.fixture
@@ -47,6 +47,7 @@ def graph_spaces():
 
 @given(parse('a graph with space named "{space}"'))
 def preload_space(
+    request,
     space,
     load_nba_data,
     load_nba_int_vid_data,
@@ -54,6 +55,7 @@ def preload_space(
     session,
     graph_spaces,
 ):
+    space = normalize_outline_scenario(request, space)
     if space == "nba":
         graph_spaces["space_desc"] = load_nba_data
     elif space == "nba_int_vid":
@@ -74,17 +76,20 @@ def empty_graph(session, graph_spaces):
 @given(parse("having executed:\n{query}"))
 def having_executed(query, session, request):
     ngql = " ".join(query.splitlines())
-    ngql = normalize_ngql_for_outline_scenario(request, ngql)
+    ngql = normalize_outline_scenario(request, ngql)
     response(session, ngql)
 
 
 @given(parse("create a space with following options:\n{options}"))
-def new_space(options, session, graph_spaces):
+def new_space(request, options, session, graph_spaces):
     lines = csv.reader(io.StringIO(options), delimiter="|")
-    opts = {line[1].strip(): line[2].strip() for line in lines}
+    opts = {
+        line[1].strip(): normalize_outline_scenario(request, line[2].strip())
+        for line in lines
+    }
     name = "EmptyGraph_" + space_generator()
     space_desc = SpaceDesc(
-        name=name,
+        name=opts.get("name", name),
         partition_num=int(opts.get("partition_num", 7)),
         replica_factor=int(opts.get("replica_factor", 1)),
         vid_type=opts.get("vid_type", "FIXED_STRING(30)"),
@@ -97,8 +102,8 @@ def new_space(options, session, graph_spaces):
 
 
 @given(parse('load "{data}" csv data to a new space'))
-def import_csv_data(data, graph_spaces, session, pytestconfig):
-    data_dir = os.path.join(DATA_DIR, data)
+def import_csv_data(request, data, graph_spaces, session, pytestconfig):
+    data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
     space_desc = load_csv_data(
         pytestconfig,
         session,
@@ -113,13 +118,14 @@ def import_csv_data(data, graph_spaces, session, pytestconfig):
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
     ngql = " ".join(query.splitlines())
-    ngql = normalize_ngql_for_outline_scenario(request, ngql)
+    ngql = normalize_outline_scenario(request, ngql)
     graph_spaces['result_set'] = session.execute(ngql)
     graph_spaces['ngql'] = ngql
 
 
 @given(parse("wait {secs:d} seconds"))
 @when(parse("wait {secs:d} seconds"))
+@then(parse("wait {secs:d} seconds"))
 def wait(secs):
     time.sleep(secs)
 
@@ -147,7 +153,10 @@ def cmp_dataset(
     vid_fn = None
     if space_desc is not None:
         vid_fn = murmurhash2 if space_desc.vid_type == 'int' else None
-    ds = dataset(table(result), graph_spaces.get("variables", {}))
+    ds = dataset(
+        table(result, lambda x: normalize_outline_scenario(request, x)),
+        graph_spaces.get("variables", {}),
+    )
     dscmp = DataSetComparator(strict=strict,
                               order=order,
                               included=included,

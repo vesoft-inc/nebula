@@ -51,9 +51,11 @@ Feature: Fetch Int Vid Vertices
   Scenario: [6] Fetch Vertices works with ORDER BY
     When executing query:
       """
-      $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name as name, player.age | ORDER BY name
+      $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id;
+      FETCH PROP ON player $var.id YIELD player.name as name, player.age |
+      ORDER BY name
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order:
       | VertexID            | name          | player.age |
       | hash("Tim Duncan")  | "Tim Duncan"  | 42         |
       | hash("Tony Parker") | "Tony Parker" | 36         |

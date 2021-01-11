@@ -207,6 +207,7 @@ Status setupLogging() {
                                  path.c_str(), ::strerror(errno));
         }
         if (::dup2(fd, ::fileno(stream)) == -1) {
+            ::close(fd);
             return Status::Error("Failed to ::dup2 from `%s' to stdout: %s",
                                  path.c_str(), ::strerror(errno));
         }
@@ -214,19 +215,9 @@ Status setupLogging() {
         return Status::OK();
     };
 
-    Status status = Status::OK();
-    do {
-        status = dup(FLAGS_stdout_log_file, stdout);
-        if (!status.ok()) {
-            break;
-        }
-        status = dup(FLAGS_stderr_log_file, stderr);
-        if (!status.ok()) {
-            break;
-        }
-    } while (false);
-
-    return status;
+    NG_RETURN_IF_ERROR(dup(FLAGS_stdout_log_file, stdout));
+    NG_RETURN_IF_ERROR(dup(FLAGS_stderr_log_file, stderr));
+    return Status::OK();
 }
 
 

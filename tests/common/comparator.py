@@ -296,8 +296,9 @@ class DataSetComparator:
                 return False
         return True
 
-    def _get_map_value_by_key(self, key: bytes,
-                             kv: Dict[Union[str, bytes], Value]):
+    def _get_map_value_by_key(self,
+                              key: bytes,
+                              kv: Dict[Union[str, bytes], Value]):
         for k, v in kv.items():
             if key == self.bstr(k):
                 return True, v

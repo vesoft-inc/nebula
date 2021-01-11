@@ -340,10 +340,13 @@ def create_space(space_desc: SpaceDesc, sess: Session):
     def exec(stmt):
         response(sess, stmt)
 
-    exec(space_desc.drop_stmt())
-    exec(space_desc.create_stmt())
-    time.sleep(3)
-    exec(space_desc.use_stmt())
+    stmts = [
+        space_desc.drop_stmt(),
+        space_desc.create_stmt(),
+        space_desc.use_stmt(),
+    ]
+
+    exec(";".join(stmts))
 
 
 def _load_data_from_file(sess, data_dir, fd):

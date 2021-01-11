@@ -182,3 +182,4 @@ Feature: Delete string vid of edge
       """
     Then the result should be, in any order:
       | like._dst |
+    And drop the used space
