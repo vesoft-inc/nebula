@@ -1130,6 +1130,13 @@ struct RemoveSessionReq {
     1: common.SessionID      session_id,
 }
 
+struct ReportTaskReq {
+    1: ErrorCode            code,
+    2: i32                  job_id,
+    3: i32                  task_id,
+    4: optional StatisItem  statis
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -1228,4 +1235,6 @@ service MetaService {
     ListSessionsResp listSessions(1: ListSessionsReq req);
     GetSessionResp getSession(1: GetSessionReq req);
     ExecResp removeSession(1: RemoveSessionReq req);
+
+    ExecResp reportTaskFinish(1: ReportTaskReq req);
 }

@@ -3230,6 +3230,29 @@ MetaClient::getStatis(GraphSpaceID spaceId) {
     return future;
 }
 
+folly::Future<StatusOr<cpp2::ErrorCode>> MetaClient::reportTaskFinish(
+    int32_t jobId,
+    int32_t taskId,
+    nebula::meta::cpp2::ErrorCode taskErrCode,
+    cpp2::StatisItem* statisticItem) {
+    cpp2::ReportTaskReq req;
+    req.set_code(taskErrCode);
+    req.set_job_id(jobId);
+    req.set_task_id(taskId);
+    if (statisticItem) {
+        req.set_statis(*statisticItem);
+    }
+    folly::Promise<StatusOr<cpp2::ErrorCode>> pro;
+    auto fut = pro.getFuture();
+    getResponse(
+        std::move(req),
+        [](auto client, auto request) { return client->future_reportTaskFinish(request); },
+        [](cpp2::ExecResp&& resp) -> cpp2::ErrorCode { return resp.code; },
+        std::move(pro),
+        true);
+    return fut;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::signInFTService(
     cpp2::FTServiceType type, const std::vector<cpp2::FTClient>& clients) {
     cpp2::SignInFTServiceReq req;
