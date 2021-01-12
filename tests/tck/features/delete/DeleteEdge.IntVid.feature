@@ -45,31 +45,31 @@ Feature: Delete int vid of edge
       GO FROM hash("Zhangsan"), hash("Jack") OVER friend
       YIELD $^.person.name, friend.intimacy, friend._dst
       """
-    Then the result should be, in any order:
-      | $^.person.name | friend.intimacy | friend._dst  |
-      | "Zhangsan"     | 90              | hash("Lisi") |
-      | "Zhangsan"     | 50              | hash("Jack") |
-      | "Jack"         | 100             | hash("Rose") |
+    Then the result should be, in any order, and the columns 2 should be hashed:
+      | $^.person.name | friend.intimacy | friend._dst |
+      | "Zhangsan"     | 90              | "Lisi"      |
+      | "Zhangsan"     | 50              | "Jack"      |
+      | "Jack"         | 100             | "Rose"      |
     # before delete edge to check value by go
     When executing query:
       """
       GO FROM hash("Zhangsan"), hash("Lisi") OVER schoolmate
       YIELD $^.person.name, schoolmate.likeness, schoolmate._dst
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, and the columns 2 should be hashed:
       | $^.person.name | schoolmate.likeness | schoolmate._dst |
-      | "Zhangsan"     | 60                  | hash("Jack")    |
-      | "Lisi"         | 70                  | hash("Rose")    |
+      | "Zhangsan"     | 60                  | "Jack"          |
+      | "Lisi"         | 70                  | "Rose"          |
     # before delete edge to check value by go
     When executing query:
       """
       GO FROM hash("Zhangsan") OVER transfer
       YIELD $^.person.name,transfer._rank, transfer.money, transfer._dst
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, and the columns 3 should be hashed:
       | $^.person.name | transfer._rank | transfer.money | transfer._dst |
-      | "Zhangsan"     | 1561013236     | 33             | hash("Lisi")  |
-      | "Zhangsan"     | 1561013237     | 77             | hash("Lisi")  |
+      | "Zhangsan"     | 1561013236     | 33             | "Lisi"        |
+      | "Zhangsan"     | 1561013237     | 77             | "Lisi"        |
     # delete edge friend
     When executing query:
       """
@@ -94,27 +94,27 @@ Feature: Delete int vid of edge
       GO FROM hash("Zhangsan"), hash("Jack") OVER friend
       YIELD $^.person.name, friend.intimacy, friend._dst
       """
-    Then the result should be, in any order:
-      | $^.person.name | friend.intimacy | friend._dst  |
-      | "Zhangsan"     | 50              | hash("Jack") |
+    Then the result should be, in any order, and the columns 2 should be hashed:
+      | $^.person.name | friend.intimacy | friend._dst |
+      | "Zhangsan"     | 50              | "Jack"      |
     # after delete edge to check value by go
     When executing query:
       """
       GO FROM hash("Zhangsan"), hash("Lisi") OVER schoolmate
       YIELD $^.person.name, schoolmate.likeness, schoolmate._dst
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, and the columns 2 should be hashed:
       | $^.person.name | schoolmate.likeness | schoolmate._dst |
-      | "Zhangsan"     | 60                  | hash("Jack")    |
+      | "Zhangsan"     | 60                  | "Jack"          |
     # after delete edge to check value by go
     When executing query:
       """
       GO FROM hash("Zhangsan") OVER transfer
       YIELD $^.person.name,transfer._rank, transfer.money, transfer._dst
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, and the columns 3 should be hashed:
       | $^.person.name | transfer._rank | transfer.money | transfer._dst |
-      | "Zhangsan"     | 1561013236     | 33             | hash("Lisi")  |
+      | "Zhangsan"     | 1561013236     | 33             | "Lisi"        |
     # delete non-existing edges and a same edge
     When executing query:
       """
@@ -127,7 +127,7 @@ Feature: Delete int vid of edge
       GO FROM hash("Zhangsan"),hash("Jack") OVER friend
       YIELD $^.person.name, friend.intimacy, friend._dst
       """
-    Then the result should be, in any order:
-      | $^.person.name | friend.intimacy | friend._dst  |
-      | "Zhangsan"     | 50              | hash("Jack") |
+    Then the result should be, in any order, and the columns 2 should be hashed:
+      | $^.person.name | friend.intimacy | friend._dst |
+      | "Zhangsan"     | 50              | "Jack"      |
     Then drop the used space

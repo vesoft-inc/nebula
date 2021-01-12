@@ -220,40 +220,40 @@ Feature: Groupby & limit Sentence
       | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == hash('Tim Duncan') as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR($-.following) AS following
       """
-    Then the result should be, in any order, with relax comparison:
-      | dst                   | following |
-      | hash("Manu Ginobili") | BAD_TYPE  |
-      | hash("Tony Parker")   | BAD_TYPE  |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | dst             | following |
+      | "Manu Ginobili" | BAD_TYPE  |
+      | "Tony Parker"   | BAD_TYPE  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst as dst
       | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == hash('Tim Duncan') as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_OR(case when $-.following==true then 1 else 0 end) AS following
       """
-    Then the result should be, in any order, with relax comparison:
-      | dst                   | following |
-      | hash("Tony Parker")   | 1         |
-      | hash("Manu Ginobili") | 1         |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | dst             | following |
+      | "Tony Parker"   | 1         |
+      | "Manu Ginobili" | 1         |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst as dst
       |  GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == hash('Tim Duncan') as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND($-.following) AS following
       """
-    Then the result should be, in any order, with relax comparison:
-      | dst                   | following |
-      | hash("Manu Ginobili") | BAD_TYPE  |
-      | hash("Tony Parker")   | BAD_TYPE  |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | dst             | following |
+      | "Manu Ginobili" | BAD_TYPE  |
+      | "Tony Parker"   | BAD_TYPE  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst as dst
       | GO FROM $-.dst over like YIELD $-.dst as dst, like._dst == hash('Tim Duncan') as following
       | GROUP BY $-.dst YIELD $-.dst AS dst, BIT_AND(case when $-.following==true then 1 else 0 end) AS following
       """
-    Then the result should be, in any order, with relax comparison:
-      | dst                   | following |
-      | hash("Manu Ginobili") | 1         |
-      | hash("Tony Parker")   | 0         |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | dst             | following |
+      | "Manu Ginobili" | 1         |
+      | "Tony Parker"   | 0         |
 
   @skip
   Scenario: Groupby with COUNT_DISTINCT

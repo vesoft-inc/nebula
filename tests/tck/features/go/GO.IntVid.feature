@@ -12,24 +12,24 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("Tim Duncan") OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    |
-      | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
     When executing query:
       """
       GO FROM hash("Tim Duncan"), hash("Tim Duncan") OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    |
-      | hash("Spurs") |
-      | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Spurs"    |
     When executing query:
       """
       YIELD hash("Tim Duncan") as vid | GO FROM $-.vid OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    |
-      | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
     When executing query:
       """
       GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name
@@ -57,41 +57,41 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id
       | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Hornets")       |
-      | hash("Trail Blazers") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Hornets"       |
+      | "Trail Blazers" |
     When executing query:
       """
       GO FROM hash('Thunders') OVER serve REVERSELY
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst                |
-      | hash("Russell Westbrook") |
-      | hash("Kevin Durant")      |
-      | hash("James Harden")      |
-      | hash("Carmelo Anthony")   |
-      | hash("Paul George")       |
-      | hash("Ray Allen")         |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst          |
+      | "Russell Westbrook" |
+      | "Kevin Durant"      |
+      | "James Harden"      |
+      | "Carmelo Anthony"   |
+      | "Paul George"       |
+      | "Ray Allen"         |
     When executing query:
       """
       GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id
       |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Hornets")       |
-      | hash("Trail Blazers") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Hornets"       |
+      | "Trail Blazers" |
     When executing query:
       """
       GO FROM hash("No Exist Vertex Id") OVER like YIELD like._dst as id
@@ -104,25 +104,25 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Boris Diaw") OVER like, serve YIELD like._dst as id
       |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Hornets")       |
-      | hash("Trail Blazers") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Hornets"       |
+      | "Trail Blazers" |
 
   Scenario: Integer Vid assignment simple
     When executing query:
       """
       $var = GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as id; GO FROM $var.id OVER like
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tracy McGrady")     |
-      | hash("LaMarcus Aldridge") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tracy McGrady"     |
+      | "LaMarcus Aldridge" |
 
   Scenario: Integer Vid assignment pipe
     When executing query:
@@ -130,24 +130,24 @@ Feature: IntegerVid Go  Sentence
       $var = (GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as id | GO FROM $-.id OVER like YIELD like._dst as id);
       GO FROM $var.id OVER like
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst           |
-      | hash("Kobe Bryant") |
-      | hash("Grant Hill")  |
-      | hash("Rudy Gay")    |
-      | hash("Tony Parker") |
-      | hash("Tim Duncan")  |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst     |
+      | "Kobe Bryant" |
+      | "Grant Hill"  |
+      | "Rudy Gay"    |
+      | "Tony Parker" |
+      | "Tim Duncan"  |
 
   Scenario: Integer Vid pipe only yield input prop
     When executing query:
       """
       GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as vid | GO FROM $-.vid OVER like YIELD $-.vid as id
       """
-    Then the result should be, in any order, with relax comparison:
-      | id                  |
-      | hash("Kobe Bryant") |
-      | hash("Grant Hill")  |
-      | hash("Rudy Gay")    |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | id            |
+      | "Kobe Bryant" |
+      | "Grant Hill"  |
+      | "Rudy Gay"    |
 
   Scenario: Integer Vid pipe only yield constant
     When executing query:
@@ -189,20 +189,20 @@ Feature: IntegerVid Go  Sentence
       | GO FROM $-.id OVER serve
       YIELD DISTINCT serve._dst, $$.team.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            | $$.team.name    |
-      | hash("Spurs")         | "Spurs"         |
-      | hash("Hornets")       | "Hornets"       |
-      | hash("Trail Blazers") | "Trail Blazers" |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      | $$.team.name    |
+      | "Spurs"         | "Spurs"         |
+      | "Hornets"       | "Hornets"       |
+      | "Trail Blazers" | "Trail Blazers" |
     When executing query:
       """
       GO 2 STEPS FROM hash("Tony Parker") OVER like YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst             |
-      | hash("Tim Duncan")    |
-      | hash("Tony Parker")   |
-      | hash("Manu Ginobili") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst       |
+      | "Tim Duncan"    |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
 
   Scenario: Integer Vid vertex noexist
     When executing query:
@@ -247,52 +247,52 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("Russell Westbrook") OVER * REVERSELY YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst               |
-      | EMPTY      | hash("James Harden")    |
-      | EMPTY      | hash("Dejounte Murray") |
-      | EMPTY      | hash("Paul George")     |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst         |
+      | EMPTY      | "James Harden"    |
+      | EMPTY      | "Dejounte Murray" |
+      | EMPTY      | "Paul George"     |
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER * REVERSELY YIELD serve._src, like._src
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._src | like._src                 |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._src | like._src           |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER * REVERSELY
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst               | serve._dst | teammate._dst |
-      | hash("James Harden")    | EMPTY      | EMPTY         |
-      | hash("Dejounte Murray") | EMPTY      | EMPTY         |
-      | hash("Paul George")     | EMPTY      | EMPTY         |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | like._dst         | serve._dst | teammate._dst |
+      | "James Harden"    | EMPTY      | EMPTY         |
+      | "Dejounte Murray" | EMPTY      | EMPTY         |
+      | "Paul George"     | EMPTY      | EMPTY         |
     When executing query:
       """
       GO FROM hash("Dirk Nowitzki") OVER * YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst        | like._dst           |
-      | hash("Mavericks") | EMPTY               |
-      | EMPTY             | hash("Steve Nash")  |
-      | EMPTY             | hash("Jason Kidd")  |
-      | EMPTY             | hash("Dwyane Wade") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst  | like._dst     |
+      | "Mavericks" | EMPTY         |
+      | EMPTY       | "Steve Nash"  |
+      | EMPTY       | "Jason Kidd"  |
+      | EMPTY       | "Dwyane Wade" |
     When executing query:
       """
       GO FROM hash("Paul Gasol") OVER *
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst           | serve._dst        | teammate._dst |
-      | EMPTY               | hash("Grizzlies") | EMPTY         |
-      | EMPTY               | hash("Lakers")    | EMPTY         |
-      | EMPTY               | hash("Bulls")     | EMPTY         |
-      | EMPTY               | hash("Spurs")     | EMPTY         |
-      | EMPTY               | hash("Bucks")     | EMPTY         |
-      | hash("Kobe Bryant") | EMPTY             | EMPTY         |
-      | hash("Marc Gasol")  | EMPTY             | EMPTY         |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | like._dst     | serve._dst  | teammate._dst |
+      | EMPTY         | "Grizzlies" | EMPTY         |
+      | EMPTY         | "Lakers"    | EMPTY         |
+      | EMPTY         | "Bulls"     | EMPTY         |
+      | EMPTY         | "Spurs"     | EMPTY         |
+      | EMPTY         | "Bucks"     | EMPTY         |
+      | "Kobe Bryant" | EMPTY       | EMPTY         |
+      | "Marc Gasol"  | EMPTY       | EMPTY         |
     When executing query:
       """
       GO FROM hash("Manu Ginobili") OVER * REVERSELY YIELD like.likeness, teammate.start_year, serve.start_year, $$.player.name
@@ -320,15 +320,15 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Boris Diaw") OVER * YIELD like._dst as id
       | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Hornets")       |
-      | hash("Trail Blazers") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Hornets"       |
+      | "Trail Blazers" |
 
   @skip
   Scenario: Integer Vid edge type
@@ -346,11 +346,11 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY
       YIELD serve._dst, like._dst, serve._type, like._type
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst               | serve._type | like._type |
-      | EMPTY      | hash("James Harden")    | EMPTY       | -5         |
-      | EMPTY      | hash("Dejounte Murray") | EMPTY       | -5         |
-      | EMPTY      | hash("Paul George")     | EMPTY       | -5         |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst         | serve._type | like._type |
+      | EMPTY      | "James Harden"    | EMPTY       | -5         |
+      | EMPTY      | "Dejounte Murray" | EMPTY       | -5         |
+      | EMPTY      | "Paul George"     | EMPTY       | -5         |
 
   Scenario: Integer Vid multi edges
     When executing query:
@@ -366,53 +366,53 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("Shaquile O\'Neal") OVER serve, like
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst        | like._dst            |
-      | hash("Magic")     | EMPTY                |
-      | hash("Lakers")    | EMPTY                |
-      | hash("Heat")      | EMPTY                |
-      | hash("Suns")      | EMPTY                |
-      | hash("Cavaliers") | EMPTY                |
-      | hash("Celtics")   | EMPTY                |
-      | EMPTY             | hash("JaVale McGee") |
-      | EMPTY             | hash("Tim Duncan")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst  | like._dst      |
+      | "Magic"     | EMPTY          |
+      | "Lakers"    | EMPTY          |
+      | "Heat"      | EMPTY          |
+      | "Suns"      | EMPTY          |
+      | "Cavaliers" | EMPTY          |
+      | "Celtics"   | EMPTY          |
+      | EMPTY       | "JaVale McGee" |
+      | EMPTY       | "Tim Duncan"   |
     When executing query:
       """
       GO FROM hash('Russell Westbrook') OVER serve, like
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst       | like._dst            |
-      | hash("Thunders") | EMPTY                |
-      | EMPTY            | hash("Paul George")  |
-      | EMPTY            | hash("James Harden") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst      |
+      | "Thunders" | EMPTY          |
+      | EMPTY      | "Paul George"  |
+      | EMPTY      | "James Harden" |
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY
       YIELD serve._dst, like._dst, serve.start_year, like.likeness
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst               | serve.start_year | like.likeness |
-      | EMPTY      | hash("James Harden")    | EMPTY            | 80            |
-      | EMPTY      | hash("Dejounte Murray") | EMPTY            | 99            |
-      | EMPTY      | hash("Paul George")     | EMPTY            | 95            |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst         | serve.start_year | like.likeness |
+      | EMPTY      | "James Harden"    | EMPTY            | 80            |
+      | EMPTY      | "Dejounte Murray" | EMPTY            | 99            |
+      | EMPTY      | "Paul George"     | EMPTY            | 95            |
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY YIELD serve._src, like._src
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._src | like._src                 |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._src | like._src           |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst               |
-      | EMPTY      | hash("James Harden")    |
-      | EMPTY      | hash("Dejounte Murray") |
-      | EMPTY      | hash("Paul George")     |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst         |
+      | EMPTY      | "James Harden"    |
+      | EMPTY      | "Dejounte Murray" |
+      | EMPTY      | "Paul George"     |
     When executing query:
       """
       GO FROM hash("Manu Ginobili") OVER like, teammate REVERSELY YIELD like.likeness, teammate.start_year, $$.player.name
@@ -605,19 +605,19 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id
       | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123)
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst      |
-      | hash("Spurs")   |
-      | hash("Hornets") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Hornets"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id
       | GO FROM  $-.id OVER serve WHERE udf_is_in($-.id, 'Tony Parker', 123) AND 1 == 1
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst      |
-      | hash("Spurs")   |
-      | hash("Hornets") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Hornets"  |
 
   @skip
   Scenario: Integer Vid return test (reason = "return not implement")
@@ -628,11 +628,11 @@ Feature: IntegerVid Go  Sentence
       RETURN $rA IF $rA IS NOT NULL;
       GO FROM $A.dst OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst      |
-      | hash("Spurs")   |
-      | hash("Spurs")   |
-      | hash("Hornets") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Spurs"    |
+      | "Hornets"  |
     When executing query:
       """
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dst;
@@ -640,10 +640,10 @@ Feature: IntegerVid Go  Sentence
       RETURN $rA IF $rA IS NOT NULL;
       GO FROM $A.dst OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Tony Parker")   |
-      | hash("Manu Ginobili") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
     When executing query:
       """
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dstA;
@@ -654,13 +654,13 @@ Feature: IntegerVid Go  Sentence
       RETURN $rB IF $rB IS NOT NULL;
       GO FROM $B.dstB OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
-      | hash("Trail Blazers") |
-      | hash("Spurs")         |
-      | hash("Spurs")         |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Spurs"         |
+      | "Spurs"         |
+      | "Trail Blazers" |
+      | "Spurs"         |
+      | "Spurs"         |
     When executing query:
       """
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dst;
@@ -675,10 +675,10 @@ Feature: IntegerVid Go  Sentence
       $rA = YIELD $A.* WHERE 1 == 1;
       RETURN $rA IF $rA IS NOT NULL;
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst            |
-      | hash("Tony Parker")   |
-      | hash("Manu Ginobili") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst      |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
     When executing query:
       """
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dst;
@@ -704,18 +704,18 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash('Tim Duncan') OVER like REVERSELY YIELD like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Boris Diaw")        |
-      | hash("Tiago Splitter")    |
-      | hash("Dejounte Murray")   |
-      | hash("Shaquile O'Neal")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Boris Diaw"        |
+      | "Tiago Splitter"    |
+      | "Dejounte Murray"   |
+      | "Shaquile O'Neal"   |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like REVERSELY YIELD $$.player.name
@@ -748,63 +748,63 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash('Tim Duncan') OVER * REVERSELY YIELD like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Boris Diaw")        |
-      | hash("Tiago Splitter")    |
-      | hash("Dejounte Murray")   |
-      | hash("Shaquile O'Neal")   |
-      | EMPTY                     |
-      | EMPTY                     |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Boris Diaw"        |
+      | "Tiago Splitter"    |
+      | "Dejounte Murray"   |
+      | "Shaquile O'Neal"   |
+      | EMPTY               |
+      | EMPTY               |
 
   Scenario: Integer Vid only id n steps
     When executing query:
       """
       GO 2 STEPS FROM hash('Tony Parker') OVER like YIELD like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst             |
-      | hash("Tim Duncan")    |
-      | hash("Tim Duncan")    |
-      | hash("Tony Parker")   |
-      | hash("Tony Parker")   |
-      | hash("Manu Ginobili") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst       |
+      | "Tim Duncan"    |
+      | "Tim Duncan"    |
+      | "Tony Parker"   |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
     When executing query:
       """
       GO 3 STEPS FROM hash('Tony Parker') OVER like YIELD like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Manu Ginobili")     |
-      | hash("Tim Duncan")        |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
     When executing query:
       """
       GO 1 STEPS FROM hash('Tony Parker') OVER like YIELD like._dst AS id
       | GO 2 STEPS FROM $-.id OVER like YIELD like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("LaMarcus Aldridge") |
-      | hash("LaMarcus Aldridge") |
-      | hash("Manu Ginobili")     |
-      | hash("Manu Ginobili")     |
-      | hash("Tim Duncan")        |
-      | hash("Tim Duncan")        |
-      | hash("Tim Duncan")        |
-      | hash("Manu Ginobili")     |
-      | hash("Manu Ginobili")     |
-      | hash("Tony Parker")       |
-      | hash("Tony Parker")       |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "LaMarcus Aldridge" |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+      | "Tim Duncan"        |
+      | "Tim Duncan"        |
+      | "Manu Ginobili"     |
+      | "Manu Ginobili"     |
+      | "Tony Parker"       |
+      | "Tony Parker"       |
 
   Scenario: Integer Vid reverse two steps
     When executing query:
@@ -822,15 +822,15 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Manu Ginobili') OVER * REVERSELY YIELD like._dst AS id
       | GO FROM $-.id OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst      |
-      | hash("Spurs")   |
-      | hash("Spurs")   |
-      | hash("Hornets") |
-      | hash("Spurs")   |
-      | hash("Hawks")   |
-      | hash("76ers")   |
-      | hash("Spurs")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Spurs"    |
+      | "Hornets"  |
+      | "Spurs"    |
+      | "Hawks"    |
+      | "76ers"    |
+      | "Spurs"    |
 
   Scenario: Integer Vid reverse with pipe
     When executing query:
@@ -899,61 +899,61 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Manu Ginobili') OVER like REVERSELY YIELD like._dst AS id
       | GO FROM $-.id OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst      |
-      | hash("Spurs")   |
-      | hash("Spurs")   |
-      | hash("Spurs")   |
-      | hash("Spurs")   |
-      | hash("Hornets") |
-      | hash("Hawks")   |
-      | hash("76ers")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+      | "Spurs"    |
+      | "Spurs"    |
+      | "Spurs"    |
+      | "Hornets"  |
+      | "Hawks"    |
+      | "76ers"    |
 
   Scenario: Integer Vid bidirect
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve bidirect
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    |
-      | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like bidirect
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Boris Diaw")        |
-      | hash("Tiago Splitter")    |
-      | hash("Dejounte Murray")   |
-      | hash("Shaquile O'Neal")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Boris Diaw"        |
+      | "Tiago Splitter"    |
+      | "Dejounte Murray"   |
+      | "Shaquile O'Neal"   |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve, like bidirect
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    | like._dst                 |
-      | hash("Spurs") | EMPTY                     |
-      | EMPTY         | hash("Tony Parker")       |
-      | EMPTY         | hash("Manu Ginobili")     |
-      | EMPTY         | hash("Tony Parker")       |
-      | EMPTY         | hash("Manu Ginobili")     |
-      | EMPTY         | hash("LaMarcus Aldridge") |
-      | EMPTY         | hash("Marco Belinelli")   |
-      | EMPTY         | hash("Danny Green")       |
-      | EMPTY         | hash("Aron Baynes")       |
-      | EMPTY         | hash("Boris Diaw")        |
-      | EMPTY         | hash("Tiago Splitter")    |
-      | EMPTY         | hash("Dejounte Murray")   |
-      | EMPTY         | hash("Shaquile O'Neal")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           |
+      | "Spurs"    | EMPTY               |
+      | EMPTY      | "Tony Parker"       |
+      | EMPTY      | "Manu Ginobili"     |
+      | EMPTY      | "Tony Parker"       |
+      | EMPTY      | "Manu Ginobili"     |
+      | EMPTY      | "LaMarcus Aldridge" |
+      | EMPTY      | "Marco Belinelli"   |
+      | EMPTY      | "Danny Green"       |
+      | EMPTY      | "Aron Baynes"       |
+      | EMPTY      | "Boris Diaw"        |
+      | EMPTY      | "Tiago Splitter"    |
+      | EMPTY      | "Dejounte Murray"   |
+      | EMPTY      | "Shaquile O'Neal"   |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve bidirect YIELD $$.team.name
@@ -984,73 +984,73 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Tim Duncan') OVER like bidirect WHERE like.likeness > 90
       YIELD $^.player.name, like._dst, $$.player.name, like.likeness
       """
-    Then the result should be, in any order, with relax comparison:
-      | $^.player.name | like._dst               | $$.player.name    | like.likeness |
-      | "Tim Duncan"   | hash("Tony Parker")     | "Tony Parker"     | 95            |
-      | "Tim Duncan"   | hash("Manu Ginobili")   | "Manu Ginobili"   | 95            |
-      | "Tim Duncan"   | hash("Tony Parker")     | "Tony Parker"     | 95            |
-      | "Tim Duncan"   | hash("Dejounte Murray") | "Dejounte Murray" | 99            |
+    Then the result should be, in any order, with relax comparison, and the columns 1 should be hashed:
+      | $^.player.name | like._dst         | $$.player.name    | like.likeness |
+      | "Tim Duncan"   | "Tony Parker"     | "Tony Parker"     | 95            |
+      | "Tim Duncan"   | "Manu Ginobili"   | "Manu Ginobili"   | 95            |
+      | "Tim Duncan"   | "Tony Parker"     | "Tony Parker"     | 95            |
+      | "Tim Duncan"   | "Dejounte Murray" | "Dejounte Murray" | 99            |
 
   Scenario: Integer Vid bidirect_over_all
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER * bidirect YIELD $^.player.name, serve._dst, $$.team.name, like._dst, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | $^.player.name | serve._dst    | $$.team.name | like._dst                 | $$.player.name      |
-      | "Tim Duncan"   | hash("Spurs") | "Spurs"      | EMPTY                     | EMPTY               |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Tony Parker")       | "Tony Parker"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Manu Ginobili")     | "Manu Ginobili"     |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Tony Parker")       | "Tony Parker"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Manu Ginobili")     | "Manu Ginobili"     |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("LaMarcus Aldridge") | "LaMarcus Aldridge" |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Marco Belinelli")   | "Marco Belinelli"   |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Danny Green")       | "Danny Green"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Aron Baynes")       | "Aron Baynes"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Boris Diaw")        | "Boris Diaw"        |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Tiago Splitter")    | "Tiago Splitter"    |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Dejounte Murray")   | "Dejounte Murray"   |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | hash("Shaquile O'Neal")   | "Shaquile O'Neal"   |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "Tony Parker"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "Manu Ginobili"     |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "Danny Green"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "LaMarcus Aldridge" |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "Tony Parker"       |
-      | "Tim Duncan"   | EMPTY         | EMPTY        | EMPTY                     | "Manu Ginobili"     |
+    Then the result should be, in any order, with relax comparison, and the columns 1,3 should be hashed:
+      | $^.player.name | serve._dst | $$.team.name | like._dst           | $$.player.name      |
+      | "Tim Duncan"   | "Spurs"    | "Spurs"      | EMPTY               | EMPTY               |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Tony Parker"       | "Tony Parker"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Manu Ginobili"     | "Manu Ginobili"     |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Tony Parker"       | "Tony Parker"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Manu Ginobili"     | "Manu Ginobili"     |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "LaMarcus Aldridge" | "LaMarcus Aldridge" |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Marco Belinelli"   | "Marco Belinelli"   |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Danny Green"       | "Danny Green"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Aron Baynes"       | "Aron Baynes"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Boris Diaw"        | "Boris Diaw"        |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Tiago Splitter"    | "Tiago Splitter"    |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Dejounte Murray"   | "Dejounte Murray"   |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Shaquile O'Neal"   | "Shaquile O'Neal"   |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Tony Parker"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Manu Ginobili"     |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Danny Green"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "LaMarcus Aldridge" |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Tony Parker"       |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Manu Ginobili"     |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER * bidirect
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 | serve._dst    | teammate._dst             |
-      | EMPTY                     | hash("Spurs") | EMPTY                     |
-      | hash("Tony Parker")       | EMPTY         | EMPTY                     |
-      | hash("Manu Ginobili")     | EMPTY         | EMPTY                     |
-      | hash("Tony Parker")       | EMPTY         | EMPTY                     |
-      | hash("Manu Ginobili")     | EMPTY         | EMPTY                     |
-      | hash("LaMarcus Aldridge") | EMPTY         | EMPTY                     |
-      | hash("Marco Belinelli")   | EMPTY         | EMPTY                     |
-      | hash("Danny Green")       | EMPTY         | EMPTY                     |
-      | hash("Aron Baynes")       | EMPTY         | EMPTY                     |
-      | hash("Boris Diaw")        | EMPTY         | EMPTY                     |
-      | hash("Tiago Splitter")    | EMPTY         | EMPTY                     |
-      | hash("Dejounte Murray")   | EMPTY         | EMPTY                     |
-      | hash("Shaquile O'Neal")   | EMPTY         | EMPTY                     |
-      | EMPTY                     | EMPTY         | hash("Tony Parker")       |
-      | EMPTY                     | EMPTY         | hash("Manu Ginobili")     |
-      | EMPTY                     | EMPTY         | hash("LaMarcus Aldridge") |
-      | EMPTY                     | EMPTY         | hash("Danny Green")       |
-      | EMPTY                     | EMPTY         | hash("Tony Parker")       |
-      | EMPTY                     | EMPTY         | hash("Manu Ginobili")     |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | like._dst           | serve._dst | teammate._dst       |
+      | EMPTY               | "Spurs"    | EMPTY               |
+      | "Tony Parker"       | EMPTY      | EMPTY               |
+      | "Manu Ginobili"     | EMPTY      | EMPTY               |
+      | "Tony Parker"       | EMPTY      | EMPTY               |
+      | "Manu Ginobili"     | EMPTY      | EMPTY               |
+      | "LaMarcus Aldridge" | EMPTY      | EMPTY               |
+      | "Marco Belinelli"   | EMPTY      | EMPTY               |
+      | "Danny Green"       | EMPTY      | EMPTY               |
+      | "Aron Baynes"       | EMPTY      | EMPTY               |
+      | "Boris Diaw"        | EMPTY      | EMPTY               |
+      | "Tiago Splitter"    | EMPTY      | EMPTY               |
+      | "Dejounte Murray"   | EMPTY      | EMPTY               |
+      | "Shaquile O'Neal"   | EMPTY      | EMPTY               |
+      | EMPTY               | EMPTY      | "Tony Parker"       |
+      | EMPTY               | EMPTY      | "Manu Ginobili"     |
+      | EMPTY               | EMPTY      | "LaMarcus Aldridge" |
+      | EMPTY               | EMPTY      | "Danny Green"       |
+      | EMPTY               | EMPTY      | "Tony Parker"       |
+      | EMPTY               | EMPTY      | "Manu Ginobili"     |
 
   Scenario: Integer Vid duplicate column name
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve YIELD serve._dst, serve._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    | serve._dst    |
-      | hash("Spurs") | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | serve._dst |
+      | "Spurs"    | "Spurs"    |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id, like.likeness AS id
@@ -1126,55 +1126,55 @@ Feature: IntegerVid Go  Sentence
       """
       GO 1 TO 2 STEPS FROM hash('Tony Parker') OVER like YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Tim Duncan")        |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Tim Duncan"        |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Tony Parker') OVER like YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Tim Duncan")        |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Tim Duncan"        |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM hash('Tony Parker') OVER like YIELD DISTINCT like._dst, like.likeness, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 | like.likeness | $$.player.name      |
-      | hash("Manu Ginobili")     | 95            | "Manu Ginobili"     |
-      | hash("LaMarcus Aldridge") | 90            | "LaMarcus Aldridge" |
-      | hash("Tim Duncan")        | 95            | "Tim Duncan"        |
-      | hash("Tony Parker")       | 95            | "Tony Parker"       |
-      | hash("Tony Parker")       | 75            | "Tony Parker"       |
-      | hash("Tim Duncan")        | 75            | "Tim Duncan"        |
-      | hash("Tim Duncan")        | 90            | "Tim Duncan"        |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           | like.likeness | $$.player.name      |
+      | "Manu Ginobili"     | 95            | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" | 90            | "LaMarcus Aldridge" |
+      | "Tim Duncan"        | 95            | "Tim Duncan"        |
+      | "Tony Parker"       | 95            | "Tony Parker"       |
+      | "Tony Parker"       | 75            | "Tony Parker"       |
+      | "Tim Duncan"        | 75            | "Tim Duncan"        |
+      | "Tim Duncan"        | 90            | "Tim Duncan"        |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Tony Parker') OVER like YIELD DISTINCT like._dst, like.likeness, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 | like.likeness | $$.player.name      |
-      | hash("Manu Ginobili")     | 95            | "Manu Ginobili"     |
-      | hash("LaMarcus Aldridge") | 90            | "LaMarcus Aldridge" |
-      | hash("Tim Duncan")        | 95            | "Tim Duncan"        |
-      | hash("Tony Parker")       | 95            | "Tony Parker"       |
-      | hash("Tony Parker")       | 75            | "Tony Parker"       |
-      | hash("Tim Duncan")        | 75            | "Tim Duncan"        |
-      | hash("Tim Duncan")        | 90            | "Tim Duncan"        |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           | like.likeness | $$.player.name      |
+      | "Manu Ginobili"     | 95            | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" | 90            | "LaMarcus Aldridge" |
+      | "Tim Duncan"        | 95            | "Tim Duncan"        |
+      | "Tony Parker"       | 95            | "Tony Parker"       |
+      | "Tony Parker"       | 75            | "Tony Parker"       |
+      | "Tim Duncan"        | 75            | "Tim Duncan"        |
+      | "Tim Duncan"        | 90            | "Tim Duncan"        |
     When executing query:
       """
       GO 0 TO 3 STEPS FROM hash('Tim Duncan') OVER serve
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst    |
-      | hash("Spurs") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
     When executing query:
       """
       GO 2 TO 3 STEPS FROM hash('Tim Duncan') OVER serve
@@ -1185,244 +1185,244 @@ Feature: IntegerVid Go  Sentence
       """
       GO 1 TO 2 STEPS FROM hash('Tony Parker') OVER like REVERSELY YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Boris Diaw")        |
-      | hash("Dejounte Murray")   |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Tiago Splitter")    |
-      | hash("Shaquile O'Neal")   |
-      | hash("Rudy Gay")          |
-      | hash("Damian Lillard")    |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Boris Diaw"        |
+      | "Dejounte Murray"   |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Tiago Splitter"    |
+      | "Shaquile O'Neal"   |
+      | "Rudy Gay"          |
+      | "Damian Lillard"    |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Tony Parker') OVER like REVERSELY YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Boris Diaw")        |
-      | hash("Dejounte Murray")   |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Tiago Splitter")    |
-      | hash("Shaquile O'Neal")   |
-      | hash("Rudy Gay")          |
-      | hash("Damian Lillard")    |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Boris Diaw"        |
+      | "Dejounte Murray"   |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Tiago Splitter"    |
+      | "Shaquile O'Neal"   |
+      | "Rudy Gay"          |
+      | "Damian Lillard"    |
     When executing query:
       """
       GO 2 TO 2 STEPS FROM hash('Tony Parker') OVER like REVERSELY YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Boris Diaw")        |
-      | hash("Dejounte Murray")   |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Tiago Splitter")    |
-      | hash("Shaquile O'Neal")   |
-      | hash("Rudy Gay")          |
-      | hash("Damian Lillard")    |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Boris Diaw"        |
+      | "Dejounte Murray"   |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Tiago Splitter"    |
+      | "Shaquile O'Neal"   |
+      | "Rudy Gay"          |
+      | "Damian Lillard"    |
     When executing query:
       """
       GO 1 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst                |
-      | hash("Tim Duncan")        |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Rudy Gay")          |
-      | hash("Marco Belinelli")   |
-      | hash("Danny Green")       |
-      | hash("Kyle Anderson")     |
-      | hash("Aron Baynes")       |
-      | hash("Boris Diaw")        |
-      | hash("Tiago Splitter")    |
-      | hash("Cory Joseph")       |
-      | hash("David West")        |
-      | hash("Jonathon Simmons")  |
-      | hash("Dejounte Murray")   |
-      | hash("Tracy McGrady")     |
-      | hash("Paul Gasol")        |
-      | hash("Marco Belinelli")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst          |
+      | "Tim Duncan"        |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Rudy Gay"          |
+      | "Marco Belinelli"   |
+      | "Danny Green"       |
+      | "Kyle Anderson"     |
+      | "Aron Baynes"       |
+      | "Boris Diaw"        |
+      | "Tiago Splitter"    |
+      | "Cory Joseph"       |
+      | "David West"        |
+      | "Jonathon Simmons"  |
+      | "Dejounte Murray"   |
+      | "Tracy McGrady"     |
+      | "Paul Gasol"        |
+      | "Marco Belinelli"   |
     When executing query:
       """
       GO 0 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst                |
-      | hash("Tim Duncan")        |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("LaMarcus Aldridge") |
-      | hash("Rudy Gay")          |
-      | hash("Marco Belinelli")   |
-      | hash("Danny Green")       |
-      | hash("Kyle Anderson")     |
-      | hash("Aron Baynes")       |
-      | hash("Boris Diaw")        |
-      | hash("Tiago Splitter")    |
-      | hash("Cory Joseph")       |
-      | hash("David West")        |
-      | hash("Jonathon Simmons")  |
-      | hash("Dejounte Murray")   |
-      | hash("Tracy McGrady")     |
-      | hash("Paul Gasol")        |
-      | hash("Marco Belinelli")   |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | serve._dst          |
+      | "Tim Duncan"        |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+      | "Rudy Gay"          |
+      | "Marco Belinelli"   |
+      | "Danny Green"       |
+      | "Kyle Anderson"     |
+      | "Aron Baynes"       |
+      | "Boris Diaw"        |
+      | "Tiago Splitter"    |
+      | "Cory Joseph"       |
+      | "David West"        |
+      | "Jonathon Simmons"  |
+      | "Dejounte Murray"   |
+      | "Tracy McGrady"     |
+      | "Paul Gasol"        |
+      | "Marco Belinelli"   |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM hash('Tony Parker') OVER like BIDIRECT YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Boris Diaw")        |
-      | hash("Dejounte Murray")   |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Tiago Splitter")    |
-      | hash("Shaquile O'Neal")   |
-      | hash("Rudy Gay")          |
-      | hash("Damian Lillard")    |
-      | hash("LeBron James")      |
-      | hash("Russell Westbrook") |
-      | hash("Chris Paul")        |
-      | hash("Kyle Anderson")     |
-      | hash("Kevin Durant")      |
-      | hash("James Harden")      |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Boris Diaw"        |
+      | "Dejounte Murray"   |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Tiago Splitter"    |
+      | "Shaquile O'Neal"   |
+      | "Rudy Gay"          |
+      | "Damian Lillard"    |
+      | "LeBron James"      |
+      | "Russell Westbrook" |
+      | "Chris Paul"        |
+      | "Kyle Anderson"     |
+      | "Kevin Durant"      |
+      | "James Harden"      |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Tony Parker') OVER like BIDIRECT YIELD DISTINCT like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst                 |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Marco Belinelli")   |
-      | hash("Boris Diaw")        |
-      | hash("Dejounte Murray")   |
-      | hash("Tony Parker")       |
-      | hash("Manu Ginobili")     |
-      | hash("Danny Green")       |
-      | hash("Aron Baynes")       |
-      | hash("Tiago Splitter")    |
-      | hash("Shaquile O'Neal")   |
-      | hash("Rudy Gay")          |
-      | hash("Damian Lillard")    |
-      | hash("LeBron James")      |
-      | hash("Russell Westbrook") |
-      | hash("Chris Paul")        |
-      | hash("Kyle Anderson")     |
-      | hash("Kevin Durant")      |
-      | hash("James Harden")      |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Marco Belinelli"   |
+      | "Boris Diaw"        |
+      | "Dejounte Murray"   |
+      | "Tony Parker"       |
+      | "Manu Ginobili"     |
+      | "Danny Green"       |
+      | "Aron Baynes"       |
+      | "Tiago Splitter"    |
+      | "Shaquile O'Neal"   |
+      | "Rudy Gay"          |
+      | "Damian Lillard"    |
+      | "LeBron James"      |
+      | "Russell Westbrook" |
+      | "Chris Paul"        |
+      | "Kyle Anderson"     |
+      | "Kevin Durant"      |
+      | "James Harden"      |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM hash('Russell Westbrook') OVER * YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst       | like._dst                 |
-      | hash("Thunders") | EMPTY                     |
-      | EMPTY            | hash("Paul George")       |
-      | EMPTY            | hash("James Harden")      |
-      | hash("Pacers")   | EMPTY                     |
-      | hash("Thunders") | EMPTY                     |
-      | EMPTY            | hash("Russell Westbrook") |
-      | hash("Thunders") | EMPTY                     |
-      | hash("Rockets")  | EMPTY                     |
-      | EMPTY            | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           |
+      | "Thunders" | EMPTY               |
+      | EMPTY      | "Paul George"       |
+      | EMPTY      | "James Harden"      |
+      | "Pacers"   | EMPTY               |
+      | "Thunders" | EMPTY               |
+      | EMPTY      | "Russell Westbrook" |
+      | "Thunders" | EMPTY               |
+      | "Rockets"  | EMPTY               |
+      | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Russell Westbrook') OVER * YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst       | like._dst                 |
-      | hash("Thunders") | EMPTY                     |
-      | EMPTY            | hash("Paul George")       |
-      | EMPTY            | hash("James Harden")      |
-      | hash("Pacers")   | EMPTY                     |
-      | hash("Thunders") | EMPTY                     |
-      | EMPTY            | hash("Russell Westbrook") |
-      | hash("Thunders") | EMPTY                     |
-      | hash("Rockets")  | EMPTY                     |
-      | EMPTY            | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           |
+      | "Thunders" | EMPTY               |
+      | EMPTY      | "Paul George"       |
+      | EMPTY      | "James Harden"      |
+      | "Pacers"   | EMPTY               |
+      | "Thunders" | EMPTY               |
+      | EMPTY      | "Russell Westbrook" |
+      | "Thunders" | EMPTY               |
+      | "Rockets"  | EMPTY               |
+      | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM hash('Russell Westbrook') OVER *
       YIELD serve._dst, like._dst, serve.start_year, like.likeness, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst       | like._dst                 | serve.start_year | like.likeness | $$.player.name      |
-      | hash("Thunders") | EMPTY                     | 2008             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Paul George")       | EMPTY            | 90            | "Paul George"       |
-      | EMPTY            | hash("James Harden")      | EMPTY            | 90            | "James Harden"      |
-      | hash("Pacers")   | EMPTY                     | 2010             | EMPTY         | EMPTY               |
-      | hash("Thunders") | EMPTY                     | 2017             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Russell Westbrook") | EMPTY            | 95            | "Russell Westbrook" |
-      | hash("Thunders") | EMPTY                     | 2009             | EMPTY         | EMPTY               |
-      | hash("Rockets")  | EMPTY                     | 2012             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Russell Westbrook") | EMPTY            | 80            | "Russell Westbrook" |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
+      | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Russell Westbrook') OVER *
       YIELD serve._dst, like._dst, serve.start_year, like.likeness, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst       | like._dst                 | serve.start_year | like.likeness | $$.player.name      |
-      | hash("Thunders") | EMPTY                     | 2008             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Paul George")       | EMPTY            | 90            | "Paul George"       |
-      | EMPTY            | hash("James Harden")      | EMPTY            | 90            | "James Harden"      |
-      | hash("Pacers")   | EMPTY                     | 2010             | EMPTY         | EMPTY               |
-      | hash("Thunders") | EMPTY                     | 2017             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Russell Westbrook") | EMPTY            | 95            | "Russell Westbrook" |
-      | hash("Thunders") | EMPTY                     | 2009             | EMPTY         | EMPTY               |
-      | hash("Rockets")  | EMPTY                     | 2012             | EMPTY         | EMPTY               |
-      | EMPTY            | hash("Russell Westbrook") | EMPTY            | 80            | "Russell Westbrook" |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
+      | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM hash('Russell Westbrook') OVER * REVERSELY YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst                 |
-      | EMPTY      | hash("Dejounte Murray")   |
-      | EMPTY      | hash("James Harden")      |
-      | EMPTY      | hash("Paul George")       |
-      | EMPTY      | hash("Dejounte Murray")   |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Luka Doncic")       |
-      | EMPTY      | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           |
+      | EMPTY      | "Dejounte Murray"   |
+      | EMPTY      | "James Harden"      |
+      | EMPTY      | "Paul George"       |
+      | EMPTY      | "Dejounte Murray"   |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Luka Doncic"       |
+      | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM hash('Russell Westbrook') OVER * REVERSELY YIELD serve._dst, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | serve._dst | like._dst                 |
-      | EMPTY      | hash("Dejounte Murray")   |
-      | EMPTY      | hash("James Harden")      |
-      | EMPTY      | hash("Paul George")       |
-      | EMPTY      | hash("Dejounte Murray")   |
-      | EMPTY      | hash("Russell Westbrook") |
-      | EMPTY      | hash("Luka Doncic")       |
-      | EMPTY      | hash("Russell Westbrook") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | serve._dst | like._dst           |
+      | EMPTY      | "Dejounte Murray"   |
+      | EMPTY      | "James Harden"      |
+      | EMPTY      | "Paul George"       |
+      | EMPTY      | "Dejounte Murray"   |
+      | EMPTY      | "Russell Westbrook" |
+      | EMPTY      | "Luka Doncic"       |
+      | EMPTY      | "Russell Westbrook" |
 
   Scenario: Integer Vid error message
     When executing query:
@@ -1459,84 +1459,84 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Tim Duncan') OVER like YIELD like._src as src, like._dst as dst | GO FROM $-.src OVER like
       YIELD $-.src as src, like._dst as dst, $^.player.name, $$.player.name
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                | dst                   | $^.player.name | $$.player.name  |
-      | hash("Tim Duncan") | hash("Tony Parker")   | "Tim Duncan"   | "Tony Parker"   |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | "Tim Duncan"   | "Manu Ginobili" |
-      | hash("Tim Duncan") | hash("Tony Parker")   | "Tim Duncan"   | "Tony Parker"   |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | "Tim Duncan"   | "Manu Ginobili" |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | src          | dst             | $^.player.name | $$.player.name  |
+      | "Tim Duncan" | "Tony Parker"   | "Tim Duncan"   | "Tony Parker"   |
+      | "Tim Duncan" | "Manu Ginobili" | "Tim Duncan"   | "Manu Ginobili" |
+      | "Tim Duncan" | "Tony Parker"   | "Tim Duncan"   | "Tony Parker"   |
+      | "Tim Duncan" | "Manu Ginobili" | "Tim Duncan"   | "Manu Ginobili" |
     When executing query:
       """
       $a = GO FROM hash('Tim Duncan') OVER like YIELD like._src as src, like._dst as dst;
       GO FROM $a.src OVER like YIELD $a.src as src, like._dst as dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                | dst                   |
-      | hash("Tim Duncan") | hash("Tony Parker")   |
-      | hash("Tim Duncan") | hash("Manu Ginobili") |
-      | hash("Tim Duncan") | hash("Tony Parker")   |
-      | hash("Tim Duncan") | hash("Manu Ginobili") |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | src          | dst             |
+      | "Tim Duncan" | "Tony Parker"   |
+      | "Tim Duncan" | "Manu Ginobili" |
+      | "Tim Duncan" | "Tony Parker"   |
+      | "Tim Duncan" | "Manu Ginobili" |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._src as src, like._dst as dst
       | GO 1 TO 2 STEPS FROM $-.src OVER like YIELD $-.src as src, like._dst as dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                | dst                       |
-      | hash("Tim Duncan") | hash("Tony Parker")       |
-      | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Tim Duncan") | hash("Tony Parker")       |
-      | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Tim Duncan") | hash("Tim Duncan")        |
-      | hash("Tim Duncan") | hash("Tim Duncan")        |
-      | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Tim Duncan") | hash("LaMarcus Aldridge") |
-      | hash("Tim Duncan") | hash("LaMarcus Aldridge") |
-      | hash("Tim Duncan") | hash("Tim Duncan")        |
-      | hash("Tim Duncan") | hash("Tim Duncan")        |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
+      | src          | dst                 |
+      | "Tim Duncan" | "Tony Parker"       |
+      | "Tim Duncan" | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tony Parker"       |
+      | "Tim Duncan" | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tim Duncan"        |
+      | "Tim Duncan" | "Tim Duncan"        |
+      | "Tim Duncan" | "Manu Ginobili"     |
+      | "Tim Duncan" | "Manu Ginobili"     |
+      | "Tim Duncan" | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "Tim Duncan"        |
+      | "Tim Duncan" | "Tim Duncan"        |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._src as src, like._dst as dst
       | GO 1 TO 2 STEPS FROM $-.src OVER like
       YIELD $-.src as src, $-.dst, like._dst as dst, like.likeness
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                | $-.dst                | dst                       | like.likeness |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("Tony Parker")       | 95            |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("Manu Ginobili")     | 95            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("Tony Parker")       | 95            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("Manu Ginobili")     | 95            |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("Tim Duncan")        | 95            |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("Manu Ginobili")     | 95            |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("LaMarcus Aldridge") | 90            |
-      | hash("Tim Duncan") | hash("Tony Parker")   | hash("Tim Duncan")        | 90            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("Tim Duncan")        | 95            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("Manu Ginobili")     | 95            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("LaMarcus Aldridge") | 90            |
-      | hash("Tim Duncan") | hash("Manu Ginobili") | hash("Tim Duncan")        | 90            |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | src          | $-.dst          | dst                 | like.likeness |
+      | "Tim Duncan" | "Tony Parker"   | "Tony Parker"       | 95            |
+      | "Tim Duncan" | "Tony Parker"   | "Manu Ginobili"     | 95            |
+      | "Tim Duncan" | "Manu Ginobili" | "Tony Parker"       | 95            |
+      | "Tim Duncan" | "Manu Ginobili" | "Manu Ginobili"     | 95            |
+      | "Tim Duncan" | "Tony Parker"   | "Tim Duncan"        | 95            |
+      | "Tim Duncan" | "Tony Parker"   | "Manu Ginobili"     | 95            |
+      | "Tim Duncan" | "Tony Parker"   | "LaMarcus Aldridge" | 90            |
+      | "Tim Duncan" | "Tony Parker"   | "Tim Duncan"        | 90            |
+      | "Tim Duncan" | "Manu Ginobili" | "Tim Duncan"        | 95            |
+      | "Tim Duncan" | "Manu Ginobili" | "Manu Ginobili"     | 95            |
+      | "Tim Duncan" | "Manu Ginobili" | "LaMarcus Aldridge" | 90            |
+      | "Tim Duncan" | "Manu Ginobili" | "Tim Duncan"        | 90            |
     When executing query:
       """
       GO FROM hash('Danny Green') OVER like YIELD like._src AS src, like._dst AS dst
       | GO FROM $-.dst OVER teammate YIELD $-.src AS src, $-.dst, teammate._dst AS dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                 | $-.dst             | dst                       |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Tony Parker")       |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("LaMarcus Aldridge") |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Danny Green")       |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | src           | $-.dst       | dst                 |
+      | "Danny Green" | "Tim Duncan" | "Tony Parker"       |
+      | "Danny Green" | "Tim Duncan" | "Manu Ginobili"     |
+      | "Danny Green" | "Tim Duncan" | "LaMarcus Aldridge" |
+      | "Danny Green" | "Tim Duncan" | "Danny Green"       |
     When executing query:
       """
       $a = GO FROM hash('Danny Green') OVER like YIELD like._src AS src, like._dst AS dst;
       GO FROM $a.dst OVER teammate YIELD $a.src AS src, $a.dst, teammate._dst AS dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | src                 | $a.dst             | dst                       |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Tony Parker")       |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Manu Ginobili")     |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("LaMarcus Aldridge") |
-      | hash("Danny Green") | hash("Tim Duncan") | hash("Danny Green")       |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
+      | src           | $a.dst       | dst                 |
+      | "Danny Green" | "Tim Duncan" | "Tony Parker"       |
+      | "Danny Green" | "Tim Duncan" | "Manu Ginobili"     |
+      | "Danny Green" | "Tim Duncan" | "LaMarcus Aldridge" |
+      | "Danny Green" | "Tim Duncan" | "Danny Green"       |
 
   Scenario: Integer Vid backtrack overlap
     When executing query:
@@ -1544,45 +1544,45 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst
       | GO 2 STEPS FROM $-.src OVER like YIELD $-.src, $-.dst, like._src, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | $-.src              | $-.dst                     | like._src                  | like._dst              |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Tim Duncan" )        | hash("Manu Ginobili")  |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Manu Ginobili")      | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Tim Duncan" )        | hash("Manu Ginobili" ) |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Manu Ginobili" )     | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )        | hash("Manu Ginobili" ) |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Manu Ginobili" )     | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
+      | $-.src        | $-.dst              | like._src           | like._dst       |
+      | "Tony Parker" | "Tim Duncan"        | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "Tim Duncan"        | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "Tim Duncan"        | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "Tim Duncan"        | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "Tim Duncan"        | "LaMarcus Aldridge" | "Tim Duncan"    |
+      | "Tony Parker" | "Manu Ginobili"     | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "Manu Ginobili"     | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "Manu Ginobili"     | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "Manu Ginobili"     | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "Manu Ginobili"     | "LaMarcus Aldridge" | "Tim Duncan"    |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "LaMarcus Aldridge" | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "LaMarcus Aldridge" | "LaMarcus Aldridge" | "Tim Duncan"    |
     When executing query:
       """
       $a = GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst;
       GO 2 STEPS FROM $a.src OVER like YIELD $a.src, $a.dst, like._src, like._dst
       """
-    Then the result should be, in any order, with relax comparison:
-      | $a.src              | $a.dst                     | like._src                  | like._dst              |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Tim Duncan" )        | hash("Manu Ginobili")  |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("Manu Ginobili")      | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Tim Duncan" )        | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Tim Duncan" )        | hash("Manu Ginobili" ) |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("Manu Ginobili" )     | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("Manu Ginobili" )     | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )        | hash("Manu Ginobili" ) |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )        | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("LaMarcus Aldridge" ) | hash("Tony Parker")    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("Manu Ginobili" )     | hash("Tim Duncan" )    |
-      | hash("Tony Parker") | hash("LaMarcus Aldridge" ) | hash("LaMarcus Aldridge" ) | hash("Tim Duncan" )    |
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
+      | $a.src        | $a.dst              | like._src           | like._dst       |
+      | "Tony Parker" | "Tim Duncan"        | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "Tim Duncan"        | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "Tim Duncan"        | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "Tim Duncan"        | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "Tim Duncan"        | "LaMarcus Aldridge" | "Tim Duncan"    |
+      | "Tony Parker" | "Manu Ginobili"     | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "Manu Ginobili"     | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "Manu Ginobili"     | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "Manu Ginobili"     | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "Manu Ginobili"     | "LaMarcus Aldridge" | "Tim Duncan"    |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Tim Duncan"        | "Manu Ginobili" |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Tim Duncan"        | "Tony Parker"   |
+      | "Tony Parker" | "LaMarcus Aldridge" | "LaMarcus Aldridge" | "Tony Parker"   |
+      | "Tony Parker" | "LaMarcus Aldridge" | "Manu Ginobili"     | "Tim Duncan"    |
+      | "Tony Parker" | "LaMarcus Aldridge" | "LaMarcus Aldridge" | "Tim Duncan"    |
 
   Scenario: Integer Vid GroupBy and Count
     When executing query:
@@ -1599,6 +1599,6 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("Tim Duncan") OVER like WHERE like._dst == hash("Tony Parker") | limit 10;
       """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst           |
-      | hash("Tony Parker") |
+    Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
+      | like._dst     |
+      | "Tony Parker" |

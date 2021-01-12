@@ -163,29 +163,29 @@ Feature: Yield Sentence
       """
       GO 2 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst | YIELD DISTINCT $-.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                       |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Manu Ginobili" )    |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst                 |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
     When executing query:
       """
       GO 2 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst | YIELD $-.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                       |
-      | hash("Tim Duncan")        |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Manu Ginobili")     |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst                 |
+      | "Tim Duncan"        |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst | YIELD DISTINCT $-.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                   |
-      | hash("Tony Parker")   |
-      | hash("Manu Ginobili") |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst             |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
 
   Scenario: YieldVar
     When executing query:
@@ -254,29 +254,29 @@ Feature: Yield Sentence
       """
       $a = GO 2 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst;YIELD DISTINCT $a.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                       |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Manu Ginobili")     |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst                 |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
     When executing query:
       """
       $a = GO 2 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst;YIELD $a.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                       |
-      | hash("Tim Duncan")        |
-      | hash("LaMarcus Aldridge") |
-      | hash("Manu Ginobili")     |
-      | hash("Tim Duncan")        |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst                 |
+      | "Tim Duncan"        |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
     When executing query:
       """
       $a = GO FROM hash("Tim Duncan") OVER like YIELD like._dst AS dst;YIELD DISTINCT $a.dst AS dst
       """
-    Then the result should be, in any order:
-      | dst                   |
-      | hash("Manu Ginobili") |
-      | hash("Tony Parker")   |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | dst             |
+      | "Manu Ginobili" |
+      | "Tony Parker"   |
 
   Scenario: Error
     When executing query:
