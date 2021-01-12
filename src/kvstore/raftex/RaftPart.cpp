@@ -1433,20 +1433,24 @@ void RaftPart::processAskForVoteRequest(
             LOG(INFO) << idStr_
                       << "The partition's last log id is " << lastLogId_
                       << ". The candidate's last log id " << req.get_last_log_id()
-                      << " is smaller, so it will be rejected";
+                      << " is smaller, so it will be rejected, candidate is "
+                      << candidate;
             resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
             return;
         }
     }
 
     // If we have voted for somebody, we will reject other candidates under the proposedTerm.
-    if (votedAddr_ != HostAddr("", 0) && proposedTerm_ >= req.get_term()) {
-        LOG(INFO) << idStr_
-                  << "We have voted " << votedAddr_ << " on term " << proposedTerm_
-                  << ", so we should reject the candidate " << candidate
-                  << " request on term " << req.get_term();
-        resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
-        return;
+    if (votedAddr_ != HostAddr("", 0)) {
+        if (proposedTerm_ > req.get_term()
+                || (proposedTerm_ == req.get_term() && votedAddr_ != candidate)) {
+            LOG(INFO) << idStr_
+                << "We have voted " << votedAddr_ << " on term " << proposedTerm_
+                << ", so we should reject the candidate " << candidate
+                << " request on term " << req.get_term();
+            resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+            return;
+        }
     }
 
     auto code = checkPeer(candidate);
@@ -1455,9 +1459,15 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
     // Ok, no reason to refuse, we will vote for the candidate
-    LOG(INFO) << idStr_ << "The partition will vote for the candidate";
+    LOG(INFO) << idStr_ << "The partition will vote for the candidate " << candidate;
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
+    // Before change role from leader to follower, check the logs locally.
+    if (role_ == Role::LEADER && wal_->lastLogId() > lastLogId_) {
+        LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+                  << " i did not commit when i was leader, rollback to " << lastLogId_;
+        wal_->rollbackToLog(lastLogId_);
+    }
     role_ = Role::FOLLOWER;
     votedAddr_ = candidate;
     proposedTerm_ = req.get_term();
@@ -1687,6 +1697,8 @@ void RaftPart::processAppendLogRequest(
         }
     }
 
+    // Reset the timeout timer again in case wal and commit takes longer time than expected
+    lastMsgRecvDur_.reset();
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 }
 
