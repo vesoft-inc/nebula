@@ -388,6 +388,10 @@ Status LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
 }
 
 StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr, const std::string& prop) {
+    if (!evaluableExpr(expr)) {
+        return Status::SemanticError("'%s' is not an evaluable expression.",
+                                     expr->toString().c_str());
+    }
     auto schema = isEdge_ ? qctx_->schemaMng()->getEdgeSchema(spaceId_, schemaId_)
                           : qctx_->schemaMng()->getTagSchema(spaceId_, schemaId_);
     auto type = schema->getFieldType(prop);

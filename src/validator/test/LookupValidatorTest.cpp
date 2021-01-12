@@ -80,5 +80,42 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
     }
 }
 
+TEST_F(LookupValidatorTest, InvalidFilterExpression) {
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age == person.name;";
+        EXPECT_FALSE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age > person.name;";
+        EXPECT_FALSE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age != person.name;";
+        EXPECT_FALSE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age + 1 > 5;";
+        EXPECT_FALSE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age > person.name + 5;";
+        EXPECT_FALSE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age > 1 + 5;";
+        EXPECT_TRUE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
+            "LOOKUP ON person where person.age > abs(-5);";
+        EXPECT_TRUE(checkResult(query, {}));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
