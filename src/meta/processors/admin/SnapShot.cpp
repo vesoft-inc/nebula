@@ -92,7 +92,7 @@ StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() 
         LOG(ERROR) << "Get hosts meta data error";
         return Status::Error("Get hosts meta data error");
     }
-    while (iter->valid()) {
+    for (; iter->valid(); iter->next()) {
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         auto space = MetaServiceUtils::parsePartKeySpaceId(iter->key());
         if (!spaces_.empty()) {
@@ -105,7 +105,6 @@ StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() 
         for (auto& ph : partHosts) {
             hostsByspaces[space].emplace(std::move(ph));
         }
-        iter->next();
     }
     return hostsByspaces;
 }
