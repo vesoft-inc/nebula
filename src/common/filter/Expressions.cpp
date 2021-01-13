@@ -669,15 +669,18 @@ OptVariantType UnaryExpression::eval(Getters &getters) const {
                 return OptVariantType(-asInt(value.value()));
             } else if (isDouble(value.value())) {
                 return OptVariantType(-asDouble(value.value()));
+            } else {
+                return OptVariantType(
+                    Status::Error(folly::sformat("attempt to perform unary arithmetic on a `{}'",
+                                                 VARIANT_TYPE_NAME[value.value().which()])));
             }
+            return Status::Error("Wrong value type for !");
         } else {
             return OptVariantType(!asBool(value.value()));
         }
     }
 
-    return OptVariantType(Status::Error(folly::sformat(
-        "attempt to perform unary arithmetic on a `{}'",
-        VARIANT_TYPE_NAME[value.value().which()])));
+    return value;
 }
 
 Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor) const {
@@ -867,7 +870,7 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         } else if (lv > 0 && rv < 0) {
             return minInt / lv > rv;
         } else if (lv < 0 && rv > 0) {
-            return minInt / lv < rv;
+            return minInt / rv > lv;
         } else {
             return false;
         }
@@ -929,9 +932,15 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                     return OptVariantType(asDouble(l) / asDouble(r));
                 }
 
-                if (abs(asInt(r)) == 0) {
+                int64_t lValue = asInt(l);
+                int64_t rValue = asInt(r);
+                if (abs(rValue) == 0) {
                     // When Null is supported, should be return NULL
                     return Status::Error("Division by zero");
+                }
+
+                if (lValue == minInt && rValue == -1) {
+                    return Status::Error("Out of range %ld * %ld", lValue, rValue);
                 }
                 return OptVariantType(asInt(l) / asInt(r));
             }

@@ -57,6 +57,7 @@ private:
 private:
     YieldSentence                              *sentence_;
     std::vector<YieldColumn*>                   yields_;
+    bool                                        distinct_{false};
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     Expression                                 *filter_{nullptr};

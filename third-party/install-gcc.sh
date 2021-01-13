@@ -102,7 +102,7 @@ esac
     exit 1
 }
 
-selected_archive=vesoft-gcc-$version-$selected_distro-x86_64-glibc-$selected_libc_version.sh
+selected_archive=vesoft-gcc-$version-$selected_distro-$(uname -m)-glibc-$selected_libc_version.sh
 
 url=$url_base/$selected_archive
 $download_cmd $url
