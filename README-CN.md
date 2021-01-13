@@ -37,6 +37,10 @@
 * 类 SQL 查询语言
 * 用户鉴权
 
+## Nebula Graph Cloud Service 火热公测中
+
+[Nebula Graph Cloud Service](https://cloud.nebula-graph.com.cn/) 是 Nebula Graph 的图数据库云服务平台（Database-as-a-Service，DBaaS），支持一键部署 Nebula Graph。Nebula Graph Cloud Service 服务目前处于公测阶段。公测期间不会就云服务收取任何费用，欢迎 **免费试用**。
+
 ## 快速使用
 
 请查看[快速使用手册](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)，开始使用 **Nebula Graph**。
