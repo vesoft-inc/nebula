@@ -29,6 +29,7 @@ nebula_add_library(
     PathBuildExpression.cpp
     TextSearchExpression.cpp
     ColumnExpression.cpp
+    PredicateExpression.cpp
     ListComprehensionExpression.cpp
 )
 

@@ -86,6 +86,7 @@ public:
 
         kCase,
 
+        kPredicate,
         kListComprehension,
 
         kPathBuild,
