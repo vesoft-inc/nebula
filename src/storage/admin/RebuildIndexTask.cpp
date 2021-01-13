@@ -33,7 +33,7 @@ RebuildIndexTask::genSubTasks() {
 
         for (const auto& index : indexes) {
             auto indexID = folly::to<IndexID>(index);
-            auto indexRet = env_->indexMan_->getTagIndex(space_, indexID);
+            auto indexRet = getIndex(space_, indexID);
             if (!indexRet.ok()) {
                 LOG(ERROR) << "Index not found";
                 return cpp2::ErrorCode::E_INDEX_NOT_FOUND;

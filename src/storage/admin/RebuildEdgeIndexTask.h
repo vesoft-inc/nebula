@@ -22,6 +22,9 @@ private:
     StatusOr<IndexItems>
     getIndexes(GraphSpaceID space) override;
 
+    StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
+    getIndex(GraphSpaceID space, IndexID index) override;
+
     kvstore::ResultCode buildIndexGlobal(GraphSpaceID space,
                                          PartitionID part,
                                          const IndexItems& items) override;

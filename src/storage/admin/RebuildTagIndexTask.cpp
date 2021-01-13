@@ -17,6 +17,11 @@ RebuildTagIndexTask::getIndexes(GraphSpaceID space) {
     return env_->indexMan_->getTagIndexes(space);
 }
 
+StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
+RebuildTagIndexTask::getIndex(GraphSpaceID space, IndexID index) {
+    return env_->indexMan_->getTagIndex(space, index);
+}
+
 kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                           PartitionID part,
                                                           const IndexItems& items) {

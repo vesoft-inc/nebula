@@ -32,6 +32,9 @@ protected:
     virtual StatusOr<IndexItems>
     getIndexes(GraphSpaceID space) = 0;
 
+    virtual StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
+    getIndex(GraphSpaceID space, IndexID index) = 0;
+
     virtual kvstore::ResultCode
     buildIndexGlobal(GraphSpaceID space,
                      PartitionID part,

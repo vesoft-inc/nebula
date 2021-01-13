@@ -17,6 +17,11 @@ RebuildEdgeIndexTask::getIndexes(GraphSpaceID space) {
     return env_->indexMan_->getEdgeIndexes(space);
 }
 
+StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
+RebuildEdgeIndexTask::getIndex(GraphSpaceID space, IndexID index) {
+    return env_->indexMan_->getEdgeIndex(space, index);
+}
+
 kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                            PartitionID part,
                                                            const IndexItems& items) {
