@@ -67,6 +67,10 @@ func newFullBackupCmd() *cobra.Command {
 				}
 			}
 
+			if backupConfig.MaxConcurrent <= 0 {
+				backupConfig.MaxConcurrent = 5
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

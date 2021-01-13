@@ -16,7 +16,7 @@ import (
 	"github.com/vesoft-inc/nebula-go/nebula/meta"
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/config"
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/metaclient"
-	"github.com/vesoft-inc/nebula-storage/util/br/pkg/ssh"
+	"github.com/vesoft-inc/nebula-storage/util/br/pkg/remote"
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/storage"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -65,7 +65,7 @@ func (r *Restore) checkPhysicalTopology(info map[nebula.GraphSpaceID]*meta.Space
 func (r *Restore) check() error {
 	nodes := append(r.config.MetaNodes, r.config.StorageNodes...)
 	command := r.backend.CheckCommand()
-	return ssh.CheckCommand(command, nodes, r.log)
+	return remote.CheckCommand(command, nodes, r.log)
 }
 
 func (r *Restore) downloadMetaFile() error {
@@ -108,7 +108,16 @@ func (r *Restore) downloadMeta(g *errgroup.Group, file []string) map[string][][]
 	for _, n := range r.config.MetaNodes {
 		cmd, files := r.backend.RestoreMetaCommand(file, n.DataDir)
 		ipAddr := strings.Split(n.Addrs, ":")
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr[0], n.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr[0], n.User, r.log)
 		var byteFile [][]byte
 		for _, f := range files {
 			byteFile = append(byteFile, []byte(f))
@@ -134,20 +143,24 @@ func (r *Restore) downloadStorage(g *errgroup.Group, info map[nebula.GraphSpaceI
 		r.log.Info("download", zap.String("ip", ip), zap.String("storage", sNode.Addrs))
 		cmd := r.backend.RestoreStorageCommand(ip, ids, sNode.DataDir+"/nebula")
 		addr := strings.Split(sNode.Addrs, ":")
-		storageIPmap[ip] = sNode.Addrs
-		g.Go(func() error { return ssh.ExecCommandBySSH(addr[0], sNode.User, cmd, r.log) })
+		if ip != sNode.Addrs {
+			storageIPmap[ip] = sNode.Addrs
+		}
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(addr[0], sNode.User, r.log)
 		i++
 	}
-
-	for _, s := range r.config.StorageNodes {
-		if _, ok := storageIPmap[s.Addrs]; ok {
-			delete(storageIPmap, s.Addrs)
-			continue
-		}
-	}
-
 	return storageIPmap
 }
+
 func stringToHostAddr(host string) (*nebula.HostAddr, error) {
 	ipAddr := strings.Split(host, ":")
 	port, err := strconv.ParseInt(ipAddr[1], 10, 32)
@@ -202,26 +215,28 @@ func (r *Restore) restoreMeta(sstFiles map[string][][]byte, storageIDMap map[str
 	r.log.Info("restoreMeta")
 	var hostMap []*meta.HostPair
 
-	if len(storageIDMap) != 0 {
-		for k, v := range storageIDMap {
-			fromAddr, err := stringToHostAddr(k)
-			if err != nil {
-				return err
-			}
-			toAddr, err := stringToHostAddr(v)
-			if err != nil {
-				return err
-			}
-
-			pair := &meta.HostPair{fromAddr, toAddr}
-			hostMap = append(hostMap, pair)
+	for k, v := range storageIDMap {
+		fromAddr, err := stringToHostAddr(k)
+		if err != nil {
+			return err
 		}
+		toAddr, err := stringToHostAddr(v)
+		if err != nil {
+			return err
+		}
+
+		r.log.Info("restoreMeta host mapping", zap.String("fromAddr", fromAddr.String()), zap.String("toAddr", toAddr.String()))
+		pair := &meta.HostPair{fromAddr, toAddr}
+		hostMap = append(hostMap, pair)
 	}
+
 	g, _ := errgroup.WithContext(context.Background())
 	for _, n := range r.config.MetaNodes {
 		r.log.Info("will restore meta", zap.String("addr", n.Addrs))
 		addr := n.Addrs
-		g.Go(func() error { return sendRestoreMeta(addr, sstFiles[n.Addrs], hostMap, r.log) })
+		func(addr string, files [][]byte, hostMap []*meta.HostPair, log *zap.Logger) {
+			g.Go(func() error { return sendRestoreMeta(addr, files, hostMap, r.log) })
+		}(addr, sstFiles[n.Addrs], hostMap, r.log)
 	}
 
 	err := g.Wait()
@@ -236,13 +251,31 @@ func (r *Restore) cleanupOriginal() error {
 	for _, node := range r.config.StorageNodes {
 		cmd := r.backend.RestoreStoragePreCommand(node.DataDir + "/nebula")
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	for _, node := range r.config.MetaNodes {
 		cmd := r.backend.RestoreMetaPreCommand(node.DataDir + "/nebula")
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	err := g.Wait()
@@ -258,13 +291,32 @@ func (r *Restore) stopCluster() error {
 	for _, node := range r.config.StorageNodes {
 		cmd := "cd " + node.RootDir + " && scripts/nebula.service stop storaged"
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	for _, node := range r.config.MetaNodes {
 		cmd := "cd " + node.RootDir + " && scripts/nebula.service stop metad"
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	err := g.Wait()
@@ -280,7 +332,16 @@ func (r *Restore) startMetaService() error {
 	for _, node := range r.config.MetaNodes {
 		cmd := "cd " + node.RootDir + " && scripts/nebula.service start metad &>/dev/null &"
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	err := g.Wait()
@@ -296,7 +357,16 @@ func (r *Restore) startStorageService() error {
 	for _, node := range r.config.StorageNodes {
 		cmd := "cd " + node.RootDir + " && scripts/nebula.service start storaged &>/dev/null &"
 		ipAddr := strings.Split(node.Addrs, ":")[0]
-		g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr, node.User, cmd, r.log) })
+		func(addr string, user string, log *zap.Logger) {
+			g.Go(func() error {
+				client, err := remote.NewClient(addr, user, log)
+				if err != nil {
+					return err
+				}
+				defer client.Close()
+				return client.ExecCommandBySSH(cmd)
+			})
+		}(ipAddr, node.User, r.log)
 	}
 
 	err := g.Wait()
@@ -372,10 +442,12 @@ func (r *Restore) RestoreCluster() error {
 
 	time.Sleep(time.Second * 3)
 
-	err = r.restoreMeta(sstFiles, storageIDMap)
-	if err != nil {
-		r.log.Error("restore meta file failed", zap.Error(err))
-		return err
+	if len(storageIDMap) > 0 {
+		err = r.restoreMeta(sstFiles, storageIDMap)
+		if err != nil {
+			r.log.Error("restore meta file failed", zap.Error(err))
+			return err
+		}
 	}
 
 	err = r.startStorageService()

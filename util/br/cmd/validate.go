@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vesoft-inc/nebula-storage/util/br/pkg/ssh"
+	"github.com/vesoft-inc/nebula-storage/util/br/pkg/remote"
 	"go.uber.org/zap"
 )
 
@@ -35,12 +35,12 @@ func checkSSH(addr string, user string, log *zap.Logger) error {
 	if len(ipAddr) != 2 {
 		return &addressValidateError{addr}
 	}
-	session, err := ssh.NewSshSession(ipAddr[0], user, log)
+	client, err := remote.NewClient(ipAddr[0], user, log)
 	if err != nil {
 		log.Error("must enable SSH tunneling")
 		return &sshValidateError{err}
 	}
-	session.Close()
+	client.Close()
 	return nil
 }
 

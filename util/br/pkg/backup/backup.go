@@ -20,7 +20,7 @@ import (
 
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/config"
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/metaclient"
-	"github.com/vesoft-inc/nebula-storage/util/br/pkg/ssh"
+	"github.com/vesoft-inc/nebula-storage/util/br/pkg/remote"
 	"github.com/vesoft-inc/nebula-storage/util/br/pkg/storage"
 )
 
@@ -179,7 +179,7 @@ func (b *Backup) Init() {
 func (b *Backup) check() error {
 	nodes := append(b.config.MetaNodes, b.config.StorageNodes...)
 	command := b.backendStorage.CheckCommand()
-	return ssh.CheckCommand(command, nodes, b.log)
+	return remote.CheckCommand(command, nodes, b.log)
 }
 
 func (b *Backup) BackupCluster() error {
@@ -212,10 +212,20 @@ func (b *Backup) uploadMeta(g *errgroup.Group, files []string) {
 	cmd := b.backendStorage.BackupMetaCommand(files)
 	b.log.Info("start upload meta", zap.String("addr", b.metaLeader.Addrs))
 	ipAddr := strings.Split(b.metaLeader.Addrs, ":")
-	g.Go(func() error { return ssh.ExecCommandBySSH(ipAddr[0], b.metaLeader.User, cmd, b.log) })
+	func(addr string, user string, log *zap.Logger) {
+		g.Go(func() error {
+			client, err := remote.NewClient(addr, user, log)
+			if err != nil {
+				return err
+			}
+			defer client.Close()
+			return client.ExecCommandBySSH(cmd)
+		})
+	}(ipAddr[0], b.metaLeader.User, b.log)
 }
 
-func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) {
+func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) error {
+	b.log.Info("uploadStorage", zap.Int("dirs length", len(dirs)))
 	for k, v := range dirs {
 		b.log.Info("start upload storage", zap.String("addr", k))
 		idMap := make(map[string]string)
@@ -225,12 +235,30 @@ func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) {
 		}
 
 		ipAddrs := strings.Split(k, ":")
+		b.log.Info("uploadStorage idMap", zap.Int("idMap length", len(idMap)))
+		clients, err := remote.NewClientPool(ipAddrs[0], b.storageNodeMap[k].User, b.log, b.config.MaxConcurrent)
+		if err != nil {
+			b.log.Error("new clients failed", zap.Error(err))
+			return err
+		}
+		i := 0
+		//We need to limit the number of ssh connections per storage node
 		for id2, cp := range idMap {
 			cmd := b.backendStorage.BackupStorageCommand(cp, k, id2)
-
-			g.Go(func() error { return ssh.ExecCommandBySSH(ipAddrs[0], b.storageNodeMap[k].User, cmd, b.log) })
+			if i >= len(clients) {
+				i = 0
+			}
+			client := clients[i]
+			func(client *remote.Client, cmd string) {
+				g.Go(func() error {
+					return client.ExecCommandBySSH(cmd)
+				})
+			}(client, cmd)
+			//g.Go(func() error { return client.ExecCommandBySSH(cmd) })
+			i++
 		}
 	}
+	return nil
 }
 
 func (b *Backup) uploadMetaFile() error {
@@ -295,7 +323,10 @@ func (b *Backup) uploadAll(meta *meta.BackupMeta) error {
 			storageMap[metaclient.HostaddrToString(f.Host)] = append(storageMap[metaclient.HostaddrToString(f.Host)], cpDir)
 		}
 	}
-	b.uploadStorage(g, storageMap)
+	err = b.uploadStorage(g, storageMap)
+	if err != nil {
+		return err
+	}
 
 	err = g.Wait()
 	if err != nil {
