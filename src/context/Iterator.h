@@ -244,9 +244,19 @@ public:
         return valid_ && iter_ < logicalRows_.end();
     }
 
+    bool noEdgeValid() const {
+        return noEdgeValid_ && noEdgeIter_ < noEdgeRows_.end();
+    }
+
     void next() override {
         if (valid()) {
             ++iter_;
+        }
+    }
+
+    void noEdgeNext() {
+        if (noEdgeValid()) {
+            ++noEdgeIter_;
         }
     }
 
@@ -296,36 +306,16 @@ public:
 
     Value getVertex() const override;
 
+    Value getNoEdgeVertex() const;
+
     Value getEdge() const override;
 
     // getVertices and getEdges arg batch interface use for subgraph
     // Its unique based on the plan
-    List getVertices() {
-        DCHECK(iter_ == logicalRows_.begin());
-        List vertices;
-        vertices.values.reserve(size());
-        for (; valid(); next()) {
-            vertices.values.emplace_back(getVertex());
-        }
-        reset();
-        return vertices;
-    }
+    List getVertices();
 
     // Its unique based on the GN interface dedup
-    List getEdges() {
-        DCHECK(iter_ == logicalRows_.begin());
-        List edges;
-        edges.values.reserve(size());
-        for (; valid(); next()) {
-            auto edge = getEdge();
-            if (edge.isEdge()) {
-                const_cast<Edge&>(edge.getEdge()).format();
-            }
-            edges.values.emplace_back(std::move(edge));
-        }
-        reset();
-        return edges;
-    }
+    List getEdges();
 
     const LogicalRow* row() const override {
         return &*iter_;
@@ -396,9 +386,8 @@ private:
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
                 return (*row_)[idx];
-            } else {
-                return Value::kNullOverflow;
             }
+            return Value::kNullOverflow;
         }
 
         size_t size() const override {
@@ -435,6 +424,10 @@ private:
     bool                       valid_{false};
     RowsType<GetNbrLogicalRow> logicalRows_;
     RowsIter<GetNbrLogicalRow> iter_;
+    // rows without edges
+    bool                       noEdgeValid_{false};
+    RowsType<GetNbrLogicalRow> noEdgeRows_;
+    RowsIter<GetNbrLogicalRow> noEdgeIter_;
     std::vector<DataSetIndex>  dsIndices_;
 };
 
@@ -459,9 +452,8 @@ public:
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
                 return row_->values[idx];
-            } else {
-                return Value::kEmpty;
             }
+            return Value::kEmpty;
         }
 
         size_t size() const override {
@@ -577,10 +569,9 @@ public:
         auto index = colIndices_.find(col);
         if (index == colIndices_.end()) {
             return Value::kNullValue;
-        } else {
-            DCHECK_LT(index->second, logicalRow.row_->values.size());
-            return logicalRow.row_->values[index->second];
         }
+        DCHECK_LT(index->second, logicalRow.row_->values.size());
+        return logicalRow.row_->values[index->second];
     }
 
     const Value& getColumn(int32_t index) const override;
@@ -657,16 +648,14 @@ public:
                 auto index = colIdxIndices_->find(idx);
                 if (index == colIdxIndices_->end()) {
                     return Value::kNullValue;
-                } else {
-                    auto keyIdx = index->second.first;
-                    auto valIdx = index->second.second;
-                    DCHECK_LT(keyIdx, values_.size());
-                    DCHECK_LT(valIdx, values_[keyIdx]->values.size());
-                    return values_[keyIdx]->values[valIdx];
                 }
-            } else {
-                return Value::kEmpty;
+                auto keyIdx = index->second.first;
+                auto valIdx = index->second.second;
+                DCHECK_LT(keyIdx, values_.size());
+                DCHECK_LT(valIdx, values_[keyIdx]->values.size());
+                return values_[keyIdx]->values[valIdx];
             }
+            return Value::kEmpty;
         }
 
         size_t size() const override {
@@ -773,13 +762,12 @@ public:
         auto index = colIndices_.find(col);
         if (index == colIndices_.end()) {
             return Value::kNullValue;
-        } else {
-            auto segIdx = index->second.first;
-            auto colIdx = index->second.second;
-            DCHECK_LT(segIdx, row.values_.size());
-            DCHECK_LT(colIdx, row.values_[segIdx]->values.size());
-            return row.values_[segIdx]->values[colIdx];
         }
+        auto segIdx = index->second.first;
+        auto colIdx = index->second.second;
+        DCHECK_LT(segIdx, row.values_.size());
+        DCHECK_LT(colIdx, row.values_[segIdx]->values.size());
+        return row.values_[segIdx]->values[colIdx];
     }
 
     const Value& getColumn(int32_t index) const override;
@@ -834,9 +822,8 @@ public:
         const Value& operator[](size_t idx) const override {
             if (idx < row_->size()) {
                 return row_->values[idx];
-            } else {
-                return Value::kEmpty;
             }
+            return Value::kEmpty;
         }
 
         size_t size() const override {
