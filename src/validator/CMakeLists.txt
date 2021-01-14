@@ -30,6 +30,8 @@ nebula_add_library(
     FindPathValidator.cpp
     LookupValidator.cpp
     MatchValidator.cpp
+    DownloadValidator.cpp
+    IngestValidator.cpp
 )
 
 nebula_add_subdirectory(test)

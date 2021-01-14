@@ -137,6 +137,8 @@ public:
         kShowTSClients,
         kSignInTSService,
         kSignOutTSService,
+        kDownload,
+        kIngest,
     };
 
     PlanNode(QueryContext* qctx, Kind kind);

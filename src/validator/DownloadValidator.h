@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_BALANCEVALIDATOR_H_
-#define VALIDATOR_BALANCEVALIDATOR_H_
+#ifndef VALIDATOR_DOWNLOADVALIDATOR_H_
+#define VALIDATOR_DOWNLOADVALIDATOR_H_
 
 #include "common/base/Base.h"
 #include "validator/Validator.h"
@@ -14,12 +14,10 @@
 namespace nebula {
 namespace graph {
 
-class BalanceValidator final : public Validator {
+class DownloadValidator final : public Validator {
 public:
-    BalanceValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+    DownloadValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {}
 
 private:
     Status validateImpl() override {
@@ -32,4 +30,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // VALIDATOR_BALANCEVALIDATOR_H_
+#endif  // VALIDATOR_DOWNLOADVALIDATOR_H_
