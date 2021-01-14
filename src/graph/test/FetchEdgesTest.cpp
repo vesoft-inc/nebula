@@ -48,7 +48,7 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -73,7 +73,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, bool, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve) > 2001, std::get<2>(serve)},
+            {player.vid(),
+             team.vid(),
+             std::get<1>(serve),
+             std::get<2>(serve) > 2001,
+             std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -98,7 +102,7 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -126,8 +130,16 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team0.vid(), 0, std::get<1>(serve0), std::get<2>(serve0)},
-            {player.vid(), team1.vid(), 0, std::get<1>(serve1), std::get<2>(serve1)},
+            {player.vid(),
+             team0.vid(),
+             std::get<1>(serve0),
+             std::get<2>(serve0),
+             std::get<3>(serve0)},
+            {player.vid(),
+             team1.vid(),
+             std::get<1>(serve1),
+             std::get<2>(serve1),
+             std::get<3>(serve1)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -152,8 +164,12 @@ TEST_F(FetchEdgesTest, Base) {
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
-                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(
+                player.vid(),
+                teams_[std::get<0>(serve)].vid(),
+                std::get<1>(serve),
+                std::get<2>(serve),
+                std::get<3>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -180,8 +196,12 @@ TEST_F(FetchEdgesTest, Base) {
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
-                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(
+                player.vid(),
+                teams_[std::get<0>(serve)].vid(),
+                std::get<1>(serve),
+                std::get<2>(serve),
+                std::get<3>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -197,7 +217,7 @@ TEST_F(FetchEdgesTest, Base) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -212,7 +232,7 @@ TEST_F(FetchEdgesTest, Base) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+            {std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
@@ -239,7 +259,7 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -263,7 +283,7 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -287,7 +307,7 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -301,7 +321,7 @@ TEST_F(FetchEdgesTest, NoYield) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+            {std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
@@ -330,7 +350,7 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<3>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -355,8 +375,12 @@ TEST_F(FetchEdgesTest, Distinct) {
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
-                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(
+                player.vid(),
+                teams_[std::get<0>(serve)].vid(),
+                std::get<1>(serve),
+                std::get<2>(serve),
+                std::get<3>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -383,8 +407,12 @@ TEST_F(FetchEdgesTest, Distinct) {
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
-                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(
+                player.vid(),
+                teams_[std::get<0>(serve)].vid(),
+                std::get<1>(serve),
+                std::get<2>(serve),
+                std::get<3>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -547,7 +575,7 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<1>(serve)},
+            {player.vid(), team.vid(), std::get<1>(serve), std::get<2>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -573,7 +601,12 @@ TEST_F(FetchEdgesTest, DuplicateColumnName) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
-            {player.vid(), team.vid(), 0, player.vid(), team.vid(), 0},
+            {player.vid(),
+             team.vid(),
+             std::get<1>(serve),
+             player.vid(),
+             team.vid(),
+             std::get<1>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

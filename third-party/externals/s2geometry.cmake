@@ -14,11 +14,14 @@ ExternalProject_Add(
     TMP_DIR ${BUILD_INFO_DIR}
     STAMP_DIR ${BUILD_INFO_DIR}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
+    PATCH_COMMAND patch -p1 < ${CMAKE_SOURCE_DIR}/patches/${name}-0.9.0.patch
     SOURCE_DIR ${source_dir}
     CMAKE_ARGS
         ${common_cmake_args}
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_EXAMPLES=OFF
+        -DWITH_GLOG=ON
+        -DWITH_GFLAGS=ON
         -DBUILD_SHARED_LIBS=OFF
 
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}

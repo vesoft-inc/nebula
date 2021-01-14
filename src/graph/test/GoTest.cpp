@@ -92,6 +92,26 @@ TEST_P(GoTest, OneStepOutBound) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name"
+                    " | LIMIT 1 OFFSET 2";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2012, 2016, "Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto &player = players_["Rajon Rondo"];
         auto *fmt = "GO FROM %ld OVER serve WHERE "
                     "serve.start_year >= 2013 && serve.end_year <= 2018 YIELD "
@@ -1225,10 +1245,18 @@ TEST_P(GoTest, ReverselyWithPipe) {
         client_->execute(query, resp);
         std::vector<std::tuple<std::string, std::string>> expected = {
             { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
             { "Cavaliers", "Danny Green" },
             { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Cavaliers", "LeBron James" },
+            { "Heat", "Dwyane Wade" },
             { "Heat", "Dwyane Wade" },
             { "Heat", "LeBron James" },
             { "Heat", "Ray Allen" },
@@ -1259,6 +1287,11 @@ TEST_P(GoTest, ReverselyWithPipe) {
             { "Cavaliers", "Dwyane Wade" },
             { "Cavaliers", "Shaquile O'Neal" },
             { "Cavaliers", "Danny Green" },
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
+            { "Heat", "Dwyane Wade" },
             { "Heat", "Dwyane Wade" },
             { "Heat", "Ray Allen" },
             { "Heat", "Shaquile O'Neal" },
@@ -1564,23 +1597,24 @@ TEST_P(GoTest, Bidirect) {
 }
 
 TEST_P(GoTest, FilterPushdown) {
-    #define TEST_FILTER_PUSHDOWN_REWRITE(rewrite_expected, filter_pushdown)             \
-        auto result = GQLParser().parse(query);                                         \
-        ASSERT_TRUE(result.ok());                                                       \
-        auto sentences = result.value()->sentences();                                   \
-        ASSERT_EQ(sentences.size(), 1);                                                 \
-        auto goSentence = static_cast<GoSentence*>(sentences[0]);                       \
-        auto whereWrapper = std::make_unique<WhereWrapper>(goSentence->whereClause());  \
-        auto filter = whereWrapper->filter_;                                            \
-        ASSERT_NE(filter, nullptr);                                                     \
-        auto isRewriteSucceded = whereWrapper->rewrite(filter);                         \
-        ASSERT_EQ(rewrite_expected, isRewriteSucceded);                                 \
-        std::string filterPushdown = "";                                                \
-        if (isRewriteSucceded) {                                                        \
-            filterPushdown = filter->toString();                                        \
-        }                                                                               \
-        LOG(INFO) << "Filter rewrite: " << filterPushdown;                             \
-        ASSERT_EQ(filter_pushdown, filterPushdown);
+#define TEST_FILTER_PUSHDOWN_REWRITE(can_pushdown, filter_pushdown)                                \
+    auto result = GQLParser().parse(query);                                                        \
+    ASSERT_TRUE(result.ok());                                                                      \
+    auto sentences = result.value()->sentences();                                                  \
+    ASSERT_EQ(sentences.size(), 1);                                                                \
+    auto goSentence = static_cast<GoSentence *>(sentences[0]);                                     \
+    auto whereWrapper = std::make_unique<WhereWrapper>(goSentence->whereClause());                 \
+    auto filter = whereWrapper->filter_;                                                           \
+    ASSERT_NE(filter, nullptr);                                                                    \
+    auto isRewriteSucceded = whereWrapper->rewrite(filter);                                        \
+    auto canPushdown = isRewriteSucceded && whereWrapper->canPushdown(filter);                     \
+    ASSERT_EQ(can_pushdown, canPushdown);                                                          \
+    std::string filterPushdown = "";                                                               \
+    if (canPushdown) {                                                                             \
+        filterPushdown = filter->toString();                                                       \
+    }                                                                                              \
+    LOG(INFO) << "Filter rewrite: " << filterPushdown;                                             \
+    ASSERT_EQ(filter_pushdown, filterPushdown);
 
     {
         // Filter pushdown: ((serve.start_year>2013)&&(serve.end_year<2018))
@@ -2260,6 +2294,55 @@ TEST_P(GoTest, FilterPushdown) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        auto *fmt = "GO FROM %ld OVER serve, like "
+                    "WHERE serve.start_year > 2013 OR like.likeness > 90";
+        auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Hornets"].vid(), 0},
+            {0, players_["Tim Duncan"].vid()},
+            {0, players_["Manu Ginobili"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER serve, like "
+                    "WHERE !(serve.start_year > 2013 OR like.likeness > 90)";
+        auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Spurs"].vid(), 0},
+            {0, players_["LaMarcus Aldridge"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 #undef TEST_FILTER_PUSHDWON_REWRITE
 }
 
@@ -2610,6 +2693,7 @@ TEST_P(GoTest, WithIntermediateData) {
             players_["Dejounte Murray"].vid(),
             players_["Tracy McGrady"].vid(),
             players_["Paul Gasol"].vid(),
+            players_["Marco Belinelli"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -2638,6 +2722,7 @@ TEST_P(GoTest, WithIntermediateData) {
             players_["Dejounte Murray"].vid(),
             players_["Tracy McGrady"].vid(),
             players_["Paul Gasol"].vid(),
+            players_["Marco Belinelli"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -3047,6 +3132,48 @@ TEST_P(GoTest, issueBackTrackOverlap) {
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
             ASSERT_TRUE(verifyResult(resp, expected));
+        }
+    }
+}
+
+TEST_P(GoTest, NStepQueryHangAndOOM) {
+    {
+        std::vector<std::tuple<VertexID>> expected = {
+                {players_["Tony Parker"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["LaMarcus Aldridge"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tony Parker"].vid()},
+                {players_["Manu Ginobili"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tim Duncan"].vid()},
+                {players_["Tony Parker"].vid()},
+        };
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "GO 1 TO 3 STEPS FROM %ld OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "YIELD %ld as id "
+                        "| GO 1 TO 3 STEPS FROM $-.id OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            ASSERT_TRUE(verifyResult(resp, expected));
+        }
+        {
+            cpp2::ExecutionResponse resp;
+            auto *fmt = "GO 1 TO 40 STEPS FROM %ld OVER like YIELD like._dst as dst";
+            auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+            auto code = client_->execute(query, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         }
     }
 }

@@ -45,7 +45,6 @@ DEFINE_int32(num_worker_threads, 32, "Number of workers");
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
-DECLARE_bool(check_leader);
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
@@ -75,8 +74,6 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                  FLAGS_num_worker_threads, true /*stats*/));
     threadManager->setNamePrefix("executor");
     threadManager->start();
-    // On metad, we are allowed to read on follower
-    FLAGS_check_leader = false;
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
@@ -308,7 +305,9 @@ void signalHandler(int sig) {
             }
             {
                 auto gJobMgr = nebula::meta::JobManager::getInstance();
-                gJobMgr->shutDown();
+                if (gJobMgr) {
+                    gJobMgr->shutDown();
+                }
             }
             if (gKVStore) {
                 gKVStore->stop();

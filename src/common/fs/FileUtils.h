@@ -251,7 +251,8 @@ public:
 #define CHECK_TYPE(NAME, FTYPE, DTYPE) \
     bool FileUtils::is ## NAME(struct dirent *dEnt, const char* path) { \
         if (dEnt->d_type == DT_UNKNOWN) { \
-            const char* subPath = FileUtils::joinPath(path, dEnt->d_name).c_str(); \
+            auto str = FileUtils::joinPath(path, dEnt->d_name); \
+            const char* subPath = str.c_str(); \
             return FileUtils::fileType(subPath) == FileType::FTYPE; \
         } else { \
             return dEnt->d_type == DT_ ## DTYPE; \

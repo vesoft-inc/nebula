@@ -37,7 +37,9 @@ cpp2::ErrorCode IndexExecutor<RESP>::buildExecutionPlan(const std::string& filte
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
-    buildPolicy();
+    if (!buildPolicy()) {
+        return cpp2::ErrorCode::E_INVALID_FILTER;
+    }
     return ret;
 }
 
@@ -115,16 +117,280 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+// TODO (sky) : String range scan was disabled graph layer. it is not support in storage layer.
+template <typename RESP>
+std::pair<std::string, std::string>
+IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
+    std::string beginStr = NebulaKeyUtils::indexPrefix(partId, indexId);
+    std::string endStr = NebulaKeyUtils::indexPrefix(partId, indexId);
+    const auto& fields = index_->get_fields();
+    std::vector<int32_t> colsLen;
+    for (const auto& field : fields) {
+        auto item = scanItems_.find(field.get_name());
+        if (item == scanItems_.end()) {
+            break;
+        }
+        // here need check the value type, maybe different data types appear.
+        // for example:
+        // index (c1 double)
+        // where c1 > abs(1) , FunctionCallExpression->eval(abs(1))
+        // should be cast type from int to double.
+        bool suc = true;
+        if (item->second.beginBound_.rel_ != RelationType::kNull) {
+            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                      item->second.beginBound_.val_);
+        }
+        if (suc == true && item->second.endBound_.rel_ != RelationType::kNull) {
+            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                      item->second.endBound_.val_);
+        }
+        if (!suc) {
+            VLOG(1) << "Unknown VariantType";
+            return {};
+        }
+        auto pair = normalizeScanPair(field, (*item).second);
+        if (field.get_type().type == nebula::cpp2::SupportedType::STRING) {
+            if (pair.first != pair.second) {
+                VLOG(1) << "String type field does not allow range scan : " << field.get_name();
+                return {};
+            }
+            colsLen.emplace_back(pair.first.size());
+        }
+        beginStr.append(pair.first);
+        endStr.append(pair.second);
+    }
+    for (auto len : colsLen) {
+        beginStr.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+        endStr.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    }
+    return std::make_pair(beginStr, endStr);
+}
+
+template <typename RESP>
+std::pair<std::string, std::string>
+IndexExecutor<RESP>::normalizeScanPair(const nebula::cpp2::ColumnDef& field,
+                                       const ScanBound& item) {
+    std::string begin, end;
+    auto type = field.get_type().type;
+    // if begin == end, means the scan is equivalent scan.
+    if (item.beginBound_.rel_ == RelationType::kEQRel &&
+        item.endBound_.rel_ == RelationType::kEQRel &&
+        item.beginBound_.rel_ != RelationType::kNull &&
+        item.endBound_.rel_ != RelationType::kNull &&
+        item.beginBound_.val_ == item.endBound_.val_) {
+        begin = end = NebulaKeyUtils::encodeVariant(item.beginBound_.val_);
+        return std::make_pair(begin, end);
+    }
+    // normalize begin and end value using ScanItem. for example :
+    // 1 < c1 < 5   --> ScanItem:{(GT, 1), (LT, 5)} --> {2, 5}
+    // 1 <= c1 <= 5 --> ScanItem:{(GE, 1), (LE, 5)} --> {1, 6}
+    // c1 > 5 --> ScanItem:{(GT, 5), (NULL)} --> {6, max}
+    // c1 >= 5 --> ScanItem:{(GE, 5), (NULL)} --> {5, max}
+    // c1 < 6 --> ScanItem:{(NULL), (LT, 6)} --> {min, 6}
+    // c1 <= 6 --> ScanItem:{(NULL), (LE, 6)} --> {min, 7}
+    if (item.beginBound_.rel_ == RelationType::kNull) {
+        begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMin);
+    } else if (item.beginBound_.rel_ == RelationType::kGTRel) {
+        begin = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
+                                             item.beginBound_.val_);
+    } else {
+        begin = NebulaKeyUtils::encodeVariant(item.beginBound_.val_);
+    }
+
+    if (item.endBound_.rel_ == RelationType::kNull) {
+        end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kMax);
+    } else if (item.endBound_.rel_ == RelationType::kLTRel) {
+        end = NebulaKeyUtils::encodeVariant(item.endBound_.val_);
+    } else {
+        end = NebulaKeyUtils::boundVariant(type, NebulaBoundValueType::kAddition,
+                                           item.endBound_.val_);
+    }
+    return std::make_pair(begin, end);
+}
+
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
-                        .append(prefix_);
-    std::unique_ptr<kvstore::KVIterator> iter;
     std::vector<std::string> keys;
-    auto ret = this->kvstore_->prefix(spaceId_,
-                                      part,
-                                      prefix,
-                                      &iter);
+    auto ret = getIndexKey(part, keys);
+    if (ret != nebula::kvstore::SUCCEEDED) {
+        return ret;
+    }
+    for (auto& item : keys) {
+        ret = getDataRow(part, item);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanConcurrently(
+    const std::vector<PartitionID>& parts) {
+    if (isEdgeIndex_) {
+        return executeExecutionPlanForEdge(parts);
+    }
+    return executeExecutionPlanForVertex(parts);
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanForEdge(
+    const std::vector<PartitionID>& parts) {
+    std::vector<folly::Future<std::tuple<PartitionID, EdgeRows>>> results;
+    for (auto& part : parts) {
+        folly::Promise<std::tuple<PartitionID, EdgeRows>> pro;
+        auto f = pro.getFuture();
+        executor_->add([this, p = std::move(pro), &part] () mutable {
+            std::tuple<PartitionID, EdgeRows> partEdgeRows;
+            std::vector<std::string> keys;
+            auto code = getIndexKey(part, keys);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Execute execution plan for edge concurrently! "
+                           << "getIndexKey error, ret = "
+                           << static_cast<int32_t>(code)
+                           << ", spaceId = " << spaceId_
+                           << ", partId =  " << part;
+                partEdgeRows = std::make_tuple(part, code);
+                p.setValue(partEdgeRows);
+                return;
+            }
+
+            std::vector<cpp2::Edge> edgeDatas;
+            for (auto& key : keys) {
+                cpp2::Edge data;
+                code = getEdgeRow(part, key, &data);
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "execute execution plan for edge concurrently! "
+                               << "getDataRow error, ret = "
+                               << static_cast<int32_t>(code)
+                               << ", spaceId = " << spaceId_
+                               << ", partId =  " << part;
+                    partEdgeRows = std::make_tuple(part, code);
+                    p.setValue(partEdgeRows);
+                    return;
+                }
+                edgeDatas.emplace_back(std::move(data));
+            }
+
+            partEdgeRows = std::make_tuple(part, edgeDatas);
+            p.setValue(std::move(partEdgeRows));
+        });
+        results.emplace_back(std::move(f));
+    }
+    folly::Promise<std::unordered_map<PartitionID, kvstore::ResultCode>> resultPro;
+    auto result = resultPro.getFuture();
+    folly::collect(results).via(executor_).then([this, pro = std::move(resultPro)](
+        const std::vector<std::tuple<PartitionID, EdgeRows>>& partEdgeRows) mutable {
+        std::unordered_map<PartitionID, kvstore::ResultCode> res;
+        for (const auto& partEdgeRow : partEdgeRows) {
+            auto part = std::get<0>(partEdgeRow);
+            auto keysOr = std::get<1>(partEdgeRow);
+            if (!nebula::ok(keysOr)) {
+                auto code = nebula::error(keysOr);
+                res.emplace(part, code);
+            }
+        }
+        if (!res.empty()) {
+            pro.setValue(res);
+            return;
+        }
+
+        for (const auto& partEdgeRow : partEdgeRows) {
+            auto keysOr = std::get<1>(partEdgeRow);
+            std::vector<cpp2::Edge> edgeRows = nebula::value(keysOr);
+            edgeRows_.insert(edgeRows_.end(), edgeRows.begin(), edgeRows.end());
+        }
+        pro.setValue(res);
+    });
+    return result;
+}
+
+template <typename RESP>
+folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+IndexExecutor<RESP>::executeExecutionPlanForVertex(
+    const std::vector<PartitionID>& parts) {
+    std::vector<folly::Future<std::tuple<PartitionID, VertexRows>>> results;
+    for (auto& part : parts) {
+        folly::Promise<std::tuple<PartitionID, VertexRows>> pro;
+        auto f = pro.getFuture();
+        executor_->add([this, p = std::move(pro), &part] () mutable {
+            std::tuple<PartitionID, VertexRows> partVertexRows;
+            std::vector<std::string> keys;
+            auto code = getIndexKey(part, keys);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "execute execution plan for vertex concurrently! "
+                           << "getIndexKey error, ret = "
+                           << static_cast<int32_t>(code)
+                           << ", spaceId = " << spaceId_
+                           << ", partId =  " << part;
+                partVertexRows = std::make_tuple(part, code);
+                p.setValue(partVertexRows);
+                return;
+            }
+
+            std::vector<cpp2::VertexIndexData> vertexDatas;
+            for (auto& key : keys) {
+                cpp2::VertexIndexData data;
+                code = getVertexRow(part, key, &data);
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "execute execution plan for vertex concurrently! "
+                               << "getDataRow error, ret = "
+                               << static_cast<int32_t>(code)
+                               << ", spaceId = " << spaceId_
+                               << ", partId =  " << part;
+                    partVertexRows = std::make_tuple(part, code);
+                    p.setValue(partVertexRows);
+                    return;
+                }
+                vertexDatas.emplace_back(std::move(data));
+            }
+
+            partVertexRows = std::make_tuple(part, vertexDatas);
+            p.setValue(std::move(partVertexRows));
+        });
+        results.emplace_back(std::move(f));
+    }
+    folly::Promise<std::unordered_map<PartitionID, kvstore::ResultCode>> resultPro;
+    auto result = resultPro.getFuture();
+    folly::collect(results).via(executor_).then([this, pro = std::move(resultPro)](
+        const std::vector<std::tuple<PartitionID, VertexRows>>& partVertexRows) mutable {
+        std::unordered_map<PartitionID, kvstore::ResultCode> res;
+        for (const auto& partVertexRow : partVertexRows) {
+            auto part = std::get<0>(partVertexRow);
+            auto keysOr = std::get<1>(partVertexRow);
+            if (!nebula::ok(keysOr)) {
+                auto code = nebula::error(keysOr);
+                res.emplace(part, code);
+            }
+        }
+        if (!res.empty()) {
+            pro.setValue(res);
+            return;
+        }
+
+        for (const auto& partVertexRow : partVertexRows) {
+            auto keysOr = std::get<1>(partVertexRow);
+            std::vector<cpp2::VertexIndexData> vertexDatas = nebula::value(keysOr);
+            vertexRows_.insert(vertexRows_.end(), vertexDatas.begin(), vertexDatas.end());
+        }
+        pro.setValue(res);
+    });
+    return result;
+}
+
+template <typename RESP>
+kvstore::ResultCode IndexExecutor<RESP>::getIndexKey(PartitionID part,
+                                                     std::vector<std::string>& keys) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto pair = makeScanPair(part, index_->get_index_id());
+    if (pair.first.empty() || pair.second.empty()) {
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    }
+    auto ret = (pair.first == pair.second)
+               ? this->doPrefix(spaceId_, part, pair.first, &iter)
+               : this->doRange(spaceId_, part, pair.first, pair.second, &iter);
     if (ret != nebula::kvstore::SUCCEEDED) {
         return ret;
     }
@@ -140,12 +406,6 @@ kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) 
         }
         keys.emplace_back(key);
         iter->next();
-    }
-    for (auto& item : keys) {
-        ret = getDataRow(part, item);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return ret;
-        }
     }
     return ret;
 }

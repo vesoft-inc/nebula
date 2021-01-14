@@ -256,7 +256,7 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string> result(std::get<0>(serve));
@@ -274,7 +274,7 @@ TEST_F(YieldTest, YieldPipe) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -288,11 +288,11 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -306,14 +306,65 @@ TEST_F(YieldTest, YieldPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string, int64_t> result(
-                    player.name(), std::get<1>(serve),
+                    player.name(), std::get<2>(serve),
                     std::get<0>(serve), std::hash<int32_t>{}(123));
             expected.emplace_back(std::move(result));
         }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, YieldPipeDistinct) {
+    {
+        // duplicate
+        std::string fmt = "GO 2 STEPS FROM %ld OVER like YIELD like._dst AS dst"
+                            "| YIELD DISTINCT $-.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tim Duncan"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // duplicate without distinct
+        std::string fmt = "GO 2 STEPS FROM %ld OVER like YIELD like._dst AS dst"
+                            "| YIELD $-.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tim Duncan"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // no duplicate
+        std::string fmt = "GO FROM %ld OVER like YIELD like._dst AS dst"
+                            "| YIELD DISTINCT $-.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+        };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
@@ -358,7 +409,7 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string> result(std::get<0>(serve));
@@ -376,7 +427,7 @@ TEST_F(YieldTest, YieldVar) {
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -390,11 +441,11 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string> result(
-                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                    player.name(), std::get<2>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -408,14 +459,65 @@ TEST_F(YieldTest, YieldVar) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
         std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            if (std::get<1>(serve) <= 2005) {
+            if (std::get<2>(serve) <= 2005) {
                 continue;
             }
             std::tuple<std::string, int64_t, std::string, int64_t> result(
-                    player.name(), std::get<1>(serve),
+                    player.name(), std::get<2>(serve),
                     std::get<0>(serve), std::hash<int32_t>{}(123));
             expected.emplace_back(std::move(result));
         }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, YieldVarDistinct) {
+    {
+        // duplicate
+        std::string fmt = "$a = GO 2 STEPS FROM %ld OVER like YIELD like._dst AS dst;"
+                            "YIELD DISTINCT $a.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tim Duncan"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // duplicate without distinct
+        std::string fmt = "$a = GO 2 STEPS FROM %ld OVER like YIELD like._dst AS dst;"
+                            "YIELD $a.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tim Duncan"].vid()},
+            {players_["Manu Ginobili"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // no duplicate
+        std::string fmt = "$a = GO FROM %ld OVER like YIELD like._dst AS dst;"
+                            "YIELD DISTINCT $a.dst AS dst";
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+        };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
@@ -869,6 +971,14 @@ TEST_F(YieldTest, WithComment) {
             {1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, FIX_BUG) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute("YIELD !(1/0)", resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }   // namespace graph

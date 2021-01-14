@@ -1339,5 +1339,48 @@ TEST_F(SchemaTest, issue2009) {
     }
 }
 
+TEST_F(SchemaTest, fetchWithTimestamp) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE fetchWithTimestamp; USE fetchWithTimestamp;"
+                            "CREATE TAG tag_timestamp(`create` timestamp);"
+                            "CREATE EDGE edge_timestamp(`create` timestamp);";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    ::sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "INSERT VERTEX tag_timestamp (`create`) VALUES 111:(now());"
+                            "INSERT EDGE edge_timestamp (`create`) VALUES 111->222:(now());";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "FETCH PROP ON tag_timestamp 111;";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns().size(), 2);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns()[1].getType(),
+                  cpp2::ColumnValue::Type::timestamp);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "FETCH PROP ON edge_timestamp 111->222;";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns().size(), 4);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns()[3].getType(),
+                  cpp2::ColumnValue::Type::timestamp);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

@@ -13,6 +13,10 @@
 namespace nebula {
 namespace storage {
 
+using PartKeys = ErrorOr<kvstore::ResultCode, std::vector<std::string>>;
+using EdgeRows = ErrorOr<kvstore::ResultCode, std::vector<cpp2::Edge>>;
+using VertexRows = ErrorOr<kvstore::ResultCode, std::vector<cpp2::VertexIndexData>>;
+
 template<typename RESP>
 class IndexExecutor : public BaseProcessor<RESP>
                     , public IndexPolicyMaker {
@@ -25,9 +29,11 @@ protected:
                            meta::IndexManager* indexMan,
                            stats::Stats* stats,
                            VertexCache* cache,
+                           folly::Executor* executor,
                            bool isEdgeIndex = false)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
         , IndexPolicyMaker(schemaMan, indexMan)
+        , executor_(executor)
         , vertexCache_(cache)
         , isEdgeIndex_(isEdgeIndex) {}
 
@@ -48,12 +54,29 @@ protected:
      **/
     cpp2::ErrorCode buildExecutionPlan(const std::string& filter);
 
+    std::pair<std::string, std::string> makeScanPair(PartitionID partId, IndexID indexId);
+
+    std::pair<std::string, std::string>
+    normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanBound& item);
+
     /**
      * Details Scan index part as one by one.
      **/
     kvstore::ResultCode executeExecutionPlan(PartitionID part);
 
+    /**
+     * Details Scan index parts
+     **/
+    folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+    executeExecutionPlanConcurrently(const std::vector<PartitionID>& parts);
+
 private:
+    folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+    executeExecutionPlanForEdge(const std::vector<PartitionID>& parts);
+
+    folly::Future<std::unordered_map<PartitionID, kvstore::ResultCode>>
+    executeExecutionPlanForVertex(const std::vector<PartitionID>& parts);
+
     cpp2::ErrorCode checkIndex(IndexID indexId);
 
     cpp2::ErrorCode checkReturnColumns(const std::vector<std::string> &cols);
@@ -79,8 +102,15 @@ private:
     folly::StringPiece getIndexVal(const folly::StringPiece& key,
                                    const folly::StringPiece& prop);
 
+    /**
+    * Details Scan index key
+    **/
+    kvstore::ResultCode getIndexKey(PartitionID part,
+                                    std::vector<std::string>& keys);
+
 protected:
     GraphSpaceID                           spaceId_;
+    folly::Executor*                       executor_{nullptr};
     VertexCache*                           vertexCache_{nullptr};
     std::shared_ptr<SchemaWriter>          schema_{nullptr};
     std::vector<cpp2::VertexIndexData>     vertexRows_;
