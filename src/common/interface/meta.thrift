@@ -76,14 +76,15 @@ enum ErrorCode {
     E_SAVE_JOB_FAILURE       = -57,
     E_BALANCER_FAILURE       = -58,
     E_JOB_NOT_FINISHED       = -59,
+    E_TASK_REPORT_OUT_DATE   = -60,
 
     // Backup Failure
-    E_BACKUP_FAILURE = -60,
-    E_BACKUP_BUILDING_INDEX = -61,
-    E_BACKUP_SPACE_NOT_FOUND = -62,
+    E_BACKUP_FAILURE = -70,
+    E_BACKUP_BUILDING_INDEX = -71,
+    E_BACKUP_SPACE_NOT_FOUND = -72,
 
     // RESTORE Failure
-    E_RESTORE_FAILURE = -70,
+    E_RESTORE_FAILURE = -80,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
