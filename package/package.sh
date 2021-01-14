@@ -23,7 +23,7 @@ static_sanitizer="OFF"
 build_type="Release"
 branch="master"
 
-while getopts v:n:s:b:d: opt;
+while getopts v:n:s:b:d:t: opt;
 do
     case $opt in
         v)
@@ -44,6 +44,9 @@ do
                 static_sanitizer="ON"
             fi
             build_type="RelWithDebInfo"
+            ;;
+        t)
+            build_type=$OPTARG
             ;;
         ?)
             echo "Invalid option, use default arguments"
