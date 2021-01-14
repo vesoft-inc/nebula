@@ -81,6 +81,50 @@ public:
             lc->setMapping(newMapping);
         }
     }
+
+    static void rewritePred(QueryContext *qctx,
+                            PredicateExpression *pred,
+                            const std::string &oldVarName) {
+        const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
+        qctx->ectx()->setValue(newVarName, Value());
+        auto rewriter = [&oldVarName, &newVarName](const Expression *expr) {
+            Expression *ret = nullptr;
+            if (expr->kind() == Expression::Kind::kLabel) {
+                auto *label = static_cast<const LabelExpression *>(expr);
+                if (*label->name() == oldVarName) {
+                    ret = new VariableExpression(new std::string(newVarName));
+                } else {
+                    ret = label->clone().release();
+                }
+            } else {
+                DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
+                auto *la = static_cast<const LabelAttributeExpression *>(expr);
+                if (*la->left()->name() == oldVarName) {
+                    const auto &value = la->right()->value();
+                    ret =
+                        new AttributeExpression(new VariableExpression(new std::string(newVarName)),
+                                                new ConstantExpression(value));
+                } else {
+                    ret = la->clone().release();
+                }
+            }
+            return ret;
+        };
+
+        RewriteMatchLabelVisitor visitor(rewriter);
+
+        pred->setOriginString(new std::string(pred->makeString()));
+        pred->setInnerVar(new std::string(newVarName));
+        Expression *filter = pred->filter();
+        Expression *newFilter = nullptr;
+        if (isLabel(filter)) {
+            newFilter = rewriter(filter);
+        } else {
+            newFilter = filter->clone().release();
+            newFilter->accept(&visitor);
+        }
+        pred->setFilter(newFilter);
+    }
 };
 
 }   // namespace graph

@@ -157,6 +157,12 @@ void CollectAllExprsVisitor::visit(ListComprehensionExpression* expr) {
     }
 }
 
+void CollectAllExprsVisitor::visit(PredicateExpression *expr) {
+    collectExpr(expr);
+    expr->collection()->accept(this);
+    expr->filter()->accept(this);
+}
+
 void CollectAllExprsVisitor::visitBinaryExpr(BinaryExpression *expr) {
     collectExpr(expr);
     expr->left()->accept(this);

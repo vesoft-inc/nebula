@@ -166,6 +166,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "COLLATION"                 { return TokenType::KW_COLLATION; }
 "ATOMIC_EDGE"               { return TokenType::KW_ATOMIC_EDGE; }
 "ALL"                       { return TokenType::KW_ALL; }
+"ANY"                       { return TokenType::KW_ANY; }
+"SINGLE"                    { return TokenType::KW_SINGLE; }
+"NONE"                      { return TokenType::KW_NONE; }
 "LEADER"                    { return TokenType::KW_LEADER; }
 "UUID"                      { return TokenType::KW_UUID; }
 "DATA"                      { return TokenType::KW_DATA; }

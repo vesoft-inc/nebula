@@ -87,6 +87,15 @@ void FindAnyExprVisitor::visit(CaseExpression *expr) {
     }
 }
 
+void FindAnyExprVisitor::visit(PredicateExpression *expr) {
+    findExpr(expr);
+    if (found_) return;
+    expr->collection()->accept(this);
+    if (found_) return;
+    expr->filter()->accept(this);
+    if (found_) return;
+}
+
 void FindAnyExprVisitor::visit(ConstantExpression *expr) {
     findExpr(expr);
 }

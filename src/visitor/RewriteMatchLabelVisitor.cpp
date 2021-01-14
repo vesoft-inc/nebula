@@ -143,6 +143,19 @@ void RewriteMatchLabelVisitor::visit(ListComprehensionExpression *expr) {
     }
 }
 
+void RewriteMatchLabelVisitor::visit(PredicateExpression *expr) {
+    if (isLabel(expr->collection())) {
+        expr->setCollection(rewriter_(expr));
+    } else {
+        expr->collection()->accept(this);
+    }
+    if (isLabel(expr->filter())) {
+        expr->setFilter(rewriter_(expr));
+    } else {
+        expr->filter()->accept(this);
+    }
+}
+
 void RewriteMatchLabelVisitor::visitBinaryExpr(BinaryExpression *expr) {
     if (isLabel(expr->left())) {
         expr->setLeft(rewriter_(expr->left()));

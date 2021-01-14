@@ -23,6 +23,7 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/CaseExpression.h"
 #include "common/expression/TextSearchExpression.h"
+#include "common/expression/PredicateExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
 
@@ -182,6 +183,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_LISTENER KW_ELASTICSEARCH
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
+%token KW_ANY KW_SINGLE KW_NONE
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -195,7 +197,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL IPV4
 
-%type <strval> name_label unreserved_keyword agg_function
+%type <strval> name_label unreserved_keyword agg_function predicate_name
 %type <expr> expression
 %type <expr> property_expression
 %type <expr> vertex_prop_expression
@@ -215,6 +217,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <expr> subscript_expression
 %type <expr> attribute_expression
 %type <expr> case_expression
+%type <expr> predicate_expression
 %type <expr> list_comprehension_expression
 %type <expr> compound_expression
 %type <expr> aggregate_expression
@@ -453,6 +456,9 @@ unreserved_keyword
     | KW_META               { $$ = new std::string("meta"); }
     | KW_STORAGE            { $$ = new std::string("storage"); }
     | KW_ALL                { $$ = new std::string("all"); }
+    | KW_ANY                { $$ = new std::string("any"); }
+    | KW_SINGLE             { $$ = new std::string("single"); }
+    | KW_NONE               { $$ = new std::string("none"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
     | KW_NOLOOP             { $$ = new std::string("noloop"); }
     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
@@ -627,6 +633,9 @@ expression
     | case_expression {
         $$ = $1;
     }
+    | predicate_expression {
+        $$ = $1;
+    }
     | list_comprehension_expression {
         $$ = $1;
     }
@@ -749,6 +758,24 @@ when_then_list
     }
     ;
 
+predicate_name
+    : KW_ALL                { $$ = new std::string("all"); }
+    | KW_ANY                { $$ = new std::string("any"); }
+    | KW_SINGLE             { $$ = new std::string("single"); }
+    | KW_NONE               { $$ = new std::string("none"); }
+    ;
+
+predicate_expression
+    : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
+        if ($3->kind() != Expression::Kind::kLabel) {
+            throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
+        }
+        auto &innerVar = *(static_cast<const LabelExpression *>($3)->name());
+        auto *expr = new PredicateExpression($1, new std::string(innerVar), $5, $7);
+        nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
+        $$ = expr;
+        delete $3;
+    }
 
 list_comprehension_expression
     : L_BRACKET expression KW_IN expression KW_WHERE expression R_BRACKET {

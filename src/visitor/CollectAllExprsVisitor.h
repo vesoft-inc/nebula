@@ -56,6 +56,7 @@ private:
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
     void visit(CaseExpression* expr) override;
+    void visit(PredicateExpression* expr) override;
     void visit(ListComprehensionExpression* expr) override;
 
     void visit(ColumnExpression* expr) override;

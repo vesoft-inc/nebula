@@ -33,6 +33,7 @@ private:
     void visit(SetExpression *expr) override;
     void visit(MapExpression *expr) override;
     void visit(CaseExpression *) override;
+    void visit(PredicateExpression *) override;
     void visit(ListComprehensionExpression *) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression *) override {}

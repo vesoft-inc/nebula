@@ -381,5 +381,26 @@ void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
     canBeFolded_ = canBeFolded;
 }
 
+void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
+    bool canBeFolded = true;
+    if (!isConstant(expr->collection())) {
+        expr->collection()->accept(this);
+        if (canBeFolded_) {
+            expr->setCollection(fold(expr->collection()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    if (!isConstant(expr->filter())) {
+        expr->filter()->accept(this);
+        if (canBeFolded_) {
+            expr->setFilter(fold(expr->filter()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    canBeFolded_ = canBeFolded;
+}
+
 }   // namespace graph
 }   // namespace nebula

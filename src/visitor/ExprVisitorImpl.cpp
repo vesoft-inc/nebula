@@ -145,6 +145,14 @@ void ExprVisitorImpl::visit(PathBuildExpression *expr) {
     }
 }
 
+void ExprVisitorImpl::visit(PredicateExpression *expr) {
+    DCHECK(ok());
+    expr->collection()->accept(this);
+    if (!ok()) return;
+    expr->filter()->accept(this);
+    if (!ok()) return;
+}
+
 void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
     DCHECK(ok());
     expr->collection()->accept(this);

@@ -271,5 +271,17 @@ void RewriteInputPropVisitor::visit(PathBuildExpression* expr) {
         }
     }
 }
+
+void RewriteInputPropVisitor::visit(PredicateExpression* expr) {
+    expr->collection()->accept(this);
+    if (ok()) {
+        expr->setCollection(result_.release());
+    }
+    expr->filter()->accept(this);
+    if (ok()) {
+        expr->setFilter(result_.release());
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
