@@ -1952,9 +1952,28 @@ StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto iter = localCache_.find(spaceId);
     if (iter == localCache_.end()) {
-        return Status::Error("Space not %d found", spaceId);
+        return Status::Error("Space %d not found", spaceId);
     }
     return iter->second->tagSchemas_;
+}
+
+
+StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto iter = localCache_.find(spaceId);
+    if (iter == localCache_.end()) {
+        return Status::Error("Space %d not found", spaceId);
+    }
+    TagSchema tagsSchema;
+    tagsSchema.reserve(iter->second->tagSchemas_.size());
+    // fetch all tagIds
+    for (const auto& tagSchema : iter->second->tagSchemas_) {
+        tagsSchema.emplace(tagSchema.first, tagSchema.second.back());
+    }
+    return tagsSchema;
 }
 
 
@@ -1965,7 +1984,7 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto iter = localCache_.find(spaceId);
     if (iter == localCache_.end()) {
-        return Status::Error("Space not %d found", spaceId);
+        return Status::Error("Space %d not found", spaceId);
     }
     return iter->second->edgeSchemas_;
 }
@@ -2206,6 +2225,7 @@ bool MetaClient::authCheckFromCache(const std::string& account, const std::strin
     return iter->second == password;
 }
 
+
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
     if (!ready_) {
         return false;
@@ -2230,7 +2250,6 @@ StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID&
     }
     return it->second;
 }
-
 
 StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID& space,
                                                               const EdgeType& edgeType) {
