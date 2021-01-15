@@ -19,6 +19,8 @@ namespace mock {
 // the different version of tag schema, from oldest to newest
 using TagSchemas =
     std::unordered_map<TagID, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
+
+using TagSchema = nebula::meta::TagSchema;
 // the different version of edge schema, from oldest to newest
 using EdgeSchemas =
     std::unordered_map<EdgeType, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
@@ -76,19 +78,22 @@ public:
 
     StatusOr<meta::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
 
-    // get all version of all tags
+    // Get all versions of all tags
     StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) override;
 
-    // get all version of all edges
+    // Get latest version of all tags
+    StatusOr<TagSchema> getAllLatestVerTagSchema(GraphSpaceID space) override;
+
+    // Get all version of all edges
     StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override;
 
-    // mock previous version of get schema from cache in MetaClient, only used of benchmark
+    // Mock previous version of get schema from cache in MetaClient, only used of benchmark
     std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
     getTagSchemaFromMap(GraphSpaceID space,
                         TagID tag,
                         SchemaVer ver);
 
-    // mock previous version of get schema from cache in MetaClient, only used of benchmark
+    // Mock previous version of get schema from cache in MetaClient, only used of benchmark
     std::shared_ptr<const nebula::meta::NebulaSchemaProvider>
     getEdgeSchemaFromMap(GraphSpaceID space,
                          EdgeType edge,
@@ -105,12 +110,12 @@ public:
 protected:
     folly::RWSpinLock tagLock_;
 
-    // all version of the same tag schema is stored in a vector
+    // All version of the same tag schema is stored in a vector
     std::unordered_map<GraphSpaceID, TagSchemas> tagSchemasInVector_;
 
     folly::RWSpinLock edgeLock_;
 
-    // all version of the same edge schema is stored in a vector
+    // All version of the same edge schema is stored in a vector
     std::unordered_map<GraphSpaceID, EdgeSchemas> edgeSchemasInVector_;
 
     folly::RWSpinLock spaceLock_;
@@ -119,14 +124,14 @@ protected:
     std::unordered_map<std::string, TagID> tagNameToId_;
 
 private:
-    // all version of the same tag schema is stored in map, same as previous MetaClient cache
-    // only used for benchmark comparison
+    // All version of the same tag schema is stored in map, same as previous MetaClient cache
+    // Only used for benchmark comparison
     std::unordered_map<GraphSpaceID,
         std::unordered_map<std::pair<TagID, SchemaVer>,
             std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>> tagSchemasInMap_;
 
-    // all version of the same edge schema is stored in map, same as previous MetaClient cache
-    // only used for benchmark comparison
+    // All version of the same edge schema is stored in map, same as previous MetaClient cache
+    // Only used for benchmark comparison
     std::unordered_map<GraphSpaceID,
         std::unordered_map<std::pair<EdgeType, SchemaVer>,
             std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>> edgeSchemasInMap_;
