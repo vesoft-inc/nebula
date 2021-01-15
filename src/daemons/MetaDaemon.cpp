@@ -223,6 +223,7 @@ int main(int argc, char *argv[]) {
     pool->start(FLAGS_meta_http_thread_num, "http thread pool");
 
     auto webSvc = std::make_unique<nebula::WebService>();
+    webSvc->SetDataPath({FLAGS_data_path});
     status = initWebService(webSvc.get(), gKVStore.get(), helper.get(), pool.get());
     if (!status.ok()) {
         LOG(ERROR) << "Init web service failed: " << status;

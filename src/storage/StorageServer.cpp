@@ -73,6 +73,7 @@ bool StorageServer::initWebService() {
     webWorkers_->start(FLAGS_storage_http_thread_num, "http thread pool");
     LOG(INFO) << "Http Thread Pool started";
     webSvc_ = std::make_unique<WebService>();
+    webSvc_->SetDataPath(dataPaths_);
     auto& router = webSvc_->router();
 
     router.get("/download").handler([this](web::PathParams&&) {

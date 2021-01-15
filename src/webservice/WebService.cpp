@@ -14,6 +14,7 @@
 #include "webservice/GetFlagsHandler.h"
 #include "webservice/SetFlagsHandler.h"
 #include "webservice/GetStatsHandler.h"
+#include "webservice/SysInfoHandler.h"
 #include "webservice/Router.h"
 #include "webservice/StatusHandler.h"
 
@@ -65,7 +66,6 @@ Status WebService::start() {
         LOG(INFO) << "Web service has been started.";
         return Status::OK();
     }
-
     router().get("/get_flag").handler([](web::PathParams&& params) {
         DCHECK(params.empty());
         return new GetFlagsHandler();
@@ -98,7 +98,12 @@ Status WebService::start() {
         DCHECK(params.empty());
         return new StatusHandler();
     });
-
+    router().get("/sysinfo").handler([this](web::PathParams&& params) {
+        DCHECK(params.empty());
+        auto sysHandler = new SysInfoHandler();
+        sysHandler->init(dataPaths_);
+        return sysHandler;
+    });
     started_ = true;
 
     std::vector<HTTPServer::IPConfig> ips = {

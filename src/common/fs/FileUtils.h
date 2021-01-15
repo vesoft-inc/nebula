@@ -114,7 +114,8 @@ public:
     // Refer to `man 3 rename'
     // return false when rename failed
     static bool rename(const std::string& src, const std::string& dst);
-
+    // Get Disk Usage: total size, available size
+    static std::pair<double, double> detectFilesystemUsage(const std::string& data_path);
     /**
      * List all entities in the given directory, whose type matches
      * the given file type
