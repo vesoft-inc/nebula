@@ -11,6 +11,8 @@
 #include "common/algorithm/ReservoirSampling.h"
 #include "storage/exec/AggregateNode.h"
 #include "storage/exec/HashJoinNode.h"
+#include "storage/StorageFlags.h"
+
 
 namespace nebula {
 namespace storage {
@@ -89,7 +91,8 @@ protected:
         int64_t edgeRowCount = 0;
         nebula::List list;
         for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
-            if (limit_ > 0 && edgeRowCount >= limit_) {
+            if ((limit_ > 0 && edgeRowCount >= limit_) ||
+                (limit_ == 0 && edgeRowCount >= FLAGS_max_edge_returned_per_vertex)) {
                 return kvstore::ResultCode::SUCCEEDED;
             }
             auto key = upstream_->key();
@@ -130,8 +133,14 @@ public:
                            EdgeContext* edgeContext,
                            nebula::DataSet* resultDataSet,
                            int64_t limit)
-        : GetNeighborsNode(planCtx, hashJoinNode, upstream, edgeContext, resultDataSet, limit)
-        , sampler_(std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit_)) {}
+        : GetNeighborsNode(planCtx, hashJoinNode, upstream, edgeContext, resultDataSet, limit) {
+            if (limit > 0) {
+                sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit);
+            } else {
+                sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(
+                         FLAGS_max_edge_returned_per_vertex);
+            }
+        }
 
 private:
     using Sample = std::tuple<EdgeType,

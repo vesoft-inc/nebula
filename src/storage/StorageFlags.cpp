@@ -45,3 +45,6 @@ DEFINE_uint64(default_mvcc_ver, 0L, "vertex/edge version if enable_multi_version
 DEFINE_string(reader_handlers_type, "cpu", "Type of reader handlers, options: cpu,io");
 
 DEFINE_bool(trace_toss, false, "output verbose log of toss");
+
+DEFINE_int32(max_edge_returned_per_vertex, INT_MAX,
+             "Max edge number returnred searching vertex");

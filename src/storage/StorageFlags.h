@@ -39,4 +39,6 @@ DECLARE_string(reader_handlers_type);
 
 DECLARE_bool(trace_toss);
 
+DECLARE_int32(max_edge_returned_per_vertex);
+
 #endif  // STORAGE_STORAGEFLAGS_H_
