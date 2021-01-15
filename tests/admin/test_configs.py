@@ -77,7 +77,9 @@ class TestConfigs(NebulaTestSuite):
                            ['STORAGE', 'enable_multi_versions', 'bool', 'MUTABLE', False],
                            ['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE',
                             {"write_buffer_size":"67108864","max_bytes_for_level_base":"268435456","max_write_buffer_number":"4"}],
-                           ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size":"8192"}]]
+                           ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size":"8192"}],
+                           ["STORAGE", "max_edge_returned_per_vertex", "int", "MUTABLE", 2147483647]]
+        print(resp)
         self.check_out_of_order_result(resp, expected_result)
 
         # update rocksdb
