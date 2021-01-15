@@ -868,6 +868,9 @@ function_call_expression
     | KW_DATETIME L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression(new std::string("datetime"), $3);
     }
+    | KW_TAGS L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("tags"), $3);
+    }
     ;
 
 aggregate_expression

@@ -137,7 +137,7 @@ StatusOr<int64_t> GetNeighborsIter::buildIndex(DataSetIndex* dsIndex) {
     for (size_t i = 0; i < colNames.size(); ++i) {
         dsIndex->colIndices.emplace(colNames[i], i);
         auto& colName = colNames[i];
-        if (colName.find("_tag") == 0) {
+        if (colName.find(nebula::kTag) == 0) {  // "_tag"
             NG_RETURN_IF_ERROR(buildPropIndex(colName, i, false, dsIndex));
         } else if (colName.find("_edge") == 0) {
             NG_RETURN_IF_ERROR(buildPropIndex(colName, i, true, dsIndex));
@@ -618,7 +618,9 @@ Value PropIter::getVertex() const {
     auto& tagPropsMap = dsIndex_.propsMap;
     bool isVertexProps = true;
     auto& row = *(iter_->row_);
+    // tagPropsMap -> <std::string, std::unordered_map<std::string, size_t> >
     for (auto& tagProp : tagPropsMap) {
+        // propIndex -> std::unordered_map<std::string, size_t>
         for (auto& propIndex : tagProp.second) {
             if (row[propIndex.second].empty()) {
                 // Not current vertex's prop
@@ -633,7 +635,11 @@ Value PropIter::getVertex() const {
         Tag tag;
         tag.name = tagProp.first;
         for (auto& propIndex : tagProp.second) {
-            tag.props.emplace(propIndex.first, row[propIndex.second]);
+            if (propIndex.first == nebula::kTag) {  // "_tag"
+                continue;
+            } else {
+                tag.props.emplace(propIndex.first, row[propIndex.second]);
+            }
         }
         vertex.tags.emplace_back(std::move(tag));
     }

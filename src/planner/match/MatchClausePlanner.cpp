@@ -264,8 +264,15 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
     MatchSolver::extractAndDedupVidColumn(
         qctx, initialExpr, plan.root, plan.root->outputVar(), plan);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
+    auto props = flattenTags(qctx, space);
+    NG_RETURN_IF_ERROR(props);
     auto gv = GetVertices::make(
-        qctx, plan.root, space.id, qctx->objPool()->add(srcExpr.release()), {}, {});
+        qctx,
+        plan.root,
+        space.id,
+        qctx->objPool()->add(srcExpr.release()),
+        std::move(props).value(),
+        {});
 
     PlanNode* root = gv;
     if (nodeFilter != nullptr) {
@@ -295,6 +302,36 @@ Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
     plan.root = Project::make(qctx, root, columns);
     plan.root->setColNames({kPathStr});
     return Status::OK();
+}
+
+StatusOr<std::vector<storage::cpp2::VertexProp>>
+MatchClausePlanner::flattenTags(QueryContext *qctx, const SpaceInfo& space) {
+    // Get all tags in the space
+    const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
+    NG_RETURN_IF_ERROR(allTagsResult);
+    // allTags: std::unordered_map<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
+    const auto allTags = std::move(allTagsResult).value();
+
+    std::vector<storage::cpp2::VertexProp> props;
+    props.reserve(allTags.size());
+    // Retrieve prop names of each tag and append "_tag" to the name list to query empty tags
+    for (const auto &tag : allTags) {
+        // tag: pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
+        std::vector<std::string> propNames;
+        storage::cpp2::VertexProp vProp;
+
+        const auto tagId = tag.first;
+        vProp.set_tag(tagId);
+        const auto tagSchema = tag.second;  // nebulaSchemaProvider
+        for (size_t i=0; i < tagSchema->getNumFields(); i++) {
+            const auto propName = tagSchema->getFieldName(i);
+            propNames.emplace_back(propName);
+        }
+        propNames.emplace_back(nebula::kTag);  // "_tag"
+        vProp.set_props(std::move(propNames));
+        props.emplace_back(std::move(vProp));
+    }
+    return props;
 }
 
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,

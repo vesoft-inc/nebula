@@ -81,11 +81,11 @@ Status FetchVerticesValidator::check() {
         }
     } else {
         onStar_ = true;
-        const auto allTagsResult = qctx_->schemaMng()->getAllVerTagSchema(space_.id);
+        const auto allTagsResult = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
         NG_RETURN_IF_ERROR(allTagsResult);
         const auto allTags = std::move(allTagsResult).value();
         for (const auto &tag : allTags) {
-            tagsSchema_.emplace(tag.first, tag.second.back());
+            tagsSchema_.emplace(tag.first, tag.second);
         }
         for (const auto &tagSchema : tagsSchema_) {
             auto tagNameResult = qctx_->schemaMng()->toTagName(space_.id, tagSchema.first);

@@ -342,11 +342,11 @@ Status GetSubgraphValidator::toPlan() {
 StatusOr<std::vector<storage::cpp2::VertexProp>> GetSubgraphValidator::buildVertexProp() {
     // list all tag properties
     std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema;
-    const auto allTagsResult = qctx()->schemaMng()->getAllVerTagSchema(space_.id);
+    const auto allTagsResult = qctx()->schemaMng()->getAllLatestVerTagSchema(space_.id);
     NG_RETURN_IF_ERROR(allTagsResult);
     const auto allTags = std::move(allTagsResult).value();
     for (const auto& tag : allTags) {
-        tagsSchema.emplace(tag.first, tag.second.back());
+        tagsSchema.emplace(tag.first, tag.second);
     }
     std::vector<storage::cpp2::VertexProp> vProps;
     for (const auto& tagSchema : tagsSchema) {

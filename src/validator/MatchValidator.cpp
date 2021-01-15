@@ -427,8 +427,8 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
     if (max == std::numeric_limits<int64_t>::max()) {
         return Status::SemanticError("Not set maximum hop for variable length relationships");
     }
-    if (min == 0) {
-        return Status::SemanticError("Zero steps implementation coming soon.");
+    if (min < 0) {
+        return Status::SemanticError("Negtive steps are invalid");
     }
     return Status::OK();
 }
