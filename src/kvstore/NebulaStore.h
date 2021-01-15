@@ -274,6 +274,9 @@ public:
                               PartitionID partId,
                               const std::vector<HostAddr>& remoteListeners) override;
 
+    ResultCode multiPutWithoutReplicator(GraphSpaceID spaceId,
+                                        std::vector<KV> keyValues) override;
+
 private:
     void loadPartFromDataPath();
 

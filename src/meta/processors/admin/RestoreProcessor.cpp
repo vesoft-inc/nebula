@@ -31,7 +31,7 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
     if (!replaceHosts.empty()) {
         for (auto h : replaceHosts) {
             auto result = MetaServiceUtils::replaceHostInPartition(
-                kvstore_, h.get_from_host(), h.get_to_host());
+                kvstore_, h.get_from_host(), h.get_to_host(), true);
             if (!result) {
                 LOG(ERROR) << "replaceHost in partition fails when recovered";
                 handleErrorCode(cpp2::ErrorCode::E_RESTORE_FAILURE);
@@ -39,8 +39,8 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
                 return;
             }
 
-            result =
-                MetaServiceUtils::replaceHostInZone(kvstore_, h.get_from_host(), h.get_to_host());
+            result = MetaServiceUtils::replaceHostInZone(
+                kvstore_, h.get_from_host(), h.get_to_host(), true);
             if (!result) {
                 LOG(ERROR) << "replacehost in zone fails when recovered";
                 handleErrorCode(cpp2::ErrorCode::E_RESTORE_FAILURE);
