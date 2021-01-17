@@ -31,6 +31,13 @@ StatisJobExecutor::save(const std::string& key, const std::string& val) {
     return rc;
 }
 
+void StatisJobExecutor::doRemove(const std::string& key) {
+    folly::Baton<true, std::atomic> baton;
+    kvstore_->asyncRemove(
+        kDefaultSpaceId, kDefaultPartId, key, [&](nebula::kvstore::ResultCode) { baton.post(); });
+    baton.wait();
+}
+
 cpp2::ErrorCode StatisJobExecutor::prepare() {
     auto spaceRet = getSpaceIdFromName(paras_[0]);
     if (!nebula::ok(spaceRet)) {
@@ -57,10 +64,78 @@ StatisJobExecutor::executeInternal(HostAddr&& address, std::vector<PartitionID>&
                                  std::move(parts), concurrency_, &(statisItem_[address]));
 }
 
+void showStatisItem(const cpp2::StatisItem& item, const std::string& msg) {
+    std::stringstream oss;
+    oss << msg << ": ";
+    oss << "tag_vertices: ";
+    for (auto& it : item.tag_vertices) {
+        oss << folly::sformat("[{}, {}] ", it.first, it.second);
+    }
+    oss << ", edges: ";
+    for (auto& it : item.edges) {
+        oss << folly::sformat("[{}, {}] ", it.first, it.second);
+    }
+    oss << folly::sformat(", space_vertices={}", item.space_vertices);
+    oss << folly::sformat(", space_edges={}", item.space_edges);
+    LOG(INFO) << oss.str();
+}
+
+void StatisJobExecutor::addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem& rhs) {
+    for (auto& it : rhs.tag_vertices) {
+        lhs.tag_vertices[it.first] += it.second;
+    }
+
+    for (auto& it : rhs.edges) {
+        lhs.edges[it.first] += it.second;
+    }
+
+    lhs.space_vertices += rhs.space_vertices;
+    lhs.space_edges += rhs.space_edges;
+    // ignore part_corelativity, they shoule be same
+}
+
+/**
+ * @brief caller will guarantee there won't be any conflict read / write.
+ */
+cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) {
+    if (!req.__isset.statis) {
+        return cpp2::ErrorCode::SUCCEEDED;
+    }
+    cpp2::StatisItem statisItem;
+    auto statisKey = MetaServiceUtils::statisKey(space_);
+    auto tempKey = toTempKey(req.get_job_id());
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
+    if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+        ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statisKey, &val);
+    }
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        statisItem = MetaServiceUtils::parseStatisVal(val);
+    }
+    addStatis(statisItem, *req.get_statis());
+    auto statisVal = MetaServiceUtils::statisVal(statisItem);
+    save(tempKey, statisVal);
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
+/**
+ * @brief
+ *      if two stats job run at the same time.
+ *      (this may happens if leader changed)
+ *      they will write to the same kv data
+ *      so separate the partial result by job
+ * @return std::string
+ */
+std::string StatisJobExecutor::toTempKey(int32_t jobId) {
+    std::string key = MetaServiceUtils::statisKey(space_);;
+    return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
+}
+
 void StatisJobExecutor::finish(bool ExeSuccessed) {
     auto statisKey = MetaServiceUtils::statisKey(space_);
+    auto tempKey = toTempKey(jobId_);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statisKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Can't find the statis data, spaceId : " << space_;
         return;
@@ -68,40 +143,12 @@ void StatisJobExecutor::finish(bool ExeSuccessed) {
     auto statisItem = MetaServiceUtils::parseStatisVal(val);
     if (ExeSuccessed) {
         statisItem.status = cpp2::JobStatus::FINISHED;
-        statisItem.space_vertices = 0;
-        statisItem.space_edges = 0;
-        decltype(statisItem.tag_vertices) tagVertices;
-        decltype(statisItem.edges) edges;
-
-        for (auto& e : statisItem_) {
-            auto item = e.second;
-            statisItem.space_vertices += item.space_vertices;
-            statisItem.space_edges += item.space_edges;
-
-            for (auto& tag : item.tag_vertices) {
-                auto tagName = tag.first;
-                if (tagVertices.find(tagName) == tagVertices.end()) {
-                    tagVertices[tagName] = tag.second;
-                } else {
-                    tagVertices[tagName] += tag.second;
-                }
-            }
-            for (auto& edge : item.edges) {
-                auto edgeName = edge.first;
-                if (edges.find(edgeName) == edges.end()) {
-                    edges[edgeName] = edge.second;
-                } else {
-                    edges[edgeName] += edge.second;
-                }
-            }
-        }
-        statisItem.set_tag_vertices(std::move(tagVertices));
-        statisItem.set_edges(std::move(edges));
     } else {
         statisItem.status = cpp2::JobStatus::FAILED;
     }
     auto statisVal = MetaServiceUtils::statisVal(statisItem);
     save(statisKey, statisVal);
+    doRemove(tempKey);
     return;
 }
 

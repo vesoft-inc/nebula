@@ -27,6 +27,57 @@ using ::testing::DefaultValue;
 using ::testing::NiceMock;
 using ::testing::SetArgPointee;
 
+std::string toTempKey(int32_t space, int32_t jobId) {
+    std::string key = MetaServiceUtils::statisKey(space);
+    return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
+}
+
+void copyData(kvstore::KVStore* kv,
+              int32_t space,
+              int32_t part,
+              const std::string& keySrc,
+              const std::string& keyDst) {
+    std::string val;
+    kv->get(space, part, keySrc, &val);
+
+    std::vector<kvstore::KV> data{std::make_pair(keyDst, val)};
+    folly::Baton<true, std::atomic> b;
+    kv->asyncMultiPut(space, part, std::move(data), [&](auto) { b.post(); });
+    b.wait();
+}
+
+void genTempData(int32_t spaceId, int jobId, kvstore::KVStore* kv) {
+    auto statisKey = MetaServiceUtils::statisKey(spaceId);
+    auto tempKey = toTempKey(spaceId, jobId);
+    copyData(kv, 0, 0, statisKey, tempKey);
+}
+
+struct JobCallBack {
+    JobCallBack(JobManager* jobMgr, int job, int task, int n)
+        : jobMgr_(jobMgr), jobId_(job), taskId_(task), n_(n) {}
+
+    folly::Future<nebula::Status> operator()() {
+        cpp2::ReportTaskReq req;
+        req.set_code(cpp2::ErrorCode::SUCCEEDED);
+        req.set_job_id(jobId_);
+        req.set_task_id(taskId_);
+
+        cpp2::StatisItem item;
+        item.tag_vertices = {{"t1", n_}, {"t2", n_}};
+        item.edges = {{"e1", n_}, {"e2", n_}};
+        item.space_vertices = 2 * n_;
+        item.space_edges = 2 * n_;
+        req.set_statis(item);
+        jobMgr_->reportTaskFinish(req);
+        return folly::Future<Status>(Status::OK());
+    }
+
+    JobManager* jobMgr_{nullptr};
+    int32_t jobId_{-1};
+    int32_t taskId_{-1};
+    int32_t n_{-1};
+};
+
 class GetStatisTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -39,7 +90,7 @@ protected:
         });
 
         jobMgr = JobManager::getInstance();
-        jobMgr->status_ = JobManager::Status::NOT_START;
+        jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
         jobMgr->init(kv_.get());
     }
 
@@ -103,7 +154,12 @@ TEST_F(GetStatisTest, StatisJob) {
     // But set statis data.
     statisJob.setStatus(cpp2::JobStatus::FINISHED);
     jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
+    auto jobId = statisJob.getJobId();
+    auto statisKey = MetaServiceUtils::statisKey(spaceId);
+    auto tempKey = toTempKey(spaceId, jobId);
 
+    copyData(kv_.get(), 0, 0, statisKey, tempKey);
+    jobMgr->jobFinished(jobId, true);
     {
         auto job2 = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
         ASSERT_TRUE(job2);
@@ -116,6 +172,9 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(INFO) << "resp.code=" << static_cast<int>(resp.code);
+        }
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
 
         auto statisItem = resp.statis;
@@ -218,6 +277,14 @@ TEST_F(GetStatisTest, StatisJob) {
     // Insert running status statis data in prepare function of runJobInternal.
     // Update statis data to finished or failed status in finish function of runJobInternal.
     auto result2 = jobMgr->runJobInternal(statisJob2);
+
+    auto jobId2 = statisJob2.getJobId();
+    auto statisKey2 = MetaServiceUtils::statisKey(spaceId);
+    auto tempKey2 = toTempKey(spaceId, jobId2);
+
+    copyData(kv_.get(), 0, 0, statisKey2, tempKey2);
+    jobMgr->jobFinished(jobId2, true);
+
     ASSERT_TRUE(result2);
     // JobManager does not set the job finished status in RunJobInternal function.
     // But set statis data.
@@ -285,21 +352,13 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
     JobDescription job1(jobId1, cpp2::AdminCmd::STATS, paras);
     jobMgr->addJob(job1, &adminClient);
 
-    auto genItem = [] (int64_t count) -> cpp2::StatisItem {
-        cpp2::StatisItem item;
-        item.tag_vertices = {{"t1", count}, {"t2", count}};
-        item.edges = {{"e1", count}, {"e2", count}};
-        item.space_vertices = 2 * count;
-        item.space_edges = 2 * count;
-        return item;
-    };
+    JobCallBack cb1(jobMgr, jobId1, 0, 100);
+    JobCallBack cb2(jobMgr, 2, 0, 200);
 
     EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _, _))
         .Times(2)
-        .WillOnce(DoAll(SetArgPointee<8>(genItem(100)),
-                        Return(ByMove(folly::Future<Status>(Status::OK())))))
-        .WillOnce(DoAll(SetArgPointee<8>(genItem(200)),
-                        Return(ByMove(folly::Future<Status>(Status::OK())))));
+        .WillOnce(testing::InvokeWithoutArgs(cb1))
+        .WillOnce(testing::InvokeWithoutArgs(cb2));
 
     // check job result
     {
@@ -404,23 +463,15 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
     JobDescription job(jobId, cpp2::AdminCmd::STATS, paras);
     jobMgr->addJob(job, &adminClient);
 
-    auto genItem = [] (int64_t count) -> cpp2::StatisItem {
-        cpp2::StatisItem item;
-        item.tag_vertices = {{"t1", count}, {"t2", count}};
-        item.edges = {{"e1", count}, {"e2", count}};
-        item.space_vertices = 2 * count;
-        item.space_edges = 2 * count;
-        return item;
-    };
+    JobCallBack cb1(jobMgr, jobId, 0, 100);
+    JobCallBack cb2(jobMgr, jobId, 1, 200);
+    JobCallBack cb3(jobMgr, jobId, 2, 300);
 
     EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _, _, _))
         .Times(3)
-        .WillOnce(DoAll(SetArgPointee<8>(genItem(100)),
-                        Return(ByMove(folly::Future<Status>(Status::OK())))))
-        .WillOnce(DoAll(SetArgPointee<8>(genItem(200)),
-                        Return(ByMove(folly::Future<Status>(Status::OK())))))
-        .WillOnce(DoAll(SetArgPointee<8>(genItem(300)),
-                        Return(ByMove(folly::Future<Status>(Status::OK())))));
+        .WillOnce(testing::InvokeWithoutArgs(cb1))
+        .WillOnce(testing::InvokeWithoutArgs(cb2))
+        .WillOnce(testing::InvokeWithoutArgs(cb3));
 
     // check job result
     {

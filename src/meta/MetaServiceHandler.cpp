@@ -50,6 +50,7 @@
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
 #include "meta/processors/jobMan/AdminJobProcessor.h"
+#include "meta/processors/jobMan/ReportTaskProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/jobMan/GetStatisProcessor.h"
 #include "meta/processors/jobMan/ListTagIndexStatusProcessor.h"
@@ -96,6 +97,12 @@ MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
 folly::Future<cpp2::AdminJobResp>
 MetaServiceHandler::future_runAdminJob(const cpp2::AdminJobReq& req) {
     auto* processor = AdminJobProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_reportTaskFinish(const cpp2::ReportTaskReq& req) {
+    auto* processor = ReportTaskProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

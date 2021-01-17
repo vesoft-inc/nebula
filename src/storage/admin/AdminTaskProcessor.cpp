@@ -12,40 +12,61 @@ namespace nebula {
 namespace storage {
 
 void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
-    bool runDirectly = true;
-    auto rc = cpp2::ErrorCode::SUCCEEDED;
     auto taskManager = AdminTaskManager::instance();
 
-    auto cb = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
-        if (ret != cpp2::ErrorCode::SUCCEEDED) {
-            cpp2::PartitionResult thriftRet;
-            thriftRet.set_code(ret);
-            codes_.emplace_back(std::move(thriftRet));
-        } else {
-            if (result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
-                onProcessFinished(result);
-            }
+    auto toMetaErrCode = [](storage::cpp2::ErrorCode storageCode) {
+        switch (storageCode) {
+            case storage::cpp2::ErrorCode::SUCCEEDED:
+                return meta::cpp2::ErrorCode::SUCCEEDED;
+            case storage::cpp2::ErrorCode::E_UNKNOWN:
+                return meta::cpp2::ErrorCode::E_UNKNOWN;
+            default:
+                LOG(ERROR) << "unsupported conversion of code "
+                           << cpp2::_ErrorCode_VALUES_TO_NAMES.at(storageCode);
+                return meta::cpp2::ErrorCode::SUCCEEDED;
         }
-        onFinished();
     };
 
-    TaskContext ctx(req, cb);
+    auto cb = [=, jobId = req.get_job_id(), taskId = req.get_task_id()](
+                  nebula::storage::cpp2::ErrorCode errCode,
+                  nebula::meta::cpp2::StatisItem& result) {
+        meta::cpp2::StatisItem* pStatis = nullptr;
+        if (errCode == cpp2::ErrorCode::SUCCEEDED &&
+            result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+            pStatis = &result;
+        }
+
+        LOG(INFO) << folly::sformat("report task finish, job={}, task={}", jobId, taskId);
+        auto metaCode = toMetaErrCode(errCode);
+        auto maxRetry = 5;
+        auto retry = 0;
+        while (retry++ < maxRetry) {
+            auto rc = meta::cpp2::ErrorCode::SUCCEEDED;
+            auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, metaCode, pStatis);
+            fut.wait();
+            if (!fut.hasValue()) {
+                continue;
+            }
+            rc = fut.value().value();
+            if (rc == meta::cpp2::ErrorCode::E_LEADER_CHANGED ||
+                rc == meta::cpp2::ErrorCode::E_STORE_FAILURE) {
+                continue;
+            } else {
+                break;
+            }
+        }
+    };
+
+    TaskContext ctx(req, std::move(cb));
     auto task = AdminTaskFactory::createAdminTask(env_, std::move(ctx));
     if (task) {
-        runDirectly = false;
         taskManager->addAsyncTask(task);
     } else {
-        rc = cpp2::ErrorCode::E_INVALID_TASK_PARA;
+        cpp2::PartitionResult thriftRet;
+        thriftRet.set_code(cpp2::ErrorCode::E_INVALID_TASK_PARA);
+        codes_.emplace_back(std::move(thriftRet));
     }
-
-    if (runDirectly) {
-        if (rc != cpp2::ErrorCode::SUCCEEDED) {
-            cpp2::PartitionResult thriftRet;
-            thriftRet.set_code(rc);
-            codes_.emplace_back(std::move(thriftRet));
-        }
-        onFinished();
-    }
+    onFinished();
 }
 
 void AdminTaskProcessor::onProcessFinished(nebula::meta::cpp2::StatisItem& result) {

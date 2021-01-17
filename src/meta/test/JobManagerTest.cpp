@@ -26,6 +26,8 @@ namespace meta {
 using ::testing::DefaultValue;
 using ::testing::NiceMock;
 
+bool gInitialized = false;
+
 class JobManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -38,30 +40,37 @@ protected:
 
         // Make sure the rebuild job could find the index name.
         std::vector<cpp2::ColumnDef> columns;
-        TestUtils::mockTagIndex(kv_.get(), 1, "tag_name", 11,
-                                "tag_index_name", columns);
-        TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21,
-                                 "edge_index_name", columns);
+        TestUtils::mockTagIndex(kv_.get(), 1, "tag_name", 11, "tag_index_name", columns);
+        TestUtils::mockEdgeIndex(kv_.get(), 1, "edge_name", 21, "edge_index_name", columns);
 
         adminClient_ = std::make_unique<NiceMock<MockAdminClient>>();
-        DefaultValue<folly::Future<Status>>::SetFactory([] {
-            return folly::Future<Status>(Status::OK());
-        });
+        DefaultValue<folly::Future<Status>>::SetFactory(
+            [] { return folly::Future<Status>(Status::OK()); });
 
         jobMgr = JobManager::getInstance();
-        jobMgr->status_ = JobManager::Status::NOT_START;
-        jobMgr->init(kv_.get());
+        jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
+        jobMgr->kvStore_ = kv_.get();
+        if (!gInitialized) {
+            jobMgr->init(kv_.get());
+            gInitialized = true;
+        }
     }
 
     void TearDown() override {
-        jobMgr->shutDown();
+        auto cleanUnboundQueue = [](auto& q) {
+            int32_t jobId = 0;
+            while (!q.empty()) {
+                q.dequeue(jobId);
+            }
+        };
+        cleanUnboundQueue(*jobMgr->lowPriorityQueue_);
+        cleanUnboundQueue(*jobMgr->highPriorityQueue_);
         kv_.reset();
         rootPath_.reset();
     }
 
     std::unique_ptr<fs::TempDir> rootPath_{nullptr};
     std::unique_ptr<kvstore::KVStore> kv_{nullptr};
-    std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
     std::unique_ptr<AdminClient> adminClient_{nullptr};
     JobManager* jobMgr{nullptr};
 };
@@ -76,7 +85,7 @@ TEST_F(JobManagerTest, addJob) {
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
     // For preventting job schedule in JobManager
-    jobMgr->status_ = JobManager::Status::STOPPED;
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
     std::vector<std::string> paras{"tag_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
@@ -89,7 +98,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
     // For preventting job schedule in JobManager
-    jobMgr->status_ = JobManager::Status::STOPPED;
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
     std::vector<std::string> paras{"edge_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
@@ -101,7 +110,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
 
 TEST_F(JobManagerTest, StatisJob) {
     // For preventting job schedule in JobManager
-    jobMgr->status_ = JobManager::Status::STOPPED;
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
     std::vector<std::string> paras{"test_space"};
     JobDescription job(12, cpp2::AdminCmd::STATS, paras);
@@ -121,7 +130,7 @@ TEST_F(JobManagerTest, StatisJob) {
 
 TEST_F(JobManagerTest, JobPriority) {
     // For preventting job schedule in JobManager
-    jobMgr->status_ = JobManager::Status::STOPPED;
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
     ASSERT_EQ(0, jobMgr->jobSize());
 
@@ -151,12 +160,12 @@ TEST_F(JobManagerTest, JobPriority) {
     result = jobMgr->try_dequeue(jobId);
     ASSERT_FALSE(result);
 
-    jobMgr->status_ = JobManager::Status::RUNNING;
+    jobMgr->status_ = JobManager::JbmgrStatus::IDLE;
 }
 
 TEST_F(JobManagerTest, JobDeduplication) {
     // For preventting job schedule in JobManager
-    jobMgr->status_ = JobManager::Status::STOPPED;
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
     ASSERT_EQ(0, jobMgr->jobSize());
 
@@ -202,7 +211,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
 
     result = jobMgr->try_dequeue(jobId);
     ASSERT_FALSE(result);
-    jobMgr->status_ = JobManager::Status::RUNNING;
+    jobMgr->status_ = JobManager::JbmgrStatus::IDLE;
 }
 
 TEST_F(JobManagerTest, loadJobDescription) {
@@ -324,7 +333,7 @@ TEST_F(JobManagerTest, showJob) {
 
 TEST_F(JobManagerTest, recoverJob) {
     // set status to prevent running the job since AdminClient is a injector
-    jobMgr->status_ = JobManager::Status::NOT_START;
+    jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
     int32_t nJob = 3;
     for (auto i = 0; i != nJob; ++i) {
         JobDescription jd(i, cpp2::AdminCmd::FLUSH, {"test_space"});

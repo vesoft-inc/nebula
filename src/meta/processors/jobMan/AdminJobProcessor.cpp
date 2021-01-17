@@ -16,11 +16,11 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     cpp2::AdminJobResult result;
     cpp2::ErrorCode errorCode = cpp2::ErrorCode::SUCCEEDED;
     std::stringstream oss;
-    oss << " op = " << static_cast<int>(req.get_op());
+    oss << "op = " << cpp2::_AdminJobOp_VALUES_TO_NAMES.at(req.get_op());
     if (req.get_op() == nebula::meta::cpp2::AdminJobOp::ADD) {
-        oss << ", cmd = " << static_cast<int>(req.get_cmd());
+        oss << ", cmd = " << cpp2::_AdminCmd_VALUES_TO_NAMES.at(req.get_cmd());
     }
-    oss << ", paras =";
+    oss << ", paras.size()=" << req.get_paras().size();
     for (auto& p : req.get_paras()) {
         oss << " " << p;
     }

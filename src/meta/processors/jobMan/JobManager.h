@@ -17,6 +17,7 @@
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 
 namespace nebula {
@@ -46,9 +47,10 @@ public:
     ~JobManager();
     static JobManager* getInstance();
 
-    enum class Status {
+    enum class JbmgrStatus {
         NOT_START,
-        RUNNING,
+        IDLE,       // Job manager started, no running any job
+        BUSY,       // Job manager is running job
         STOPPED,
     };
 
@@ -77,6 +79,16 @@ public:
 
     ErrorOr<cpp2::ErrorCode, JobID> recoverJob();
 
+    /**
+     * @brief persist job executed result, and do the cleanup
+     * @return cpp2::ErrorCode if error when write to kv store
+     */
+    cpp2::ErrorCode jobFinished(JobID jobId, bool suc);
+
+    // report task finished.
+    // cpp2::ErrorCode reportTaskFinish(JobID jobId, int32_t taskId, cpp2::ErrorCode code);
+    cpp2::ErrorCode reportTaskFinish(const cpp2::ReportTaskReq& req);
+
     // Only used for Test
     // The number of jobs in lowPriorityQueue_ a and highPriorityQueue_
     size_t jobSize() const;
@@ -91,9 +103,12 @@ public:
 
 private:
     JobManager() = default;
+
     void scheduleThread();
+    void scheduleThreadOld();
 
     bool runJobInternal(const JobDescription& jobDesc);
+    bool runJobInternalOld(const JobDescription& jobDesc);
 
     GraphSpaceID getSpaceId(const std::string& name);
 
@@ -102,6 +117,12 @@ private:
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
 
     void removeExpiredJobs(const std::vector<std::string>& jobKeys);
+
+    std::list<TaskDescription> getAllTasks(JobID jobId);
+
+    void cleanJob(JobID jobId);
+
+    cpp2::ErrorCode saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
 
 private:
     // Todo(pandasheep)
@@ -113,13 +134,13 @@ private:
     // The job in running or queue
     folly::ConcurrentHashMap<JobID, JobDescription>    inFlightJobs_;
 
-    std::unique_ptr<thread::GenericWorker>             bgThread_;
+    std::thread                                        bgThread_;
     std::mutex                                         statusGuard_;
-    Status                                             status_{Status::NOT_START};
+    JbmgrStatus                                        status_{JbmgrStatus::NOT_START};
     nebula::kvstore::KVStore*                          kvStore_{nullptr};
-    std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
     AdminClient*                                       adminClient_{nullptr};
-    std::unique_ptr<meta::MetaJobExecutor>             currJob_{nullptr};
+
+    std::mutex                                         muReportFinish_;
 };
 
 }  // namespace meta

@@ -36,11 +36,19 @@ public:
     // Summarize the results of statisItem_
     void finish(bool ExeSuccessed) override;
 
+    cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) override;
+
 private:
     // Statis job writes an additional data.
     // The additional data is written when the statis job passes the check function.
     // Update this additional data when job finishes.
     kvstore::ResultCode save(const std::string& key, const std::string& val);
+
+    void addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem& rhs);
+
+    std::string toTempKey(int32_t jobId);
+
+    void doRemove(const std::string& key);
 
 private:
     // Statis results

@@ -35,7 +35,7 @@ class TaskDescription {
     FRIEND_TEST(TaskDescriptionTest, dump);
     FRIEND_TEST(TaskDescriptionTest, ctor2);
     FRIEND_TEST(JobManagerTest, showJob);
-
+    friend class JobManager;
 public:
     TaskDescription(JobID iJob, TaskID iTask, const HostAddr& dst);
     TaskDescription(JobID iJob, TaskID iTask, std::string addr, int32_t port);
@@ -94,6 +94,8 @@ public:
     bool setStatus(cpp2::JobStatus newStatus);
 
     JobID getJobId() { return iJob_; }
+
+    TaskID getTaskId() { return iTask_; }
 
 private:
     JobID                           iJob_;
