@@ -637,39 +637,39 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::SUCCEEDED:
             return Status::OK();
         case cpp2::ErrorCode::E_DISCONNECTED:
-            return Status::Error("disconnected!");
+            return Status::Error("Disconnected!");
         case cpp2::ErrorCode::E_FAIL_TO_CONNECT:
-            return Status::Error("fail to connect!");
+            return Status::Error("Fail to connect!");
         case cpp2::ErrorCode::E_RPC_FAILURE:
-            return Status::Error("rpc failure!");
+            return Status::Error("Rpc failure!");
         case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::LeaderChanged("Leader changed!");
         case cpp2::ErrorCode::E_NO_HOSTS:
-            return Status::Error("no hosts!");
+            return Status::Error("No hosts!");
         case cpp2::ErrorCode::E_EXISTED:
-            return Status::Error("existed!");
+            return Status::Error("Existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
-            return Status::Error("not existed!");
+            return Status::Error("Not existed!");
         case cpp2::ErrorCode::E_INVALID_HOST:
-            return Status::Error("invalid host!");
+            return Status::Error("Invalid host!");
         case cpp2::ErrorCode::E_UNSUPPORTED:
-            return Status::Error("unsupported!");
+            return Status::Error("Unsupported!");
         case cpp2::ErrorCode::E_NOT_DROP:
-            return Status::Error("not drop!");
+            return Status::Error("Not allowed to drop!");
         case cpp2::ErrorCode::E_BALANCER_RUNNING:
             return Status::Error("The balancer is running!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
             return Status::Error("Config immutable!");
         case cpp2::ErrorCode::E_CONFLICT:
-            return Status::Error("conflict!");
+            return Status::Error("Conflict!");
         case cpp2::ErrorCode::E_INVALID_PARM:
-            return Status::Error("invalid parm!");
+            return Status::Error("Invalid parm!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
-            return Status::Error("wrong cluster!");
+            return Status::Error("Wrong cluster!");
         case cpp2::ErrorCode::E_STORE_FAILURE:
-            return Status::Error("store failure!");
+            return Status::Error("Store failure!");
         case cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL:
-            return Status::Error("store segment illegal!");
+            return Status::Error("Store segment illegal!");
         case cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
             return Status::Error("Bad balance plan!");
         case cpp2::ErrorCode::E_BALANCED:
@@ -695,26 +695,39 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH:
             return Status::Error("Charset and collate not match!");
         case cpp2::ErrorCode::E_SNAPSHOT_FAILURE:
-            return Status::Error("snapshot failure!");
+            return Status::Error("Snapshot failure!");
         case cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE:
-            return Status::Error("block write failure!");
+            return Status::Error("Block write failure!");
         case cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE:
-            return Status::Error("rebuild index failure!");
+            return Status::Error("Rebuild index failure!");
         case cpp2::ErrorCode::E_INDEX_WITH_TTL:
-            return Status::Error("index with ttl!");
+            return Status::Error("Index with ttl!");
         case cpp2::ErrorCode::E_ADD_JOB_FAILURE:
-            return Status::Error("add job failure!");
+            return Status::Error("Add job failure!");
         case cpp2::ErrorCode::E_STOP_JOB_FAILURE:
-            return Status::Error("stop job failure!");
+            return Status::Error("Stop job failure!");
         case cpp2::ErrorCode::E_SAVE_JOB_FAILURE:
-            return Status::Error("save job failure!");
+            return Status::Error("Save job failure!");
         case cpp2::ErrorCode::E_BALANCER_FAILURE:
-            return Status::Error("balancer failure!");
+            return Status::Error("Balance failure!");
+        case cpp2::ErrorCode::E_NO_INVALID_BALANCE_PLAN:
+            return Status::Error("No invalid balance plan!");
+        case cpp2::ErrorCode::E_JOB_NOT_FINISHED:
+            return Status::Error("Job is not finished!");
+        case cpp2::ErrorCode::E_TASK_REPORT_OUT_DATE:
+            return Status::Error("Task report is out of date!");
+        case cpp2::ErrorCode::E_BACKUP_FAILURE:
+            return Status::Error("Backup failure!");
+        case cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX:
+            return Status::Error("Backup building indexes!");
+        case cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND:
+            return Status::Error("The space is not found when backup!");
+        case cpp2::ErrorCode::E_RESTORE_FAILURE:
+            return Status::Error("Restore failure!");
         case cpp2::ErrorCode::E_UNKNOWN:
-            return Status::Error("unknown!");
-        default:
-            return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
+            return Status::Error("Unknown error!");
     }
+    return Status::Error("Unknown error!");
 }
 
 
