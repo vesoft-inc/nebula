@@ -173,6 +173,9 @@ bool JobDescription::setStatus(Status newStatus) {
 }
 
 bool JobDescription::isJobKey(const folly::StringPiece& rawKey) {
+    if (!rawKey.startsWith(JobUtil::jobPrefix())) {
+        return false;
+    }
     return rawKey.size() == JobUtil::jobPrefix().length() + sizeof(int32_t);
 }
 

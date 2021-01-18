@@ -26,6 +26,7 @@
 #include "meta/processors/jobMan/JobManager.h"
 #include "meta/RootUserMan.h"
 #include "meta/MetaServiceUtils.h"
+#include "meta/MetaVersionMan.h"
 #include "version/Version.h"
 
 using nebula::operator<<;
@@ -50,8 +51,6 @@ DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DECLARE_bool(check_leader);
-DEFINE_bool(upgrade_meta_data, false, "old stored meta data may have different format "
-                                      " set to true to do meta data upgrade");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
@@ -138,11 +137,25 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
         }
     }
 
-    if (FLAGS_upgrade_meta_data) {
-        nebula::meta::MetaServiceUtils::upgradeMetaDataV1toV2(kvstore.get());
+    LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
+
+    auto version = nebula::meta::MetaVersionMan::getMetaVersionFromKV(kvstore.get());
+    LOG(INFO) << "Get meta version is " << version;
+    if (version <= 0) {
+        LOG(ERROR) << "Get meta meta version failed.";
+        return nullptr;
     }
 
-    LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
+    if (version == 1) {
+        // need to upgrade the v1.0 meta data format to v2.0 meta data format
+        auto ret = nebula::meta::MetaVersionMan::updateMetaV1ToV2(kvstore.get());
+        if (!ret.ok()) {
+            LOG(ERROR) << ret;
+            return nullptr;
+        }
+        nebula::meta::MetaVersionMan::setMetaVersionToKV(kvstore.get());
+    }
+
     return kvstore;
 }
 

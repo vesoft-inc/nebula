@@ -86,7 +86,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
     // step 5 : create checkpoint for meta server.
     auto meteRet = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
-    if (csRet.isLeftType()) {
+    if (meteRet.isLeftType()) {
         LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
         handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();

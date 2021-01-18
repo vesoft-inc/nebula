@@ -220,8 +220,6 @@ public:
 
     static const std::string& snapshotPrefix();
 
-    static void upgradeMetaDataV1toV2(nebula::kvstore::KVStore* kv);
-
     static std::string serializeHostAddr(const HostAddr& host);
 
     static HostAddr deserializeHostAddr(folly::StringPiece str);

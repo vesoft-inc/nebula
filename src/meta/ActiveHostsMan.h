@@ -48,6 +48,7 @@ struct HostInfo {
     static HostInfo decodeV1(const folly::StringPiece& data) {
         HostInfo info;
         info.lastHBTimeInMilliSec_ = *reinterpret_cast<const int64_t*>(data.data());
+        info.role_ = cpp2::HostRole::STORAGE;
         return info;
     }
 

@@ -98,6 +98,16 @@ nebula_add_library(
     MetaHttpReplaceHostHandler.cpp
 )
 
+nebula_add_library(
+    meta_version_man_obj OBJECT
+    MetaVersionMan.cpp
+)
+
+add_dependencies(
+    meta_version_man_obj
+    old_meta_thrift_obj
+)
+
 nebula_add_subdirectory(test)
 
 nebula_add_library(
@@ -110,3 +120,5 @@ nebula_add_library(
     IndexManager.cpp
     ServerBasedIndexManager.cpp
 )
+
+nebula_add_subdirectory(upgradeData)

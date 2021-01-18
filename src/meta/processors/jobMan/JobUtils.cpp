@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/base/Base.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include <stdexcept>
 #include <vector>
@@ -53,12 +54,17 @@ const std::string& JobUtil::archivePrefix() {
 
 std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
     if (rawVal.size() < offset + sizeof(size_t)) {
+        LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal)
+                   << ", offset: " << offset;
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
                                                      __func__, offset, rawVal.size()));
     }
     auto len = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
     offset += sizeof(size_t);
     if (rawVal.size() < offset + len) {
+        LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal)
+                   << ", len: " << len
+                   << ", offset: " << offset;
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
                                                      __func__, offset, rawVal.size()));
     }
@@ -68,6 +74,8 @@ std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
 std::vector<std::string> JobUtil::parseStrVector(folly::StringPiece rawVal, size_t* offset) {
     std::vector<std::string> ret;
     if (rawVal.size() < *offset + sizeof(size_t)) {
+        LOG(ERROR) << "Error: rawVal: " << toHexStr(rawVal)
+                   << ", offset: " << offset;
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
                                                      __func__, *offset, rawVal.size()));
     }
