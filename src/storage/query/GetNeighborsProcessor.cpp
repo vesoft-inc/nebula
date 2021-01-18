@@ -38,10 +38,12 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
         return;
     }
 
-    int64_t limit = 0;
+    int64_t limit = FLAGS_max_edge_returned_per_vertex;
     bool random = false;
     if (req.traverse_spec.__isset.limit) {
-        limit = req.traverse_spec.limit;
+        if (req.traverse_spec.limit >= 0) {
+            limit = req.traverse_spec.limit;
+        }
         if (req.traverse_spec.__isset.random) {
             random = req.traverse_spec.random;
         }

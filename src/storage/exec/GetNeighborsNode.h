@@ -91,8 +91,7 @@ protected:
         int64_t edgeRowCount = 0;
         nebula::List list;
         for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
-            if ((limit_ > 0 && edgeRowCount >= limit_) ||
-                (limit_ == 0 && edgeRowCount >= FLAGS_max_edge_returned_per_vertex)) {
+            if (edgeRowCount >= limit_) {
                 return kvstore::ResultCode::SUCCEEDED;
             }
             auto key = upstream_->key();
@@ -134,12 +133,7 @@ public:
                            nebula::DataSet* resultDataSet,
                            int64_t limit)
         : GetNeighborsNode(planCtx, hashJoinNode, upstream, edgeContext, resultDataSet, limit) {
-            if (limit > 0) {
-                sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit);
-            } else {
-                sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(
-                         FLAGS_max_edge_returned_per_vertex);
-            }
+            sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit);
         }
 
 private:
