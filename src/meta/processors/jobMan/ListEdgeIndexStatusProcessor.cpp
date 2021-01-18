@@ -32,8 +32,8 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
             auto jobDesc = optJob->toJobDesc();
             if (jobDesc.get_cmd() == meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
                 auto paras = jobDesc.get_paras();
-                DCHECK_EQ(paras.size(), 2);
-                auto spaceName = paras[1];
+                DCHECK_GE(paras.size(), 1);
+                auto spaceName = paras.back();
                 auto ret = getSpaceId(spaceName);
                 if (!ret.ok()) {
                     continue;
@@ -52,7 +52,13 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
     });
     std::unordered_map<std::string, cpp2::JobStatus> tmp;
     for (auto &jobDesc : jobs) {
-        tmp.emplace(jobDesc.get_paras()[0], jobDesc.get_status());
+        auto paras = jobDesc.get_paras();
+        if (paras.size() == 1) {
+            tmp.emplace(paras[0] + "_all_edge_indexes", jobDesc.get_status());
+            continue;
+        }
+        paras.pop_back();
+        tmp.emplace(folly::join(",", paras), jobDesc.get_status());
     }
     for (auto &kv : tmp) {
         cpp2::IndexStatus status;

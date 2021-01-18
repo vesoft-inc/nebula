@@ -19,7 +19,8 @@ RebuildIndexTask::genSubTasks() {
     auto parts = ctx_.parameters_.parts;
 
     IndexItems items;
-    if (ctx_.parameters_.task_specfic_paras.empty()) {
+    if (!ctx_.parameters_.__isset.task_specfic_paras
+            || ctx_.parameters_.task_specfic_paras.empty()) {
         auto itemsRet = getIndexes(space_);
         if (!itemsRet.ok()) {
             LOG(ERROR) << "Indexes not found";
@@ -28,14 +29,11 @@ RebuildIndexTask::genSubTasks() {
 
         items = std::move(itemsRet).value();
     } else {
-        std::vector<std::string> indexes;
-        folly::split(",", ctx_.parameters_.task_specfic_paras[0], indexes, true);
-
-        for (const auto& index : indexes) {
+        for (const auto& index : ctx_.parameters_.task_specfic_paras) {
             auto indexID = folly::to<IndexID>(index);
             auto indexRet = getIndex(space_, indexID);
             if (!indexRet.ok()) {
-                LOG(ERROR) << "Index not found";
+                LOG(ERROR) << "Index not found: " << indexID;
                 return cpp2::ErrorCode::E_INDEX_NOT_FOUND;
             }
             items.emplace_back(indexRet.value());

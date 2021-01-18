@@ -31,7 +31,7 @@ public:
     meta::cpp2::ErrorCode stop() override;
 
 protected:
-    IndexID                  indexId_;
+    std::vector<std::string>  taskParameters_;
 };
 
 }  // namespace meta

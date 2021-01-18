@@ -18,27 +18,32 @@ namespace nebula {
 namespace meta {
 
 bool RebuildJobExecutor::check() {
-    return paras_.size() == 2;
+    return paras_.size() >= 1;
 }
 
 cpp2::ErrorCode RebuildJobExecutor::prepare() {
-    auto spaceRet = getSpaceIdFromName(paras_[1]);
+    // the last value of paras_ is the space name, others are index name
+    auto spaceRet = getSpaceIdFromName(paras_.back());
     if (!nebula::ok(spaceRet)) {
-        LOG(ERROR) << "Can't find the space: " << paras_[1];
+        LOG(ERROR) << "Can't find the space: " << paras_.back();
         return nebula::error(spaceRet);
     }
     space_ = nebula::value(spaceRet);
 
     std::string indexValue;
-    auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[0]);
-    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get indexKey error indexName: " << paras_[0];
-        return cpp2::ErrorCode::E_NOT_FOUND;
-    }
+    IndexID indexId = -1;
+    for (auto i = 0u; i < paras_.size() - 1; i++) {
+        auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[i]);
+        auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
+        if (result != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Get indexKey error indexName: " << paras_[i];
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        }
 
-    indexId_ = *reinterpret_cast<const IndexID*>(indexValue.c_str());
-    LOG(INFO) << "Rebuild Index Space " << space_ << ", Index " << indexId_;
+        indexId = *reinterpret_cast<const IndexID*>(indexValue.c_str());
+        LOG(INFO) << "Rebuild Index Space " << space_ << ", Index " << indexId;
+        taskParameters_.emplace_back(folly::to<std::string>(indexId));
+    }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
