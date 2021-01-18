@@ -53,10 +53,13 @@ public:
      * Get the maximum pid of the system.
      */
     static pid_t maxPid();
+
+    static void bgRunCommand();
+
     /**
      * Execute a shell command and return the standard output of the command
      */
-    static StatusOr<std::string> runCommand(const char* command);
+    static StatusOr<std::string> runCommand(const char* command, bool bg = true);
 };
 
 }   // namespace nebula

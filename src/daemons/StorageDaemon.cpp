@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    ProcessUtils::bgRunCommand();
+
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Storage Data Path should not empty";
         return EXIT_FAILURE;
