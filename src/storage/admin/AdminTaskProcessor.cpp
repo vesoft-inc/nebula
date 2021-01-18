@@ -36,8 +36,11 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
             pStatis = &result;
         }
 
-        LOG(INFO) << folly::sformat("report task finish, job={}, task={}", jobId, taskId);
         auto metaCode = toMetaErrCode(errCode);
+        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+                                    jobId,
+                                    taskId,
+                                    meta::cpp2::_ErrorCode_VALUES_TO_NAMES.at(metaCode));
         auto maxRetry = 5;
         auto retry = 0;
         while (retry++ < maxRetry) {
@@ -45,9 +48,25 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
             auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, metaCode, pStatis);
             fut.wait();
             if (!fut.hasValue()) {
+                LOG(INFO) << folly::sformat(
+                    "reportTaskFinish() got rpc error:, job={}, task={}",
+                    jobId,
+                    taskId);
                 continue;
             }
+            if (!fut.value().ok()) {
+                LOG(INFO) << folly::sformat(
+                    "reportTaskFinish() has bad status:, job={}, task={}, rc={}",
+                    jobId,
+                    taskId,
+                    fut.value().status().toString());
+                break;
+            }
             rc = fut.value().value();
+            LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+                                        jobId,
+                                        taskId,
+                                        meta::cpp2::_ErrorCode_VALUES_TO_NAMES.at(rc));
             if (rc == meta::cpp2::ErrorCode::E_LEADER_CHANGED ||
                 rc == meta::cpp2::ErrorCode::E_STORE_FAILURE) {
                 continue;
