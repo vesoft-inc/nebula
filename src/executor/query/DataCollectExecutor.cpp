@@ -109,6 +109,7 @@ Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
     for (auto& var : vars) {
         auto& result = ectx_->getResult(var);
         auto iter = result.iter();
+        ds.rows.reserve(ds.rows.size() + iter->size());
         if (iter->isSequentialIter() || iter->isPropIter()) {
             auto* seqIter = static_cast<SequentialIter*>(iter.get());
             for (; seqIter->valid(); seqIter->next()) {

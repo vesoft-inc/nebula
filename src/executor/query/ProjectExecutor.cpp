@@ -25,6 +25,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     VLOG(1) << "input: " << project->inputVar();
     DataSet ds;
     ds.colNames = project->colNames();
+    ds.rows.reserve(iter->size());
     for (; iter->valid(); iter->next()) {
         Row row;
         for (auto& col : columns) {
