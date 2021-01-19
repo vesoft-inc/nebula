@@ -60,12 +60,6 @@ private:
                           size_t startIndex,
                           SubPlan& subplan);
 
-    Status appendFetchVertexPlan(const Expression* nodeFilter,
-                                 const SpaceInfo& space,
-                                 QueryContext* qctx,
-                                 Expression* initialExpr,
-                                 SubPlan& plan);
-
     Status projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
                                    size_t startIndex,
                                    SubPlan& plan);
@@ -80,9 +74,6 @@ private:
                                  size_t nodeInfoSize) const;
 
     Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
-    // Fetch all tags in the space and retrieve props from tags
-    StatusOr<std::vector<storage::cpp2::VertexProp>> flattenTags(QueryContext *qctx,
-                                                                 const SpaceInfo& space);
 
 private:
     std::unique_ptr<Expression> initialExpr_;

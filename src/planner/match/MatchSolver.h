@@ -60,7 +60,27 @@ public:
     static PlanNode* filtPathHasSameEdge(PlanNode* input,
                                          const std::string& column,
                                          QueryContext* qctx);
+
+    static Status appendFetchVertexPlan(const Expression* nodeFilter,
+                                        const SpaceInfo& space,
+                                        QueryContext* qctx,
+                                        Expression* initialExpr,
+                                        SubPlan& plan);
+
+    // In 0 step left expansion case, the result of initial index scan
+    // will be passed as inputVar after right expansion is finished
+    static Status appendFetchVertexPlan(const Expression* nodeFilter,
+                                        const SpaceInfo& space,
+                                        QueryContext* qctx,
+                                        Expression* initialExpr,
+                                        std::string inputVar,
+                                        SubPlan& plan);
+
+    // Fetch all tags in the space and retrieve props from tags
+    static StatusOr<std::vector<storage::cpp2::VertexProp>> flattenTags(QueryContext* qctx,
+                                                                        const SpaceInfo& space);
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_MATCHSOLVER_H_

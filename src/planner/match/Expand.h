@@ -50,7 +50,6 @@ private:
                       PlanNode* dep,
                       const std::string& inputVar,
                       const Expression* nodeFilter,
-                      bool needPassThrough,
                       SubPlan* plan);
 
     Status collectData(const PlanNode* joinLeft,
@@ -60,6 +59,10 @@ private:
                        SubPlan* plan);
 
     Status filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, SubPlan* plan);
+
+    // Add a passThrough node into plan so that the result of previous ndoe
+    // can be used by multiple other plan nodes
+    PlanNode* passThrough(const QueryContext *qctx, const PlanNode *root) const;
 
     template <typename T>
     T* saveObject(T* obj) const {

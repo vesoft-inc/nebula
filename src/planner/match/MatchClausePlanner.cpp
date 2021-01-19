@@ -116,7 +116,6 @@ Status MatchClausePlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos
     SubPlan rightExpandPlan = subplan;
     NG_RETURN_IF_ERROR(
         rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, rightExpandPlan));
-
     if (startIndex > 0) {
         auto left = rightExpandPlan.root;
         SubPlan leftExpandPlan = rightExpandPlan;
@@ -126,6 +125,7 @@ Status MatchClausePlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos
                                               startIndex,
                                               subplan.root->outputVar(),
                                               leftExpandPlan));
+
         rightExpandPlan.root = leftExpandPlan.root;
         if (startIndex < nodeInfos.size() - 1) {
             // Connect the left expand and right expand part.
@@ -175,16 +175,16 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
 
     VLOG(1) << "root: " << subplan.root->outputVar() << " tail: " << subplan.tail->outputVar();
     auto left = subplan.root;
-    NG_RETURN_IF_ERROR(
-        appendFetchVertexPlan(nodeInfos.front().filter,
-                              matchClauseCtx->space,
-                              matchClauseCtx->qctx,
-                              edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
-                              subplan));
+    NG_RETURN_IF_ERROR(MatchSolver::appendFetchVertexPlan(
+        nodeInfos.front().filter,
+        matchClauseCtx->space,
+        matchClauseCtx->qctx,
+        edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
+        subplan));
     if (!edgeInfos.empty()) {
         auto right = subplan.root;
         VLOG(1) << "left: " << folly::join(",", left->colNames())
-            << " right: " << folly::join(",", right->colNames());
+                << " right: " << folly::join(",", right->colNames());
         subplan.root = SegmentsConnector::innerJoinSegments(matchClauseCtx->qctx, left, right);
         joinColNames.emplace_back(
             folly::stringPrintf("%s_%lu", kPathStr, nodeInfos.size() + startIndex));
@@ -224,12 +224,12 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
 
     VLOG(1) << "root: " << subplan.root->outputVar() << " tail: " << subplan.tail->outputVar();
     auto left = subplan.root;
-    NG_RETURN_IF_ERROR(
-        appendFetchVertexPlan(nodeInfos.back().filter,
-                              matchClauseCtx->space,
-                              matchClauseCtx->qctx,
-                              edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
-                              subplan));
+    NG_RETURN_IF_ERROR(MatchSolver::appendFetchVertexPlan(
+        nodeInfos.back().filter,
+        matchClauseCtx->space,
+        matchClauseCtx->qctx,
+        edgeInfos.empty() ? initialExpr_->clone().release() : nullptr,
+        subplan));
     if (!edgeInfos.empty()) {
         auto right = subplan.root;
         VLOG(1) << "left: " << folly::join(",", left->colNames())
@@ -254,84 +254,6 @@ Status MatchClausePlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos
     UNUSED(startIndex);
     UNUSED(subplan);
     return Status::Error("Expand from edge has not been implemented yet.");
-}
-
-Status MatchClausePlanner::appendFetchVertexPlan(const Expression* nodeFilter,
-                                                 const SpaceInfo& space,
-                                                 QueryContext* qctx,
-                                                 Expression* initialExpr,
-                                                 SubPlan& plan) {
-    MatchSolver::extractAndDedupVidColumn(
-        qctx, initialExpr, plan.root, plan.root->outputVar(), plan);
-    auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
-    auto props = flattenTags(qctx, space);
-    NG_RETURN_IF_ERROR(props);
-    auto gv = GetVertices::make(
-        qctx,
-        plan.root,
-        space.id,
-        qctx->objPool()->add(srcExpr.release()),
-        std::move(props).value(),
-        {});
-
-    PlanNode* root = gv;
-    if (nodeFilter != nullptr) {
-        auto filter = qctx->objPool()->add(nodeFilter->clone().release());
-        RewriteMatchLabelVisitor visitor(
-            [](const Expression* expr) -> Expression *{
-            DCHECK(expr->kind() == Expression::Kind::kLabelAttribute ||
-                expr->kind() == Expression::Kind::kLabel);
-            // filter prop
-            if (expr->kind() == Expression::Kind::kLabelAttribute) {
-                auto la = static_cast<const LabelAttributeExpression*>(expr);
-                return new AttributeExpression(
-                    new VertexExpression(), la->right()->clone().release());
-            }
-            // filter tag
-            return new VertexExpression();
-        });
-        filter->accept(&visitor);
-        root = Filter::make(qctx, root, filter);
-    }
-
-    // normalize all columns to one
-    auto columns = qctx->objPool()->add(new YieldColumns);
-    auto pathExpr = std::make_unique<PathBuildExpression>();
-    pathExpr->add(std::make_unique<VertexExpression>());
-    columns->addColumn(new YieldColumn(pathExpr.release()));
-    plan.root = Project::make(qctx, root, columns);
-    plan.root->setColNames({kPathStr});
-    return Status::OK();
-}
-
-StatusOr<std::vector<storage::cpp2::VertexProp>>
-MatchClausePlanner::flattenTags(QueryContext *qctx, const SpaceInfo& space) {
-    // Get all tags in the space
-    const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
-    NG_RETURN_IF_ERROR(allTagsResult);
-    // allTags: std::unordered_map<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
-    const auto allTags = std::move(allTagsResult).value();
-
-    std::vector<storage::cpp2::VertexProp> props;
-    props.reserve(allTags.size());
-    // Retrieve prop names of each tag and append "_tag" to the name list to query empty tags
-    for (const auto &tag : allTags) {
-        // tag: pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
-        std::vector<std::string> propNames;
-        storage::cpp2::VertexProp vProp;
-
-        const auto tagId = tag.first;
-        vProp.set_tag(tagId);
-        const auto tagSchema = tag.second;  // nebulaSchemaProvider
-        for (size_t i=0; i < tagSchema->getNumFields(); i++) {
-            const auto propName = tagSchema->getFieldName(i);
-            propNames.emplace_back(propName);
-        }
-        propNames.emplace_back(nebula::kTag);  // "_tag"
-        vProp.set_props(std::move(propNames));
-        props.emplace_back(std::move(vProp));
-    }
-    return props;
 }
 
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,

@@ -300,7 +300,7 @@ Feature: Basic match
       """
     Then a SemanticError should be raised at runtime: Only column name can be used as sort item
 
-  Scenario: Oeturn path
+  Scenario: Return path
     When executing query:
       """
       MATCH p = (n:player{name:"Tony Parker"}) return p,n

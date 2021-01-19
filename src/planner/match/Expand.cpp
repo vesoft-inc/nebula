@@ -90,32 +90,59 @@ Status Expand::doExpand(const NodeInfo& node,
     return Status::OK();
 }
 
+// (v)-[e]-()
 Status Expand::expandSteps(const NodeInfo& node,
                            const EdgeInfo& edge,
                            SubPlan* plan) {
     SubPlan subplan;
-    NG_RETURN_IF_ERROR(expandStep(edge, dependency_, inputVar_, node.filter, true, &subplan));
-    // plan->tail = subplan.tail;
-    PlanNode* passThrough = subplan.root;
+    int64_t startIndex = 0;
+    auto minHop = edge.range ? edge.range->min() : 1;
     auto maxHop = edge.range ? edge.range->max() : 1;
-    for (int64_t i = 1; i < maxHop; ++i) {
+
+    // In the case of 0 step, src node is the dst node, return the vertex directly
+    if (minHop == 0) {
+        subplan = *plan;
+        startIndex = 0;
+        // Get vertex
+        NG_RETURN_IF_ERROR(MatchSolver::appendFetchVertexPlan(node.filter,
+                                                              matchCtx_->space,
+                                                              matchCtx_->qctx,
+                                                              initialExpr_.release(),
+                                                              inputVar_,
+                                                              subplan));
+        // If maxHop > 0, the result of 0 step will be passed to next plan node
+        if (maxHop > 0) {
+            subplan.root = passThrough(matchCtx_->qctx, subplan.root);
+        }
+    } else {  // Case 1 to n steps
+        startIndex = 1;
+        // Expand first step from src
+        NG_RETURN_IF_ERROR(expandStep(edge, dependency_, inputVar_, node.filter, &subplan));
+        // Manualy create a passThrough node for the first step
+        // Rest steps will be passed through in collectData()
+        subplan.root = passThrough(matchCtx_->qctx, subplan.root);
+    }
+
+    PlanNode* passThrough = subplan.root;
+    for (; startIndex < maxHop; ++startIndex) {
         SubPlan curr;
         NG_RETURN_IF_ERROR(
-            expandStep(edge, passThrough, passThrough->outputVar(), nullptr, false, &curr));
+            expandStep(edge, passThrough, passThrough->outputVar(), nullptr, &curr));
         auto rNode = subplan.root;
         DCHECK(rNode->kind() == PNKind::kUnion || rNode->kind() == PNKind::kPassThrough);
         NG_RETURN_IF_ERROR(collectData(passThrough, curr.root, rNode, &passThrough, &subplan));
     }
     plan->root = subplan.root;
+
     return Status::OK();
 }
 
-// build subplan: Project->Dedup->GetNeighbors->[Filter]->Project
+
+// Build subplan: Project->Dedup->GetNeighbors->[Filter]->Project
 Status Expand::expandStep(const EdgeInfo& edge,
                           PlanNode* dep,
                           const std::string& inputVar,
                           const Expression* nodeFilter,
-                          bool needPassThrough,
                           SubPlan* plan) {
     auto qctx = matchCtx_->qctx;
 
@@ -172,13 +199,6 @@ Status Expand::expandStep(const EdgeInfo& edge,
     root = Project::make(qctx, root, listColumns);
     root->setColNames({kPathStr});
 
-    if (needPassThrough) {
-        auto pt = PassThroughNode::make(qctx, root);
-        pt->setColNames(root->colNames());
-        pt->setOutputVar(root->outputVar());
-        root = pt;
-    }
-
     plan->root = root;
     plan->tail = curr.tail;
     return Status::OK();
@@ -190,6 +210,7 @@ Status Expand::collectData(const PlanNode* joinLeft,
                            PlanNode** passThrough,
                            SubPlan* plan) {
     auto qctx = matchCtx_->qctx;
+    // [dataJoin]
     auto join = SegmentsConnector::innerJoinSegments(qctx, joinLeft, joinRight);
     auto lpath = folly::stringPrintf("%s_%d", kPathStr, 0);
     auto rpath = folly::stringPrintf("%s_%d", kPathStr, 1);
@@ -221,9 +242,9 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge,
                                          SubPlan* plan) {
     auto qctx = matchCtx_->qctx;
 
-    // filter rows whose edges number less than min hop
+    // Filter rows whose edges number less than min hop
     auto args = std::make_unique<ArgumentList>();
-    // expr: length(relationships(p)) >= minHop
+    // Expr: length(relationships(p)) >= minHop
     auto pathExpr = ExpressionUtils::inputPropExpr(kPathStr);
     args->addArgument(std::move(pathExpr));
     auto fn = std::make_unique<std::string>("length");
@@ -235,8 +256,16 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge,
     auto filter = Filter::make(qctx, input, saveObject(expr.release()));
     filter->setColNames(input->colNames());
     plan->root = filter;
-    // plan->tail = curr.tail;
+    // Plan->tail = curr.tail;
     return Status::OK();
 }
+
+PlanNode* Expand::passThrough(const QueryContext *qctx, const PlanNode *root) const {
+    auto pt = PassThroughNode::make(const_cast<QueryContext*>(qctx), const_cast<PlanNode*>(root));
+    pt->setOutputVar(root->outputVar());
+    pt->setColNames(root->colNames());
+    return pt;
+}
+
 }  // namespace graph
 }  // namespace nebula

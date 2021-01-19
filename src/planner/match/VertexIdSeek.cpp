@@ -117,8 +117,8 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
     }
 
     auto* passThrough = PassThroughNode::make(qctx, nullptr);
-    passThrough->setColNames({kVid});
     passThrough->setOutputVar(vidsResult.first);
+    passThrough->setColNames({kVid});
     plan.root = passThrough;
     plan.tail = passThrough;
 
