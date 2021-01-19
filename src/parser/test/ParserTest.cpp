@@ -3090,4 +3090,31 @@ TEST(Parser, FullTextServiceTest) {
         ASSERT_FALSE(result.ok());
     }
 }
+
+TEST(Parser, JobTest) {
+    GQLParser parser;
+    auto checkTest = [&parser] (const std::string& query, const std::string expectedStr) {
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << query << ":" << result.status();
+        ASSERT_EQ(result.value()->toString(), expectedStr);
+    };
+    checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
+    checkTest("SUBMIT JOB COMPACT 111", "SUBMIT JOB COMPACT 111");
+    checkTest("SUBMIT JOB FLUSH", "SUBMIT JOB FLUSH");
+    checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
+    checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
+    checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
+    checkTest("SHOW JOBS", "SHOW JOBS");
+    checkTest("SHOW JOB 111", "SHOW JOB 111");
+    checkTest("STOP JOB 111", "STOP JOB 111");
+    checkTest("RECOVER JOB", "RECOVER JOB");
+    checkTest("REBUILD TAG INDEX name_index", "REBUILD TAG INDEX name_index");
+    checkTest("REBUILD EDGE INDEX name_index", "REBUILD EDGE INDEX name_index");
+    checkTest("REBUILD TAG INDEX", "REBUILD TAG INDEX ");
+    checkTest("REBUILD EDGE INDEX", "REBUILD EDGE INDEX ");
+    checkTest("REBUILD TAG INDEX name_index, age_index",
+            "REBUILD TAG INDEX name_index,age_index");
+    checkTest("REBUILD EDGE INDEX name_index, age_index",
+            "REBUILD EDGE INDEX name_index,age_index");
+}
 }   // namespace nebula

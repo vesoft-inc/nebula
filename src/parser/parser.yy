@@ -2184,22 +2184,30 @@ describe_edge_index_sentence
     ;
 
 rebuild_tag_index_sentence
-    : KW_REBUILD KW_TAG KW_INDEX name_label {
+    : KW_REBUILD KW_TAG KW_INDEX name_label_list {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
     }
+    | KW_REBUILD KW_TAG KW_INDEX {
+        $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                  meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
+    }
     ;
 
 rebuild_edge_index_sentence
-    : KW_REBUILD KW_EDGE KW_INDEX name_label {
+    : KW_REBUILD KW_EDGE KW_INDEX name_label_list {
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                              meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
+    }
+    | KW_REBUILD KW_EDGE KW_INDEX {
+        $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                  meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
     }
     ;
 

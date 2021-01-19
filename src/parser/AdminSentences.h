@@ -593,6 +593,7 @@ public:
     }
 
     void addPara(const std::string& para);
+    void addPara(const NameLabelList& NameLabelList);
     std::string toString() const override;
     meta::cpp2::AdminJobOp getOp() const;
     meta::cpp2::AdminCmd getCmd() const;

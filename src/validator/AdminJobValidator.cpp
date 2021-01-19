@@ -21,25 +21,29 @@ Status AdminJobValidator::validateImpl() {
 
             if (cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX ||
                 cmd == meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
-                DCHECK_EQ(sentence_->getParas().size(), 2);
-
-                const auto &indexName = sentence_->getParas()[0];
                 auto ret = cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX
-                               ? qctx()->getMetaClient()->getTagIndexesFromCache(spaceId)
-                               : qctx()->getMetaClient()->getEdgeIndexesFromCache(spaceId);
+                           ? qctx()->indexMng()->getTagIndexes(spaceId)
+                           : qctx()->indexMng()->getEdgeIndexes(spaceId);
                 if (!ret.ok()) {
-                    return Status::SemanticError(
-                        "Index %s not found in space %s", indexName.c_str(), spaceName.c_str());
+                    return Status::SemanticError("Get index failed in space `%s': %s",
+                            spaceName.c_str(), ret.status().toString().c_str());
                 }
                 auto indexes = std::move(ret).value();
-                auto it = std::find_if(indexes.begin(),
-                                       indexes.end(),
-                                       [&indexName](std::shared_ptr<meta::cpp2::IndexItem>& item) {
-                                           return item->get_index_name() == indexName;
-                                       });
-                if (it == indexes.end()) {
-                    return Status::SemanticError(
-                        "Index %s not found in space %s", indexName.c_str(), spaceName.c_str());
+                const auto &paras = sentence_->getParas();
+                if (paras.size() == 1 && indexes.empty()) {
+                    return Status::SemanticError("Space `%s' without indexes", spaceName.c_str());
+                }
+                for (auto i = 0u; i < paras.size() - 1; i++) {
+                    const auto &indexName = paras[i];
+                    auto it = std::find_if(indexes.begin(), indexes.end(),
+                            [&indexName](std::shared_ptr<meta::cpp2::IndexItem>& item) {
+                                return item->get_index_name() == indexName;
+                            });
+                    if (it == indexes.end()) {
+                        return Status::SemanticError(
+                                "Index %s not found in space %s",
+                                indexName.c_str(), spaceName.c_str());
+                    }
                 }
             }
         }

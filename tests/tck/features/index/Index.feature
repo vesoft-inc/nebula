@@ -646,7 +646,7 @@ Feature: IndexTest_Vid_String
       """
       SHOW EDGE INDEX STATUS;
       """
-    Then the result should be, in any order:
+    Then the result should include:
       | Name                | Index Status |
       | "edge_index_status" | "FINISHED"   |
     Then drop the used space
@@ -687,4 +687,236 @@ Feature: IndexTest_Vid_String
       LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
       """
     Then the execution should be successful
+    Then drop the used space
+
+  Scenario: IndexTest rebuild all tag indexes by empty input
+    Given an empty graph
+    And create a space with following options:
+      | name     | rebuild_tag_space |
+      | vid_type | FIXED_STRING(10)  |
+    And having executed:
+      """
+      CREATE TAG id_tag(id int);
+      CREATE TAG name_tag(name string);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX id_tag(id) VALUES "100":(100), "200":(100);
+      INSERT VERTEX name_tag(name) VALUES "300":("100"), "400":("100");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX id_tag_index ON id_tag(id);
+      CREATE TAG INDEX name_tag_index ON name_tag(name(10));
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      REBUILD TAG INDEX;
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      SHOW TAG INDEX STATUS;
+      """
+    Then the result should include:
+      | Name                                | Index Status |
+      | "rebuild_tag_space_all_tag_indexes" | "FINISHED"   |
+    When executing query:
+      """
+      LOOKUP ON id_tag WHERE id_tag.id == 100
+      """
+    Then the result should be, in any order:
+      | VertexID |
+      | "100"    |
+      | "200"    |
+    When executing query:
+      """
+      LOOKUP ON name_tag WHERE name_tag.name == "100"
+      """
+    Then the result should be, in any order:
+      | VertexID |
+      | "300"    |
+      | "400"    |
+    Then drop the used space
+
+  Scenario: IndexTest rebuild all tag indexes by multi input
+    Given an empty graph
+    And create a space with following options:
+      | vid_type | FIXED_STRING(10) |
+    And having executed:
+      """
+      CREATE TAG id_tag(id int);
+      CREATE TAG name_tag(name string);
+      CREATE TAG age_tag(age int);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX id_tag(id) VALUES "100":(100), "200":(100);
+      INSERT VERTEX name_tag(name) VALUES "300":("100"), "400":("100");
+      INSERT VERTEX age_tag(age) VALUES "500":(8), "600":(8);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX id_tag_index ON id_tag(id);
+      CREATE TAG INDEX name_tag_index ON name_tag(name(10));
+      CREATE TAG INDEX age_tag_index ON age_tag(age);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      REBUILD TAG INDEX id_tag_index, name_tag_index;
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      SHOW TAG INDEX STATUS;
+      """
+    Then the result should include:
+      | Name                          | Index Status |
+      | "id_tag_index,name_tag_index" | "FINISHED"   |
+    When executing query:
+      """
+      LOOKUP ON id_tag WHERE id_tag.id == 100
+      """
+    Then the result should be, in any order:
+      | VertexID |
+      | "100"    |
+      | "200"    |
+    When executing query:
+      """
+      LOOKUP ON name_tag WHERE name_tag.name == "100"
+      """
+    Then the result should be, in any order:
+      | VertexID |
+      | "300"    |
+      | "400"    |
+    When executing query:
+      """
+      LOOKUP ON age_tag WHERE age_tag.age == 8
+      """
+    Then the result should be, in any order:
+      | VertexID |
+    Then drop the used space
+
+  Scenario: IndexTest rebuild all edge indexes by empty input
+    Given an empty graph
+    And create a space with following options:
+      | name     | rebuild_edge_space |
+      | vid_type | FIXED_STRING(10)   |
+    And having executed:
+      """
+      CREATE EDGE id_edge(id int);
+      CREATE EDGE name_edge(name string);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT EDGE id_edge(id) VALUES "100"->"200":(100);
+      INSERT EDGE name_edge(name) VALUES "300"->"400":("100");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX id_edge_index ON id_edge(id);
+      CREATE EDGE INDEX name_edge_index ON name_edge(name(10));
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      REBUILD EDGE INDEX;
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      SHOW EDGE INDEX STATUS;
+      """
+    Then the result should include:
+      | Name                                  | Index Status |
+      | "rebuild_edge_space_all_edge_indexes" | "FINISHED"   |
+    When executing query:
+      """
+      LOOKUP ON id_edge WHERE id_edge.id == 100
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
+      | "100"  | "200"  | 0       |
+    When executing query:
+      """
+      LOOKUP ON name_edge WHERE name_edge.name == "100"
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
+      | "300"  | "400"  | 0       |
+    Then drop the used space
+
+  Scenario: IndexTest rebuild all edge indexes by multi input
+    Given an empty graph
+    And create a space with following options:
+      | vid_type | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE EDGE id_edge(id int);
+      CREATE EDGE name_edge(name string);
+      CREATE EDGE age_edge(age int);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT EDGE id_edge(id) VALUES "100"->"200":(100);
+      INSERT EDGE name_edge(name) VALUES "300"->"400":("100");
+      INSERT EDGE age_edge(age) VALUES "500"->"600":(8);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX id_edge_index ON id_edge(id);
+      CREATE EDGE INDEX name_edge_index ON name_edge(name(10));
+      CREATE EDGE INDEX age_edge_index ON age_edge(age);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      REBUILD EDGE INDEX id_edge_index,name_edge_index;
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      SHOW EDGE INDEX STATUS;
+      """
+    Then the result should include:
+      | Name                            | Index Status |
+      | "id_edge_index,name_edge_index" | "FINISHED"   |
+    When executing query:
+      """
+      LOOKUP ON id_edge WHERE id_edge.id == 100
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
+      | "100"  | "200"  | 0       |
+    When executing query:
+      """
+      LOOKUP ON name_edge WHERE name_edge.name == "100"
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
+      | "300"  | "400"  | 0       |
+    When executing query:
+      """
+      LOOKUP ON age_edge WHERE age_edge.age == 8
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
     Then drop the used space
