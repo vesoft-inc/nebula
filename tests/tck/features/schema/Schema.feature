@@ -99,7 +99,7 @@ Feature: Insert string vid of vertex and edge
       """
       DESCRIBE TAG not_exist
       """
-    Then a ExecutionError should be raised at runtime: not existed!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # unreserved keyword
     When executing query:
       """
@@ -123,7 +123,7 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG person(id int)
       """
-    Then a ExecutionError should be raised at runtime: existed!
+    Then a ExecutionError should be raised at runtime: Existed!
     # alter tag
     When executing query:
       """
@@ -135,7 +135,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG person DROP (gender)
       """
-    Then a ExecutionError should be raised at runtime: not existed!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # check result
     When executing query:
       """
@@ -194,7 +194,7 @@ Feature: Insert string vid of vertex and edge
       """
       DROP TAG not_exist_tag
       """
-    Then a ExecutionError should be raised at runtime: not existed!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # drop if exists with not exist tag
     When executing query:
       """
@@ -271,13 +271,13 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE EDGE buy_type_mismatch(id int, time_ string DEFAULT 0)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # existent edge
     When executing query:
       """
       CREATE EDGE buy(id int, time_ string)
       """
-    Then a ExecutionError should be raised at runtime: existed!
+    Then a ExecutionError should be raised at runtime: Existed!
     # DESCRIBE edge
     When executing query:
       """
@@ -301,7 +301,7 @@ Feature: Insert string vid of vertex and edge
       """
       DESCRIBE EDGE not_exist
       """
-    Then a ExecutionError should be raised at runtime: unknown!
+    Then a ExecutionError should be raised at runtime: Unknown error!
     # create edge with timestamp
     When executing query:
       """
@@ -340,7 +340,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE education DROP (id, time_)
       """
-    Then a ExecutionError should be raised at runtime: not existed!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # check result
     When executing query:
       """
@@ -378,7 +378,7 @@ Feature: Insert string vid of vertex and edge
       """
       DROP EDGE not_exist_edge
       """
-    Then a ExecutionError should be raised at runtime: not existed!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # drop if exists
     When executing query:
       """
@@ -652,43 +652,43 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG bad_null_default_value(name string DEFAULT "N/A", age int DEFAULT 1%0)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of string when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 string DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of timestamp when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 timestamp DEFAULT -10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of float when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 float DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of bool when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 bool DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of int8 when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 int8 DEFAULT 10000)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with wrong type default value of time when add
     When executing query:
       """
       ALTER TAG tag_not_null_default1 ADD (col1 time DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter tag with out of rang string default value of fixed_string when add
     When executing query:
       """
@@ -708,44 +708,44 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG tag_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of string when add
     When executing query:
       """
       CREATE EDGE edge_not_null_default1(name string NOT NULL DEFAULT "N/A");
       ALTER EDGE edge_not_null_default1 ADD (col1 string DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of timestamp when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 timestamp DEFAULT -10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of float when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 float DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of bool when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 bool DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of int8 when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 int8 DEFAULT 10000)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with wrong type default value of time when add
     When executing query:
       """
       ALTER EDGE edge_not_null_default1 ADD (col1 time DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     # test alter edge with out of rang string default value of fixed_string when add
     When executing query:
       """
@@ -765,5 +765,5 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
-    Then a ExecutionError should be raised at runtime: invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid parm!
     Then drop the used space
