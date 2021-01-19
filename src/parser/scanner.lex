@@ -187,6 +187,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "BIT_AND"                   { return TokenType::KW_BIT_AND; }
 "BIT_OR"                    { return TokenType::KW_BIT_OR; }
 "BIT_XOR"                   { return TokenType::KW_BIT_XOR; }
+"COLLECT"                   { return TokenType::KW_COLLECT; }
+"COLLECT_SET"               { return TokenType::KW_COLLECT_SET; }
 "PATH"                      { return TokenType::KW_PATH; }
 "BIDIRECT"                  { return TokenType::KW_BIDIRECT; }
 "STATS"                     { return TokenType::KW_STATS; }

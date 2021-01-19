@@ -90,6 +90,26 @@ Feature: Basic Aggregate and GroupBy
       | "Manu Ginobili" | 41.0 |
     When executing query:
       """
+      GO 2 STEPS FROM "Tim Duncan" OVER like YIELD like._dst as dst,like._src AS src, $$.player.age AS age
+      | GROUP BY $-.dst YIELD $-.dst AS dst,collect_set($-.src) AS src,collect($-.age) AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 | src                              | age      |
+      | "Manu Ginobili"     | {"Tony Parker"}                  | [41]     |
+      | "Tim Duncan"        | {"Tony Parker", "Manu Ginobili"} | [42, 42] |
+      | "LaMarcus Aldridge" | {"Tony Parker"}                  | [33]     |
+    When executing query:
+      """
+      $var=GO 2 STEPS FROM "Tim Duncan" OVER like YIELD like._dst as dst,like._src AS src, $$.player.age AS age;
+      YIELD $var.dst AS dst,collect_set($var.src) AS src,collect($var.age) AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 | src                              | age      |
+      | "Manu Ginobili"     | {"Tony Parker"}                  | [41]     |
+      | "Tim Duncan"        | {"Tony Parker", "Manu Ginobili"} | [42, 42] |
+      | "LaMarcus Aldridge" | {"Tony Parker"}                  | [33]     |
+    When executing query:
+      """
       GO FROM 'Aron Baynes', 'Tracy McGrady' OVER serve
          YIELD $$.team.name AS name,
                serve._dst AS id,
