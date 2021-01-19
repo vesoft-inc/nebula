@@ -83,7 +83,7 @@ public:
      * @brief persist job executed result, and do the cleanup
      * @return cpp2::ErrorCode if error when write to kv store
      */
-    cpp2::ErrorCode jobFinished(JobID jobId, bool suc);
+    cpp2::ErrorCode jobFinished(JobID jobId, cpp2::JobStatus jobStatus);
 
     // report task finished.
     // cpp2::ErrorCode reportTaskFinish(JobID jobId, int32_t taskId, cpp2::ErrorCode code);
@@ -141,6 +141,7 @@ private:
     AdminClient*                                       adminClient_{nullptr};
 
     std::mutex                                         muReportFinish_;
+    std::mutex                                         muJobFinished_;
 };
 
 }  // namespace meta

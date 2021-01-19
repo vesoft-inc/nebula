@@ -159,7 +159,7 @@ TEST_F(GetStatisTest, StatisJob) {
     auto tempKey = toTempKey(spaceId, jobId);
 
     copyData(kv_.get(), 0, 0, statisKey, tempKey);
-    jobMgr->jobFinished(jobId, true);
+    jobMgr->jobFinished(jobId, cpp2::JobStatus::FINISHED);
     {
         auto job2 = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
         ASSERT_TRUE(job2);
@@ -283,7 +283,7 @@ TEST_F(GetStatisTest, StatisJob) {
     auto tempKey2 = toTempKey(spaceId, jobId2);
 
     copyData(kv_.get(), 0, 0, statisKey2, tempKey2);
-    jobMgr->jobFinished(jobId2, true);
+    jobMgr->jobFinished(jobId2, cpp2::JobStatus::FINISHED);
 
     ASSERT_TRUE(result2);
     // JobManager does not set the job finished status in RunJobInternal function.
