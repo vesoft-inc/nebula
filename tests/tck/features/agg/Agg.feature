@@ -451,6 +451,12 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
+      | GROUP BY $-.age YIELD $-.age,avg(distinct $-.age),$-.dst AS dst
+      """
+    Then a SemanticError should be raised at runtime: Yield non-agg expression `$-.dst' must be functionally dependent on items in GROUP BY clause
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
       | GROUP BY $-.age+1 YIELD $-.age,avg(distinct $-.age) AS age
       """
     Then a SemanticError should be raised at runtime: Yield non-agg expression `$-.age' must be functionally dependent on items in GROUP BY clause
