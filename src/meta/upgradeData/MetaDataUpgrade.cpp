@@ -193,7 +193,7 @@ Status MetaDataUpgrade::rewriteJobDesc(const folly::StringPiece &key,
         str.append(reinterpret_cast<const char*>(&len), sizeof(len))
                 .append(reinterpret_cast<const char*>(&para[0]), len);
     }
-    str.append(reinterpret_cast<const char*>(&status), sizeof(Status))
+    str.append(reinterpret_cast<const char*>(&status), sizeof(nebula::meta::cpp2::JobStatus))
             .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
             .append(reinterpret_cast<const char*>(&stopTime), sizeof(int64_t));
 
