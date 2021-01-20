@@ -50,6 +50,9 @@ private:
     // in the block. This index is zero-based
     mutable std::vector<std::pair<int64_t, uint8_t>> blockOffsets_;
     mutable std::vector<int64_t> offsets_;
+    // When we reset reader as RowReaderV1, it will trim the header, and save as buffer_.
+    // The raw row is saved in data_.
+    folly::StringPiece buffer_;
 
 private:
     RowReaderV1() = default;

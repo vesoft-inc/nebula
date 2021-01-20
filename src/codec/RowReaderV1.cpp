@@ -36,8 +36,8 @@ bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema,
     offsets_.clear();
 
     if (processHeader(data_)) {
-        // data_.begin() points to the first field
-        data_ = data_.subpiece(headerLen_);
+        // buffer_.begin() points to the first field
+        buffer_ = data_.subpiece(headerLen_);
         return true;
     } else {
         // Invalid data
@@ -146,7 +146,7 @@ int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
         }
     }
 
-    if (offset > static_cast<int64_t>(data_.size())) {
+    if (offset > static_cast<int64_t>(buffer_.size())) {
         return -1;
     }
 
@@ -231,7 +231,7 @@ Value RowReaderV1::getBool(int64_t index) const noexcept {
     Value v;
     switch (getSchema()->getFieldType(index)) {
         case meta::cpp2::PropertyType::BOOL: {
-            v.setBool(intToBool(data_[offset]));
+            v.setBool(intToBool(buffer_[offset]));
             offset++;
             break;
         }
@@ -448,8 +448,8 @@ Value RowReaderV1::getVid(int64_t index) const noexcept {
  *
  ***********************************************************/
 int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {
-    const uint8_t* start = reinterpret_cast<const uint8_t*>(&(data_[offset]));
-    folly::ByteRange range(start, data_.size() - offset);
+    const uint8_t* start = reinterpret_cast<const uint8_t*>(&(buffer_[offset]));
+    folly::ByteRange range(start, buffer_.size() - offset);
 
     try {
         v = folly::decodeVarint(range);
@@ -461,22 +461,22 @@ int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {
 
 
 int32_t RowReaderV1::readFloat(int64_t offset, float& v) const noexcept {
-    if (offset + sizeof(float) > data_.size()) {
+    if (offset + sizeof(float) > buffer_.size()) {
         return -1;
     }
 
-    memcpy(reinterpret_cast<char*>(&v), &(data_[offset]), sizeof(float));
+    memcpy(reinterpret_cast<char*>(&v), &(buffer_[offset]), sizeof(float));
 
     return sizeof(float);
 }
 
 
 int32_t RowReaderV1::readDouble(int64_t offset, double& v) const noexcept {
-    if (offset + sizeof(double) > data_.size()) {
+    if (offset + sizeof(double) > buffer_.size()) {
         return -1;
     }
 
-    memcpy(reinterpret_cast<char*>(&v), &(data_[offset]), sizeof(double));
+    memcpy(reinterpret_cast<char*>(&v), &(buffer_[offset]), sizeof(double));
 
     return sizeof(double);
 }
@@ -486,22 +486,22 @@ int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const noe
     int64_t strLen = 0;
     int32_t intLen = readInteger(offset, strLen);
     CHECK_GT(intLen, 0) << "Invalid string length";
-    if (offset + intLen + strLen > static_cast<int64_t>(data_.size())) {
+    if (offset + intLen + strLen > static_cast<int64_t>(buffer_.size())) {
         return -1;
     }
 
-    v = folly::StringPiece(data_.data() + offset + intLen, strLen);
+    v = folly::StringPiece(buffer_.data() + offset + intLen, strLen);
     return intLen + strLen;
 }
 
 
 int32_t RowReaderV1::readInt64(int64_t offset, int64_t& v) const noexcept {
-    if (offset + sizeof(int64_t) > data_.size()) {
+    if (offset + sizeof(int64_t) > buffer_.size()) {
         return -1;
     }
 
     // VID is stored in Little Endian
-    memcpy(reinterpret_cast<char*>(&v), &(data_[offset]), sizeof(int64_t));
+    memcpy(reinterpret_cast<char*>(&v), &(buffer_[offset]), sizeof(int64_t));
 
     return sizeof(int64_t);
 }
