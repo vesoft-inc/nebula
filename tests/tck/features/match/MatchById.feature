@@ -918,3 +918,25 @@ Feature: Match By Id
     Then the result should be, in any order, with relax comparison:
       | COUNT(1) |
       | 927      |
+
+  Scenario: the referred vertex of id fn is not the first
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v2) == 'Tim Duncan'
+      RETURN v1, v3 |
+      YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 10       |
+    When executing query:
+      """
+      MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
+      WHERE id(v3) == 'Spurs'
+      RETURN v1 |
+      YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 34       |

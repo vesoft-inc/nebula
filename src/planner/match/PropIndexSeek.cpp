@@ -31,8 +31,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 
     auto* matchClauseCtx = nodeCtx->matchClauseCtx;
     Expression* filter = nullptr;
-    if (matchClauseCtx->where != nullptr
-            && matchClauseCtx->where->filter != nullptr) {
+    if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
         filter = MatchSolver::makeIndexFilter(*node.labels.back(),
                                               *node.alias,
                                                matchClauseCtx->where->filter.get(),
@@ -43,6 +42,13 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
             filter = MatchSolver::makeIndexFilter(*node.labels.back(),
                                                    node.props,
                                                    matchClauseCtx->qctx);
+        }
+    }
+    // TODO(yee): Refactor these index choice logic
+    if (filter == nullptr && !node.labelProps.empty()) {
+        auto props = node.labelProps.back();
+        if (props != nullptr) {
+            filter = MatchSolver::makeIndexFilter(*node.labels.back(), props, matchClauseCtx->qctx);
         }
     }
 

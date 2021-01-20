@@ -23,19 +23,19 @@ StatusOr<SubPlan> VertexIdSeek::transformEdge(EdgeContext* edgeCtx) {
 }
 
 bool VertexIdSeek::matchNode(NodeContext* nodeCtx) {
-    auto& node = *nodeCtx->info;
     auto* matchClauseCtx = nodeCtx->matchClauseCtx;
-    if (matchClauseCtx->where == nullptr
-            || matchClauseCtx->where->filter == nullptr) {
+    auto where = matchClauseCtx->where.get();
+    if (where == nullptr || where->filter == nullptr) {
         return false;
     }
 
-    if (!node.labels.empty()) {
-        // TODO: Only support all tags for now.
+    DCHECK(nodeCtx->info != nullptr);
+    auto alias = nodeCtx->info->alias;
+    if (alias == nullptr) {
         return false;
     }
 
-    auto vidResult = extractVids(matchClauseCtx->where->filter.get());
+    auto vidResult = extractVids(*alias, where->filter.get());
     if (!vidResult.ok()) {
         return false;
     }
@@ -44,7 +44,23 @@ bool VertexIdSeek::matchNode(NodeContext* nodeCtx) {
     return true;
 }
 
-StatusOr<const Expression*> VertexIdSeek::extractVids(const Expression* filter) {
+static Status checkIDFun(const std::string& alias, const FunctionCallExpression* fCallExpr) {
+    if (*fCallExpr->name() != "id") {
+        return Status::Error("Only id function is allowed");
+    }
+    const auto& args = DCHECK_NOTNULL(fCallExpr->args())->args();
+    if (args.size() != 1U) {
+        return Status::Error("Invalid parameter number of id function");
+    }
+    auto arg = args.back().get();
+    if (arg->toString() != alias) {
+        return Status::Error("Invalid parameter `%s' of id function", alias.c_str());
+    }
+    return Status::OK();
+}
+
+StatusOr<const Expression*> VertexIdSeek::extractVids(const std::string& alias,
+                                                      const Expression* filter) {
     if (filter->kind() == Expression::Kind::kRelIn) {
         const auto* inExpr = static_cast<const RelationalExpression*>(filter);
         if (inExpr->left()->kind() != Expression::Kind::kFunctionCall ||
@@ -52,9 +68,7 @@ StatusOr<const Expression*> VertexIdSeek::extractVids(const Expression* filter) 
             return Status::Error("Not supported expression.");
         }
         const auto* fCallExpr = static_cast<const FunctionCallExpression*>(inExpr->left());
-        if (*fCallExpr->name() != "id") {
-            return Status::Error("Require id limit.");
-        }
+        NG_RETURN_IF_ERROR(checkIDFun(alias, fCallExpr));
         auto* constExpr = const_cast<Expression*>(inExpr->right());
         return constExpr;
     } else if (filter->kind() == Expression::Kind::kRelEQ) {
@@ -64,9 +78,7 @@ StatusOr<const Expression*> VertexIdSeek::extractVids(const Expression* filter) 
             return Status::Error("Not supported expression.");
         }
         const auto* fCallExpr = static_cast<const FunctionCallExpression*>(eqExpr->left());
-        if (*fCallExpr->name() != "id") {
-            return Status::Error("Require id limit.");
-        }
+        NG_RETURN_IF_ERROR(checkIDFun(alias, fCallExpr));
         auto* constExpr = const_cast<Expression*>(eqExpr->right());
         return constExpr;
     } else {
@@ -123,7 +135,6 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
     plan.tail = passThrough;
 
     nodeCtx->initialExpr = std::unique_ptr<Expression>(vidsResult.second);
-    VLOG(1) << "root: " << plan.root->kind() << " tail: " << plan.tail->kind();
     return plan;
 }
 }  // namespace graph

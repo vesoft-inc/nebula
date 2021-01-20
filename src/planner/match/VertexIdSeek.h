@@ -25,7 +25,7 @@ public:
 
     bool matchEdge(EdgeContext* edgeCtx) override;
 
-    StatusOr<const Expression*> extractVids(const Expression* filter);
+    StatusOr<const Expression*> extractVids(const std::string& alias, const Expression* filter);
 
     StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) override;
 
