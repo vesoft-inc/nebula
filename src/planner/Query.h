@@ -133,7 +133,7 @@ public:
                               bool dedup = false,
                               bool random = false,
                               std::vector<storage::cpp2::OrderBy> orderBy = {},
-                              int64_t limit = std::numeric_limits<int64_t>::max(),
+                              int64_t limit = -1,
                               std::string filter = "") {
         auto gn = make(qctx, input, space);
         gn->setSrc(src);
@@ -221,7 +221,9 @@ public:
 
 private:
     GetNeighbors(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
-        : Explore(qctx, Kind::kGetNeighbors, input, space) {}
+        : Explore(qctx, Kind::kGetNeighbors, input, space) {
+        setLimit(-1);
+    }
 
 private:
     void clone(const GetNeighbors& g);

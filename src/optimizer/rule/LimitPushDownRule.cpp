@@ -53,7 +53,7 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
     const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
     int64_t limitRows = limit->offset() + limit->count();
-    if (limitRows >= gn->limit()) {
+    if (gn->limit() >= 0 && limitRows >= gn->limit()) {
         return TransformResult::noTransform();
     }
 
