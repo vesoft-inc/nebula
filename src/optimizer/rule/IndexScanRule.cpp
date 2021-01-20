@@ -337,7 +337,7 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
                 kind->setKind(k);
             } else if (kind->getKind() != k) {
                 auto errorMsg = folly::StringPiece("Condition not support yet : %s",
-                                                   Expression::encode(*expr).c_str());
+                                                   expr->toString().c_str());
                 return Status::NotSupported(errorMsg);
             }
             // TODO(dutor) Deal with n-ary operands
@@ -365,7 +365,7 @@ Status IndexScanRule::analyzeExpression(Expression* expr,
         }
         default: {
             auto errorMsg = folly::StringPiece("Filter not support yet : %s",
-                                               Expression::encode(*expr).c_str());
+                                               expr->toString().c_str());
             return Status::NotSupported(errorMsg);
         }
     }
