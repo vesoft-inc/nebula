@@ -19,11 +19,11 @@ public:
 
     IndexEdgeNode(PlanContext* planCtx,
                   IndexScanNode<T>* indexScanNode,
-                  std::shared_ptr<const meta::NebulaSchemaProvider> schema,
+                  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName)
         : planContext_(planCtx)
         , indexScanNode_(indexScanNode)
-        , schema_(schema)
+        , schemas_(schemas)
         , schemaName_(schemaName) {}
 
     kvstore::ResultCode execute(PartitionID partId) override {
@@ -66,8 +66,8 @@ public:
         return std::move(data_);
     }
 
-    const meta::NebulaSchemaProvider* getSchema() {
-        return schema_.get();
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchemas() {
+        return schemas_;
     }
 
     const std::string& getSchemaName() {
@@ -75,11 +75,11 @@ public:
     }
 
 private:
-    PlanContext*                                      planContext_;
-    IndexScanNode<T>*                                 indexScanNode_;
-    std::vector<kvstore::KV>                          data_;
-    std::shared_ptr<const meta::NebulaSchemaProvider> schema_{nullptr};
-    const std::string&                                schemaName_;
+    PlanContext*                                                          planContext_;
+    IndexScanNode<T>*                                                     indexScanNode_;
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
+    const std::string&                                                    schemaName_;
+    std::vector<kvstore::KV>                                              data_;
 };
 
 }  // namespace storage

@@ -73,9 +73,9 @@ public:
                     data_.emplace_back(k.first, k.second);
                 }
             } else {
-                const auto* schema = isEdge_ ? indexEdgeNode_->getSchema()
-                                             : indexVertexNode_->getSchema();
-                auto reader = RowReaderWrapper::getRowReader(schema, k.second);
+                const auto& schemas = isEdge_ ? indexEdgeNode_->getSchemas()
+                                              : indexVertexNode_->getSchemas();
+                auto reader = RowReaderWrapper::getRowReader(schemas, k.second);
                 if (!reader) {
                     continue;
                 }
@@ -91,12 +91,9 @@ public:
         return std::move(data_);
     }
 
-    const meta::NebulaSchemaProvider* getSchema() {
-        if (evalExprByIndex_) {
-            return nullptr;
-        }
-        return isEdge_ ? indexEdgeNode_->getSchema()
-                       : indexVertexNode_->getSchema();
+    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchemas() {
+        return isEdge_ ? indexEdgeNode_->getSchemas()
+                       : indexVertexNode_->getSchemas();
     }
 
      bool hasNullableCol() const {

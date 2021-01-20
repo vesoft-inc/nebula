@@ -153,21 +153,21 @@ private:
     }
 
     kvstore::ResultCode vertexRowsFromData(const std::vector<kvstore::KV>& data) {
-        const auto* schema = type_ == IndexResultType::kVertexFromDataScan
-                             ? indexVertexNode_->getSchema()
-                             : indexFilterNode_->getSchema();
-        if (schema == nullptr) {
+        const auto& schemas = type_ == IndexResultType::kVertexFromDataScan
+                              ? indexVertexNode_->getSchemas()
+                              : indexFilterNode_->getSchemas();
+        if (schemas.empty()) {
             return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
         }
         for (const auto& val : data) {
             Row row;
-            auto reader = RowReaderWrapper::getRowReader(schema, val.second);
+            auto reader = RowReaderWrapper::getRowReader(schemas, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
             }
             for (const auto& col : result_->colNames) {
-                auto ret = addIndexValue(row, reader.get(), val, col, schema);
+                auto ret = addIndexValue(row, reader.get(), val, col, schemas.back().get());
                 if (!ret.ok()) {
                     return kvstore::ResultCode::ERR_INVALID_DATA;
                 }
@@ -192,21 +192,21 @@ private:
     }
 
     kvstore::ResultCode edgeRowsFromData(const std::vector<kvstore::KV>& data) {
-        const auto* schema = type_ == IndexResultType::kEdgeFromDataScan
-                             ? indexEdgeNode_->getSchema()
-                             : indexFilterNode_->getSchema();
-        if (schema == nullptr) {
+        const auto& schemas = type_ == IndexResultType::kEdgeFromDataScan
+                              ? indexEdgeNode_->getSchemas()
+                              : indexFilterNode_->getSchemas();
+        if (schemas.empty()) {
             return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
         }
         for (const auto& val : data) {
             Row row;
-            auto reader = RowReaderWrapper::getRowReader(schema, val.second);
+            auto reader = RowReaderWrapper::getRowReader(schemas, val.second);
             if (!reader) {
                 VLOG(1) << "Can't get tag reader";
                 return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
             }
             for (const auto& col : result_->colNames) {
-                auto ret = addIndexValue(row, reader.get(), val, col, schema);
+                auto ret = addIndexValue(row, reader.get(), val, col, schemas.back().get());
                 if (!ret.ok()) {
                     return kvstore::ResultCode::ERR_INVALID_DATA;
                 }

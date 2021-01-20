@@ -27,7 +27,14 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
             return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         planContext_->edgeName_ = std::move(edgeName.value());
-        schema_ = this->env_->schemaMan_->getEdgeSchema(spaceId_, planContext_->edgeType_);
+        auto allEdges = this->env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
+        if (!allEdges.ok()) {
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+        if (!allEdges.value().count(planContext_->edgeType_)) {
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+        schemas_ = std::move(allEdges).value()[planContext_->edgeType_];
     } else {
         planContext_->tagId_ = indices.get_tag_or_edge_id();
         auto tagName = this->env_->schemaMan_->toTagName(spaceId_, planContext_->tagId_);
@@ -35,7 +42,14 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
             return cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         planContext_->tagName_ = std::move(tagName.value());
-        schema_ = this->env_->schemaMan_->getTagSchema(spaceId_, planContext_->tagId_);
+        auto allTags = this->env_->schemaMan_->getAllVerTagSchema(spaceId_);
+        if (!allTags.ok()) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        }
+        if (!allTags.value().count(planContext_->tagId_)) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        }
+        schemas_ = std::move(allTags).value()[planContext_->tagId_];
     }
 
     if (indices.get_contexts().empty() || !req.__isset.return_columns ||
@@ -220,20 +234,20 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
             auto expr = Expression::decode(ctx.get_filter());
             // Need to get columns in data, expr ctx need to be aware of schema
             const auto& schemaName = planContext_->isEdge_ ? planContext_->edgeName_ :
-                                                                planContext_->tagName_;
-            if (schema_ == nullptr) {
+                                                             planContext_->tagName_;
+            if (schemas_.empty()) {
                 return Status::Error("Schema not found");
             }
             auto exprCtx = std::make_unique<StorageExpressionContext>(planContext_->vIdLen_,
-                                                                        planContext_->isIntId_,
-                                                                        schemaName,
-                                                                        schema_.get(),
-                                                                        planContext_->isEdge_);
+                                                                      planContext_->isIntId_,
+                                                                      schemaName,
+                                                                      schemas_.back().get(),
+                                                                      planContext_->isEdge_);
             filterItems_.emplace(filterId, std::make_pair(std::move(exprCtx), std::move(expr)));
             out = buildPlanWithDataAndFilter(ctx,
-                                                plan,
-                                                filterItems_[filterId].first.get(),
-                                                filterItems_[filterId].second.get());
+                                             plan,
+                                             filterItems_[filterId].first.get(),
+                                             filterItems_[filterId].second.get());
             filterId++;
         }
         if (out == nullptr) {
@@ -319,7 +333,7 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithData(const cpp2::IndexQueryContext&
     if (planContext_->isEdge_) {
         auto edge = std::make_unique<IndexEdgeNode<IndexID>>(planContext_.get(),
                                                              indexScan.get(),
-                                                             schema_,
+                                                             schemas_,
                                                              planContext_->edgeName_);
         edge->addDependency(indexScan.get());
         auto output = std::make_unique<IndexOutputNode<IndexID>>(&resultDataSet_,
@@ -333,7 +347,7 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithData(const cpp2::IndexQueryContext&
         auto vertex = std::make_unique<IndexVertexNode<IndexID>>(planContext_.get(),
                                                                  this->vertexCache_,
                                                                  indexScan.get(),
-                                                                 schema_,
+                                                                 schemas_,
                                                                  planContext_->tagName_);
         vertex->addDependency(indexScan.get());
         auto output = std::make_unique<IndexOutputNode<IndexID>>(&resultDataSet_,
@@ -436,7 +450,7 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(const cpp2::IndexQuer
     if (planContext_->isEdge_) {
         auto edge = std::make_unique<IndexEdgeNode<IndexID>>(planContext_.get(),
                                                              indexScan.get(),
-                                                             schema_,
+                                                             schemas_,
                                                              planContext_->edgeName_);
         edge->addDependency(indexScan.get());
         auto filter = std::make_unique<IndexFilterNode<IndexID>>(edge.get(),
@@ -456,7 +470,7 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(const cpp2::IndexQuer
         auto vertex = std::make_unique<IndexVertexNode<IndexID>>(planContext_.get(),
                                                                  this->vertexCache_,
                                                                  indexScan.get(),
-                                                                 schema_,
+                                                                 schemas_,
                                                                  planContext_->tagName_);
         vertex->addDependency(indexScan.get());
         auto filter = std::make_unique<IndexFilterNode<IndexID>>(vertex.get(),
