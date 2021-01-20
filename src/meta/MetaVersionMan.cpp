@@ -296,7 +296,8 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     // delete
     {
-        std::vector<std::string> prefixes({nebula::oldmeta::kIndexesTable,
+        std::vector<std::string> prefixes({nebula::oldmeta::kIndexStatusTable,
+                                           nebula::oldmeta::kIndexesTable,
                                            nebula::oldmeta::kDefaultTable,
                                            nebula::oldmeta::kCurrJob,
                                            nebula::oldmeta::kJobArchive});
@@ -306,8 +307,18 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
             if (ret == kvstore::ResultCode::SUCCEEDED) {
                 Status status = Status::OK();
                 while (iter->valid()) {
-                    if (FLAGS_print_info) {
-                        upgrader.printIndexes(iter->val());
+                    if (prefix == nebula::oldmeta::kIndexesTable) {
+                        if (FLAGS_print_info) {
+                            upgrader.printIndexes(iter->val());
+                        }
+                        auto oldItem = oldmeta::MetaServiceUtilsV1::parseIndex(iter->val());
+                        auto spaceId = MetaServiceUtils::parseIndexesKeySpaceID(iter->key());
+                        status = upgrader.deleteKeyVal(
+                                MetaServiceUtils::indexIndexKey(spaceId, oldItem.get_index_name()));
+                        if (!status.ok()) {
+                            LOG(ERROR) << status;
+                            return status;
+                        }
                     }
                     status = upgrader.deleteKeyVal(iter->key());
                     if (!status.ok()) {
