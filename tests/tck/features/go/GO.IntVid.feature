@@ -1584,6 +1584,28 @@ Feature: IntegerVid Go  Sentence
       | "Tony Parker" | "LaMarcus Aldridge" | "Manu Ginobili"     | "Tim Duncan"    |
       | "Tony Parker" | "LaMarcus Aldridge" | "LaMarcus Aldridge" | "Tim Duncan"    |
 
+  Scenario: Integer Vid Go and Limit
+    When executing query:
+      """
+      $a = GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst;
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
+      | ORDER BY $-.src | OFFSET 1 LIMIT 2
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
+      | src           | $a.dst          | like._src       | like._dst    |
+      | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
+      | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
+    When executing query:
+      """
+      $a = GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst;
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
+      | ORDER BY $-.src | LIMIT 2 OFFSET 1
+      """
+    Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
+      | src           | $a.dst          | like._src       | like._dst    |
+      | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
+      | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
+
   Scenario: Integer Vid GroupBy and Count
     When executing query:
       """

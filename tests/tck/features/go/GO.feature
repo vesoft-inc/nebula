@@ -1588,21 +1588,21 @@ Feature: Go Sentence
     When executing query:
       """
       $a = GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src, $a.dst, like._src, like._dst |
-      OFFSET 1 LIMIT 2
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
+      | ORDER BY $-.src | OFFSET 1 LIMIT 2
       """
     Then the result should be, in any order, with relax comparison:
-      | $a.src        | $a.dst          | like._src       | like._dst    |
+      | src           | $a.dst          | like._src       | like._dst    |
       | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
       | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
     When executing query:
       """
       $a = GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src, $a.dst, like._src, like._dst |
-      LIMIT 2 OFFSET 1
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
+      | ORDER BY $-.src | LIMIT 2 OFFSET 1
       """
     Then the result should be, in any order, with relax comparison:
-      | $a.src        | $a.dst          | like._src       | like._dst    |
+      | src           | $a.dst          | like._src       | like._dst    |
       | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
       | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
 
