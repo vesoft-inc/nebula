@@ -7,6 +7,7 @@
 #ifndef _UTIL_EXPRESSION_UTILS_H_
 #define _UTIL_EXPRESSION_UTILS_H_
 
+#include "common/base/Status.h"
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/FunctionCallExpression.h"
@@ -139,6 +140,10 @@ public:
     static std::unique_ptr<Expression> expandImplAnd(const Expression *expr);
 
     static std::vector<std::unique_ptr<Expression>> expandImplOr(const Expression *expr);
+
+    static Status checkAggExpr(const AggregateExpression* aggExpr);
+
+    static bool isEvaluableExpr(const Expression* expr);
 };
 
 }   // namespace graph

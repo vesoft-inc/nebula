@@ -10,6 +10,7 @@
 
 #include "common/expression/PropertyExpression.h"
 #include "visitor/FoldConstantExprVisitor.h"
+#include "visitor/EvaluableExprVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -199,6 +200,51 @@ std::vector<std::unique_ptr<Expression>> ExpressionUtils::expandImplOr(const Exp
         }
     }
     return exprs;
+}
+
+
+Status ExpressionUtils::checkAggExpr(const AggregateExpression* aggExpr) {
+    auto func = aggExpr->name();
+    if (!func) {
+        return Status::SemanticError("`%s' aggregate function not set.",
+                                     aggExpr->toString().c_str());
+    }
+
+    auto iter = AggregateExpression::NAME_ID_MAP.find(func->c_str());
+    if (iter == AggregateExpression::NAME_ID_MAP.end()) {
+        return Status::SemanticError("Unknown aggregate function `%s'", func->c_str());
+    }
+
+    auto* aggArg = aggExpr->arg();
+    if (graph::ExpressionUtils::findAny(aggArg,
+                                        {Expression::Kind::kAggregate})) {
+        return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
+                                     aggExpr->toString().c_str());
+    }
+
+    if (iter->second != AggregateExpression::Function::kCount) {
+        if (aggArg->toString() == "*") {
+            return Status::SemanticError("Could not apply aggregation function `%s' on `*`",
+                                         aggExpr->toString().c_str());
+        }
+        if (aggArg->kind() == Expression::Kind::kInputProperty
+            || aggArg->kind() == Expression::Kind::kVarProperty) {
+            auto propExpr = static_cast<const PropertyExpression*>(aggArg);
+            if (*propExpr->prop() == "*") {
+                return Status::SemanticError(
+                    "Could not apply aggregation function `%s' on `%s'",
+                    aggExpr->toString().c_str(), propExpr->toString().c_str());
+            }
+        }
+    }
+
+    return Status::OK();
+}
+
+bool ExpressionUtils::isEvaluableExpr(const Expression* expr) {
+    EvaluableExprVisitor visitor;
+    const_cast<Expression*>(expr)->accept(&visitor);
+    return visitor.ok();
 }
 }   // namespace graph
 }   // namespace nebula

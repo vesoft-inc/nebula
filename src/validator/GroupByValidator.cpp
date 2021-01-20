@@ -46,7 +46,6 @@ Status GroupByValidator::validateYield(const YieldClause *yieldClause) {
         if (colExpr->kind() == Expression::Kind::kAggregate) {
             auto* aggExpr = static_cast<AggregateExpression*>(colExpr);
             NG_RETURN_IF_ERROR(checkAggExpr(aggExpr));
-            yieldAggs_.emplace_back(colExpr);
         } else {
             yieldCols_.emplace_back(colExpr);
         }

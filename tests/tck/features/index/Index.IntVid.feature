@@ -550,7 +550,6 @@ Feature: IndexTest_Vid_Int
       | 100      | true       | 5          |
     Then drop the used space
 
-  @test3
   Scenario: IndexTest IntVid RebuildTagIndexStatusInfo
     Given an empty graph
     And create a space with following options:

@@ -7,11 +7,10 @@
 #include "planner/match/ReturnClausePlanner.h"
 
 #include "planner/Query.h"
-#include "planner/match/MatchSolver.h"
 #include "planner/match/OrderByClausePlanner.h"
 #include "planner/match/PaginationPlanner.h"
+#include "planner/match/YieldClausePlanner.h"
 #include "planner/match/SegmentsConnector.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -27,47 +26,11 @@ StatusOr<SubPlan> ReturnClausePlanner::transform(CypherClauseContextBase* clause
 }
 
 Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan) {
-    auto* yields = new YieldColumns();
-    rctx->qctx->objPool()->add(yields);
-    std::vector<std::string> colNames;
-    PlanNode* current = nullptr;
-
-    auto rewriter = [rctx](const Expression* expr) {
-        return MatchSolver::doRewrite(*rctx->aliasesUsed, expr);
-    };
-
-    for (auto* col : rctx->yieldColumns->columns()) {
-        auto kind = col->expr()->kind();
-        YieldColumn* newColumn = nullptr;
-        if (kind == Expression::Kind::kLabel || kind == Expression::Kind::kLabelAttribute) {
-            newColumn = new YieldColumn(rewriter(col->expr()));
-        } else {
-            auto newExpr = col->expr()->clone();
-            RewriteMatchLabelVisitor visitor(rewriter);
-            newExpr->accept(&visitor);
-            newColumn = new YieldColumn(newExpr.release());
-        }
-        yields->addColumn(newColumn);
-        if (col->alias() != nullptr) {
-            colNames.emplace_back(*col->alias());
-        } else {
-            colNames.emplace_back(col->expr()->toString());
-        }
-    }
-
-    auto* project = Project::make(rctx->qctx, nullptr, yields);
-    project->setColNames(std::move(colNames));
-    subPlan.tail = project;
-    current = project;
-
-    if (rctx->distinct) {
-        auto* dedup = Dedup::make(rctx->qctx, current);
-        dedup->setInputVar(current->outputVar());
-        dedup->setColNames(current->colNames());
-        current = dedup;
-    }
-
-    subPlan.root = current;
+    auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(rctx->yield.get());
+    NG_RETURN_IF_ERROR(yieldPlan);
+    auto yieldplan = std::move(yieldPlan).value();
+    subPlan.tail = yieldplan.tail;
+    subPlan.root = yieldplan.root;
 
     if (rctx->order != nullptr) {
         auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(rctx->order.get());
@@ -90,7 +53,6 @@ Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subP
 
     VLOG(1) << "return root: " << subPlan.root->outputVar()
             << " colNames: " << folly::join(",", subPlan.root->colNames());
-    // TODO: Handle grouping
 
     return Status::OK();
 }

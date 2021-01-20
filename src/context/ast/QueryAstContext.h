@@ -24,6 +24,7 @@ enum class CypherClauseKind : uint8_t {
     kReturn,
     kOrderBy,
     kPagination,
+    kYield,
 };
 
 enum class PatternKind : uint8_t {
@@ -92,15 +93,28 @@ struct PaginationContext final : CypherClauseContextBase {
     int64_t     limit{std::numeric_limits<int64_t>::max()};
 };
 
+struct YieldClauseContext final : CypherClauseContextBase {
+    YieldClauseContext() : CypherClauseContextBase(CypherClauseKind::kYield) {}
+
+    bool                                              distinct{false};
+    const YieldColumns*                               yieldColumns{nullptr};
+    std::unordered_map<std::string, AliasType>*       aliasesUsed{nullptr};
+
+    bool                                              hasAgg_{false};
+    bool                                              needGenProject_{false};
+    YieldColumns*                                     projCols_;
+    std::vector<Expression*>                          groupKeys_;
+    std::vector<Expression*>                          groupItems_;
+    std::vector<std::string>                          aggOutputColumnNames_;
+    std::vector<std::string>                          projOutputColumnNames_;
+};
+
 struct ReturnClauseContext final : CypherClauseContextBase {
     ReturnClauseContext() : CypherClauseContextBase(CypherClauseKind::kReturn) {}
 
-    bool                                         distinct{false};
-    const YieldColumns*                          yieldColumns{nullptr};
     std::unique_ptr<OrderByClauseContext>        order;
     std::unique_ptr<PaginationContext>           pagination;
-    std::unordered_map<std::string, AliasType>*  aliasesUsed{nullptr};
-    // TODO: grouping columns
+    std::unique_ptr<YieldClauseContext>          yield;
 };
 
 struct WithClauseContext final : CypherClauseContextBase {

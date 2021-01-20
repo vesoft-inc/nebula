@@ -29,7 +29,7 @@ folly::Future<Status> AggregateExecutor::execute() {
     std::unordered_map<List, std::vector<std::unique_ptr<AggData>>, std::hash<nebula::List>> result;
     for (; iter->valid(); iter->next()) {
         List list;
-        for (auto& key : groupKeys) {
+        for (auto* key : groupKeys) {
             list.values.emplace_back(key->eval(ctx(iter.get())));
         }
 

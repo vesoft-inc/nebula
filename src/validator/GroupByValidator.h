@@ -35,7 +35,6 @@ private:
 
 private:
     std::vector<Expression*>                         yieldCols_;
-    std::vector<Expression*>                         yieldAggs_;
 
     // key: alias, value: input name
     std::unordered_map<std::string, YieldColumn*>     aliases_;
