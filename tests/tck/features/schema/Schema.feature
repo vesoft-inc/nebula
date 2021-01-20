@@ -504,7 +504,7 @@ Feature: Insert string vid of vertex and edge
     # check result by fetch
     When executing query:
       """
-      FETCH PROP ON t "1"
+      FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
       | VertexID | t.name | t.age | t.description |
@@ -525,7 +525,7 @@ Feature: Insert string vid of vertex and edge
     # check result by fetch
     When executing query:
       """
-      FETCH PROP ON t "1"
+      FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
       | VertexID | t.name | t.age | t.description |
@@ -556,7 +556,7 @@ Feature: Insert string vid of vertex and edge
     # check result by fetch
     When executing query:
       """
-      FETCH PROP ON t "1"
+      FETCH PROP ON t "1" YIELD t.name, t.age, t.description
       """
     Then the result should be, in any order:
       | VertexID | t.name | t.age | t.description |

@@ -94,7 +94,7 @@ Feature: Insert int vid of vertex and edge
     # check vertex result with fetch
     When executing query:
       """
-      FETCH PROP ON person hash("Conan")
+      FETCH PROP ON person hash("Conan") YIELD person.name, person.age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID | person.name | person.age |
@@ -151,7 +151,7 @@ Feature: Insert int vid of vertex and edge
     # check edge result with fetch
     When executing query:
       """
-      FETCH PROP ON school hash("sun_school")
+      FETCH PROP ON school hash("sun_school") YIELD school.name, school.create_time
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID     | school.name  | school.create_time |
@@ -173,7 +173,7 @@ Feature: Insert int vid of vertex and edge
     # check person tag result with fetch
     When executing query:
       """
-      FETCH PROP ON person hash("Bob")
+      FETCH PROP ON person hash("Bob") YIELD person.name, person.age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID | person.name | person.age |
@@ -181,7 +181,7 @@ Feature: Insert int vid of vertex and edge
     # check student tag result with fetch
     When executing query:
       """
-      FETCH PROP ON student hash("Bob")
+      FETCH PROP ON student hash("Bob") YIELD student.grade, student.number
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID | student.grade | student.number |

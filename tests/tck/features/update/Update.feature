@@ -502,7 +502,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -515,7 +515,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -527,7 +527,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -540,7 +540,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -561,7 +561,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |
@@ -574,7 +574,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |
@@ -587,7 +587,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |
@@ -1004,7 +1004,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -1017,7 +1017,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -1029,7 +1029,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -1042,7 +1042,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name
       """
     Then the result should be, in any order:
       | VertexID | building.name |
@@ -1063,7 +1063,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |
@@ -1076,7 +1076,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "100"
+      FETCH PROP ON building "100" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |
@@ -1089,7 +1089,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON building "101"
+      FETCH PROP ON building "101" YIELD building.name, building.new_field
       """
     Then the result should be, in any order:
       | VertexID | building.name | building.new_field |

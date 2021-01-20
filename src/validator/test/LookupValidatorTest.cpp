@@ -22,6 +22,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                   "FETCH PROP ON person $-.VertexID";
         EXPECT_TRUE(checkResult(query,
                                 {
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kIndexScan,
                                     PlanNode::Kind::kStart,
@@ -34,6 +35,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
             "FETCH PROP ON person $-.name";
         EXPECT_TRUE(checkResult(query,
                                 {
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kIndexScan,
@@ -46,6 +48,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                   "FETCH PROP ON person $a.VertexID";
         EXPECT_TRUE(checkResult(query,
                                 {
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kIndexScan,
                                     PlanNode::Kind::kStart,
@@ -58,6 +61,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
             "FETCH PROP ON person $a.name";
         EXPECT_TRUE(checkResult(query,
                                 {
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kIndexScan,

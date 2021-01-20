@@ -39,21 +39,29 @@ Status FetchVerticesValidator::toPlan() {
     // pipe will set the input variable
     PlanNode *current = getVerticesNode;
 
-    if (withProject_) {
+    if (withYield_) {
         auto *projectNode = Project::make(qctx_, current, newYieldColumns_);
         projectNode->setInputVar(current->outputVar());
         projectNode->setColNames(colNames_);
         current = projectNode;
-    }
-    // Project select properties then dedup
-    if (dedup_) {
-        auto *dedupNode = Dedup::make(qctx_, current);
-        dedupNode->setInputVar(current->outputVar());
-        dedupNode->setColNames(colNames_);
-        current = dedupNode;
 
-        // the framework will add data collect to collect the result
-        // if the result is required
+        // Project select properties then dedup
+        if (dedup_) {
+            auto *dedupNode = Dedup::make(qctx_, current);
+            dedupNode->setInputVar(current->outputVar());
+            dedupNode->setColNames(colNames_);
+            current = dedupNode;
+
+            // the framework will add data collect to collect the result
+            // if the result is required
+        }
+    } else {
+        auto *columns = qctx_->objPool()->add(new YieldColumns());
+        columns->addColumn(new YieldColumn(new VertexExpression(), new std::string("vertices_")));
+        auto *projectNode = Project::make(qctx_, current, columns);
+        projectNode->setInputVar(current->outputVar());
+        projectNode->setColNames(colNames_);
+        current = projectNode;
     }
     root_ = current;
     tail_ = getVerticesNode;
@@ -138,13 +146,13 @@ Status FetchVerticesValidator::prepareProperties() {
 }
 
 Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yield) {
-    withProject_ = true;
+    withYield_ = true;
     // outputs
     auto yieldSize = yield->columns().size();
     colNames_.reserve(yieldSize + 1);
     outputs_.reserve(yieldSize + 1);
     colNames_.emplace_back(VertexID);
-    gvColNames_.emplace_back(colNames_.back());
+    gvColNames_.emplace_back(nebula::kVid);
     outputs_.emplace_back(VertexID, vidType_);   // kVid
 
     dedup_ = yield->isDistinct();
@@ -184,27 +192,21 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
         return Status::SemanticError("Unsupported empty tag property expression in yield.");
     }
 
-    if (onStar_) {
-        for (const auto &tag : exprProps.tagNameIds()) {
-            if (tags_.find(tag.first) == tags_.end()) {
-                return Status::SemanticError("Mismatched tag.");
-            }
-        }
-    } else {
-        if (tags_ != exprProps.tagNameIds()) {
-            return Status::SemanticError("Mismatched tag.");
+    for (const auto &tag : exprProps.tagNameIds()) {
+        if (tags_.find(tag.first) == tags_.end()) {
+            return Status::SemanticError("Mismatched tag: %s", tag.first.c_str());
         }
     }
     for (const auto &tagNameId : exprProps.tagNameIds()) {
         storage::cpp2::VertexProp vProp;
-        std::vector<std::string> props;
-        props.reserve(exprProps.tagProps().at(tagNameId.second).size());
+        std::vector<std::string> propNames;
+        propNames.reserve(exprProps.tagProps().at(tagNameId.second).size());
         vProp.set_tag(tagNameId.second);
         for (const auto &prop : exprProps.tagProps().at(tagNameId.second)) {
-            props.emplace_back(prop.toString());
+            propNames.emplace_back(prop.toString());
             gvColNames_.emplace_back(tagNameId.first + "." + prop.toString());
         }
-        vProp.set_props(std::move(props));
+        vProp.set_props(std::move(propNames));
         props_.emplace_back(std::move(vProp));
     }
 
@@ -213,7 +215,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     newYieldColumns_ = qctx_->objPool()->add(new YieldColumns());
     // note eval vid by input expression
     newYieldColumns_->addColumn(new YieldColumn(
-        new InputPropertyExpression(new std::string(VertexID)), new std::string(VertexID)));
+        new InputPropertyExpression(new std::string(nebula::kVid)), new std::string(VertexID)));
     for (auto col : yield->columns()) {
         newYieldColumns_->addColumn(col->clone().release());
     }
@@ -221,24 +223,26 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 }
 
 Status FetchVerticesValidator::preparePropertiesWithoutYield() {
-    // empty for all tag and properties
     props_.clear();
-    outputs_.emplace_back(VertexID, vidType_);
-    colNames_.emplace_back(VertexID);
-    gvColNames_.emplace_back(colNames_.back());
+    colNames_.emplace_back("vertices_");
+    outputs_.emplace_back("vertices_", Value::Type::VERTEX);
+    gvColNames_.emplace_back(nebula::kVid);
     for (const auto &tagSchema : tagsSchema_) {
         storage::cpp2::VertexProp vProp;
         vProp.set_tag(tagSchema.first);
+        std::vector<std::string> propNames;
+        propNames.reserve(tagSchema.second->getNumFields()+1);
         auto tagNameResult = qctx_->schemaMng()->toTagName(space_.id, tagSchema.first);
         NG_RETURN_IF_ERROR(tagNameResult);
         auto tagName = std::move(tagNameResult).value();
         for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
-            outputs_.emplace_back(
-                tagSchema.second->getFieldName(i),
-                SchemaUtil::propTypeToValueType(tagSchema.second->getFieldType(i)));
-            colNames_.emplace_back(tagName + "." + tagSchema.second->getFieldName(i));
-            gvColNames_.emplace_back(colNames_.back());
+            const auto propName = tagSchema.second->getFieldName(i);
+            propNames.emplace_back(propName);
+            gvColNames_.emplace_back(tagName + "." + propName);
         }
+        gvColNames_.emplace_back(tagName + "._tag");
+        propNames.emplace_back(nebula::kTag);  // "_tag"
+        vProp.set_props(std::move(propNames));
         props_.emplace_back(std::move(vProp));
     }
     return Status::OK();

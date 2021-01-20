@@ -94,9 +94,9 @@ Feature: Insert string vid of vertex and edge
       """
       FETCH PROP ON person "Conan"
       """
-    Then the result should be, in any order:
-      | VertexID | person.name | person.age |
-      | 'Conan'  | 'Conan'     | 10         |
+    Then the result should be, in any order, with relax comparison:
+      | vertices_ |
+      | ('Conan') |
     # insert vertex with string timestamp succeeded
     When executing query:
       """
@@ -143,7 +143,7 @@ Feature: Insert string vid of vertex and edge
     # check edge result with fetch
     When executing query:
       """
-      FETCH PROP ON school "sun_school"
+      FETCH PROP ON school "sun_school" YIELD school.name, school.create_time
       """
     Then the result should be, in any order:
       | VertexID     | school.name  | school.create_time |
@@ -165,7 +165,7 @@ Feature: Insert string vid of vertex and edge
     # check person tag result with fetch
     When executing query:
       """
-      FETCH PROP ON person "Bob"
+      FETCH PROP ON person "Bob" YIELD person.name, person.age
       """
     Then the result should be, in any order:
       | VertexID | person.name | person.age |
@@ -173,7 +173,7 @@ Feature: Insert string vid of vertex and edge
     # check student tag result with fetch
     When executing query:
       """
-      FETCH PROP ON student "Bob"
+      FETCH PROP ON student "Bob" YIELD student.grade, student.number
       """
     Then the result should be, in any order:
       | VertexID | student.grade | student.number |
@@ -465,9 +465,9 @@ Feature: Insert string vid of vertex and edge
       """
       FETCH PROP ON course "English"
       """
-    Then the result should be, in any order:
-      | VertexID  | course.name | course.introduce |
-      | 'English' | 'Engli'     | NULL             |
+    Then the result should be, in any order, with relax comparison:
+      | vertices_   |
+      | ('English') |
     # test insert with empty str vid
     When executing query:
       """
@@ -477,7 +477,7 @@ Feature: Insert string vid of vertex and edge
     # check result
     When executing query:
       """
-      FETCH PROP ON student ""
+      FETCH PROP ON student "" YIELD student.name, student.age
       """
     Then the result should be, in any order:
       | VertexID | student.name | student.age |

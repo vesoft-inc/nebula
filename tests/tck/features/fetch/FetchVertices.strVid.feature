@@ -32,15 +32,15 @@ Feature: Fetch String Vertices
       FETCH PROP ON bachelor 'Tim Duncan'
       """
     Then the result should be, in any order:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+      | vertices_                                                          |
+      | ("Tim Duncan":bachelor{name:"Tim Duncan",speciality:"psychology"}) |
     When executing query:
       """
       FETCH PROP ON player 'Boris Diaw'
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Boris Diaw" | "Boris Diaw" | 36         |
+      | vertices_                                        |
+      | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
 
   Scenario: Fetch Vertices works with ORDER BY
     When executing query:
@@ -207,7 +207,8 @@ Feature: Fetch String Vertices
       | "Tim Duncan"  | "Tim Duncan"  | 42         |
     When executing query:
       """
-      GO FROM 'Boris Diaw' over like YIELD like._dst as id | FETCH PROP ON player, bachelor $-.id
+      GO FROM 'Boris Diaw' over like YIELD like._dst as id
+      | FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
@@ -225,7 +226,8 @@ Feature: Fetch String Vertices
       | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
     When executing query:
       """
-      GO FROM 'Boris Diaw' over like YIELD like._dst as id | FETCH PROP ON player, bachelor $-.id
+      GO FROM 'Boris Diaw' over like YIELD like._dst as id
+      | FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
@@ -291,16 +293,27 @@ Feature: Fetch String Vertices
       | "Tim Duncan"  | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
       | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
 
+  Scenario: Fetch and Yield id(v)
+    When executing query:
+      """
+      FETCH PROP ON player 'Boris Diaw', 'Tony Parker' | YIELD id($-.vertices_) as id
+      """
+    Then the result should be, in any order:
+      | id            |
+      | "Boris Diaw"  |
+      | "Tony Parker" |
+
+  @skip
   Scenario: Output fetch result to graph traverse
     When executing query:
       """
-      FETCH PROP ON player 'NON EXIST VERTEX ID' | go from $-.VertexID over like yield like._dst
+      FETCH PROP ON player 'NON EXIST VERTEX ID' | go from id($-.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      FETCH PROP ON player "Tim Duncan" | go from $-.VertexID over like yield like._dst
+      FETCH PROP ON player "Tim Duncan" | go from id($-.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -308,7 +321,7 @@ Feature: Fetch String Vertices
       | "Tony Parker"   |
     When executing query:
       """
-      FETCH PROP ON player "Tim Duncan", "Yao Ming" | go from $-.VertexID over like yield like._dst
+      FETCH PROP ON player "Tim Duncan", "Yao Ming" | go from id($-.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -326,7 +339,7 @@ Feature: Fetch String Vertices
       | "Tony Parker"   |
     When executing query:
       """
-      $var = FETCH PROP ON player "Tim Duncan", "Yao Ming"; go from $var.VertexID over like yield like._dst
+      $var = FETCH PROP ON player "Tim Duncan", "Yao Ming"; go from id($var.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -334,6 +347,26 @@ Feature: Fetch String Vertices
       | "Tony Parker"     |
       | "Shaquile O'Neal" |
       | "Tracy McGrady"   |
+    When executing query:
+      """
+      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name
+      | GO FROM $-.Name OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst           |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+    When executing query:
+      """
+      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name
+      | GO FROM $-.VertexID OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst           |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
 
   Scenario: Typical errors
     # Fetch Vertices not support get src property

@@ -50,9 +50,9 @@ private:
     std::vector<storage::cpp2::OrderBy> orderBy_{};
     int64_t limit_{std::numeric_limits<int64_t>::max()};
     std::string filter_{};
-    // valid when yield expression does not require storage
-    // So expression like these will be evaluated in Project Executor
-    bool withProject_{false};
+    // valid when yield expression not require storage
+    // So expression like these will be evaluate in Project Executor
+    bool withYield_{false};
     // outputs
     std::vector<std::string> gvColNames_;
     std::vector<std::string> colNames_;
