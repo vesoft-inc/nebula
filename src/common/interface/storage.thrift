@@ -606,7 +606,7 @@ struct ScanVertexRequest {
     3: optional binary                      cursor,
     4: VertexProp                           return_columns,
     // max row count of tag in this response
-    5: i32                                  limit,
+    5: i64                                  limit,
     // only return data in time range [start_time, end_time)
     6: optional i64                         start_time,
     7: optional i64                         end_time,
@@ -636,7 +636,7 @@ struct ScanEdgeRequest {
     3: optional binary                      cursor,
     4: EdgeProp                             return_columns,
     // max row count of edge in this response
-    5: i32                                  limit,
+    5: i64                                  limit,
     // only return data in time range [start_time, end_time)
     6: optional i64                         start_time,
     7: optional i64                         end_time,

@@ -67,9 +67,7 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
         if (!orderBy.empty()) {
             spec.set_order_by(orderBy);
         }
-        if (limit < std::numeric_limits<int64_t>::max()) {
-            spec.set_limit(limit);
-        }
+        spec.set_limit(limit);
         if (filter.size() > 0) {
             spec.set_filter(filter);
         }
@@ -206,9 +204,7 @@ GraphStorageClient::getProps(GraphSpaceID space,
         if (!orderBy.empty()) {
             req.set_order_by(orderBy);
         }
-        if (limit < std::numeric_limits<int64_t>::max()) {
-            req.set_limit(limit);
-        }
+        req.set_limit(limit);
         if (filter.size() > 0) {
             req.set_filter(filter);
         }
