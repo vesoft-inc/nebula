@@ -137,25 +137,35 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
         }
     }
 
-    LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
-
     auto version = nebula::meta::MetaVersionMan::getMetaVersionFromKV(kvstore.get());
-    LOG(INFO) << "Get meta version is " << version;
-    if (version <= 0) {
-        LOG(ERROR) << "Get meta meta version failed.";
+    LOG(INFO) << "Get meta version is " << static_cast<int32_t>(version);
+    if (version == nebula::meta::MetaVersion::UNKNOWN) {
+        LOG(ERROR) << "Meta version is invalid";
         return nullptr;
+    } else if (version == nebula::meta::MetaVersion::V1) {
+        if (leader == localhost) {
+            LOG(INFO) << "I am leader, begin upgrade meta data";
+            // need to upgrade the v1.0 meta data format to v2.0 meta data format
+            auto ret = nebula::meta::MetaVersionMan::updateMetaV1ToV2(kvstore.get());
+            if (!ret.ok()) {
+                LOG(ERROR) << ret;
+                return nullptr;
+            }
+        } else {
+            LOG(INFO) << "I am follower, wait for leader to sync upgrade";
+            while (version != nebula::meta::MetaVersion::V2) {
+                VLOG(1) << "Waiting for leader to upgrade";
+                sleep(1);
+                version = nebula::meta::MetaVersionMan::getMetaVersionFromKV(kvstore.get());
+            }
+        }
     }
 
-    if (version == 1) {
-        // need to upgrade the v1.0 meta data format to v2.0 meta data format
-        auto ret = nebula::meta::MetaVersionMan::updateMetaV1ToV2(kvstore.get());
-        if (!ret.ok()) {
-            LOG(ERROR) << ret;
-            return nullptr;
-        }
+    if (leader == localhost) {
         nebula::meta::MetaVersionMan::setMetaVersionToKV(kvstore.get());
     }
 
+    LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
     return kvstore;
 }
 

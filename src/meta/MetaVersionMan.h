@@ -14,6 +14,12 @@
 namespace nebula {
 namespace meta {
 
+enum class MetaVersion {
+    UNKNOWN = 0,
+    V1      = 1,
+    V2      = 2,
+};
+
 /**
  * This class manages the version of meta's data.
  * */
@@ -21,14 +27,15 @@ class MetaVersionMan final {
 public:
     MetaVersionMan() = delete;
 
-    static int32_t getMetaVersionFromKV(kvstore::KVStore* kv);
+    static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
 
     static bool setMetaVersionToKV(kvstore::KVStore* kv);
 
     static Status updateMetaV1ToV2(kvstore::KVStore* kv);
 
 private:
-    static bool isV1(kvstore::KVStore* kv);
+    static MetaVersion getVersionByHost(kvstore::KVStore* kv);
+
     static Status doUpgrade(kvstore::KVStore* kv);
 };
 
