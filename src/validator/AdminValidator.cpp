@@ -89,6 +89,9 @@ Status CreateSpaceValidator::validateImpl() {
                     spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::DEFAULT);
                 }
             }
+            case SpaceOptItem::GROUP_NAME: {
+                break;
+            }
         }
     }
 

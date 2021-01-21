@@ -55,7 +55,8 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                                     "Replica Factor",
                                     "Charset",
                                     "Collate",
-                                    "Vid Type"};
+                                    "Vid Type",
+                                    "Group"};
                 Row row;
                 row.values.emplace_back(spaceId);
                 row.values.emplace_back(properties.get_space_name());
@@ -64,6 +65,11 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                 row.values.emplace_back(properties.get_charset_name());
                 row.values.emplace_back(properties.get_collate_name());
                 row.values.emplace_back(SchemaUtil::typeToString(properties.get_vid_type()));
+                if (properties.__isset.group_name) {
+                    row.values.emplace_back(properties.get_group_name());
+                } else {
+                    row.values.emplace_back("default");
+                }
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
                                   .value(Value(std::move(dataSet)))
@@ -144,7 +150,7 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                 Row row;
                 row.values.emplace_back(properties.get_space_name());
                 auto fmt = "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                           "charset = %s, collate = %s, vid_type = %s)";
+                           "charset = %s, collate = %s, vid_type = %s) ON %s";
                 row.values.emplace_back(folly::stringPrintf(
                     fmt,
                     properties.get_space_name().c_str(),
@@ -152,7 +158,9 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                     properties.get_replica_factor(),
                     properties.get_charset_name().c_str(),
                     properties.get_collate_name().c_str(),
-                    SchemaUtil::typeToString(properties.get_vid_type()).c_str()));
+                    SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
+                    properties.__isset.group_name ? properties.get_group_name()->c_str()
+                                                  : "default"));
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
                                   .value(Value(std::move(dataSet)))
