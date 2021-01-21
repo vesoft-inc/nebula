@@ -133,7 +133,7 @@ void AdminTaskManager::schedule() {
             FLOG_INFO("task(%d, %d) finished, no subtask", task->getJobId(), task->getTaskId());
             task->finish();
             tasks_.erase(handle);
-            return;
+            continue;
         }
 
         FLOG_INFO("run task(%d, %d), %zu subtasks in %zu thread",

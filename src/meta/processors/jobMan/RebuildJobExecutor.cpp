@@ -64,6 +64,12 @@ meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
 
     folly::collectAll(std::move(futures))
         .thenValue([] (const auto& tries) mutable {
+            if (std::any_of(tries.begin(), tries.end(), [](auto& t){
+                return t.hasException();
+            })) {
+                LOG(ERROR) << "RebuildJobExecutor::stop() RPC failure.";
+                return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
+            }
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Stop Build Index Failed";
