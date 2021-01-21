@@ -140,8 +140,10 @@ public:
 protected:
     explicit QueryBaseProcessor(StorageEnv* env,
                                 stats::Stats* stats = nullptr,
+                                folly::Executor* executor = nullptr,
                                 VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(env, stats) {
+        : BaseProcessor<RESP>(env, stats)
+        , executor_(executor) {
         this->tagContext_.vertexCache_ = cache;
     }
 
@@ -187,7 +189,7 @@ protected:
 
 protected:
     GraphSpaceID                                        spaceId_;
-
+    folly::Executor*                                    executor_{nullptr};
     TagContext                                          tagContext_;
     EdgeContext                                         edgeContext_;
     std::unique_ptr<Expression>                         filter_;

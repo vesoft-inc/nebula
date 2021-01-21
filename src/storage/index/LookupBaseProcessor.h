@@ -34,8 +34,10 @@ public:
 protected:
     LookupBaseProcessor(StorageEnv* env,
                         stats::Stats* stats = nullptr,
+                        folly::Executor* executor = nullptr,
                         VertexCache* cache = nullptr)
         : BaseProcessor<RESP>(env, stats)
+        , executor_(executor)
         , vertexCache_(cache) {}
 
     virtual void onProcessFinished() = 0;
@@ -70,6 +72,7 @@ protected:
 protected:
     GraphSpaceID                                                   spaceId_;
     std::unique_ptr<PlanContext>                                   planContext_;
+    folly::Executor*                                               executor_{nullptr};
     VertexCache*                                                   vertexCache_{nullptr};
     nebula::DataSet                                                resultDataSet_;
     std::vector<cpp2::IndexQueryContext>                           contexts_{};

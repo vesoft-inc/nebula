@@ -29,7 +29,7 @@ public:
 private:
     UpdateVertexProcessor(StorageEnv* env, stats::Stats* stats, VertexCache* cache)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest,
-                             cpp2::UpdateResponse>(env, stats, cache) {}
+                             cpp2::UpdateResponse>(env, stats, nullptr, cache) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) override;
 

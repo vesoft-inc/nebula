@@ -22,18 +22,22 @@ class GetNeighborsProcessor
 public:
     static GetNeighborsProcessor* instance(StorageEnv* env,
                                            stats::Stats* stats,
-                                           VertexCache* cache) {
-        return new GetNeighborsProcessor(env, stats, cache);
+                                           folly::Executor* executor = nullptr,
+                                           VertexCache* cache = nullptr) {
+        return new GetNeighborsProcessor(env, stats, executor, cache);
     }
 
     void process(const cpp2::GetNeighborsRequest& req) override;
 
+    void doProcess(const cpp2::GetNeighborsRequest& req);
+
 protected:
     GetNeighborsProcessor(StorageEnv* env,
                           stats::Stats* stats,
+                          folly::Executor* executor,
                           VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::GetNeighborsResponse>(env, stats, cache) {}
+                             cpp2::GetNeighborsResponse>(env, stats, executor, cache) {}
 
     StoragePlan<VertexID> buildPlan(nebula::DataSet* result,
                                     int64_t limit = 0,

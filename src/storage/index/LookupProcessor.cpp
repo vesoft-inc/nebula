@@ -10,6 +10,15 @@ namespace nebula {
 namespace storage {
 
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
+    if (executor_ != nullptr) {
+        executor_->add([&req, this] () {
+            this->doProcess(req);
+        });
+    } else {
+        doProcess(req);
+    }
+}
+void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
     auto retCode = requestCheck(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {

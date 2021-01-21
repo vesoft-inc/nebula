@@ -19,18 +19,22 @@ class LookupProcessor
 public:
     static LookupProcessor* instance(StorageEnv* env,
                                      stats::Stats* stats,
-                                     VertexCache* cache) {
-        return new LookupProcessor(env, stats, cache);
+                                     folly::Executor* executor = nullptr,
+                                     VertexCache* cache = nullptr) {
+        return new LookupProcessor(env, stats, executor, cache);
     }
 
     void process(const cpp2::LookupIndexRequest& req) override;
 
+    void doProcess(const cpp2::LookupIndexRequest& req);
+
 protected:
     LookupProcessor(StorageEnv* env,
                     stats::Stats* stats,
+                    folly::Executor* executor,
                     VertexCache* cache)
         : LookupBaseProcessor<cpp2::LookupIndexRequest,
-                              cpp2::LookupIndexResp>(env, stats, cache) {}
+                              cpp2::LookupIndexResp>(env, stats, executor, cache) {}
 
     void onProcessFinished() override;
 };

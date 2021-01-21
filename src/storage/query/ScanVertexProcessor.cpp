@@ -13,6 +13,16 @@ namespace nebula {
 namespace storage {
 
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
+    if (executor_ != nullptr) {
+        executor_->add([&req, this] () {
+            this->doProcess(req);
+        });
+    } else {
+        doProcess(req);
+    }
+}
+
+void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     spaceId_ = req.get_space_id();
     partId_ = req.get_part_id();
 

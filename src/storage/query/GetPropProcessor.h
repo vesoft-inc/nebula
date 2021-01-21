@@ -20,18 +20,22 @@ class GetPropProcessor
 public:
     static GetPropProcessor* instance(StorageEnv* env,
                                       stats::Stats* stats,
-                                      VertexCache* cache) {
-        return new GetPropProcessor(env, stats, cache);
+                                      folly::Executor* executor = nullptr,
+                                      VertexCache* cache = nullptr) {
+        return new GetPropProcessor(env, stats, executor, cache);
     }
 
     void process(const cpp2::GetPropRequest& req) override;
 
+    void doProcess(const cpp2::GetPropRequest& req);
+
 protected:
     GetPropProcessor(StorageEnv* env,
                      stats::Stats* stats,
+                     folly::Executor* executor,
                      VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetPropRequest,
-                             cpp2::GetPropResponse>(env, stats, cache) {}
+                             cpp2::GetPropResponse>(env, stats, executor, cache) {}
 
     StoragePlan<VertexID> buildTagPlan(nebula::DataSet* result);
 

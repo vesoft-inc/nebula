@@ -11,6 +11,16 @@ namespace nebula {
 namespace storage {
 
 void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
+    if (executor_ != nullptr) {
+        executor_->add([&req, this] () {
+            this->doProcess(req);
+        });
+    } else {
+        doProcess(req);
+    }
+}
+
+void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
     spaceId_ = req.get_space_id();
     auto retCode = getSpaceVidLen(spaceId_);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {

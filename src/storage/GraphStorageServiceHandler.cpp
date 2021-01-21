@@ -70,31 +70,42 @@ folly::Future<cpp2::GetNeighborsResponse>
 GraphStorageServiceHandler::future_getNeighbors(const cpp2::GetNeighborsRequest& req) {
     auto* processor = GetNeighborsProcessor::instance(env_,
                                                       &getNeighborsQpsStat_,
+                                                      readerPool_.get(),
                                                       &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::GetPropResponse>
 GraphStorageServiceHandler::future_getProps(const cpp2::GetPropRequest& req) {
-    auto* processor = GetPropProcessor::instance(env_, &getPropQpsStat_, &vertexCache_);
+    auto* processor = GetPropProcessor::instance(env_,
+                                                 &getPropQpsStat_,
+                                                 readerPool_.get(),
+                                                 &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::LookupIndexResp>
 GraphStorageServiceHandler::future_lookupIndex(const cpp2::LookupIndexRequest& req) {
-    auto* processor = LookupProcessor::instance(env_, &lookupQpsStat_, &vertexCache_);
+    auto* processor = LookupProcessor::instance(env_,
+                                                &lookupQpsStat_,
+                                                readerPool_.get(),
+                                                &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ScanVertexResponse>
 GraphStorageServiceHandler::future_scanVertex(const cpp2::ScanVertexRequest& req) {
-    auto* processor = ScanVertexProcessor::instance(env_, &scanVertexQpsStat_);
+    auto* processor = ScanVertexProcessor::instance(env_,
+                                                    &scanVertexQpsStat_,
+                                                    readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ScanEdgeResponse>
 GraphStorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
-    auto* processor = ScanEdgeProcessor::instance(env_, &scanEdgeQpsStat_);
+    auto* processor = ScanEdgeProcessor::instance(env_,
+                                                  &scanEdgeQpsStat_,
+                                                  readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
