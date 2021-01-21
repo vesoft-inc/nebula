@@ -17,7 +17,7 @@ cpp2::ScanEdgeRequest buildRequest(
         PartitionID partId,
         const std::string& cursor,
         const std::pair<EdgeType, std::vector<std::string>>& edge,
-        int32_t rowLimit = 100,
+        int64_t rowLimit = 100,
         int64_t startTime = 0,
         int64_t endTime = std::numeric_limits<int64_t>::max(),
         bool onlyLatestVer = false) {

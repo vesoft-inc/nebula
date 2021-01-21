@@ -47,7 +47,7 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
         return;
     }
 
-    int32_t rowLimit = req.get_limit();
+    auto rowLimit = req.get_limit();
     int64_t startTime = 0, endTime = std::numeric_limits<int64_t>::max();
     if (req.__isset.start_time) {
         startTime = *req.get_start_time();
@@ -60,7 +60,7 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     bool onlyLatestVer = req.get_only_latest_version();
     // last valid key without version
     std::string lastValidKey;
-    for (int32_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
+    for (int64_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
         auto key = iter->key();
         if (!NebulaKeyUtils::isEdge(spaceVidLen_, key)) {
             continue;
