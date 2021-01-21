@@ -90,7 +90,7 @@ class TestBasicTypeCrud(NebulaTestSuite):
         result = [["test", CommonTtypes.Date(2017, 3, 4), CommonTtypes.Time(23, 1, 0, 0), CommonTtypes.DateTime(2017, 3, 4, 22, 30, 40, 0)]]
         self.check_out_of_order_result(resp, result)
 
-        resp = self.execute('FETCH PROP ON edge_date "test_src"->"test_dst"')
+        resp = self.execute('FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge_date.f_date, edge_date.f_time, edge_date.f_datetime')
         self.check_resp_succeeded(resp)
         result = [["test_src", "test_dst", 0, CommonTtypes.Date(2017, 3, 4), CommonTtypes.Time(23, 1, 0, 0), CommonTtypes.DateTime(2017, 3, 4, 22, 30, 40, 0)]]
         self.check_out_of_order_result(resp, result)

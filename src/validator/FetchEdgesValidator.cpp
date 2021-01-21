@@ -54,21 +54,28 @@ Status FetchEdgesValidator::toPlan() {
     notExistEdgeFilter->setColNames(geColNames_);
     current = notExistEdgeFilter;
 
-    if (withProject_) {
+    if (withYield_) {
         auto *projectNode = Project::make(qctx_, current, newYield_->yields());
         projectNode->setInputVar(current->outputVar());
         projectNode->setColNames(colNames_);
         current = projectNode;
-    }
-    // Project select the properties then dedup
-    if (dedup_) {
-        auto *dedupNode = Dedup::make(qctx_, current);
-        dedupNode->setInputVar(current->outputVar());
-        dedupNode->setColNames(colNames_);
-        current = dedupNode;
+        // Project select the properties then dedup
+        if (dedup_) {
+            auto *dedupNode = Dedup::make(qctx_, current);
+            dedupNode->setInputVar(current->outputVar());
+            dedupNode->setColNames(colNames_);
+            current = dedupNode;
 
-        // the framework will add data collect to collect the result
-        // if the result is required
+            // the framework will add data collect to collect the result
+            // if the result is required
+        }
+    } else {
+        auto *columns = qctx_->objPool()->add(new YieldColumns());
+        columns->addColumn(new YieldColumn(new EdgeExpression(), new std::string("edges_")));
+        auto *projectNode = Project::make(qctx_, current, columns);
+        projectNode->setInputVar(current->outputVar());
+        projectNode->setColNames(colNames_);
+        current = projectNode;
     }
     root_ = current;
     tail_ = getEdgesNode;
@@ -161,7 +168,7 @@ Status FetchEdgesValidator::prepareProperties() {
 }
 
 Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield) {
-    withProject_ = true;
+    withYield_ = true;
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType_);
     // insert the reserved properties expression be compatible with 1.0
@@ -231,33 +238,30 @@ Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield)
 
 Status FetchEdgesValidator::preparePropertiesWithoutYield() {
     // no yield
+    colNames_.emplace_back("edges_");
+    outputs_.emplace_back("edges_", Value::Type::EDGE);
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType_);
     std::vector<std::string> propNames;   // filter the type
-    propNames.reserve(3 + schema_->getNumFields());
-    outputs_.reserve(3 + schema_->getNumFields());
-    colNames_.reserve(3 + schema_->getNumFields());
-    geColNames_.reserve(3 + schema_->getNumFields());
+    propNames.reserve(4 + schema_->getNumFields());
+    geColNames_.reserve(4 + schema_->getNumFields());
     // insert the reserved properties be compatible with 1.0
+    // kSrc
     propNames.emplace_back(kSrc);
-    colNames_.emplace_back(edgeTypeName_ + "." + kSrc);
-    outputs_.emplace_back(colNames_.back(), vidType_);
-    geColNames_.emplace_back(colNames_.back());
+    geColNames_.emplace_back(edgeTypeName_ + "." + kSrc);
+    // kDst
     propNames.emplace_back(kDst);
-    colNames_.emplace_back(edgeTypeName_ + "." + kDst);
-    outputs_.emplace_back(colNames_.back(), vidType_);
-    geColNames_.emplace_back(colNames_.back());
+    geColNames_.emplace_back(edgeTypeName_ + "." + kDst);
+    // kRank
     propNames.emplace_back(kRank);
-    colNames_.emplace_back(edgeTypeName_ + "." + kRank);
-    outputs_.emplace_back(colNames_.back(), Value::Type::INT);
-    geColNames_.emplace_back(colNames_.back());
+    geColNames_.emplace_back(edgeTypeName_ + "." + kRank);
+    // kType
+    propNames.emplace_back(kType);
+    geColNames_.emplace_back(edgeTypeName_ + "." + kType);
 
     for (std::size_t i = 0; i < schema_->getNumFields(); ++i) {
         propNames.emplace_back(schema_->getFieldName(i));
-        outputs_.emplace_back(schema_->getFieldName(i),
-                              SchemaUtil::propTypeToValueType(schema_->getFieldType(i)));
-        colNames_.emplace_back(edgeTypeName_ + "." + schema_->getFieldName(i));
-        geColNames_.emplace_back(colNames_.back());
+        geColNames_.emplace_back(edgeTypeName_ + "." + schema_->getFieldName(i));
     }
     prop.set_props(std::move(propNames));
     props_.emplace_back(std::move(prop));

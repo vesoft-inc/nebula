@@ -6,7 +6,6 @@ Feature: Fetch prop on empty tag/edge
 
   Background:
     Given an empty graph
-    Given an empty graph
     And create a space with following options:
       | partition_num  | 1 |
       | replica_factor | 1 |
@@ -54,27 +53,26 @@ Feature: Fetch prop on empty tag/edge
       | vertices_             |
       | ("2":zero_prop_tag_0) |
 
-  @skip
   Scenario: fetch prop on empty edge
     When executing query:
       """
       FETCH PROP ON zero_prop_edge "1"->"2"
       """
     Then the result should be, in any order:
-      | _edges                          |
+      | edges_                          |
       | [:zero_prop_edge "1"->"2" @0{}] |
     When executing query:
       """
       FETCH PROP ON zero_prop_edge "1"->"3"
       """
     Then the result should be, in any order:
-      | _edges |
+      | edges_ |
     When executing query:
       """
       FETCH PROP ON zero_prop_edge "101"->"102"
       """
     Then the result should be, in any order:
-      | _edges |
+      | edges_ |
     When executing query:
       """
       GO FROM "1" OVER zero_prop_edge
@@ -82,5 +80,5 @@ Feature: Fetch prop on empty tag/edge
       | FETCH PROP ON zero_prop_edge $-.src->$-.dst
       """
     Then the result should be, in any order:
-      | _edges                          |
+      | edges_                          |
       | [:zero_prop_edge "1"->"2" @0{}] |

@@ -607,7 +607,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"100"@0
+      FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |
@@ -619,7 +619,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"100"@0
+      FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |
@@ -631,7 +631,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"101"@0
+      FETCH PROP ON like "1"->"101"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |
@@ -1109,7 +1109,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"100"@0
+      FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |
@@ -1121,7 +1121,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"100"@0
+      FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |
@@ -1133,7 +1133,7 @@ Feature: Update string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON like "1"->"101"@0
+      FETCH PROP ON like "1"->"101"@0 YIELD like.likeness, like.new_field
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.likeness | like.new_field |

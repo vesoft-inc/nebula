@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@test
 Feature: Fix match losing undefined vertex tag info
   Examples:
     | space       | vid                |
@@ -16,12 +15,12 @@ Feature: Fix match losing undefined vertex tag info
       """
       CREATE TAG IF NOT EXISTS empty_tag();
       """
-    And wait 2 seconds
+    And wait 3 seconds
     And having executed:
       """
       INSERT VERTEX empty_tag() values <vid>:()
       """
-    And wait 2 seconds
+    And wait 3 seconds
 
   Scenario Outline: single vertex
     When executing query:

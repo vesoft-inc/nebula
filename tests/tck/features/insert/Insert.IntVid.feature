@@ -127,7 +127,7 @@ Feature: Insert int vid of vertex and edge
     # check edge result with fetch
     When executing query:
       """
-      FETCH PROP ON schoolmate hash("Tom")->hash("Bob")
+      FETCH PROP ON schoolmate hash("Tom")->hash("Bob") YIELD schoolmate.likeness, schoolmate.nickname
       """
     Then the result should be, in any order, and the columns 0,1 should be hashed:
       | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |

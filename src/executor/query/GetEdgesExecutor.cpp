@@ -55,7 +55,10 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
 
     if (edges.rows.empty()) {
         // TODO: add test for empty input.
-        return finish(ResultBuilder().value(Value(DataSet(ge->colNames()))).finish());
+        return finish(ResultBuilder()
+                          .value(Value(DataSet(ge->colNames())))
+                          .iter(Iterator::Kind::kProp)
+                          .finish());
     }
 
     time::Duration getPropsTime;

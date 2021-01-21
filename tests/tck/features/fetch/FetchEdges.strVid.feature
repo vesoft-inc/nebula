@@ -3,7 +3,7 @@ Feature: Fetch String Vid Edges
   Background:
     Given a graph with space named "nba"
 
-  Scenario: Base fetch prop on an edge and return the specific properties
+  Scenario: Base fetch prop on an edge
     When executing query:
       """
       FETCH PROP ON serve 'Boris Diaw' -> 'Hawks' YIELD serve.start_year, serve.end_year
@@ -11,6 +11,19 @@ Feature: Fetch String Vid Edges
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
       | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Spurs"
+      """
+    Then the result should be, in any order:
+      | edges_                                                               |
+      | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}] |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Not Exist"
+      """
+    Then the result should be, in any order:
+      | edges_ |
 
   Scenario: Fetch prop on an edge
     When executing query:
@@ -31,7 +44,7 @@ Feature: Fetch String Vid Edges
     # Fetch prop on an edge without yield
     When executing query:
       """
-      FETCH PROP ON serve 'Boris Diaw'->'Hawks'
+      FETCH PROP ON serve 'Boris Diaw'->'Hawks' YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -39,7 +52,7 @@ Feature: Fetch String Vid Edges
     # Fetch prop on a edge with a rank,but without yield
     When executing query:
       """
-      FETCH PROP ON serve 'Boris Diaw'->'Hawks'@0
+      FETCH PROP ON serve 'Boris Diaw'->'Hawks'@0 YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -180,6 +193,32 @@ Feature: Fetch String Vid Edges
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve._src   | serve._dst | serve._rank |
       | "Boris Diaw" | "Spurs"    | 0           | "Boris Diaw" | "Spurs"    | 0           |
+
+  Scenario: Fetch and Yield
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield properties($-.edges_)
+      """
+    Then the result should be, in any order:
+      | properties($-.edges_) |
+      | {likeness: 95}        |
+      | {likeness: 90}        |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield startNode($-.edges_) AS nodes
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nodes           |
+      | ("Tony Parker") |
+      | ("Grant Hill")  |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield endNode($-.edges_) AS nodes
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nodes             |
+      | ("Tim Duncan")    |
+      | ("Tracy McGrady") |
 
   Scenario: Fetch prop Semantic Error
     When executing query:

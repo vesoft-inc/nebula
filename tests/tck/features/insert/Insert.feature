@@ -119,7 +119,7 @@ Feature: Insert string vid of vertex and edge
     # check edge result with fetch
     When executing query:
       """
-      FETCH PROP ON schoolmate "Tom"->"Bob"
+      FETCH PROP ON schoolmate "Tom"->"Bob" YIELD schoolmate.likeness, schoolmate.nickname
       """
     Then the result should be, in any order:
       | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |

@@ -39,7 +39,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
         auto edgeType = edgeTypeResult.value();
         storage::cpp2::EdgeProp prop;
         prop.set_type(edgeType);
-        prop.set_props({kSrc, kDst, kRank, "start", "end", "likeness"});
+        prop.set_props({kSrc, kDst, kRank, kType, "start", "end", "likeness"});
         std::vector<storage::cpp2::EdgeProp> props;
         props.emplace_back(std::move(prop));
         auto *ge = GetEdges::make(
@@ -47,6 +47,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
         std::vector<std::string> colNames{std::string("like.") + kSrc,
                                           std::string("like.") + kDst,
                                           std::string("like.") + kRank,
+                                          std::string("like.") + kType,
                                           "like.start",
                                           "like.end",
                                           "like.likeness"};
@@ -56,12 +57,12 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
         auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
         filter->setColNames(colNames);
 
-        // data collect
-        auto *dataCollect = DataCollect::make(
-            qctx, filter, DataCollect::CollectKind::kRowBasedMove, {filter->outputVar()});
-        dataCollect->setColNames(colNames);
-
-        auto result = Eq(qctx->plan()->root(), dataCollect);
+        // project
+        auto yieldColumns = std::make_unique<YieldColumns>();
+        yieldColumns->addColumn(new YieldColumn(new EdgeExpression(), new std::string("edges_")));
+        auto *project = Project::make(qctx, filter, yieldColumns.get());
+        project->setColNames({"edges_"});
+        auto result = Eq(qctx->plan()->root(), project);
         ASSERT_TRUE(result.ok()) << result;
     }
     // With YIELD
@@ -333,7 +334,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesInputOutput) {
                                   "FETCH PROP ON like $a.src->$a.dst";
         EXPECT_TRUE(checkResult(query,
                                 {
-                                    PlanNode::Kind::kDataCollect,
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kFilter,
                                     PlanNode::Kind::kGetEdges,
                                     PlanNode::Kind::kProject,
@@ -349,7 +350,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesInputOutput) {
                                   " | FETCH PROP ON like $-.src->$-.dst@$-.rank";
         EXPECT_TRUE(checkResult(query,
                                 {
-                                    PlanNode::Kind::kDataCollect,
+                                    PlanNode::Kind::kProject,
                                     PlanNode::Kind::kFilter,
                                     PlanNode::Kind::kGetEdges,
                                     PlanNode::Kind::kProject,

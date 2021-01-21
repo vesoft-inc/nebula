@@ -22,11 +22,17 @@ Feature: Fetch Int Vid Edges
     # Fetch prop on an edge without yield
     When executing query:
       """
-      FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks')
+      FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs")
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
-      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
-      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           |
+    Then the result should be, in any order:
+      | edges_                                                                           |
+      | [:serve hash("Boris Diaw")->hash("Spurs") @0 {end_year: 2016, start_year: 2012}] |
+    When executing query:
+      """
+      FETCH PROP ON serve hash("Boris Diaw")->hash("Not Exist")
+      """
+    Then the result should be, in any order:
+      | edges_ |
     # Fetch prop on the edgetype of a edge with ranking
     When executing query:
       """
@@ -38,11 +44,11 @@ Feature: Fetch Int Vid Edges
     # Fetch prop on a edge with a rank,but without yield
     When executing query:
       """
-      FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks')@0
+      FETCH PROP ON like hash("Tony Parker")->hash("Tim Duncan")@0
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
-      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
-      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           |
+    Then the result should be, in any order:
+      | edges_                                                            |
+      | [:like hash("Tony Parker")->hash("Tim Duncan") @0 {likeness: 95}] |
 
   Scenario: Fetch prop on multiple edges
     When executing query:
@@ -102,7 +108,7 @@ Feature: Fetch Int Vid Edges
     # Fetch prop works with uuid, but without YIELD
     When executing query:
       """
-      FETCH PROP ON serve uuid('Boris Diaw')->uuid('Hawks')
+      FETCH PROP ON serve uuid('Boris Diaw')->uuid('Hawks') YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src           | serve._dst          | serve._rank | serve.start_year | serve.end_year |

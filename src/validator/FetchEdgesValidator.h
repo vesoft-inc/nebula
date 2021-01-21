@@ -73,7 +73,7 @@ private:
     std::string filter_{""};
     // valid when yield expression not require storage
     // So expression like these will be evaluate in Project Executor
-    bool withProject_{false};
+    bool withYield_{false};
     // outputs
     std::vector<std::string> colNames_;
     std::vector<std::string> geColNames_;

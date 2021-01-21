@@ -408,7 +408,7 @@ Feature: TTLTest
       | "2"      | EMPTY     | 200       |
     When executing query:
       """
-      FETCH PROP ON friend "100"->"1","100"->"2";
+      FETCH PROP ON friend "100"->"1","100"->"2" YIELD friend.id;
       """
     Then the result should be, in any order:
       | friend._src | friend._dst | friend._rank | friend.id |
@@ -424,7 +424,7 @@ Feature: TTLTest
       | "100"       | "2"         | 0            | 200 |
     When executing query:
       """
-      FETCH PROP ON like "100"->"1","100"->"2";
+      FETCH PROP ON like "100"->"1","100"->"2" YIELD like.id;
       """
     Then the result should be, in any order:
       | like._src | like._dst | like._rank | like.id |
