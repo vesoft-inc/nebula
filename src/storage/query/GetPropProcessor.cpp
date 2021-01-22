@@ -12,7 +12,7 @@ namespace storage {
 
 void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
     if (executor_ != nullptr) {
-        executor_->add([&req, this] () {
+        executor_->add([req, this] () {
             this->doProcess(req);
         });
     } else {

@@ -18,7 +18,7 @@ namespace storage {
 
 void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
     if (executor_ != nullptr) {
-        executor_->add([&req, this] () {
+        executor_->add([req, this] () {
             this->doProcess(req);
         });
     } else {

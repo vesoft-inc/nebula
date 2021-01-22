@@ -14,7 +14,7 @@ namespace storage {
 
 void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     if (executor_ != nullptr) {
-        executor_->add([&req, this] () {
+        executor_->add([req, this] () {
             this->doProcess(req);
         });
     } else {

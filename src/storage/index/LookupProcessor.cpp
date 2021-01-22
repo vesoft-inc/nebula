@@ -11,7 +11,7 @@ namespace storage {
 
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
     if (executor_ != nullptr) {
-        executor_->add([&req, this] () {
+        executor_->add([req, this] () {
             this->doProcess(req);
         });
     } else {
