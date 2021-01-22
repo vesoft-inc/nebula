@@ -58,6 +58,7 @@ private:
     void visit(CaseExpression* expr) override;
     void visit(PredicateExpression* expr) override;
     void visit(ListComprehensionExpression* expr) override;
+    void visit(ReduceExpression* expr) override;
 
     void visit(ColumnExpression* expr) override;
 

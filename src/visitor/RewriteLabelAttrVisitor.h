@@ -35,6 +35,7 @@ private:
     void visit(CaseExpression *) override;
     void visit(PredicateExpression *) override;
     void visit(ListComprehensionExpression *) override;
+    void visit(ReduceExpression * expr) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression *) override {}
     void visit(UUIDExpression *) override {}

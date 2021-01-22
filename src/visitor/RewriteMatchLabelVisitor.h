@@ -41,6 +41,7 @@ private:
     void visit(SetExpression*) override;
     void visit(MapExpression*) override;
     void visit(CaseExpression *) override;
+    void visit(ReduceExpression *) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression*) override {}
     void visit(AttributeExpression*) override;

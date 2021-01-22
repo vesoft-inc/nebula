@@ -164,6 +164,24 @@ void RewriteMatchLabelVisitor::visit(PredicateExpression *expr) {
     }
 }
 
+void RewriteMatchLabelVisitor::visit(ReduceExpression *expr) {
+    if (isLabel(expr->initial())) {
+        expr->setInitial(rewriter_(expr));
+    } else {
+        expr->initial()->accept(this);
+    }
+    if (isLabel(expr->collection())) {
+        expr->setCollection(rewriter_(expr));
+    } else {
+        expr->collection()->accept(this);
+    }
+    if (isLabel(expr->mapping())) {
+        expr->setMapping(rewriter_(expr));
+    } else {
+        expr->mapping()->accept(this);
+    }
+}
+
 void RewriteMatchLabelVisitor::visitBinaryExpr(BinaryExpression *expr) {
     if (isLabel(expr->left())) {
         expr->setLeft(rewriter_(expr->left()));

@@ -498,6 +498,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("else", TokenType::KW_ELSE),
         CHECK_SEMANTIC_TYPE("END", TokenType::KW_END),
         CHECK_SEMANTIC_TYPE("end", TokenType::KW_END),
+        CHECK_SEMANTIC_TYPE("REDUCE", TokenType::KW_REDUCE),
+        CHECK_SEMANTIC_TYPE("reduce", TokenType::KW_REDUCE),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

@@ -169,6 +169,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "ANY"                       { return TokenType::KW_ANY; }
 "SINGLE"                    { return TokenType::KW_SINGLE; }
 "NONE"                      { return TokenType::KW_NONE; }
+"REDUCE"                    { return TokenType::KW_REDUCE; }
 "LEADER"                    { return TokenType::KW_LEADER; }
 "UUID"                      { return TokenType::KW_UUID; }
 "DATA"                      { return TokenType::KW_DATA; }

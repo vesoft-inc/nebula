@@ -125,6 +125,63 @@ public:
         }
         pred->setFilter(newFilter);
     }
+
+
+    static void rewriteReduce(QueryContext *qctx,
+                              ReduceExpression *reduce,
+                              const std::string &oldAccName,
+                              const std::string &oldVarName) {
+        const auto &newAccName = qctx->vctx()->anonVarGen()->getVar();
+        qctx->ectx()->setValue(newAccName, Value());
+        const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
+        qctx->ectx()->setValue(newVarName, Value());
+        auto rewriter = [oldAccName, newAccName, oldVarName, newVarName](
+                            const Expression *expr) {
+            Expression *ret = nullptr;
+            if (expr->kind() == Expression::Kind::kLabel) {
+                auto *label = static_cast<const LabelExpression *>(expr);
+                if (*label->name() == oldAccName) {
+                    ret = new VariableExpression(new std::string(newAccName));
+                } else if (*label->name() == oldVarName) {
+                    ret = new VariableExpression(new std::string(newVarName));
+                } else {
+                    ret = label->clone().release();
+                }
+            } else {
+                DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
+                auto *la = static_cast<const LabelAttributeExpression *>(expr);
+                if (*la->left()->name() == oldAccName) {
+                    const auto &value = la->right()->value();
+                    ret =
+                        new AttributeExpression(new VariableExpression(new std::string(newAccName)),
+                                                new ConstantExpression(value));
+                } else if (*la->left()->name() == oldVarName) {
+                    const auto &value = la->right()->value();
+                    ret =
+                        new AttributeExpression(new VariableExpression(new std::string(newVarName)),
+                                                new ConstantExpression(value));
+                } else {
+                    ret = la->clone().release();
+                }
+            }
+            return ret;
+        };
+
+        RewriteMatchLabelVisitor visitor(rewriter);
+
+        reduce->setOriginString(new std::string(reduce->makeString()));
+        reduce->setAccumulator(new std::string(newAccName));
+        reduce->setInnerVar(new std::string(newVarName));
+        Expression *mapping = reduce->mapping();
+        Expression *newMapping = nullptr;
+        if (isLabel(mapping)) {
+            newMapping = rewriter(mapping);
+        } else {
+            newMapping = mapping->clone().release();
+            newMapping->accept(&visitor);
+        }
+        reduce->setMapping(newMapping);
+    }
 };
 
 }   // namespace graph

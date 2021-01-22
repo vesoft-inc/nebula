@@ -88,6 +88,8 @@ private:
     void visit(PredicateExpression *expr) override;
     // list comprehension expression
     void visit(ListComprehensionExpression *) override;
+    // reduce expression
+    void visit(ReduceExpression *expr) override;
 
     void visitVertexPropertyExpr(PropertyExpression *expr);
 

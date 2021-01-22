@@ -283,5 +283,20 @@ void RewriteInputPropVisitor::visit(PredicateExpression* expr) {
     }
 }
 
+void RewriteInputPropVisitor::visit(ReduceExpression* expr) {
+    expr->initial()->accept(this);
+    if (ok()) {
+        expr->setInitial(result_.release());
+    }
+    expr->collection()->accept(this);
+    if (ok()) {
+        expr->setCollection(result_.release());
+    }
+    expr->mapping()->accept(this);
+    if (ok()) {
+        expr->setMapping(result_.release());
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

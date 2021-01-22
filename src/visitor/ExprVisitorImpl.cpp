@@ -167,5 +167,15 @@ void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
     }
 }
 
+void ExprVisitorImpl::visit(ReduceExpression *expr) {
+    DCHECK(ok());
+    expr->initial()->accept(this);
+    if (!ok()) return;
+    expr->collection()->accept(this);
+    if (!ok()) return;
+    expr->mapping()->accept(this);
+    if (!ok()) return;
+}
+
 }   // namespace graph
 }   // namespace nebula

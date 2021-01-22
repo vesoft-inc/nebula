@@ -602,6 +602,9 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
+    expr->filter()->accept(this);
+    if (!ok()) return;
+
     expr->collection()->accept(this);
     if (!ok()) return;
     if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
@@ -610,34 +613,15 @@ void DeduceTypeVisitor::visit(PredicateExpression *expr) {
     if (type_ != Value::Type::LIST) {
         std::stringstream ss;
         ss << "`" << expr->toString().c_str()
-           << "': Invalid colletion type, expected type of LIST, but was:" << type_;
+           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
         status_ = Status::SemanticError(ss.str());
         return;
     }
-    expr->filter()->accept(this);
-    if (!ok()) return;
 
     type_ = Value::Type::BOOL;
 }
 
 void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
-    expr->collection()->accept(this);
-    if (!ok()) {
-        return;
-    }
-
-    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
-        return;
-    }
-
-    if (type_ != Value::Type::LIST) {
-        std::stringstream ss;
-        ss << "`" << expr->toString().c_str()
-           << "': Invalid colletion type, expected type of LIST, but was:" << type_;
-        status_ = Status::SemanticError(ss.str());
-        return;
-    }
-
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
         if (!ok()) {
@@ -651,7 +635,49 @@ void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
         }
     }
 
+    expr->collection()->accept(this);
+    if (!ok()) {
+        return;
+    }
+
+    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
+        return;
+    }
+
+    if (type_ != Value::Type::LIST) {
+        std::stringstream ss;
+        ss << "`" << expr->toString().c_str()
+           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
+        status_ = Status::SemanticError(ss.str());
+        return;
+    }
+
     type_ = Value::Type::LIST;
+}
+
+void DeduceTypeVisitor::visit(ReduceExpression *expr) {
+    expr->initial()->accept(this);
+    if (!ok()) return;
+    expr->mapping()->accept(this);
+    if (!ok()) return;
+
+    expr->collection()->accept(this);
+    if (!ok()) return;
+
+    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
+        return;
+    }
+
+    if (type_ != Value::Type::LIST) {
+        std::stringstream ss;
+        ss << "`" << expr->toString().c_str()
+           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
+        status_ = Status::SemanticError(ss.str());
+        return;
+    }
+
+    // Will not deduce the actual value type returned by reduce expression.
+    type_ = Value::Type::__EMPTY__;
 }
 
 void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {

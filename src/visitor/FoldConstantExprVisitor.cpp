@@ -402,5 +402,34 @@ void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
     canBeFolded_ = canBeFolded;
 }
 
+void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
+    bool canBeFolded = true;
+    if (!isConstant(expr->initial())) {
+        expr->initial()->accept(this);
+        if (canBeFolded_) {
+            expr->setInitial(fold(expr->initial()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    if (!isConstant(expr->collection())) {
+        expr->collection()->accept(this);
+        if (canBeFolded_) {
+            expr->setCollection(fold(expr->collection()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    if (!isConstant(expr->mapping())) {
+        expr->mapping()->accept(this);
+        if (canBeFolded_) {
+            expr->setMapping(fold(expr->mapping()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    canBeFolded_ = canBeFolded;
+}
+
 }   // namespace graph
 }   // namespace nebula

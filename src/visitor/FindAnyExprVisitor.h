@@ -40,6 +40,7 @@ private:
     void visit(MapExpression* expr) override;
     void visit(CaseExpression* expr) override;
     void visit(PredicateExpression* expr) override;
+    void visit(ReduceExpression* expr) override;
 
     void visit(ConstantExpression* expr) override;
     void visit(EdgePropertyExpression* expr) override;

@@ -27,6 +27,9 @@
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
 
+#include "common/expression/ReduceExpression.h"
+#include "util/ParserUtil.h"
+#include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 #include "util/ParserUtil.h"
 #include "context/QueryContext.h"
@@ -184,6 +187,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
+%token KW_REDUCE
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -219,6 +223,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <expr> case_expression
 %type <expr> predicate_expression
 %type <expr> list_comprehension_expression
+%type <expr> reduce_expression
 %type <expr> compound_expression
 %type <expr> aggregate_expression
 %type <expr> text_search_expression
@@ -461,6 +466,7 @@ unreserved_keyword
     | KW_ANY                { $$ = new std::string("any"); }
     | KW_SINGLE             { $$ = new std::string("single"); }
     | KW_NONE               { $$ = new std::string("none"); }
+    | KW_REDUCE             { $$ = new std::string("reduce"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
     | KW_NOLOOP             { $$ = new std::string("noloop"); }
     | KW_COUNT_DISTINCT     { $$ = new std::string("count_distinct"); }
@@ -643,6 +649,9 @@ expression
     | list_comprehension_expression {
         $$ = $1;
     }
+    | reduce_expression {
+        $$ = $1;
+    }
     ;
 
 compound_expression
@@ -780,6 +789,7 @@ predicate_expression
         $$ = expr;
         delete $3;
     }
+    ;
 
 list_comprehension_expression
     : L_BRACKET expression KW_IN expression KW_WHERE expression R_BRACKET {
@@ -811,6 +821,14 @@ list_comprehension_expression
         nebula::graph::ParserUtil::rewriteLC(qctx, expr, innerVar);
         $$ = expr;
         delete $2;
+    }
+    ;
+
+reduce_expression
+    : KW_REDUCE L_PAREN name_label ASSIGN expression COMMA name_label KW_IN expression PIPE expression R_PAREN {
+        auto *expr = new ReduceExpression($3, $5, $7, $9, $11);
+        nebula::graph::ParserUtil::rewriteReduce(qctx, expr, *$3, *$7);
+        $$ = expr;
     }
     ;
 

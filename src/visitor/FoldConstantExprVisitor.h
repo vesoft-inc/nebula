@@ -68,6 +68,8 @@ public:
     void visit(PredicateExpression *expr) override;
     // list comprehension expression
     void visit(ListComprehensionExpression *) override;
+    // reduce expression
+    void visit(ReduceExpression *expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
     Expression *fold(Expression *expr) const;
