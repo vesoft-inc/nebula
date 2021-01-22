@@ -32,6 +32,7 @@
 #include "common/expression/ColumnExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
+#include "common/expression/ReduceExpression.h"
 
 namespace nebula {
 
@@ -85,6 +86,8 @@ public:
     virtual void visit(PredicateExpression *expr) = 0;
     // list comprehension expression
     virtual void visit(ListComprehensionExpression *expr) = 0;
+    // reduce expression
+    virtual void visit(ReduceExpression *expr) = 0;
 };
 
 }   // namespace nebula

@@ -23,6 +23,7 @@
 #include "common/expression/CaseExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
+#include "common/expression/ReduceExpression.h"
 
 namespace nebula {
 
@@ -471,6 +472,29 @@ TEST(ExpressionEncodeDecode, PredicateExpression) {
                 Expression::Kind::kRelGE,
                 new LabelExpression(new std::string("n")),
                 new ConstantExpression(2)));
+        auto decoded = Expression::decode(Expression::encode(*origin));
+        ASSERT_EQ(*origin, *decoded);
+    }
+}
+
+TEST(ExpressionEncodeDecode, ReduceExpression) {
+    {
+        // reduce(totalNum = 2 * 10, n IN range(1, 5) | totalNum + n * 2)
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<ConstantExpression>(1));
+        argList->addArgument(std::make_unique<ConstantExpression>(5));
+        auto origin = std::make_unique<ReduceExpression>(
+            new std::string("totalNum"),
+            new ArithmeticExpression(
+                Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("range"), argList),
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new LabelExpression(new std::string("totalNum")),
+                new ArithmeticExpression(Expression::Kind::kMultiply,
+                                         new LabelExpression(new std::string("n")),
+                                         new ConstantExpression(2))));
         auto decoded = Expression::decode(Expression::encode(*origin));
         ASSERT_EQ(*origin, *decoded);
     }

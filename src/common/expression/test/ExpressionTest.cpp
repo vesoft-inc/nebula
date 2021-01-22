@@ -37,6 +37,7 @@
 #include "common/expression/ColumnExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/PredicateExpression.h"
+#include "common/expression/ReduceExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
@@ -3134,6 +3135,53 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
     }
 }
 
+TEST_F(ExpressionTest, ReduceExprToString) {
+    {
+        // reduce(totalNum = 2 * 10, n IN range(1, 5) | totalNum + n * 2)
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<ConstantExpression>(1));
+        argList->addArgument(std::make_unique<ConstantExpression>(5));
+        ReduceExpression expr(
+            new std::string("totalNum"),
+            new ArithmeticExpression(
+                Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("range"), argList),
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new LabelExpression(new std::string("totalNum")),
+                new ArithmeticExpression(Expression::Kind::kMultiply,
+                                         new LabelExpression(new std::string("n")),
+                                         new ConstantExpression(2))));
+        ASSERT_EQ("reduce(totalNum = (2*10), n IN range(1,5) | (totalNum+(n*2)))", expr.toString());
+    }
+}
+
+TEST_F(ExpressionTest, ReduceEvaluate) {
+    {
+        // reduce(totalNum = 2 * 10, n IN range(1, 5) | totalNum + n * 2)
+        ArgumentList *argList = new ArgumentList();
+        argList->addArgument(std::make_unique<ConstantExpression>(1));
+        argList->addArgument(std::make_unique<ConstantExpression>(5));
+        ReduceExpression expr(
+            new std::string("totalNum"),
+            new ArithmeticExpression(
+                Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
+            new std::string("n"),
+            new FunctionCallExpression(new std::string("range"), argList),
+            new ArithmeticExpression(
+                Expression::Kind::kAdd,
+                new VariableExpression(new std::string("totalNum")),
+                new ArithmeticExpression(Expression::Kind::kMultiply,
+                                         new VariableExpression(new std::string("n")),
+                                         new ConstantExpression(2))));
+
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_EQ(Value::Type::INT, value.type());
+        ASSERT_EQ(50, value.getInt());
+    }
+}
+
 TEST_F(ExpressionTest, TestExprClone) {
     ConstantExpression expr(1);
     auto clone = expr.clone();
@@ -3260,6 +3308,22 @@ TEST_F(ExpressionTest, TestExprClone) {
                                  new LabelExpression(new std::string("n")),
                                  new ConstantExpression(2)));
     ASSERT_EQ(predExpr, *predExpr.clone());
+
+    argList = new ArgumentList();
+    argList->addArgument(std::make_unique<ConstantExpression>(1));
+    argList->addArgument(std::make_unique<ConstantExpression>(5));
+    ReduceExpression reduceExpr(
+        new std::string("totalNum"),
+        new ArithmeticExpression(
+            Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
+        new std::string("n"),
+        new FunctionCallExpression(new std::string("range"), argList),
+        new ArithmeticExpression(Expression::Kind::kAdd,
+                                 new LabelExpression(new std::string("totalNum")),
+                                 new ArithmeticExpression(Expression::Kind::kMultiply,
+                                                          new LabelExpression(new std::string("n")),
+                                                          new ConstantExpression(2))));
+    ASSERT_EQ(reduceExpr, *reduceExpr.clone());
 }
 
 TEST_F(ExpressionTest, PathBuild) {

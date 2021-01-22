@@ -27,8 +27,8 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
     }
 
     auto& listVal = collection_->eval(ctx);
-    if (listVal.isNull()) {
-        result_ = Value::kNullValue;
+    if (listVal.isNull() || listVal.empty()) {
+        result_ = listVal;
         return result_;
     }
     if (!listVal.isList()) {

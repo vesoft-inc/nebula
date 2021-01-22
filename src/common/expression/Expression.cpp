@@ -32,6 +32,7 @@
 #include "common/expression/ColumnExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/PredicateExpression.h"
+#include "common/expression/ReduceExpression.h"
 
 namespace nebula {
 
@@ -495,6 +496,11 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kReduce: {
+            exp = std::make_unique<ReduceExpression>();
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kTSPrefix:
         case Expression::Kind::kTSWildcard:
         case Expression::Kind::kTSRegexp:
@@ -698,6 +704,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kPredicate:
             os << "Predicate";
+            break;
+        case Expression::Kind::kReduce:
+            os << "Reduce";
             break;
     }
     return os;

@@ -88,6 +88,7 @@ public:
 
         kPredicate,
         kListComprehension,
+        kReduce,
 
         kPathBuild,
         // text or key word search expression

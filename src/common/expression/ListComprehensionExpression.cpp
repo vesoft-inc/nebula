@@ -13,8 +13,9 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
     List ret;
 
     auto& listVal = collection_->eval(ctx);
-    if (!listVal.isList()) {
-        return Value::kNullBadType;
+    if (listVal.isNull() || listVal.empty()) {
+        result_ = listVal;
+        return result_;
     }
     auto& list = listVal.getList();
 

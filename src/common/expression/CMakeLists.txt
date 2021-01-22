@@ -31,6 +31,7 @@ nebula_add_library(
     ColumnExpression.cpp
     PredicateExpression.cpp
     ListComprehensionExpression.cpp
+    ReduceExpression.cpp
 )
 
 nebula_add_subdirectory(test)
