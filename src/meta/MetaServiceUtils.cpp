@@ -569,7 +569,7 @@ std::string MetaServiceUtils::indexGroupKey(const std::string& name) {
     std::string key;
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size())
-       .append(reinterpret_cast<const char*>(&type), sizeof(type))
+       .append(reinterpret_cast<const char*>(&type), sizeof(EntryType))
        .append(name);
     return key;
 }

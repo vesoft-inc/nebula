@@ -49,7 +49,7 @@ folly::Future<cpp2::ErrorCode> TransactionManager::addSamePartEdges(
             auto srcId = NebulaKeyUtils::getSrcId(vIdLen, kv.first);
             auto dstId = NebulaKeyUtils::getDstId(vIdLen, kv.first);
             LOG(INFO) << "begin txn hexSrcDst=" << folly::hexlify(srcId)
-                << folly::hexlify(dstId) << ", txnId=" << txnId;
+                      << folly::hexlify(dstId) << ", txnId=" << txnId;
         }
     }
     // steps 1: lock edges in memory

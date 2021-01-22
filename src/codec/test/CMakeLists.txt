@@ -38,8 +38,7 @@ nebula_add_test(
     OBJECTS ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -51,8 +50,7 @@ nebula_add_test(
     OBJECTS ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -64,8 +62,7 @@ nebula_add_test(
     OBJECTS ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -79,8 +76,7 @@ nebula_add_test(
     OBJECTS ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         follybenchmark
         wangle
         boost_regex
@@ -96,8 +92,7 @@ nebula_add_executable(
     OBJECTS ${CODEC_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         follybenchmark
         wangle
         boost_regex

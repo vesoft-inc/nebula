@@ -13,7 +13,7 @@
 #define FLOG_FMT(...) LOG(INFO) << folly::sformat(__VA_ARGS__)
 
 DECLARE_int32(heartbeat_interval_secs);
-DEFINE_string(meta_server, "192.168.8.5:6500", "Meta servers' address.");
+DEFINE_string(meta_server, "127.0.0.1:44500", "Meta servers' address.");
 
 namespace nebula {
 namespace storage {

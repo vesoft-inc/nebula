@@ -178,6 +178,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             }
 
             auto partHosts = std::move(partHostsRet).value();
+
+            std::stringstream ss;
+            for (const auto& host : partHosts) {
+                ss << host << ", ";
+            }
+
+            VLOG(3) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
             data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                               MetaServiceUtils::partVal(partHosts));
         }

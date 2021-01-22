@@ -40,8 +40,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -56,8 +55,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -72,8 +70,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -88,8 +85,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -104,8 +100,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -121,8 +116,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -137,8 +131,7 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )
@@ -153,8 +146,7 @@ nebula_add_executable(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         follybenchmark
         boost_regex
@@ -170,8 +162,7 @@ nebula_add_executable(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         follybenchmark
         gtest

@@ -68,6 +68,10 @@ public:
         return tasks_;
     }
 
+    int32_t taskSize() const {
+        return tasks_.size();
+    }
+
     void stop() {
         std::lock_guard<std::mutex> lg(lock_);
         stopped_ = true;

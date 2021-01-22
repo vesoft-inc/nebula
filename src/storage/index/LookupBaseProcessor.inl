@@ -79,8 +79,8 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
     static const std::set<std::string> propsInEdgeKey{kSrc, kType, kRank, kDst};
     auto fields = index->get_fields();
     switch (filter->kind()) {
-        case Expression::Kind::kLogicalOr :
-        case Expression::Kind::kLogicalAnd : {
+        case Expression::Kind::kLogicalOr:
+        case Expression::Kind::kLogicalAnd: {
             auto *lExpr = static_cast<LogicalExpression*>(filter);
             for (auto &expr : lExpr->operands()) {
                 auto ret = isOutsideIndex(expr.get(), index);
@@ -90,14 +90,14 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
             }
             break;
         }
-        case Expression::Kind::kRelLE :
-        case Expression::Kind::kRelIn :
-        case Expression::Kind::kRelGE :
-        case Expression::Kind::kRelEQ :
-        case Expression::Kind::kRelLT :
-        case Expression::Kind::kRelGT :
-        case Expression::Kind::kRelNE :
-        case Expression::Kind::kRelNotIn : {
+        case Expression::Kind::kRelLE:
+        case Expression::Kind::kRelIn:
+        case Expression::Kind::kRelGE:
+        case Expression::Kind::kRelEQ:
+        case Expression::Kind::kRelLT:
+        case Expression::Kind::kRelGT:
+        case Expression::Kind::kRelNE:
+        case Expression::Kind::kRelNotIn: {
             auto* rExpr = static_cast<RelationalExpression*>(filter);
             auto ret = isOutsideIndex(rExpr->left(), index);
             if (ret) {

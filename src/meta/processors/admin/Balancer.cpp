@@ -20,7 +20,7 @@ DEFINE_double(leader_balance_deviation, 0.05, "after leader balance, leader coun
 namespace nebula {
 namespace meta {
 
-ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::unordered_set<HostAddr> hostDel) {
+ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::vector<HostAddr>&& lostHosts) {
     std::lock_guard<std::mutex> lg(lock_);
     if (!running_) {
         auto retCode = recovery();
@@ -31,7 +31,7 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::unordered_set<HostAdd
         }
         if (plan_ == nullptr) {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
-            retCode = buildBalancePlan(std::move(hostDel));
+            retCode = buildBalancePlan(std::move(lostHosts));
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Create balance plan failed";
                 finish();
@@ -49,12 +49,11 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::unordered_set<HostAdd
 }
 
 StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
-    {
-        std::lock_guard<std::mutex> lg(lock_);
-        if (plan_ != nullptr && plan_->id() == id) {
-            return *plan_;
-        }
+    std::lock_guard<std::mutex> lg(lock_);
+    if (plan_ != nullptr && plan_->id() == id) {
+        return *plan_;
     }
+
     if (kv_) {
         BalancePlan plan(id, kv_, client_);
         auto retCode = plan.recovery(false);
@@ -149,6 +148,7 @@ cpp2::ErrorCode Balancer::recovery() {
             LOG(INFO) << "No corrupted plan need to recovery!";
             return cpp2::ErrorCode::SUCCEEDED;
         }
+
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_);
         plan_->onFinished_ = [this] () {
@@ -192,28 +192,36 @@ bool Balancer::getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>
     return true;
 }
 
-cpp2::ErrorCode Balancer::buildBalancePlan(std::unordered_set<HostAddr> hostDel) {
-    CHECK(!plan_) << "plan should be nullptr now";
+cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr>&& lostHosts) {
+    if (plan_ != nullptr) {
+        LOG(ERROR) << "Balance plan should be nullptr now";
+        return cpp2::ErrorCode::E_CONFLICT;
+    }
+
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
     if (!getAllSpaces(spaces)) {
         LOG(ERROR) << "Can't get all spaces";
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
+
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_);
-    for (auto spaceInfo : spaces) {
-        auto taskRet = genTasks(std::get<0>(spaceInfo),
-                                std::get<1>(spaceInfo),
-                                std::get<2>(spaceInfo),
-                                hostDel);
+    for (const auto& spaceInfo : spaces) {
+        auto spaceId = std::get<0>(spaceInfo);
+        auto spaceReplica = std::get<1>(spaceInfo);
+        auto dependentOnGroup = std::get<2>(spaceInfo);
+        LOG(INFO) << "Balance Space " << spaceId;
+        auto taskRet = genTasks(spaceId, spaceReplica, dependentOnGroup, std::move(lostHosts));
         if (!ok(taskRet)) {
             LOG(ERROR) << "Generate tasks on space " << std::get<0>(spaceInfo) << " failed";
             return error(taskRet);
         }
+
         auto tasks = std::move(value(taskRet));
         for (auto& task : tasks) {
             plan_->addTask(std::move(task));
         }
     }
+
     plan_->onFinished_ = [this] () {
         auto self = plan_;
         {
@@ -235,8 +243,7 @@ ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
 Balancer::genTasks(GraphSpaceID spaceId,
                    int32_t spaceReplica,
                    bool dependentOnGroup,
-                   std::unordered_set<HostAddr> hostDel) {
-    CHECK(!!plan_) << "plan should not be nullptr";
+                   std::vector<HostAddr>&& lostHosts) {
     HostParts hostParts;
     int32_t totalParts = 0;
     // hostParts is current part allocation map
@@ -246,106 +253,164 @@ Balancer::genTasks(GraphSpaceID spaceId,
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
 
-    std::vector<HostAddr> newlyAdded;
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    calDiff(hostParts, activeHosts, newlyAdded, hostDel);
-    // newHostParts is new part allocation map after balance, it would include newlyAdded
-    // and exclude hostDel
-    decltype(hostParts) newHostParts(hostParts);
-    for (auto& h : newlyAdded) {
-        LOG(INFO) << "Found new host " << h;
-        newHostParts.emplace(h, std::vector<PartitionID>());
-    }
-    for (auto& h : hostDel) {
-        LOG(INFO) << "Lost host " << h;
-        newHostParts.erase(h);
-    }
-    LOG(INFO) << "Now, try to balance the newHostParts";
+    auto hostPartsRet = fetchHostParts(spaceId, dependentOnGroup, hostParts, lostHosts);
+    auto confirmedHostParts = hostPartsRet.first;
+    auto activeHosts = hostPartsRet.second;
+    LOG(INFO) << "Now, try to balance the confirmedHostParts";
 
     // We have two parts need to balance, the first one is parts on lost hosts and deleted hosts
-    // The seconds one is parts on unbalanced host in newHostParts.
+    // The seconds one is parts on unbalanced host in confirmedHostParts.
     std::vector<BalanceTask> tasks;
-    // 1. Iterate through all hosts that would not be included in newHostParts,
-    //    move all parts in them to host with minimum part in newHostParts
-    for (auto& h : hostDel) {
-        auto& lostParts = hostParts[h];
+    // 1. Iterate through all hosts that would not be included in confirmedHostParts,
+    //    move all parts in them to host with minimum part in confirmedHostParts
+    for (auto& lostHost : lostHosts) {
+        auto& lostParts = hostParts[lostHost];
         for (auto& partId : lostParts) {
+            LOG(INFO) << "Try balance part " << partId << " for lost host " << lostHost;
             // check whether any peers which is alive
             auto alive = checkReplica(hostParts, activeHosts, spaceReplica, partId);
             if (!alive.ok()) {
-                LOG(ERROR) << "Error: " << alive;
+                LOG(ERROR) << "Check Replica failed: " << alive
+                           << " Part: " << partId;
                 return cpp2::ErrorCode::E_NO_VALID_HOST;
             }
-            // find a host with minimum parts which doesn't have this part
-            auto ret = hostWithMinimalParts(newHostParts, partId);
-            if (!ret.ok()) {
-                LOG(ERROR) << "Error: " << ret.status();
+
+            if (!transferLostHost(tasks, confirmedHostParts, lostHost,
+                                  spaceId, partId, dependentOnGroup)) {
+                LOG(ERROR) << "Transfer lost host " << lostHost << " failed";
                 return cpp2::ErrorCode::E_NO_VALID_HOST;
             }
-            auto& luckyHost = ret.value();
-            newHostParts[luckyHost].emplace_back(partId);
-            tasks.emplace_back(plan_->id_,
-                               spaceId,
-                               partId,
-                               h,
-                               luckyHost,
-                               kv_,
-                               client_);
         }
     }
-    if (newHostParts.size() < 2) {
+
+    if (confirmedHostParts.size() < 2) {
         LOG(INFO) << "Too few hosts, no need for balance!";
         return cpp2::ErrorCode::E_NO_VALID_HOST;
     }
-    // 2. Make all hosts in newHostParts balanced
-    balanceParts(plan_->id_, spaceId, newHostParts, totalParts, tasks);
-    return tasks;
+    // 2. Make all hosts in confirmedHostParts balanced
+    if (balanceParts(plan_->id_, spaceId, confirmedHostParts, totalParts, tasks)) {
+        return tasks;
+    } else {
+        return cpp2::ErrorCode::E_BAD_BALANCE_PLAN;
+    }
 }
 
-void Balancer::balanceParts(BalanceID balanceId,
+bool Balancer::transferLostHost(std::vector<BalanceTask>& tasks,
+                                HostParts& confirmedHostParts,
+                                const HostAddr& source,
+                                GraphSpaceID spaceId,
+                                PartitionID partId,
+                                bool dependentOnGroup) {
+    // find a host with minimum parts which doesn't have this part
+    StatusOr<HostAddr> result;
+    if (dependentOnGroup) {
+        result = hostWithMinimalPartsForZone(source, confirmedHostParts, partId);
+    } else {
+        result = hostWithMinimalParts(confirmedHostParts, partId);
+    }
+
+    if (!result.ok()) {
+        LOG(ERROR) << "Can't find a host which doesn't have part: " << partId;
+        return false;
+    }
+    const auto& targetHost = result.value();
+    confirmedHostParts[targetHost].emplace_back(partId);
+    tasks.emplace_back(plan_->id_,
+                       spaceId,
+                       partId,
+                       source,
+                       targetHost,
+                       kv_,
+                       client_);
+    return true;
+}
+
+std::pair<HostParts, std::vector<HostAddr>>
+Balancer::fetchHostParts(GraphSpaceID spaceId,
+                         bool dependentOnGroup,
+                         const HostParts& hostParts,
+                         std::vector<HostAddr>& lostHosts) {
+    std::vector<HostAddr> activeHosts;
+    if (dependentOnGroup) {
+        activeHosts = ActiveHostsMan::getActiveHostsWithGroup(kv_, spaceId);
+    } else {
+        activeHosts = ActiveHostsMan::getActiveHosts(kv_);
+    }
+
+    std::vector<HostAddr> expand;
+    calDiff(hostParts, activeHosts, expand, lostHosts);
+    // confirmedHostParts is new part allocation map after balance, it would include newlyAdded
+    // and exclude lostHosts
+    HostParts confirmedHostParts(hostParts);
+    for (const auto& h : expand) {
+        LOG(INFO) << "Found new host " << h;
+        confirmedHostParts.emplace(h, std::vector<PartitionID>());
+    }
+    for (const auto& h : lostHosts) {
+        LOG(INFO) << "Lost host " << h;
+        confirmedHostParts.erase(h);
+    }
+    return std::make_pair(confirmedHostParts, activeHosts);
+}
+
+bool Balancer::balanceParts(BalanceID balanceId,
                             GraphSpaceID spaceId,
-                            HostParts& newHostParts,
+                            HostParts& confirmedHostParts,
                             int32_t totalParts,
                             std::vector<BalanceTask>& tasks) {
-    auto avgLoad = static_cast<float>(totalParts) / newHostParts.size();
-    LOG(INFO) << "The expect avg load is " << avgLoad;
+    auto avgLoad = static_cast<float>(totalParts) / confirmedHostParts.size();
+    VLOG(3) << "The expect avg load is " << avgLoad;
     int32_t minLoad = std::floor(avgLoad);
     int32_t maxLoad = std::ceil(avgLoad);
-    auto hosts = sortedHostsByParts(newHostParts);
-    CHECK_GT(hosts.size(), 1);
-    auto maxPartsHost = hosts.back();
-    auto minPartsHost = hosts.front();
-    auto lastDelta = maxPartsHost.second - minPartsHost.second + 1;
-    while (maxPartsHost.second > maxLoad
-            || minPartsHost.second < minLoad
-            || maxPartsHost.second - minPartsHost.second < lastDelta) {
-        CHECK_GE(maxPartsHost.second, avgLoad);
-        CHECK_GE(avgLoad, minPartsHost.second);
-        auto& partsFrom = newHostParts[maxPartsHost.first];
-        auto& partsTo = newHostParts[minPartsHost.first];
+    VLOG(3) << "The min load is " << minLoad << " max load is " << maxLoad;
+
+    auto sortedHosts = sortedHostsByParts(confirmedHostParts);
+    if (sortedHosts.empty()) {
+        LOG(ERROR) << "Host is empty";
+        return false;
+    }
+
+    auto maxPartsHost = sortedHosts.back();
+    auto minPartsHost = sortedHosts.front();
+
+    while (maxPartsHost.second > maxLoad || minPartsHost.second < minLoad) {
+        auto& partsFrom = confirmedHostParts[maxPartsHost.first];
+        auto& partsTo = confirmedHostParts[minPartsHost.first];
         std::sort(partsFrom.begin(), partsFrom.end());
         std::sort(partsTo.begin(), partsTo.end());
-        VLOG(1) << maxPartsHost.first << ":" << partsFrom.size()
-                << "->" << minPartsHost.first << ":" << partsTo.size()
-                << ", lastDelta=" << lastDelta;
+
+        LOG(INFO) << maxPartsHost.first << ":" << partsFrom.size()
+                  << " -> " << minPartsHost.first << ":" << partsTo.size();
         std::vector<PartitionID> diff;
         std::set_difference(partsFrom.begin(), partsFrom.end(), partsTo.begin(), partsTo.end(),
                             std::inserter(diff, diff.begin()));
         bool noAction = true;
         for (auto& partId : diff) {
-            if (partsFrom.size() <= partsTo.size() + 1 ||
-                partsFrom.size() <= (size_t)minLoad ||
-                partsTo.size() >= (size_t)maxLoad) {
-                VLOG(1) << "No need to move any parts from "
+            LOG(INFO) << "partsFrom size " << partsFrom.size()
+                      << " partsTo size " << partsTo.size()
+                      << " minLoad " << minLoad << " maxLoad " << maxLoad;
+            if (partsFrom.size() == partsTo.size() + 1 ||
+                partsFrom.size() == static_cast<size_t>(minLoad) ||
+                partsTo.size() == static_cast<size_t>(maxLoad)) {
+                VLOG(3) << "No need to move any parts from "
                         << maxPartsHost.first << " to " << minPartsHost.first;
                 break;
             }
+
             LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] "
                       << maxPartsHost.first << "->" << minPartsHost.first;
             auto it = std::find(partsFrom.begin(), partsFrom.end(), partId);
-            CHECK(it != partsFrom.end());
-            CHECK(std::find(partsTo.begin(), partsTo.end(), partId) == partsTo.end());
+            if (it == partsFrom.end()) {
+                LOG(ERROR) << "Part " << partId << " not found in partsFrom";
+                return false;
+            }
+
             partsFrom.erase(it);
+            if (std::find(partsTo.begin(), partsTo.end(), partId) != partsTo.end()) {
+                LOG(ERROR) << "Part " << partId << " already existed in partsTo";
+                return false;
+            }
+
             partsTo.emplace_back(partId);
             tasks.emplace_back(balanceId,
                                spaceId,
@@ -360,10 +425,9 @@ void Balancer::balanceParts(BalanceID balanceId,
             LOG(INFO) << "Here is no action";
             break;
         }
-        lastDelta = maxPartsHost.second - minPartsHost.second;
-        hosts = sortedHostsByParts(newHostParts);
-        maxPartsHost = hosts.back();
-        minPartsHost = hosts.front();
+        sortedHosts = sortedHostsByParts(confirmedHostParts);
+        maxPartsHost = sortedHosts.back();
+        minPartsHost = sortedHosts.front();
     }
     std::random_device rd;
     std::mt19937 g(rd());
@@ -372,6 +436,8 @@ void Balancer::balanceParts(BalanceID balanceId,
     for (auto& task : tasks) {
         LOG(INFO) << task.taskIdStr();
     }
+
+    return true;
 }
 
 bool Balancer::getHostParts(GraphSpaceID spaceId,
@@ -381,15 +447,10 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto code = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
         return false;
-    }
-
-    std::vector<HostAddr> hosts;
-    if (dependentOnGroup) {
-        hosts = ActiveHostsMan::getActiveHostsBySpace(kv_, spaceId);
     }
 
     while (iter->valid()) {
@@ -398,46 +459,106 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         for (auto& ph : partHosts) {
-            if (dependentOnGroup &&
-                std::find(hosts.begin(), hosts.end(), ph) == hosts.end()) {
-                continue;
-            }
             hostParts[ph].emplace_back(partId);
         }
         totalParts++;
         iter->next();
     }
 
-    LOG(INFO) << "Host parts size: " << hostParts.size();
+    LOG(INFO) << "Host size: " << hostParts.size();
     auto key = MetaServiceUtils::spaceKey(spaceId);
     std::string value;
-    auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
+    code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
         return false;
     }
 
     auto properties = MetaServiceUtils::parseSpace(value);
-    CHECK_EQ(totalParts, properties.get_partition_num());
+    if (totalParts != properties.get_partition_num()) {
+        LOG(ERROR) << "Partition number not equals";
+        return false;
+    }
+
+    if (properties.__isset.group_name) {
+        auto groupName = *properties.get_group_name();
+        if (dependentOnGroup && !assembleZoneParts(groupName, hostParts)) {
+            LOG(ERROR) << "Assemble Zone Parts failed group: " << groupName;
+            return false;
+        }
+    }
+
     totalParts *= properties.get_replica_factor();
+    return true;
+}
+
+bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostParts) {
+    auto groupKey = MetaServiceUtils::groupKey(groupName);
+    std::string groupValue;
+    auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get group " << groupName << " failed";
+        return false;
+    }
+
+    // zoneHosts use to record this host belong to zone's hosts
+    std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+    for (auto zoneName : zoneNames) {
+        auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+        std::string zoneValue;
+        code = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Get zone " << zoneName << " failed";
+            return false;
+        }
+
+        auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+        for (const auto& host : hosts) {
+            auto pair = std::pair<HostAddr, std::string>(std::move(host),
+                                                         std::move(zoneName));
+            auto& hs = zoneHosts[std::move(pair)];
+            hs.insert(hs.end(), hosts.begin(), hosts.end());
+        }
+    }
+
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        auto host = it->first;
+        auto zoneIter = std::find_if(zoneHosts.begin(), zoneHosts.end(),
+                                     [host](const auto& pair) -> bool {
+            return host == pair.first.first;
+        });
+
+        if (zoneIter == zoneHosts.end()) {
+            LOG(INFO) << it->first << " have lost";
+            continue;
+        }
+
+        auto& hosts = zoneIter->second;
+        auto name = zoneIter->first.second;
+        for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
+            auto partIter = hostParts.find(*hostIter);
+            zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+        }
+    }
     return true;
 }
 
 void Balancer::calDiff(const HostParts& hostParts,
                        const std::vector<HostAddr>& activeHosts,
-                       std::vector<HostAddr>& newlyAdded,
-                       std::unordered_set<HostAddr>& lost) {
+                       std::vector<HostAddr>& expand,
+                       std::vector<HostAddr>& lost) {
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
         VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end() &&
             std::find(lost.begin(), lost.end(), it->first) == lost.end()) {
-            lost.emplace(it->first);
+            lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {
         VLOG(1) << "Active host " << h;
         if (hostParts.find(h) == hostParts.end()) {
-            newlyAdded.emplace_back(h);
+            expand.emplace_back(h);
         }
     }
 }
@@ -461,8 +582,8 @@ Status Balancer::checkReplica(const HostParts& hostParts,
     // check host hold the part and alive
     auto checkPart = [&] (const auto& entry) {
         auto& host = entry.first;
-        auto& peers = entry.second;
-        return std::find(peers.begin(), peers.end(), partId) != peers.end() &&
+        auto& parts = entry.second;
+        return std::find(parts.begin(), parts.end(), partId) != parts.end() &&
                std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
     };
     auto aliveReplica = std::count_if(hostParts.begin(), hostParts.end(), checkPart);
@@ -489,6 +610,25 @@ StatusOr<HostAddr> Balancer::hostWithMinimalParts(const HostParts& hostParts,
     return Status::Error("No host is suitable for %d", partId);
 }
 
+StatusOr<HostAddr> Balancer::hostWithMinimalPartsForZone(const HostAddr& source,
+                                                         const HostParts& hostParts,
+                                                         PartitionID partId) {
+    auto hosts = sortedHostsByParts(hostParts);
+    for (auto& h : hosts) {
+        auto it = hostParts.find(h.first);
+        if (it == hostParts.end()) {
+            LOG(ERROR) << "Host " << h.first << " not found";
+            return Status::Error("Host not found");
+        }
+
+        if (std::find(it->second.begin(), it->second.end(), partId) == it->second.end() &&
+            checkZoneLegal(source, h.first, partId)) {
+            return h.first;
+        }
+    }
+    return Status::Error("No host is suitable for %d", partId);
+}
+
 cpp2::ErrorCode Balancer::leaderBalance() {
     if (running_) {
         LOG(INFO) << "Balance process still running";
@@ -497,7 +637,6 @@ cpp2::ErrorCode Balancer::leaderBalance() {
 
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
-
     // Space ID, Replica Factor and Dependent On Group
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
     if (!getAllSpaces(spaces)) {
@@ -702,6 +841,7 @@ int32_t Balancer::acquireLeaders(HostParts& allHostParts,
             if (source == target || !activeHosts.count(source)) {
                 continue;
             }
+
             // if peer is the leader of partId and can transfer, then transfer it to host
             auto& sourceLeaders = leaderHostParts[source];
             VLOG(3) << "Check peer: " << source << " min load: " << minLoad
@@ -799,6 +939,92 @@ void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan
                           std::get<2>(partEntry.second.front()),
                           std::get<3>(partEntry.second.back()));
     }
+}
+
+bool Balancer::collectZoneParts(const std::string& groupName,
+                                HostParts& hostParts) {
+    auto groupKey = MetaServiceUtils::groupKey(groupName);
+    std::string groupValue;
+    auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Get group " << groupName << " failed";
+        return false;
+    }
+
+    // zoneHosts use to record this host belong to zone's hosts
+    std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+    for (auto zoneName : zoneNames) {
+        auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+        std::string zoneValue;
+        code = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Get zone " << zoneName << " failed";
+            return false;
+        }
+
+        auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+        for (const auto& host : hosts) {
+            auto pair = std::pair<HostAddr, std::string>(std::move(host),
+                                                         std::move(zoneName));
+            auto& hs = zoneHosts[std::move(pair)];
+            hs.insert(hs.end(), hosts.begin(), hosts.end());
+        }
+    }
+
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        auto host = it->first;
+        auto zoneIter = std::find_if(zoneHosts.begin(), zoneHosts.end(),
+                                     [host](const auto& pair) -> bool {
+            return host == pair.first.first;
+        });
+
+        if (zoneIter == zoneHosts.end()) {
+            LOG(INFO) << it->first << " have lost";
+            continue;
+        }
+
+        auto& hosts = zoneIter->second;
+        auto name = zoneIter->first.second;
+        for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
+            auto partIter = hostParts.find(*hostIter);
+            zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+        }
+    }
+    return true;
+}
+
+bool Balancer::checkZoneLegal(const HostAddr& source,
+                              const HostAddr& target,
+                              PartitionID part) {
+    VLOG(3) << "Check " << source << " : " << target << " with part " << part;
+    auto sourceIter = std::find_if(zoneParts_.begin(), zoneParts_.end(),
+                                   [&source](const auto& pair) {
+        return source == pair.first;
+    });
+
+    if (sourceIter == zoneParts_.end()) {
+        LOG(INFO) << "Source " << source << " not found";
+        return false;
+    }
+
+    auto targetIter = std::find_if(zoneParts_.begin(), zoneParts_.end(),
+                                   [&target](const auto& pair) {
+        return target == pair.first;
+    });
+
+    if (targetIter == zoneParts_.end()) {
+        LOG(INFO) << "Target " << target << " not found";
+        return false;
+    }
+
+    if (sourceIter->second.first == targetIter->second.first) {
+        LOG(INFO) << source << " --> " << target << " transfer in the same zone";
+        return true;
+    }
+
+    auto& parts = targetIter->second.second;
+    return std::find(parts.begin(), parts.end(), part) == parts.end();
 }
 
 }  // namespace meta

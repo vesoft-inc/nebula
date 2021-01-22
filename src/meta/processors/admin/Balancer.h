@@ -22,6 +22,7 @@ namespace meta {
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using PartAllocation = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
+using ZoneNameAndParts = std::pair<std::string, std::vector<PartitionID>>;
 
 /**
 There are two interfaces public:
@@ -45,6 +46,7 @@ Some notes:
 class Balancer {
     FRIEND_TEST(BalanceTest, BalancePartsTest);
     FRIEND_TEST(BalanceTest, NormalTest);
+    FRIEND_TEST(BalanceTest, SimpleTestWithZone);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, MockReplaceMachineTest);
@@ -61,6 +63,11 @@ class Balancer {
     FRIEND_TEST(BalanceTest, LeaderBalanceWithZoneTest);
     FRIEND_TEST(BalanceTest, LeaderBalanceWithLargerZoneTest);
     FRIEND_TEST(BalanceTest, LeaderBalanceWithComplexZoneTest);
+    FRIEND_TEST(BalanceTest, ExpansionZoneTest);
+    FRIEND_TEST(BalanceTest, ExpansionHostIntoZoneTest);
+    FRIEND_TEST(BalanceTest, ShrinkZoneTest);
+    FRIEND_TEST(BalanceTest, ShrinkHostFromZoneTest);
+    FRIEND_TEST(BalanceTest, BalanceWithComplexZoneTest);
     FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
     FRIEND_TEST(BalanceIntegrationTest, BalanceTest);
 
@@ -76,7 +83,7 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::unordered_set<HostAddr> hostDel = {});
+    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::vector<HostAddr>&& lostHosts = {});
 
     /**
      * Show balance plan id status.
@@ -143,39 +150,55 @@ private:
     /**
      * Build balance plan and save it in kvstore.
      * */
-    cpp2::ErrorCode buildBalancePlan(std::unordered_set<HostAddr> hostDel);
+    cpp2::ErrorCode buildBalancePlan(std::vector<HostAddr>&& lostHosts);
 
     ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
     genTasks(GraphSpaceID spaceId,
              int32_t spaceReplica,
              bool dependentOnGroup,
-             std::unordered_set<HostAddr> hostDel);
+             std::vector<HostAddr>&& lostHosts);
+
+    std::pair<HostParts, std::vector<HostAddr>>
+    fetchHostParts(GraphSpaceID spaceId,
+                   bool dependentOnGroup,
+                   const HostParts& hostParts,
+                   std::vector<HostAddr>& lostHosts);
 
     bool getHostParts(GraphSpaceID spaceId,
                       bool dependentOnGroup,
                       HostParts& hostParts,
                       int32_t& totalParts);
 
+    bool assembleZoneParts(const std::string& groupName, HostParts& hostParts);
+
     void calDiff(const HostParts& hostParts,
                  const std::vector<HostAddr>& activeHosts,
                  std::vector<HostAddr>& newlyAdded,
-                 std::unordered_set<HostAddr>& lost);
+                 std::vector<HostAddr>& lost);
 
     Status checkReplica(const HostParts& hostParts,
                         const std::vector<HostAddr>& activeHosts,
                         int32_t replica,
                         PartitionID partId);
 
-    StatusOr<HostAddr> hostWithMinimalParts(
-                        const HostParts& hostParts,
-                        PartitionID partId);
+    StatusOr<HostAddr> hostWithMinimalParts(const HostParts& hostParts,
+                                            PartitionID partId);
 
-    void balanceParts(BalanceID balanceId,
+    StatusOr<HostAddr> hostWithMinimalPartsForZone(const HostAddr& source,
+                                                   const HostParts& hostParts,
+                                                   PartitionID partId);
+    bool balanceParts(BalanceID balanceId,
                       GraphSpaceID spaceId,
                       HostParts& newHostParts,
                       int32_t totalParts,
                       std::vector<BalanceTask>& tasks);
 
+    bool transferLostHost(std::vector<BalanceTask>& tasks,
+                          HostParts& newHostParts,
+                          const HostAddr& source,
+                          GraphSpaceID spaceId,
+                          PartitionID partId,
+                          bool dependentOnGroup);
 
     std::vector<std::pair<HostAddr, int32_t>>
     sortedHostsByParts(const HostParts& hostParts);
@@ -206,9 +229,13 @@ private:
                           LeaderBalancePlan& plan,
                           GraphSpaceID spaceId);
 
+    bool collectZoneParts(const std::string& groupName, HostParts& hostParts);
+
+    bool checkZoneLegal(const HostAddr& source, const HostAddr& target, PartitionID part);
+
 private:
     std::atomic_bool running_{false};
-    kvstore::KVStore* kv_ = nullptr;
+    kvstore::KVStore* kv_{nullptr};
     AdminClient* client_{nullptr};
     // Current running plan.
     std::shared_ptr<BalancePlan> plan_{nullptr};
@@ -220,6 +247,7 @@ private:
     mutable std::mutex lock_;
 
     std::unordered_map<HostAddr, std::pair<int32_t, int32_t>> hostBounds_;
+    std::unordered_map<HostAddr, ZoneNameAndParts> zoneParts_;
 };
 
 }  // namespace meta

@@ -72,8 +72,6 @@ StatusOr<std::string> silentCurl(const std::string& path) {
 }
 
 TEST(MetaHttpReplaceHandlerTest, FooTest) {
-    LOG(INFO) << __func__ << " enter";
-
     std::vector<std::string> dump = dumpKVStore(gKVStore);
     for (auto& row : dump) {
         LOG(INFO) << "host=" << row;
@@ -175,8 +173,7 @@ std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
             auto hostAddrs = MetaServiceUtils::parsePartVal(iter->val());
             LOG(INFO) << "hostAddrs.size()=" << hostAddrs.size();
             for (auto& hostAddr : hostAddrs) {
-                auto sHost = nebula::network::NetworkUtils::intToIPv4(hostAddr.ip);
-                ret.emplace_back(sHost);
+                ret.emplace_back(hostAddr.host);
             }
             iter->next();
         }

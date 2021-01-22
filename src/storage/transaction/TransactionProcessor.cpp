@@ -35,11 +35,11 @@ void InterTxnProcessor::process(const cpp2::InternalTxnRequest& req) {
             for (auto& p : codes_) {
                 if (p.__isset.leader) {
                     LOG(INFO) << "txnId=" << txnId << ", part=" << p.part_id
-                        << ", code=" << static_cast<int32_t>(p.code)
-                        << ", leader=" << p.leader;
+                              << ", code=" << static_cast<int32_t>(p.code)
+                              << ", leader=" << p.leader;
                 } else {
                     LOG(INFO) << "txnId=" << txnId << ", part=" << p.part_id
-                        << ", code=" << static_cast<int32_t>(p.code);
+                              << ", code=" << static_cast<int32_t>(p.code);
                 }
             }
             onFinished();

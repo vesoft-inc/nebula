@@ -12,7 +12,6 @@
 #include "meta/test/TestUtils.h"
 #include "common/clients/storage/GraphStorageClient.h"
 #include "codec/RowReader.h"
-#include "codec/RowWriterV2.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(heartbeat_interval_secs);

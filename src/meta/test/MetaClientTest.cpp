@@ -35,7 +35,7 @@ TEST(MetaClientTest, InterfacesTest) {
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -349,7 +349,7 @@ TEST(MetaClientTest, SpaceWithGroupTest) {
     fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -512,7 +512,7 @@ TEST(MetaClientTest, TagTest) {
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -741,7 +741,7 @@ TEST(MetaClientTest, EdgeTest) {
     fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -848,7 +848,7 @@ TEST(MetaClientTest, TagIndexTest) {
     fs::TempDir rootPath("/tmp/MetaClientTagIndexTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -1036,7 +1036,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     fs::TempDir rootPath("/tmp/MetaClientEdgeIndexTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -1223,7 +1223,7 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     fs::TempDir rootPath("/tmp/GroupAndZoneTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     cluster.initMetaClient();
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
@@ -1448,7 +1448,7 @@ TEST(MetaClientTest, FTServiceTest) {
     fs::TempDir rootPath("/tmp/FTServiceTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     uint32_t localMetaPort = cluster.metaServer_->port_;
     auto* kv = cluster.metaKV_.get();
     auto localIp = cluster.localIP();
@@ -1573,7 +1573,7 @@ TEST(MetaClientTest, DiffTest) {
     fs::TempDir rootPath("/tmp/MetaClientDiffTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     meta::MetaClientOptions options;
     options.role_ = meta::cpp2::HostRole::STORAGE;
     cluster.initMetaClient(options);
@@ -1632,7 +1632,7 @@ TEST(MetaClientTest, ListenerDiffTest) {
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
     meta::MetaClientOptions options;
     options.localHost_ = {"", 0};
     options.role_ = meta::cpp2::HostRole::STORAGE;
@@ -1734,7 +1734,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/HeartbeatTest.XXXXXX");
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
 
     meta::MetaClientOptions options;
     HostAddr localHost(cluster.localIP(), network::NetworkUtils::getAvailablePort());
@@ -1948,7 +1948,7 @@ TEST(MetaClientTest, Config) {
     fs::TempDir rootPath("/tmp/MetaClientTest.Config.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path());
 
     MetaClientOptions options;
     // Now the `--local_config' option only affect if initialize the configuration from meta
@@ -2057,7 +2057,7 @@ TEST(MetaClientTest, ListenerTest) {
     fs::TempDir rootPath("/tmp/MetaClientListenerTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
     uint32_t localMetaPort = cluster.metaServer_->port_;
     auto* kv = cluster.metaKV_.get();
     auto localIp = cluster.localIP();
@@ -2116,7 +2116,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
 
     mock::MockCluster cluster;
-    cluster.startMeta(0, rootPath.path());
+    cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
 
     MetaClientOptions options;
     // Now the `--local_config' option only affect if initialize the configuration from meta

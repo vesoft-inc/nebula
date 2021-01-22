@@ -18,7 +18,7 @@ namespace nebula {
 namespace meta {
 class BalanceTask {
     friend class BalancePlan;
-    FRIEND_TEST(BalanceTaskTest, SimpleTest);
+    FRIEND_TEST(BalanceTest, BalanceTaskTest);
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, SpecifyHostTest);
     FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
@@ -62,7 +62,7 @@ public:
 
 private:
     std::string buildTaskId() {
-        return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d] ",
+        return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d]",
                                    balanceId_,
                                    spaceId_,
                                    partId_,

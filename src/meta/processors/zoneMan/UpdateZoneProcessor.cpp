@@ -52,8 +52,7 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
 
     hosts.emplace_back(host);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::zoneKey(zoneName),
-                      MetaServiceUtils::zoneVal(std::move(hosts)));
+    data.emplace_back(std::move(zoneKey), MetaServiceUtils::zoneVal(std::move(hosts)));
     LOG(INFO) << "Add Host " << host << " Into Zone " << zoneName;
     doSyncPutAndUpdate(std::move(data));
 }
@@ -90,8 +89,7 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
 
     hosts.erase(iter);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::zoneKey(zoneName),
-                      MetaServiceUtils::zoneVal(std::move(hosts)));
+    data.emplace_back(std::move(zoneKey), MetaServiceUtils::zoneVal(std::move(hosts)));
     LOG(INFO) << "Drop Host " << host << " From Zone " << zoneName;
     doSyncPutAndUpdate(std::move(data));
 }

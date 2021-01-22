@@ -173,7 +173,7 @@ TEST_F(ElasticSearchBasicTest, SimpleTest) {
     ftClient.set_host(HostAddr("127.0.0.1", esPort_));
     const nebula::ClusterID kClusterId = 10;
     mock::MockCluster cluster;
-    cluster.startMeta(0, folly::stringPrintf("%s/meta", rootPath_->path()));
+    cluster.startMeta(folly::stringPrintf("%s/meta", rootPath_->path()));
     meta::MetaClientOptions options;
     HostAddr localHost(cluster.localIP(), network::NetworkUtils::getAvailablePort());
     options.localHost_ = localHost;
@@ -182,8 +182,8 @@ TEST_F(ElasticSearchBasicTest, SimpleTest) {
     cluster.initMetaClient(std::move(options));
 
     cluster.initStorageKV(rootPath_->path(),
-                            localHost,
-                            1, true, true, {ftClient});
+                          localHost,
+                          1, true, true, {ftClient});
     auto* env = cluster.storageEnv_.get();
     {
         sleep(FLAGS_heartbeat_interval_secs + 1);

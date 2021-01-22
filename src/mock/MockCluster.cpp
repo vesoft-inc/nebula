@@ -97,10 +97,9 @@ MockCluster::initMetaKV(const char* dataPath, HostAddr addr) {
     return kv;
 }
 
-void MockCluster::startMeta(int32_t port,
-                            const std::string& rootPath,
-                            std::string hostname) {
-    metaKV_ = initMetaKV(rootPath.c_str(), {hostname, port});
+void MockCluster::startMeta(const std::string& rootPath,
+                            HostAddr addr) {
+    metaKV_ = initMetaKV(rootPath.c_str(), addr);
     metaServer_ = std::make_unique<RpcServer>();
     auto handler = std::make_shared<meta::MetaServiceHandler>(metaKV_.get(),
                                                               clusterId_);

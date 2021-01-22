@@ -29,22 +29,10 @@ namespace mock {
 
 class MockCluster {
 public:
+    MockCluster() = default;
+
     ~MockCluster() {
-        if (metaClient_) {
-            metaClient_->stop();
-        }
-        if (lMetaClient_) {
-            lMetaClient_->stop();
-        }
-        if (metaKV_) {
-            metaKV_->stop();
-        }
-        if (storageKV_) {
-            storageKV_->stop();
-        }
-        if (esListener_) {
-            esListener_->stop();
-        }
+        stop();
         storageAdminServer_.reset();
         graphStorageServer_.reset();
         generalStorageServer_.reset();
@@ -52,7 +40,7 @@ public:
 
     void startAll();
 
-    void startMeta(int32_t port, const std::string& rootPath, std::string hostname = "127.0.0.1");
+    void startMeta(const std::string& rootPath, HostAddr addr = HostAddr("127.0.0.1", 0));
 
     void startStorage(HostAddr addr,
                       const std::string& rootPath,
@@ -109,6 +97,24 @@ public:
 
     int32_t getTotalParts() {
         return totalParts_;
+    }
+
+    void stop() {
+        if (metaClient_) {
+            metaClient_->stop();
+        }
+        if (lMetaClient_) {
+            lMetaClient_->stop();
+        }
+        if (metaKV_) {
+            metaKV_->stop();
+        }
+        if (storageKV_) {
+            storageKV_->stop();
+        }
+        if (esListener_) {
+            esListener_->stop();
+        }
     }
 
 public:

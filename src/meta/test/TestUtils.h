@@ -20,6 +20,7 @@
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "utils/DefaultValueContext.h"
+#include <gtest/gtest.h>
 #include "version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
@@ -97,13 +98,22 @@ public:
                                      const ZoneInfo& zoneInfo,
                                      const GroupInfo& groupInfo) {
         std::vector<kvstore::KV> data;
+        int32_t id = 10;
         for (auto iter = zoneInfo.begin(); iter != zoneInfo.end(); iter++) {
+            data.emplace_back(MetaServiceUtils::indexZoneKey(iter->first),
+                              std::string(reinterpret_cast<const char*>(&id), sizeof(ZoneID)));
             data.emplace_back(MetaServiceUtils::zoneKey(iter->first),
                               MetaServiceUtils::zoneVal(iter->second));
+            id += 1;
         }
+
+        id = 100;
         for (auto iter = groupInfo.begin(); iter != groupInfo.end(); iter++) {
+            data.emplace_back(MetaServiceUtils::indexGroupKey(iter->first),
+                              std::string(reinterpret_cast<const char*>(&id), sizeof(GroupID)));
             data.emplace_back(MetaServiceUtils::groupKey(iter->first),
                               MetaServiceUtils::groupVal(iter->second));
+            id += 1;
         }
 
         folly::Baton<true, std::atomic> baton;
@@ -113,6 +123,85 @@ public:
                               baton.post();
                           });
         baton.wait();
+    }
+
+    static bool modifyHostAboutZone(kvstore::KVStore* kv, const std::string& zoneName,
+                                    HostAddr host, bool isAdd) {
+        auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+        std::string zoneValue;
+        auto code = kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Get zone " <<  zoneName << " failed";
+            return false;
+        }
+
+        auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+        auto iter = std::find(hosts.begin(), hosts.end(), host);
+        if (isAdd) {
+            if (iter != hosts.end()) {
+                LOG(ERROR) << "Host " << host << " have existed";
+                return false;
+            }
+            hosts.emplace_back(std::move(host));
+        } else {
+            if (iter == hosts.end()) {
+                LOG(ERROR) << "Host " << host << " not existed";
+                return false;
+            }
+            hosts.erase(iter);
+        }
+
+        std::vector<kvstore::KV> data;
+        data.emplace_back(zoneKey, MetaServiceUtils::zoneVal(std::move(hosts)));
+
+        bool ret = false;
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode resultCode) {
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, resultCode);
+                              baton.post();
+                          });
+        baton.wait();
+        return ret;
+    }
+
+    static bool modifyZoneAboutGroup(kvstore::KVStore* kv, const std::string& groupName,
+                                     const std::string& zoneName, bool isAdd) {
+        auto groupKey = MetaServiceUtils::groupKey(groupName);
+        std::string groupValue;
+        auto code = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Get group " <<  groupName << " failed";
+            return false;
+        }
+
+        auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+        auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
+        if (isAdd) {
+            if (iter != zoneNames.end()) {
+                LOG(ERROR) << "Zone " << zoneName << " have existed";
+                return false;
+            }
+            zoneNames.emplace_back(std::move(zoneName));
+        } else {
+            if (iter == zoneNames.end()) {
+                LOG(ERROR) << "Zone " << zoneName << " not existed";
+                return false;
+            }
+            zoneNames.erase(iter);
+        }
+
+        std::vector<kvstore::KV> data;
+        data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));
+
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode resultCode) {
+                              ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, resultCode);
+                              baton.post();
+                          });
+        baton.wait();
+        return true;
     }
 
     static void assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,

@@ -11,8 +11,7 @@
 namespace nebula {
 namespace meta {
 
-void LeaderBalanceProcessor::process(const cpp2::LeaderBalanceReq& req) {
-    UNUSED(req);
+void LeaderBalanceProcessor::process(const cpp2::LeaderBalanceReq&) {
     auto ret = Balancer::instance(kvstore_)->leaderBalance();
     handleErrorCode(ret);
     onFinished();

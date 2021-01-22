@@ -164,6 +164,7 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
         LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
         return MetaCommon::to(ret);
     }
+
     while (iter->valid()) {
         BalanceTask task;
         task.kv_ = kv_;
