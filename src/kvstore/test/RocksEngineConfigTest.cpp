@@ -37,7 +37,8 @@ TEST(RocksEngineConfigTest, SimpleOptionTest) {
     FLAGS_rocksdb_block_based_table_options = R"({"block_restart_interval":"2"})";
 
     // Create the RocksEngine instance
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    int defaultVidLen = 8;
+    auto engine = std::make_unique<RocksEngine>(0, defaultVidLen, rootPath.path());
     engine.reset();
 
     ASSERT_NE(nebula::fs::FileType::NOTEXIST,

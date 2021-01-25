@@ -309,6 +309,8 @@ private:
 
     void cleanWAL();
 
+    int32_t getSpaceVidLen(GraphSpaceID spaceId);
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;

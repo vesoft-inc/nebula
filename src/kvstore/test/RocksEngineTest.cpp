@@ -14,9 +14,11 @@
 namespace nebula {
 namespace kvstore {
 
+const int32_t kDefaultVIdLen = 8;
+
 TEST(RocksEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_SimpleTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -26,7 +28,7 @@ TEST(RocksEngineTest, SimpleTest) {
 
 TEST(RocksEngineTest, RangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_RangeTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
@@ -69,7 +71,7 @@ TEST(RocksEngineTest, RangeTest) {
 
 TEST(RocksEngineTest, PrefixTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_PrefixTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
@@ -115,7 +117,7 @@ TEST(RocksEngineTest, PrefixTest) {
 
 TEST(RocksEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_RemoveTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -127,7 +129,7 @@ TEST(RocksEngineTest, RemoveTest) {
 
 TEST(RocksEngineTest, RemoveRangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_RemoveRangeTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     for (int32_t i = 0; i < 100; i++) {
         std::string key(reinterpret_cast<const char*>(&i), sizeof(int32_t));
         std::string value(folly::stringPrintf("%d_val", i));
@@ -168,7 +170,7 @@ TEST(RocksEngineTest, RemoveRangeTest) {
 
 TEST(RocksEngineTest, OptionTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_OptionTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED,
               engine->setOption("disable_auto_compactions", "true"));
     EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
@@ -188,7 +190,7 @@ TEST(RocksEngineTest, OptionTest) {
 
 TEST(RocksEngineTest, CompactTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_CompactTest.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 2; i < 8;  i++) {
         data.emplace_back(folly::stringPrintf("key_%d", i),
@@ -212,7 +214,7 @@ TEST(RocksEngineTest, IngestTest) {
     ASSERT_TRUE(stauts.ok());
     writer.Finish();
 
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 
@@ -228,7 +230,7 @@ TEST(RocksEngineTest, BackupRestoreTable) {
     rocksdb::Options options;
     rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
     fs::TempDir rootPath("/tmp/rocksdb_engine_backuptable.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
 
     std::vector<KV> data;
     for (int32_t i = 0; i < 10; i++) {
@@ -256,7 +258,7 @@ TEST(RocksEngineTest, BackupRestoreTable) {
     sst_files.emplace_back(value(tags));
 
     fs::TempDir restoreRootPath("/tmp/rocksdb_engine_restoretable.XXXXXX");
-    auto restore_engine = std::make_unique<RocksEngine>(0, restoreRootPath.path());
+    auto restore_engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, restoreRootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->ingest(sst_files));
 
     std::unique_ptr<KVIterator> iter;

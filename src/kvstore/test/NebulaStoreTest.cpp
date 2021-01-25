@@ -19,6 +19,7 @@
 #include "kvstore/LogEncoder.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
+const int32_t kDefaultVidLen = 8;
 using nebula::meta::PartHosts;
 
 namespace nebula {
@@ -153,6 +154,7 @@ TEST(NebulaStoreTest, PartsTest) {
     for (size_t i = 0; i < paths.size(); i++) {
         auto db = std::make_unique<RocksEngine>(
             0, /* spaceId */
+            kDefaultVidLen,
             paths[i]);
         for (auto partId = 0; partId < 3; partId++) {
             db->addPart(5 * i + partId);

@@ -73,6 +73,7 @@ public:
  *
  **************************************/
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
+                         int32_t vIdLen,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
@@ -90,7 +91,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
-    rocksdb::Status status = initRocksdbOptions(options);
+    rocksdb::Status status = initRocksdbOptions(options, vIdLen);
     CHECK(status.ok());
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;

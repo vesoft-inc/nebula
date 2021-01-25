@@ -262,10 +262,8 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
         if (options_.cffBuilder_ != nullptr) {
             cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
         }
-        return std::make_unique<RocksEngine>(spaceId,
-                                             path,
-                                             options_.mergeOp_,
-                                             cfFactory);
+        auto vIdLen = getSpaceVidLen(spaceId);
+        return std::make_unique<RocksEngine>(spaceId, vIdLen, path, options_.mergeOp_, cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         return nullptr;
@@ -309,6 +307,16 @@ void NebulaStore::addSpace(GraphSpaceID spaceId, bool isListener) {
     }
 }
 
+int32_t NebulaStore::getSpaceVidLen(GraphSpaceID spaceId) {
+    int vIdLen = 8;  // default value
+    if (options_.schemaMan_) {
+        auto stVidLen = options_.schemaMan_->getSpaceVidLen(spaceId);
+        if (stVidLen.ok()) {
+            vIdLen = stVidLen.value();
+        }
+    }
+    return vIdLen;
+}
 
 void NebulaStore::addPart(GraphSpaceID spaceId,
                           PartitionID partId,
