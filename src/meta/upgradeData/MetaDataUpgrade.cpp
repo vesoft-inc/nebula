@@ -109,7 +109,7 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
         schemaId.set_edge_type(oldItem.get_schema_id().getType());
     }
     newItem.set_schema_id(schemaId);
-    NG_LOG_AND_RETURN_IF_ERROR(convertToNewColumns(oldItem.fields, newItem.fields));
+    NG_LOG_AND_RETURN_IF_ERROR(convertToNewIndexColumns(oldItem.fields, newItem.fields));
     NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaServiceUtils::indexVal(newItem)));
     return Status::OK();
 }
@@ -243,6 +243,29 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
 
             columnDef.set_default_value(std::move(encodeStr));
         }
+        if (FLAGS_null_type) {
+            columnDef.set_nullable(true);
+        }
+        newCols.emplace_back(std::move(columnDef));
+    }
+    return Status::OK();
+}
+
+Status
+MetaDataUpgrade::convertToNewIndexColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+                                          std::vector<cpp2::ColumnDef> &newCols) {
+    for (auto &colDef : oldCols) {
+        cpp2::ColumnDef columnDef;
+        columnDef.set_name(colDef.get_name());
+        if (colDef.get_type().get_type() == oldmeta::cpp2::SupportedType::STRING) {
+            cpp2::ColumnTypeDef type;
+            type.set_type(cpp2::PropertyType::FIXED_STRING);
+            type.set_type_length(256);
+            columnDef.set_type(std::move(type));
+        } else {
+            columnDef.type.set_type(static_cast<cpp2::PropertyType>(colDef.get_type().get_type()));
+        }
+        DCHECK(!colDef.__isset.default_value);
         if (FLAGS_null_type) {
             columnDef.set_nullable(true);
         }

@@ -222,6 +222,27 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
     }
 
     {
+        // kIndexesTable
+        auto prefix = nebula::oldmeta::kIndexesTable;
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED) {
+            Status status = Status::OK();
+            while (iter->valid()) {
+                if (FLAGS_print_info) {
+                    upgrader.printIndexes(iter->val());
+                }
+                status = upgrader.rewriteIndexes(iter->key(), iter->val());
+                if (!status.ok()) {
+                    LOG(ERROR) << status;
+                    return status;
+                }
+                iter->next();
+            }
+        }
+    }
+
+    {
         // kConfigsTable
         auto prefix = nebula::oldmeta::kConfigsTable;
         std::unique_ptr<kvstore::KVIterator> iter;
@@ -275,7 +296,6 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
     // delete
     {
         std::vector<std::string> prefixes({nebula::oldmeta::kIndexStatusTable,
-                                           nebula::oldmeta::kIndexesTable,
                                            nebula::oldmeta::kDefaultTable,
                                            nebula::oldmeta::kCurrJob,
                                            nebula::oldmeta::kJobArchive});

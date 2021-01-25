@@ -104,6 +104,9 @@ private:
     Status convertToNewColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
                                std::vector<cpp2::ColumnDef> &newCols);
 
+    Status convertToNewIndexColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+                                    std::vector<cpp2::ColumnDef> &newCols);
+
 private:
     kvstore::KVStore*        kv_ = nullptr;
 };
