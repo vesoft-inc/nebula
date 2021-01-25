@@ -271,8 +271,10 @@ void DbDumper::run() {
         case 0b1000: {
             // specified part, seek with prefix and print them all
             for (auto partId : parts_) {
-                auto prefix = NebulaKeyUtils::partPrefix(partId);
-                seek(prefix);
+                auto vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
+                seek(vertexPrefix);
+                auto edgePrefix = NebulaKeyUtils::edgePrefix(partId);
+                seek(edgePrefix);
             }
             break;
         }
@@ -281,7 +283,7 @@ void DbDumper::run() {
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto partId : parts_) {
-                auto prefix = NebulaKeyUtils::partPrefix(partId);
+                auto prefix = NebulaKeyUtils::edgePrefix(partId);
                 seek(prefix);
             }
             break;
@@ -291,7 +293,7 @@ void DbDumper::run() {
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
             for (auto partId : parts_) {
-                auto prefix = NebulaKeyUtils::partPrefix(partId);
+                auto prefix = NebulaKeyUtils::vertexPrefix(partId);
                 seek(prefix);
             }
             break;
@@ -301,7 +303,7 @@ void DbDumper::run() {
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto partId : parts_) {
-                auto prefix = NebulaKeyUtils::partPrefix(partId);
+                auto prefix = NebulaKeyUtils::edgePrefix(partId);
                 seek(prefix);
             }
 
@@ -310,7 +312,7 @@ void DbDumper::run() {
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
             for (auto partId : parts_) {
-                auto prefix = NebulaKeyUtils::partPrefix(partId);
+                auto prefix = NebulaKeyUtils::vertexPrefix(partId);
                 seek(prefix);
             }
             break;

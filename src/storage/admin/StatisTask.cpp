@@ -84,12 +84,19 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 
     LOG(INFO) << "Start statis task";
     CHECK_NOTNULL(env_->kvstore_);
-    auto prefix = NebulaKeyUtils::partPrefix(part);
-    std::unique_ptr<kvstore::KVIterator> iter;
+    auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
+    std::unique_ptr<kvstore::KVIterator> vertexIter;
+    auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
+    std::unique_ptr<kvstore::KVIterator> edgeIter;
 
     // When the storage occurs leader change, continue to read data from the follower
     // instead of reporting an error.
-    auto ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter, true);
+    auto ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Statis task failed";
+        return ret;
+    }
+    ret = env_->kvstore_->prefix(spaceId, part, edgePrefix, &edgeIter, true);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Statis task failed";
         return ret;
@@ -100,14 +107,6 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     int64_t                               spaceVertices = 0;
     int64_t                               spaceEdges = 0;
 
-    TagID                                 lastTagId = 0;
-    VertexID                              lastVertexId = "";
-
-    VertexID                              lastSrcVertexId = "";
-    EdgeType                              lastEdgeType = 0;
-    VertexID                              lastDstVertexId = "";
-    EdgeRanking                           lastRank = 0;
-
     for (auto tag : tags) {
         tagsVertices[tag.first] = 0;
     }
@@ -116,6 +115,8 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         edgetypeEdges[edge.first] = 0;
     }
 
+    TagID                                 lastTagId = 0;
+    VertexID                              lastVertexId = "";
     // Only statis valid vetex data
     // For example
     // Vid  tagId  version
@@ -125,80 +126,88 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     // 2     2     1   (invalid data)
     // 2     3     1
     // 3     1     2
-    while (iter && iter->valid()) {
-        auto key = iter->key();
-        if (NebulaKeyUtils::isVertex(vIdLen, key)) {
-            auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
-            auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
+    while (vertexIter && vertexIter->valid()) {
+        auto key = vertexIter->key();
+        auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
+        auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
 
-            auto it = tagsVertices.find(tagId);
-            if (it == tagsVertices.end()) {
-                // Invalid data
-                iter->next();
-                continue;
-            }
+        auto it = tagsVertices.find(tagId);
+        if (it == tagsVertices.end()) {
+            // Invalid data
+            vertexIter->next();
+            continue;
+        }
 
-            if (vId == lastVertexId) {
-                if (tagId == lastTagId) {
-                    // Multi version
-                } else {
-                    tagsVertices[tagId] += 1;
-                    lastTagId = tagId;
-                }
-            } else {
-                tagsVertices[tagId] += 1;
-                spaceVertices++;
-                lastTagId = tagId;
-                lastVertexId  = vId;
-            }
-        } else if (NebulaKeyUtils::isEdge(vIdLen, key)) {
-            // Only statis valid edge data
-            // For example
-            // src edgetype rank dst  version
-            // 1    1       1    2    2
-            // 1    1       1    2    1
-            // 2    2       1    3    2  (invalid data)
-            // 2    2       1    4    2  (invalid data)
-            // 2    3       1    4    1
-            // 3    3       1    4    1
-            auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
-            if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
-                iter->next();
-                continue;
-            }
-            auto source = NebulaKeyUtils::getSrcId(vIdLen, key).str();
-            auto ranking = NebulaKeyUtils::getRank(vIdLen, key);
-            auto destination = NebulaKeyUtils::getDstId(vIdLen, key).str();
-
-            if (source == lastSrcVertexId &&
-                edgeType == lastEdgeType &&
-                ranking == lastRank &&
-                destination == lastDstVertexId) {
+        if (vId == lastVertexId) {
+            if (tagId == lastTagId) {
                 // Multi version
             } else {
-                spaceEdges++;
-                edgetypeEdges[edgeType] += 1;
-                lastSrcVertexId = source;
-                lastEdgeType  = edgeType;
-                lastRank = ranking;
-                lastDstVertexId = destination;
+                tagsVertices[tagId] += 1;
+                lastTagId = tagId;
             }
+        } else {
+            tagsVertices[tagId] += 1;
+            spaceVertices++;
+            lastTagId = tagId;
+            lastVertexId  = vId;
         }
-        iter->next();
+        vertexIter->next();
+    }
+
+    VertexID                              lastSrcVertexId = "";
+    EdgeType                              lastEdgeType = 0;
+    VertexID                              lastDstVertexId = "";
+    EdgeRanking                           lastRank = 0;
+    // Only statis valid edge data
+    // For example
+    // src edgetype rank dst  version
+    // 1    1       1    2    2
+    // 1    1       1    2    1
+    // 2    2       1    3    2  (invalid data)
+    // 2    2       1    4    2  (invalid data)
+    // 2    3       1    4    1
+    // 3    3       1    4    1
+    while (edgeIter && edgeIter->valid()) {
+        auto key = edgeIter->key();
+        auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
+        if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
+            edgeIter->next();
+            continue;
+        }
+        auto source = NebulaKeyUtils::getSrcId(vIdLen, key).str();
+        auto ranking = NebulaKeyUtils::getRank(vIdLen, key);
+        auto destination = NebulaKeyUtils::getDstId(vIdLen, key).str();
+
+        if (source == lastSrcVertexId &&
+            edgeType == lastEdgeType &&
+            ranking == lastRank &&
+            destination == lastDstVertexId) {
+            // Multi version
+        } else {
+            spaceEdges++;
+            edgetypeEdges[edgeType] += 1;
+            lastSrcVertexId = source;
+            lastEdgeType  = edgeType;
+            lastRank = ranking;
+            lastDstVertexId = destination;
+        }
+        edgeIter->next();
     }
 
     nebula::meta::cpp2::StatisItem statisItem;
 
     // convert tagId/edgeType to tagName/edgeName
     for (auto &tagElem : tagsVertices) {
-        auto tagIter = tags_.find(tagElem.first);
-        CHECK(tagIter != tags_.end());
-        statisItem.tag_vertices.emplace(tagIter->second, tagElem.second);
+        auto iter = tags_.find(tagElem.first);
+        if (iter != tags_.end()) {
+            statisItem.tag_vertices.emplace(iter->second, tagElem.second);
+        }
     }
     for (auto &edgeElem : edgetypeEdges) {
-        auto edgeIter = edges_.find(edgeElem.first);
-        CHECK(edgeIter != edges_.end());
-        statisItem.edges.emplace(edgeIter->second, edgeElem.second);
+        auto iter = edges_.find(edgeElem.first);
+        if (iter != edges_.end()) {
+            statisItem.edges.emplace(iter->second, edgeElem.second);
+        }
     }
 
     statisItem.set_space_vertices(spaceVertices);

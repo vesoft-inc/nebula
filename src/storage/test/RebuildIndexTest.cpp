@@ -102,7 +102,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
     EXPECT_LT(0, vidSize);
     int dataNum = 0;
     for (auto part : parts) {
-        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto prefix = NebulaKeyUtils::vertexPrefix(part);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
@@ -191,7 +191,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
     EXPECT_LT(0, vidSize);
     int dataNum = 0;
     for (auto part : parts) {
-        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto prefix = NebulaKeyUtils::edgePrefix(part);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);

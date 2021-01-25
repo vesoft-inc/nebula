@@ -41,7 +41,7 @@ void ScanEdgeProcessor::doProcess(const cpp2::ScanEdgeRequest& req) {
     }
 
     std::string start;
-    std::string prefix = NebulaKeyUtils::partPrefix(partId_);
+    std::string prefix = NebulaKeyUtils::edgePrefix(partId_);
     if (req.get_cursor() == nullptr || req.get_cursor()->empty()) {
         start = prefix;
     } else {

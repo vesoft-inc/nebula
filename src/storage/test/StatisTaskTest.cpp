@@ -296,7 +296,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             VertexID                              lastDstVertexId = "";
             EdgeRanking                           lastRank = 0;
 
-            auto prefix = NebulaKeyUtils::partPrefix(part);
+            auto prefix = NebulaKeyUtils::vertexPrefix(part);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -305,53 +305,61 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
 
             while (iter && iter->valid()) {
                 auto key = iter->key();
-                if (NebulaKeyUtils::isVertex(spaceVidLen, key)) {
-                    auto vId = NebulaKeyUtils::getVertexId(spaceVidLen, key).str();
-                    auto tagId = NebulaKeyUtils::getTagId(spaceVidLen, key);
-                    auto it = tagsVertices.find(tagId);
-                    if (it == tagsVertices.end()) {
-                        // Invalid data
-                        iter->next();
-                        continue;
-                    }
+                auto vId = NebulaKeyUtils::getVertexId(spaceVidLen, key).str();
+                auto tagId = NebulaKeyUtils::getTagId(spaceVidLen, key);
+                auto it = tagsVertices.find(tagId);
+                if (it == tagsVertices.end()) {
+                    // Invalid data
+                    iter->next();
+                    continue;
+                }
 
-                    if (vId == lastVertexId) {
-                        if (tagId == lastTagId) {
-                            // Multi version
-                        } else {
-                            tagsVertices[tagId] += 1;
-                            lastTagId = tagId;
-                        }
-                    } else {
-                        tagsVertices[tagId] += 1;
-                        spaceVertices++;
-                        lastTagId = tagId;
-                        lastVertexId  = vId;
-                    }
-                } else if (NebulaKeyUtils::isEdge(spaceVidLen, key)) {
-                    auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen, key);
-                    if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
-                        iter->next();
-                        continue;
-                    }
-
-                    auto source = NebulaKeyUtils::getSrcId(spaceVidLen, key).str();
-                    auto ranking = NebulaKeyUtils::getRank(spaceVidLen, key);
-                    auto destination = NebulaKeyUtils::getDstId(spaceVidLen, key).str();
-
-                    if (source == lastSrcVertexId &&
-                        edgeType == lastEdgeType &&
-                        ranking == lastRank &&
-                        destination == lastDstVertexId) {
+                if (vId == lastVertexId) {
+                    if (tagId == lastTagId) {
                         // Multi version
                     } else {
-                        spaceEdges++;
-                        edgetypeEdges[edgeType] += 1;
-                        lastSrcVertexId = source;
-                        lastEdgeType  = edgeType;
-                        lastRank = ranking;
-                        lastDstVertexId = destination;
+                        tagsVertices[tagId] += 1;
+                        lastTagId = tagId;
                     }
+                } else {
+                    tagsVertices[tagId] += 1;
+                    spaceVertices++;
+                    lastTagId = tagId;
+                    lastVertexId  = vId;
+                }
+                iter->next();
+            }
+
+            prefix = NebulaKeyUtils::edgePrefix(part);
+            ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                continue;
+            }
+
+            while (iter && iter->valid()) {
+                auto key = iter->key();
+                auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen, key);
+                if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
+                    iter->next();
+                    continue;
+                }
+
+                auto source = NebulaKeyUtils::getSrcId(spaceVidLen, key).str();
+                auto ranking = NebulaKeyUtils::getRank(spaceVidLen, key);
+                auto destination = NebulaKeyUtils::getDstId(spaceVidLen, key).str();
+
+                if (source == lastSrcVertexId &&
+                    edgeType == lastEdgeType &&
+                    ranking == lastRank &&
+                    destination == lastDstVertexId) {
+                    // Multi version
+                } else {
+                    spaceEdges++;
+                    edgetypeEdges[edgeType] += 1;
+                    lastSrcVertexId = source;
+                    lastEdgeType  = edgeType;
+                    lastRank = ranking;
+                    lastDstVertexId = destination;
                 }
                 iter->next();
             }

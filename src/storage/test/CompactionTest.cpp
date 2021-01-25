@@ -36,7 +36,7 @@ void checkTagVertexData(int32_t spaceVidLen,
     VertexID lastVertexId = "";
 
     for (int part = 1; part <= parts; part++) {
-        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto prefix = NebulaKeyUtils::vertexPrefix(part);
         auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
         ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
@@ -81,7 +81,7 @@ void checkEdgeData(int32_t spaceVidLen,
     EdgeRanking lastRank = 0;
 
     for (int part = 1; part <= parts; part++) {
-        auto prefix = NebulaKeyUtils::partPrefix(part);
+        auto prefix = NebulaKeyUtils::edgePrefix(part);
         auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
         ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 

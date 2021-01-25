@@ -43,7 +43,7 @@ kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
 
     auto vidSize = vidSizeRet.value();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::partPrefix(part);
+    auto prefix = NebulaKeyUtils::vertexPrefix(part);
     auto ret = env_->kvstore_->prefix(space, part, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Processing Part " << part << " Failed";

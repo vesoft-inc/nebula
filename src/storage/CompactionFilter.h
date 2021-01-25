@@ -40,7 +40,23 @@ public:
             return false;
         }
 
-        if (NebulaKeyUtils::isDataKey(key)) {
+        // todo(doodle):
+        // 1. remove redundant code in schemaValid/ttlValid
+        // 2. only filter multi version when mvcc enabled
+        // 3. only check isLock once
+        if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
+            if (!schemaValid(spaceId, key)) {
+                return true;
+            }
+            if (!ttlValid(spaceId, key, val)) {
+                VLOG(3) << "TTL invalid for key " << key;
+                return true;
+            }
+            if (filterVersions(key)) {
+                VLOG(3) << "Extra versions has been filtered!";
+                return true;
+            }
+        } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             if (!schemaValid(spaceId, key)) {
                 return true;
             }

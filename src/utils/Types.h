@@ -13,11 +13,13 @@
 namespace nebula {
 
 enum class NebulaKeyType : uint32_t {
-    kData              = 0x00000001,
-    kIndex             = 0x00000002,
-    kUUID              = 0x00000003,
-    kSystem            = 0x00000004,
-    kOperation         = 0x00000005,
+    kVertex            = 0x00000001,
+    kEdge              = 0x00000002,
+    kIndex             = 0x00000003,
+    kUUID              = 0x00000004,
+    kSystem            = 0x00000005,
+    kOperation         = 0x00000006,
+    kKeyValue          = 0x00000007,
 };
 
 enum class NebulaSystemKeyType : uint32_t {
@@ -31,7 +33,6 @@ enum class NebulaOperationType : uint32_t {
 };
 
 using VertexIDSlice = folly::StringPiece;
-using VertexIntID = int64_t;
 using IndexID = int32_t;
 
 template<typename T>
@@ -56,16 +57,6 @@ static constexpr uint8_t kPartitionOffset = 8;
 // The key type bits Mask
 // See KeyType enum
 static constexpr uint32_t kTypeMask     = 0x000000FF;
-
-// The Tag/Edge type bit Mask, the most significant bit is to indicate sign,
-// the next bit is to indicate it is tag or edge, 0 for Tag, 1 for Edge
-static constexpr uint32_t kTagEdgeMask      = 0x40000000;
-// For extract Tag/Edge value
-static constexpr uint32_t kTagEdgeValueMask = ~kTagEdgeMask;
-// Write edge by &=
-static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
-// Write Tag by |=
-static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
 
 static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID);
 

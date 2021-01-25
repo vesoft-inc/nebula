@@ -23,6 +23,14 @@ public:
                                  raftex::SnapshotCallback cb) override;
 
 private:
+    void accessTable(GraphSpaceID spaceId,
+                     PartitionID partId,
+                     const std::string& prefix,
+                     raftex::SnapshotCallback& cb,
+                     std::vector<std::string>& data,
+                     int64_t& totalCount,
+                     int64_t& totalSize);
+
     KVStore* store_;
 };
 

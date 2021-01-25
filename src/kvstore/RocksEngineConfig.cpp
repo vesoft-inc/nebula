@@ -99,8 +99,8 @@ public:
     }
 
     bool InDomain(const rocksdb::Slice& src) const override {
-        return src.size() >= prefixLen_ && NebulaKeyUtils::isDataKey(
-                folly::StringPiece(src.data(), 1));
+        // todo(doodle): only need to consider tag and edge
+        return src.size() >= prefixLen_;
     }
 };
 

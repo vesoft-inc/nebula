@@ -67,6 +67,8 @@ public:
 
     static std::string vertexPrefix(size_t vIdLen, PartitionID partId, VertexID vId);
 
+    static std::string vertexPrefix(PartitionID partId);
+
     /**
      * Prefix for edge
      * */
@@ -81,11 +83,11 @@ public:
                                   EdgeRanking rank,
                                   VertexID dstId);
 
+    static std::string edgePrefix(PartitionID partId);
+
     static std::string systemPrefix();
 
-    static std::string partPrefix(PartitionID partId);
-
-    static std::string snapshotPrefix(PartitionID partId);
+    static std::vector<std::string> snapshotPrefix(PartitionID partId);
 
     static PartitionID getPart(const folly::StringPiece& rawKey) {
         return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
@@ -97,12 +99,8 @@ public:
         }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
-        if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
-            return false;
-        }
-        auto offset = sizeof(PartitionID) + vIdLen;
-        TagID tagId = readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
-        return !(tagId & kTagEdgeMask);
+        // return static_cast<uint32_t>(NebulaKeyType::kVertex) == type;
+        return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVertex;
     }
 
     static VertexIDSlice getVertexId(size_t vIdLen, const folly::StringPiece& rawKey) {
@@ -127,12 +125,8 @@ public:
         }
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
-        if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
-            return false;
-        }
-        auto offset = sizeof(PartitionID) + vIdLen;
-        EdgeType etype = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
-        return etype & kTagEdgeMask;
+        // return static_cast<uint32_t>(NebulaKeyType::kEdge) == type;
+        return static_cast<NebulaKeyType>(type) == NebulaKeyType::kEdge;
     }
 
     static bool isLock(size_t vIdLen, const folly::StringPiece& rawKey) {
@@ -140,24 +134,36 @@ public:
         return isEdge(vIdLen, folly::StringPiece(rawKey.begin(), len));
     }
 
+    static bool isSystem(const folly::StringPiece& rawKey) {
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
+        return static_cast<NebulaKeyType>(type) == NebulaKeyType::kSystem;
+    }
+
     static bool isSystemCommit(const folly::StringPiece& rawKey) {
         if (rawKey.size() != kSystemLen) {
+            return false;
+        }
+        if (!isSystem(rawKey)) {
             return false;
         }
         auto position = rawKey.data() + sizeof(PartitionID);
         auto len = sizeof(NebulaSystemKeyType);
         auto type = readInt<uint32_t>(position, len);
-        return static_cast<uint32_t>(NebulaSystemKeyType::kSystemCommit) == type;
+        return static_cast<NebulaSystemKeyType>(type) == NebulaSystemKeyType::kSystemCommit;
     }
 
     static bool isSystemPart(const folly::StringPiece& rawKey) {
         if (rawKey.size() != kSystemLen) {
             return false;
         }
+        if (!isSystem(rawKey)) {
+            return false;
+        }
         auto position = rawKey.data() + sizeof(PartitionID);
         auto len = sizeof(NebulaSystemKeyType);
         auto type = readInt<uint32_t>(position, len);
-        return static_cast<uint32_t>(NebulaSystemKeyType::kSystemPart) == type;
+        return static_cast<NebulaSystemKeyType>(type) == NebulaSystemKeyType::kSystemPart;
     }
 
     static VertexIDSlice getSrcId(size_t vIdLen, const folly::StringPiece& rawKey) {
@@ -182,8 +188,7 @@ public:
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID) + vIdLen;
-        EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
-        return type > 0 ? type & kTagEdgeValueMask : type;
+        return readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
     }
 
     static EdgeRanking getRank(size_t vIdLen, const folly::StringPiece& rawKey) {
@@ -206,15 +211,10 @@ public:
         return 0;  // will not runs here, just for satisfied g++
     }
 
-    static bool isDataKey(const folly::StringPiece& key) {
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<int32_t>(key.data(), len) & kTypeMask;
-        return static_cast<uint32_t>(NebulaKeyType::kData) == type;
-    }
-
     static bool isUUIDKey(const folly::StringPiece& key) {
         auto type = readInt<int32_t>(key.data(), sizeof(int32_t)) & kTypeMask;
-        return static_cast<uint32_t>(NebulaKeyType::kUUID) == type;
+        // return static_cast<uint32_t>(NebulaKeyType::kUUID) == type;
+        return static_cast<NebulaKeyType>(type) == NebulaKeyType::kUUID;
     }
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {

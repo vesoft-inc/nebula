@@ -179,7 +179,7 @@ TEST(IndexTest, SimpleEdgesTest) {
 
         LOG(INFO) << "Check insert data...";
         for (auto partId = 1; partId <= 6; partId++) {
-            auto prefix = NebulaKeyUtils::partPrefix(partId);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId);
             auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
             EXPECT_EQ(2, retNum);
         }
@@ -213,7 +213,7 @@ TEST(IndexTest, SimpleEdgesTest) {
 
         LOG(INFO) << "Check delete data...";
         for (auto partId = 1; partId <= 6; partId++) {
-            auto prefix = NebulaKeyUtils::partPrefix(partId);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId);
             auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
             EXPECT_EQ(0, retNum);
         }

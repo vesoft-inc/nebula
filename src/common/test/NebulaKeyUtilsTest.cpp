@@ -34,7 +34,6 @@ public:
         ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vIdLen_, vertexKey));
         ASSERT_EQ(vId, NebulaKeyUtils::getVertexId(vIdLen_, vertexKey).subpiece(0, actualSize));
         ASSERT_EQ(tagVersion, NebulaKeyUtils::getVersion(vIdLen_, vertexKey));
-        ASSERT_TRUE(NebulaKeyUtils::isDataKey(vertexKey));
     }
 
     void verifyEdge(PartitionID partId,
@@ -62,7 +61,6 @@ public:
         ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(vIdLen_, edgeKey));
         ASSERT_EQ(rank, NebulaKeyUtils::getRank(vIdLen_, edgeKey));
         ASSERT_EQ(edgeVersion, NebulaKeyUtils::getVersion(vIdLen_, edgeKey));
-        ASSERT_TRUE(NebulaKeyUtils::isDataKey(edgeKey));
     }
 
 protected:
