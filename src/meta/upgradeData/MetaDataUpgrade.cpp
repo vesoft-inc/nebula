@@ -104,9 +104,9 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
     newItem.set_index_name(oldItem.get_index_name());
     cpp2::SchemaID schemaId;
     if (oldItem.get_schema_id().getType() == oldmeta::cpp2::SchemaID::Type::tag_id) {
-        schemaId.set_tag_id(oldItem.get_schema_id().getType());
+        schemaId.set_tag_id(oldItem.get_schema_id().get_tag_id());
     } else {
-        schemaId.set_edge_type(oldItem.get_schema_id().getType());
+        schemaId.set_edge_type(oldItem.get_schema_id().get_edge_type());
     }
     newItem.set_schema_id(schemaId);
     NG_LOG_AND_RETURN_IF_ERROR(convertToNewIndexColumns(oldItem.fields, newItem.fields));
