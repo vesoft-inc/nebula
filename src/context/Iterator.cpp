@@ -20,12 +20,12 @@ bool equal_to<const nebula::graph::LogicalRow*>::operator()(
     switch (lhs->kind()) {
         case nebula::graph::LogicalRow::Kind::kSequential:
         case nebula::graph::LogicalRow::Kind::kJoin: {
-            auto lhsValues = lhs->segments();
-            auto rhsValues = rhs->segments();
+            auto& lhsValues = lhs->segments();
+            auto& rhsValues = rhs->segments();
             if (lhsValues.size() != rhsValues.size()) {
                 return false;
             }
-            for (size_t i = lhsValues.size(); i < lhsValues.size(); ++i) {
+            for (size_t i = 0; i < lhsValues.size(); ++i) {
                 const auto* l = lhsValues[i];
                 const auto* r = rhsValues[i];
                 auto equal =
@@ -199,7 +199,10 @@ const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     if (found == index.end()) {
         return Value::kEmpty;
     }
-    return iter_->row_->values[found->second];
+
+    DCHECK_EQ(iter_->segments_.size(), 1);
+    auto* row = iter_->segments_[0];
+    return row->values[found->second];
 }
 
 const Value& GetNeighborsIter::getColumn(int32_t index) const {
@@ -223,7 +226,8 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kEmpty;
     }
     auto colId = index->second.colIdx;
-    auto& row = *(iter_->row_);
+    DCHECK_EQ(iter_->segments_.size(), 1);
+    auto& row = *(iter_->segments_[0]);
     DCHECK_GT(row.size(), colId);
     if (!row[colId].isList()) {
         return Value::kNullBadType;
@@ -274,7 +278,8 @@ Value GetNeighborsIter::getVertex() const {
     vertex.vid = vidVal;
     auto& tagPropMap = dsIndices_[segment].tagPropsMap;
     for (auto& tagProp : tagPropMap) {
-        auto& row = *(iter_->row_);
+        DCHECK_EQ(iter_->segments_.size(), 1);
+        auto& row = *(iter_->segments_[0]);
         auto& tagPropNameList = tagProp.second.propList;
         auto tagColId = tagProp.second.colIdx;
         if (!row[tagColId].isList()) {
@@ -304,7 +309,8 @@ Value GetNeighborsIter::getNoEdgeVertex() const {
     if (found == index.end()) {
         return Value::kNullBadType;
     }
-    auto vidVal = noEdgeIter_->row_->values[found->second];
+    DCHECK_EQ(noEdgeIter_->segments_.size(), 1);
+    auto vidVal = noEdgeIter_->segments_[0]->values[found->second];
     if (!SchemaUtil::isValidVid(vidVal)) {
         return Value::kNullBadType;
     }
@@ -313,7 +319,8 @@ Value GetNeighborsIter::getNoEdgeVertex() const {
     auto& tagPropMap = dsIndices_[0].tagPropsMap;
     bool existTag = false;
     for (auto& tagProp : tagPropMap) {
-        auto& row = *(noEdgeIter_->row_);
+        DCHECK_EQ(noEdgeIter_->segments_.size(), 1);
+        auto& row = *(noEdgeIter_->segments_[0]);
         auto& tagPropNameList = tagProp.second.propList;
         auto tagColId = tagProp.second.colIdx;
         if (!row[tagColId].isList()) {
@@ -579,15 +586,18 @@ const Value& PropIter::getColumn(const std::string& col) const {
     if (index == dsIndex_.colIndices.end()) {
         return Value::kNullValue;
     }
-    DCHECK_LT(index->second, logicalRow.row_->values.size());
-    return logicalRow.row_->values[index->second];
+    DCHECK_EQ(logicalRow.segments_.size(), 1);
+    auto* row = logicalRow.segments_[0];
+    DCHECK_LT(index->second, row->values.size());
+    return row->values[index->second];
 }
 
 const Value& PropIter::getProp(const std::string& name, const std::string& prop) const {
     if (!valid()) {
         return Value::kNullValue;
     }
-    auto& row = *(iter_->row_);
+    DCHECK_EQ(iter_->segments_.size(), 1);
+    auto& row = *(iter_->segments_[0]);
     auto& propsMap = dsIndex_.propsMap;
     auto index = propsMap.find(name);
     if (index == propsMap.end()) {
@@ -617,7 +627,8 @@ Value PropIter::getVertex() const {
     vertex.vid = vidVal;
     auto& tagPropsMap = dsIndex_.propsMap;
     bool isVertexProps = true;
-    auto& row = *(iter_->row_);
+    DCHECK_EQ(iter_->segments_.size(), 1);
+    auto& row = *(iter_->segments_[0]);
     // tagPropsMap -> <std::string, std::unordered_map<std::string, size_t> >
     for (auto& tagProp : tagPropsMap) {
         // propIndex -> std::unordered_map<std::string, size_t>
@@ -653,7 +664,8 @@ Value PropIter::getEdge() const {
     Edge edge;
     auto& edgePropsMap = dsIndex_.propsMap;
     bool isEdgeProps = true;
-    auto row = *(iter_->row_);
+    DCHECK_EQ(iter_->segments_.size(), 1);
+    auto& row = *(iter_->segments_[0]);
     for (auto& edgeProp : edgePropsMap) {
         for (auto& propIndex : edgeProp.second) {
             if (row[propIndex.second].empty()) {

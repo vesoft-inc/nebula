@@ -139,11 +139,12 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
             auto iter = hist[i].iter();
             if (iter->isSequentialIter()) {
                 auto* seqIter = static_cast<SequentialIter*>(iter.get());
-                for (; seqIter->valid(); seqIter->next()) {
+                while (seqIter->valid()) {
                     if (distinct && !unique.emplace(seqIter->row()).second) {
-                        continue;
+                        seqIter->unstableErase();
+                    } else {
+                        seqIter->next();
                     }
-                    ds.rows.emplace_back(seqIter->moveRow());
                 }
             } else {
                 std::stringstream msg;
@@ -151,6 +152,15 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
                 return Status::Error(msg.str());
             }
             itersHolder.emplace_back(std::move(iter));
+        }
+    }
+
+    for (auto& iter : itersHolder) {
+        if (iter->isSequentialIter()) {
+            auto* seqIter = static_cast<SequentialIter*>(iter.get());
+            for (seqIter->reset(); seqIter->valid(); seqIter->next()) {
+                ds.rows.emplace_back(seqIter->moveRow());
+            }
         }
     }
     result_.setDataSet(std::move(ds));

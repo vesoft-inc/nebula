@@ -918,7 +918,69 @@ TEST(IteratorTest, EdgeProp) {
     }
 }
 
+TEST(IteratorTest, RowEqualTo) {
+    DataSet ds;
+    ds.colNames = {"col1", "col2"};
+    for (auto i = 0; i < 2; ++i) {
+        Row row;
+        row.values.emplace_back(i);
+        row.values.emplace_back(folly::to<std::string>(i));
+        ds.rows.emplace_back(std::move(row));
+    }
 
+    Row row;
+    row.values.emplace_back(0);
+    row.values.emplace_back(folly::to<std::string>(0));
+    ds.rows.emplace_back(std::move(row));
+
+    SequentialIter::SeqLogicalRow row0(&ds.rows[0]);
+    SequentialIter::SeqLogicalRow row1(&ds.rows[1]);
+
+    EXPECT_FALSE(std::equal_to<const nebula::graph::LogicalRow*>()(&row0, &row1));
+
+    SequentialIter::SeqLogicalRow row2(&ds.rows[2]);
+    EXPECT_TRUE(std::equal_to<const nebula::graph::LogicalRow*>()(&row0, &row2));
+    EXPECT_TRUE(std::equal_to<const nebula::graph::LogicalRow*>()(&row0, &row0));
+}
+
+TEST(IteratorTest, EraseBySwap) {
+    DataSet ds;
+    ds.colNames = {"col1", "col2"};
+    for (auto i = 0; i < 3; ++i) {
+        Row row;
+        row.values.emplace_back(i);
+        row.values.emplace_back(folly::to<std::string>(i));
+        ds.rows.emplace_back(std::move(row));
+    }
+    auto val = std::make_shared<Value>(std::move(ds));
+    SequentialIter iter(val);
+    EXPECT_EQ(iter.size(), 3);
+    iter.unstableErase();
+    EXPECT_EQ(iter.size(), 2);
+
+
+    std::vector<Row> expected;
+    {
+        Row row;
+        row.values.emplace_back(2);
+        row.values.emplace_back("2");
+        expected.emplace_back(std::move(row));
+    }
+    {
+        Row row;
+        row.values.emplace_back(1);
+        row.values.emplace_back("1");
+        expected.emplace_back(std::move(row));
+    }
+    std::vector<Row> result;
+    for (; iter.valid(); iter.next()) {
+        Row row;
+        row.values.emplace_back(iter.getColumn("col1"));
+        row.values.emplace_back(iter.getColumn("col2"));
+        result.emplace_back(std::move(row));
+    }
+    EXPECT_EQ(result, expected);
+}
 }  // namespace graph
 }  // namespace nebula
 

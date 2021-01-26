@@ -104,8 +104,8 @@ void DataJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
         for (auto i = range.first; i != range.second; ++i) {
             auto row = i->second;
             std::vector<const Row*> values;
-            auto lSegs = row->segments();
-            auto rSegs = probeIter->row()->segments();
+            auto& lSegs = row->segments();
+            auto& rSegs = probeIter->row()->segments();
             if (exchange_) {
                 values.insert(values.end(), rSegs.begin(), rSegs.end());
                 values.insert(values.end(), lSegs.begin(), lSegs.end());

@@ -62,10 +62,10 @@ void CartesianProductExecutor::doCartesianProduct(Iterator* leftIter,
                                                   Iterator* rightIter,
                                                   JoinIter* joinIter) {
     for (; leftIter->valid(); leftIter->next()) {
-        auto lSegs = leftIter->row()->segments();
+        auto& lSegs = leftIter->row()->segments();
         for (; rightIter->valid(); rightIter->next()) {
             std::vector<const Row*> values;
-            auto rSegs = rightIter->row()->segments();
+            auto& rSegs = rightIter->row()->segments();
             values.insert(values.end(), lSegs.begin(), lSegs.end());
             values.insert(values.end(), rSegs.begin(), rSegs.end());
             auto size = leftIter->row()->size() + rightIter->row()->size();
