@@ -32,6 +32,7 @@ using TagVersion = int64_t;
 using EdgeType = int32_t;
 using EdgeRanking = int64_t;
 using EdgeVersion = int64_t;
+using EdgeVerPlaceHolder = char;
 using SchemaVer = int64_t;
 using IndexID = int32_t;
 using Timestamp = int64_t;
