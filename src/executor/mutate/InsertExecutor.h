@@ -7,15 +7,15 @@
 #ifndef EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_
 #define EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_
 
-#include "executor/QueryStorageExecutor.h"
+#include "executor/StorageAccessExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class InsertVerticesExecutor final : public QueryStorageExecutor {
+class InsertVerticesExecutor final : public StorageAccessExecutor {
 public:
     InsertVerticesExecutor(const PlanNode *node, QueryContext *qctx)
-        : QueryStorageExecutor("InsertVerticesExecutor", node, qctx) {}
+        : StorageAccessExecutor("InsertVerticesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 
@@ -23,10 +23,10 @@ private:
     folly::Future<Status> insertVertices();
 };
 
-class InsertEdgesExecutor final : public QueryStorageExecutor {
+class InsertEdgesExecutor final : public StorageAccessExecutor {
 public:
     InsertEdgesExecutor(const PlanNode *node, QueryContext *qctx)
-        : QueryStorageExecutor("InsertEdgesExecutor", node, qctx) {}
+        : StorageAccessExecutor("InsertEdgesExecutor", node, qctx) {}
 
     folly::Future<Status> execute() override;
 

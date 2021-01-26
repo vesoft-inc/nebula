@@ -9,16 +9,16 @@
 
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "common/clients/storage/GraphStorageClient.h"
-#include "executor/QueryStorageExecutor.h"
+#include "executor/StorageAccessExecutor.h"
 #include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
 
-class IndexScanExecutor final : public QueryStorageExecutor {
+class IndexScanExecutor final : public StorageAccessExecutor {
 public:
     IndexScanExecutor(const PlanNode *node, QueryContext *qctx)
-        : QueryStorageExecutor("IndexScanExecutor", node, qctx) {
+        : StorageAccessExecutor("IndexScanExecutor", node, qctx) {
         gn_ = asNode<IndexScan>(node);
     }
 

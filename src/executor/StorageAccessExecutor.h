@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERYSTORAGEEXECUTOR_H_
-#define EXECUTOR_QUERYSTORAGEEXECUTOR_H_
+#ifndef EXECUTOR_STORAGEACCESSEXECUTOR_H_
+#define EXECUTOR_STORAGEACCESSEXECUTOR_H_
 
 #include "executor/Executor.h"
 #include "common/clients/storage/StorageClientBase.h"
@@ -14,9 +14,9 @@ namespace nebula {
 namespace graph {
 
 // It's used for data write/update/query
-class QueryStorageExecutor : public Executor {
+class StorageAccessExecutor : public Executor {
 protected:
-    QueryStorageExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+    StorageAccessExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
         : Executor(name, node, qctx) {}
 
     // parameter isCompleteRequire to specify is return error when partial succeeded
@@ -105,9 +105,20 @@ protected:
         }
         return Status::OK();
     }
+
+    template<typename RESP>
+    void addStats(RESP& resp, std::unordered_map<std::string, std::string>& stats) const {
+        auto& hostLatency = resp.hostLatency();
+        for (size_t i = 0; i < hostLatency.size(); ++i) {
+            auto& info = hostLatency[i];
+            stats.emplace(
+                folly::stringPrintf("%s exec/total", std::get<0>(info).toString().c_str()),
+                folly::stringPrintf("%d(us)/%d(us)", std::get<1>(info), std::get<2>(info)));
+        }
+    }
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // EXECUTOR_QUERYSTORAGEEXECUTOR_H_
+#endif  // EXECUTOR_STORAGEACCESSEXECUTOR_H_

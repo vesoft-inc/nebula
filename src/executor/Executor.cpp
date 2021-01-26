@@ -516,6 +516,7 @@ Status Executor::close() {
     stats.totalDurationInUs = totalDuration_.elapsedInUSec();
     stats.rows = numRows_;
     stats.execDurationInUs = execTime_;
+    stats.otherStats = std::move(otherStats_);
     qctx()->addProfilingData(node_->id(), std::move(stats));
     return Status::OK();
 }

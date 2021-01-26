@@ -7,16 +7,16 @@
 #ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 #define _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 
-#include "executor/QueryStorageExecutor.h"
+#include "executor/StorageAccessExecutor.h"
 #include "common/clients/storage/StorageClientBase.h"
 
 namespace nebula {
 namespace graph {
 
-class GetPropExecutor : public QueryStorageExecutor {
+class GetPropExecutor : public StorageAccessExecutor {
 protected:
     GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
-        : QueryStorageExecutor(name, node, qctx) {}
+        : StorageAccessExecutor(name, node, qctx) {}
 
     Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
                       const std::vector<std::string> &colNames) {

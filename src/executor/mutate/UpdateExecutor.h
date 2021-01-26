@@ -8,17 +8,17 @@
 #define EXECUTOR_MUTATE_UPDATEEXECUTOR_H_
 
 #include "common/base/StatusOr.h"
-#include "executor/QueryStorageExecutor.h"
+#include "executor/StorageAccessExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class UpdateBaseExecutor : public QueryStorageExecutor {
+class UpdateBaseExecutor : public StorageAccessExecutor {
 public:
     UpdateBaseExecutor(const std::string &execName,
                        const PlanNode *node,
                        QueryContext *qctx)
-        : QueryStorageExecutor(execName, node, qctx) {}
+        : StorageAccessExecutor(execName, node, qctx) {}
 
     virtual ~UpdateBaseExecutor() {}
 

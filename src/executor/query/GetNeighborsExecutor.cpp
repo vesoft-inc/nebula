@@ -23,6 +23,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
+    otherStats_ = std::make_unique<std::unordered_map<std::string, std::string>>();
     auto status = buildRequestDataSet();
     if (!status.ok()) {
         return error(std::move(status));
@@ -94,10 +95,17 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
                        gn_->limit(),
                        gn_->filter())
         .via(runner())
-        .ensure([getNbrTime]() {
+        .ensure([this, getNbrTime]() {
+            if (otherStats_ != nullptr) {
+                otherStats_->emplace("total_rpc_time",
+                                     folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
+            }
             VLOG(1) << "Get neighbors time: " << getNbrTime.elapsedInUSec() << "us";
         })
         .then([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
+            if (otherStats_ != nullptr) {
+                addStats(resp, *otherStats_);
+            }
             SCOPED_TIMER(&execTime_);
             return handleResponse(resp);
         });
