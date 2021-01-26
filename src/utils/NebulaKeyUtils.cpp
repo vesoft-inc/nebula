@@ -9,7 +9,7 @@
 namespace nebula {
 
 // static
-bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, VertexID srcVId, VertexID dstVId) {
+bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, const VertexID& srcVId, const VertexID& dstVId) {
     if (srcVId.size() > vIdLen || dstVId.size() > vIdLen) {
         return false;
     }
@@ -19,7 +19,7 @@ bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, VertexID srcVId, VertexID dstV
 // static
 std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
                                       PartitionID partId,
-                                      VertexID vId,
+                                      const VertexID& vId,
                                       TagID tagId,
                                       TagVersion tv) {
     CHECK_GE(vIdLen, vId.size());
@@ -38,10 +38,10 @@ std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
 // static
 std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
                                     PartitionID partId,
-                                    VertexID srcId,
+                                    const VertexID& srcId,
                                     EdgeType type,
                                     EdgeRanking rank,
-                                    VertexID dstId,
+                                    const VertexID& dstId,
                                     EdgeVersion ev) {
     CHECK_GE(vIdLen, srcId.size());
     CHECK_GE(vIdLen, dstId.size());
@@ -104,7 +104,7 @@ std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& 
 
 // static
 std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId,
-                                         VertexID vId, TagID tagId) {
+                                         const VertexID& vId, TagID tagId) {
     CHECK_GE(vIdLen, vId.size());
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
 
@@ -118,7 +118,7 @@ std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId,
 }
 
 // static
-std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId, VertexID vId) {
+std::string NebulaKeyUtils::vertexPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId) {
     CHECK_GE(vIdLen, vId.size());
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
     std::string key;
@@ -140,7 +140,7 @@ std::string NebulaKeyUtils::vertexPrefix(PartitionID partId) {
 
 // static
 std::string NebulaKeyUtils::edgePrefix(size_t vIdLen, PartitionID partId,
-                                       VertexID srcId, EdgeType type) {
+                                       const VertexID& srcId, EdgeType type) {
     CHECK_GE(vIdLen, srcId.size());
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
 
@@ -154,7 +154,7 @@ std::string NebulaKeyUtils::edgePrefix(size_t vIdLen, PartitionID partId,
 }
 
 // static
-std::string NebulaKeyUtils::edgePrefix(size_t vIdLen, PartitionID partId, VertexID srcId) {
+std::string NebulaKeyUtils::edgePrefix(size_t vIdLen, PartitionID partId, const VertexID& srcId) {
     CHECK_GE(vIdLen, srcId.size());
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
     std::string key;
@@ -177,10 +177,10 @@ std::string NebulaKeyUtils::edgePrefix(PartitionID partId) {
 // static
 std::string NebulaKeyUtils::edgePrefix(size_t vIdLen,
                                        PartitionID partId,
-                                       VertexID srcId,
+                                       const VertexID& srcId,
                                        EdgeType type,
                                        EdgeRanking rank,
-                                       VertexID dstId) {
+                                       const VertexID& dstId) {
     CHECK_GE(vIdLen, srcId.size());
     CHECK_GE(vIdLen, dstId.size());
     int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);

@@ -18,7 +18,7 @@ class OperationKeyUtils final {
 public:
     ~OperationKeyUtils() = default;
 
-    static std::string modifyOperationKey(PartitionID part, std::string key);
+    static std::string modifyOperationKey(PartitionID part, const std::string& key);
 
     static std::string deleteOperationKey(PartitionID part);
 

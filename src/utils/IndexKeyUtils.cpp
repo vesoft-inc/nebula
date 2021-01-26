@@ -45,7 +45,7 @@ std::string IndexKeyUtils::encodeValues(std::vector<Value>&& values,
 
 // static
 std::string IndexKeyUtils::vertexIndexKey(size_t vIdLen, PartitionID partId,
-                                          IndexID indexId, VertexID vId,
+                                          IndexID indexId, const VertexID& vId,
                                           std::string&& values) {
     int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
     std::string key;
@@ -60,8 +60,8 @@ std::string IndexKeyUtils::vertexIndexKey(size_t vIdLen, PartitionID partId,
 
 // static
 std::string IndexKeyUtils::edgeIndexKey(size_t vIdLen, PartitionID partId,
-                                        IndexID indexId, VertexID srcId,
-                                        EdgeRanking rank, VertexID dstId,
+                                        IndexID indexId, const VertexID& srcId,
+                                        EdgeRanking rank, const VertexID& dstId,
                                         std::string&& values) {
     int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
     std::string key;

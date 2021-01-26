@@ -458,7 +458,7 @@ public:
      *                     in the index, the parameter can be empty.
      **/
     static std::string vertexIndexKey(size_t vIdLen, PartitionID partId,
-                                      IndexID indexId, VertexID vId,
+                                      IndexID indexId, const VertexID& vId,
                                       std::string&& values);
 
     /**
@@ -466,8 +466,8 @@ public:
      *                     in the index, the parameter can be empty.
      **/
     static std::string edgeIndexKey(size_t vIdLen, PartitionID partId,
-                                    IndexID indexId, VertexID srcId,
-                                    EdgeRanking rank, VertexID dstId,
+                                    IndexID indexId, const VertexID& srcId,
+                                    EdgeRanking rank, const VertexID& dstId,
                                     std::string&& values);
 
     static std::string indexPrefix(PartitionID partId, IndexID indexId);

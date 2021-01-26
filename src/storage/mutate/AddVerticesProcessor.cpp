@@ -236,7 +236,7 @@ AddVerticesProcessor::addVertices(PartitionID partId,
 }
 
 folly::Optional<std::string>
-AddVerticesProcessor::findOldValue(PartitionID partId, VertexID vId, TagID tagId) {
+AddVerticesProcessor::findOldValue(PartitionID partId, const VertexID& vId, TagID tagId) {
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
@@ -252,7 +252,7 @@ AddVerticesProcessor::findOldValue(PartitionID partId, VertexID vId, TagID tagId
 }
 
 std::string AddVerticesProcessor::indexKey(PartitionID partId,
-                                           VertexID vId,
+                                           const VertexID& vId,
                                            RowReader* reader,
                                            std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());

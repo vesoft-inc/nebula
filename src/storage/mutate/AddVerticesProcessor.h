@@ -35,9 +35,9 @@ private:
     addVertices(PartitionID partId,
                 const std::vector<kvstore::KV>& vertices);
 
-    folly::Optional<std::string> findOldValue(PartitionID partId, VertexID vId, TagID tagId);
+    folly::Optional<std::string> findOldValue(PartitionID partId, const VertexID& vId, TagID tagId);
 
-    std::string indexKey(PartitionID partId, VertexID vId, RowReader* reader,
+    std::string indexKey(PartitionID partId, const VertexID& vId, RowReader* reader,
                          std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
 private:

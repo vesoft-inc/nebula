@@ -37,20 +37,27 @@ public:
     /*
      * Check the validity of vid length
      */
-    static bool isValidVidLen(size_t vIdLen, VertexID srcvId, VertexID dstvId = "");
+    static bool isValidVidLen(size_t vIdLen, const VertexID& srcvId, const VertexID& dstvId = "");
 
     /**
      * Generate vertex key for kv store
      * */
-    static std::string vertexKey(size_t vIdLen, PartitionID partId, VertexID vId,
-                                 TagID tagId, TagVersion tv);
+    static std::string vertexKey(size_t vIdLen,
+                                 PartitionID partId,
+                                 const VertexID& vId,
+                                 TagID tagId,
+                                 TagVersion tv);
 
     /**
      * Generate edge key for kv store
      * */
-    static std::string edgeKey(size_t vIdLen, PartitionID partId, VertexID srcId,
-                               EdgeType type, EdgeRanking rank,
-                               VertexID dstId, EdgeVersion ev);
+    static std::string edgeKey(size_t vIdLen,
+                               PartitionID partId,
+                               const VertexID& srcId,
+                               EdgeType type,
+                               EdgeRanking rank,
+                               const VertexID& dstId,
+                               EdgeVersion ev);
 
     static std::string systemCommitKey(PartitionID partId);
 
@@ -63,25 +70,31 @@ public:
     /**
      * Prefix for vertex
      * */
-    static std::string vertexPrefix(size_t vIdLen, PartitionID partId, VertexID vId, TagID tagId);
+    static std::string vertexPrefix(size_t vIdLen,
+                                    PartitionID partId,
+                                    const VertexID& vId,
+                                    TagID tagId);
 
-    static std::string vertexPrefix(size_t vIdLen, PartitionID partId, VertexID vId);
+    static std::string vertexPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId);
 
     static std::string vertexPrefix(PartitionID partId);
 
     /**
      * Prefix for edge
      * */
-    static std::string edgePrefix(size_t vIdLen, PartitionID partId, VertexID srcId, EdgeType type);
+    static std::string edgePrefix(size_t vIdLen,
+                                  PartitionID partId,
+                                  const VertexID& srcId,
+                                  EdgeType type);
 
-    static std::string edgePrefix(size_t vIdLen, PartitionID partId, VertexID srcId);
+    static std::string edgePrefix(size_t vIdLen, PartitionID partId, const VertexID& srcId);
 
     static std::string edgePrefix(size_t vIdLen,
                                   PartitionID partId,
-                                  VertexID srcId,
+                                  const VertexID& srcId,
                                   EdgeType type,
                                   EdgeRanking rank,
-                                  VertexID dstId);
+                                  const VertexID& dstId);
 
     static std::string edgePrefix(PartitionID partId);
 

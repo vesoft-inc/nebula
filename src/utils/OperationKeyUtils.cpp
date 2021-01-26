@@ -10,7 +10,7 @@
 namespace nebula {
 
 // static
-std::string OperationKeyUtils::modifyOperationKey(PartitionID part, std::string key) {
+std::string OperationKeyUtils::modifyOperationKey(PartitionID part, const std::string& key) {
     uint32_t item = (part << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
     int64_t ts = time::WallClock::fastNowInMicroSec();
     uint32_t type = static_cast<uint32_t>(NebulaOperationType::kModify);
