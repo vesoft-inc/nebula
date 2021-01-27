@@ -1,6 +1,5 @@
 Feature: IndexTest_Vid_String
 
-  @skip
   Scenario: IndexTest TagIndex
     Given an empty graph
     And create a space with following options:
@@ -62,10 +61,10 @@ Feature: IndexTest_Vid_String
     When executing query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES
-                      "Tim":  ("Tim",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                      "Tony": ("Tony", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                      "May":  ("May",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                      "Tom":  ("Tom",  18, 11.11, `timestamp`("2000-10-10T10:00:00)")
+                         "Tim":  ("Tim",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                         "Tony": ("Tony", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                         "May":  ("May",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                         "Tom":  ("Tom",  18, 11.11, `timestamp`("2000-10-10T10:00:00"))
       """
     And wait 6 seconds
     Then the execution should be successful

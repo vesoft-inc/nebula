@@ -1,6 +1,5 @@
 Feature: IndexTest_Vid_Int
 
-  @skip
   Scenario: IndexTest IntVid TagIndex
     Given an empty graph
     And create a space with following options:
@@ -62,10 +61,10 @@ Feature: IndexTest_Vid_Int
     When executing query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES
-                       uuid("Tim"):  ("Tim",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                       uuid("Tony"): ("Tony", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                       uuid("May"):  ("May",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                       uuid("Tom"):  ("Tom",  18, 11.11, `timestamp`("2000-10-10T10:00:00"))
+                       hash("Tim"):  ("Tim",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                       hash("Tony"): ("Tony", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                       hash("May"):  ("May",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                       hash("Tom"):  ("Tom",  18, 11.11, `timestamp`("2000-10-10T10:00:00"))
       """
     And wait 6 seconds
     Then the execution should be successful
@@ -145,7 +144,6 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     Then drop the used space
 
-  @skip
   Scenario: IndexTest IntVid EdgeIndex
     Given an empty graph
     And create a space with following options:
@@ -207,10 +205,10 @@ Feature: IndexTest_Vid_Int
     When executing query:
       """
       INSERT EDGE edge_1(col1, col2, col3, col4) VALUES
-                     uuid("Tim")  ->  uuid("May"):  ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                     uuid("Tim")  ->  uuid("Tony"): ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                     uuid("Tony") ->  uuid("May"): ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
-                     uuid("May")  ->  uuid("Tim"):  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00"))
+                     hash("Tim")  ->  hash("May"):  ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                     hash("Tim")  ->  hash("Tony"): ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                     hash("Tony") ->  hash("May"): ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
+                     hash("May")  ->  hash("Tim"):  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00"))
       """
     And wait 6 seconds
     Then the execution should be successful
