@@ -300,6 +300,16 @@ Feature: Variable length Pattern match (m to n)
       | e                                                                                                                         |
       | [[:like "Tim Duncan"<-"Dejounte Murray"], [:like "Dejounte Murray"->"LeBron James"], [:like "LeBron James"->"Ray Allen"]] |
 
+  Scenario: filter by dst node tag
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:teammate*3..4]-(v2:bachelor)
+      RETURN DISTINCT v2
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v2                                                                                                          |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+
   Scenario: multi-steps and filter by node properties
     When executing query:
       """
