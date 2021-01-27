@@ -9,6 +9,7 @@
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
 #include "util/ScopedTimer.h"
+#include "common/time/TimeUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -63,14 +64,13 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                     }
                     auto &jobDesc = *resp.value().get_job_desc();
                     // job desc
-                    v.emplace_back(
-                        nebula::Row(
-                            {jobDesc.front().get_id(),
-                            meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(jobDesc.front().get_cmd()),
-                            meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(jobDesc.front().get_status()),
-                            jobDesc.front().get_start_time(),
-                            jobDesc.front().get_stop_time(),
-                            }));
+                    v.emplace_back(nebula::Row({
+                        jobDesc.front().get_id(),
+                        meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(jobDesc.front().get_cmd()),
+                        meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(jobDesc.front().get_status()),
+                        time::TimeUtils::unixSecondsToDateTime(jobDesc.front().get_start_time()),
+                        time::TimeUtils::unixSecondsToDateTime(jobDesc.front().get_stop_time()),
+                    }));
                     // tasks desc
                     auto &tasksDesc = *resp.value().get_task_desc();
                     for (const auto & taskDesc : tasksDesc) {
@@ -78,8 +78,8 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                             taskDesc.get_task_id(),
                             taskDesc.get_host().host,
                             meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(taskDesc.get_status()),
-                            taskDesc.get_start_time(),
-                            taskDesc.get_stop_time(),
+                            time::TimeUtils::unixSecondsToDateTime(taskDesc.get_start_time()),
+                            time::TimeUtils::unixSecondsToDateTime(taskDesc.get_stop_time()),
                         }));
                     }
                     return finish(std::move(v));
@@ -96,8 +96,8 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                             jobDesc.get_id(),
                             meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(jobDesc.get_cmd()),
                             meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(jobDesc.get_status()),
-                            jobDesc.get_start_time(),
-                            jobDesc.get_stop_time(),
+                            time::TimeUtils::unixSecondsToDateTime(jobDesc.get_start_time()),
+                            time::TimeUtils::unixSecondsToDateTime(jobDesc.get_stop_time()),
                         }));
                     }
                     return finish(std::move(v));
