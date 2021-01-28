@@ -58,28 +58,11 @@ void ScanEdgeProcessor::doProcess(const cpp2::ScanEdgeRequest& req) {
     }
 
     auto rowLimit = req.get_limit();
-    int64_t startTime = 0, endTime = std::numeric_limits<int64_t>::max();
-    if (req.__isset.start_time) {
-        startTime = *req.get_start_time();
-    }
-    if (req.__isset.end_time) {
-        endTime = *req.get_end_time();
-    }
     RowReaderWrapper reader;
 
-    bool onlyLatestVer = req.get_only_latest_version();
-    // last valid key without version
-    std::string lastValidKey;
     for (int64_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
         auto key = iter->key();
         if (!NebulaKeyUtils::isEdge(spaceVidLen_, key)) {
-            continue;
-        }
-
-        // only return data within time range [start, end)
-        auto version = folly::Endian::big(NebulaKeyUtils::getVersion(spaceVidLen_, key));
-        int64_t ts = std::numeric_limits<int64_t>::max() - version;
-        if (FLAGS_enable_multi_versions && (ts < startTime || ts >= endTime)) {
             continue;
         }
 
@@ -95,15 +78,6 @@ void ScanEdgeProcessor::doProcess(const cpp2::ScanEdgeRequest& req) {
         reader.reset(schemaIter->second, val);
         if (!reader) {
             continue;
-        }
-
-        if (onlyLatestVer) {
-            auto noVer = NebulaKeyUtils::keyWithNoVersion(key);
-            if (noVer == lastValidKey) {
-                continue;
-            } else {
-                lastValidKey = noVer.str();
-            }
         }
 
         nebula::List list;

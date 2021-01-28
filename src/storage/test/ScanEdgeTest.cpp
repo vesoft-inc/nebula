@@ -192,59 +192,7 @@ TEST(ScanEdgeTest, CursorTest) {
     }
 }
 
-TEST(ScanEdgeTest, OnlyLatestVerTest) {
-    FLAGS_enable_multi_versions = true;
-    fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
-    mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path());
-    auto* env = cluster.storageEnv_.get();
-    auto totalParts = cluster.getTotalParts();
-    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
-    sleep(1);
-    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
 
-    EdgeType serve = 101;
-
-    {
-        LOG(INFO) << "Scan one edge with some properties only latest version";
-        size_t totalRowCount = 0;
-        auto edge = std::make_pair(serve, std::vector<std::string>{
-            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-        for (PartitionID partId = 1; partId <= totalParts; partId++) {
-            auto req = buildRequest(
-                partId, "", edge, 100, 0, std::numeric_limits<int64_t>::max(), true);
-            auto* processor = ScanEdgeProcessor::instance(env, nullptr);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-
-            ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
-        }
-        CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
-    }
-    FLAGS_enable_multi_versions = false;
-    {
-        LOG(INFO) << "Scan one edge with some properties all version";
-        size_t totalRowCount = 0;
-        auto edge = std::make_pair(serve, std::vector<std::string>{
-            kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-        for (PartitionID partId = 1; partId <= totalParts; partId++) {
-            auto req = buildRequest(
-                partId, "", edge, 100, 0, std::numeric_limits<int64_t>::max(), true);
-            auto* processor = ScanEdgeProcessor::instance(env, nullptr);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-
-            ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
-        }
-        CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
-    }
-}
 
 }  // namespace storage
 }  // namespace nebula

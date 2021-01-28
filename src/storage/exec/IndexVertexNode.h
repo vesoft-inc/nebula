@@ -49,8 +49,7 @@ public:
                     auto vertexKey = NebulaKeyUtils::vertexKey(planContext_->vIdLen_,
                                                                partId,
                                                                vId,
-                                                               planContext_->tagId_,
-                                                               0);
+                                                               planContext_->tagId_);
                     data_.emplace_back(std::move(vertexKey), std::move(result).value());
                     continue;
                 } else {

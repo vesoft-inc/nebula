@@ -11,7 +11,8 @@ nebula_add_library(
     HBaseClient.cpp
 )
 
-nebula_add_subdirectory(test)
+# HBase things will be removed later.
+# nebula_add_subdirectory(test)
 
 add_custom_target(
     clean-hbase

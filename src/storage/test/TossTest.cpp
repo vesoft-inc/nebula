@@ -343,8 +343,7 @@ TEST_F(TossTest, lock_test_0) {
 
     auto vIdLen = 8;
     auto partId = 5;  // just a random number
-    int64_t ver = 1;
-    auto rawKey = TransactionUtils::edgeKey(vIdLen, partId, edge.key, ver);
+    auto rawKey = TransactionUtils::edgeKey(vIdLen, partId, edge.key);
     auto lockKey = NebulaKeyUtils::toLockKey(rawKey);
 
     ASSERT_TRUE(NebulaKeyUtils::isLock(vIdLen, lockKey));

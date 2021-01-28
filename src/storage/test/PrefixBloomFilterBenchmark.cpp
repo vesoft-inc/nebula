@@ -28,7 +28,7 @@ void mockData(StorageEnv* env, int32_t partCount) {
              vertexId++) {
             for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(
-                    vIdLen, partId, std::to_string(vertexId), tagId, 1);
+                    vIdLen, partId, std::to_string(vertexId), tagId);
                 auto val = folly::stringPrintf("%d_%d", vertexId, tagId);
                 data.emplace_back(std::move(key), std::move(val));
             }

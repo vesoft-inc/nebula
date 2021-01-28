@@ -46,11 +46,7 @@ public:
         for (const auto& vertex : vertices) {
             PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
             TagID tagId = vertex.tId_;
-            auto ver = FLAGS_enable_multi_versions ?
-                       std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() :
-                       0L;
-            auto key = NebulaKeyUtils::vertexKey(
-                spaceVidLen, partId, vertex.vId_, tagId, folly::Endian::big(ver));
+            auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId);
             auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 LOG(ERROR) << "Invalid tagId " << tagId;
@@ -130,12 +126,8 @@ public:
 
             std::vector<Value> values;
             for (int i = 0; i < vers; i++) {
-                auto ver = FLAGS_enable_multi_versions ?
-                    std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec() - i:
-                    0L;
                 auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
-                                                   edge.rank_, edge.dstId_,
-                                                   folly::Endian::big(ver));
+                                                   edge.rank_, edge.dstId_);
                 auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
                 if (!schema) {
                     LOG(ERROR) << "Invalid edge " << edge.type_;

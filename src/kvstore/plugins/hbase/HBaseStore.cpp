@@ -21,7 +21,7 @@ const uint8_t kFillMin = 0x00;
 const uint8_t kFillMax = 0xFF;
 const size_t kMaxRowKeyLength = sizeof(PartitionID) + sizeof(VertexID)
                               + sizeof(EdgeType) + sizeof(VertexID)
-                              + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+                              + sizeof(EdgeRanking) + sizeof(EdgeVerPlaceHolder);
 
 HBaseStore::HBaseStore(KVOptions options)
         : options_(std::move(options)) {

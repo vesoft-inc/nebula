@@ -40,9 +40,6 @@ void AddEdgesAtomicProcessor::process(const cpp2::AddEdgesRequest& req) {
 }
 
 void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
-    auto ver = FLAGS_enable_multi_versions
-                       ? std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec()
-                       : 1L;
     std::unordered_map<ChainId, std::vector<KV>> edgesByChain;
     std::unordered_map<PartitionID, cpp2::ErrorCode> failedPart;
     // split req into chains
@@ -61,7 +58,7 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
                 LOG(INFO) << "ekey.src.hex=" << folly::hexlify(ekey.src.toString())
                           << ", ekey.dst.hex=" << folly::hexlify(ekey.dst.toString());
             }
-            auto key = TransactionUtils::edgeKey(vIdLen_, localPart, edge.get_key(), ver);
+            auto key = TransactionUtils::edgeKey(vIdLen_, localPart, edge.get_key());
             std::string val;
             auto code = encodeSingleEdgeProps(edge, val);
             if (code != cpp2::ErrorCode::SUCCEEDED) {

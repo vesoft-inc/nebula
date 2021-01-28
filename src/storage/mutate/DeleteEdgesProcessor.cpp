@@ -67,7 +67,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                                    edgeKey.edge_type,
                                                    edgeKey.ranking,
                                                    edgeKey.dst.getStr(),
-                                                   std::numeric_limits<int64_t>::max());
+                                                   std::numeric_limits<char>::max());
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto retRes = env_->kvstore_->range(spaceId_, partId, start, end, &iter);
                 if (retRes != kvstore::ResultCode::SUCCEEDED) {

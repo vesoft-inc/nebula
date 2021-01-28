@@ -232,10 +232,7 @@ folly::Future<cpp2::ErrorCode> TransactionManager::updateEdgeAtomic(size_t vIdLe
         return folly::makeFuture(CommonUtils::to(stRemotePart.status()));
     }
     auto remotePart = stRemotePart.value();
-
-    // the actual ver(of edge key will be determined behind set mem lock)
-    int64_t fakeVer = 1;
-    auto localKey = TransactionUtils::edgeKey(vIdLen, partId, edgeKey, fakeVer);
+    auto localKey = TransactionUtils::edgeKey(vIdLen, partId, edgeKey);
 
     std::vector<KV> data{std::make_pair(localKey, "")};
     return addSamePartEdges(vIdLen, spaceId, partId, remotePart, data, nullptr, batchGetter);
@@ -244,13 +241,13 @@ folly::Future<cpp2::ErrorCode> TransactionManager::updateEdgeAtomic(size_t vIdLe
 folly::Future<cpp2::ErrorCode> TransactionManager::resumeTransaction(size_t vIdLen,
                                                                      GraphSpaceID spaceId,
                                                                      std::string lockKey,
-                                                                     std::string lockVal,
                                                                      ResumedResult result) {
     LOG_IF(INFO, FLAGS_trace_toss) << "begin resume txn from lock=" << folly::hexlify(lockKey);
     // 1st, set memory lock
     auto localKey = NebulaKeyUtils::toEdgeKey(lockKey);
     CHECK(NebulaKeyUtils::isEdge(vIdLen, localKey));
-    int64_t ver = NebulaKeyUtils::getVersion(vIdLen, localKey);
+    // int64_t ver = NebulaKeyUtils::getVersion(vIdLen, localKey);
+    auto ver = NebulaKeyUtils::getLockVersion(lockKey);
     auto keyWoVer = NebulaKeyUtils::keyWithNoVersion(localKey).str();
     if (!memLock_.insert(std::make_pair(keyWoVer, ver)).second) {
         return folly::makeFuture(cpp2::ErrorCode::E_MUTATE_EDGE_CONFLICT);
@@ -260,7 +257,14 @@ folly::Future<cpp2::ErrorCode> TransactionManager::resumeTransaction(size_t vIdL
     // 2nd, get values from remote in-edge
     auto spPromiseVal = std::make_shared<cpp2::ErrorCode>(cpp2::ErrorCode::SUCCEEDED);
     auto c = folly::makePromiseContract<cpp2::ErrorCode>();
-    auto remoteKey = reverseKey(vIdLen, spaceId, localKey, ver);
+
+    auto dst = NebulaKeyUtils::getDstId(vIdLen, localKey);
+    auto stRemotePartId = env_->metaClient_->partId(spaceId, dst.str());
+    if (!stRemotePartId.ok()) {
+        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+    }
+    auto remoteKey = TransactionUtils::reverseRawKey(vIdLen, stRemotePartId.value(), localKey);
+
     LOG_IF(INFO, FLAGS_trace_toss) << "try to get remote key=" << folly::hexlify(remoteKey)
         << ", according to lock=" << folly::hexlify(lockKey);
     interClient_->getValue(vIdLen, spaceId, remoteKey)
@@ -278,19 +282,6 @@ folly::Future<cpp2::ErrorCode> TransactionManager::resumeTransaction(size_t vIdL
                 return;
             }
             auto& kv = *lockedPtr;
-            if (FLAGS_enable_multi_versions) {
-                auto verPrev =
-                    NebulaKeyUtils::isEdge(vIdLen, kv.first)
-                        ? folly::Endian::big(NebulaKeyUtils::getVersion(vIdLen, kv.first))
-                        : std::numeric_limits<int64_t>::max();
-                auto verCurr = folly::Endian::big(ver);
-                LOG_IF(INFO, FLAGS_trace_toss)
-                    << "compare ver=" << ver << ", verCurr=" << verCurr << ", verPrev=" << verPrev;
-                if (verCurr > verPrev) {
-                    *spPromiseVal = cpp2::ErrorCode::E_OUTDATED_LOCK;
-                    return;
-                }
-            }
             kv.first = localKey;
             kv.second = nebula::value(errOrVal);
             LOG_IF(INFO, FLAGS_trace_toss)
@@ -302,18 +293,11 @@ folly::Future<cpp2::ErrorCode> TransactionManager::resumeTransaction(size_t vIdL
              *                  which means we can trust the val of lock as the out-edge
              *              else, don't trust lock.
              * */
-            if (FLAGS_enable_multi_versions) {
-                commitBatch(spaceId, localPart, lockVal)
-                    .via(exec_.get())
-                    .thenValue([=](auto&& rc) { *spPromiseVal = CommonUtils::to(rc); })
-                    .thenError([=](auto&&) { *spPromiseVal = cpp2::ErrorCode::E_UNKNOWN; });
-            } else {
-                commitEdgeOut(
+            commitEdgeOut(
                     spaceId, localPart, std::string(kv.first), std::string(kv.second))
                     .via(exec_.get())
                     .thenValue([=](auto&& rc) { *spPromiseVal = CommonUtils::to(rc); })
                     .thenError([=](auto&&) { *spPromiseVal = cpp2::ErrorCode::E_UNKNOWN; });
-            }
         })
         .thenValue([=](auto&&) {
             // 4th, remove persist lock
@@ -437,21 +421,6 @@ meta::cpp2::IsolationLevel TransactionManager::getSpaceIsolationLvel(GraphSpaceI
     return ret.value();
 }
 
-std::string TransactionManager::reverseKey(size_t vIdLen,
-                                           GraphSpaceID spaceId,
-                                           std::string& rawKey,
-                                           int64_t ver) {
-    VertexIDSlice src = NebulaKeyUtils::getSrcId(vIdLen, rawKey);
-    VertexIDSlice dst = NebulaKeyUtils::getDstId(vIdLen, rawKey);
-    EdgeType type = NebulaKeyUtils::getEdgeType(vIdLen, rawKey);
-    EdgeRanking rank = NebulaKeyUtils::getRank(vIdLen, rawKey);
-
-    auto inPartIdStatus = env_->metaClient_->partId(spaceId, dst.str());
-    CHECK(inPartIdStatus.ok());
-    auto inPartId = inPartIdStatus.value();
-
-    return NebulaKeyUtils::edgeKey(vIdLen, inPartId, dst.str(), 0 - type, rank, src.str(), ver);
-}
 
 std::string TransactionManager::encodeBatch(std::vector<KV>&& data) {
     kvstore::BatchHolder bat;

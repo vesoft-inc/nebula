@@ -35,13 +35,13 @@ TEST(HBaseStoreTest, SimpleTest) {
     VertexID srcId = 10L, dstId = 20L;
     EdgeType edgeType = 101;
     EdgeRanking rank = 10L;
-    EdgeVersion edgeVersion = 0L;
+    EdgeVerPlaceHolder edgeVersion = 1;
     std::vector<std::string> edgeKeys;
     std::vector<KV> edgeData;
     auto edgeScheam = sm->getEdgeSchema(spaceId, edgeType, edgeVersion);
     for (auto vertexId = srcId; vertexId < dstId; vertexId++) {
         auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, edgeType,
-                                               rank, vertexId, edgeVersion);
+                                               rank, vertexId);
         edgeKeys.emplace_back(edgeKey);
         RowWriter edgeWriter(edgeScheam);
         for (int32_t iInt = 0; iInt < 10; iInt++) {
@@ -57,7 +57,7 @@ TEST(HBaseStoreTest, SimpleTest) {
     edgeScheam = sm->getEdgeSchema(spaceId, edgeType + 1, edgeVersion);
     for (; edgeVersion < 10L; edgeVersion++) {
         auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, edgeType + 1,
-                                               rank, dstId, edgeVersion);
+                                               rank, dstId);
         edgeKeys.emplace_back(edgeKey);
         RowWriter edgeWriter(edgeScheam);
         for (int32_t iInt = 0; iInt < 5; iInt++) {

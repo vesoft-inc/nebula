@@ -19,12 +19,6 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    auto version = FLAGS_enable_multi_versions
-                       ? std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec()
-                       : 0L;
-    // Switch version to big-endian, make sure the key is in ordered.
-    version = folly::Endian::big(version);
-
     spaceId_ = req.get_space_id();
     const auto& partVertices = req.get_parts();
     const auto& propNamesMap = req.get_prop_names();
@@ -70,7 +64,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
             for (auto& newTag : newTags) {
                 auto tagId = newTag.get_tag_id();
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid
-                        << ", TagID: " << tagId << ", TagVersion: " << version;
+                        << ", TagID: " << tagId;
 
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
@@ -80,9 +74,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                     return;
                 }
 
-                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid,
-                                                     tagId, version);
-
+                auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
                 auto props = newTag.get_props();
                 auto iter = propNamesMap.find(tagId);
                 std::vector<std::string> propNames;

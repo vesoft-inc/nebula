@@ -56,14 +56,10 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
         data.clear();
         for (const auto& vertex : part.second) {
             TagID tagId = vertex.tId_;
-            // Switch version to big-endian, make sure the key is in ordered.
-            auto version = std::numeric_limits<int64_t>::max() - 0L;
-            version = folly::Endian::big(version);
             auto key = NebulaKeyUtils::vertexKey(spaceVidLen,
                                                  part.first,
                                                  vertex.vId_,
-                                                 tagId,
-                                                 version);
+                                                 tagId);
             auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 LOG(ERROR) << "Invalid tagId " << tagId;
@@ -810,7 +806,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
     auto partId = std::hash<std::string>()("Lonzo Ball") % parts + 1;
     VertexID vertexId("Lonzo Ball");
-    auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId,  vertexId, 1, 0L);
+    auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId,  vertexId, 1);
     std::vector<kvstore::KV> data;
     data.emplace_back(std::make_pair(key, ""));
     folly::Baton<> baton;
@@ -1204,7 +1200,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
         iter->next();
         count++;
     }
-    EXPECT_EQ(2, count);
+    EXPECT_EQ(1, count);
 }
 
 // upsert, insert faild

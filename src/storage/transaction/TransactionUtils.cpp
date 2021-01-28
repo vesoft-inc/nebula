@@ -15,29 +15,11 @@ std::string TransactionUtils::dumpKey(const cpp2::EdgeKey& key) {
     return folly::sformat("dumpKey(): src={}, dst={}", key.src.toString(), key.dst.toString());
 }
 
-// debug only
-std::string TransactionUtils::dumpEdge(size_t vIdLen,
-                                       folly::StringPiece key,
-                                       folly::StringPiece val) {
-    std::stringstream oss;
-    if (key.empty()) {
-        return oss.str();
-    }
-    int64_t ver = NebulaKeyUtils::getVersion(vIdLen, key);
-    oss << "edge ver = " << ver << "\n"
-        << ", key hexlify: " << folly::hexlify(key) << "\n"
-        << "key hexDump:\n"
-        << folly::hexDump(key.data(), key.size()) << "val hexDump:\n"
-        << folly::hexDump(val.data(), val.size());
-    return oss.str();
-}
-
 std::string TransactionUtils::edgeKey(size_t vIdLen,
                                       PartitionID partId,
-                                      const cpp2::EdgeKey& key,
-                                      EdgeVersion ver) {
+                                      const cpp2::EdgeKey& key) {
     return NebulaKeyUtils::edgeKey(
-        vIdLen, partId, key.src.getStr(), key.edge_type, key.ranking, key.dst.getStr(), ver);
+        vIdLen, partId, key.src.getStr(), key.edge_type, key.ranking, key.dst.getStr());
 }
 
 std::string TransactionUtils::reverseRawKey(size_t vIdLen,
@@ -48,8 +30,7 @@ std::string TransactionUtils::reverseRawKey(size_t vIdLen,
                                    NebulaKeyUtils::getDstId(vIdLen, rawKey).str(),
                                    0 - NebulaKeyUtils::getEdgeType(vIdLen, rawKey),
                                    NebulaKeyUtils::getRank(vIdLen, rawKey),
-                                   NebulaKeyUtils::getSrcId(vIdLen, rawKey).str(),
-                                   NebulaKeyUtils::getVersion(vIdLen, rawKey));
+                                   NebulaKeyUtils::getSrcId(vIdLen, rawKey).str());
 }
 
 int64_t TransactionUtils::getSnowFlakeUUID() {

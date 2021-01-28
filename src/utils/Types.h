@@ -43,11 +43,11 @@ readInt(const char* data, int32_t len) {
 }
 
 // size of vertex key except vertexId
-static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(TagID) + sizeof(TagVersion);
+static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(TagID);
 
 // size of vertex key except srcId and dstId
 static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(EdgeType) +
-                                    sizeof(EdgeRanking) + sizeof(EdgeVersion);
+                                    sizeof(EdgeRanking) + sizeof(EdgeVerPlaceHolder);
 
 static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 

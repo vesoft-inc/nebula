@@ -553,8 +553,7 @@ struct TossEnvironment {
         auto edgeKey = TossTestUtils::toVidKey(e);
         auto partId = getPartId(edgeKey.src.getStr());
 
-        auto ver = 1;
-        auto rawKey = TransactionUtils::edgeKey(vIdLen_, partId, edgeKey, ver);
+        auto rawKey = TransactionUtils::edgeKey(vIdLen_, partId, edgeKey);
         return std::make_pair(rawKey, partId);
     }
 

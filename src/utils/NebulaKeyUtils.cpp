@@ -20,8 +20,7 @@ bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, const VertexID& srcVId, const 
 std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
                                       PartitionID partId,
                                       const VertexID& vId,
-                                      TagID tagId,
-                                      TagVersion tv) {
+                                      TagID tagId) {
     CHECK_GE(vIdLen, vId.size());
     int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
 
@@ -30,8 +29,7 @@ std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
     key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
        .append(vId.data(), vId.size())
        .append(vIdLen - vId.size(), '\0')
-       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
-       .append(reinterpret_cast<const char*>(&tv), sizeof(TagVersion));
+       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
     return key;
 }
 
@@ -42,7 +40,7 @@ std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
                                     EdgeType type,
                                     EdgeRanking rank,
                                     const VertexID& dstId,
-                                    EdgeVersion ev) {
+                                    EdgeVerPlaceHolder ev) {
     CHECK_GE(vIdLen, srcId.size());
     CHECK_GE(vIdLen, dstId.size());
     int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
@@ -56,7 +54,7 @@ std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
        .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
        .append(dstId.data(), dstId.size())
        .append(vIdLen - dstId.size(), '\0')
-       .append(reinterpret_cast<const char*>(&ev), sizeof(EdgeVersion));
+       .append(1, ev);
     return key;
 }
 
@@ -217,28 +215,16 @@ std::string NebulaKeyUtils::systemPrefix() {
     return key;
 }
 
-std::string NebulaKeyUtils::toLockKey(const folly::StringPiece& rawKey,
-                                      bool enableMvcc) {
-    EdgeVersion verPlaceHolder = 0;
-    EdgeVersion ver = 0;
-    if (enableMvcc) {
-        auto offset = rawKey.size() - sizeof(EdgeVersion);
-        ver = readInt<int64_t>(rawKey.data() + offset, sizeof(EdgeVersion));
-    }
-
-    auto lockKey = keyWithNoVersion(rawKey).str();
-    lockKey.append(reinterpret_cast<const char*>(&verPlaceHolder), sizeof(EdgeVersion));
-    lockKey.append(reinterpret_cast<const char*>(&ver), sizeof(EdgeVersion));
-    return lockKey + kLockSuffix;
+std::string NebulaKeyUtils::toLockKey(const folly::StringPiece& rawKey) {
+    std::string ret = rawKey.str();
+    ret.back() = 0;
+    return ret;
 }
 
-std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey, bool enableMvcc) {
-    // edges in toss space must have edge ver greater then 0.
-    EdgeVersion ver = enableMvcc ? NebulaKeyUtils::getLockVersion(lockKey) : 1;
-
-    auto rawKey = lockWithNoVersion(lockKey).str();
-    rawKey.append(reinterpret_cast<const char*>(&ver), sizeof(EdgeVersion));
-    return rawKey;
+std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey) {
+    std::string ret = lockKey.str();
+    ret.back() = 1;
+    return ret;
 }
 
 }   // namespace nebula

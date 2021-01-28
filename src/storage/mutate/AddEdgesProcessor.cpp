@@ -16,12 +16,6 @@ namespace nebula {
 namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
-    auto version = FLAGS_enable_multi_versions
-                       ? std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec()
-                       : 0L;
-    // Switch version to big-endian, make sure the key is in ordered.
-    version = folly::Endian::big(version);
-
     spaceId_ = req.get_space_id();
     const auto& partEdges = req.get_parts();
     const auto& propNames = req.get_prop_names();
@@ -58,7 +52,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edgeKey.src
                     << ", EdgeType: " << edgeKey.edge_type << ", EdgeRanking: "
                     << edgeKey.ranking << ", VertexID: "
-                    << edgeKey.dst << ", EdgeVersion: " << version;
+                    << edgeKey.dst;
 
             if (!NebulaKeyUtils::isValidVidLen(
                     spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
@@ -75,8 +69,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                                                edgeKey.src.getStr(),
                                                edgeKey.edge_type,
                                                edgeKey.ranking,
-                                               edgeKey.dst.getStr(),
-                                               version);
+                                               edgeKey.dst.getStr());
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
                                                           std::abs(edgeKey.edge_type));
             if (!schema) {

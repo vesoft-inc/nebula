@@ -130,14 +130,10 @@ bool mockVertexData(storage::StorageEnv* ev, int32_t totalParts, int32_t vidLen,
     std::atomic<size_t> count(1);
     std::vector<kvstore::KV> data;
 
-    // Switch version to big-endian, make sure the key is in ordered.
-    auto version = std::numeric_limits<int64_t>::max() - 0L;
-    version = folly::Endian::big(version);
     auto key = NebulaKeyUtils::vertexKey(vidLen,
                                          pId,
                                          vertex.vId_,
-                                         vertex.tId_,
-                                         version);
+                                         vertex.tId_);
     auto schema = ev->schemaMan_->getTagSchema(spaceId, vertex.tId_);
     if (!schema) {
         LOG(ERROR) << "Invalid tagId " << vertex.tId_;

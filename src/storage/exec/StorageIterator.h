@@ -102,39 +102,7 @@ public:
 protected:
     // return true when the value iter to a valid edge value
     bool check() {
-        return FLAGS_enable_multi_versions ? checkWithMvcc() : checkWithOutMvcc();
-    }
-
-    bool checkWithOutMvcc() {
         reader_.reset(*schemas_, iter_->val());
-        if (!reader_) {
-            planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
-            return false;
-        }
-
-        if (hasTtl_ && CommonUtils::checkDataExpiredForTTL(schemas_->back().get(), reader_.get(),
-                                                           ttlCol_, ttlDuration_)) {
-            reader_.reset();
-            return false;
-        }
-
-        return true;
-    }
-
-    bool checkWithMvcc() {
-        reader_.reset();
-        auto key = iter_->key();
-        auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, key);
-        auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, key);
-        if (rank == lastRank_ && lastDstId_ == dstId) {
-            // pass old version data of same edge
-            return false;
-        }
-        lastRank_ = rank;
-        lastDstId_ = dstId.str();
-
-        auto val = iter_->val();
-        reader_.reset(*schemas_, val);
         if (!reader_) {
             planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;

@@ -264,14 +264,7 @@ public:
             expCtx_->setTagProp(tagName_, p.first, p.second);
         }
 
-        // build key, value is emtpy
-        auto version = FLAGS_enable_multi_versions ? std::numeric_limits<int64_t>::max() -
-                                                         time::WallClock::fastNowInMicroSec()
-                                                   : 0L;
-        // Switch version to big-endian, make sure the key is in ordered.
-        version = folly::Endian::big(version);
-        key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_,
-                                         partId, vId, tagId_, version);
+        key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_, partId, vId, tagId_);
         rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
         return kvstore::ResultCode::SUCCEEDED;
@@ -581,19 +574,12 @@ public:
             expCtx_->setEdgeProp(edgeName_, e.first, e.second);
         }
 
-        // build key, value is emtpy
-        auto version = FLAGS_enable_multi_versions ? std::numeric_limits<int64_t>::max() -
-                                                         time::WallClock::fastNowInMicroSec()
-                                                   : planContext_->defaultEdgeVer_;
-        // Switch version to big-endian, make sure the key is in ordered.
-        version = folly::Endian::big(version);
         key_ = NebulaKeyUtils::edgeKey(planContext_->vIdLen_,
                                        partId,
                                        edgeKey.src.getStr(),
                                        edgeKey.edge_type,
                                        edgeKey.ranking,
-                                       edgeKey.dst.getStr(),
-                                       version);
+                                       edgeKey.dst.getStr());
         rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
         return kvstore::ResultCode::SUCCEEDED;

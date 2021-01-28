@@ -17,8 +17,6 @@ namespace storage {
 
 class TransactionUtils {
 public:
-    static std::string dumpEdge(size_t vIdLen, folly::StringPiece key, folly::StringPiece val);
-
     static std::string dumpKey(const cpp2::EdgeKey& key);
 
     // join hex of src & dst as en edge id
@@ -34,8 +32,7 @@ public:
      */
     static std::string edgeKey(size_t vIdLen,
                                PartitionID partId,
-                               const cpp2::EdgeKey& key,
-                               EdgeVersion ver);
+                               const cpp2::EdgeKey& key);
 };
 
 /**

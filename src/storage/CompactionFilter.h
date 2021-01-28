@@ -52,10 +52,6 @@ public:
                 VLOG(3) << "TTL invalid for key " << key;
                 return true;
             }
-            if (filterVersions(key)) {
-                VLOG(3) << "Extra versions has been filtered!";
-                return true;
-            }
         } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             if (!schemaValid(spaceId, key)) {
                 return true;
@@ -65,10 +61,6 @@ public:
             }
             if (!ttlValid(spaceId, key, val)) {
                 VLOG(3) << "TTL invalid for key " << key;
-                return true;
-            }
-            if (filterVersions(key)) {
-                VLOG(3) << "Extra versions has been filtered!";
                 return true;
             }
         } else if (IndexKeyUtils::isIndexKey(key)) {
@@ -101,7 +93,7 @@ public:
                 return false;
             }
         } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
-            auto edgeKey = NebulaKeyUtils::toEdgeKey(key, true);
+            auto edgeKey = NebulaKeyUtils::toEdgeKey(key);
             return schemaValid(spaceId, edgeKey);
         }
         return true;
@@ -147,7 +139,7 @@ public:
             }
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
-            auto edgeKey = NebulaKeyUtils::toEdgeKey(key, true);
+            auto edgeKey = NebulaKeyUtils::toEdgeKey(key);
             return ttlValid(spaceId, edgeKey, val);
         }
         return true;
@@ -177,32 +169,6 @@ public:
 
         return !nebula::storage::CommonUtils::checkDataExpiredForTTL(
                     schema, reader, ttlCol, ttlDuration);
-    }
-
-    bool filterVersions(const folly::StringPiece& key) const {
-        if (NebulaKeyUtils::isLock(vIdLen_, key)) {
-            /*
-             * if MVCC enabled,
-             * only erase lock if there is a prev edge
-             * edges will not erase no matter if thers is a lock before
-             * e.g.
-             * LOCK (1)
-             * LOCK (2)
-             * EDGE (3)
-             * EDGE (4)
-             * LOCK (5)
-             * EDGE (6)
-             * 4, 5, 6 will erased by compaction, 1, 2, 3 won't
-             * */
-            return NebulaKeyUtils::lockWithNoVersion(key) == lastKeyWithNoVersion_;
-        }
-        folly::StringPiece keyWithNoVersion = NebulaKeyUtils::keyWithNoVersion(key);
-        if (keyWithNoVersion == lastKeyWithNoVersion_) {
-            // TODO(heng): we could support max-versions configuration in schema if needed.
-            return true;
-        }
-        lastKeyWithNoVersion_ = keyWithNoVersion.str();
-        return false;
     }
 
     bool indexValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {

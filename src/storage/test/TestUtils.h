@@ -134,7 +134,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
             }
         }
         if (mode == 2) {
-            EXPECT_EQ(newVertexVec.size(), count / 2);
+            EXPECT_EQ(newVertexVec.size(), count);
         } else {
             // There is only one tag per vertex, either tagId is 1 or tagId is 2
             EXPECT_EQ(newVertexVec.size(), count);

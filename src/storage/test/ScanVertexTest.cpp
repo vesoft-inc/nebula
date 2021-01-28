@@ -193,59 +193,6 @@ TEST(ScanVertexTest, CursorTest) {
     }
 }
 
-TEST(ScanVertexTest, OnlyLatestVerTest) {
-    FLAGS_enable_multi_versions = true;
-    fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
-    mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path());
-    auto* env = cluster.storageEnv_.get();
-    auto totalParts = cluster.getTotalParts();
-    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
-    sleep(1);
-    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
-
-    TagID player = 1;
-
-    {
-        LOG(INFO) << "Scan one tag with some properties only latest version";
-        size_t totalRowCount = 0;
-        auto tag = std::make_pair(player, std::vector<std::string>{
-            kVid, kTag, "name", "age", "avgScore"});
-        for (PartitionID partId = 1; partId <= totalParts; partId++) {
-            auto req = buildRequest(
-                partId, "", tag, 100, 0, std::numeric_limits<int64_t>::max(), true);
-            auto* processor = ScanVertexProcessor::instance(env, nullptr);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-
-            ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.vertex_data, tag, tag.second.size(), totalRowCount);
-        }
-        CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
-    }
-    FLAGS_enable_multi_versions = false;
-    {
-        LOG(INFO) << "Scan one tag with some properties all version";
-        size_t totalRowCount = 0;
-        auto tag = std::make_pair(player, std::vector<std::string>{
-            kVid, kTag, "name", "age", "avgScore"});
-        for (PartitionID partId = 1; partId <= totalParts; partId++) {
-            auto req = buildRequest(
-                partId, "", tag, 100, 0, std::numeric_limits<int64_t>::max(), true);
-            auto* processor = ScanVertexProcessor::instance(env, nullptr);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-
-            ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.vertex_data, tag, tag.second.size(), totalRowCount);
-        }
-        CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
-    }
-}
 
 
 }  // namespace storage

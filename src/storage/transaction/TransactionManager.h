@@ -82,7 +82,6 @@ public:
     folly::Future<cpp2::ErrorCode> resumeTransaction(size_t vIdLen,
                                                      GraphSpaceID spaceId,
                                                      std::string lockKey,
-                                                     std::string value,
                                                      ResumedResult result = nullptr);
 
     folly::SemiFuture<kvstore::ResultCode> commitBatch(GraphSpaceID spaceId,
@@ -113,8 +112,6 @@ protected:
     eraseKey(GraphSpaceID spaceId, PartitionID partId, const std::string& key);
 
     void eraseMemoryLock(const std::string& rawKey, int64_t ver);
-
-    std::string reverseKey(size_t vIdLen, GraphSpaceID spaceId, std::string& rawKey, int64_t ver);
 
     nebula::meta::cpp2::IsolationLevel getSpaceIsolationLvel(GraphSpaceID spaceId);
 

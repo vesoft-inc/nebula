@@ -168,7 +168,6 @@ public:
                     planContext_->env_->txnMan_->resumeTransaction(planContext_->vIdLen_,
                                                                    planContext_->spaceId_,
                                                                    iter_->key().str(),
-                                                                   iter_->val().str(),
                                                                    recoverEdges_.back()));
                 lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, rawKey);
                 lastDstId_ = NebulaKeyUtils::getDstId(planContext_->vIdLen_, rawKey).str();

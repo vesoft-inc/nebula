@@ -53,7 +53,7 @@ public:
         if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
             auto cache = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_));
             if (cache.ok()) {
-                key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_, partId, vId, tagId_, 0L);
+                key_ = NebulaKeyUtils::vertexKey(planContext_->vIdLen_, partId, vId, tagId_);
                 value_ = std::move(cache.value());
                 // if data in vertex cache is valid, don't read from kv
                 if (resetReader(vId)) {

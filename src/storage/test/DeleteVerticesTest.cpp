@@ -68,7 +68,6 @@ TEST(DeleteVerticesTest, SimpleTest) {
 }
 
 TEST(DeleteVerticesTest, MultiVersionTest) {
-    FLAGS_enable_multi_versions = true;
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -99,8 +98,8 @@ TEST(DeleteVerticesTest, MultiVersionTest) {
         }
 
         LOG(INFO) << "Check data in kv store...";
-        // The number of vertices is 162
-        checkAddVerticesData(req, env, 162, 2);
+        // The number of vertices is 81
+        checkAddVerticesData(req, env, 81, 2);
     }
 
     // Delete vertices
@@ -124,7 +123,6 @@ TEST(DeleteVerticesTest, MultiVersionTest) {
         // All the added datas are deleted, the number of vertices is 0
         checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
     }
-    FLAGS_enable_multi_versions = false;
 }
 
 }  // namespace storage
