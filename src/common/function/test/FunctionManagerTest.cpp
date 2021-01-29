@@ -1174,6 +1174,11 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(Value::Type::MAP, result.value());
     }
     {
+        auto result = FunctionManager::getReturnType("properties", {Value::Type::MAP});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::MAP, result.value());
+    }
+    {
         auto result = FunctionManager::getReturnType("type", {Value::Type::EDGE});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::STRING, result.value());

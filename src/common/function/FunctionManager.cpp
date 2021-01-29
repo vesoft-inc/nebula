@@ -173,6 +173,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
              }},
     {"properties", {TypeSignature({Value::Type::VERTEX}, Value::Type::MAP),
                     TypeSignature({Value::Type::EDGE}, Value::Type::MAP),
+                    TypeSignature({Value::Type::MAP}, Value::Type::MAP),
              }},
     {"type", {TypeSignature({Value::Type::EDGE}, Value::Type::STRING),
              }},
@@ -1248,6 +1249,8 @@ FunctionManager::FunctionManager() {
                 Map props;
                 props.kvs = args[0].getEdge().props;
                 return Value(std::move(props));
+            } else if (args[0].isMap()) {
+                return args[0];
             } else {
                 return Value::kNullBadType;
             }
