@@ -1824,6 +1824,106 @@ TEST_F(ExpressionTest, MapSubscript) {
     }
 }
 
+TEST_F(ExpressionTest, VertexSubscript) {
+    Vertex vertex;
+    vertex.vid = "vid";
+    vertex.tags.resize(2);
+    vertex.tags[0].props = {
+        {"Venus", "Mars"},
+        {"Mull", "Kintyre"},
+    };
+    vertex.tags[1].props = {
+        {"Bip", "Bop"},
+        {"Tug", "War"},
+        {"Venus", "RocksShow"},
+    };
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new ConstantExpression("Mull");
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Kintyre", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression("Bip");
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Bop", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression("Venus");
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Mars", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(vertex));
+        auto *right = new LabelExpression("_vid");
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("vid", value.getStr());
+    }
+}
+
+TEST_F(ExpressionTest, EdgeSubscript) {
+    Edge edge;
+    edge.name = "type";
+    edge.src = "src";
+    edge.dst = "dst";
+    edge.ranking = 123;
+    edge.props = {
+        {"Magill", "Nancy"},
+        {"Gideon", "Bible"},
+        {"Rocky", "Raccoon"},
+    };
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new ConstantExpression("Rocky");
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("Raccoon", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new ConstantExpression(kType);
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("type", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new ConstantExpression(kSrc);
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("src", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new ConstantExpression(kDst);
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isStr());
+        ASSERT_EQ("dst", value.getStr());
+    }
+    {
+        auto *left = new ConstantExpression(Value(edge));
+        auto *right = new ConstantExpression(kRank);
+        SubscriptExpression expr(left, right);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        ASSERT_TRUE(value.isInt());
+        ASSERT_EQ(123, value.getInt());
+    }
+}
+
 TEST_F(ExpressionTest, MapAttribute) {
     // {"key1":1, "key2":2, "key3":3}.key1
     {
