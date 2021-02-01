@@ -14,7 +14,7 @@ defaults:
 jobs:
   lint:
     name: lint
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
