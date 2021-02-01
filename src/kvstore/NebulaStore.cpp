@@ -78,7 +78,7 @@ void NebulaStore::loadPartFromDataPath() {
         auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
         auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
         for (auto& dir : dirs) {
-            LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
+            LOG(INFO) << "Scan path \"" << rootPath << "/" << dir << "\"";
             try {
                 GraphSpaceID spaceId;
                 try {
