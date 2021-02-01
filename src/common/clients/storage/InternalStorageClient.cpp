@@ -84,8 +84,7 @@ void InternalStorageClient::forwardTransactionImpl(int64_t txnId,
         std::make_pair(dest, interReq),
         [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::InternalTxnRequest& r) {
             return client->future_forwardTransaction(r);
-        },
-        kInternalPortOffset)
+        })
         .thenTry([=, p = std::move(p)](auto&& t) mutable {
             auto code = extractErrorCode(t);
             if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -151,7 +150,7 @@ void InternalStorageClient::getValueImpl(GraphSpaceID spaceId,
         }
     };
 
-    getResponse(evb, std::move(req), remote, kInternalPortOffset).thenTry(std::move(cb));
+    getResponse(evb, std::move(req), remote).thenTry(std::move(cb));
 }
 
 }   // namespace storage
