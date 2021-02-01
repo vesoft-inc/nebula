@@ -58,10 +58,6 @@
 # recommend: 1/3 of all memory
 --rocksdb_block_cache=4096
 
-# The default block cache size used in BlockBasedTable.
-# The unit is MB.
---rocksdb_block_cache=1024
-
 # Compression algorithm, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
 # For the sake of binary compatibility, the default value is snappy.
 # Recommend to use:
