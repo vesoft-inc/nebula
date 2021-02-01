@@ -41,10 +41,10 @@ MetaVersion MetaVersionMan::getVersionByHost(kvstore::KVStore* kv) {
     }
     if (iter->valid()) {
         auto v1KeySize = hostPrefix.size() + sizeof(int64_t);
-        return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::UNKNOWN;
+        return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V2;
     }
-    // No hosts exists, but other data need to upgrade
-    return MetaVersion::V1;
+    // No hosts exists, regard as regard as version 2
+    return MetaVersion::V2;
 }
 
 // static
