@@ -77,3 +77,18 @@ nebula_add_test(
     LIBRARIES
         gtest
 )
+
+
+nebula_add_executable(
+    NAME
+        edge_bm
+    SOURCES
+        EdgeBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+    LIBRARIES
+        follybenchmark
+        boost_regex
+        ${THRIFT_LIBRARIES}
+)

@@ -62,11 +62,13 @@ struct Edge {
     std::string toString() const;
 
     bool operator==(const Edge& rhs) const {
-        return src == rhs.src &&
-               dst == rhs.dst &&
-               type == rhs.type &&
-               ranking == rhs.ranking &&
-               props == rhs.props;
+        if (type != rhs.type && type != -rhs.type) {
+            return false;
+        }
+        if (type == rhs.type) {
+            return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking && props == rhs.props;
+        }
+        return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking && props == rhs.props;
     }
 
     void format() {
