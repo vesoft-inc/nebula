@@ -235,6 +235,9 @@ TEST(Value, Comparison) {
     Value vStr2("World");
     Value vBool1(false);
     Value vBool2(true);
+    List vList1({2, 1, 3});
+    List vList2({2, 1});
+    List vList3({-4, 1, 30});
     Value vTime1(Time(23, 19, 55, 23));
     Value vTime2(Time(00, 12, 45, 32));
     Value vDate1(Date(2020, 1, 1));
@@ -282,6 +285,18 @@ TEST(Value, Comparison) {
         EXPECT_EQ(false, v.getBool());
 
         v = vInt1 > vEmpty;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vList1 > vList2;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vList1 > vList3;
+        EXPECT_EQ(Value::Type::BOOL, v.type());
+        EXPECT_EQ(true, v.getBool());
+
+        v = vList3 < vList2;
         EXPECT_EQ(Value::Type::BOOL, v.type());
         EXPECT_EQ(true, v.getBool());
     }

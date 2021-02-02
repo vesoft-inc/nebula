@@ -165,10 +165,6 @@ std::unordered_map<AggregateExpression::Function,
             if (res.isBadNull()) {
                 return;
             }
-            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isNumeric())) {
-                res = Value::kNullBadType;
-                return;
-            }
             if (val.isBadNull()) {
                 res = Value::kNullBadData;
                 return;
@@ -191,10 +187,6 @@ std::unordered_map<AggregateExpression::Function,
         [](AggData* aggData, const Value& val) {
             auto& res = aggData->result();
             if (res.isBadNull()) {
-                return;
-            }
-            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isNumeric())) {
-                res = Value::kNullBadType;
                 return;
             }
             if (val.isBadNull()) {

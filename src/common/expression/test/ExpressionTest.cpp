@@ -3715,13 +3715,21 @@ TEST_F(ExpressionTest, AggregateExpression) {
             {"a", 9}};
 
     std::vector<std::pair<std::string, Value>> vals9_ =
-        {{"a", 1},
+        {{"a", true},
          {"b", true},
-         {"c", 3},
-         {"a", true},
-         {"c", 8},
-         {"c", 5},
+         {"c", false},
+         {"a", false},
+         {"c", false},
+         {"c", false},
          {"c", true}};
+    std::vector<std::pair<std::string, Value>> vals10_ =
+        {{"a", "true"},
+         {"b", "12"},
+         {"c", "a"},
+         {"a", "false"},
+         {"c", "zxA"},
+         {"c", "zxbC"},
+         {"c", "Ca"}};
 
 
     {
@@ -3919,6 +3927,14 @@ TEST_F(ExpressionTest, AggregateExpression) {
              expected5 = {{"a", Value::kNullBadType},
                           {"b", Value::kNullBadType},
                           {"c", Value::kNullBadType}};
+        const std::unordered_map<std::string, Value>
+             expected6 = {{"a", false},
+                          {"b", true},
+                          {"c", false}};
+        const std::unordered_map<std::string, Value>
+             expected7 = {{"a", true},
+                          {"b", true},
+                          {"c", true}};
 
         TEST_AGG(COUNT, false, isConst, vals5_, expected2);
         TEST_AGG(COUNT, true, isConst, vals5_, expected2);
@@ -3934,12 +3950,12 @@ TEST_F(ExpressionTest, AggregateExpression) {
         TEST_AGG(AVG, true, isConst, vals9_, expected5);
         TEST_AGG(MAX, false, isConst, vals5_, expected1);
         TEST_AGG(MAX, true, isConst, vals5_, expected1);
-        TEST_AGG(MAX, false, isConst, vals9_, expected5);
-        TEST_AGG(MAX, true, isConst, vals9_, expected5);
+        TEST_AGG(MAX, false, isConst, vals9_, expected7);
+        TEST_AGG(MAX, true, isConst, vals9_, expected7);
         TEST_AGG(MIN, false, isConst, vals5_, expected1);
         TEST_AGG(MIN, true, isConst, vals5_, expected1);
-        TEST_AGG(MIN, false, isConst, vals9_, expected5);
-        TEST_AGG(MIN, true, isConst, vals9_, expected5);
+        TEST_AGG(MIN, false, isConst, vals9_, expected6);
+        TEST_AGG(MIN, true, isConst, vals9_, expected6);
         TEST_AGG(STD, false, isConst, vals5_, expected1);
         TEST_AGG(STD, true, isConst, vals5_, expected1);
         TEST_AGG(STD, false, isConst, vals9_, expected5);

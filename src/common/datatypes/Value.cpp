@@ -2286,7 +2286,9 @@ bool operator<(const Value& lhs, const Value& rhs) {
         case Value::Type::DATETIME: {
             return lhs.getDateTime() < rhs.getDateTime();
         }
-        case Value::Type::LIST:
+        case Value::Type::LIST: {
+            return lhs.getList() < rhs.getList();
+        }
         case Value::Type::MAP:
         case Value::Type::SET:
         case Value::Type::DATASET: {
