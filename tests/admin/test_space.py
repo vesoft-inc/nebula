@@ -23,7 +23,8 @@ class TestSpace(NebulaTestSuite):
 
         # check result
         resp = self.client.execute('DESC SPACE space_with_default_options')
-        expect_result = [['space_with_default_options', 100, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['space_with_default_options', 100, 1, 'utf8', 'utf8_bin',
+        'FIXED_STRING(8)', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -42,7 +43,8 @@ class TestSpace(NebulaTestSuite):
         # desc space
         resp = self.client.execute('DESC SPACE default_space')
         self.check_resp_succeeded(resp)
-        expect_result = [['default_space', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['default_space', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)',
+        'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # show create space
@@ -55,7 +57,8 @@ class TestSpace(NebulaTestSuite):
                            'replica_factor = 1, '\
                            'charset = utf8, '\
                            'collate = utf8_bin, '\
-                           'vid_type = FIXED_STRING(8)) '\
+                           'vid_type = FIXED_STRING(8), '\
+                           'atomic_edge = false) '\
                            'ON default'
 
         expect_result = [['default_space', create_space_str]]
@@ -83,7 +86,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_charset_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['space_charset_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -96,7 +99,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_charset')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['space_charset', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -109,7 +112,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['space_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -146,7 +149,8 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_capital')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_capital', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'default']]
+        expect_result = [['space_capital', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)',
+        'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -198,7 +202,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_string_vid')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_string_vid', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(30)', 'default']]
+        expect_result = [['space_string_vid', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(30)', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
 
     def test_create_space_with_int_vid(self):
@@ -209,5 +213,5 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_int_vid')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_int_vid', 9, 1, 'utf8', 'utf8_bin', 'INT64', 'default']]
+        expect_result = [['space_int_vid', 9, 1, 'utf8', 'utf8_bin', 'INT64', 'false', 'default']]
         self.check_result(resp, expect_result, {0})
