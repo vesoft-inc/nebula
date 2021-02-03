@@ -70,6 +70,8 @@ const char *Status::toString(Code code) {
             return "SemanticError: ";
         case kKeyNotFound:
             return "KeyNotFound: ";
+        case kPartialSuccess:
+            return "PartialSuccess: ";
         case kSpaceNotFound:
             return "SpaceNotFound: ";
         case kHostNotFound:

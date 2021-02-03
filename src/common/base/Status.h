@@ -126,6 +126,7 @@ public:
 
     // Storage engine errors
     STATUS_GENERATOR(KeyNotFound);
+    STATUS_GENERATOR(PartialSuccess);
 
     // Meta engine errors
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
@@ -168,6 +169,7 @@ public:
         kSemanticError          = 203,
         // 3xx, for storage engine errors
         kKeyNotFound            = 301,
+        kPartialSuccess         = 302,
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
         kHostNotFound           = 405,

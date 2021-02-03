@@ -87,9 +87,11 @@ public:
         , numNullableFields_(0) {}
 
     SchemaVer getVersion() const noexcept override;
+    // Returns the size of fields_
     size_t getNumFields() const noexcept override;
     size_t getNumNullableFields() const noexcept override;
 
+    // Returns the total space in bytes occupied by the fields_
     size_t size() const noexcept override;
 
     int64_t getFieldIndex(const folly::StringPiece name) const override;
