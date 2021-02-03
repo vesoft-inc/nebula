@@ -63,3 +63,18 @@ Feature: Reduce
     Then the result should be, in any order:
       | age1 | age2 | x  |
       | 34   | 43   | 19 |
+
+  Scenario: collection is not a LIST
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      YIELD reduce(totalNum = 10, n IN "jerry" | totalNum + n) AS r
+      """
+    Then a SemanticError should be raised at runtime: `reduce(totalNum = 10, n IN jerry | (totalNum+n))': Invalid colletion type, expected type of LIST, but was: STRING
+    When executing query:
+      """
+      YIELD reduce(totalNum = 10, n IN NULL | totalNum + n) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |

@@ -73,3 +73,18 @@ Feature: Predicate
     Then the result should be, in any order:
       | b    |
       | True |
+
+  Scenario: collection is not a LIST
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      YIELD single(n IN "Tom" WHERE n == 3) AS r
+      """
+    Then a SemanticError should be raised at runtime: `single(n IN Tom WHERE (n==3))': Invalid colletion type, expected type of LIST, but was: STRING
+    When executing query:
+      """
+      YIELD single(n IN NULL WHERE n == 3) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |

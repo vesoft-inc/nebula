@@ -72,3 +72,18 @@ Feature: ListComprehension
     Then the result should be, in any order:
       | r          |
       | [134, 143] |
+
+  Scenario: collection is not a LIST
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      YIELD [n IN 18 WHERE n > 2 | n + 10] AS a
+      """
+    Then a SemanticError should be raised at runtime: `[n IN 18 WHERE (n>2) | (n+10)]': Invalid colletion type, expected type of LIST, but was: INT
+    When executing query:
+      """
+      YIELD [n IN NULL WHERE n > 2 | n + 10] AS a
+      """
+    Then the result should be, in any order:
+      | a    |
+      | NULL |
