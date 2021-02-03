@@ -19,13 +19,15 @@ protected:
     StorageAccessExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
         : Executor(name, node, qctx) {}
 
-    // parameter isCompleteRequire to specify is return error when partial succeeded
+    // Parameter isPartialSuccessAccepted to specify
+    // whether to return an error for partial succeeded.
+    // An error will be returned if isPartialSuccessAccepted
+    // is set to false and completeness is less than 100.
     template <typename Resp>
     StatusOr<Result::State>
     handleCompleteness(const storage::StorageRpcResponse<Resp> &rpcResp,
-                       bool isCompleteRequire) const {
+                       bool isPartialSuccessAccepted) const {
         auto completeness = rpcResp.completeness();
-        // TODO(shylock) Maybe add option to treat the partial failed as error
         if (completeness != 100) {
             const auto &failedCodes = rpcResp.failedParts();
             for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
@@ -33,13 +35,15 @@ protected:
                            << storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(it->second) << ", part "
                            << it->first;
             }
-            if (completeness == 0 || isCompleteRequire) {
+            // cannot execute at all, or partial success is not accepted
+            if (completeness == 0 || !isPartialSuccessAccepted) {
                 if (failedCodes.size() > 0) {
                     return handleErrorCode(failedCodes.begin()->second,
                                            failedCodes.begin()->first);
                 }
                 return Status::Error("Request to storage failed, without failedCodes.");
             }
+            // partial success is accepted
             return Result::State::kPartialSuccess;
         }
         return Result::State::kSuccess;

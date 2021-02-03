@@ -9,6 +9,7 @@
 
 #include "executor/StorageAccessExecutor.h"
 #include "common/clients/storage/StorageClientBase.h"
+#include "service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -20,7 +21,7 @@ protected:
 
     Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
                       const std::vector<std::string> &colNames) {
-        auto result = handleCompleteness(rpcResp, false);
+        auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
         NG_RETURN_IF_ERROR(result);
         auto state = std::move(result).value();
         // Ok, merge DataSets to one

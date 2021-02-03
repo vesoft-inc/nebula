@@ -9,7 +9,8 @@
         "wal_ttl",
         "enable_reservoir_sampling",
         "custom_filter_interval_secs",
-        "enable_multi_versions"
+        "enable_multi_versions",
+        "accept_partial_success"
     ],
     "NESTED": [
         "rocksdb_db_options",

@@ -14,6 +14,7 @@
 #include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
+#include "service/GraphFlags.h"
 
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
@@ -112,7 +113,7 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
 }
 
 Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
-    auto result = handleCompleteness(resps, false);
+    auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
     NG_RETURN_IF_ERROR(result);
     ResultBuilder builder;
     builder.state(result.value());

@@ -50,3 +50,5 @@ DEFINE_uint32(max_allowed_statements, 512, "Max allowed sequential statements");
 DEFINE_bool(enable_optimizer, false, "Whether to enable optimizer");
 
 DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
+
+DEFINE_bool(accept_partial_success, false, "Whether to accept partial success, default false");

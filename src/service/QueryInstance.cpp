@@ -142,6 +142,7 @@ void QueryInstance::onError(Status status) {
         case Status::Code::kIndexNotFound:
         case Status::Code::kInserted:
         case Status::Code::kKeyNotFound:
+        case Status::Code::kPartialSuccess:
         case Status::Code::kLeaderChanged:
         case Status::Code::kNoSuchFile:
         case Status::Code::kNotSupported:

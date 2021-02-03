@@ -67,7 +67,7 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         })
         .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
             SCOPED_TIMER(&execTime_);
-            NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+            NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
             return Status::OK();
         });
 }
@@ -161,7 +161,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
             })
             .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
                 SCOPED_TIMER(&execTime_);
-                NG_RETURN_IF_ERROR(handleCompleteness(resp, true));
+                NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
                 return Status::OK();
             });
 }
