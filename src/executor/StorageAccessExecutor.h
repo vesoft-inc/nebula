@@ -102,8 +102,10 @@ protected:
             case storage::cpp2::ErrorCode::E_FILTER_OUT:
                 return Status::OK();
             default:
-                auto status = Status::Error("Storage Error: part: %d, error code: %d.",
-                                             partId, static_cast<int32_t>(code));
+                auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
+                                            partId,
+                                            storage::cpp2::_ErrorCode_VALUES_TO_NAMES.at(code),
+                                            static_cast<int32_t>(code));
                 LOG(ERROR) << status;
                 return status;
         }
