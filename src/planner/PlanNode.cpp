@@ -207,6 +207,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ProduceAllPaths";
         case Kind::kCartesianProduct:
             return "CartesianProduct";
+        case Kind::kSubgraph:
+            return "Subgraph";
         // Group and Zone
         case Kind::kAddGroup:
             return "AddGroup";

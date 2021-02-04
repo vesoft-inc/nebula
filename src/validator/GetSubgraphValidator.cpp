@@ -14,6 +14,7 @@
 #include "parser/TraverseSentences.h"
 #include "planner/Logic.h"
 #include "planner/Query.h"
+#include "planner/Algo.h"
 
 namespace nebula {
 namespace graph {
@@ -99,54 +100,6 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
     }
 
     return Status::OK();
-}
-
-/*
- * 1 steps   history: collectVid{0}
- * 2 steps   history: collectVid{-1} collectVid{0}
- * 3 steps   history: collectVid{-2} collectVid{-1} collectVid{0}
- * ...
- * n steps   history: collectVid{-n+1} ...  collectVid{-1} collectVid{0}
- */
-Expression* GetSubgraphValidator::buildFilterCondition(int64_t step) {
-    // where *._dst IN startVids(*._dst IN runtimeStartVar_) OR *._dst IN collectVid{0}[0][0] OR
-    // *._dst IN collectVid{-1}[0][0] OR ... *._dst IN collectVid{-step+1}[0][0]
-    if (step == 1) {
-        Expression* left = nullptr;
-        if (!runtimeStartVar_.empty()) {
-            auto* startDataSet = new VersionedVariableExpression(new std::string(runtimeStartVar_),
-                                                                 new ConstantExpression(0));
-            auto* runtimeStartList = new SubscriptExpression(
-                new SubscriptExpression(startDataSet, new ConstantExpression(0)),
-                new ConstantExpression(0));
-            left = new RelationalExpression(Expression::Kind::kRelIn,
-                                            new EdgeDstIdExpression(new std::string("*")),
-                                            runtimeStartList);
-        } else {
-            left = new RelationalExpression(Expression::Kind::kRelIn,
-                                            new EdgeDstIdExpression(new std::string("*")),
-                                            new SetExpression(startVidList_.release()));
-        }
-        auto* lastestVidsDataSet = new VersionedVariableExpression(new std::string(collectVar_),
-                                                                   new ConstantExpression(0));
-        auto* lastestVidsList = new SubscriptExpression(
-            new SubscriptExpression(lastestVidsDataSet, new ConstantExpression(0)),
-            new ConstantExpression(0));
-        auto* right = new RelationalExpression(Expression::Kind::kRelIn,
-                                               new EdgeDstIdExpression(new std::string("*")),
-                                               lastestVidsList);
-        return new LogicalExpression(Expression::Kind::kLogicalOr, left, right);
-    }
-    auto* historyVidsDataSet = new VersionedVariableExpression(new std::string(collectVar_),
-                                                               new ConstantExpression(1 - step));
-    auto* historyVidsList = new SubscriptExpression(
-        new SubscriptExpression(historyVidsDataSet, new ConstantExpression(0)),
-        new ConstantExpression(0));
-    auto* left = new RelationalExpression(
-        Expression::Kind::kRelIn, new EdgeDstIdExpression(new std::string("*")), historyVidsList);
-    auto* right = buildFilterCondition(step - 1);
-    auto* result = new LogicalExpression(Expression::Kind::kLogicalOr, left, right);
-    return result;
 }
 
 StatusOr<GetNeighbors::EdgeProps> GetSubgraphValidator::buildEdgeProps() {
@@ -243,39 +196,19 @@ Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& input
 
 Status GetSubgraphValidator::toPlan() {
     auto& space = vctx_->whichSpace();
-    // gn <- filter <- DataCollect
-    //  |
-    // loop(step) -> Agg(collect) -> project -> gn -> bodyStart
     auto* bodyStart = StartNode::make(qctx_);
 
     std::string startVidsVar;
-    SingleInputNode* collectRunTimeStartVids = nullptr;
-
+    PlanNode* loopDep = nullptr;
     if (!from_.vids.empty() && from_.originalSrc == nullptr) {
         buildConstantInput(from_, startVidsVar);
     } else {
-        PlanNode* dedupStartVid = buildRuntimeInput(from_, projectStartVid_);
-        startVidsVar = dedupStartVid->outputVar();
-        // collect runtime startVids
-        auto var = vctx_->anonVarGen()->getVar();
-        auto* column = new VariablePropertyExpression(new std::string(var), new std::string(kVid));
-        auto* func = new AggregateExpression(new std::string("COLLECT_SET"), column, true);
-        qctx_->objPool()->add(func);
-        collectRunTimeStartVids =
-            Aggregate::make(qctx_,
-                            dedupStartVid,
-                            {},
-                            {func});
-        collectRunTimeStartVids->setInputVar(dedupStartVid->outputVar());
-        collectRunTimeStartVids->setColNames({kVid});
-        runtimeStartVar_ = collectRunTimeStartVids->outputVar();
+        loopDep = buildRuntimeInput(from_, projectStartVid_);
+        startVidsVar = loopDep->outputVar();
     }
 
     if (steps_.steps == 0) {
-        if (collectRunTimeStartVids == nullptr) {
-            return zeroStep(bodyStart, startVidsVar);
-        }
-        return zeroStep(collectRunTimeStartVids, startVidsVar);
+        return zeroStep(loopDep == nullptr ? bodyStart : loopDep, startVidsVar);
     }
 
     auto vertexPropsResult = buildVertexProp();
@@ -288,51 +221,19 @@ Status GetSubgraphValidator::toPlan() {
     NG_RETURN_IF_ERROR(edgePropsResult);
     gn->setEdgeProps(
         std::make_unique<std::vector<storage::cpp2::EdgeProp>>(*edgePropsResult.value()));
-    gn->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
     gn->setInputVar(startVidsVar);
 
-    auto* projectVids = projectDstVidsFromGN(gn, startVidsVar);
+    auto oneMoreStepOutput = vctx_->anonVarGen()->getVar();
+    auto* subgraph = Subgraph::make(qctx_, gn, oneMoreStepOutput, loopSteps_, steps_.steps + 1);
+    subgraph->setOutputVar(startVidsVar);
+    subgraph->setColNames({nebula::kVid});
 
-    auto var = vctx_->anonVarGen()->getVar();
-    auto* column = new VariablePropertyExpression(new std::string(var), new std::string(kVid));
-    auto* func = new AggregateExpression(new std::string("COLLECT_SET"), column, true);
-    qctx_->objPool()->add(func);
-    auto* collect =
-        Aggregate::make(qctx_,
-                        projectVids,
-                        {},
-                        {func});
-    collect->setInputVar(projectVids->outputVar());
-    collect->setColNames({kVid});
-    collectVar_ = collect->outputVar();
+    auto* loopCondition = buildNStepLoopCondition(steps_.steps + 1);
+    auto* loop = Loop::make(qctx_, loopDep, subgraph, loopCondition);
 
-    // TODO(jmq) add condition when gn get empty result
-    auto* condition = buildNStepLoopCondition(steps_.steps);
-    auto* loop = Loop::make(qctx_, collectRunTimeStartVids, collect, condition);
-
-    vertexPropsResult = buildVertexProp();
-    NG_RETURN_IF_ERROR(vertexPropsResult);
-    auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
-    auto* gn1 = GetNeighbors::make(qctx_, loop, space.id);
-    gn1->setSrc(from_.src);
-    gn1->setVertexProps(std::make_unique<std::vector<storage::cpp2::VertexProp>>(
-        std::move(vertexPropsResult).value()));
-    auto allEdgePropResult = buildAllEdgeProp();
-    NG_RETURN_IF_ERROR(allEdgePropResult);
-    gn1->setEdgeProps(std::make_unique<std::vector<storage::cpp2::EdgeProp>>(
-        std::move(allEdgePropResult).value()));
-    gn1->setEdgeDirection(storage::cpp2::EdgeDirection::BOTH);
-    gn1->setInputVar(projectVids->outputVar());
-
-    auto* filter =
-        Filter::make(qctx_, gn1, qctx_->objPool()->add(buildFilterCondition(steps_.steps)));
-    filter->setInputVar(gn1->outputVar());
-    filter->setColNames({kVid});
-
-    // datacollect
-    std::vector<std::string> collects = {gn->outputVar(), filter->outputVar()};
+    std::vector<std::string> collects = {gn->outputVar(), oneMoreStepOutput};
     auto* dc =
-        DataCollect::make(qctx_, filter, DataCollect::CollectKind::kSubgraph, std::move(collects));
+        DataCollect::make(qctx_, loop, DataCollect::CollectKind::kSubgraph, std::move(collects));
     dc->setColNames({"_vertices", "_edges"});
     root_ = dc;
     tail_ = projectStartVid_ != nullptr ? projectStartVid_ : loop;

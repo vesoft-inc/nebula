@@ -139,6 +139,45 @@ private:
     std::vector<std::vector<std::string>> allColNames_;
 };
 
+class Subgraph final : public SingleInputNode {
+public:
+    static Subgraph* make(QueryContext* qctx,
+                          PlanNode* input,
+                          const std::string& oneMoreStepOutput,
+                          const std::string& currentStepVar,
+                          uint32_t steps) {
+        return qctx->objPool()->add(
+            new Subgraph(qctx, input, oneMoreStepOutput, currentStepVar, steps));
+    }
+
+    const std::string& oneMoreStepOutput() const {
+        return oneMoreStepOutput_;
+    }
+
+    const std::string& currentStepVar() const {
+        return currentStepVar_;
+    }
+
+    uint32_t steps() const {
+        return steps_;
+    }
+
+private:
+    Subgraph(QueryContext* qctx,
+             PlanNode* input,
+             const std::string& oneMoreStepOutput,
+             const std::string& currentStepVar,
+             uint32_t steps)
+        : SingleInputNode(qctx, Kind::kSubgraph, input),
+          oneMoreStepOutput_(oneMoreStepOutput),
+          currentStepVar_(currentStepVar),
+          steps_(steps) {}
+
+    std::string oneMoreStepOutput_;
+    std::string currentStepVar_;
+    uint32_t steps_;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_ALGO_H_

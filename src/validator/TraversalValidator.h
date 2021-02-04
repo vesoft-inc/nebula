@@ -47,6 +47,7 @@ protected:
 protected:
     TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {
         startVidList_.reset(new ExpressionList());
+        loopSteps_ = vctx_->anonVarGen()->getVar();
     }
 
     Status validateStarts(const VerticesClause* clause, Starts& starts);
@@ -68,6 +69,7 @@ protected:
     Steps                 steps_;
     std::string           srcVidColName_;
     PlanNode*             projectStartVid_{nullptr};
+    std::string           loopSteps_;
 
     std::unique_ptr<ExpressionList>  startVidList_;
 };

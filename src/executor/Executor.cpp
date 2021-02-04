@@ -49,6 +49,7 @@
 #include "executor/algo/ConjunctPathExecutor.h"
 #include "executor/algo/ProduceAllPathsExecutor.h"
 #include "executor/algo/CartesianProductExecutor.h"
+#include "executor/algo/SubgraphExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
@@ -417,6 +418,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kCartesianProduct: {
             return pool->add(new CartesianProductExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kSubgraph: {
+            return pool->add(new SubgraphExecutor(node, qctx));
         }
         case PlanNode::Kind::kAddGroup: {
             return pool->add(new AddGroupExecutor(node, qctx));

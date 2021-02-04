@@ -62,11 +62,14 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
     ds.colNames = std::move(colNames_);
     // the subgraph not need duplicate vertices or edges, so dedup here directly
     std::unordered_set<Value> uniqueVids;
-    std::unordered_set<std::tuple<Value, std::string, int64_t, Value>> uniqueEdges;
-    for (auto& var : vars) {
-        auto& hist = ectx_->getHistory(var);
-        for (auto& result : hist) {
-            auto iter = result.iter();
+    std::unordered_set<std::tuple<Value, EdgeType, EdgeRanking, Value>> uniqueEdges;
+    for (auto i = vars.begin(); i != vars.end(); ++i) {
+        const auto& hist = ectx_->getHistory(*i);
+        for (auto j = hist.begin(); j != hist.end(); ++j) {
+            if (i == vars.begin() && j == hist.end() - 1) {
+                continue;
+            }
+            auto iter = (*j).iter();
             if (!iter->isGetNeighborsIter()) {
                 std::stringstream msg;
                 msg << "Iterator should be kind of GetNeighborIter, but was: " << iter->kind();
@@ -85,14 +88,14 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
                 }
             }
             auto originEdges = gnIter->getEdges();
-            for (auto& e : originEdges.values) {
-                if (!e.isEdge()) {
+            for (auto& edge : originEdges.values) {
+                if (!edge.isEdge()) {
                     continue;
                 }
-                auto edgeKey = std::make_tuple(
-                    e.getEdge().src, e.getEdge().name, e.getEdge().ranking, e.getEdge().dst);
+                const auto& e = edge.getEdge();
+                auto edgeKey = std::make_tuple(e.src, e.type, e.ranking, e.dst);
                 if (uniqueEdges.emplace(std::move(edgeKey)).second) {
-                    edges.emplace_back(std::move(e));
+                    edges.emplace_back(std::move(edge));
                 }
             }
             ds.rows.emplace_back(Row({std::move(vertices), std::move(edges)}));

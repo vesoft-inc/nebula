@@ -29,8 +29,6 @@ private:
 
     Status validateBothInOutBound(BothInOutClause* out);
 
-    Expression* buildFilterCondition(int64_t step);
-
     StatusOr<GetNeighbors::EdgeProps> buildEdgeProps();
 
     Status zeroStep(PlanNode* depend, const std::string& inputVar);
@@ -44,8 +42,6 @@ private:
 
 private:
     std::unordered_set<EdgeType>                edgeTypes_;
-    std::string                                 collectVar_;
-    std::string                                 runtimeStartVar_;
 };
 }  // namespace graph
 }  // namespace nebula

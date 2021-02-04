@@ -87,12 +87,16 @@ protected:
 
             List datasets;
             datasets.values.emplace_back(std::move(ds1));
-            datasets.values.emplace_back(std::move(ds2));
 
             ResultBuilder builder;
             builder.value(Value(std::move(datasets))).iter(Iterator::Kind::kGetNeighbors);
             qctx_->symTable()->newVariable("input_datasets");
             qctx_->ectx()->setResult("input_datasets", builder.finish());
+            qctx_->ectx()->setResult("input_datasets",
+                                     ResultBuilder()
+                                         .value(Value(std::move(ds2)))
+                                         .iter(Iterator::Kind::kGetNeighbors)
+                                         .finish());
         }
         {
             DataSet ds;
@@ -115,6 +119,11 @@ protected:
                             "_edge:+edge1:prop1:prop2:_dst:_rank",
                             "_expr"};
             qctx_->symTable()->newVariable("empty_get_neighbors");
+            qctx_->ectx()->setResult("empty_get_neighbors",
+                                     ResultBuilder()
+                                         .value(Value(ds))
+                                         .iter(Iterator::Kind::kGetNeighbors)
+                                         .finish());
             qctx_->ectx()->setResult("empty_get_neighbors",
                                      ResultBuilder()
                                          .value(Value(std::move(ds)))
@@ -140,8 +149,8 @@ TEST_F(DataCollectTest, CollectSubgraph) {
 
     DataSet expected;
     expected.colNames = {"_vertices", "_edges"};
-    auto& input = qctx_->ectx()->getResult("input_datasets");
-    auto iter = input.iter();
+    auto& hist = qctx_->ectx()->getHistory("input_datasets");
+    auto iter = hist[0].iter();
     auto* gNIter = static_cast<GetNeighborsIter*>(iter.get());
     Row row;
     std::unordered_set<Value> vids;

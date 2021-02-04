@@ -118,6 +118,7 @@ public:
         kConjunctPath,
         kProduceAllPaths,
         kCartesianProduct,
+        kSubgraph,
         // zone related
         kAddGroup,
         kDropGroup,
