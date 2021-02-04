@@ -19,6 +19,7 @@
 #include "common/webservice/WebService.h"
 #include "common/time/TimeUtils.h"
 #include "version/Version.h"
+#include "stats/StatsDef.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -48,6 +49,7 @@ int main(int argc, char *argv[]) {
     }
 
     folly::init(&argc, &argv, true);
+    nebula::initCounters();
 
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);

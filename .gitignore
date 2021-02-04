@@ -10,6 +10,7 @@ _install
 install
 bin/
 install_manifest.txt
+src/version/Version.cpp
 
 # ccls
 .ccls

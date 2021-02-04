@@ -13,6 +13,7 @@
 #include "service/GraphFlags.h"
 #include "service/PasswordAuthenticator.h"
 #include "service/CloudAuthenticator.h"
+#include "stats/StatsDef.h"
 
 namespace nebula {
 namespace graph {
@@ -65,11 +66,13 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());
     auto future = ctx->future();
+    stats::StatsManager::addValue(kNumQueries);
+
     {
         // When the sessionId is 0, it means the clients to ping the connection is ok
         if (sessionId == 0) {
             ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-            ctx->resp().errorMsg = std::make_unique<std::string>("The Session id is not valid");
+            ctx->resp().errorMsg = std::make_unique<std::string>("Invalid session id");
             ctx->finish();
             return future;
         }
