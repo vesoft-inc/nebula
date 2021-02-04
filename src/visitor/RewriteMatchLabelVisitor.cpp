@@ -100,14 +100,14 @@ void RewriteMatchLabelVisitor::visit(MapExpression *expr) {
 void RewriteMatchLabelVisitor::visit(CaseExpression *expr) {
     if (expr->hasCondition()) {
         if (isLabel(expr->condition())) {
-            expr->setCondition(rewriter_(expr));
+            expr->setCondition(rewriter_(expr->condition()));
         } else {
             expr->condition()->accept(this);
         }
     }
     if (expr->hasDefault()) {
         if (isLabel(expr->defaultResult())) {
-            expr->setDefault(rewriter_(expr));
+            expr->setDefault(rewriter_(expr->defaultResult()));
         } else {
             expr->defaultResult()->accept(this);
         }
@@ -131,20 +131,20 @@ void RewriteMatchLabelVisitor::visit(CaseExpression *expr) {
 
 void RewriteMatchLabelVisitor::visit(ListComprehensionExpression *expr) {
     if (isLabel(expr->collection())) {
-        expr->setCollection(rewriter_(expr));
+        expr->setCollection(rewriter_(expr->collection()));
     } else {
         expr->collection()->accept(this);
     }
     if (expr->hasFilter()) {
         if (isLabel(expr->filter())) {
-            expr->setFilter(rewriter_(expr));
+            expr->setFilter(rewriter_(expr->filter()));
         } else {
             expr->filter()->accept(this);
         }
     }
     if (expr->hasMapping()) {
         if (isLabel(expr->mapping())) {
-            expr->setMapping(rewriter_(expr));
+            expr->setMapping(rewriter_(expr->mapping()));
         } else {
             expr->mapping()->accept(this);
         }
@@ -153,12 +153,12 @@ void RewriteMatchLabelVisitor::visit(ListComprehensionExpression *expr) {
 
 void RewriteMatchLabelVisitor::visit(PredicateExpression *expr) {
     if (isLabel(expr->collection())) {
-        expr->setCollection(rewriter_(expr));
+        expr->setCollection(rewriter_(expr->collection()));
     } else {
         expr->collection()->accept(this);
     }
     if (isLabel(expr->filter())) {
-        expr->setFilter(rewriter_(expr));
+        expr->setFilter(rewriter_(expr->filter()));
     } else {
         expr->filter()->accept(this);
     }
@@ -166,17 +166,17 @@ void RewriteMatchLabelVisitor::visit(PredicateExpression *expr) {
 
 void RewriteMatchLabelVisitor::visit(ReduceExpression *expr) {
     if (isLabel(expr->initial())) {
-        expr->setInitial(rewriter_(expr));
+        expr->setInitial(rewriter_(expr->initial()));
     } else {
         expr->initial()->accept(this);
     }
     if (isLabel(expr->collection())) {
-        expr->setCollection(rewriter_(expr));
+        expr->setCollection(rewriter_(expr->collection()));
     } else {
         expr->collection()->accept(this);
     }
     if (isLabel(expr->mapping())) {
-        expr->setMapping(rewriter_(expr));
+        expr->setMapping(rewriter_(expr->mapping()));
     } else {
         expr->mapping()->accept(this);
     }

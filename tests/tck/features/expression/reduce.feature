@@ -43,7 +43,7 @@ Feature: Reduce
       RETURN
         nodes(p)[0].age AS age1,
         nodes(p)[1].age AS age2,
-        reduce(totalAge = 100, n IN nodes(p) | totalAge + n.age) as r
+        reduce(totalAge = 100, n IN nodes(p) | totalAge + n.age) AS r
       """
     Then the result should be, in any order:
       | age1 | age2 | r   |
@@ -58,11 +58,27 @@ Feature: Reduce
       MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)
       RETURN nodes(p)[0].age AS age1,
              nodes(p)[1].age AS age2,
-             reduce(x = 10, n IN nodes(p) | n.age - x) as x
+             reduce(x = 10, n IN nodes(p) | n.age - x) AS x
       """
     Then the result should be, in any order:
       | age1 | age2 | x  |
       | 34   | 43   | 19 |
+    When executing query:
+      """
+      WITH [1, 2, NULL] AS a
+      RETURN reduce(x = 10, n IN a | n - x) AS x
+      """
+    Then the result should be, in any order:
+      | x    |
+      | NULL |
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a, 2 AS b
+      RETURN reduce(x = 10, n IN a | b*(n+x)) AS r1
+      """
+    Then the result should be, in any order:
+      | r1  |
+      | 102 |
 
   Scenario: collection is not a LIST
     Given a graph with space named "nba"
