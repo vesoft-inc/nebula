@@ -940,3 +940,28 @@ Feature: Match By Id
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
       | 34       |
+
+  Scenario: [v2rc1 bug] https://discuss.nebula-graph.com.cn/t/topic/2646/15
+    When executing query:
+      """
+      MATCH (v:player)-[e]-(v2)
+      WHERE id(v)=='Marco Belinelli'
+      RETURN v2
+      """
+    Then the result should be, in any order:
+      | v2                                                                                                          |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("76ers" :team{name: "76ers"})                                                                              |
+      | ("Bulls" :team{name: "Bulls"})                                                                              |
+      | ("Hawks" :team{name: "Hawks"})                                                                              |
+      | ("Hornets" :team{name: "Hornets"})                                                                          |
+      | ("Kings" :team{name: "Kings"})                                                                              |
+      | ("Raptors" :team{name: "Raptors"})                                                                          |
+      | ("Spurs" :team{name: "Spurs"})                                                                              |
+      | ("Warriors" :team{name: "Warriors"})                                                                        |
+      | ("Hornets" :team{name: "Hornets"})                                                                          |
+      | ("Spurs" :team{name: "Spurs"})                                                                              |
