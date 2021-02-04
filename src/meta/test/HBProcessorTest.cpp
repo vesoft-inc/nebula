@@ -26,7 +26,7 @@ TEST(HBProcessorTest, HBTest) {
             req.set_host(HostAddr(std::to_string(i), i));
             req.set_cluster_id(kClusterId);
             req.set_role(cpp2::HostRole::STORAGE);
-            auto* processor = HBProcessor::instance(kv.get(), kClusterId);
+            auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
@@ -42,7 +42,7 @@ TEST(HBProcessorTest, HBTest) {
         req.set_host(HostAddr(std::to_string(11), 11));
         req.set_cluster_id(1);
         req.set_role(cpp2::HostRole::STORAGE);
-        auto* processor = HBProcessor::instance(kv.get());
+        auto* processor = HBProcessor::instance(kv.get(), nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

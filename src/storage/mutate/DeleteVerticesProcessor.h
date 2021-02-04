@@ -15,19 +15,24 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kDelVerticesCounters;
+
 class DeleteVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static DeleteVerticesProcessor* instance(StorageEnv* env,
-                                             stats::Stats* stats,
-                                             VertexCache* cache = nullptr) {
-        return new DeleteVerticesProcessor(env, stats, cache);
+    static DeleteVerticesProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kDelVerticesCounters,
+            VertexCache* cache = nullptr) {
+        return new DeleteVerticesProcessor(env, counters, cache);
     }
 
     void process(const cpp2::DeleteVerticesRequest& req);
 
 private:
-    DeleteVerticesProcessor(StorageEnv* env, stats::Stats* stats, VertexCache* cache)
-        : BaseProcessor<cpp2::ExecResponse>(env, stats)
+    DeleteVerticesProcessor(StorageEnv* env,
+                            const ProcessorCounters* counters,
+                            VertexCache* cache)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters)
         , vertexCache_(cache) {}
 
     folly::Optional<std::string>

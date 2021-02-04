@@ -17,10 +17,14 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kAddEdgesAtomicCounters;
+
 class AddEdgesAtomicProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static AddEdgesAtomicProcessor* instance(StorageEnv* env, stats::Stats* stats) {
-        return new AddEdgesAtomicProcessor(env, stats);
+    static AddEdgesAtomicProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kAddEdgesAtomicCounters) {
+        return new AddEdgesAtomicProcessor(env, counters);
     }
 
     void process(const cpp2::AddEdgesRequest& req);
@@ -28,8 +32,8 @@ public:
     void processByChain(const cpp2::AddEdgesRequest& req);
 
 private:
-    AddEdgesAtomicProcessor(StorageEnv* env, stats::Stats* stats)
-        : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
+    AddEdgesAtomicProcessor(StorageEnv* env, const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
     cpp2::ErrorCode encodeSingleEdgeProps(const cpp2::NewEdge& e, std::string& encodedVal);
 

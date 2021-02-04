@@ -33,10 +33,10 @@ public:
 
 protected:
     LookupBaseProcessor(StorageEnv* env,
-                        stats::Stats* stats = nullptr,
+                        const ProcessorCounters* counters,
                         folly::Executor* executor = nullptr,
                         VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(env, stats)
+        : BaseProcessor<RESP>(env, counters)
         , executor_(executor)
         , vertexCache_(cache) {}
 

@@ -15,14 +15,17 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kGetPropCounters;
+
 class GetPropProcessor
     : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse> {
 public:
-    static GetPropProcessor* instance(StorageEnv* env,
-                                      stats::Stats* stats,
-                                      folly::Executor* executor = nullptr,
-                                      VertexCache* cache = nullptr) {
-        return new GetPropProcessor(env, stats, executor, cache);
+    static GetPropProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kGetPropCounters,
+            folly::Executor* executor = nullptr,
+            VertexCache* cache = nullptr) {
+        return new GetPropProcessor(env, counters, executor, cache);
     }
 
     void process(const cpp2::GetPropRequest& req) override;
@@ -31,11 +34,13 @@ public:
 
 protected:
     GetPropProcessor(StorageEnv* env,
-                     stats::Stats* stats,
+                     const ProcessorCounters* counters,
                      folly::Executor* executor,
                      VertexCache* cache)
-        : QueryBaseProcessor<cpp2::GetPropRequest,
-                             cpp2::GetPropResponse>(env, stats, executor, cache) {}
+        : QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse>(env,
+                                                                          counters,
+                                                                          executor,
+                                                                          cache) {}
 
     StoragePlan<VertexID> buildTagPlan(nebula::DataSet* result);
 

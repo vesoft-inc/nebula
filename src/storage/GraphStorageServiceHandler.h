@@ -8,8 +8,6 @@
 #define STORAGE_GRAPHSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/stats/Stats.h"
-#include "common/stats/StatsManager.h"
 #include "common/interface/gen-cpp2/GraphStorageService.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "storage/CommonUtils.h"
@@ -22,34 +20,7 @@ class StorageEnv;
 
 class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
 public:
-    explicit GraphStorageServiceHandler(StorageEnv* env)
-        : env_(env)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
-        if (FLAGS_reader_handlers_type == "io") {
-            auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
-            readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
-                                                                        std::move(tf));
-        } else {
-            if (FLAGS_reader_handlers_type != "cpu") {
-                LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
-            }
-            using TM = apache::thrift::concurrency::PriorityThreadManager;
-            auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
-            pool->setNamePrefix("reader-pool");
-            pool->start();
-            readerPool_ = std::move(pool);
-        }
-        addVerticesQpsStat_ = stats::Stats("storage", "add_vertices");
-        addEdgesQpsStat_ = stats::Stats("storage", "add_edges");
-        delVerticesQpsStat_ = stats::Stats("storage", "del_vertices");
-        delEdgesQpsStat_ = stats::Stats("storage", "del_edges");
-        updateVertexQpsStat_ = stats::Stats("storage", "update_vertex");
-        updateEdgeQpsStat_ = stats::Stats("storage", "update_edge");
-        getNeighborsQpsStat_ = stats::Stats("storage", "get_neighbors");
-        getPropQpsStat_ = stats::Stats("storage", "get_prop");
-        scanVertexQpsStat_ = stats::Stats("storage", "scan_vertex");
-        scanEdgeQpsStat_ = stats::Stats("storage", "scan_edge");
-    }
+    explicit GraphStorageServiceHandler(StorageEnv* env);
 
     // Vertice section
     folly::Future<cpp2::ExecResponse>
@@ -96,18 +67,6 @@ private:
     StorageEnv*                                     env_{nullptr};
     VertexCache                                     vertexCache_;
     std::shared_ptr<folly::Executor>                readerPool_;
-
-    stats::Stats                                    addVerticesQpsStat_;
-    stats::Stats                                    addEdgesQpsStat_;
-    stats::Stats                                    delVerticesQpsStat_;
-    stats::Stats                                    delEdgesQpsStat_;
-    stats::Stats                                    updateVertexQpsStat_;
-    stats::Stats                                    updateEdgeQpsStat_;
-    stats::Stats                                    getNeighborsQpsStat_;
-    stats::Stats                                    getPropQpsStat_;
-    stats::Stats                                    lookupQpsStat_;
-    stats::Stats                                    scanVertexQpsStat_;
-    stats::Stats                                    scanEdgeQpsStat_;
 };
 
 }  // namespace storage

@@ -19,6 +19,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kAddEdgesAtomicCounters;
+
 // use localPart vs remotePart to identify different channel.
 using ChainId = std::pair<PartitionID, PartitionID>;
 
@@ -81,7 +83,7 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
     auto stIndex = env_->indexMan_->getEdgeIndexes(spaceId_);
     if (stIndex.ok()) {
         if (!stIndex.value().empty()) {
-            processor_.reset(AddEdgesProcessor::instance(env_, nullptr));
+            processor_.reset(AddEdgesProcessor::instance(env_));
             processor_->indexes_ = stIndex.value();
         }
     }

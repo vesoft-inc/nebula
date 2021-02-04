@@ -12,6 +12,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kScanEdgeCounters;
+
 void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
     if (executor_ != nullptr) {
         executor_->add([req, this] () {

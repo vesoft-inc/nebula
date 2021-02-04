@@ -13,17 +13,20 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kPutCounters;
+
 class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static PutProcessor* instance(StorageEnv* env, stats::Stats* stats) {
-        return new PutProcessor(env, stats);
+    static PutProcessor* instance(StorageEnv* env,
+                                  const ProcessorCounters* counters = &kPutCounters) {
+        return new PutProcessor(env, counters);
     }
 
     void process(const cpp2::KVPutRequest& req);
 
 private:
-    explicit PutProcessor(StorageEnv* env, stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
+    explicit PutProcessor(StorageEnv* env, const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 
 }  // namespace storage

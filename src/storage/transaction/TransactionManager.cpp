@@ -356,7 +356,7 @@ folly::SemiFuture<kvstore::ResultCode> TransactionManager::commitEdgeOut(GraphSp
         auto c = folly::makePromiseContract<kvstore::ResultCode>();
 
         auto atomic = [partId, edges = std::move(data), this]() -> folly::Optional<std::string> {
-            auto* processor = AddEdgesProcessor::instance(env_, nullptr);
+            auto* processor = AddEdgesProcessor::instance(env_);
             return processor->addEdges(partId, edges);
         };
 

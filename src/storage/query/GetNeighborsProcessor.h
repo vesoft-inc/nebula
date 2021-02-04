@@ -15,16 +15,19 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kGetNeighborsCounters;
+
 class GetNeighborsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::GetNeighborsResponse> {
     FRIEND_TEST(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan);
 
 public:
-    static GetNeighborsProcessor* instance(StorageEnv* env,
-                                           stats::Stats* stats,
-                                           folly::Executor* executor = nullptr,
-                                           VertexCache* cache = nullptr) {
-        return new GetNeighborsProcessor(env, stats, executor, cache);
+    static GetNeighborsProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kGetNeighborsCounters,
+            folly::Executor* executor = nullptr,
+            VertexCache* cache = nullptr) {
+        return new GetNeighborsProcessor(env, counters, executor, cache);
     }
 
     void process(const cpp2::GetNeighborsRequest& req) override;
@@ -33,11 +36,14 @@ public:
 
 protected:
     GetNeighborsProcessor(StorageEnv* env,
-                          stats::Stats* stats,
+                          const ProcessorCounters* counters,
                           folly::Executor* executor,
                           VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::GetNeighborsResponse>(env, stats, executor, cache) {}
+                             cpp2::GetNeighborsResponse>(env,
+                                                         counters,
+                                                         executor,
+                                                         cache) {}
 
     StoragePlan<VertexID> buildPlan(nebula::DataSet* result,
                                     int64_t limit = 0,

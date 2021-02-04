@@ -8,8 +8,6 @@
 #define STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/stats/Stats.h"
-#include "common/stats/StatsManager.h"
 #include "common/interface/gen-cpp2/InternalStorageService.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "storage/CommonUtils.h"
@@ -22,9 +20,7 @@ class StorageEnv;
 
 class InternalStorageServiceHandler final : public cpp2::InternalStorageServiceSvIf {
 public:
-    explicit InternalStorageServiceHandler(StorageEnv* env) : env_(env) {
-        addEdgesQpsStat_ = stats::Stats("storage", "add_edges");
-    }
+    explicit InternalStorageServiceHandler(StorageEnv* env);
 
     folly::Future<cpp2::ExecResponse>
     future_forwardTransaction(const cpp2::InternalTxnRequest& req) override;
@@ -34,7 +30,6 @@ public:
 
 private:
     StorageEnv*                                     env_{nullptr};
-    stats::Stats                                    addEdgesQpsStat_;
 };
 
 }  // namespace storage

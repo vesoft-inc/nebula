@@ -12,6 +12,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kScanVertexCounters;
+
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
     if (executor_ != nullptr) {
         executor_->add([req, this] () {

@@ -13,15 +13,17 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kLookupCounters;
+
 class LookupProcessor
     : public LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp> {
 
 public:
     static LookupProcessor* instance(StorageEnv* env,
-                                     stats::Stats* stats,
+                                     const ProcessorCounters* counters = &kLookupCounters,
                                      folly::Executor* executor = nullptr,
                                      VertexCache* cache = nullptr) {
-        return new LookupProcessor(env, stats, executor, cache);
+        return new LookupProcessor(env, counters, executor, cache);
     }
 
     void process(const cpp2::LookupIndexRequest& req) override;
@@ -30,11 +32,11 @@ public:
 
 protected:
     LookupProcessor(StorageEnv* env,
-                    stats::Stats* stats,
+                    const ProcessorCounters* counters,
                     folly::Executor* executor,
                     VertexCache* cache)
-        : LookupBaseProcessor<cpp2::LookupIndexRequest,
-                              cpp2::LookupIndexResp>(env, stats, executor, cache) {}
+        : LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp>(
+            env, counters, executor, cache) {}
 
     void onProcessFinished() override;
 };

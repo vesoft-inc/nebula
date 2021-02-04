@@ -18,6 +18,9 @@ DECLARE_bool(enable_vertex_cache);
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kAddVerticesCounters;
+
+
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     spaceId_ = req.get_space_id();
     const auto& partVertices = req.get_parts();

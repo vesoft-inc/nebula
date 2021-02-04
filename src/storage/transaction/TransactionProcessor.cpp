@@ -11,6 +11,7 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kForwardTranxCounters;
 
 void InterTxnProcessor::process(const cpp2::InternalTxnRequest& req) {
     int64_t txnId = req.get_txn_id();

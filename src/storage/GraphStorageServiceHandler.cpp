@@ -16,7 +16,6 @@
 #include "storage/query/GetPropProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
-#include "storage/query/GetUUIDProcessor.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/transaction/TransactionProcessor.h"
 
@@ -28,99 +27,143 @@
 namespace nebula {
 namespace storage {
 
+GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env)
+        : env_(env)
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+    if (FLAGS_reader_handlers_type == "io") {
+        auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
+        readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
+                                                                    std::move(tf));
+    } else {
+        if (FLAGS_reader_handlers_type != "cpu") {
+            LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
+        }
+        using TM = apache::thrift::concurrency::PriorityThreadManager;
+        auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+        pool->setNamePrefix("reader-pool");
+        pool->start();
+        readerPool_ = std::move(pool);
+    }
+
+    // Initialize all counters
+    kAddVerticesCounters.init("add_vertices");
+    kAddEdgesCounters.init("add_edges");
+    kAddEdgesAtomicCounters.init("add_edges_atomic");
+    kDelVerticesCounters.init("delete_vertices");
+    kDelEdgesCounters.init("delete_edges");
+    kUpdateVertexCounters.init("update_vertex");
+    kUpdateEdgeCounters.init("update_edge");
+    kGetNeighborsCounters.init("get_neighbors");
+    kGetPropCounters.init("get_prop");
+    kLookupCounters.init("lookup");
+    kScanVertexCounters.init("scan_vertex");
+    kScanEdgeCounters.init("scan_edge");
+}
+
+
 // Vertice section
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addVertices(const cpp2::AddVerticesRequest& req) {
-    auto* processor = AddVerticesProcessor::instance(env_, &addVerticesQpsStat_, &vertexCache_);
+    auto* processor = AddVerticesProcessor::instance(env_, &kAddVerticesCounters, &vertexCache_);
     RETURN_FUTURE(processor);
 }
+
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& req) {
-    auto* processor = DeleteVerticesProcessor::instance(env_, &delVerticesQpsStat_, &vertexCache_);
+    auto* processor = DeleteVerticesProcessor::instance(env_, &kDelVerticesCounters, &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::UpdateResponse>
 GraphStorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
-    auto* processor = UpdateVertexProcessor::instance(env_, &updateVertexQpsStat_, &vertexCache_);
+    auto* processor = UpdateVertexProcessor::instance(env_, &kUpdateVertexCounters, &vertexCache_);
     RETURN_FUTURE(processor);
 }
+
 
 // Edge section
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
-    auto* processor = AddEdgesProcessor::instance(env_, &addEdgesQpsStat_);
+    auto* processor = AddEdgesProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
+
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
-    auto* processor = DeleteEdgesProcessor::instance(env_, &delEdgesQpsStat_);
+    auto* processor = DeleteEdgesProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::UpdateResponse>
 GraphStorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
-    auto* processor = UpdateEdgeProcessor::instance(env_, &updateEdgeQpsStat_);
+    auto* processor = UpdateEdgeProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
+
 
 folly::Future<cpp2::GetNeighborsResponse>
 GraphStorageServiceHandler::future_getNeighbors(const cpp2::GetNeighborsRequest& req) {
     auto* processor = GetNeighborsProcessor::instance(env_,
-                                                      &getNeighborsQpsStat_,
+                                                      &kGetNeighborsCounters,
                                                       readerPool_.get(),
                                                       &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::GetPropResponse>
 GraphStorageServiceHandler::future_getProps(const cpp2::GetPropRequest& req) {
     auto* processor = GetPropProcessor::instance(env_,
-                                                 &getPropQpsStat_,
+                                                 &kGetPropCounters,
                                                  readerPool_.get(),
                                                  &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::LookupIndexResp>
 GraphStorageServiceHandler::future_lookupIndex(const cpp2::LookupIndexRequest& req) {
     auto* processor = LookupProcessor::instance(env_,
-                                                &lookupQpsStat_,
+                                                &kLookupCounters,
                                                 readerPool_.get(),
                                                 &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::ScanVertexResponse>
 GraphStorageServiceHandler::future_scanVertex(const cpp2::ScanVertexRequest& req) {
     auto* processor = ScanVertexProcessor::instance(env_,
-                                                    &scanVertexQpsStat_,
+                                                    &kScanVertexCounters,
                                                     readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::ScanEdgeResponse>
 GraphStorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
     auto* processor = ScanEdgeProcessor::instance(env_,
-                                                  &scanEdgeQpsStat_,
+                                                  &kScanEdgeCounters,
                                                   readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::GetUUIDResp>
-GraphStorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
-    auto* processor = GetUUIDProcessor::instance(env_);
-    RETURN_FUTURE(processor);
+GraphStorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq&) {
+    LOG(FATAL) << "Unsupported in version 2.0";
 }
+
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addEdgesAtomic(const cpp2::AddEdgesRequest& req) {
-    auto* processor = AddEdgesAtomicProcessor::instance(env_, &addEdgesQpsStat_);
+    auto* processor = AddEdgesAtomicProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
-
 
 }  // namespace storage
 }  // namespace nebula

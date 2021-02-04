@@ -14,18 +14,21 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kDelEdgesCounters;
+
 class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static DeleteEdgesProcessor* instance(StorageEnv* env,
-                                          stats::Stats* stats) {
-        return new DeleteEdgesProcessor(env, stats);
+    static DeleteEdgesProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kDelEdgesCounters) {
+        return new DeleteEdgesProcessor(env, counters);
     }
 
     void process(const cpp2::DeleteEdgesRequest& req);
 
 private:
-    explicit DeleteEdgesProcessor(StorageEnv* env, stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
+    explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+            : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
     folly::Optional<std::string> deleteEdges(PartitionID partId,
                                              const std::vector<cpp2::EdgeKey>& edges);

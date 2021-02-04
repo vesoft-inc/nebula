@@ -15,20 +15,23 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kAddEdgesCounters;
+
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
     friend class TransactionManager;
     friend class AddEdgesAtomicProcessor;
 public:
-    static AddEdgesProcessor* instance(StorageEnv* env,
-                                       stats::Stats* stats) {
-        return new AddEdgesProcessor(env, stats);
+    static AddEdgesProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kAddEdgesCounters) {
+        return new AddEdgesProcessor(env, counters);
     }
 
     void process(const cpp2::AddEdgesRequest& req);
 
 private:
-    AddEdgesProcessor(StorageEnv* env, stats::Stats* stats)
-        : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
+    AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
     folly::Optional<std::string> addEdges(PartitionID partId,
                                           const std::vector<kvstore::KV>& edges);

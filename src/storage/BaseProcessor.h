@@ -10,7 +10,6 @@
 #include "common/base/Base.h"
 #include "common/time/Duration.h"
 #include "common/stats/StatsManager.h"
-#include "common/stats/Stats.h"
 #include <folly/SpinLock.h>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
@@ -27,10 +26,9 @@ using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(StorageEnv* env,
-                           stats::Stats* stats = nullptr)
+    explicit BaseProcessor(StorageEnv* env, const ProcessorCounters* counters = nullptr)
             : env_(env)
-            , stats_(stats) {}
+            , counters_(counters) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -39,14 +37,23 @@ public:
     }
 
 protected:
-    void onFinished() {
-        stats::Stats::addStatsValue(stats_,
-                                    this->result_.get_failed_parts().empty(),
-                                    this->duration_.elapsedInUSec());
+    virtual void onFinished() {
+        if (counters_) {
+            stats::StatsManager::addValue(counters_->numCalls_);
+            if (!this->result_.get_failed_parts().empty()) {
+                stats::StatsManager::addValue(counters_->numErrors_);
+            }
+        }
+
         this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
         this->result_.set_failed_parts(this->codes_);
         this->resp_.set_result(std::move(this->result_));
         this->promise_.setValue(std::move(this->resp_));
+
+        if (counters_) {
+            stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
+        }
+
         delete this;
     }
 
@@ -100,7 +107,8 @@ protected:
 
 protected:
     StorageEnv*                                     env_{nullptr};
-    stats::Stats*                                   stats_{nullptr};
+    const ProcessorCounters*                        counters_;
+
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;

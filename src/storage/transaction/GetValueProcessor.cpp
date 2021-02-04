@@ -11,6 +11,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kGetValueCounters;
+
 void GetValueProcessor::process(const cpp2::GetValueRequest& req) {
     CHECK_NOTNULL(env_->kvstore_);
     auto spaceId = req.get_space_id();

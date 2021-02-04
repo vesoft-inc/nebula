@@ -13,6 +13,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kDelEdgesCounters;
+
 void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     spaceId_ = req.get_space_id();
     const auto& partEdges = req.get_parts();

@@ -10,6 +10,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kGetCounters;
+
 void GetProcessor::process(const cpp2::KVGetRequest& req) {
     CHECK_NOTNULL(env_->kvstore_);
     GraphSpaceID spaceId = req.get_space_id();

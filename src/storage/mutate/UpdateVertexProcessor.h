@@ -15,21 +15,28 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kUpdateVertexCounters;
+
 class UpdateVertexProcessor
     : public QueryBaseProcessor<cpp2::UpdateVertexRequest, cpp2::UpdateResponse> {
 public:
-    static UpdateVertexProcessor* instance(StorageEnv* env,
-                                           stats::Stats* stats,
-                                           VertexCache* cache = nullptr) {
-        return new UpdateVertexProcessor(env, stats, cache);
+    static UpdateVertexProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kUpdateVertexCounters,
+            VertexCache* cache = nullptr) {
+        return new UpdateVertexProcessor(env, counters, cache);
     }
 
     void process(const cpp2::UpdateVertexRequest& req) override;
 
 private:
-    UpdateVertexProcessor(StorageEnv* env, stats::Stats* stats, VertexCache* cache)
-        : QueryBaseProcessor<cpp2::UpdateVertexRequest,
-                             cpp2::UpdateResponse>(env, stats, nullptr, cache) {}
+    UpdateVertexProcessor(StorageEnv* env,
+                          const ProcessorCounters* counters,
+                          VertexCache* cache)
+        : QueryBaseProcessor<cpp2::UpdateVertexRequest, cpp2::UpdateResponse>(env,
+                                                                              counters,
+                                                                              nullptr,
+                                                                              cache) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) override;
 

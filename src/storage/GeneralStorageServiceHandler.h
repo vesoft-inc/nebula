@@ -8,7 +8,6 @@
 #define STORAGE_GENERALSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/stats/Stats.h"
 #include "common/interface/gen-cpp2/GeneralStorageService.h"
 
 namespace nebula {
@@ -18,12 +17,7 @@ class StorageEnv;
 
 class GeneralStorageServiceHandler final : public cpp2::GeneralStorageServiceSvIf {
 public:
-    explicit GeneralStorageServiceHandler(StorageEnv* env)
-        : env_(env) {
-        getQpsStat_    = stats::Stats("storage", "get_kv");
-        putQpsStat_    = stats::Stats("storage", "put_kv");
-        removeQpsStat_ = stats::Stats("storage", "remove_kv");
-    }
+    explicit GeneralStorageServiceHandler(StorageEnv* env);
 
     folly::Future<cpp2::ExecResponse>
     future_put(const cpp2::KVPutRequest& req) override;
@@ -36,9 +30,6 @@ public:
 
 private:
     StorageEnv*             env_{nullptr};
-    stats::Stats            getQpsStat_;
-    stats::Stats            putQpsStat_;
-    stats::Stats            removeQpsStat_;
 };
 
 }  // namespace storage

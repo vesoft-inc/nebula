@@ -10,6 +10,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kRemoveCounters;
+
 void RemoveProcessor::process(const cpp2::KVRemoveRequest& req) {
     CHECK_NOTNULL(env_->kvstore_);
     const auto& pairs = req.get_parts();

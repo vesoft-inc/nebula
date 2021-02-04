@@ -16,6 +16,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kGetNeighborsCounters;
+
 void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
     if (executor_ != nullptr) {
         executor_->add([req, this] () {

@@ -9,6 +9,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kLookupCounters;
+
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
     if (executor_ != nullptr) {
         executor_->add([req, this] () {

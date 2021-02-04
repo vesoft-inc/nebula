@@ -9,7 +9,6 @@
 
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
-#include "common/stats/Stats.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "common/base/StatusOr.h"
 #include "common/time/Duration.h"
@@ -50,8 +49,8 @@ using SignType = storage::cpp2::EngineSignType;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore, stats::Stats* stats = nullptr)
-            : kvstore_(kvstore), stats_(stats) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore)
+            : kvstore_(kvstore) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -63,10 +62,7 @@ protected:
     /**
      * Destroy current instance when finished.
      * */
-    void onFinished() {
-        stats::Stats::addStatsValue(stats_,
-                                    resp_.get_code() == cpp2::ErrorCode::SUCCEEDED,
-                                    this->duration_.elapsedInUSec());
+    virtual void onFinished() {
         promise_.setValue(std::move(resp_));
         delete this;
     }
@@ -243,7 +239,6 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
-    stats::Stats* stats_ = nullptr;
     time::Duration duration_;
 };
 

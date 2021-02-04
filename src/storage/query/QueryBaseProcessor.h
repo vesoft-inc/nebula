@@ -97,6 +97,7 @@ public:
     std::vector<cpp2::StatType> statType_;
 };
 
+
 struct TagContext {
     std::vector<std::pair<TagID, std::vector<PropContext>>>             propContexts_;
     // indicates whether TagID is in propContxts_
@@ -110,6 +111,7 @@ struct TagContext {
     std::unordered_map<TagID, std::pair<std::string, int64_t>>          ttlInfo_;
     VertexCache                                                        *vertexCache_ = nullptr;
 };
+
 
 struct EdgeContext {
     // propContexts_, indexMap_, edgeNames_ will contain both +/- edges
@@ -130,6 +132,7 @@ struct EdgeContext {
     size_t                                                              statCount_ = 0;
 };
 
+
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
 public:
@@ -139,10 +142,10 @@ public:
 
 protected:
     explicit QueryBaseProcessor(StorageEnv* env,
-                                stats::Stats* stats = nullptr,
+                                const ProcessorCounters* counters,
                                 folly::Executor* executor = nullptr,
                                 VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(env, stats)
+        : BaseProcessor<RESP>(env, counters)
         , executor_(executor) {
         this->tagContext_.vertexCache_ = cache;
     }

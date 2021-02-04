@@ -344,6 +344,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
 }
 
+
 TEST(MetaClientTest, SpaceWithGroupTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");

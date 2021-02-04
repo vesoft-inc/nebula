@@ -306,7 +306,7 @@ MetaServiceHandler::future_listFTClients(const cpp2::ListFTClientsReq& req) {
 
 folly::Future<cpp2::HBResp>
 MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
-    auto* processor = HBProcessor::instance(kvstore_, clusterId_, &heartBeatStat_);
+    auto* processor = HBProcessor::instance(kvstore_, &kHBCounters, clusterId_);
     RETURN_FUTURE(processor);
 }
 

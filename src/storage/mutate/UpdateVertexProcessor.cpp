@@ -15,6 +15,9 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kUpdateVertexCounters;
+
+
 void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     spaceId_ = req.get_space_id();
     auto partId = req.get_part_id();

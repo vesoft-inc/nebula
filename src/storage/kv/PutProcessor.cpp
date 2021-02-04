@@ -10,6 +10,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kPutCounters;
+
 void PutProcessor::process(const cpp2::KVPutRequest& req) {
     CHECK_NOTNULL(env_->kvstore_);
     const auto& pairs = req.get_parts();

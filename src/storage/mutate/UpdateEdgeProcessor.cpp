@@ -15,6 +15,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kUpdateEdgeCounters;
+
 void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     spaceId_ = req.get_space_id();
     auto partId = req.get_part_id();

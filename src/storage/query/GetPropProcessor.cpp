@@ -10,6 +10,8 @@
 namespace nebula {
 namespace storage {
 
+ProcessorCounters kGetPropCounters;
+
 void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
     if (executor_ != nullptr) {
         executor_->add([req, this] () {

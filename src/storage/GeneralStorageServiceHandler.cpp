@@ -17,21 +17,31 @@
 namespace nebula {
 namespace storage {
 
+GeneralStorageServiceHandler::GeneralStorageServiceHandler(StorageEnv* env)
+        : env_(env) {
+    kPutCounters.init("put");
+    kGetCounters.init("get");
+    kRemoveCounters.init("remove");
+}
+
+
 folly::Future<cpp2::ExecResponse>
 GeneralStorageServiceHandler::future_put(const cpp2::KVPutRequest& req) {
-    auto* processor = PutProcessor::instance(env_, &putQpsStat_);
+    auto* processor = PutProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
+
 
 folly::Future<cpp2::KVGetResponse>
 GeneralStorageServiceHandler::future_get(const cpp2::KVGetRequest& req) {
-    auto* processor = GetProcessor::instance(env_, &getQpsStat_);
+    auto* processor = GetProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
 
+
 folly::Future<cpp2::ExecResponse>
 GeneralStorageServiceHandler::future_remove(const cpp2::KVRemoveRequest& req) {
-    auto* processor = RemoveProcessor::instance(env_, &removeQpsStat_);
+    auto* processor = RemoveProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
 

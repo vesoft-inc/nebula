@@ -62,16 +62,16 @@ TEST(WalFileIter, MultiFilesReadTest) {
                                     });
     EXPECT_EQ(0, wal->lastLogId());
 
-    for (int i = 1; i <= 50000; i++) {
+    for (int i = 1; i <= 20000; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
     LOG(INFO) << "Total wals number " << wal->walFiles_.size();
-    EXPECT_EQ(50000, wal->lastLogId());
+    EXPECT_EQ(20000, wal->lastLogId());
     EXPECT_LT(10, wal->walFiles_.size());
     {
-        auto it = std::make_unique<WalFileIterator>(wal, 1, 50000);
+        auto it = std::make_unique<WalFileIterator>(wal, 1, 20000);
         LogID id = 1;
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
@@ -80,10 +80,10 @@ TEST(WalFileIter, MultiFilesReadTest) {
             ++(*it);
             ++id;
         }
-        EXPECT_EQ(50001, id);
+        EXPECT_EQ(20001, id);
     }
     {
-        auto it = std::make_unique<WalFileIterator>(wal, 10000, 50000);
+        auto it = std::make_unique<WalFileIterator>(wal, 10000, 20000);
         LogID id = 10000;
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
@@ -92,11 +92,11 @@ TEST(WalFileIter, MultiFilesReadTest) {
             ++(*it);
             ++id;
         }
-        EXPECT_EQ(50001, id);
+        EXPECT_EQ(20001, id);
     }
     {
-        auto it = std::make_unique<WalFileIterator>(wal, 45000, 50000);
-        LogID id = 45000;
+        auto it = std::make_unique<WalFileIterator>(wal, 15000, 20000);
+        LogID id = 15000;
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
             EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
@@ -104,7 +104,7 @@ TEST(WalFileIter, MultiFilesReadTest) {
             ++(*it);
             ++id;
         }
-        EXPECT_EQ(50001, id);
+        EXPECT_EQ(20001, id);
     }
 }
 

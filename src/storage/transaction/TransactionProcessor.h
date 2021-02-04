@@ -16,19 +16,21 @@
 namespace nebula {
 namespace storage {
 
+extern ProcessorCounters kForwardTranxCounters;
 
 class InterTxnProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static InterTxnProcessor* instance(StorageEnv* env,
-                                       stats::Stats* stats) {
-        return new InterTxnProcessor(env, stats);
+    static InterTxnProcessor* instance(
+            StorageEnv* env,
+            const ProcessorCounters* counters = &kForwardTranxCounters) {
+        return new InterTxnProcessor(env, counters);
     }
 
     void process(const cpp2::InternalTxnRequest& req);
 
 private:
-    InterTxnProcessor(StorageEnv* env, stats::Stats* stats)
-        : BaseProcessor<cpp2::ExecResponse>(env, stats) {}
+    InterTxnProcessor(StorageEnv* env, const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 };
 
 }  // namespace storage
