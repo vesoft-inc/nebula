@@ -798,7 +798,7 @@ FunctionManager::FunctionManager() {
         attr.body_ = [](const auto &args) -> Value {
              switch (args[0].type()) {
                 case Value::Type::NULLVALUE:
-                    return Value::kNullBadType;
+                    return "NULL";
                 case Value::Type::INT: {
                     return folly::to<std::string>(args[0].getInt());
                 }
