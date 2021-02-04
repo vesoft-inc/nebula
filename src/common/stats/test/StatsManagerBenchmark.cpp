@@ -8,18 +8,19 @@
 #include <folly/Benchmark.h>
 #include "common/stats/StatsManager.h"
 
+using nebula::stats::CounterId;
 using nebula::stats::StatsManager;
 
-const int32_t kCounterStats = StatsManager::registerStats("stats");
-const int32_t kCounterHisto = StatsManager::registerHisto("histogram", 10, 1, 100);
+CounterId kCounterStats;
+CounterId kCounterHisto;
 
 
-void statsBM(int32_t counterId, uint32_t numThreads, uint32_t iters) {
+void statsBM(const CounterId& counterId, uint32_t numThreads, uint32_t iters) {
     std::vector<std::thread> threads;
     for (uint32_t i = 0; i < numThreads; i++) {
         auto itersInThread = i == 0 ? iters - (iters / numThreads) * (numThreads - 1)
                                     : iters / numThreads;
-        threads.emplace_back([counterId, itersInThread]() {
+        threads.emplace_back([&counterId, itersInThread]() {
             for (uint32_t k = 0; k < itersInThread; k++) {
                 StatsManager::addValue(counterId, k);
             }
@@ -31,8 +32,6 @@ void statsBM(int32_t counterId, uint32_t numThreads, uint32_t iters) {
     }
 }
 
-
-BENCHMARK_DRAW_LINE();
 
 BENCHMARK(add_stats_value_1t, iters) {
     statsBM(kCounterStats, 1, iters);
@@ -60,11 +59,12 @@ BENCHMARK(add_histogram_value_8t, iters) {
     statsBM(kCounterHisto, 8, iters);
 }
 
-BENCHMARK_DRAW_LINE();
-
 
 int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
+
+    kCounterStats = StatsManager::registerStats("stats", "avg, rate, sum");
+    kCounterHisto = StatsManager::registerHisto("histogram", 100, 1, 1000, "p95, p99");
 
     folly::runBenchmarks();
     return 0;

@@ -13,11 +13,11 @@ namespace nebula {
 namespace stats {
 
 TEST(StatsManager, RateTest) {
-    auto statId = StatsManager::registerStats("ratetest");
+    auto statId = StatsManager::registerStats("ratetest", "AVG, SUM");
     auto thread = std::make_unique<thread::GenericWorker>();
     ASSERT_TRUE(thread->start());
 
-    auto task = [=] () {
+    auto task = [&statId] () {
         StatsManager::addValue(statId);
     };
     constexpr auto qps = 100L;

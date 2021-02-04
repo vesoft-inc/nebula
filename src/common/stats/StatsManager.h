@@ -18,6 +18,49 @@
 namespace nebula {
 namespace stats {
 
+// A wrapper class of counter index. Each instance can only be writtern once.
+class CounterId final {
+public:
+    CounterId() : index_{0} {}
+    CounterId(int32_t index) : index_{index} {}  // NOLINT
+
+    CounterId& operator=(const CounterId& right) {
+        if (!right.valid()) {
+            LOG(FATAL) << "Invalid counter id";
+        }
+        if (valid()) {
+            // Already assigned
+            LOG(FATAL) << "CounterId cannot be assigned twice";
+        }
+        index_ = right.index_;
+        return *this;
+    }
+
+    CounterId& operator=(int32_t right) {
+        if (right == 0) {
+            LOG(FATAL) << "Invalid counter id";
+        }
+        if (valid()) {
+            // Already assigned
+            LOG(FATAL) << "CounterId cannot be assigned twice";
+        }
+        index_ = right;
+        return *this;
+    }
+
+    bool valid() const {
+        return index_ != 0;
+    }
+
+    int32_t index() const {
+        return index_;
+    }
+
+private:
+    int32_t index_;
+};
+
+
 /**
  * This is a utility class to keep track the service's statistic information.
  *
@@ -69,27 +112,48 @@ public:
 
     // Both register methods return the index to the internal data structure.
     // This index will be used by addValue() methods.
+    //
     // Both register methods is not thread safe, and user need to register stats one
-    // by onebefore calling addValue, readStats, readHisto and so on.
-    static int32_t registerStats(folly::StringPiece counterName);
-    static int32_t registerHisto(folly::StringPiece counterName,
-                                 VT bucketSize,
-                                 VT min,
-                                 VT max);
+    // by one before calling addValue, readStats, readHisto and so on.
+    //
+    // The parameter **stats** is a list of statistic method abbreviations (or
+    // percentiles when registering histogram), separated by commas, such as
+    // "avg, rate, sum", or "avg, rate, p95, p99". This parameter only affects
+    // the readAllValue() method. The readAllValue() only returns the matrix for
+    // those specified in the parameter **stats**. If **stats** is empty, nothing
+    // will return from readAllValue()
+    static CounterId registerStats(folly::StringPiece counterName, std::string stats);
+    static CounterId registerHisto(folly::StringPiece counterName,
+                                   VT bucketSize,
+                                   VT min,
+                                   VT max,
+                                   std::string stats);
 
-    static void addValue(int32_t index, VT value = 1);
+    static void addValue(const CounterId& id, VT value = 1);
 
+    // The parameter counter here must be a qualified counter name, which includes
+    // all three parts (counter name, method/percentile, and time range). Here are
+    // some examples:
+    //
+    //    query_qps.rate.60
+    //    query_latency.p95.600
+    //    query_latency.avg.60
     static StatusOr<VT> readValue(folly::StringPiece counter);
-    static StatusOr<VT> readStats(int32_t index,
+
+    static StatusOr<VT> readStats(const CounterId& id,
                                   TimeRange range,
                                   StatsMethod method);
     static StatusOr<VT> readStats(const std::string& counterName,
                                   TimeRange range,
                                   StatsMethod method);
+    static StatusOr<VT> readHisto(const CounterId& id,
+                                  TimeRange range,
+                                  double pct);
     static StatusOr<VT> readHisto(const std::string& counterName,
                                   TimeRange range,
                                   double pct);
     static void readAllValue(folly::dynamic& vals);
+
 
 private:
     static StatsManager& get();
@@ -98,11 +162,29 @@ private:
     StatsManager(const StatsManager&) = delete;
     StatsManager(StatsManager&&) = delete;
 
+    static bool strToPct(folly::StringPiece part, double& pct);
+    static void parseStats(const folly::StringPiece stats,
+                           std::vector<StatsMethod>& methods,
+                           std::vector<std::pair<std::string, double>>& percentiles);
+
     template<class StatsHolder>
     static VT readValue(StatsHolder& stats, TimeRange range, StatsMethod method);
 
 
 private:
+    struct CounterInfo {
+        CounterId                                   id_;
+        std::vector<StatsMethod>                    methods_;
+        std::vector<std::pair<std::string, double>> percentiles_;
+
+        CounterInfo(int32_t index,
+                    std::vector<StatsMethod>&& methods,
+                    std::vector<std::pair<std::string, double>>&& percentiles)
+            : id_(index)
+            , methods_(std::move(methods))
+            , percentiles_(std::move(percentiles)) {}
+    };
+
     std::string domain_;
     HostAddr collectorAddr_{"", 0};
     int32_t interval_{0};
@@ -111,7 +193,7 @@ private:
     // when index > 0, (index - 1) is the index of stats_ list
     // when index < 0, [- (index + 1)] is the index of histograms_ list
     folly::RWSpinLock nameMapLock_;
-    std::unordered_map<std::string, int32_t> nameMap_;
+    std::unordered_map<std::string, CounterInfo> nameMap_;
 
     // All time series stats
     std::vector<

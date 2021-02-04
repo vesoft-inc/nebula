@@ -11,11 +11,12 @@
 
 namespace nebula {
 namespace stats {
+
 TEST(StatsManager, StatsTest) {
-    auto statId = StatsManager::registerStats("stat01");
+    auto statId = StatsManager::registerStats("stat01", "");
     std::vector<std::thread> threads;
     for (int i = 0; i < 10; i++) {
-        threads.emplace_back([statId, i] () {
+        threads.emplace_back([&statId, i] () {
             for (int k = i * 10 + 1; k <= i * 10 + 10; k++) {
                 sleep(6);
                 StatsManager::addValue(statId, k);
@@ -45,11 +46,12 @@ TEST(StatsManager, StatsTest) {
     EXPECT_FALSE(StatsManager::readValue("stat01.Avg1.3600").ok());
 }
 
+
 TEST(StatsManager, HistogramTest) {
-    auto statId = StatsManager::registerHisto("stat02", 1, 1, 100);
+    auto statId = StatsManager::registerHisto("stat02", 1, 1, 100, "");
     std::vector<std::thread> threads;
     for (int i = 0; i < 10; i++) {
-        threads.emplace_back([statId, i] () {
+        threads.emplace_back([&statId, i] () {
             for (int k = i * 10 + 1; k <= i * 10 + 10; k++) {
                 sleep(6);
                 StatsManager::addValue(statId, k);
@@ -88,22 +90,47 @@ TEST(StatsManager, HistogramTest) {
     EXPECT_FALSE(StatsManager::readValue("stat02.t9599.60").ok());
 }
 
+
+bool counterExists(const folly::dynamic& stats, const std::string& counter, int64_t& val) {
+    for (auto& stat : stats) {
+        if (stat["name"] == counter) {
+            val = stat["value"].asInt();
+            return true;
+        }
+    }
+    return false;
+}
+
+
 TEST(StatsManager, ReadAllTest) {
-    auto statId1 = StatsManager::registerStats("stat03");
-    auto statId2 = StatsManager::registerHisto("stat04", 1, 1, 100);
+    auto statId1 = StatsManager::registerStats("stat03", "RATE, sum");
+    auto statId2 = StatsManager::registerHisto("stat04", 1, 1, 100, "sum, p95, p99");
     StatsManager::addValue(statId1, 1);
+    StatsManager::addValue(statId1, 2);
     StatsManager::addValue(statId2, 1);
+    StatsManager::addValue(statId2, 2);
 
     auto stats = folly::dynamic::array();
     StatsManager::readAllValue(stats);
-    EXPECT_EQ(stats[0]["name"], "stat04.sum.5");
-    EXPECT_EQ(stats[0]["value"], 1);
-    EXPECT_EQ(stats[16]["name"], "stat04.p99.5");
-    EXPECT_EQ(stats[16]["value"], 1);
-    EXPECT_EQ(stats[19]["name"], "stat04.p99.3600");
-    EXPECT_EQ(stats[19]["value"], 1);
-    EXPECT_EQ(stats[35]["name"], "stat03.rate.3600");
-    EXPECT_EQ(stats[35]["value"], 1);
+
+    int64_t val;
+    EXPECT_TRUE(counterExists(stats, "stat04.sum.5", val));
+    EXPECT_EQ(3, val);
+    EXPECT_TRUE(counterExists(stats, "stat04.p95.5", val));
+    EXPECT_EQ(2, val);
+    EXPECT_TRUE(counterExists(stats, "stat04.p99.3600", val));
+    EXPECT_EQ(2, val);
+
+    EXPECT_TRUE(counterExists(stats, "stat03.sum.3600", val));
+    EXPECT_EQ(3, val);
+
+    EXPECT_FALSE(counterExists(stats, "stat03.count.600", val));
+    EXPECT_FALSE(counterExists(stats, "stat03.avg.3600", val));
+
+    EXPECT_FALSE(counterExists(stats, "stat04.rate.600", val));
+    EXPECT_FALSE(counterExists(stats, "stat04.count.60", val));
+    EXPECT_FALSE(counterExists(stats, "stat04.avg.3600", val));
+    EXPECT_FALSE(counterExists(stats, "stat04.p75.5", val));
 }
 
 }   // namespace stats
