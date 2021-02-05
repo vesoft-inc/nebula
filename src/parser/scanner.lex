@@ -120,6 +120,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "FLUSH"                     { return TokenType::KW_FLUSH; }
 "SUBMIT"                    { return TokenType::KW_SUBMIT; }
 "ASC"                       { return TokenType::KW_ASC; }
+"ASCENDING"                 { return TokenType::KW_ASCENDING; }
+"DESCENDING"                { return TokenType::KW_DESCENDING; }
 "DISTINCT"                  { return TokenType::KW_DISTINCT; }
 "FETCH"                     { return TokenType::KW_FETCH; }
 "PROP"                      { return TokenType::KW_PROP; }

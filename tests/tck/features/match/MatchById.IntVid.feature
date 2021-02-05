@@ -260,7 +260,7 @@ Feature: Integer Vid Match By Id
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
       RETURN v.name AS Name, v.age AS Age
-      ORDER BY Age DESC, Name ASC
+      ORDER BY Age DESC, Name ASCENDING
       LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
@@ -273,7 +273,7 @@ Feature: Integer Vid Match By Id
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == hash('Dejounte Murray')
       RETURN v.name AS Name, v.age AS Age
-      ORDER BY Age DESC, Name ASC
+      ORDER BY Age DESCENDING, Name ASC
       SKIP 3
       """
     Then the result should be, in any order, with relax comparison:

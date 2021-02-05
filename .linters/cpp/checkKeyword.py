@@ -93,6 +93,8 @@ reserved_key_words = [
     'KW_FLUSH',
     'KW_SUBMIT',
     'KW_ASC',
+    'KW_ASCENDING',
+    'KW_DESCENDING',
     'KW_DISTINCT',
     'KW_FETCH',
     'KW_PROP',

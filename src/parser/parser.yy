@@ -165,7 +165,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
-%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP
@@ -1694,6 +1694,12 @@ order_factor
         $$ = new OrderFactor($1, OrderFactor::ASCEND);
     }
     | expression KW_DESC {
+        $$ = new OrderFactor($1, OrderFactor::DESCEND);
+    }
+    | expression KW_ASCENDING {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | expression KW_DESCENDING {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
     ;
