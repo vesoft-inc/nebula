@@ -75,7 +75,7 @@ void ExecutionPlan::onFinish() {
         stats::Stats::addStatsValue(slowQueryStats_.get(), true, latency);
         LOG(WARNING) << "Slow query: exec succ, cost: " << latency
             << "us, space: " << spaceName
-            << ", query: " << rctx->query().c_str();
+            << ", query: " << rctx->query();
     }
     rctx->finish();
 
@@ -110,7 +110,7 @@ void ExecutionPlan::onError(Status status) {
                 : std::to_string(int32_t(rctx->resp().get_error_code())))
         << ", cost: " << latency
         << "us, space: " << (rctx->session()->spaceName())
-        << ", query: " << (rctx->query().c_str())
+        << ", query: " << (rctx->query())
         << ", errmsg: " << status.toString();
 
     // slow query
@@ -122,7 +122,7 @@ void ExecutionPlan::onError(Status status) {
                     ? errorCodeIt->second
                     : std::to_string(int32_t(rctx->resp().get_error_code())))
             << ", space: " << (rctx->session()->spaceName())
-            << ", query: " << (rctx->query().c_str());
+            << ", query: " << (rctx->query());
     }
 
     rctx->finish();
