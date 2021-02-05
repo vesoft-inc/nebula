@@ -35,10 +35,10 @@ init: clean install-nebula-py
 init-all: init gherkin-fmt
 
 fmt:
-	@find $(CURR_DIR)/tck/features -type f -iname '*.feature' -print | xargs $(gherkin_fmt)
+	@find $(CURR_DIR)/tck/ -type f -iname '*.feature' -print | xargs $(gherkin_fmt)
 
 check:
-	@find $(CURR_DIR)/tck/features -type f -iname "*.feature" -print | xargs $(gherkin_fmt) --check
+	@find $(CURR_DIR)/tck/ -type f -iname "*.feature" -print | xargs $(gherkin_fmt) --check
 
 test:
 	cd $(CURR_DIR) && python3 -m pytest -n$(J) --dist=loadfile --rm_dir=$(RM_DIR) -m "not skip" -k "not tck" $(TEST_DIR)
