@@ -13,52 +13,52 @@ namespace nebula {
 namespace graph {
 
 std::unique_ptr<PlanNodeDescription> CreateSpace::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
     addDescription("spaceDesc", folly::toJson(util::toJson(spaceDesc_)), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DropSpace::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceName", spaceName_, desc.get());
     addDescription("ifExists", util::toJson(ifExists_), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DescSpace::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceName", spaceName_, desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ShowCreateSpace::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceName", spaceName_, desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DropSnapshot::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("snapshotName", snapshotName_, desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ShowParts::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("partIds", folly::toJson(util::toJson(partIds_)), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ShowConfigs::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> SetConfig::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
     addDescription("name", name_, desc.get());
     addDescription("value", value_.toString(), desc.get());
@@ -66,7 +66,7 @@ std::unique_ptr<PlanNodeDescription> SetConfig::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> GetConfig::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
     addDescription("name", name_, desc.get());
     return desc;

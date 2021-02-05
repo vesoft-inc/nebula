@@ -17,7 +17,7 @@
  */
 namespace nebula {
 namespace graph {
-class InsertVertices final : public SingleInputNode {
+class InsertVertices final : public SingleDependencyNode {
 public:
     static InsertVertices* make(QueryContext* qctx,
                                 PlanNode* input,
@@ -58,7 +58,7 @@ private:
                    std::vector<storage::cpp2::NewVertex> vertices,
                    std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
                    bool overwritable)
-        : SingleInputNode(qctx, Kind::kInsertVertices, input),
+        : SingleDependencyNode(qctx, Kind::kInsertVertices, input),
           spaceId_(spaceId),
           vertices_(std::move(vertices)),
           tagPropNames_(std::move(tagPropNames)),
@@ -71,7 +71,7 @@ private:
     bool overwritable_;
 };
 
-class InsertEdges final : public SingleInputNode {
+class InsertEdges final : public SingleDependencyNode {
 public:
     static InsertEdges* make(QueryContext* qctx,
                              PlanNode* input,
@@ -119,7 +119,7 @@ private:
                 std::vector<std::string> propNames,
                 bool overwritable,
                 bool useChainInsert)
-        : SingleInputNode(qctx, Kind::kInsertEdges, input),
+        : SingleDependencyNode(qctx, Kind::kInsertEdges, input),
           spaceId_(spaceId),
           edges_(std::move(edges)),
           propNames_(std::move(propNames)),
@@ -136,7 +136,7 @@ private:
     bool useChainInsert_{false};
 };
 
-class Update : public SingleInputNode {
+class Update : public SingleDependencyNode {
 public:
     bool getInsertable() const {
         return insertable_;
@@ -179,7 +179,7 @@ protected:
            std::vector<std::string> returnProps,
            std::string condition,
            std::vector<std::string> yieldNames)
-        : SingleInputNode(qctx, kind, input),
+        : SingleDependencyNode(qctx, kind, input),
           spaceId_(spaceId),
           schemaName_(std::move(name)),
           insertable_(insertable),

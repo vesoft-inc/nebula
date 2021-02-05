@@ -13,7 +13,7 @@ namespace nebula {
 namespace graph {
 
 std::unique_ptr<PlanNodeDescription> InsertVertices::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("overwritable", util::toJson(overwritable_), desc.get());
 
@@ -30,7 +30,7 @@ std::unique_ptr<PlanNodeDescription> InsertVertices::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> InsertEdges::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("overwritable", folly::to<std::string>(overwritable_), desc.get());
     addDescription("propNames", folly::toJson(util::toJson(propNames_)), desc.get());
@@ -39,7 +39,7 @@ std::unique_ptr<PlanNodeDescription> InsertEdges::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> Update::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
     addDescription("schemaName", schemaName_, desc.get());
     addDescription("insertable", folly::to<std::string>(insertable_), desc.get());

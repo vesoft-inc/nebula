@@ -74,7 +74,7 @@ private:
     meta::cpp2::ListHostType type_;
 };
 
-class CreateSpace final : public SingleInputNode {
+class CreateSpace final : public SingleDependencyNode {
 public:
     static CreateSpace* make(QueryContext* qctx,
                              PlanNode* input,
@@ -100,7 +100,7 @@ private:
                 PlanNode* input,
                 meta::cpp2::SpaceDesc spaceDesc,
                 bool ifNotExists)
-        : SingleInputNode(qctx, Kind::kCreateSpace, input) {
+        : SingleDependencyNode(qctx, Kind::kCreateSpace, input) {
         spaceDesc_ = std::move(spaceDesc);
         ifNotExists_ = ifNotExists;
     }
@@ -110,7 +110,7 @@ private:
     bool                      ifNotExists_{false};
 };
 
-class DropSpace final : public SingleInputNode {
+class DropSpace final : public SingleDependencyNode {
 public:
     static DropSpace* make(QueryContext* qctx,
                            PlanNode* input,
@@ -135,7 +135,7 @@ private:
               PlanNode* input,
               std::string spaceName,
               bool ifExists)
-        : SingleInputNode(qctx, Kind::kDropSpace, input) {
+        : SingleDependencyNode(qctx, Kind::kDropSpace, input) {
         spaceName_ = std::move(spaceName);
         ifExists_ = ifExists;
     }
@@ -145,7 +145,7 @@ private:
     bool                  ifExists_;
 };
 
-class DescSpace final : public SingleInputNode {
+class DescSpace final : public SingleDependencyNode {
 public:
     static DescSpace* make(QueryContext* qctx, PlanNode* input, std::string spaceName) {
         return qctx->objPool()->add(new DescSpace(qctx, input, std::move(spaceName)));
@@ -161,7 +161,7 @@ private:
     DescSpace(QueryContext* qctx,
               PlanNode* input,
               std::string spaceName)
-        : SingleInputNode(qctx, Kind::kDescSpace, input) {
+        : SingleDependencyNode(qctx, Kind::kDescSpace, input) {
         spaceName_ = std::move(spaceName);
     }
 
@@ -169,7 +169,7 @@ private:
     std::string           spaceName_;
 };
 
-class ShowSpaces final : public SingleInputNode {
+class ShowSpaces final : public SingleDependencyNode {
 public:
     static ShowSpaces* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowSpaces(qctx, input));
@@ -177,10 +177,10 @@ public:
 
 private:
     explicit ShowSpaces(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowSpaces, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowSpaces, input) {}
 };
 
-class ShowConfigs final : public SingleInputNode {
+class ShowConfigs final : public SingleDependencyNode {
 public:
     static ShowConfigs* make(QueryContext* qctx, PlanNode* input, meta::cpp2::ConfigModule module) {
         return qctx->objPool()->add(new ShowConfigs(qctx, input, module));
@@ -196,14 +196,14 @@ private:
     ShowConfigs(QueryContext* qctx,
                 PlanNode* input,
                 meta::cpp2::ConfigModule module)
-        : SingleInputNode(qctx, Kind::kShowConfigs, input)
+        : SingleDependencyNode(qctx, Kind::kShowConfigs, input)
         , module_(module) {}
 
 private:
     meta::cpp2::ConfigModule    module_;
 };
 
-class SetConfig final : public SingleInputNode {
+class SetConfig final : public SingleDependencyNode {
 public:
     static SetConfig* make(QueryContext* qctx,
                            PlanNode* input,
@@ -234,7 +234,7 @@ private:
               meta::cpp2::ConfigModule module,
               std::string name,
               Value value)
-        : SingleInputNode(qctx, Kind::kSetConfig, input),
+        : SingleDependencyNode(qctx, Kind::kSetConfig, input),
           module_(module),
           name_(std::move(name)),
           value_(std::move(value)) {}
@@ -245,7 +245,7 @@ private:
     Value value_;
 };
 
-class GetConfig final : public SingleInputNode {
+class GetConfig final : public SingleDependencyNode {
 public:
     static GetConfig* make(QueryContext* qctx,
                            PlanNode* input,
@@ -270,7 +270,7 @@ private:
                        PlanNode* input,
                        meta::cpp2::ConfigModule module,
                        std::string name)
-        : SingleInputNode(qctx, Kind::kGetConfig, input),
+        : SingleDependencyNode(qctx, Kind::kGetConfig, input),
           module_(module),
           name_(std::move(name)) {}
 
@@ -279,7 +279,7 @@ private:
     std::string name_;
 };
 
-class ShowCreateSpace final : public SingleInputNode {
+class ShowCreateSpace final : public SingleDependencyNode {
 public:
     static ShowCreateSpace* make(QueryContext* qctx, PlanNode* input, std::string spaceName) {
         return qctx->objPool()->add(
@@ -294,7 +294,7 @@ public:
 
 private:
     ShowCreateSpace(QueryContext* qctx, PlanNode* input, std::string spaceName)
-        : SingleInputNode(qctx, Kind::kShowCreateSpace, input) {
+        : SingleDependencyNode(qctx, Kind::kShowCreateSpace, input) {
         spaceName_ = std::move(spaceName);
     }
 
@@ -302,7 +302,7 @@ private:
     std::string spaceName_;
 };
 
-class CreateSnapshot final : public SingleInputNode {
+class CreateSnapshot final : public SingleDependencyNode {
 public:
     static CreateSnapshot* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new CreateSnapshot(qctx, input));
@@ -310,10 +310,10 @@ public:
 
 private:
     explicit CreateSnapshot(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kCreateSnapshot, input) {}
+        : SingleDependencyNode(qctx, Kind::kCreateSnapshot, input) {}
 };
 
-class DropSnapshot final : public SingleInputNode {
+class DropSnapshot final : public SingleDependencyNode {
 public:
     static DropSnapshot* make(QueryContext* qctx, PlanNode* input, std::string snapshotName) {
         return qctx->objPool()->add(
@@ -330,7 +330,7 @@ private:
     explicit DropSnapshot(QueryContext* qctx,
                           PlanNode* input,
                           std::string snapshotName)
-        : SingleInputNode(qctx, Kind::kDropSnapshot, input) {
+        : SingleDependencyNode(qctx, Kind::kDropSnapshot, input) {
         snapshotName_ = std::move(snapshotName);
     }
 
@@ -338,7 +338,7 @@ private:
     std::string snapshotName_;
 };
 
-class ShowSnapshots final : public SingleInputNode {
+class ShowSnapshots final : public SingleDependencyNode {
 public:
     static ShowSnapshots* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowSnapshots(qctx, input));
@@ -346,10 +346,10 @@ public:
 
 private:
     explicit ShowSnapshots(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowSnapshots, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowSnapshots, input) {}
 };
 
-class AddListener final : public SingleInputNode {
+class AddListener final : public SingleDependencyNode {
 public:
     static AddListener* make(QueryContext* qctx,
                              PlanNode* input,
@@ -372,7 +372,7 @@ private:
                          PlanNode* input,
                          meta::cpp2::ListenerType type,
                          std::vector<HostAddr> hosts)
-        : SingleInputNode(qctx, Kind::kAddListener, input) {
+        : SingleDependencyNode(qctx, Kind::kAddListener, input) {
         type_ = std::move(type);
         hosts_ = std::move(hosts);
     }
@@ -382,7 +382,7 @@ private:
     std::vector<HostAddr> hosts_;
 };
 
-class RemoveListener final : public SingleInputNode {
+class RemoveListener final : public SingleDependencyNode {
 public:
     static RemoveListener* make(QueryContext* qctx,
                                 PlanNode* input,
@@ -396,7 +396,7 @@ public:
 
 private:
     explicit RemoveListener(QueryContext* qctx, PlanNode* input, meta::cpp2::ListenerType type)
-        : SingleInputNode(qctx, Kind::kRemoveListener, input) {
+        : SingleDependencyNode(qctx, Kind::kRemoveListener, input) {
         type_ = std::move(type);
     }
 
@@ -404,7 +404,7 @@ private:
     meta::cpp2::ListenerType type_;
 };
 
-class ShowListener final : public SingleInputNode {
+class ShowListener final : public SingleDependencyNode {
 public:
     static ShowListener* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowListener(qctx, input));
@@ -412,7 +412,7 @@ public:
 
 private:
     explicit ShowListener(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowListener, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowListener, input) {}
 };
 
 class Download final : public SingleDependencyNode {
@@ -735,7 +735,7 @@ private:
     GraphSpaceID space_{-1};
 };
 
-class ShowParts final : public SingleInputNode {
+class ShowParts final : public SingleDependencyNode {
 public:
     static ShowParts* make(QueryContext* qctx,
                            PlanNode* input,
@@ -759,7 +759,7 @@ private:
                        PlanNode* input,
                        GraphSpaceID spaceId,
                        std::vector<PartitionID> partIds)
-        : SingleInputNode(qctx, Kind::kShowParts, input) {
+        : SingleDependencyNode(qctx, Kind::kShowParts, input) {
         spaceId_ = spaceId;
         partIds_ = std::move(partIds);
     }
@@ -884,7 +884,7 @@ private:
     int64_t jobId_;
 };
 
-class ShowCharset final : public SingleInputNode {
+class ShowCharset final : public SingleDependencyNode {
 public:
     static ShowCharset* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowCharset(qctx, input));
@@ -892,10 +892,10 @@ public:
 
 private:
     ShowCharset(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowCharset, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowCharset, input) {}
 };
 
-class ShowCollation final : public SingleInputNode {
+class ShowCollation final : public SingleDependencyNode {
 public:
     static ShowCollation* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowCollation(qctx, input));
@@ -903,10 +903,10 @@ public:
 
 private:
     ShowCollation(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowCollation, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowCollation, input) {}
 };
 
-class AddGroup final : public SingleInputNode {
+class AddGroup final : public SingleDependencyNode {
 public:
     static AddGroup* make(QueryContext* qctx,
                           PlanNode* input,
@@ -931,7 +931,7 @@ private:
              PlanNode* input,
              std::string groupName,
              std::vector<std::string> zoneNames)
-        : SingleInputNode(qctx, Kind::kAddGroup, input) {
+        : SingleDependencyNode(qctx, Kind::kAddGroup, input) {
         groupName_ = std::move(groupName);
         zoneNames_ = std::move(zoneNames);
     }
@@ -941,7 +941,7 @@ private:
     std::vector<std::string> zoneNames_;
 };
 
-class DropGroup final : public SingleInputNode {
+class DropGroup final : public SingleDependencyNode {
 public:
     static DropGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
         return qctx->objPool()->add(new DropGroup(qctx, input, std::move(groupName)));
@@ -953,7 +953,7 @@ public:
 
 private:
     DropGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
-        : SingleInputNode(qctx, Kind::kDropGroup, input) {
+        : SingleDependencyNode(qctx, Kind::kDropGroup, input) {
         groupName_ = std::move(groupName);
     }
 
@@ -961,7 +961,7 @@ private:
     std::string groupName_;
 };
 
-class DescribeGroup final : public SingleInputNode {
+class DescribeGroup final : public SingleDependencyNode {
 public:
     static DescribeGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
         return qctx->objPool()->add(new DescribeGroup(qctx, input, std::move(groupName)));
@@ -973,7 +973,7 @@ public:
 
 private:
     DescribeGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
-        : SingleInputNode(qctx, Kind::kDescribeGroup, input) {
+        : SingleDependencyNode(qctx, Kind::kDescribeGroup, input) {
         groupName_ = std::move(groupName);
     }
 
@@ -981,7 +981,7 @@ private:
     std::string groupName_;
 };
 
-class ListGroups final : public SingleInputNode {
+class ListGroups final : public SingleDependencyNode {
 public:
     static ListGroups* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ListGroups(qctx, input));
@@ -989,10 +989,10 @@ public:
 
 private:
     ListGroups(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowGroups, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowGroups, input) {}
 };
 
-class AddHostIntoZone final : public SingleInputNode {
+class AddHostIntoZone final : public SingleDependencyNode {
 public:
     static AddHostIntoZone* make(QueryContext* qctx,
                                  PlanNode* input,
@@ -1017,7 +1017,7 @@ private:
                     PlanNode* input,
                     std::string zoneName,
                     HostAddr addresses)
-        : SingleInputNode(qctx, Kind::kAddHostIntoZone, input) {
+        : SingleDependencyNode(qctx, Kind::kAddHostIntoZone, input) {
         zoneName_ = std::move(zoneName);
         addresses_ = std::move(addresses);
     }
@@ -1027,7 +1027,7 @@ private:
     HostAddr    addresses_;
 };
 
-class DropHostFromZone final : public SingleInputNode {
+class DropHostFromZone final : public SingleDependencyNode {
 public:
     static DropHostFromZone* make(QueryContext* qctx,
                                   PlanNode* input,
@@ -1052,7 +1052,7 @@ private:
                      PlanNode* input,
                      std::string zoneName,
                      HostAddr addresses)
-        : SingleInputNode(qctx, Kind::kDropHostFromZone, input) {
+        : SingleDependencyNode(qctx, Kind::kDropHostFromZone, input) {
         zoneName_ = std::move(zoneName);
         addresses_ = std::move(addresses);
     }
@@ -1062,7 +1062,7 @@ private:
     HostAddr    addresses_;
 };
 
-class AddZone final : public SingleInputNode {
+class AddZone final : public SingleDependencyNode {
 public:
     static AddZone* make(QueryContext* qctx,
                          PlanNode* input,
@@ -1087,7 +1087,7 @@ private:
             PlanNode* input,
             std::string zoneName,
             std::vector<HostAddr> addresses)
-        : SingleInputNode(qctx, Kind::kAddZone, input) {
+        : SingleDependencyNode(qctx, Kind::kAddZone, input) {
         zoneName_ = std::move(zoneName);
         addresses_ = std::move(addresses);
     }
@@ -1097,7 +1097,7 @@ private:
     std::vector<HostAddr> addresses_;
 };
 
-class DropZone final : public SingleInputNode {
+class DropZone final : public SingleDependencyNode {
 public:
     static DropZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
         return qctx->objPool()->add(new DropZone(qctx, input, std::move(zoneName)));
@@ -1109,7 +1109,7 @@ public:
 
 private:
     DropZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
-        : SingleInputNode(qctx, Kind::kDropZone, input) {
+        : SingleDependencyNode(qctx, Kind::kDropZone, input) {
         zoneName_ = std::move(zoneName);
     }
 
@@ -1117,7 +1117,7 @@ private:
     std::string zoneName_;
 };
 
-class DescribeZone final : public SingleInputNode {
+class DescribeZone final : public SingleDependencyNode {
 public:
     static DescribeZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
         return qctx->objPool()->add(new DescribeZone(qctx, input, std::move(zoneName)));
@@ -1129,7 +1129,7 @@ public:
 
 private:
     DescribeZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
-        : SingleInputNode(qctx, Kind::kDescribeZone, input) {
+        : SingleDependencyNode(qctx, Kind::kDescribeZone, input) {
         zoneName_ = std::move(zoneName);
     }
 
@@ -1137,7 +1137,7 @@ private:
     std::string zoneName_;
 };
 
-// class DrainZone final : public SingleInputNode {
+// class DrainZone final : public SingleDependencyNode {
 // public:
 //     static DrainZone* make(QueryContext* qctx, PlanNode* input, std::string zoneName) {
 //         return qctx->objPool()->add(new DrainZone(qctx, input, std::move(zoneName)));
@@ -1149,7 +1149,7 @@ private:
 
 // private:
 //     DrainZone(QueryContext* qctx, PlanNode* input, std::string zoneName)
-//         : SingleInputNode(qctx, Kind::kDrainZone, input) {
+//         : SingleDependencyNode(qctx, Kind::kDrainZone, input) {
 //         zoneName_ = std::move(zoneName);
 //     }
 
@@ -1157,7 +1157,7 @@ private:
 //     std::string zoneName_;
 // };
 
-class ListZones final : public SingleInputNode {
+class ListZones final : public SingleDependencyNode {
 public:
     static ListZones* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ListZones(qctx, input));
@@ -1165,10 +1165,10 @@ public:
 
 private:
     ListZones(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowZones, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowZones, input) {}
 };
 
-class AddZoneIntoGroup final : public SingleInputNode {
+class AddZoneIntoGroup final : public SingleDependencyNode {
 public:
     static AddZoneIntoGroup* make(QueryContext* qctx,
                                   PlanNode* input,
@@ -1193,7 +1193,7 @@ private:
                     PlanNode* input,
                     std::string zoneName,
                     std::string groupName)
-        : SingleInputNode(qctx, Kind::kAddZoneIntoGroup, input) {
+        : SingleDependencyNode(qctx, Kind::kAddZoneIntoGroup, input) {
         zoneName_ = std::move(zoneName);
         groupName_ = std::move(groupName);
     }
@@ -1203,7 +1203,7 @@ private:
     std::string    groupName_;
 };
 
-class DropZoneFromGroup final : public SingleInputNode {
+class DropZoneFromGroup final : public SingleDependencyNode {
 public:
     static DropZoneFromGroup* make(QueryContext* qctx,
                                    PlanNode* input,
@@ -1228,7 +1228,7 @@ private:
                       PlanNode* input,
                       std::string zoneName,
                       std::string groupName)
-        : SingleInputNode(qctx, Kind::kDropZoneFromGroup, input) {
+        : SingleDependencyNode(qctx, Kind::kDropZoneFromGroup, input) {
         zoneName_ = std::move(zoneName);
         groupName_ = std::move(groupName);
     }
@@ -1238,7 +1238,7 @@ private:
     std::string    groupName_;
 };
 
-class ShowGroups final : public SingleInputNode {
+class ShowGroups final : public SingleDependencyNode {
 public:
     static ShowGroups* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowGroups(qctx, input));
@@ -1246,10 +1246,10 @@ public:
 
 private:
     ShowGroups(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowGroups, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowGroups, input) {}
 };
 
-class ShowZones final : public SingleInputNode {
+class ShowZones final : public SingleDependencyNode {
 public:
     static ShowZones* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowZones(qctx, input));
@@ -1257,10 +1257,10 @@ public:
 
 private:
     ShowZones(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowZones, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowZones, input) {}
 };
 
-class ShowStats final : public SingleInputNode {
+class ShowStats final : public SingleDependencyNode {
 public:
     static ShowStats* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowStats(qctx, input));
@@ -1268,10 +1268,10 @@ public:
 
 private:
     ShowStats(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowStats, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowStats, input) {}
 };
 
-class ShowTSClients final : public SingleInputNode {
+class ShowTSClients final : public SingleDependencyNode {
 public:
     static ShowTSClients* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowTSClients(qctx, input));
@@ -1279,10 +1279,10 @@ public:
 
 private:
     ShowTSClients(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowTSClients, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowTSClients, input) {}
 };
 
-class SignInTSService final : public SingleInputNode {
+class SignInTSService final : public SingleDependencyNode {
 public:
     static SignInTSService* make(QueryContext* qctx,
                                   PlanNode* input,
@@ -1300,13 +1300,13 @@ public:
 
 private:
     SignInTSService(QueryContext* qctx, PlanNode* input, std::vector<meta::cpp2::FTClient> clients)
-        : SingleInputNode(qctx, Kind::kSignInTSService, input),
+        : SingleDependencyNode(qctx, Kind::kSignInTSService, input),
           clients_(std::move(clients)) {}
 
     std::vector<meta::cpp2::FTClient> clients_;
 };
 
-class SignOutTSService final : public SingleInputNode {
+class SignOutTSService final : public SingleDependencyNode {
 public:
     static SignOutTSService* make(QueryContext* qctx,
                                   PlanNode* input) {
@@ -1315,7 +1315,7 @@ public:
 
 private:
     SignOutTSService(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kSignOutTSService, input) {}
+        : SingleDependencyNode(qctx, Kind::kSignOutTSService, input) {}
 };
 }  // namespace graph
 }  // namespace nebula
