@@ -5,8 +5,11 @@
  */
 
 #include "planner/PlanNode.h"
+
 #include <memory>
 #include <vector>
+
+#include <folly/json.h>
 
 #include "common/graph/Response.h"
 #include "context/QueryContext.h"
@@ -300,8 +303,10 @@ std::unique_ptr<PlanNodeDescription> BiInputNode::explain() const {
     auto desc = PlanNode::explain();
     DCHECK(desc->dependencies == nullptr);
     desc->dependencies.reset(new std::vector<int64_t>{left()->id(), right()->id()});
-    addDescription("leftVar", leftInputVar(), desc.get());
-    addDescription("rightVar", rightInputVar(), desc.get());
+    folly::dynamic inputVar = folly::dynamic::object();
+    inputVar.insert("leftVar", leftInputVar());
+    inputVar.insert("rightVar", rightInputVar());
+    addDescription("inputVar", folly::toJson(inputVar), desc.get());
     return desc;
 }
 
