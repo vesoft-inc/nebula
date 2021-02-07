@@ -6,11 +6,11 @@ Feature: Yield Sentence
   Scenario: Base
     When executing query:
       """
-      YIELD 1
+      YIELD [1, 1.1, 1e2, 1.1e2, .3e4, 1.e4, 1234E-10, true] AS basic_value
       """
     Then the result should be, in any order, with relax comparison:
-      | 1 |
-      | 1 |
+      | basic_value                                                 |
+      | [1, 1.1, 100.0, 110.0, 3000.0, 10000.0, 0.0000001234, true] |
     When executing query:
       """
       YIELD 1+1, (int)3.14, (string)(1+1), (string)true,"1+1"
