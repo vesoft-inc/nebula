@@ -79,6 +79,15 @@ DEFINE_bool(enable_rocksdb_whole_key_filtering, true,
 DEFINE_int32(rocksdb_filtering_prefix_length, 12,
             "The prefix length, default value is 12 bytes(PartitionID+VertexID).");
 
+DEFINE_bool(rocksdb_compact_change_level, true,
+            "If true, compacted files will be moved to the minimum level capable "
+            "of holding the data or given level (specified non-negative target_level).");
+
+DEFINE_int32(rocksdb_compact_target_level, -1,
+             "If change_level is true and target_level have non-negative value, compacted files "
+             "will be moved to target_level. If change_level is true and target_level is -1, "
+             "compacted files will be moved to the minimum level capable of holding the data.");
+
 namespace nebula {
 namespace kvstore {
 

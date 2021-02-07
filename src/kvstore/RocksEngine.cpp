@@ -363,6 +363,8 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey, const std::str
 
 ResultCode RocksEngine::compact() {
     rocksdb::CompactRangeOptions options;
+    options.change_level = FLAGS_rocksdb_compact_change_level;
+    options.target_level = FLAGS_rocksdb_compact_target_level;
     rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;

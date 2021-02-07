@@ -47,6 +47,10 @@ DECLARE_bool(enable_rocksdb_prefix_filtering);
 DECLARE_bool(enable_rocksdb_whole_key_filtering);
 DECLARE_int32(rocksdb_filtering_prefix_length);
 
+// rocksdb compact RangeOptions
+DECLARE_bool(rocksdb_compact_change_level);
+DECLARE_int32(rocksdb_compact_target_level);
+
 namespace nebula {
 namespace kvstore {
 
