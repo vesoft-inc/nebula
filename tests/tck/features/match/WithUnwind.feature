@@ -20,6 +20,22 @@ Feature: With clause and Unwind clause
     Then the result should be, in any order, with relax comparison:
       | a       | b       |
       | [1,2,3] | "hello" |
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a
+      WITH a, "hello" AS b
+      RETURN a, b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a       | b       |
+      | [1,2,3] | "hello" |
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a
+      WITH a, "hello"
+      RETURN a
+      """
+    Then a SemanticError should be raised at runtime: Expression in WITH must be aliased (use AS)
 
   @skip
   Scenario: with match return

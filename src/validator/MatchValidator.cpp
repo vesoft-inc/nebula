@@ -451,7 +451,11 @@ Status MatchValidator::validateWith(const WithClause *with,
     exprs.reserve(with->columns()->size());
     for (auto *col : with->columns()->columns()) {
         if (col->alias() == nullptr) {
-            return Status::SemanticError("Expression in WITH must be aliased (use AS)");
+            if (col->expr()->kind() == Expression::Kind::kLabel) {
+                col->setAlias(new std::string(col->expr()->toString()));
+            } else {
+                return Status::SemanticError("Expression in WITH must be aliased (use AS)");
+            }
         }
         if (!withClauseCtx.aliasesGenerated.emplace(*col->alias(), AliasType::kDefault).second) {
             return Status::SemanticError("`%s': Redefined alias", col->alias()->c_str());
