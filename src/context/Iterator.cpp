@@ -6,8 +6,8 @@
 
 #include "context/Iterator.h"
 
-#include "common/datatypes/Vertex.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Vertex.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "util/SchemaUtil.h"
 
@@ -153,9 +153,9 @@ StatusOr<int64_t> GetNeighborsIter::buildIndex(DataSetIndex* dsIndex) {
 }
 
 Status GetNeighborsIter::buildPropIndex(const std::string& props,
-                                       size_t columnId,
-                                       bool isEdge,
-                                       DataSetIndex* dsIndex) {
+                                        size_t columnId,
+                                        bool isEdge,
+                                        DataSetIndex* dsIndex) {
     std::vector<std::string> pieces;
     folly::split(":", props, pieces);
     if (UNLIKELY(pieces.size() < 2)) {
@@ -430,6 +430,46 @@ List GetNeighborsIter::getEdges() {
     }
     reset();
     return edges;
+}
+
+SequentialIter::SequentialIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kSequential) {
+    DCHECK(value->isDataSet());
+    auto& ds = value->getDataSet();
+    for (auto& row : ds.rows) {
+        rows_.emplace_back(&row);
+    }
+    iter_ = rows_.begin();
+    for (size_t i = 0; i < ds.colNames.size(); ++i) {
+        colIndices_.emplace(ds.colNames[i], i);
+    }
+}
+
+SequentialIter::SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
+    : Iterator(left->valuePtr(), Kind::kSequential) {
+    std::vector<std::unique_ptr<Iterator>> iterators;
+    iterators.emplace_back(std::move(left));
+    iterators.emplace_back(std::move(right));
+    init(std::move(iterators));
+}
+
+SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList)
+    : Iterator(inputList.front()->valuePtr(), Kind::kSequential) {
+    init(std::move(inputList));
+}
+
+void SequentialIter::init(std::vector<std::unique_ptr<Iterator>>&& iterators) {
+    DCHECK(!iterators.empty());
+    const auto& firstIter = iterators.front();
+    DCHECK(firstIter->isSequentialIter());
+    colIndices_ = static_cast<const SequentialIter*>(firstIter.get())->getColIndices();
+    for (auto& iter : iterators) {
+        DCHECK(iter->isSequentialIter());
+        auto inputIter = static_cast<SequentialIter*>(iter.get());
+        rows_.insert(rows_.end(),
+                     std::make_move_iterator(inputIter->begin()),
+                     std::make_move_iterator(inputIter->end()));
+    }
+    iter_ = rows_.begin();
 }
 
 const Value& SequentialIter::getColumn(int32_t index) const {
