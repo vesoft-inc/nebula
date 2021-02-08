@@ -893,6 +893,9 @@ function_call_expression
     | KW_TAGS L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression(new std::string("tags"), $3);
     }
+    | KW_SIGN L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression(new std::string("sign"), $3);
+    }
     ;
 
 aggregate_expression
