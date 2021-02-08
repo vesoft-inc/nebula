@@ -1046,6 +1046,20 @@ private:
     std::vector<std::pair<std::string, std::unique_ptr<Expression>>> items_;
 };
 
+/**
+ * Union all versions of the variable in the dependency
+ * The input is a single PlanNode
+ */
+class UnionAllVersionVar final : public SingleInputNode {
+public:
+    static UnionAllVersionVar* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new UnionAllVersionVar(qctx, input));
+    }
+private:
+    UnionAllVersionVar(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kUnionAllVersionVar, input) {}
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_QUERY_H_

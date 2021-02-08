@@ -77,7 +77,7 @@ private:
     };
 
     QueryContext *qctx_{nullptr};
-    std::unordered_map<std::string, PassThroughData> passThroughPromiseMap_;
+    std::unordered_map<int64_t, PassThroughData> passThroughPromiseMap_;
 };
 
 }   // namespace graph

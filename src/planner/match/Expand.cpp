@@ -90,7 +90,8 @@ Status Expand::doExpand(const NodeInfo& node,
     return Status::OK();
 }
 
-// (v)-[e]-()
+// Build subplan: Project->Dedup->GetNeighbors->[Filter]->Project2->
+// DataJoin->Project3->[Filter]->Passthrough->Loop->UnionAllVer
 Status Expand::expandSteps(const NodeInfo& node,
                            const EdgeInfo& edge,
                            SubPlan* plan) {
@@ -99,6 +100,7 @@ Status Expand::expandSteps(const NodeInfo& node,
     auto minHop = edge.range ? edge.range->min() : 1;
     auto maxHop = edge.range ? edge.range->max() : 1;
 
+    // Build first step
     // In the case of 0 step, src node is the dst node, return the vertex directly
     if (minHop == 0) {
         subplan = *plan;
@@ -110,33 +112,56 @@ Status Expand::expandSteps(const NodeInfo& node,
                                                               initialExpr_.release(),
                                                               inputVar_,
                                                               subplan));
-        // If maxHop > 0, the result of 0 step will be passed to next plan node
-        if (maxHop > 0) {
-            subplan.root = passThrough(matchCtx_->qctx, subplan.root);
-        }
     } else {  // Case 1 to n steps
         startIndex = 1;
         // Expand first step from src
         NG_RETURN_IF_ERROR(expandStep(edge, dependency_, inputVar_, node.filter, &subplan));
-        // Manualy create a passThrough node for the first step
-        // Rest steps will be passed through in collectData()
-        subplan.root = passThrough(matchCtx_->qctx, subplan.root);
     }
+    // No need to further expand if maxHop is the start Index
+    if (maxHop == startIndex) {
+        plan->root = subplan.root;
+        return Status::OK();
+    }
+    // Result of first step expansion
+    PlanNode* firstStep = subplan.root;
 
-    PlanNode* passThrough = subplan.root;
-    for (; startIndex < maxHop; ++startIndex) {
-        SubPlan curr;
-        NG_RETURN_IF_ERROR(
-            expandStep(edge, passThrough, passThrough->outputVar(), nullptr, &curr));
-        auto rNode = subplan.root;
-        DCHECK(rNode->kind() == PNKind::kUnion || rNode->kind() == PNKind::kPassThrough);
-        NG_RETURN_IF_ERROR(collectData(passThrough, curr.root, rNode, &passThrough, &subplan));
-    }
+    // Build Start node from first step
+    SubPlan loopBodyPlan;
+    PlanNode* startNode = StartNode::make(matchCtx_->qctx);
+    startNode->setOutputVar(firstStep->outputVar());
+    startNode->setColNames(firstStep->colNames());
+    loopBodyPlan.tail = startNode;
+    loopBodyPlan.root = startNode;
+
+    // Construct loop body
+    NG_RETURN_IF_ERROR(expandStep(edge,
+                                  startNode,                // dep
+                                  startNode->outputVar(),   // inputVar
+                                  nullptr,
+                                  &loopBodyPlan));
+
+    NG_RETURN_IF_ERROR(collectData(startNode,         // left join node
+                                   loopBodyPlan.root,   // right join node
+                                   &firstStep,          // passThrough
+                                   &subplan));
+    // Union node
+    auto body = subplan.root;
+
+    // Loop condition
+    auto condition = buildNStepLoopCondition(startIndex, maxHop);
+
+    // Create loop
+    auto* loop = Loop::make(matchCtx_->qctx, firstStep, body, condition);
+
+    // Unionize the results of each expansion which are stored in the firstStep node
+    auto uResNode = UnionAllVersionVar::make(matchCtx_->qctx, loop);
+    uResNode->setInputVar(firstStep->outputVar());
+    uResNode->setColNames({kPathStr});
+
+    subplan.root = uResNode;
     plan->root = subplan.root;
-
     return Status::OK();
 }
-
 
 // Build subplan: Project->Dedup->GetNeighbors->[Filter]->Project
 Status Expand::expandStep(const EdgeInfo& edge,
@@ -150,7 +175,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
     SubPlan curr;
     curr.root = dep;
     MatchSolver::extractAndDedupVidColumn(qctx, initialExpr_.release(), dep, inputVar, curr);
-
+    // [GetNeighbors]
     auto gn = GetNeighbors::make(qctx, curr.root, matchCtx_->space.id);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
     gn->setSrc(qctx->objPool()->add(srcExpr.release()));
@@ -159,7 +184,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
     gn->setEdgeDirection(edge.direction);
 
     PlanNode* root = gn;
-
+    // [Filter]
     if (nodeFilter != nullptr) {
         auto filter = qctx->objPool()->add(nodeFilter->clone().release());
         RewriteMatchLabelVisitor visitor(
@@ -182,7 +207,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
     }
 
     if (edge.filter != nullptr) {
-        RewriteMatchLabelVisitor visitor([](const Expression*expr) {
+        RewriteMatchLabelVisitor visitor([](const Expression* expr) {
             DCHECK_EQ(expr->kind(), Expression::Kind::kLabelAttribute);
             auto la = static_cast<const LabelAttributeExpression*>(expr);
             return new AttributeExpression(new EdgeExpression(), la->right()->clone().release());
@@ -196,6 +221,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
 
     auto listColumns = saveObject(new YieldColumns);
     listColumns->addColumn(new YieldColumn(buildPathExpr(), new std::string(kPathStr)));
+    // [Project]
     root = Project::make(qctx, root, listColumns);
     root->setColNames({kPathStr});
 
@@ -204,13 +230,13 @@ Status Expand::expandStep(const EdgeInfo& edge,
     return Status::OK();
 }
 
+// Build subplan: DataJoin->Project->Filter
 Status Expand::collectData(const PlanNode* joinLeft,
                            const PlanNode* joinRight,
-                           const PlanNode* inUnionNode,
                            PlanNode** passThrough,
                            SubPlan* plan) {
     auto qctx = matchCtx_->qctx;
-    // [dataJoin]
+    // [dataJoin] read start node (joinLeft)
     auto join = SegmentsConnector::innerJoinSegments(qctx, joinLeft, joinRight);
     auto lpath = folly::stringPrintf("%s_%d", kPathStr, 0);
     auto rpath = folly::stringPrintf("%s_%d", kPathStr, 1);
@@ -220,20 +246,14 @@ Status Expand::collectData(const PlanNode* joinLeft,
     auto columns = saveObject(new YieldColumns);
     auto listExpr = mergePathColumnsExpr(lpath, rpath);
     columns->addColumn(new YieldColumn(listExpr));
+    // [Project]
     auto project = Project::make(qctx, join, columns);
     project->setColNames({kPathStr});
-
+    // [Filter]
     auto filter = MatchSolver::filtPathHasSameEdge(project, kPathStr, qctx);
-
-    auto pt = PassThroughNode::make(qctx, filter);
-    pt->setOutputVar(filter->outputVar());
-    pt->setColNames({kPathStr});
-
-    auto uNode = Union::make(qctx, pt, const_cast<PlanNode*>(inUnionNode));
-    uNode->setColNames({kPathStr});
-
-    *passThrough = pt;
-    plan->root = uNode;
+    // Update start node
+    filter->setOutputVar((*passThrough)->outputVar());
+    plan->root = filter;
     return Status::OK();
 }
 
@@ -253,18 +273,23 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge,
     auto minHopExpr = std::make_unique<ConstantExpression>(minHop);
     auto expr = std::make_unique<RelationalExpression>(
         Expression::Kind::kRelGE, edgeExpr.release(), minHopExpr.release());
+
     auto filter = Filter::make(qctx, input, saveObject(expr.release()));
     filter->setColNames(input->colNames());
     plan->root = filter;
-    // Plan->tail = curr.tail;
     return Status::OK();
 }
 
-PlanNode* Expand::passThrough(const QueryContext *qctx, const PlanNode *root) const {
-    auto pt = PassThroughNode::make(const_cast<QueryContext*>(qctx), const_cast<PlanNode*>(root));
-    pt->setOutputVar(root->outputVar());
-    pt->setColNames(root->colNames());
-    return pt;
+Expression* Expand::buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) const {
+    VLOG(1) << "match expand maxHop: " << maxHop;
+    // ++loopSteps{startIndex} <= maxHop
+    auto loopSteps = matchCtx_->qctx->vctx()->anonVarGen()->getVar();
+    matchCtx_->qctx->ectx()->setValue(loopSteps, startIndex);
+    return matchCtx_->qctx->objPool()->add(new RelationalExpression(
+        Expression::Kind::kRelLE,
+        new UnaryExpression(Expression::Kind::kUnaryIncr,
+                            new VariableExpression(new std::string(loopSteps))),
+        new ConstantExpression(static_cast<int64_t>(maxHop))));
 }
 
 }  // namespace graph

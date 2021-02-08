@@ -47,6 +47,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "Filter";
         case Kind::kUnion:
             return "Union";
+        case Kind::kUnionAllVersionVar:
+            return "UnionAllVersionVar";
         case Kind::kIntersect:
             return "Intersect";
         case Kind::kMinus:

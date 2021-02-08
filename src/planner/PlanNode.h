@@ -31,6 +31,7 @@ public:
         kIndexScan,
         kFilter,
         kUnion,
+        kUnionAllVersionVar,
         kIntersect,
         kMinus,
         kProject,

@@ -498,7 +498,7 @@ public:
         }
     }
 
-    // union two sequential iterator.
+    // Union two sequential iterators.
     SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right)
         : Iterator(left->valuePtr(), Kind::kSequential) {
         DCHECK(left->isSequentialIter());
@@ -514,6 +514,22 @@ public:
                      std::make_move_iterator(rIter->end()));
         iter_ = rows_.begin();
         colIndices_ = lIter->getColIndices();
+    }
+
+    // Union multiple sequential iterators
+    explicit SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList)
+        : Iterator(inputList[0]->valuePtr(), Kind::kSequential) {
+        auto firstInputIter = static_cast<SequentialIter*>(inputList[0].get());
+        for (size_t i = 0; i < inputList.size(); i++) {
+            DCHECK(inputList[i]->isSequentialIter());
+            auto inputIter = static_cast<SequentialIter*>(inputList[i].get());
+            rows_.insert(rows_.end(),
+                         std::make_move_iterator(inputIter->begin()),
+                         std::make_move_iterator(inputIter->end()));
+        }
+
+        iter_ = rows_.begin();
+        colIndices_ = firstInputIter->getColIndices();
     }
 
     std::unique_ptr<Iterator> copy() const override {

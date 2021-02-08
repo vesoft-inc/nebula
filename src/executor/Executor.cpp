@@ -78,6 +78,7 @@
 #include "executor/query/SortExecutor.h"
 #include "executor/query/TopNExecutor.h"
 #include "executor/query/UnionExecutor.h"
+#include "executor/query/UnionAllVersionVarExecutor.h"
 #include "executor/query/AssignExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Logic.h"
@@ -196,6 +197,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kUnion: {
             return pool->add(new UnionExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUnionAllVersionVar: {
+            return pool->add(new UnionAllVersionVarExecutor(node, qctx));
         }
         case PlanNode::Kind::kIntersect: {
             return pool->add(new IntersectExecutor(node, qctx));

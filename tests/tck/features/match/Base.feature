@@ -57,7 +57,7 @@ Feature: Basic match
       | 'David West'    | 38  |
       | 'Tracy McGrady' | 39  |
 
-  Scenario: Une step
+  Scenario: One step
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.name AS Name

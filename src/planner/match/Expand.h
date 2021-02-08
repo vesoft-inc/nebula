@@ -54,15 +54,14 @@ private:
 
     Status collectData(const PlanNode* joinLeft,
                        const PlanNode* joinRight,
-                       const PlanNode* inUnionNode,
                        PlanNode** passThrough,
                        SubPlan* plan);
 
-    Status filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, SubPlan* plan);
+    Status filterDatasetByPathLength(const EdgeInfo& edge,
+                                     PlanNode* input,
+                                     SubPlan* plan);
 
-    // Add a passThrough node into plan so that the result of previous ndoe
-    // can be used by multiple other plan nodes
-    PlanNode* passThrough(const QueryContext *qctx, const PlanNode *root) const;
+    Expression* buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) const;
 
     template <typename T>
     T* saveObject(T* obj) const {

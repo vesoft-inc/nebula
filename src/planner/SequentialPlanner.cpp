@@ -42,6 +42,7 @@ void SequentialPlanner::ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx)
         case PlanNode::Kind::kLimit:
         case PlanNode::Kind::kDedup:
         case PlanNode::Kind::kUnion:
+        case PlanNode::Kind::kUnionAllVersionVar:
         case PlanNode::Kind::kIntersect:
         case PlanNode::Kind::kCartesianProduct:
         case PlanNode::Kind::kMinus:

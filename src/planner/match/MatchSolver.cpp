@@ -243,7 +243,7 @@ Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
                                           Expression* initialExpr,
                                           std::string inputVar,
                                           SubPlan& plan) {
-    // [Dedup]
+    // [Project && Dedup]
     extractAndDedupVidColumn(qctx, initialExpr, plan.root, inputVar, plan);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
     // [Get vertices]
