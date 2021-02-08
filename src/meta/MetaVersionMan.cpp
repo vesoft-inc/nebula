@@ -12,6 +12,7 @@
 
 DEFINE_bool(null_type, true, "set schema to support null type");
 DEFINE_bool(print_info, false, "enable to print the rewrite data");
+DEFINE_uint32(string_index_limit, 64, "string index key length limit");
 
 namespace nebula {
 namespace meta {
