@@ -521,6 +521,21 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        memory_lock_test
+    SOURCES
+        MemoryLockTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         scan_vertex_test
     SOURCES
         ScanVertexTest.cpp
