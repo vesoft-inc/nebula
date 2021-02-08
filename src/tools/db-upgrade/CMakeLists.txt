@@ -4,6 +4,8 @@ nebula_add_executable(
     SOURCES
         DbUpgraderTool.cpp
         NebulaKeyUtilsV1.cpp
+        NebulaKeyUtilsV2.cpp
+        DbUpgrader.cpp
     OBJECTS
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:meta_service_handler>
@@ -51,11 +53,11 @@ nebula_add_executable(
         wangle
 )
 
-#install(
-#    TARGETS
-#        db_upgrader
-#    DESTINATION
-#        bin
-#    COMPONENT
-#        tool
-#)
+install(
+    TARGETS
+        db_upgrader
+    DESTINATION
+        bin
+    COMPONENT
+        tool
+)

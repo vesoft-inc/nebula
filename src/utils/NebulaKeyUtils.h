@@ -57,8 +57,6 @@ public:
 
     static std::string systemPartKey(PartitionID partId);
 
-    static std::string uuidKey(PartitionID partId, const folly::StringPiece& name);
-
     static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
 
     /**
@@ -203,13 +201,6 @@ public:
         }
         auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
-    }
-
-
-    static bool isUUIDKey(const folly::StringPiece& key) {
-        auto type = readInt<int32_t>(key.data(), sizeof(int32_t)) & kTypeMask;
-        // return static_cast<uint32_t>(NebulaKeyType::kUUID) == type;
-        return static_cast<NebulaKeyType>(type) == NebulaKeyType::kUUID;
     }
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {

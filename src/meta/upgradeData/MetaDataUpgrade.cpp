@@ -354,6 +354,11 @@ void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
     auto oldItem = oldmeta::MetaServiceUtilsV1::parseIndex(val);
     LOG(INFO) << "Index   id: " << oldItem.get_index_id();
     LOG(INFO) << "Index name: " << oldItem.get_index_name();
+    if (oldItem.get_schema_id().getType() == oldmeta::cpp2::SchemaID::Type::tag_id) {
+        LOG(INFO) << "Index on tag id: " << oldItem.get_schema_id().get_tag_id();
+    } else {
+        LOG(INFO) << "Index on edgetype: " << oldItem.get_schema_id().get_edge_type();
+    }
     for (auto &colDef : oldItem.get_fields()) {
         LOG(INFO) << "Index field name: " << colDef.get_name();
         LOG(INFO) << "Index field type: "

@@ -76,12 +76,17 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          int32_t vIdLen,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
-                         std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
+                         std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory,
+                         bool readonly)
     : KVEngine(spaceId), dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
-        if (!FileUtils::makeDir(path)) {
-            LOG(FATAL) << "makeDir " << path << " failed";
+        if (readonly) {
+            LOG(FATAL) << "Path " << path << " not exist";
+        } else {
+            if (!FileUtils::makeDir(path)) {
+                LOG(FATAL) << "makeDir " << path << " failed";
+            }
         }
     }
 
@@ -99,7 +104,12 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     if (cfFactory != nullptr) {
         options.compaction_filter_factory = cfFactory;
     }
-    status = rocksdb::DB::Open(options, path, &db);
+
+    if (readonly) {
+        status = rocksdb::DB::OpenForReadOnly(options, path, &db);
+    } else {
+        status = rocksdb::DB::Open(options, path, &db);
+    }
     CHECK(status.ok()) << status.ToString();
     db_.reset(db);
     partsNum_ = allParts().size();

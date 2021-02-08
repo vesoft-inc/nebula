@@ -95,7 +95,8 @@ public:
                 int32_t vIdLen,
                 const std::string& dataPath,
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
-                std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
+                std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr,
+                bool readonly = false);
 
     ~RocksEngine() {
         LOG(INFO) << "Release rocksdb on " << dataPath_;

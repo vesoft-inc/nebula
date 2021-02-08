@@ -174,8 +174,6 @@ TEST(KeyUtilsTest, MiscTest) {
     auto systemPrefix = NebulaKeyUtils::systemPrefix();
     ASSERT_EQ(commitKey.find(systemPrefix), 0);
     ASSERT_EQ(partKey.find(systemPrefix), 0);
-    auto uuidKey = NebulaKeyUtils::uuidKey(partId, "abc");
-    ASSERT_TRUE(NebulaKeyUtils::isUUIDKey(uuidKey));
 }
 
 }  // namespace nebula
