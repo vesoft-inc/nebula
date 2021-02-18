@@ -224,6 +224,7 @@ StorageClientBase<ClientType>::collectResponse(
                         VLOG(3) << "Failure! Failed part " << code.get_part_id()
                                 << ", failed code " << static_cast<int32_t>(code.get_code());
                         hasFailure = true;
+                        context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             auto* leader = code.get_leader();
                             if (isValidHostPtr(leader)) {
@@ -235,8 +236,7 @@ StorageClientBase<ClientType>::collectResponse(
                                    code.get_code() == cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
-                            // Simply keep the result
-                            context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
+                            // do nothing
                         }
                     }
                     if (hasFailure) {
