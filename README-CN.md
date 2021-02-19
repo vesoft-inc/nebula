@@ -54,9 +54,11 @@
 * [简体中文](https://docs.nebula-graph.com.cn/)
 * [English](https://docs.nebula-graph.io/)
 
+<!--
 ## 产品路线图
 
 **Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap)。
+-->
 
 ## 可视化工具：Nebula Graph Studio
 
