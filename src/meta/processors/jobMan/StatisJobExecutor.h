@@ -34,7 +34,7 @@ public:
     executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) override;
 
     // Summarize the results of statisItem_
-    void finish(bool ExeSuccessed) override;
+    void finish(bool exeSuccessed) override;
 
     cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) override;
 

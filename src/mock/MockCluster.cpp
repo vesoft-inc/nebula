@@ -249,7 +249,7 @@ void MockCluster::startStorage(HostAddr addr,
 
 std::unique_ptr<meta::SchemaManager>
 MockCluster::memSchemaMan(SchemaVer schemaVerCount, GraphSpaceID spaceId, bool hasProp) {
-    auto schemaMan = std::make_unique<AdHocSchemaManager>();
+    auto schemaMan = std::make_unique<AdHocSchemaManager>(6);
     // if have multi version schema, need to add from oldest to newest
     for (SchemaVer ver = 0; ver < schemaVerCount; ver++) {
         // Vertex has two tags: players and teams

@@ -27,7 +27,9 @@ using EdgeSchemas =
 
 class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 public:
-    AdHocSchemaManager() = default;
+    explicit AdHocSchemaManager(int32_t partNum = 1)
+        : partNum_(partNum) {}
+
     ~AdHocSchemaManager() = default;
 
     void addTagSchema(GraphSpaceID space,
@@ -104,7 +106,7 @@ public:
     void addFTClient(const nebula::meta::cpp2::FTClient& client);
 
     StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
-        return 1;
+        return partNum_;
     }
 
 protected:
@@ -137,6 +139,7 @@ private:
             std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>> edgeSchemasInMap_;
 
     std::vector<nebula::meta::cpp2::FTClient> ftClients_;
+    int32_t partNum_;
 };
 
 }  // namespace mock

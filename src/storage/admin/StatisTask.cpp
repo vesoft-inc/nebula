@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/base/MurmurHash2.h"
 #include "kvstore/Common.h"
 #include "storage/admin/StatisTask.h"
 #include "utils/NebulaKeyUtils.h"
@@ -80,8 +81,22 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         LOG(ERROR) << "Get space vid length failed";
         return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
     }
-    auto vIdLen = vIdLenRet.value();
 
+    auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
+    if (!vIdType.ok()) {
+        LOG(ERROR) << "Get space vid type failed";
+        return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+
+    auto vIdLen = vIdLenRet.value();
+    bool isIntId = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+    auto partitionNumRet = env_->schemaMan_->getPartsNum(spaceId);
+    if (!partitionNumRet.ok()) {
+        LOG(ERROR) << "Get space partition number failed";
+        return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+
+    auto partitionNum = partitionNumRet.value();
     LOG(INFO) << "Start statis task";
     CHECK_NOTNULL(env_->kvstore_);
     auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
@@ -102,10 +117,11 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         return ret;
     }
 
-    std::unordered_map<TagID, int64_t>    tagsVertices;
-    std::unordered_map<EdgeType, int64_t> edgetypeEdges;
-    int64_t                               spaceVertices = 0;
-    int64_t                               spaceEdges = 0;
+    std::unordered_map<TagID, int64_t>       tagsVertices;
+    std::unordered_map<EdgeType, int64_t>    edgetypeEdges;
+    std::unordered_map<PartitionID, int64_t> relevancy;
+    int64_t                                  spaceVertices = 0;
+    int64_t                                  spaceEdges = 0;
 
     for (auto tag : tags) {
         tagsVertices[tag.first] = 0;
@@ -174,6 +190,7 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
             edgeIter->next();
             continue;
         }
+
         auto source = NebulaKeyUtils::getSrcId(vIdLen, key).str();
         auto ranking = NebulaKeyUtils::getRank(vIdLen, key);
         auto destination = NebulaKeyUtils::getDstId(vIdLen, key).str();
@@ -190,6 +207,17 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
             lastEdgeType  = edgeType;
             lastRank = ranking;
             lastDstVertexId = destination;
+
+            uint64_t vid = 0;
+            if (isIntId) {
+                memcpy(static_cast<void*>(&vid), destination.data(), 8);
+            } else {
+                nebula::MurmurHash2 hash;
+                vid = hash(destination.data());
+            }
+
+            PartitionID partId = vid % partitionNum + 1;
+            relevancy[partId]++;
         }
         edgeIter->next();
     }
@@ -213,7 +241,27 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     statisItem.set_space_vertices(spaceVertices);
     statisItem.set_space_edges(spaceEdges);
 
-    statistics_.insert(part, std::move(statisItem));
+    using Correlativiyties = std::vector<nebula::meta::cpp2::Correlativity>;
+    Correlativiyties correlativity;
+    for (const auto& entry : relevancy) {
+        nebula::meta::cpp2::Correlativity partProportion;
+        partProportion.set_part_id(entry.first);
+        LOG(INFO) << "parts edges " << entry.second << " total " << spaceEdges;
+        double proportion = static_cast<double>(entry.second) / static_cast<double>(spaceEdges);
+        partProportion.set_proportion(proportion);
+        LOG(INFO) << "Part " << entry.first << " proportion " << proportion;
+        correlativity.emplace_back(std::move(partProportion));
+    }
+
+    std::sort(correlativity.begin(), correlativity.end(),
+              [&] (const auto& l, const auto& r) {
+                  return l.proportion < r.proportion;
+              });
+
+    std::unordered_map<PartitionID, Correlativiyties> partCorelativity;
+    partCorelativity[part] = correlativity;
+    statisItem.set_part_corelativity(std::move(partCorelativity));
+    statistics_.emplace(part, std::move(statisItem));
     LOG(INFO) << "Statis task finished";
     return kvstore::ResultCode::SUCCEEDED;
 }
