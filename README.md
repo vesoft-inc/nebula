@@ -52,9 +52,11 @@ In case you encounter any problem, be sure to ask us on our [official forum](htt
 * [English](https://docs.nebula-graph.io/)
 * [Simplified Chinese (简体中文)](https://docs.nebula-graph.com.cn/)
 
+<!--
 ## Roadmap
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap) for what's coming soon in **Nebula Graph**.
+-->
 
 ## Visualization Tool: Nebula Graph Studio
 
