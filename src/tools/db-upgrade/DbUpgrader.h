@@ -37,7 +37,9 @@ public:
     UpgraderSpace() = default;
 
     ~UpgraderSpace() {
-        pool_->join();
+        if (pool_) {
+            pool_->join();
+        }
     }
 
     Status init(meta::MetaClient* mclient,
@@ -161,7 +163,9 @@ public:
     DbUpgrader() = default;
 
     ~DbUpgrader() {
-        pool_->join();
+        if (pool_) {
+            pool_->join();
+        }
     }
 
     Status init(meta::MetaClient* mclient,

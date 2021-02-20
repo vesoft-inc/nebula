@@ -38,9 +38,15 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 
     CHECK_NOTNULL(env_->indexMan_);
     auto iRet = env_->indexMan_->getEdgeIndexes(spaceId_);
-    if (iRet.ok()) {
-        indexes_ = std::move(iRet).value();
+    if (!iRet.ok()) {
+        LOG(ERROR) << iRet.status();
+        for (auto& part : partEdges) {
+            pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+        }
+        onFinished();
+        return;
     }
+    indexes_ = std::move(iRet).value();
 
     CHECK_NOTNULL(env_->kvstore_);
     for (auto& part : partEdges) {

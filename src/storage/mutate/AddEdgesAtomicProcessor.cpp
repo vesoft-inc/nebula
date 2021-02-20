@@ -81,11 +81,16 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
 
     CHECK_NOTNULL(env_->indexMan_);
     auto stIndex = env_->indexMan_->getEdgeIndexes(spaceId_);
-    if (stIndex.ok()) {
-        if (!stIndex.value().empty()) {
-            processor_.reset(AddEdgesProcessor::instance(env_));
-            processor_->indexes_ = stIndex.value();
+    if (!stIndex.ok()) {
+         for (auto& part : req.parts)  {
+            pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
         }
+        onFinished();
+        return;
+    }
+    if (!stIndex.value().empty()) {
+        processor_.reset(AddEdgesProcessor::instance(env_));
+        processor_->indexes_ = stIndex.value();
     }
 
     std::list<folly::Future<folly::Unit>> futures;
