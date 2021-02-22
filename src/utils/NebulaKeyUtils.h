@@ -200,8 +200,25 @@ public:
             dumpBadKey(rawKey, kEdgeLen + (vIdLen << 1), vIdLen);
         }
         auto offset = sizeof(PartitionID) + vIdLen + sizeof(EdgeType);
-        return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
+        return NebulaKeyUtils::decodeRank(rawKey.data() + offset);
     }
+
+    static std::string encodeRank(EdgeRanking rank) {
+        rank ^= folly::to<int64_t>(1) << 63;
+        auto val = folly::Endian::big(rank);
+        std::string raw;
+        raw.reserve(sizeof(int64_t));
+        raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
+        return raw;
+    }
+
+    static EdgeRanking decodeRank(const folly::StringPiece& raw) {
+        auto val = *reinterpret_cast<const int64_t*>(raw.data());
+        val = folly::Endian::big(val);
+        val ^= folly::to<int64_t>(1) << 63;
+        return val;
+    }
+
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.

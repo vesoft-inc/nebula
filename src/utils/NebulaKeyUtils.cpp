@@ -51,7 +51,7 @@ std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
        .append(srcId.data(), srcId.size())
        .append(vIdLen - srcId.size(), '\0')
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
-       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(NebulaKeyUtils::encodeRank(rank))
        .append(dstId.data(), dstId.size())
        .append(vIdLen - dstId.size(), '\0')
        .append(1, ev);
@@ -178,7 +178,7 @@ std::string NebulaKeyUtils::edgePrefix(size_t vIdLen,
        .append(srcId.data(), srcId.size())
        .append(vIdLen - srcId.size(), '\0')
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
-       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(NebulaKeyUtils::encodeRank(rank))
        .append(dstId.data(), dstId.size())
        .append(vIdLen - dstId.size(), '\0');
     return key;

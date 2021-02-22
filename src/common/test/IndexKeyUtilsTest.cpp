@@ -182,6 +182,15 @@ TEST(IndexKeyUtilsTest, edgeIndexKeyV2) {
     ASSERT_EQ(1, IndexKeyUtils::getIndexRank(100, key));
     ASSERT_EQ(vid, IndexKeyUtils::getIndexDstId(100, key));
     ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
+
+    key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, -1, vid, std::move(values));
+    ASSERT_EQ(-1, IndexKeyUtils::getIndexRank(100, key));
+
+    key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 9223372036854775807, vid, std::move(values));
+    ASSERT_EQ(9223372036854775807, IndexKeyUtils::getIndexRank(100, key));
+
+    key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 0, vid, std::move(values));
+    ASSERT_EQ(0, IndexKeyUtils::getIndexRank(100, key));
 }
 
 TEST(IndexKeyUtilsTest, nullableValue) {
