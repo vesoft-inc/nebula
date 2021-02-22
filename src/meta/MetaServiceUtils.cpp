@@ -74,9 +74,6 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
 const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
 
-const std::string kHostOnline  = "Online";       // NOLINT
-const std::string kHostOffline = "Offline";      // NOLINT
-
 const int kMaxIpAddrLen = 15;   // '255.255.255.255'
 
 bool backupTable(kvstore::KVStore* kvstore,
@@ -244,14 +241,6 @@ std::string MetaServiceUtils::hostKeyV2(std::string addr, Port port) {
     return key;
 }
 
-std::string MetaServiceUtils::hostValOnline() {
-    return kHostOnline;
-}
-
-std::string MetaServiceUtils::hostValOffline() {
-    return kHostOffline;
-}
-
 const std::string& MetaServiceUtils::hostPrefix() {
     return kHostsTable;
 }
@@ -392,6 +381,11 @@ std::string MetaServiceUtils::schemaVal(const std::string& name, const cpp2::Sch
     return val;
 }
 
+EdgeType MetaServiceUtils::parseEdgeType(folly::StringPiece key) {
+    return *reinterpret_cast<const EdgeType*>(key.data() + kEdgesTable.size() +
+                                              sizeof(GraphSpaceID));
+}
+
 SchemaVer MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
     auto offset = kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType);
     return std::numeric_limits<SchemaVer>::max() -
@@ -411,6 +405,10 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, Sc
         .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
         .append(reinterpret_cast<const char*>(&storageVer), sizeof(SchemaVer));
     return key;
+}
+
+TagID MetaServiceUtils::parseTagId(folly::StringPiece key) {
+    return *reinterpret_cast<const TagID*>(key.data() + kTagsTable.size() + sizeof(GraphSpaceID));
 }
 
 SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
@@ -473,6 +471,11 @@ std::string MetaServiceUtils::indexPrefix(GraphSpaceID spaceId) {
 
 GraphSpaceID MetaServiceUtils::parseIndexesKeySpaceID(folly::StringPiece key) {
     return *reinterpret_cast<const GraphSpaceID*>(key.data() + kIndexesTable.size());
+}
+
+IndexID MetaServiceUtils::parseIndexesKeyIndexID(folly::StringPiece key) {
+    return *reinterpret_cast<const IndexID*>(key.data() + kIndexesTable.size() +
+                                             sizeof(GraphSpaceID));
 }
 
 nebula::meta::cpp2::IndexItem MetaServiceUtils::parseIndex(const folly::StringPiece& rawData) {

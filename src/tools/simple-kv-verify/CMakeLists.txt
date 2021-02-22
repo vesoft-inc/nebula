@@ -45,11 +45,11 @@ nebula_add_executable(
         gtest
 )
 
-install(
-    TARGETS
-        simple_kv_verify
-    DESTINATION
-        bin
-    COMPONENT
-        tool
-)
+#install(
+#    TARGETS
+#        simple_kv_verify
+#    DESTINATION
+#        bin
+#    COMPONENT
+#        tool
+#)

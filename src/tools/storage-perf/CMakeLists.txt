@@ -55,14 +55,14 @@ nebula_add_executable(
         gtest
 )
 
-install(
-    TARGETS
-        storage_perf
-    DESTINATION
-        bin
-    COMPONENT
-        tool
-)
+#install(
+#    TARGETS
+#        storage_perf
+#    DESTINATION
+#        bin
+#    COMPONENT
+#        tool
+#)
 
 nebula_add_executable(
     NAME
@@ -79,11 +79,11 @@ nebula_add_executable(
         gtest
 )
 
-install(
-    TARGETS
-        storage_integrity
-    DESTINATION
-        bin
-    COMPONENT
-        tool
-)
+#install(
+#    TARGETS
+#        storage_integrity
+#    DESTINATION
+#        bin
+#    COMPONENT
+#        tool
+#)

@@ -80,10 +80,6 @@ public:
 
     static std::string hostKeyV2(std::string addr, Port port);
 
-    static std::string hostValOnline();
-
-    static std::string hostValOffline();
-
     static const std::string& hostPrefix();
 
     static HostAddr parseHostKey(folly::StringPiece key);
@@ -116,9 +112,13 @@ public:
 
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
+    static EdgeType parseEdgeType(folly::StringPiece key);
+
     static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
+
+    static TagID parseTagId(folly::StringPiece key);
 
     static SchemaVer parseTagVersion(folly::StringPiece key);
 
@@ -133,6 +133,8 @@ public:
     static std::string indexVal(const cpp2::IndexItem& item);
 
     static std::string indexPrefix(GraphSpaceID spaceId);
+
+    static IndexID parseIndexesKeyIndexID(folly::StringPiece key);
 
     static cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
 

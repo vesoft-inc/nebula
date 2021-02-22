@@ -1,8 +1,8 @@
 nebula_add_executable(
     NAME
-        edges_dump
+        meta_dump
     SOURCES
-        EdgesDumpTool.cpp
+        MetaDumpTool.cpp
     OBJECTS
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:meta_service_handler>
@@ -49,4 +49,13 @@ nebula_add_executable(
         proxygenlib
         glog
         gflags
+)
+
+install(
+    TARGETS
+        meta_dump
+    DESTINATION
+        bin
+    COMPONENT
+        tool
 )
