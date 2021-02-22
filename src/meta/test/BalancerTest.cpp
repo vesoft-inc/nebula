@@ -15,7 +15,7 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 
 DECLARE_uint32(task_concurrency);
-DECLARE_int32(expired_threshold_sec);
+DECLARE_int32(heartbeat_interval_secs);
 DECLARE_double(leader_balance_deviation);
 
 namespace nebula {
@@ -139,7 +139,7 @@ TEST(BalanceTest, SimpleTestWithZone) {
     fs::TempDir rootPath("/tmp/SimpleTestWithZone.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     {
         std::vector<HostAddr> hosts;
         for (int i = 0; i < 4; i++) {
@@ -198,7 +198,7 @@ TEST(BalanceTest, ExpansionZoneTest) {
     fs::TempDir rootPath("/tmp/ExpansionZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     {
         std::vector<HostAddr> hosts;
         for (int i = 0; i < 3; i++) {
@@ -279,7 +279,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
     fs::TempDir rootPath("/tmp/ExpansionHostIntoZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     {
         std::vector<HostAddr> hosts;
         for (int i = 0; i < 3; i++) {
@@ -362,7 +362,7 @@ TEST(BalanceTest, ShrinkZoneTest) {
     fs::TempDir rootPath("/tmp/ShrinkZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 10;
+    FLAGS_heartbeat_interval_secs = 1;
     {
         std::vector<HostAddr> hosts;
         for (int i = 0; i < 4; i++) {
@@ -425,7 +425,7 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
     fs::TempDir rootPath("/tmp/ShrinkHostFromZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     {
         std::vector<HostAddr> hosts;
         for (int i = 0; i < 6; i++) {
@@ -489,7 +489,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceWithComplexZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 10;
+    FLAGS_heartbeat_interval_secs = 1;
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 18; i++) {
         hosts.emplace_back(std::to_string(i), i);
@@ -975,7 +975,7 @@ TEST(BalanceTest, NormalTest) {
     fs::TempDir rootPath("/tmp/NormalTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
     std::unordered_map<HostAddr, int32_t> partCount;
@@ -988,7 +988,7 @@ TEST(BalanceTest, NormalTest) {
     auto ret = balancer.balance();
     ASSERT_EQ(cpp2::ErrorCode::E_BALANCED, error(ret));
 
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     ret = balancer.balance();
@@ -1008,7 +1008,7 @@ TEST(BalanceTest, SpecifyHostTest) {
     fs::TempDir rootPath("/tmp/SpecifyHostTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
     std::unordered_map<HostAddr, int32_t> partCount;
@@ -1038,9 +1038,8 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     fs::TempDir rootPath("/tmp/SpecifyMultiHostTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
-    TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4},
-                                         {"5", 5}});
+    FLAGS_heartbeat_interval_secs = 1;
+    TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}});
     TestUtils::assembleSpace(kv, 1, 12, 3, 6);
     std::unordered_map<HostAddr, int32_t> partCount;
     for (int32_t i = 0; i < 6; i++) {
@@ -1053,7 +1052,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     NiceMock<MockAdminClient> client;
     Balancer balancer(kv, &client);
 
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
     LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
     // If {"2", 2} and {"3", 3} are both dead, minority hosts for some part are alive,
     // it would lead to a fail
@@ -1086,7 +1085,7 @@ TEST(BalanceTest, MockReplaceMachineTest) {
     fs::TempDir rootPath("/tmp/MockReplaceMachineTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     TestUtils::assembleSpace(kv, 1, 12, 3, 3);
 
@@ -1100,7 +1099,8 @@ TEST(BalanceTest, MockReplaceMachineTest) {
     TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     LOG(INFO) << "Now, we want to replace host {2, 2} with {3, 3}";
     // Because for all parts majority hosts still alive, we could balance
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    // {2, 2} should be offline now
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}});
     auto ret = balancer.balance();
     ASSERT_TRUE(ok(ret));
@@ -1120,7 +1120,7 @@ TEST(BalanceTest, SingleReplicaTest) {
     fs::TempDir rootPath("/tmp/SingleReplicaTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4},
                                           {"5", 5}});
     TestUtils::assembleSpace(kv, 1, 12, 1, 6);
@@ -1161,11 +1161,11 @@ TEST(BalanceTest, TryToRecoveryTest) {
     fs::TempDir rootPath("/tmp/TryToRecoveryTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
 
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
 
@@ -1196,8 +1196,9 @@ TEST(BalanceTest, TryToRecoveryTest) {
                       BalanceTaskResult::FAILED,
                       partCount, 6);
 
-    LOG(INFO) << "Now let's try to recovery it. Since the the host will expired in 1 second, "
-              << "all host would be regarded as offline, so all task will be invalid";
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    LOG(INFO) << "Now let's try to recovery it. Sinc eall host would be regarded as offline, "
+              << "so all task will be invalid";
     ret = balancer.balance();
     CHECK(ok(ret));
     balanceId = value(ret);
@@ -1214,7 +1215,7 @@ TEST(BalanceTest, RecoveryTest) {
     fs::TempDir rootPath("/tmp/RecoveryTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
 
@@ -1233,7 +1234,7 @@ TEST(BalanceTest, RecoveryTest) {
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     Balancer balancer(kv, &client);
@@ -1269,9 +1270,13 @@ TEST(BalanceTest, StopPlanTest) {
     fs::TempDir rootPath("/tmp/StopAndRecoverTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
+
+    // {3, 3} is lost for now
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
 
     DefaultValue<folly::Future<Status>>::SetFactory([] {
         return folly::Future<Status>(Status::OK());
@@ -1283,8 +1288,6 @@ TEST(BalanceTest, StopPlanTest) {
         .WillOnce(Return(
             ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
 
-    sleep(1);
-    TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     Balancer balancer(kv, &delayClient);
     auto ret = balancer.balance();
     CHECK(ok(ret));
@@ -1345,7 +1348,7 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
     fs::TempDir rootPath("/tmp/CleanLastInvalidBalancePlanTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
 
@@ -1359,7 +1362,7 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
         .Times(AtLeast(12))
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-    sleep(1);
+    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     Balancer balancer(kv, &client);
     auto ret = balancer.balance();
@@ -1594,7 +1597,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 600;
+    FLAGS_heartbeat_interval_secs = 1;
 
     int partCount = 99999;
     int replica = 3;
@@ -1668,7 +1671,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceWithZone.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 10;
+    FLAGS_heartbeat_interval_secs = 1;
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 9; i++) {
         hosts.emplace_back(std::to_string(i), i);
@@ -1747,7 +1750,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceWithLargerZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 10;
+    FLAGS_heartbeat_interval_secs = 1;
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 15; i++) {
         hosts.emplace_back(std::to_string(i), i);
@@ -1815,7 +1818,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceWithComplexZoneTest.XXXXXX");
     auto store = MockCluster::initMetaKV(rootPath.path());
     auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-    FLAGS_expired_threshold_sec = 10;
+    FLAGS_heartbeat_interval_secs = 1;
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 18; i++) {
         hosts.emplace_back(std::to_string(i), i);

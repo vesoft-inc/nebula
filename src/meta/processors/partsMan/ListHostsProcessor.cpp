@@ -9,7 +9,6 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "version/Version.h"
 
-DECLARE_int32(expired_threshold_sec);
 DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
              "Hosts will be removed in this time if no heartbeat received");
@@ -111,7 +110,9 @@ Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
         item.set_role(info.role_);
         item.set_git_info_sha(info.gitInfoSha_);
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
-            if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
+            // If meta didn't receive heartbeat with 2 periods, regard hosts as offline.
+            // Same as ActiveHostsMan::getActiveHosts
+            if (now - info.lastHBTimeInMilliSec_ < FLAGS_heartbeat_interval_secs * 2 * 1000) {
                 item.set_status(cpp2::HostStatus::ONLINE);
             } else {
                 item.set_status(cpp2::HostStatus::OFFLINE);
@@ -144,7 +145,7 @@ Status ListHostsProcessor::fillLeaderAndPartInfoPerHost() {
     }
 
     // get hosts which have send heartbeat recently
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {

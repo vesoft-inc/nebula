@@ -8,8 +8,7 @@
 #include "meta/processors/Common.h"
 #include "utils/Utils.h"
 
-DEFINE_int32(expired_threshold_sec, 10 * 60,
-             "Hosts will be expired in this time if no heartbeat received");
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -49,7 +48,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv,
         FLOG_ERROR("getActiveHosts failed(%d)", static_cast<int>(ret));
         return hosts;
     }
-    int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
+    int64_t threshold = (expiredTTL == 0 ? FLAGS_heartbeat_interval_secs * 2 : expiredTTL) * 1000;
     auto now = time::WallClock::fastNowInMilliSec();
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
@@ -79,7 +78,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHostsInZone(kvstore::KVStore* kv,
 
     auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
     auto now = time::WallClock::fastNowInMilliSec();
-    int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
+    int64_t threshold = (expiredTTL == 0 ? FLAGS_heartbeat_interval_secs * 2 : expiredTTL) * 1000;
     for (auto& host : hosts) {
         auto infoRet = getHostInfo(kv, host);
         if (!infoRet.ok()) {

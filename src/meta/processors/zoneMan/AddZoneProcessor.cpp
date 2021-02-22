@@ -30,7 +30,7 @@ void AddZoneProcessor::process(const cpp2::AddZoneReq& req) {
         return;
     }
 
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
     std::sort(activeHosts.begin(), activeHosts.end());
     if (!std::includes(activeHosts.begin(), activeHosts.end(), nodeSet.begin(), nodeSet.end())) {
         LOG(ERROR) << "Host not exist";

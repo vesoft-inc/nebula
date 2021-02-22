@@ -47,9 +47,7 @@
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "version/Version.h"
 
-
-DECLARE_int32(expired_threshold_sec);
-
+DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace meta {
 
@@ -57,7 +55,7 @@ using cpp2::PropertyType;
 
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> hosts;
     for (auto i = 0; i < 10; i++) {
@@ -81,7 +79,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(FLAGS_expired_threshold_sec + 1);
+        sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
         cpp2::ListHostsReq req;
         req.set_type(cpp2::ListHostType::STORAGE);
         auto* processor = ListHostsProcessor::instance(kv.get());
@@ -105,7 +103,7 @@ TEST(ProcessorTest, ListSpecficHostsTest) {
     std::vector<std::string> gitInfoShaVec{"fakeGraphInfoSHA",
                                            "fakeMetaInfoSHA",
                                            "fakeStorageInfoSHA"};
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> graphHosts;
     for (auto i = 0; i < 3; ++i) {
