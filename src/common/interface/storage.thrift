@@ -45,6 +45,7 @@ enum ErrorCode {
     E_FIELD_UNSET          = -22,   // The field neither can be NULL, nor has a default value
     E_OUT_OF_RANGE         = -23,   // Value exceeds the range of type
     E_ATOMIC_OP_FAILED     = -24,   // Atomic operation failed
+    E_DATA_CONFLICT_ERROR  = -25,   // data conflict, for index write withnot toss.
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND    = -31,
