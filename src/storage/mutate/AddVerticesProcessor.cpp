@@ -236,13 +236,12 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                                 }
                             }
                         }
-
-                        /*
-                        * step 3 , Insert new vertex data
-                        */
-                        batchHolder->put(std::move(key), std::move(retEnc.value()));
                     }
-                }
+                }  // for index data
+                /*
+                * step 3 , Insert new vertex data
+                */
+                batchHolder->put(std::move(key), std::move(retEnc.value()));
                 dummyLock.emplace_back(std::make_tuple(spaceId_, partId, tagId, vid));
 
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
