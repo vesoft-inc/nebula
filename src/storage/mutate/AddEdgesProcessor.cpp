@@ -20,7 +20,6 @@ ProcessorCounters kAddEdgesCounters;
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     spaceId_ = req.get_space_id();
     const auto& partEdges = req.get_parts();
-    const auto& propNames = req.get_prop_names();
 
     CHECK_NOTNULL(env_->schemaMan_);
     auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
@@ -49,6 +48,17 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     indexes_ = std::move(iRet).value();
 
     CHECK_NOTNULL(env_->kvstore_);
+
+    if (indexes_.empty()) {
+        doProcess(req);
+    } else {
+        doProcessWithIndex(req);
+    }
+}
+
+void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
+    const auto& partEdges = req.get_parts();
+    const auto& propNames = req.get_prop_names();
     for (auto& part : partEdges) {
         auto partId = part.first;
         const auto& newEdges = part.second;
@@ -100,21 +110,161 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 
             data.emplace_back(std::move(key), std::move(retEnc.value()));
         }
-        if (indexes_.empty()) {
-            doPut(spaceId_, partId, std::move(data));
-        } else {
-            auto atomic = [partId, edges = std::move(data), this]()
-                          -> folly::Optional<std::string> {
-                return addEdges(partId, edges);
-            };
-
-            auto callback = [partId, this](kvstore::ResultCode code) {
-                handleAsync(spaceId_, partId, code);
-            };
-            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
-        }
+        doPut(spaceId_, partId, std::move(data));
     }
 }
+
+void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
+    const auto& partEdges = req.get_parts();
+    const auto& propNames = req.get_prop_names();
+    for (auto& part : partEdges) {
+        IndexCountWrapper wrapper(env_);
+        std::unique_ptr<kvstore::BatchHolder> batchHolder =
+        std::make_unique<kvstore::BatchHolder>();
+        auto partId = part.first;
+        const auto& newEdges = part.second;
+        std::vector<EMLI> dummyLock;
+        dummyLock.reserve(newEdges.size());
+        for (auto& newEdge : newEdges) {
+            auto edgeKey = newEdge.key;
+            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edgeKey.src
+                    << ", EdgeType: " << edgeKey.edge_type << ", EdgeRanking: "
+                    << edgeKey.ranking << ", VertexID: "
+                    << edgeKey.dst;
+
+            if (!NebulaKeyUtils::isValidVidLen(
+                    spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                           << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << edgeKey.src
+                           << ", dstVid: " << edgeKey.dst;
+                pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+                onFinished();
+                return;
+            }
+
+            auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                               partId,
+                                               edgeKey.src.getStr(),
+                                               edgeKey.edge_type,
+                                               edgeKey.ranking,
+                                               edgeKey.dst.getStr());
+            auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
+                                                          std::abs(edgeKey.edge_type));
+            if (!schema) {
+                LOG(ERROR) << "Space " << spaceId_ << ", Edge "
+                           << edgeKey.edge_type << " invalid";
+                pushResultCode(cpp2::ErrorCode::E_EDGE_NOT_FOUND, partId);
+                onFinished();
+                return;
+            }
+
+            auto props = newEdge.get_props();
+            WriteResult wRet;
+            auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
+            if (!retEnc.ok()) {
+                LOG(ERROR) << retEnc.status();
+                pushResultCode(writeResultTo(wRet, true), partId);
+                onFinished();
+                return;
+            }
+            if (edgeKey.edge_type > 0) {
+                RowReaderWrapper nReader;
+                RowReaderWrapper oReader;
+                auto obsIdx = findOldValue(partId, key);
+                if (obsIdx != folly::none && !obsIdx.value().empty()) {
+                    oReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
+                                                                spaceId_,
+                                                                edgeKey.edge_type,
+                                                                std::move(obsIdx).value());
+                }
+                if (!retEnc.value().empty()) {
+                    nReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
+                                                                  spaceId_,
+                                                                  edgeKey.edge_type,
+                                                                  retEnc.value());
+                }
+                for (auto& index : indexes_) {
+                    if (edgeKey.edge_type == index->get_schema_id().get_edge_type()) {
+                        /*
+                        * step 1 , Delete old version index if exists.
+                        */
+                        if (oReader != nullptr) {
+                            auto oi = indexKey(partId, oReader.get(), key, index);
+                            if (!oi.empty()) {
+                                // Check the index is building for the specified partition or not.
+                                auto indexState = env_->getIndexState(spaceId_, partId);
+                                if (env_->checkRebuilding(indexState)) {
+                                    auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                                    batchHolder->put(std::move(delOpKey), std::move(oi));
+                                } else if (env_->checkIndexLocked(indexState)) {
+                                    LOG(ERROR) << "The index has been locked: "
+                                               << index->get_index_name();
+                                    pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
+                                    onFinished();
+                                    return;
+                                } else {
+                                    batchHolder->remove(std::move(oi));
+                                }
+                            }
+                        }
+                        /*
+                        * step 2 , Insert new edge index
+                        */
+                        if (nReader != nullptr) {
+                            auto ni = indexKey(partId, nReader.get(), key, index);
+                            if (!ni.empty()) {
+                                // Check the index is building for the specified partition or not.
+                                auto indexState = env_->getIndexState(spaceId_, partId);
+                                if (env_->checkRebuilding(indexState)) {
+                                    auto opKey = OperationKeyUtils::modifyOperationKey(
+                                        partId, std::move(ni));
+                                    batchHolder->put(std::move(opKey), "");
+                                } else if (env_->checkIndexLocked(indexState)) {
+                                    LOG(ERROR) << "The index has been locked: "
+                                               << index->get_index_name();
+                                    pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
+                                    onFinished();
+                                    return;
+                                } else {
+                                    batchHolder->put(std::move(ni), "");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            batchHolder->put(std::move(key), std::move(retEnc.value()));
+            dummyLock.emplace_back(std::make_tuple(spaceId_,
+                                                   partId,
+                                                   edgeKey.src.getStr(),
+                                                   edgeKey.edge_type,
+                                                   edgeKey.ranking,
+                                                   edgeKey.dst.getStr()));
+        }
+        auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+        DCHECK(!batch.empty());
+        nebula::MemoryLockGuard<EMLI> lg(env_->edgesML_.get(), std::move(dummyLock), true);
+        if (!lg) {
+            auto conflict = lg.conflictKey();
+            LOG(ERROR) << "edge conflict "
+                        << std::get<0>(conflict) << ":"
+                        << std::get<1>(conflict) << ":"
+                        << std::get<2>(conflict) << ":"
+                        << std::get<3>(conflict) << ":"
+                        << std::get<4>(conflict) << ":"
+                        << std::get<5>(conflict);
+            pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
+            onFinished();
+            return;
+        }
+        env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch),
+            [l = std::move(lg), partId, this](kvstore::ResultCode code) {
+                UNUSED(l);
+                handleAsync(spaceId_, partId, code);
+            });
+    }
+}
+
 
 folly::Optional<std::string>
 AddEdgesProcessor::addEdges(PartitionID partId,

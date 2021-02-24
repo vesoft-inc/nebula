@@ -682,7 +682,7 @@ ResultCode NebulaStore::sync(GraphSpaceID spaceId,
 
 void NebulaStore::asyncAppendBatch(GraphSpaceID spaceId,
                                    PartitionID partId,
-                                   std::string& batch,
+                                   std::string batch,
                                    KVCallback cb) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {

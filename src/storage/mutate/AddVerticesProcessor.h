@@ -29,16 +29,16 @@ public:
 
     void process(const cpp2::AddVerticesRequest& req);
 
+    void doProcess(const cpp2::AddVerticesRequest& req);
+
+    void doProcessWithIndex(const cpp2::AddVerticesRequest& req);
+
 private:
     AddVerticesProcessor(StorageEnv* env,
                          const ProcessorCounters* counters,
                          VertexCache* cache)
         : BaseProcessor<cpp2::ExecResponse>(env, counters)
         , vertexCache_(cache) {}
-
-    folly::Optional<std::string>
-    addVertices(PartitionID partId,
-                const std::vector<kvstore::KV>& vertices);
 
     folly::Optional<std::string> findOldValue(PartitionID partId, const VertexID& vId, TagID tagId);
 

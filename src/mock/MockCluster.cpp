@@ -220,6 +220,8 @@ void MockCluster::initStorageKV(const char* dataPath,
     storageEnv_->indexMan_ = indexMan_.get();
     storageEnv_->kvstore_ = storageKV_.get();
     storageEnv_->rebuildIndexGuard_ = std::make_unique<storage::IndexGuard>();
+    storageEnv_->verticesML_ = std::make_unique<storage::VerticesMemLock>();
+    storageEnv_->edgesML_ = std::make_unique<storage::EdgesMemLock>();
 }
 
 void MockCluster::startStorage(HostAddr addr,

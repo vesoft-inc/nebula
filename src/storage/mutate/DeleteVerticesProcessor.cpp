@@ -91,27 +91,44 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             doRemove(spaceId_, partId, keys);
         }
     } else {
-        std::for_each(partVertices.begin(), partVertices.end(), [this](auto &pv) {
+        for (auto& pv : partVertices) {
             auto partId = pv.first;
-            auto atomic = [partId, v = std::move(pv.second),
-                           this]() -> folly::Optional<std::string> {
-                return deleteVertices(partId, v);
-            };
-
-            auto callback = [partId, this](kvstore::ResultCode code) {
-                VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
-                handleAsync(spaceId_, partId, code);
-            };
-            env_->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
-        });
+            std::vector<VMLI> dummyLock;
+            auto batch = deleteVertices(partId, std::move(pv).second, dummyLock);
+            if (batch == folly::none) {
+                handleErrorCode(kvstore::ResultCode::ERR_INVALID_DATA, spaceId_, partId);
+                onFinished();
+                return;
+            }
+            DCHECK(!batch.value().empty());
+            nebula::MemoryLockGuard<VMLI> lg(env_->verticesML_.get(), std::move(dummyLock), true);
+            if (!lg) {
+                auto conflict = lg.conflictKey();
+                LOG(ERROR) << "vertex conflict "
+                        << std::get<0>(conflict) << ":"
+                        << std::get<1>(conflict) << ":"
+                        << std::get<2>(conflict) << ":"
+                        << std::get<3>(conflict);
+                pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
+                onFinished();
+                return;
+            }
+            env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch).value(),
+                [l = std::move(lg), partId, this](kvstore::ResultCode code) {
+                    UNUSED(l);
+                    handleAsync(spaceId_, partId, code);
+                });
+        }
     }
 }
 
 
 folly::Optional<std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
-                                        const std::vector<Value>& vertices) {
+                                        const std::vector<Value>& vertices,
+                                        std::vector<VMLI>& target) {
     IndexCountWrapper wrapper(env_);
+    target.reserve(vertices.size());
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
@@ -123,78 +140,54 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
             return folly::none;
         }
 
-        TagID latestTagId = -1;
         while (iter->valid()) {
             auto key = iter->key();
-            if (!NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
-                iter->next();
-                continue;
-            }
-
             auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+            RowReaderWrapper reader;
+            for (auto& index : indexes_) {
+                if (index->get_schema_id().get_tag_id() == tagId) {
+                    auto indexId = index->get_index_id();
+
+                    if (reader == nullptr) {
+                        reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                                                                    spaceId_,
+                                                                    tagId,
+                                                                    iter->val());
+                        if (reader == nullptr) {
+                            LOG(WARNING) << "Bad format row";
+                            return folly::none;
+                        }
+                    }
+                    const auto& cols = index->get_fields();
+                    auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
+                                                                        cols);
+                    if (!valuesRet.ok()) {
+                        continue;
+                    }
+                    auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_,
+                                                                    partId,
+                                                                    indexId,
+                                                                    vertex.getStr(),
+                                                                    std::move(valuesRet).value());
+
+                    // Check the index is building for the specified partition or not
+                    auto indexState = env_->getIndexState(spaceId_, partId);
+                    if (env_->checkRebuilding(indexState)) {
+                        auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                        batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+                    } else if (env_->checkIndexLocked(indexState)) {
+                        LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                        return folly::none;
+                    } else {
+                        batchHolder->remove(std::move(indexKey));
+                    }
+                }
+            }
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
                 vertexCache_->evict(std::make_pair(vertex.getStr(), tagId));
             }
-
-            /**
-             * example ,the prefix result as below :
-             *     V1_tag1_version3
-             *     V1_tag1_version2
-             *     V1_tag1_version1
-             *     V1_tag2_version3
-             *     V1_tag2_version2
-             *     V1_tag2_version1
-             *     V1_tag3_version3
-             *     V1_tag3_version2
-             *     V1_tag3_version1
-             * Because index depends on latest version of tag.
-             * So only V1_tag1_version3, V1_tag2_version3 and V1_tag3_version3 are needed,
-             * Using latestTagId to identify if it is the latest version
-            */
-            if (latestTagId != tagId) {
-                RowReaderWrapper reader;
-                for (auto& index : indexes_) {
-                    if (index->get_schema_id().get_tag_id() == tagId) {
-                        auto indexId = index->get_index_id();
-
-                        if (reader == nullptr) {
-                            reader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
-                                                                        spaceId_,
-                                                                        tagId,
-                                                                        iter->val());
-                            if (reader == nullptr) {
-                                LOG(WARNING) << "Bad format row";
-                                return folly::none;
-                            }
-                        }
-                        const auto& cols = index->get_fields();
-                        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
-                                                                           cols);
-                        if (!valuesRet.ok()) {
-                            continue;
-                        }
-                        auto indexKey = IndexKeyUtils::vertexIndexKey(spaceVidLen_,
-                                                                      partId,
-                                                                      indexId,
-                                                                      vertex.getStr(),
-                                                                      std::move(valuesRet).value());
-
-                        // Check the index is building for the specified partition or not
-                        auto indexState = env_->getIndexState(spaceId_, partId);
-                        if (env_->checkRebuilding(indexState)) {
-                            auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
-                        } else if (env_->checkIndexLocked(indexState)) {
-                            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                            return folly::none;
-                        } else {
-                            batchHolder->remove(std::move(indexKey));
-                        }
-                    }
-                }
-                latestTagId = tagId;
-            }
+            target.emplace_back(std::make_tuple(spaceId_, partId, tagId, vertex.getStr()));
             batchHolder->remove(key.str());
             iter->next();
         }

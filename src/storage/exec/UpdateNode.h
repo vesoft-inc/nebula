@@ -167,57 +167,65 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
+        auto ret = kvstore::ResultCode::SUCCEEDED;
+        IndexCountWrapper wrapper(planContext_->env_);
+        ret = RelNode::execute(partId, vId);
+
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+
+        if (this->planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+            return kvstore::ResultCode::ERR_INVALID_DATA;
+        } else if (this->planContext_->resultStat_ ==  ResultStatus::FILTER_OUT) {
+            return kvstore::ResultCode::ERR_RESULT_FILTERED;
+        }
+
+        if (filterNode_->valid()) {
+            this->reader_ = filterNode_->reader();
+        }
+        // reset StorageExpressionContext reader_, because it contains old value
+        this->expCtx_->reset();
+
+        if (!this->reader_ && this->insertable_) {
+            ret = this->insertTagProps(partId, vId);
+        } else if (this->reader_) {
+            this->key_ = filterNode_->key().str();
+            ret = this->collTagProp(vId);
+        } else {
+            ret = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+        }
+
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+
+        auto batch = this->updateAndWriteBack(partId, vId);
+        if (batch == folly::none) {
+            return kvstore::ResultCode::ERR_INVALID_DATA;
+        }
+
+        std::vector<VMLI> dummyLock = {std::make_tuple(planContext_->spaceId_,
+                                                       partId, tagId_, vId)};
+        nebula::MemoryLockGuard<VMLI> lg(planContext_->env_->verticesML_.get(),
+                                         std::move(dummyLock));
+        if (!lg) {
+            auto conflict = lg.conflictKey();
+            LOG(ERROR) << "vertex conflict "
+                       << std::get<0>(conflict) << ":"
+                       << std::get<1>(conflict) << ":"
+                       << std::get<2>(conflict) << ":"
+                       << std::get<3>(conflict);
+            return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+        }
 
         folly::Baton<true, std::atomic> baton;
-        auto ret = kvstore::ResultCode::SUCCEEDED;
-        planContext_->env_->kvstore_->asyncAtomicOp(planContext_->spaceId_, partId,
-            [&partId, &vId, this] ()
-            -> folly::Optional<std::string> {
-                IndexCountWrapper wrapper(planContext_->env_);
-                this->exeResult_ = RelNode::execute(partId, vId);
-
-                if (this->exeResult_ == kvstore::ResultCode::SUCCEEDED) {
-                    if (this->planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
-                        this->exeResult_ = kvstore::ResultCode::ERR_INVALID_DATA;
-                        return folly::none;
-                    } else if (this->planContext_->resultStat_ ==  ResultStatus::FILTER_OUT) {
-                        this->exeResult_ = kvstore::ResultCode::ERR_RESULT_FILTERED;
-                        return folly::none;
-                    }
-
-                    if (filterNode_->valid()) {
-                        this->reader_ = filterNode_->reader();
-                    }
-                    // reset StorageExpressionContext reader_, because it contains old value
-                    this->expCtx_->reset();
-
-                    if (!this->reader_ && this->insertable_) {
-                        this->exeResult_ = this->insertTagProps(partId, vId);
-                    } else if (this->reader_) {
-                        this->key_ = filterNode_->key().str();
-                        this->exeResult_ = this->collTagProp(vId);
-                    } else {
-                        this->exeResult_ = kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-                    }
-
-                    if (this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
-                        return folly::none;
-                    }
-                    return this->updateAndWriteBack(partId, vId);
-                } else {
-                    // if tagnode/edgenode error
-                    return folly::none;
-                }
-            },
-            [&ret, &baton, this] (kvstore::ResultCode code) {
-                if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
-                    this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
-                    ret = this->exeResult_;
-                } else {
-                    ret = code;
-                }
-                baton.post();
-            });
+        auto callback = [&ret, &baton] (kvstore::ResultCode code) {
+            ret = code;
+            baton.post();
+        };
+        planContext_->env_->kvstore_->asyncAppendBatch(
+            planContext_->spaceId_, partId, std::move(batch).value(), callback);
         baton.wait();
         return ret;
     }
@@ -452,8 +460,6 @@ public:
 
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
-
-        folly::Baton<true, std::atomic> baton;
         auto ret = kvstore::ResultCode::SUCCEEDED;
         // folly::Function<folly::Optional<std::string>(void)>
         auto op = [&partId, &edgeKey, this]() -> folly::Optional<std::string> {
@@ -497,16 +503,6 @@ public:
             }
         };
 
-        kvstore::KVCallback cb = [&ret, &baton, this] (kvstore::ResultCode code) {
-            if (code == kvstore::ResultCode::ERR_ATOMIC_OP_FAILED &&
-                this->exeResult_ != kvstore::ResultCode::SUCCEEDED) {
-                ret = this->exeResult_;
-            } else {
-                ret = code;
-            }
-            baton.post();
-        };
-
         if (planContext_->env_->txnMan_ &&
             planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
             LOG(INFO) << "before update edge atomic" << TransactionUtils::dumpKey(edgeKey);
@@ -520,8 +516,32 @@ public:
                 ret = kvstore::ResultCode::ERR_UNKNOWN;
             }
         } else {
-            planContext_->env_->kvstore_->asyncAtomicOp(
-                planContext_->spaceId_, partId, std::move(op), std::move(cb));
+            auto batch = op();
+            if (batch == folly::none) {
+                return this->exeResult_;
+            }
+            std::vector<EMLI> dummyLock = {std::make_tuple(planContext_->spaceId_, partId,
+            edgeKey.src.getStr(), edgeKey.edge_type, edgeKey.ranking, edgeKey.dst.getStr())};
+            nebula::MemoryLockGuard<EMLI> lg(planContext_->env_->edgesML_.get(),
+                                             std::move(dummyLock));
+            if (!lg) {
+                auto conflict = lg.conflictKey();
+                LOG(ERROR) << "edge conflict "
+                           << std::get<0>(conflict) << ":"
+                           << std::get<1>(conflict) << ":"
+                           << std::get<2>(conflict) << ":"
+                           << std::get<3>(conflict) << ":"
+                           << std::get<4>(conflict) << ":"
+                           << std::get<5>(conflict);
+                return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+            }
+            folly::Baton<true, std::atomic> baton;
+            auto callback = [&ret, &baton] (kvstore::ResultCode code) {
+                ret = code;
+                baton.post();
+            };
+            planContext_->env_->kvstore_->asyncAppendBatch(
+                planContext_->spaceId_, partId, std::move(batch).value(), callback);
             baton.wait();
         }
         return ret;

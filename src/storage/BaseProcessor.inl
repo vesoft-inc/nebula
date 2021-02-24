@@ -52,6 +52,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
     case kvstore::ResultCode::ERR_INVALID_OPERATION:
         return cpp2::ErrorCode::E_INVALID_OPERATION;
+    case kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR:
+        return cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }

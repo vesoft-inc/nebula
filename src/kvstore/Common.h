@@ -44,6 +44,7 @@ enum class ResultCode {
     ERR_BACKUP_EXISTED      = -24,
     ERR_BACKUP_OPEN_FAILED  = -25,
     ERR_BACKUP_EMPTY_TABLE  = -26,
+    ERR_DATA_CONFLICT_ERROR = -27,
     ERR_USER_CANCELLED      = -98,
     ERR_PARTIAL_RESULT      = -99,
     ERR_UNKNOWN             = -100,

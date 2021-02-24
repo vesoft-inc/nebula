@@ -29,6 +29,10 @@ public:
 
     void process(const cpp2::AddEdgesRequest& req);
 
+    void doProcess(const cpp2::AddEdgesRequest& req);
+
+    void doProcessWithIndex(const cpp2::AddEdgesRequest& req);
+
 private:
     AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
         : BaseProcessor<cpp2::ExecResponse>(env, counters) {}

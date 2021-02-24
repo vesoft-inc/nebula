@@ -177,7 +177,7 @@ public:
      */
     virtual void asyncAppendBatch(GraphSpaceID spaceId,
                                   PartitionID partId,
-                                  std::string& batch,
+                                  std::string batch,
                                   KVCallback cb) = 0;
 
     virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
