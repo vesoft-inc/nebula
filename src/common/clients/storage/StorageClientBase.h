@@ -77,7 +77,7 @@ public:
         std::lock_guard<std::mutex> g(*lock_);
         failedParts_.reserve(failedParts_.size() + partsId.size());
         for (const auto &partId : partsId) {
-            emplaceFailedPart(partId, errorCode);
+            failedParts_.emplace(partId, errorCode);
         }
     }
 
