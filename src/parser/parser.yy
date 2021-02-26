@@ -2593,8 +2593,9 @@ delete_vertex_sentence
 download_sentence
     : KW_DOWNLOAD KW_HDFS STRING {
         auto sentence = new DownloadSentence();
-        sentence->setUrl($3);
+        sentence->setUrl(*$3);
         $$ = sentence;
+        delete $3;
     }
     ;
 

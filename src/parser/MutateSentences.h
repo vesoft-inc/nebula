@@ -577,10 +577,6 @@ public:
         return host_.get();
     }
 
-    void setHost(std::string *host) {
-        host_.reset(host);
-    }
-
     int32_t port() const {
         return port_;
     }
@@ -593,18 +589,14 @@ public:
         return path_.get();
     }
 
-    void setPath(std::string *path) {
-        path_.reset(path);
-    }
-
-    void setUrl(std::string *url) {
+    void setUrl(std::string& url) {
         static std::string hdfsPrefix = "hdfs://";
-        if (url->find(hdfsPrefix) != 0) {
+        if (url.find(hdfsPrefix) != 0) {
             LOG(ERROR) << "URL should start with " << hdfsPrefix;
             return;
         }
 
-        std::string u = url->substr(hdfsPrefix.size(), url->size());
+        std::string u = url.substr(hdfsPrefix.size(), url.size());
         std::vector<folly::StringPiece> tokens;
         folly::split(":", u, tokens);
         if (tokens.size() == 2) {
@@ -614,16 +606,16 @@ public:
                 try {
                     port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
                 } catch (const std::exception& ex) {
-                    LOG(ERROR) << "URL's port parse failed: " << *url;
+                    LOG(ERROR) << "URL's port parse failed: " << url;
                     return;
                 }
                 path_ = std::make_unique<std::string>(
                             tokens[1].toString().substr(position, tokens[1].size()));
             } else {
-                LOG(ERROR) << "URL Parse Failed: " << *url;
+                LOG(ERROR) << "URL Parse Failed: " << url;
             }
         } else {
-            LOG(ERROR) << "URL Parse Failed: " << *url;
+            LOG(ERROR) << "URL Parse Failed: " << url;
         }
     }
 
