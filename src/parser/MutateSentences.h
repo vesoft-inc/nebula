@@ -601,7 +601,6 @@ public:
         static std::string hdfsPrefix = "hdfs://";
         if (url->find(hdfsPrefix) != 0) {
             LOG(ERROR) << "URL should start with " << hdfsPrefix;
-            delete url;
             return;
         }
 
@@ -616,6 +615,7 @@ public:
                     port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
                 } catch (const std::exception& ex) {
                     LOG(ERROR) << "URL's port parse failed: " << *url;
+                    return;
                 }
                 path_ = std::make_unique<std::string>(
                             tokens[1].toString().substr(position, tokens[1].size()));
@@ -625,7 +625,6 @@ public:
         } else {
             LOG(ERROR) << "URL Parse Failed: " << *url;
         }
-        delete url;
     }
 
     std::string toString() const override;
