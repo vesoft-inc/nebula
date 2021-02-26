@@ -650,3 +650,19 @@ nebula_add_executable(
         wangle
         gtest
 )
+
+nebula_add_executable(
+    NAME
+        mem_lock_bm
+    SOURCES
+        MemoryLockBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        follybenchmark
+        boost_regex
+)
