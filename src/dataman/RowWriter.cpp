@@ -104,14 +104,21 @@ RowWriter& RowWriter::operator<<(bool v) noexcept {
     RW_GET_COLUMN_TYPE(BOOL)
 
     switch (type->get_type()) {
-        case SupportedType::BOOL:
+        case SupportedType::BOOL: {
             cord_ << v;
             break;
-        default:
+        }
+        case SupportedType::INT: {
+            int64_t ret = v ? 1 : 0;
+            writeInt(ret);
+            break;
+        }
+        default: {
             LOG(ERROR) << "Incompatible value type \"bool\"";
             // Output a default value
             cord_ << false;
             break;
+        }
     }
 
     RW_CLEAN_UP_WRITE()
@@ -128,6 +135,16 @@ RowWriter& RowWriter::operator<<(float v) noexcept {
             break;
         case SupportedType::DOUBLE:
             cord_ << static_cast<double>(v);
+            break;
+        case SupportedType::INT:
+            if (v > std::numeric_limits<int64_t>::max() ||
+                v < std::numeric_limits<int64_t>::min()) {
+                LOG(ERROR) << "Float value " << v << " overflow the range of int64";
+                cord_ << static_cast<float>(0.0);
+            } else {
+                int64_t iv = v;
+                writeInt(iv);
+            }
             break;
         default:
             LOG(ERROR) << "Incompatible value type \"float\"";
@@ -149,6 +166,16 @@ RowWriter& RowWriter::operator<<(double v) noexcept {
             break;
         case SupportedType::DOUBLE:
             cord_ << v;
+            break;
+        case SupportedType::INT:
+            if (v > std::numeric_limits<int64_t>::max() ||
+                v < std::numeric_limits<int64_t>::min()) {
+                LOG(ERROR) << "Double value " << v << " overflow the range of int64";
+                cord_ << static_cast<double>(0.0);
+            } else {
+                int64_t iv = v;
+                writeInt(iv);
+            }
             break;
         default:
             LOG(ERROR) << "Incompatible value type \"double\"";
