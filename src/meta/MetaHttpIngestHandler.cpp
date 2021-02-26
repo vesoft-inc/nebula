@@ -120,7 +120,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     std::set<std::string> storageIPs;
     while (iter->valid()) {
         for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            if (storageIPs.count(host.host)) {
+            if (storageIPs.count(host.host) == 0) {
                 storageIPs.insert(std::move(host.host));
             }
         }
