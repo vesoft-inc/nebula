@@ -75,16 +75,14 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 }
                 while (iter->valid()) {
                     auto key = iter->key();
-                    if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
-                        auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
-                        // Evict vertices from cache
-                        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                            VLOG(3) << "Evict vertex cache for VID " << vid
-                                    << ", TagID " << tagId;
-                            vertexCache_->evict(std::make_pair(vid.getStr(), tagId));
-                        }
-                        keys.emplace_back(key.str());
+                    auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
+                    // Evict vertices from cache
+                    if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+                        VLOG(3) << "Evict vertex cache for VID " << vid
+                                << ", TagID " << tagId;
+                        vertexCache_->evict(std::make_pair(vid.getStr(), tagId));
                     }
+                    keys.emplace_back(key.str());
                     iter->next();
                 }
             }

@@ -63,9 +63,6 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     RowReaderWrapper reader;
     for (int64_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
         auto key = iter->key();
-        if (!NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
-            continue;
-        }
 
         auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
         auto tagIter = tagContext_.indexMap_.find(tagId);

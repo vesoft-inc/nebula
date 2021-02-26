@@ -42,21 +42,19 @@ void checkTagVertexData(int32_t spaceVidLen,
 
         while (iter && iter->valid()) {
             auto key = iter->key();
-            if (NebulaKeyUtils::isVertex(spaceVidLen, key)) {
-                auto tId = NebulaKeyUtils::getTagId(spaceVidLen, key);
-                if (tId == tagId) {
-                    if (distinguishMultiVer) {
-                        auto vId = NebulaKeyUtils::getVertexId(spaceVidLen, key).str();
-                        if (lastVertexId == vId) {
-                            // mutil version
-                        } else {
-                            lastVertexId  = vId;
-                            totalCount++;
-                        }
+            auto tId = NebulaKeyUtils::getTagId(spaceVidLen, key);
+            if (tId == tagId) {
+                if (distinguishMultiVer) {
+                    auto vId = NebulaKeyUtils::getVertexId(spaceVidLen, key).str();
+                    if (lastVertexId == vId) {
+                        // mutil version
                     } else {
+                        lastVertexId  = vId;
                         totalCount++;
                     }
-                }
+                 } else {
+                    totalCount++;
+                 }
             }
             iter->next();
         }

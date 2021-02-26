@@ -131,17 +131,16 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         edgetypeEdges[edge.first] = 0;
     }
 
-    TagID                                 lastTagId = 0;
     VertexID                              lastVertexId = "";
-    // Only statis valid vetex data
+
+    // Only statis valid vetex data, no multi version
     // For example
-    // Vid  tagId  version
-    // 1     1     2
-    // 1     1     1
-    // 2     2     2   (invalid data)
-    // 2     2     1   (invalid data)
-    // 2     3     1
-    // 3     1     2
+    // Vid  tagId
+    // 1     1
+    // 2     2  (invalid data, for example, tag data without tag schema)
+    // 2     3
+    // 2     5
+    // 3     1
     while (vertexIter && vertexIter->valid()) {
         auto key = vertexIter->key();
         auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
@@ -155,70 +154,48 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         }
 
         if (vId == lastVertexId) {
-            if (tagId == lastTagId) {
-                // Multi version
-            } else {
-                tagsVertices[tagId] += 1;
-                lastTagId = tagId;
-            }
+            tagsVertices[tagId] += 1;
         } else {
             tagsVertices[tagId] += 1;
             spaceVertices++;
-            lastTagId = tagId;
             lastVertexId  = vId;
         }
         vertexIter->next();
     }
 
-    VertexID                              lastSrcVertexId = "";
-    EdgeType                              lastEdgeType = 0;
-    VertexID                              lastDstVertexId = "";
-    EdgeRanking                           lastRank = 0;
-    // Only statis valid edge data
+    // Only statis valid edge data, no multi version
     // For example
-    // src edgetype rank dst  version
-    // 1    1       1    2    2
-    // 1    1       1    2    1
-    // 2    2       1    3    2  (invalid data)
-    // 2    2       1    4    2  (invalid data)
-    // 2    3       1    4    1
-    // 3    3       1    4    1
+    // src edgetype rank dst
+    // 1    1       1    2
+    // 2    2       1    3  (invalid data, for example, edge data without edge schema)
+    // 2    3       1    4
+    // 2    3       1    5
     while (edgeIter && edgeIter->valid()) {
         auto key = edgeIter->key();
+
         auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
+        // Because edge lock in toss and edge are the same except for the last byte.
+        // But only the in-edge has a lock.
         if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
             edgeIter->next();
             continue;
         }
 
-        auto source = NebulaKeyUtils::getSrcId(vIdLen, key).str();
-        auto ranking = NebulaKeyUtils::getRank(vIdLen, key);
         auto destination = NebulaKeyUtils::getDstId(vIdLen, key).str();
 
-        if (source == lastSrcVertexId &&
-            edgeType == lastEdgeType &&
-            ranking == lastRank &&
-            destination == lastDstVertexId) {
-            // Multi version
+        spaceEdges++;
+        edgetypeEdges[edgeType] += 1;
+
+        uint64_t vid = 0;
+        if (isIntId) {
+            memcpy(static_cast<void*>(&vid), destination.data(), 8);
         } else {
-            spaceEdges++;
-            edgetypeEdges[edgeType] += 1;
-            lastSrcVertexId = source;
-            lastEdgeType  = edgeType;
-            lastRank = ranking;
-            lastDstVertexId = destination;
-
-            uint64_t vid = 0;
-            if (isIntId) {
-                memcpy(static_cast<void*>(&vid), destination.data(), 8);
-            } else {
-                nebula::MurmurHash2 hash;
-                vid = hash(destination.data());
-            }
-
-            PartitionID partId = vid % partitionNum + 1;
-            relevancy[partId]++;
+            nebula::MurmurHash2 hash;
+            vid = hash(destination.data());
         }
+
+        PartitionID partId = vid % partitionNum + 1;
+        relevancy[partId]++;
         edgeIter->next();
     }
 

@@ -73,10 +73,6 @@ kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
 
         auto key = iter->key();
         auto val = iter->val();
-        if (!NebulaKeyUtils::isEdge(vidSize, key)) {
-            iter->next();
-            continue;
-        }
 
         auto edgeType = NebulaKeyUtils::getEdgeType(vidSize, key);
         if (edgeType < 0) {

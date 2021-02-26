@@ -156,7 +156,12 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId,
             return folly::none;
         }
 
-        if (iter->valid()) {
+        while (iter->valid() && NebulaKeyUtils::isLock(spaceVidLen_, iter->key())) {
+            batchHolder->remove(iter->key().str());
+            iter->next();
+        }
+
+        if (iter->valid() && NebulaKeyUtils::isEdge(spaceVidLen_, iter->key())) {
             /**
              * just get the latest version edge for index.
              */

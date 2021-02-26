@@ -72,10 +72,6 @@ kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
 
         auto key = iter->key();
         auto val = iter->val();
-        if (!NebulaKeyUtils::isVertex(vidSize, key)) {
-            iter->next();
-            continue;
-        }
 
         auto tagID = NebulaKeyUtils::getTagId(vidSize, key);
 

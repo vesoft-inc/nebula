@@ -107,9 +107,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
         auto ret = RebuildIndexTest::env_->kvstore_->prefix(1, part, prefix, &iter);
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         while (iter && iter->valid()) {
-            if (NebulaKeyUtils::isVertex(vidSize, iter->key())) {
-                dataNum++;
-            }
+            dataNum++;
             iter->next();
         }
     }

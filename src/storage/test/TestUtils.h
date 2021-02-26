@@ -160,9 +160,7 @@ void checkVerticesData(int32_t spaceVidLen,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
             while (iter && iter->valid()) {
-                if (NebulaKeyUtils::isVertex(spaceVidLen, iter->key())) {
-                    totalCount++;
-                }
+                totalCount++;
                 iter->next();
             }
         }
