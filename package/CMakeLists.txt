@@ -95,22 +95,9 @@ install(
         tool
 )
 
-#install(
-#    FILES
-#        ${NEBULA_STORAGE_BINARY_DIR}/bin/simple_kv_verify
-#    PERMISSIONS
-#        OWNER_EXECUTE OWNER_WRITE OWNER_READ
-#        GROUP_EXECUTE GROUP_READ
-#        WORLD_EXECUTE WORLD_READ
-#    DESTINATION
-#        bin
-#    COMPONENT
-#        tool
-#)
-
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/storage_perf
+        ${NEBULA_STORAGE_BINARY_DIR}/bin/meta_dump
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -123,7 +110,7 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/storage_integrity
+        ${NEBULA_STORAGE_BINARY_DIR}/bin/db_upgrader
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
