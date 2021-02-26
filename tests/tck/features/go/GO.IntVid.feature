@@ -144,10 +144,9 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as vid | GO FROM $-.vid OVER like YIELD $-.vid as id
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
-      | id            |
-      | "Kobe Bryant" |
-      | "Grant Hill"  |
-      | "Rudy Gay"    |
+      | id           |
+      | "Grant Hill" |
+      | "Rudy Gay"   |
 
   Scenario: Integer Vid pipe only yield constant
     When executing query:
@@ -155,7 +154,6 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as vid | GO FROM $-.vid OVER like YIELD 3
       """
     Then the result should be, in any order, with relax comparison:
-      | 3 |
       | 3 |
       | 3 |
       | 3 |

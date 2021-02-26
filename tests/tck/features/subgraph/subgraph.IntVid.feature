@@ -224,7 +224,7 @@ Feature: Integer Vid subgraph
       | edge1                                       | vertex2               | edge2                                           | vertex3            |
       | [:like "Aron Baynes"->"Tim Duncan"@0]       | ("LaMarcus Aldridge") | [:like "Damian Lillard"->"LaMarcus Aldridge"@0] | ("Damian Lillard") |
       | [:like "Boris Diaw"->"Tim Duncan"@0]        | ("Danny Green")       | [:like "Rudy Gay"->"LaMarcus Aldridge"@0]       | ("Yao Ming")       |
-      | [:like "Danny Green"->"Tim Duncan"@0]       | ("Marco Belinelli")   | [:like "Tony Parker"->"LaMarcus Aldridge"@0]    |                    |
+      | [:like "Danny Green"->"Tim Duncan"@0]       | ("Marco Belinelli")   | [:like "Tony Parker"->"LaMarcus Aldridge"@0]    | ("Rudy Gay")       |
       | [:like "Dejounte Murray"->"Tim Duncan"@0]   | ("Manu Ginobili")     | [:like "Dejounte Murray"->"Danny Green"@0]      |                    |
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0] | ("Shaquile O'Neal")   | [:like "Marco Belinelli"->"Danny Green"@0]      |                    |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]     | ("Tony Parker")       | [:like "Danny Green"->"Marco Belinelli"@0]      |                    |
@@ -270,7 +270,7 @@ Feature: Integer Vid subgraph
       |                                             |                       | [:serve "Marco Belinelli"->"Raptors"@0]         | ("Lakers")         |                                              |
       |                                             |                       | [:serve "Marco Belinelli"->"Spurs"@0]           | ("Suns")           |                                              |
       |                                             |                       | [:serve "Marco Belinelli"->"Warriors"@0]        | ("Magic")          |                                              |
-      |                                             |                       | [:serve "Marco Belinelli"->"Hornets"@1]         |                    |                                              |
+      |                                             |                       | [:serve "Marco Belinelli"->"Hornets"@1]         | ("Yao Ming")       |                                              |
       |                                             |                       | [:serve "Marco Belinelli"->"Spurs"@1]           |                    |                                              |
       |                                             |                       | [:like "Danny Green"->"Marco Belinelli"@0]      |                    |                                              |
       |                                             |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]  |                    |                                              |
@@ -478,12 +478,12 @@ Feature: Integer Vid subgraph
       GET SUBGRAPH 4 STEPS FROM hash('NOBODY') IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices | _edges |
-      | []        | []     |
-      | []        | []     |
-      | []        | []     |
-      | []        | []     |
-      | []        | []     |
+      | _vertices    | _edges |
+      | [("NOBODY")] | []     |
+      | []           | []     |
+      | []           | []     |
+      | []           | []     |
+      | []           | []     |
     When executing query:
       """
       Get Subgraph 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like

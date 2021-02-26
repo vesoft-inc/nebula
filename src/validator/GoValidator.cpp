@@ -662,6 +662,11 @@ std::vector<storage::cpp2::VertexProp> GoValidator::buildDstVertexProps() {
 
 GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
     GetNeighbors::EdgeProps edgeProps;
+    VLOG(1) << exprProps_.srcTagProps().empty() << exprProps_.dstTagProps().empty() <<
+                exprProps_.edgeProps().empty();
+    bool onlyInputPropsOrConstant = exprProps_.srcTagProps().empty() &&
+                                    exprProps_.dstTagProps().empty() &&
+                                    exprProps_.edgeProps().empty();
     if (!exprProps_.edgeProps().empty()) {
         if (over_.direction == storage::cpp2::EdgeDirection::IN_EDGE) {
             edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
@@ -674,7 +679,7 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
             edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
             buildEdgeProps(edgeProps, false);
         }
-    } else if (!exprProps_.dstTagProps().empty()) {
+    } else if (!exprProps_.dstTagProps().empty() || onlyInputPropsOrConstant) {
         return buildEdgeDst();
     }
 
@@ -683,6 +688,7 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
 
 void GoValidator::buildEdgeProps(GetNeighbors::EdgeProps& edgeProps, bool isInEdge) {
     edgeProps->reserve(over_.edgeTypes.size());
+    bool needJoin = !exprProps_.dstTagProps().empty();
     for (auto& e : over_.edgeTypes) {
         storage::cpp2::EdgeProp ep;
         if (isInEdge) {
@@ -697,7 +703,7 @@ void GoValidator::buildEdgeProps(GetNeighbors::EdgeProps& edgeProps, bool isInEd
         } else {
             std::vector<std::string> props(propsFound->second.begin(),
                                            propsFound->second.end());
-            if (propsFound->second.find(kDst) == propsFound->second.end()) {
+            if (needJoin && propsFound->second.find(kDst) == propsFound->second.end()) {
                 props.emplace_back(kDst);
             }
             ep.set_props(std::move(props));
@@ -708,7 +714,11 @@ void GoValidator::buildEdgeProps(GetNeighbors::EdgeProps& edgeProps, bool isInEd
 
 GetNeighbors::EdgeProps GoValidator::buildEdgeDst() {
     GetNeighbors::EdgeProps edgeProps;
-    if (!exprProps_.edgeProps().empty() || !exprProps_.dstTagProps().empty()) {
+    bool onlyInputPropsOrConstant = exprProps_.srcTagProps().empty() &&
+                                    exprProps_.dstTagProps().empty() &&
+                                    exprProps_.edgeProps().empty();
+    if (!exprProps_.edgeProps().empty() || !exprProps_.dstTagProps().empty() ||
+        onlyInputPropsOrConstant) {
         if (over_.direction == storage::cpp2::EdgeDirection::IN_EDGE) {
             edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(
                 over_.edgeTypes.size());

@@ -48,15 +48,63 @@ namespace nebula {
 namespace graph {
 GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
     : Iterator(value, Kind::kGetNeighbors) {
+    if (value == nullptr) {
+        return;
+    }
     auto status = processList(value);
     if (UNLIKELY(!status.ok())) {
         LOG(ERROR) << status;
         clear();
         return;
     }
-    iter_ = logicalRows_.begin();
-    valid_ = true;
-    noEdgeValid_ = true;
+
+    goToFirstEdge();
+}
+
+void GetNeighborsIter::goToFirstEdge() {
+    // Go to first edge
+    for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
+        for (currentRow_ = currentDs_->ds->rows.begin();
+            currentRow_ < currentDs_->ds->rows.end(); ++currentRow_) {
+            colIdx_ = currentDs_->colLowerBound + 1;
+            while (colIdx_ < currentDs_->colUpperBound && !valid_) {
+                const auto& currentCol = currentRow_->operator[](colIdx_);
+                if (!currentCol.isList() || currentCol.getList().empty()) {
+                    ++colIdx_;
+                    continue;
+                }
+
+                currentCol_ = &currentCol.getList();
+                edgeIdxUpperBound_ = currentCol_->size();
+                edgeIdx_ = 0;
+                while (edgeIdx_ < edgeIdxUpperBound_ && !valid_) {
+                    const auto& currentEdge = currentCol_->operator[](edgeIdx_);
+                    if (!currentEdge.isList()) {
+                        ++edgeIdx_;
+                        continue;
+                    }
+                    currentEdge_ = &currentEdge.getList();
+                    valid_ = true;
+                }  // `edgeIdx_'
+            }  // `colIdx_'
+            if (valid_) {
+                break;
+            }
+        }  // `currentRow_'
+        if (valid_) {
+            break;
+        }
+    }  // `currentDs_'
+
+    if (valid_) {
+        rowsUpperBound_ = currentDs_->ds->rows.end();
+        bitIdx_ = 0;
+        if (bitset_.empty()) {
+            bitset_.push_back(true);
+        } else if (!bitset_[bitIdx_]) {
+            next();
+        }
+    }
 }
 
 Status GetNeighborsIter::processList(std::shared_ptr<Value> value) {
@@ -65,62 +113,23 @@ Status GetNeighborsIter::processList(std::shared_ptr<Value> value) {
         ss << "Value type is not list, type: " << value->type();
         return Status::Error(ss.str());
     }
-    size_t idx = 0;
     for (auto& val : value->getList().values) {
         if (UNLIKELY(!val.isDataSet())) {
             return Status::Error("There is a value in list which is not a data set.");
         }
-        auto status = makeDataSetIndex(val.getDataSet(), idx++);
+        auto status = makeDataSetIndex(val.getDataSet());
         NG_RETURN_IF_ERROR(status);
         dsIndices_.emplace_back(std::move(status).value());
     }
     return Status::OK();
 }
 
-StatusOr<GetNeighborsIter::DataSetIndex> GetNeighborsIter::makeDataSetIndex(const DataSet& ds,
-                                                                            size_t idx) {
+StatusOr<GetNeighborsIter::DataSetIndex> GetNeighborsIter::makeDataSetIndex(const DataSet& ds) {
     DataSetIndex dsIndex;
     dsIndex.ds = &ds;
     auto buildResult = buildIndex(&dsIndex);
     NG_RETURN_IF_ERROR(buildResult);
-    int64_t edgeStartIndex = std::move(buildResult).value();
-    if (edgeStartIndex < 0) {
-        for (auto& row : dsIndex.ds->rows) {
-            logicalRows_.emplace_back(idx, &row, "", nullptr);
-        }
-    } else {
-        makeLogicalRowByEdge(edgeStartIndex, idx, dsIndex);
-    }
     return dsIndex;
-}
-
-void GetNeighborsIter::makeLogicalRowByEdge(int64_t edgeStartIndex,
-                                            size_t idx,
-                                            const DataSetIndex& dsIndex) {
-    for (auto& row : dsIndex.ds->rows) {
-        auto& cols = row.values;
-        bool existEdge = false;
-        for (size_t column = edgeStartIndex; column < cols.size() - 1; ++column) {
-            if (!cols[column].isList()) {
-                // Ignore the bad value.
-                continue;
-            }
-            for (auto& edge : cols[column].getList().values) {
-                if (!edge.isList()) {
-                    // Ignore the bad value.
-                    continue;
-                }
-                existEdge = true;
-                auto edgeName = dsIndex.tagEdgeNameIndices.find(column);
-                DCHECK(edgeName != dsIndex.tagEdgeNameIndices.end());
-                logicalRows_.emplace_back(
-                    idx, &row, edgeName->second, &edge.getList());
-            }
-        }
-        if (!existEdge) {
-            noEdgeRows_.emplace_back(idx, &row, "", nullptr);
-        }
-    }
 }
 
 bool checkColumnNames(const std::vector<std::string>& colNames) {
@@ -149,6 +158,8 @@ StatusOr<int64_t> GetNeighborsIter::buildIndex(DataSetIndex* dsIndex) {
         }
     }
 
+    dsIndex->colLowerBound = edgeStartIndex - 1;
+    dsIndex->colUpperBound = colNames.size() - 1;
     return edgeStartIndex;
 }
 
@@ -189,24 +200,95 @@ Status GetNeighborsIter::buildPropIndex(const std::string& props,
     return Status::OK();
 }
 
+bool GetNeighborsIter::valid() const {
+    return valid_
+            && currentDs_ < dsIndices_.end()
+            && currentRow_ < rowsUpperBound_
+            && colIdx_ < currentDs_->colUpperBound;
+}
+
+void GetNeighborsIter::next() {
+    if (!valid()) {
+        return;
+    }
+
+    while (++edgeIdx_ > -1) {
+        if (edgeIdx_ < edgeIdxUpperBound_) {
+            const auto& currentEdge = currentCol_->operator[](edgeIdx_);
+            if (!currentEdge.isList()) {
+                continue;
+            }
+            ++bitIdx_;
+            DCHECK_GT(bitIdx_, -1);
+            if (static_cast<size_t>(bitIdx_) >= bitset_.size()) {
+                bitset_.push_back(true);
+            } else if (!bitset_[bitIdx_]) {
+                VLOG(1) << "Filtered: " << currentEdge << " bitidx: " << bitIdx_;
+                // current edge had been filtered.
+                continue;
+            }
+            currentEdge_ = &currentEdge.getList();
+            break;
+        }
+
+        // go to next column
+        while (++colIdx_) {
+            if (colIdx_ < currentDs_->colUpperBound) {
+                const auto& currentCol = currentRow_->operator[](colIdx_);
+                if (!currentCol.isList() || currentCol.getList().empty()) {
+                    continue;
+                }
+
+
+                currentCol_ = &currentCol.getList();
+                edgeIdxUpperBound_ = currentCol_->size();
+                edgeIdx_ = -1;
+                break;
+            }
+            // go to next row
+            if (++currentRow_ < rowsUpperBound_) {
+                colIdx_ = currentDs_->colLowerBound;
+                continue;
+            }
+
+            // go to next dataset
+            if (++currentDs_ < dsIndices_.end()) {
+                colIdx_ = currentDs_->colLowerBound;
+                currentRow_ = currentDs_->ds->begin();
+                rowsUpperBound_ = currentDs_->ds->end();
+                continue;
+            }
+            break;
+        }
+        if (currentDs_ == dsIndices_.end()) {
+            break;
+        }
+    }
+}
+
+void GetNeighborsIter::erase() {
+    DCHECK_GE(bitIdx_, 0);
+    DCHECK_LT(bitIdx_, bitset_.size());
+    bitset_[bitIdx_] = false;
+    next();
+}
+
 const Value& GetNeighborsIter::getColumn(const std::string& col) const {
     if (!valid()) {
         return Value::kNullValue;
     }
-    auto segment = currentSeg();
-    auto& index = dsIndices_[segment].colIndices;
+    auto& index = currentDs_->colIndices;
     auto found = index.find(col);
     if (found == index.end()) {
         return Value::kEmpty;
     }
 
-    DCHECK_EQ(iter_->segments_.size(), 1);
-    auto* row = iter_->segments_[0];
-    return row->values[found->second];
+    return currentRow_->values[found->second];
 }
 
 const Value& GetNeighborsIter::getColumn(int32_t index) const {
-    return getColumnByIndex(index, iter_);
+    DCHECK_LT(index, currentRow_->values.size());
+    return currentRow_->values[index];
 }
 
 const Value& GetNeighborsIter::getTagProp(const std::string& tag,
@@ -215,8 +297,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kNullValue;
     }
 
-    auto segment = currentSeg();
-    auto &tagPropIndices = dsIndices_[segment].tagPropsMap;
+    auto &tagPropIndices = currentDs_->tagPropsMap;
     auto index = tagPropIndices.find(tag);
     if (index == tagPropIndices.end()) {
         return Value::kEmpty;
@@ -226,8 +307,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
         return Value::kEmpty;
     }
     auto colId = index->second.colIdx;
-    DCHECK_EQ(iter_->segments_.size(), 1);
-    auto& row = *(iter_->segments_[0]);
+    auto& row = *currentRow_;
     DCHECK_GT(row.size(), colId);
     if (!row[colId].isList()) {
         return Value::kNullBadType;
@@ -242,15 +322,14 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge,
         return Value::kNullValue;
     }
 
-    auto currentEdge = currentEdgeName();
+    auto& currentEdge = currentEdgeName();
     if (edge != "*" &&
             (currentEdge.compare(1, std::string::npos, edge) != 0)) {
         VLOG(1) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
         return Value::kEmpty;
     }
-    auto segment = currentSeg();
-    auto index = dsIndices_[segment].edgePropsMap.find(currentEdge);
-    if (index == dsIndices_[segment].edgePropsMap.end()) {
+    auto index = currentDs_->edgePropsMap.find(currentEdge);
+    if (index == currentDs_->edgePropsMap.end()) {
         VLOG(1) << "No edge found: " << edge;
         VLOG(1) << "Current edge: " << currentEdge;
         return Value::kEmpty;
@@ -260,8 +339,7 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge,
         VLOG(1) << "No edge prop found: " << prop;
         return Value::kEmpty;
     }
-    auto* list = currentEdgeProps();
-    return list->values[propIndex->second];
+    return currentEdge_->values[propIndex->second];
 }
 
 Value GetNeighborsIter::getVertex() const {
@@ -269,17 +347,15 @@ Value GetNeighborsIter::getVertex() const {
         return Value::kNullValue;
     }
 
-    auto segment = currentSeg();
     auto vidVal = getColumn(nebula::kVid);
     if (!SchemaUtil::isValidVid(vidVal)) {
         return Value::kNullBadType;
     }
     Vertex vertex;
     vertex.vid = vidVal;
-    auto& tagPropMap = dsIndices_[segment].tagPropsMap;
+    auto& tagPropMap = currentDs_->tagPropsMap;
     for (auto& tagProp : tagPropMap) {
-        DCHECK_EQ(iter_->segments_.size(), 1);
-        auto& row = *(iter_->segments_[0]);
+        auto& row = *currentRow_;
         auto& tagPropNameList = tagProp.second.propList;
         auto tagColId = tagProp.second.colIdx;
         if (!row[tagColId].isList()) {
@@ -295,72 +371,24 @@ Value GetNeighborsIter::getVertex() const {
             tag.props.emplace(tagPropNameList[i], propList[i]);
         }
         vertex.tags.emplace_back(std::move(tag));
-    }
-    return Value(std::move(vertex));
-}
-
-Value GetNeighborsIter::getNoEdgeVertex() const {
-    if (!noEdgeValid()) {
-        return Value::kNullValue;
-    }
-
-    auto& index = dsIndices_[0].colIndices;
-    auto found = index.find(nebula::kVid);
-    if (found == index.end()) {
-        return Value::kNullBadType;
-    }
-    DCHECK_EQ(noEdgeIter_->segments_.size(), 1);
-    auto vidVal = noEdgeIter_->segments_[0]->values[found->second];
-    if (!SchemaUtil::isValidVid(vidVal)) {
-        return Value::kNullBadType;
-    }
-    Vertex vertex;
-    vertex.vid = vidVal;
-    auto& tagPropMap = dsIndices_[0].tagPropsMap;
-    bool existTag = false;
-    for (auto& tagProp : tagPropMap) {
-        DCHECK_EQ(noEdgeIter_->segments_.size(), 1);
-        auto& row = *(noEdgeIter_->segments_[0]);
-        auto& tagPropNameList = tagProp.second.propList;
-        auto tagColId = tagProp.second.colIdx;
-        if (!row[tagColId].isList()) {
-            // Ignore the bad value.
-            continue;
-        }
-        DCHECK_GE(row.size(), tagColId);
-        auto& propList = row[tagColId].getList();
-        DCHECK_EQ(tagPropNameList.size(), propList.values.size());
-        existTag = true;
-        Tag tag;
-        tag.name = tagProp.first;
-        for (size_t i = 0; i < propList.size(); ++i) {
-            tag.props.emplace(tagPropNameList[i], propList[i]);
-        }
-        vertex.tags.emplace_back(std::move(tag));
-    }
-    if (UNLIKELY(!existTag)) {
-        // no exist vertex
-        return Value::kNullBadType;
     }
     return Value(std::move(vertex));
 }
 
 List GetNeighborsIter::getVertices() {
-    DCHECK(iter_ == logicalRows_.begin());
     List vertices;
-    vertices.values.reserve(size() + noEdgeRows_.size());
-    for (; valid(); next()) {
-        vertices.values.emplace_back(getVertex());
+    vertices.values.reserve(size());
+    valid_ = true;
+    colIdx_ = -2;
+    for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
+        rowsUpperBound_ = currentDs_->ds->rows.end();
+        for (currentRow_ = currentDs_->ds->rows.begin();
+            currentRow_ < currentDs_->ds->rows.end(); ++currentRow_) {
+            vertices.values.emplace_back(getVertex());
+            VLOG(1) << "vertex: " << getVertex() << " size: " << vertices.size();
+        }
     }
     reset();
-    // collect noEdgeRows_
-    for (noEdgeIter_ = noEdgeRows_.begin(); noEdgeValid(); noEdgeNext()) {
-        auto value = getNoEdgeVertex();
-        if (UNLIKELY(value.isBadNull())) {
-            continue;
-        }
-        vertices.values.emplace_back(std::move(value));
-    }
     return vertices;
 }
 
@@ -369,7 +397,6 @@ Value GetNeighborsIter::getEdge() const {
         return Value::kNullValue;
     }
 
-    auto segment = currentSeg();
     Edge edge;
     auto edgeName = currentEdgeName().substr(1, std::string::npos);
     edge.name = edgeName;
@@ -398,13 +425,13 @@ Value GetNeighborsIter::getEdge() const {
     }
     edge.ranking = rank.getInt();
 
-    auto& edgePropMap = dsIndices_[segment].edgePropsMap;
+    auto& edgePropMap = currentDs_->edgePropsMap;
     auto edgeProp = edgePropMap.find(currentEdgeName());
     if (edgeProp == edgePropMap.end()) {
         return Value::kNullValue;
     }
     auto& edgeNamePropList = edgeProp->second.propList;
-    auto& propList = currentEdgeProps()->values;
+    auto& propList = currentEdge_->values;
     DCHECK_EQ(edgeNamePropList.size(), propList.size());
     for (size_t i = 0; i < propList.size(); ++i) {
         auto propName = edgeNamePropList[i];
@@ -418,7 +445,6 @@ Value GetNeighborsIter::getEdge() const {
 }
 
 List GetNeighborsIter::getEdges() {
-    DCHECK(iter_ == logicalRows_.begin());
     List edges;
     edges.values.reserve(size());
     for (; valid(); next()) {

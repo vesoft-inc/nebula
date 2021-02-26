@@ -24,25 +24,16 @@ class LimitTest : public QueryTestBase {
         qctx_->symTable()->newVariable(outputName);                                                \
         auto start = StartNode::make(qctx_.get());                                                 \
         auto* limitNode = Limit::make(qctx_.get(), start, offset, count);                          \
-        limitNode->setInputVar("input_neighbor");                                                  \
+        limitNode->setInputVar("input_sequential");                                                \
         limitNode->setOutputVar(outputName);                                                       \
         auto limitExec = Executor::create(limitNode, qctx_.get());                                 \
         EXPECT_TRUE(limitExec->execute().get().ok());                                              \
         auto& limitResult = qctx_->ectx()->getResult(limitNode->outputVar());                      \
         EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                                   \
         auto yieldSentence =                                                                       \
-            getYieldSentence("YIELD study._dst AS name, study.start_year AS start");               \
+            getYieldSentence("YIELD $-.v_name AS name, $-.e_start_year AS start");                 \
         auto columns = yieldSentence->columns();                                                   \
-        for (auto& col : columns) {                                                                \
-            if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {                        \
-                auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());                 \
-                col->setExpr(                                                                      \
-                    ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(laExpr));       \
-            } else {                                                                               \
-                ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(col->expr());       \
-            }                                                                                      \
-        }                                                                                          \
-        auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
+        auto* project = Project::make(qctx_.get(), limitNode, yieldSentence->yieldColumns());      \
         project->setInputVar(limitNode->outputVar());                                              \
         project->setColNames(std::vector<std::string>{"name", "start"});                           \
         auto proExe = Executor::create(project, qctx_.get());                                      \
@@ -52,34 +43,36 @@ class LimitTest : public QueryTestBase {
         EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                     \
     } while (false)
 
-TEST_F(LimitTest, getNeighborInRange1) {
+TEST_F(LimitTest, SequentialInRange1) {
     DataSet expected({"name", "start"});
-    expected.emplace_back(Row({Value("School2"), Value(2014)}));
-    expected.emplace_back(Row({Value("School1"), Value(2008)}));
-    LIMIT_RESUTL_CHECK("limit_in_neighbor1", 1, 2, expected);
+    expected.emplace_back(Row({Value("Joy"), Value(2009)}));
+    expected.emplace_back(Row({Value("Tom"), Value(2008)}));
+    LIMIT_RESUTL_CHECK("limit_in_sequential1", 1, 2, expected);
 }
 
-TEST_F(LimitTest, getNeighborInRange2) {
+TEST_F(LimitTest, SequentialInRange2) {
     DataSet expected({"name", "start"});
-    expected.emplace_back(Row({Value("School1"), Value(2010)}));
-    expected.emplace_back(Row({Value("School2"), Value(2014)}));
-    expected.emplace_back(Row({Value("School1"), Value(2008)}));
-    expected.emplace_back(Row({Value("School2"), Value(2012)}));
-    LIMIT_RESUTL_CHECK("limit_in_neighbor2", 0, 4, expected);
+    expected.emplace_back(Row({Value("Ann"), Value(2010)}));
+    expected.emplace_back(Row({Value("Joy"), Value(2009)}));
+    expected.emplace_back(Row({Value("Tom"), Value(2008)}));
+    expected.emplace_back(Row({Value("Kate"), Value(2009)}));
+    LIMIT_RESUTL_CHECK("limit_in_sequential2", 0, 4, expected);
 }
 
-TEST_F(LimitTest, getNeighborOutRange1) {
+TEST_F(LimitTest, SequentialOutRange1) {
     DataSet expected({"name", "start"});
-    expected.emplace_back(Row({Value("School1"), Value(2010)}));
-    expected.emplace_back(Row({Value("School2"), Value(2014)}));
-    expected.emplace_back(Row({Value("School1"), Value(2008)}));
-    expected.emplace_back(Row({Value("School2"), Value(2012)}));
-    LIMIT_RESUTL_CHECK("limit_out_neighbor1", 0, 5, expected);
+    expected.emplace_back(Row({Value("Ann"), Value(2010)}));
+    expected.emplace_back(Row({Value("Joy"), Value(2009)}));
+    expected.emplace_back(Row({Value("Tom"), Value(2008)}));
+    expected.emplace_back(Row({Value("Kate"), Value(2009)}));
+    expected.emplace_back(Row({Value("Ann"), Value(2010)}));
+    expected.emplace_back(Row({Value("Lily"), Value(2009)}));
+    LIMIT_RESUTL_CHECK("limit_out_sequential1", 0, 7, expected);
 }
 
 TEST_F(LimitTest, getNeighborOutRange2) {
     DataSet expected({"name", "start"});
-    LIMIT_RESUTL_CHECK("limit_out_neighbor1", 4, 2, expected);
+    LIMIT_RESUTL_CHECK("limit_out_sequential2", 6, 2, expected);
 }
 }  // namespace graph
 }  // namespace nebula

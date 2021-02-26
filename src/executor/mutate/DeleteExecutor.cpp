@@ -88,10 +88,6 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
         DCHECK(!inputVar.empty());
         auto& inputResult = ectx_->getResult(inputVar);
         auto iter = inputResult.iter();
-        if (iter->size() == 0) {
-            VLOG(2) << "Empty input";
-            return Status::OK();
-        }
         edgeKeys.reserve(iter->size());
         QueryExpressionContext ctx(ectx_);
         for (; iter->valid(); iter->next()) {
