@@ -23,19 +23,23 @@ public:
     static UpdateVertexProcessor* instance(
             StorageEnv* env,
             const ProcessorCounters* counters = &kUpdateVertexCounters,
+            folly::Executor* executor = nullptr,
             VertexCache* cache = nullptr) {
-        return new UpdateVertexProcessor(env, counters, cache);
+        return new UpdateVertexProcessor(env, counters, executor, cache);
     }
 
     void process(const cpp2::UpdateVertexRequest& req) override;
 
+    void doProcess(const cpp2::UpdateVertexRequest& req);
+
 private:
     UpdateVertexProcessor(StorageEnv* env,
                           const ProcessorCounters* counters,
+                          folly::Executor* executor,
                           VertexCache* cache)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest, cpp2::UpdateResponse>(env,
                                                                               counters,
-                                                                              nullptr,
+                                                                              executor,
                                                                               cache) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) override;

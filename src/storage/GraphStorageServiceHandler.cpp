@@ -78,7 +78,10 @@ GraphStorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequ
 
 folly::Future<cpp2::UpdateResponse>
 GraphStorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
-    auto* processor = UpdateVertexProcessor::instance(env_, &kUpdateVertexCounters, &vertexCache_);
+    auto* processor = UpdateVertexProcessor::instance(env_,
+                                                      &kUpdateVertexCounters,
+                                                      readerPool_.get(),
+                                                      &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
@@ -100,7 +103,7 @@ GraphStorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& r
 
 folly::Future<cpp2::UpdateResponse>
 GraphStorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
-    auto* processor = UpdateEdgeProcessor::instance(env_);
+    auto* processor = UpdateEdgeProcessor::instance(env_, &kUpdateEdgeCounters, readerPool_.get());
     RETURN_FUTURE(processor);
 }
 

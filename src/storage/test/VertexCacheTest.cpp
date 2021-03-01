@@ -194,7 +194,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
         req.set_insertable(false);
 
         LOG(INFO) << "Test UpdateVertexRequest...";
-        auto* processor = UpdateVertexProcessor::instance(env, nullptr, &cache);
+        auto* processor = UpdateVertexProcessor::instance(env, nullptr, nullptr, &cache);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

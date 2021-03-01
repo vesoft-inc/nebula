@@ -23,16 +23,22 @@ class UpdateEdgeProcessor
 public:
     static UpdateEdgeProcessor* instance(
             StorageEnv* env,
-            const ProcessorCounters* counters = &kUpdateEdgeCounters) {
-        return new UpdateEdgeProcessor(env, counters);
+            const ProcessorCounters* counters = &kUpdateEdgeCounters,
+            folly::Executor* executor = nullptr) {
+        return new UpdateEdgeProcessor(env, counters, executor);
     }
 
     void process(const cpp2::UpdateEdgeRequest& req) override;
 
+    void doProcess(const cpp2::UpdateEdgeRequest& req);
+
 private:
-    UpdateEdgeProcessor(StorageEnv* env, const ProcessorCounters* counters)
+    UpdateEdgeProcessor(StorageEnv* env,
+                        const ProcessorCounters* counters,
+                        folly::Executor* executor)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse>(env,
-                                                                            counters) {}
+                                                                            counters,
+                                                                            executor) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req) override;
 
