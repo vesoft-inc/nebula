@@ -1069,6 +1069,13 @@ Feature: Go Sentence
       """
     Then a SyntaxError should be raised at runtime: syntax error near `| GO FRO'
 
+  Scenario: invalid condition in where
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like where like.likeness
+      """
+    Then a SemanticError should be raised at runtime: `like.likeness', expected Boolean, but was `INT'
+
   Scenario: contain
     When executing query:
       """

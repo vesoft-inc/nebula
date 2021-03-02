@@ -58,7 +58,8 @@ Status GoValidator::validateWhere(WhereClause* where) {
     }
     if (filter_->kind() == Expression::Kind::kLabelAttribute) {
         auto laExpr = static_cast<LabelAttributeExpression*>(filter_);
-        where->setFilter(ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(laExpr));
+        filter_ = ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(laExpr);
+        where->setFilter(filter_);
     } else {
         ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(filter_);
     }
