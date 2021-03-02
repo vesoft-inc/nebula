@@ -19,7 +19,7 @@
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
 
-DEFINE_int32(heartbeat_interval_secs, 3, "Heartbeat interval");
+DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1,
              "meta client sleep interval between retry");
@@ -2297,8 +2297,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                     leaderIds_.clear();
                     leaderIds_ = leaderIds;
                 }
-                req.set_leader_partIds(std::move(leaderIds));
             }
+            req.set_leader_partIds(std::move(leaderIds));
         } else {
             req.set_leader_partIds(std::move(leaderIds));
         }
