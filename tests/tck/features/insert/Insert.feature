@@ -436,7 +436,7 @@ Feature: Insert string vid of vertex and edge
       """
       INSERT VERTEX student(name, age) VALUES "12345678901":("Tom", 2)
       """
-    Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit interger or a string.
+    Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit interger or a string fitting space vertex id length limit.
     # test insert not null prop
     When executing query:
       """
