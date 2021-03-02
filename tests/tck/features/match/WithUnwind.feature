@@ -37,6 +37,54 @@ Feature: With clause and Unwind clause
       """
     Then a SemanticError should be raised at runtime: Expression in WITH must be aliased (use AS)
 
+  Scenario: with agg return
+    When executing query:
+      """
+      WITH collect([0, 0.0, 100]) AS n
+      RETURN n
+      """
+    Then the result should be, in any order:
+      | n               |
+      | [[0, 0.0, 100]] |
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a
+      RETURN count(a)
+      """
+    Then the result should be, in any order:
+      | COUNT(a) |
+      | 1        |
+
+  Scenario: match with return
+    When executing query:
+      """
+      MATCH (v :player{name:"Tim Duncan"})-[]-(v2)
+      WITH avg(v2.age) as average_age
+      RETURN average_age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | average_age        |
+      | 35.888888888888886 |
+    When executing query:
+      """
+      MATCH (v :player{name:"Tim Duncan"})-[]-(v2)-[]-(v3)
+      WITH v3.name as names
+      RETURN count(names)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(names) |
+      | 191          |
+    When executing query:
+      """
+      MATCH (v :player{name:"Tim Duncan"})-[]-(v2)
+      WITH distinct(v2.name) AS names
+      ORDER by names DESC LIMIT 5
+      RETURN collect(names)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COLLECT(names)                                                                   |
+      | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquile O'Neal", "Marco Belinelli"] |
+
   @skip
   Scenario: with match return
     When executing query:

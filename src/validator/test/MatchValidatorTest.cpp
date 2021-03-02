@@ -466,5 +466,32 @@ TEST_F(MatchValidatorTest, groupby) {
     }
 }
 
+TEST_F(MatchValidatorTest, with) {
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[]-(v2) "
+                            "WITH abs(avg(v2.age)) as average_age "
+                            "RETURN average_age";
+        std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kAggregate,
+                                                PlanNode::Kind::kFilter,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kDataJoin,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kGetVertices,
+                                                PlanNode::Kind::kDedup,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kFilter,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kFilter,
+                                                PlanNode::Kind::kGetNeighbors,
+                                                PlanNode::Kind::kDedup,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kIndexScan,
+                                                PlanNode::Kind::kStart};
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

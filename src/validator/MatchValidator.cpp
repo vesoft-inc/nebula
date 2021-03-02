@@ -32,8 +32,9 @@ Status MatchValidator::validateImpl() {
     std::unordered_map<std::string, AliasType> *aliasesUsed = nullptr;
     YieldColumns *prevYieldColumns = nullptr;
     auto retClauseCtx = getContext<ReturnClauseContext>();
-    auto yieldCtx = getContext<YieldClauseContext>();
-    retClauseCtx->yield = std::move(yieldCtx);
+    auto retYieldCtx = getContext<YieldClauseContext>();
+    retClauseCtx->yield = std::move(retYieldCtx);
+
     for (size_t i = 0; i < clauses.size(); ++i) {
         switch (clauses[i]->kind()) {
             case ReadingClause::Kind::kMatch: {
@@ -99,7 +100,9 @@ Status MatchValidator::validateImpl() {
             case ReadingClause::Kind::kWith: {
                 auto *withClause = static_cast<WithClause *>(clauses[i].get());
                 auto withClauseCtx = getContext<WithClauseContext>();
-                withClauseCtx->aliasesUsed = aliasesUsed;
+                auto withYieldCtx = getContext<YieldClauseContext>();
+                withClauseCtx->yield = std::move(withYieldCtx);
+                withClauseCtx->yield->aliasesUsed = aliasesUsed;
                 NG_RETURN_IF_ERROR(validateWith(withClause, *withClauseCtx));
                 if (withClause->where() != nullptr) {
                     auto whereClauseCtx = getContext<WhereClauseContext>();
@@ -110,7 +113,7 @@ Status MatchValidator::validateImpl() {
                 }
 
                 aliasesUsed = &withClauseCtx->aliasesGenerated;
-                prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yieldColumns);
+                prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
 
                 if (i == clauses.size() - 1) {
                     retClauseCtx->yield->aliasesUsed = aliasesUsed;
@@ -460,12 +463,17 @@ Status MatchValidator::validateWith(const WithClause *with,
         if (!withClauseCtx.aliasesGenerated.emplace(*col->alias(), AliasType::kDefault).second) {
             return Status::SemanticError("`%s': Redefined alias", col->alias()->c_str());
         }
+        if (!withClauseCtx.yield->hasAgg_ &&
+            ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kAggregate})) {
+            withClauseCtx.yield->hasAgg_ = true;
+        }
         exprs.push_back(col->expr());
     }
-    withClauseCtx.yieldColumns = with->columns();
-    NG_RETURN_IF_ERROR(validateAliases(exprs, withClauseCtx.aliasesUsed));
+    withClauseCtx.yield->yieldColumns = with->columns();
+    NG_RETURN_IF_ERROR(validateAliases(exprs, withClauseCtx.yield->aliasesUsed));
+    NG_RETURN_IF_ERROR(validateYield(*withClauseCtx.yield));
 
-    withClauseCtx.distinct = with->isDistinct();
+    withClauseCtx.yield->distinct = with->isDistinct();
 
     auto paginationCtx = getContext<PaginationContext>();
     NG_RETURN_IF_ERROR(validatePagination(with->skip(), with->limit(), *paginationCtx));

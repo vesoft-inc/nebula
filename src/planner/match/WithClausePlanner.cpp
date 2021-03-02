@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -7,12 +7,11 @@
 #include "planner/match/WithClausePlanner.h"
 
 #include "planner/Query.h"
-#include "planner/match/MatchSolver.h"
 #include "planner/match/OrderByClausePlanner.h"
 #include "planner/match/PaginationPlanner.h"
+#include "planner/match/YieldClausePlanner.h"
 #include "planner/match/SegmentsConnector.h"
 #include "planner/match/WhereClausePlanner.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -28,47 +27,11 @@ StatusOr<SubPlan> WithClausePlanner::transform(CypherClauseContextBase* clauseCt
 }
 
 Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
-    auto* yields = new YieldColumns();
-    wctx->qctx->objPool()->add(yields);
-    std::vector<std::string> colNames;
-    PlanNode* current = nullptr;
-
-    auto rewriter = [wctx](const Expression* expr) {
-        return MatchSolver::doRewrite(*wctx->aliasesUsed, expr);
-    };
-
-    for (auto* col : wctx->yieldColumns->columns()) {
-        auto kind = col->expr()->kind();
-        YieldColumn* newColumn = nullptr;
-        if (kind == Expression::Kind::kLabel || kind == Expression::Kind::kLabelAttribute) {
-            newColumn = new YieldColumn(rewriter(col->expr()), new std::string(*col->alias()));
-        } else {
-            auto newExpr = col->expr()->clone();
-            RewriteMatchLabelVisitor visitor(rewriter);
-            newExpr->accept(&visitor);
-            newColumn = new YieldColumn(newExpr.release());
-        }
-        yields->addColumn(newColumn);
-        if (col->alias() != nullptr) {
-            colNames.emplace_back(*col->alias());
-        } else {
-            colNames.emplace_back(col->expr()->toString());
-        }
-    }
-
-    auto* project = Project::make(wctx->qctx, nullptr, yields);
-    project->setColNames(std::move(colNames));
-    subPlan.tail = project;
-    current = project;
-
-    if (wctx->distinct) {
-        auto* dedup = Dedup::make(wctx->qctx, current);
-        dedup->setInputVar(current->outputVar());
-        dedup->setColNames(current->colNames());
-        current = dedup;
-    }
-
-    subPlan.root = current;
+    auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(wctx->yield.get());
+    NG_RETURN_IF_ERROR(yieldPlan);
+    auto yieldplan = std::move(yieldPlan).value();
+    subPlan.tail = yieldplan.tail;
+    subPlan.root = yieldplan.root;
 
     if (wctx->order != nullptr) {
         auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(wctx->order.get());
@@ -99,7 +62,6 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
 
     VLOG(1) << "with root: " << subPlan.root->outputVar()
             << " colNames: " << folly::join(",", subPlan.root->colNames());
-    // TODO: Handle grouping
 
     return Status::OK();
 }
