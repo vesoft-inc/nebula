@@ -255,8 +255,8 @@ Status InsertEdgesValidator::prepareEdges() {
 Status DeleteVerticesValidator::validateImpl() {
     auto sentence = static_cast<DeleteVerticesSentence*>(sentence_);
     spaceId_ = vctx_->whichSpace().id;
-    if (sentence->isRef()) {
-        vidRef_ = sentence->vidRef();
+    if (sentence->vertices()->isRef()) {
+        vidRef_ = sentence->vertices()->ref();
         auto type = deduceExprType(vidRef_);
         NG_RETURN_IF_ERROR(type);
         if (type.value() != Value::Type::STRING) {
@@ -266,7 +266,7 @@ Status DeleteVerticesValidator::validateImpl() {
             return Status::SemanticError(ss.str());
         }
     } else {
-        auto vIds = sentence->vidList()->vidList();
+        auto vIds = sentence->vertices()->vidList();
         for (auto vId : vIds) {
             auto idStatus = SchemaUtil::toVertexID(vId, vidType_);
             NG_RETURN_IF_ERROR(idStatus);

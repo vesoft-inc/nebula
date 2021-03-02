@@ -107,8 +107,8 @@ Status FetchVerticesValidator::check() {
 Status FetchVerticesValidator::prepareVertices() {
     auto *sentence = static_cast<FetchVerticesSentence *>(sentence_);
     // from ref, eval when execute
-    if (sentence->isRef()) {
-        srcRef_ = sentence->ref();
+    if (sentence->vertices()->isRef()) {
+        srcRef_ = sentence->vertices()->ref();
         auto result = checkRef(srcRef_, vidType_);
         NG_RETURN_IF_ERROR(result);
         inputVar_ = std::move(result).value();
@@ -118,7 +118,7 @@ Status FetchVerticesValidator::prepareVertices() {
     // from constant, eval now
     // TODO(shylock) add eval() method for expression
     QueryExpressionContext dummy(nullptr);
-    auto vids = sentence->vidList();
+    auto vids = sentence->vertices()->vidList();
     srcVids_.rows.reserve(vids.size());
     for (const auto vid : vids) {
         DCHECK(ExpressionUtils::isConstExpr(vid));

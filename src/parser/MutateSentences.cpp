@@ -259,7 +259,7 @@ std::string DeleteVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vidList_->toString();
+    buf += vertices_->toString();
     return buf;
 }
 

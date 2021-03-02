@@ -131,11 +131,7 @@ std::string FetchVerticesSentence::toString() const {
     buf += "FETCH PROP ON ";
     buf += tags_->toString();
     buf += " ";
-    if (isRef()) {
-        buf += vidRef_->toString();
-    } else {
-        buf += vidList_->toString();
-    }
+    buf += vertices_->toString();
     if (yieldClause_ != nullptr) {
         buf += " ";
         buf += yieldClause_->toString();

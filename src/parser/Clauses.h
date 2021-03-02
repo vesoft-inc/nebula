@@ -92,6 +92,8 @@ public:
         return ref_.get();
     }
 
+    std::string toString() const;
+
 protected:
     std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;

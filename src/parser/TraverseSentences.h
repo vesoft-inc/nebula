@@ -302,7 +302,7 @@ public:
                           YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tags_.reset(tags);
-        vidList_.reset(vidList);
+        vertices_.reset(new VerticesClause(vidList));
         yieldClause_.reset(clause);
     }
 
@@ -311,21 +311,21 @@ public:
                           YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tags_.reset(tags);
-        vidRef_.reset(ref);
+        vertices_.reset(new VerticesClause(ref));
         yieldClause_.reset(clause);
     }
 
     explicit FetchVerticesSentence(Expression *ref, YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tags_ = std::make_unique<NameLabelList>();
-        vidRef_.reset(ref);
+        vertices_.reset(new VerticesClause(ref));
         yieldClause_.reset(clause);
     }
 
     explicit FetchVerticesSentence(VertexIDList *vidList, YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
         tags_ = std::make_unique<NameLabelList>();
-        vidList_.reset(vidList);
+        vertices_.reset(new VerticesClause(vidList));
         yieldClause_.reset(clause);
     }
 
@@ -337,16 +337,8 @@ public:
         return tags_.get();
     }
 
-    auto vidList() const {
-        return vidList_->vidList();
-    }
-
-    bool isRef() const {
-        return vidRef_ != nullptr;
-    }
-
-    Expression* ref() const {
-        return vidRef_.get();
+    const VerticesClause* vertices() const {
+        return vertices_.get();
     }
 
     YieldClause* yieldClause() const {
@@ -361,8 +353,7 @@ public:
 
 private:
     std::unique_ptr<NameLabelList>  tags_;
-    std::unique_ptr<VertexIDList>   vidList_;
-    std::unique_ptr<Expression>     vidRef_;
+    std::unique_ptr<VerticesClause> vertices_;
     std::unique_ptr<YieldClause>    yieldClause_;
 };
 

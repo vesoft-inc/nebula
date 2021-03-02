@@ -38,10 +38,10 @@ std::string VertexIDList::toString() const {
     return buf;
 }
 
-std::string FromClause::toString() const {
+
+std::string VerticesClause::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "FROM ";
     if (isRef()) {
         buf += ref_->toString();
     } else {
@@ -50,15 +50,19 @@ std::string FromClause::toString() const {
     return buf;
 }
 
+std::string FromClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FROM ";
+    buf += VerticesClause::toString();
+    return buf;
+}
+
 std::string ToClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "TO ";
-    if (isRef()) {
-        buf += ref_->toString();
-    } else {
-        buf += vidList_->toString();
-    }
+    buf += VerticesClause::toString();
     return buf;
 }
 
