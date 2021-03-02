@@ -56,6 +56,7 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"one", {-1.2}},
     {"two", {2, 4}},
     {"pow", {2, 3}},
+    {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
     {"range3", {5, 1, -2}},
@@ -672,6 +673,12 @@ TEST_F(FunctionManagerTest, functionCall) {
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({"2020-10-10T10:00:00"});
         EXPECT_EQ(res, 1602324000);
+    }
+    {
+        TEST_FUNCTION(e, args_["empty"], M_E);
+        TEST_FUNCTION(pi, args_["empty"], M_PI);
+        TEST_FUNCTION(radians, args_["radians"], M_PI);
+        TEST_FUNCTION(radians, args_["nullvalue"], Value::kNullBadType);
     }
 }
 

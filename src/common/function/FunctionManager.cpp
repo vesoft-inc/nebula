@@ -56,6 +56,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::INT, Value::Type::FLOAT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::FLOAT)}},
+    {"e",
+     {TypeSignature({}, Value::Type::FLOAT)}},
     {"exp",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -69,6 +71,11 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"log10",
+     {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+    {"pi",
+     {TypeSignature({}, Value::Type::FLOAT)}},
+    {"radians",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"sin",
@@ -369,6 +376,17 @@ FunctionManager::FunctionManager() {
         };
     }
     {
+        // return the base of natural logarithm e
+        auto &attr = functions_["e"];
+        attr.minArity_ = 0;
+        attr.maxArity_ = 0;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            UNUSED(args);
+            return M_E;
+        };
+    }
+    {
         // e^x
         auto &attr = functions_["exp"];
         attr.minArity_ = 1;
@@ -449,6 +467,31 @@ FunctionManager::FunctionManager() {
             return Value::kNullBadType;
         };
     }
+    {
+        // return the mathmatical constant PI
+        auto &attr = functions_["pi"];
+        attr.minArity_ = 0;
+        attr.maxArity_ = 0;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            UNUSED(args);
+            return M_PI;
+        };
+    }
+
+    {
+        auto &attr = functions_["radians"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (args[0].isNumeric()) {
+                return (args[0] * M_PI) / 180;
+            }
+            return Value::kNullBadType;
+        };
+    }
+
     {
         auto &attr = functions_["sin"];
         attr.minArity_ = 1;
@@ -1109,7 +1152,7 @@ FunctionManager::FunctionManager() {
     }
     {
         auto &attr = functions_["time"];
-        // 0 for corrent time
+        // 0 for current time
         // 1 for string or map
         attr.minArity_ = 0;
         attr.maxArity_ = 1;
