@@ -701,6 +701,10 @@ public:
         return &*iter_;
     }
 
+    void reserve(size_t n) {
+        rows_.reserve(n);
+    }
+
 private:
     void doReset(size_t pos) override {
         DCHECK((pos == 0 && size() == 0) || (pos < size()));
