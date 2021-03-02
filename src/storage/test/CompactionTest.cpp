@@ -188,42 +188,6 @@ TEST(CompactionFilterTest, InvalidSchemaFilterTest) {
     checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
 }
 
-
-TEST(CompactionFilterTest, MutliVersionsFilterTest) {
-    fs::TempDir rootPath("/tmp/CompactionFilterTest.XXXXXX");
-    mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
-                          1, true, false, {}, true);
-
-    auto* env = cluster.storageEnv_.get();
-    auto parts = cluster.getTotalParts();
-
-    GraphSpaceID spaceId = 1;
-    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
-    ASSERT_TRUE(status.ok());
-    auto spaceVidLen = status.value();
-
-    // Edge contains multi version
-    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts, false, true, true, 2));
-
-    LOG(INFO) << "Before compaction, check data...";
-    // check serve positive data, data count is 334
-    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
-    // check teammates positive data, data count is 36
-    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
-
-    LOG(INFO) << "Do compaction";
-    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
-    ns->compact(spaceId);
-
-    LOG(INFO) << "Finish compaction, check data...";
-    // check serve positive data, data count is 167
-    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
-    // check teammates positive data, data count is 18
-    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
-}
-
-
 TEST(CompactionFilterTest, TTLFilterDataExpiredTest) {
     FLAGS_mock_ttl_col = true;
     FLAGS_mock_ttl_duration = 1;
