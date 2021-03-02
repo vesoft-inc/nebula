@@ -164,7 +164,7 @@ TEST_F(MutateValidatorTest, UpdateVertexTest) {
     {
         auto cmd = "UPDATE VERTEX ON person \"Tom\""
                    "SET age = age + 1 "
-                   "WHEN page == 18 "
+                   "WHEN age == 18 "
                    "YIELD name AS name, age AS age";
         ASSERT_TRUE(checkResult(cmd, {PK::kUpdateVertex, PK::kStart}));
     }
