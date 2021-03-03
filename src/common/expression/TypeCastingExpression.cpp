@@ -15,6 +15,7 @@ static std::unordered_multimap<Value::Type, Value::Type> typeCastMap = {
     {Value::Type::INT, Value::Type::INT},
     {Value::Type::FLOAT, Value::Type::INT},
     {Value::Type::STRING, Value::Type::INT},
+    {Value::Type::__EMPTY__, Value::Type::INT},
     // cast to STRING
     {Value::Type::STRING, Value::Type::STRING},
     {Value::Type::__EMPTY__, Value::Type::STRING},
@@ -42,7 +43,8 @@ static std::unordered_multimap<Value::Type, Value::Type> typeCastMap = {
     // cast to FLOAT
     {Value::Type::FLOAT, Value::Type::FLOAT},
     {Value::Type::INT, Value::Type::FLOAT},
-    {Value::Type::STRING, Value::Type::FLOAT}
+    {Value::Type::STRING, Value::Type::FLOAT},
+    {Value::Type::__EMPTY__, Value::Type::FLOAT},
 };
 
 // static
