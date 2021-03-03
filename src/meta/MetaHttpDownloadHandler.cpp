@@ -135,7 +135,6 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     }
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
-    int32_t  partNumber = files.size() - 1;
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
@@ -164,14 +163,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         iter->next();
     }
 
-    if (partNumber != partSize) {
-        LOG(ERROR) << "HDFS part number should be equal with nebula "
-                   << partNumber << " " << partSize;
-        return false;
-    }
-
     std::vector<folly::SemiFuture<bool>> futures;
-
     for (auto &pair : hostPartition) {
         std::string partsStr;
         folly::join(",", pair.second, partsStr);
