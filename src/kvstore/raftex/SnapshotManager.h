@@ -26,6 +26,7 @@ enum SnapshotStatus {
     FAILED,
 };
 
+// Return false if send snapshot failed, will not send the rest of it.
 using SnapshotCallback = folly::Function<bool(const std::vector<std::string>& rows,
                                               int64_t totalCount,
                                               int64_t totalSize,

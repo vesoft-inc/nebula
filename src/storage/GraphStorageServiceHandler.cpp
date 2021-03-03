@@ -89,14 +89,14 @@ GraphStorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest&
 // Edge section
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
-    auto* processor = AddEdgesProcessor::instance(env_);
+    auto* processor = AddEdgesProcessor::instance(env_, &kAddEdgesCounters);
     RETURN_FUTURE(processor);
 }
 
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
-    auto* processor = DeleteEdgesProcessor::instance(env_);
+    auto* processor = DeleteEdgesProcessor::instance(env_, &kDelEdgesCounters);
     RETURN_FUTURE(processor);
 }
 
@@ -164,7 +164,7 @@ GraphStorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq&) {
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addEdgesAtomic(const cpp2::AddEdgesRequest& req) {
-    auto* processor = AddEdgesAtomicProcessor::instance(env_);
+    auto* processor = AddEdgesAtomicProcessor::instance(env_, &kAddEdgesAtomicCounters);
     RETURN_FUTURE(processor);
 }
 

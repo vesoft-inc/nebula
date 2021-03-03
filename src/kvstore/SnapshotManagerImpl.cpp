@@ -22,12 +22,16 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
     int64_t totalCount = 0;
 
     for (const auto& prefix : tables) {
-        accessTable(spaceId, partId, prefix, cb, data, totalCount, totalSize);
+        if (!accessTable(spaceId, partId, prefix, cb, data, totalCount, totalSize)) {
+            return;
+        }
     }
     cb(data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
 }
 
-void SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
+// Promise is set in callback. Access part of the data, and try to send to peers. If send failed,
+// will return false.
+bool SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
                                       PartitionID partId,
                                       const std::string& prefix,
                                       raftex::SnapshotCallback& cb,
@@ -40,7 +44,7 @@ void SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
         LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
                   << ", error code:" << static_cast<int32_t>(ret);
         cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
-        return;
+        return false;
     }
     data.reserve(kReserveNum);
     int32_t batchSize = 0;
@@ -51,8 +55,8 @@ void SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
                 batchSize = 0;
             } else {
                 LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId
-                          << "] callback invoked failed";
-                return;
+                          << "] send snapshot failed";
+                return false;
             }
         }
         auto key = iter->key();
@@ -63,6 +67,7 @@ void SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
         totalCount++;
         iter->next();
     }
+    return true;
 }
 
 }   // namespace kvstore

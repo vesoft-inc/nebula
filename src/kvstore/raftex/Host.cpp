@@ -322,7 +322,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             case cpp2::ErrorCode::E_WAITING_SNAPSHOT: {
                 LOG(INFO) << self->idStr_
                           << "The host is waiting for the snapshot, so we need to send log from "
-                          << " current committedLogId " << self->committedLogId_;
+                          << "current committedLogId " << self->committedLogId_;
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);

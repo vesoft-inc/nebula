@@ -73,7 +73,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                         return true;
                     } else {
                         LOG(INFO) << part->idStr_
-                                  << "Sending snapshot failed, we don't retry anymore!"
+                                  << "Sending snapshot failed, we don't retry anymore! "
                                   << "The error code is "
                                   << static_cast<int32_t>(resp.get_error_code());
                         p.setValue(Status::Error("Send snapshot failed!"));

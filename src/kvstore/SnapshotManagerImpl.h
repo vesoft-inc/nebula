@@ -23,7 +23,7 @@ public:
                                  raftex::SnapshotCallback cb) override;
 
 private:
-    void accessTable(GraphSpaceID spaceId,
+    bool accessTable(GraphSpaceID spaceId,
                      PartitionID partId,
                      const std::string& prefix,
                      raftex::SnapshotCallback& cb,
