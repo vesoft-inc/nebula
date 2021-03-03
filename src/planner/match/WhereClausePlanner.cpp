@@ -32,8 +32,16 @@ Status WhereClausePlanner::buildFilter(WhereClauseContext* wctx, SubPlan& subpla
     auto rewriter = [wctx](const Expression* expr) {
         return MatchSolver::doRewrite(*wctx->aliasesUsed, expr);
     };
-    RewriteMatchLabelVisitor visitor(std::move(rewriter));
-    newFilter->accept(&visitor);
+
+    auto kind = newFilter->kind();
+    if (kind == Expression::Kind::kLabel
+        || kind == Expression::Kind::kLabelAttribute) {
+        newFilter.reset(rewriter(newFilter.get()));
+    } else {
+        RewriteMatchLabelVisitor visitor(std::move(rewriter));
+        newFilter->accept(&visitor);
+    }
+
     auto* cond = wctx->qctx->objPool()->add(newFilter.release());
     subplan.root = Filter::make(wctx->qctx, nullptr, cond);
     subplan.tail = subplan.root;

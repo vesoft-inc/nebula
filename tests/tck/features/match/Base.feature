@@ -361,6 +361,11 @@ Feature: Basic match
       MATCH (v:player{name:"abc"})
       """
     Then a SyntaxError should be raised at runtime: syntax error near `)'
+    When executing query:
+      """
+      MATCH (v:player) where v.name return v
+      """
+    Then a ExecutionError should be raised at runtime: Internal Error: Wrong type result, the type should be NULL,EMPTY or BOOL
 
   Scenario: Unimplemented features
     When executing query:
