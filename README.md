@@ -18,9 +18,6 @@
 
 # What is Nebula Graph?
 
-**WARNING**
-This is the Nebula Graph 2.0 pre-release. Use it only if you need to test the latest features or performance improvements. DO NOT use it in production.
-
 **Nebula Graph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
 
 Compared with other graph database solutions, **Nebula Graph** has the following advantages:
@@ -29,32 +26,38 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 * Storage and computing separation
 * Horizontal scalability
 * Strong data consistency by RAFT protocol
-* SQL-like query language
+* OpenCypher-compatible query language
 * Role-based access control for higher level security
 
 ## Notice of Release
 
+> **CAUTION**: This is the Nebula Graph 2.0 pre-release. Use it only if you need to test the latest features or performance improvements. DO NOT use it in production.
+
+
 The Nebula Graph team is glad to announce the Nebula Graph 2.0 pre-release. This is a brand new start with several important updates, and more of them are on the way. Welcome to join us.
 To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
 
+<!--
 ## Roadmap
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020) for what's coming soon in **Nebula Graph**.
+-->
 
 ## Quick start
 
-Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) article for a quick start.
+Read the [Getting started](https://docs.nebula-graph.io/2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
 
+<!--
 Please note that you need to install **Nebula Graph**, either by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/) or by [docker compose](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/2.build-by-docker/), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/videos).
+-->
 
 ## Getting help
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
-* [Slack channel](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)
-* [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
+* [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
+* [Forum](https://discuss.nebula-graph.io/)
 
 ## Documentation
 
-* [简体中文](https://docs.nebula-graph.com.cn/)
 * [English](https://docs.nebula-graph.io/)
 
 ## Architecture
@@ -64,7 +67,7 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 
 Contributions are warmly welcomed and greatly appreciated. And here are a few ways you can contribute:
 
-* Start by some [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* Start by some [issues](https://github.com/vesoft-inc/nebula-graph/issues)
 * Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/manual-EN/4.contributions/how-to-contribute/).
 
 ## Licensing
@@ -75,6 +78,8 @@ In order to prevent cloud providers monetizing from the project without contribu
 
 ## Contact
 
+* [Slack channel](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)
+* [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
 * Twitter: <a href="https://twitter.com/NebulaGraph">@NebulaGraph</a>
 * <a href="https://www.linkedin.com/company/vesoft-nebula-graph/">LinkedIn page</a>
 * <a href="https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200">Slack channel</a>
