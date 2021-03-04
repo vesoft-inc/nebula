@@ -22,7 +22,7 @@ void InterTxnProcessor::process(const cpp2::InternalTxnRequest& req) {
                                    << ", spaceId=" << spaceId << ", partId=" << partId;
     auto data = req.get_data()[req.get_position()].back();
 
-    env_->txnMan_->commitBatch(spaceId, partId, data)
+    env_->txnMan_->commitBatch(spaceId, partId, std::move(data))
         .via(env_->txnMan_->getExecutor())
         .thenValue([=](kvstore::ResultCode rc) {
             LOG_IF(INFO, FLAGS_trace_toss) << "txnId="

@@ -387,7 +387,7 @@ JobManager::showJobs() {
         }
     }
 
-    if (!removeExpiredJobs(expiredJobKeys)) {
+    if (!removeExpiredJobs(std::move(expiredJobKeys))) {
         LOG(ERROR) << "Remove Expired Jobs Failed";
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
@@ -407,10 +407,10 @@ bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
     return duration > FLAGS_job_expired_secs;
 }
 
-bool JobManager::removeExpiredJobs(const std::vector<std::string>& expiredJobsAndTasks) {
+bool JobManager::removeExpiredJobs(std::vector<std::string>&& expiredJobsAndTasks) {
     bool result = true;
     folly::Baton<true, std::atomic> baton;
-    kvStore_->asyncMultiRemove(kDefaultSpaceId, kDefaultPartId, expiredJobsAndTasks,
+    kvStore_->asyncMultiRemove(kDefaultSpaceId, kDefaultPartId, std::move(expiredJobsAndTasks),
                                [&](nebula::kvstore::ResultCode code) {
                                    if (code != kvstore::ResultCode::SUCCEEDED) {
                                        result = false;

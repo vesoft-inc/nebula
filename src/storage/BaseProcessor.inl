@@ -167,7 +167,7 @@ void BaseProcessor<RESP>::handleLeaderChanged(GraphSpaceID spaceId,
 template <typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
-                                std::vector<kvstore::KV> data) {
+                                std::vector<kvstore::KV>&& data) {
     this->env_->kvstore_->asyncMultiPut(
         spaceId, partId, std::move(data), [spaceId, partId, this](kvstore::ResultCode code) {
             handleAsync(spaceId, partId, code);
@@ -177,7 +177,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
 template <typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
                                                    PartitionID partId,
-                                                   std::vector<kvstore::KV> data) {
+                                                   std::vector<kvstore::KV>&& data) {
     folly::Baton<true, std::atomic> baton;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     env_->kvstore_->asyncMultiPut(spaceId,
@@ -196,7 +196,7 @@ kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(GraphSpaceID spaceId,
 template <typename RESP>
 void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
                                    PartitionID partId,
-                                   std::vector<std::string> keys) {
+                                   std::vector<std::string>&& keys) {
     this->env_->kvstore_->asyncMultiRemove(
         spaceId, partId, std::move(keys), [spaceId, partId, this](kvstore::ResultCode code) {
         handleAsync(spaceId, partId, code);

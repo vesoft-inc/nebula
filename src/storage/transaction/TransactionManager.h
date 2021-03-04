@@ -86,7 +86,7 @@ public:
 
     folly::SemiFuture<kvstore::ResultCode> commitBatch(GraphSpaceID spaceId,
                                                        PartitionID partId,
-                                                       std::string& batch);
+                                                       std::string&& batch);
 
     bool enableToss(GraphSpaceID spaceId) {
         return nebula::meta::cpp2::IsolationLevel::TOSS == getSpaceIsolationLvel(spaceId);

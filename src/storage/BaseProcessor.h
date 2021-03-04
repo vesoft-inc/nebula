@@ -73,13 +73,15 @@ protected:
         return cpp2::ErrorCode::SUCCEEDED;
     }
 
-    void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
+    void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
 
     kvstore::ResultCode doSyncPut(GraphSpaceID spaceId,
                                   PartitionID partId,
-                                  std::vector<kvstore::KV> data);
+                                  std::vector<kvstore::KV>&& data);
 
-    void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
+    void doRemove(GraphSpaceID spaceId,
+                  PartitionID partId,
+                  std::vector<std::string>&& keys);
 
     cpp2::ErrorCode to(kvstore::ResultCode code);
 

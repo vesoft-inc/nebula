@@ -116,7 +116,7 @@ private:
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
 
-    bool removeExpiredJobs(const std::vector<std::string>& jobKeys);
+    bool removeExpiredJobs(std::vector<std::string>&& jobKeys);
 
     std::list<TaskDescription> getAllTasks(JobID jobId);
 

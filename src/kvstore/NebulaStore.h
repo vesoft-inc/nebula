@@ -178,7 +178,7 @@ public:
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID partId,
-                       std::vector<KV> keyValues,
+                       std::vector<KV>&& keyValues,
                        KVCallback cb) override;
 
     void asyncRemove(GraphSpaceID spaceId,
@@ -188,7 +188,7 @@ public:
 
     void asyncMultiRemove(GraphSpaceID spaceId,
                           PartitionID partId,
-                          std::vector<std::string> keys,
+                          std::vector<std::string>&& keys,
                           KVCallback cb) override;
 
     void asyncRemoveRange(GraphSpaceID spaceId,
@@ -198,9 +198,9 @@ public:
                           KVCallback cb) override;
 
     void asyncAppendBatch(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               std::string batch,
-                               KVCallback cb) override;
+                          PartitionID partId,
+                          std::string&& batch,
+                          KVCallback cb) override;
 
     void asyncAtomicOp(GraphSpaceID spaceId,
                        PartitionID partId,

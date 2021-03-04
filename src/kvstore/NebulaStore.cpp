@@ -682,7 +682,7 @@ ResultCode NebulaStore::sync(GraphSpaceID spaceId,
 
 void NebulaStore::asyncAppendBatch(GraphSpaceID spaceId,
                                    PartitionID partId,
-                                   std::string batch,
+                                   std::string&& batch,
                                    KVCallback cb) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
@@ -690,12 +690,12 @@ void NebulaStore::asyncAppendBatch(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    part->asyncAppendBatch(batch, std::move(cb));
+    part->asyncAppendBatch(std::move(batch), std::move(cb));
 }
 
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
-                                std::vector<KV> keyValues,
+                                std::vector<KV>&& keyValues,
                                 KVCallback cb) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
@@ -723,7 +723,7 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
 
 void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    PartitionID  partId,
-                                   std::vector<std::string> keys,
+                                   std::vector<std::string>&& keys,
                                    KVCallback cb) {
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {

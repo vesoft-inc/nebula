@@ -319,7 +319,7 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
 
 void HBaseStore::asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID partId,
-                               std::vector<KV> keyValues,
+                               std::vector<KV>&& keyValues,
                                KVCallback cb) {
     UNUSED(partId);
     auto multiPut = [this, &spaceId, &keyValues] () -> ResultCode {

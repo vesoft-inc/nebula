@@ -86,7 +86,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     iter->next();
                 }
             }
-            doRemove(spaceId_, partId, keys);
+            doRemove(spaceId_, partId, std::move(keys));
         }
     } else {
         for (auto& pv : partVertices) {
