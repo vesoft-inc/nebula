@@ -21,8 +21,6 @@ namespace storage {
 // result from HashJoinNode, and the stat info and edge iterator from AggregateNode. Then collect
 // some edge props, and put them into the target cell of a row.
 class GetNeighborsNode : public QueryNode<VertexID> {
-    FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
-
 public:
     using RelNode::execute;
 

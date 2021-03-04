@@ -23,6 +23,7 @@ class RowReaderV2 : public RowReader {
     friend class RowReaderWrapper;
 
     FRIEND_TEST(RowReaderV2, encodedData);
+    FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
 public:
     virtual ~RowReaderV2() = default;
