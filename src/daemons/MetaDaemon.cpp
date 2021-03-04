@@ -317,7 +317,6 @@ int main(int argc, char *argv[]) {
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setPort(FLAGS_port);
-        gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down

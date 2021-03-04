@@ -30,7 +30,6 @@
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
@@ -180,7 +179,6 @@ bool StorageServer::start() {
             auto handler = std::make_shared<GraphStorageServiceHandler>(env_.get());
             storageServer_ = std::make_unique<apache::thrift::ThriftServer>();
             storageServer_->setPort(FLAGS_port);
-            storageServer_->setReusePort(FLAGS_reuse_port);
             storageServer_->setIdleTimeout(std::chrono::seconds(0));
             storageServer_->setIOThreadPool(ioThreadPool_);
             storageServer_->setThreadManager(workers_);
@@ -207,7 +205,6 @@ bool StorageServer::start() {
             auto adminAddr = Utils::getAdminAddrFromStoreAddr(localHost_);
             adminServer_ = std::make_unique<apache::thrift::ThriftServer>();
             adminServer_->setPort(adminAddr.port);
-            adminServer_->setReusePort(FLAGS_reuse_port);
             adminServer_->setIdleTimeout(std::chrono::seconds(0));
             adminServer_->setIOThreadPool(ioThreadPool_);
             adminServer_->setThreadManager(workers_);
@@ -234,7 +231,6 @@ bool StorageServer::start() {
             auto internalAddr = Utils::getInternalAddrFromStoreAddr(localHost_);
             internalStorageServer_ = std::make_unique<apache::thrift::ThriftServer>();
             internalStorageServer_->setPort(internalAddr.port);
-            internalStorageServer_->setReusePort(FLAGS_reuse_port);
             internalStorageServer_->setIdleTimeout(std::chrono::seconds(0));
             internalStorageServer_->setIOThreadPool(ioThreadPool_);
             internalStorageServer_->setThreadManager(workers_);
