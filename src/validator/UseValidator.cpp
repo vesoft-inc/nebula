@@ -40,9 +40,7 @@ Status UseValidator::validateImpl() {
 }
 
 Status UseValidator::toPlan() {
-    // The input will be set by father validator later.
-    auto *start = StartNode::make(qctx_);
-    auto reg = SwitchSpace::make(qctx_, start, *spaceName_);
+    auto reg = SwitchSpace::make(qctx_, nullptr, *spaceName_);
     root_ = reg;
     tail_ = root_;
     return Status::OK();

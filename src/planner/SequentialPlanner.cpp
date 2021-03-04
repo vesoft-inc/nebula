@@ -30,7 +30,7 @@ StatusOr<SubPlan> SequentialPlanner::transform(AstContext* astCtx) {
     for (auto iter = validators.begin(); iter < validators.end() - 1; ++iter) {
         NG_RETURN_IF_ERROR((iter + 1)->get()->appendPlan(iter->get()->root()));
     }
-    subPlan.tail = StartNode::make(qctx);
+    subPlan.tail = seqCtx->startNode;
     NG_RETURN_IF_ERROR(validators.front()->appendPlan(subPlan.tail));
     VLOG(1) << "root: " << subPlan.root->kind() << " tail: " << subPlan.tail->kind();
     return subPlan;

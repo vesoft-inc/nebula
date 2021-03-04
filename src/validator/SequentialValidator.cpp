@@ -42,6 +42,7 @@ Status SequentialValidator::validateImpl() {
             break;
     }
 
+    seqAstCtx_->startNode = StartNode::make(seqAstCtx_->qctx);
     for (auto* sentence : sentences) {
         auto validator = makeValidator(sentence, qctx_);
         NG_RETURN_IF_ERROR(validator->validate());

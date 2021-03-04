@@ -16,6 +16,7 @@ namespace graph {
 
 struct SequentialAstContext final : AstContext {
     std::vector<std::unique_ptr<Validator>>     validators;
+    PlanNode                                    *startNode;
 };
 
 /**
