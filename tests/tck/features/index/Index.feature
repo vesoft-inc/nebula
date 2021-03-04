@@ -919,3 +919,20 @@ Feature: IndexTest_Vid_String
     Then the result should be, in any order:
       | SrcVID | DstVID | Ranking |
     Then drop the used space
+
+  Scenario: show create tag index
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX `player_name_index`
+      """
+    Then the result should be, in any order:
+      | Tag Index Name      | Create Tag Index                                                     |
+      | "player_name_index" | "CREATE TAG INDEX `player_name_index` ON `player` (\n `name(64)`\n)" |
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX `player_age_index`
+      """
+    Then the result should be, in any order:
+      | Tag Index Name     | Create Tag Index                                               |
+      | "player_age_index" | "CREATE TAG INDEX `player_age_index` ON `player` (\n `age`\n)" |

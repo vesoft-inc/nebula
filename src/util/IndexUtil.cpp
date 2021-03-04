@@ -50,8 +50,12 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     Row row;
     row.emplace_back(indexName);
     for (auto &col : indexItem.get_fields()) {
-        createStr += " `" + col.get_name() + "`";
-        createStr += ",\n";
+        createStr += " `" + col.get_name();
+        const auto &type = col.get_type();
+        if (type.__isset.type_length) {
+            createStr += "(" + std::to_string(*type.get_type_length()) + ")";
+        }
+        createStr += "`,\n";
     }
     if (!indexItem.fields.empty()) {
         createStr.resize(createStr.size() -2);
@@ -65,4 +69,3 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
 
 }  // namespace graph
 }  // namespace nebula
-
