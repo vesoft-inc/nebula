@@ -429,9 +429,6 @@ bool Balancer::balanceParts(BalanceID balanceId,
         maxPartsHost = sortedHosts.back();
         minPartsHost = sortedHosts.front();
     }
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(tasks.begin(), tasks.end(), g);
     LOG(INFO) << "Balance tasks num: " << tasks.size();
     for (auto& task : tasks) {
         LOG(INFO) << task.taskIdStr();
