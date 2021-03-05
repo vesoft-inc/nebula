@@ -1550,86 +1550,81 @@ std::string Value::toString() const {
     LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
 }
 
-std::pair<bool, bool> Value::toBool() {
+Value Value::toBool() {
     switch (type_) {
-        // Type::__EMPTY__ is always false
-        case Value::Type::__EMPTY__: {
-            return std::make_pair(false, true);
-        }
-        // Type::NULLVALUE is always false
+        case Value::Type::__EMPTY__:
         case Value::Type::NULLVALUE: {
-            return std::make_pair(false, true);
+            return Value::kNullValue;
         }
         case Value::Type::BOOL: {
-            return std::make_pair(getBool(), true);
-        }
-        case Value::Type::INT: {
-            return std::make_pair(getInt() != 0, true);
-        }
-        case Value::Type::FLOAT: {
-            return std::make_pair(std::abs(getFloat()) > kEpsilon, true);
+            return *this;
         }
         case Value::Type::STRING: {
-            return std::make_pair(!getStr().empty(), true);
-        }
-        case Value::Type::DATE: {
-            return std::make_pair(getDate().toInt() != 0, true);
+            auto str = toString();
+            std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+            if (str.compare("true") == 0) {
+                return true;
+            }
+            if (str.compare("false") == 0) {
+                return false;
+            }
+            return Value::kNullValue;
         }
         default: {
-            return std::make_pair(bool{}, false);
+            return Value::kNullBadType;
         }
     }
 }
 
-std::pair<double, bool> Value::toFloat() {
+Value Value::toFloat() {
     switch (type_) {
         case Value::Type::INT: {
-            return std::make_pair(static_cast<double>(getInt()), true);
+            return static_cast<double>(getInt());
         }
         case Value::Type::FLOAT: {
-            return std::make_pair(getFloat(), true);
+            return *this;
         }
         case Value::Type::STRING: {
             const auto& str = getStr();
             char *pEnd;
             double val = strtod(str.c_str(), &pEnd);
             if (*pEnd != '\0') {
-                return std::make_pair(double{}, false);
+                return Value::kNullValue;
             }
-            return std::make_pair(val, true);
+            return val;
         }
         default: {
-            return std::make_pair(double{}, false);
+            return Value::kNullBadType;
         }
     }
 }
 
-std::pair<int64_t, bool> Value::toInt() {
+Value Value::toInt() {
     switch (type_) {
         case Value::Type::INT: {
-            return std::make_pair(getInt(), true);
+            return *this;
         }
         case Value::Type::FLOAT: {
             // Check if float value is in the range of int_64
             // Return min/max int_64 value and false to accommodate Cypher
             if (getFloat() <= std::numeric_limits<int64_t>::min()) {
-                return std::make_pair(std::numeric_limits<int64_t>::min(), true);
+                return std::numeric_limits<int64_t>::min();
             } else if (getFloat() >= std::numeric_limits<int64_t>::max()) {
-                return std::make_pair(std::numeric_limits<int64_t>::max(), true);
+                return std::numeric_limits<int64_t>::max();
             }
-            return std::make_pair(static_cast<int64_t>(getFloat()), true);
+            return static_cast<int64_t>(getFloat());
         }
         case Value::Type::STRING: {
             const auto& str = getStr();
             char *pEnd;
             double val = strtod(str.c_str(), &pEnd);
             if (*pEnd != '\0') {
-                return std::make_pair(int64_t{}, false);
+                return Value::kNullValue;
             }
-            return std::make_pair(static_cast<int64_t>(val), true);
+            return static_cast<int64_t>(val);
         }
         default: {
-            return std::make_pair(int64_t{}, false);
+            return Value::kNullBadType;
         }
     }
 }

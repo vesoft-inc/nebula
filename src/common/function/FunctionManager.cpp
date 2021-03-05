@@ -146,6 +146,24 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                   TypeSignature({Value::Type::TIME}, Value::Type::STRING),
                   TypeSignature({Value::Type::DATETIME}, Value::Type::STRING)
                 }},
+    {"toBoolean", {TypeSignature({Value::Type::STRING}, Value::Type::BOOL),
+                   TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
+                   TypeSignature({Value::Type::BOOL}, Value::Type::BOOL)
+                }},
+    {"toFloat", {TypeSignature({Value::Type::STRING}, Value::Type::FLOAT),
+                 TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
+                 TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+                 TypeSignature({Value::Type::INT}, Value::Type::FLOAT)
+                }},
+    {"toInteger", {TypeSignature({Value::Type::STRING}, Value::Type::INT),
+                   TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
+                   TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
+                   TypeSignature({Value::Type::INT}, Value::Type::INT)
+                }},
+    {"toBoolean", {TypeSignature({Value::Type::STRING}, Value::Type::BOOL),
+                   TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE),
+                   TypeSignature({Value::Type::BOOL}, Value::Type::BOOL)
+                }},
     {"hash", {TypeSignature({Value::Type::INT}, Value::Type::INT),
               TypeSignature({Value::Type::FLOAT}, Value::Type::INT),
               TypeSignature({Value::Type::STRING}, Value::Type::INT),
@@ -893,6 +911,33 @@ FunctionManager::FunctionManager() {
                     LOG(ERROR) << "toString has not been implemented for " << args[0].type();
                     return Value::kNullBadType;
             }
+        };
+    }
+    {
+        auto &attr = functions_["toBoolean"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+             return Value(args[0]).toBool();
+        };
+    }
+    {
+        auto &attr = functions_["toFloat"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+             return Value(args[0]).toFloat();
+        };
+    }
+    {
+        auto &attr = functions_["toInteger"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+             return Value(args[0]).toInt();
         };
     }
     {

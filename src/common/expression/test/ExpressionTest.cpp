@@ -2113,14 +2113,12 @@ TEST_F(ExpressionTest, TypeCastTest) {
     {
         TypeCastingExpression typeCast(Value::Type::BOOL, new ConstantExpression(2));
         auto eval = Expression::eval(&typeCast, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, true);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         TypeCastingExpression typeCast(Value::Type::BOOL, new ConstantExpression(0));
         auto eval = Expression::eval(&typeCast, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, false);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         TypeCastingExpression typeCast(Value::Type::STRING, new ConstantExpression(true));

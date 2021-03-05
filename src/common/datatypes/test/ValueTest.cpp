@@ -549,6 +549,122 @@ TEST(Value, Logical) {
     }
 }
 
+TEST(Value, TypeCast) {
+    Value vInt(1);
+    Value vFloat(3.14);
+    Value vStr1("TrUe");
+    Value vStr2("3.14");
+    Value vBool1(false);
+    Value vBool2(true);
+    Value vDate(Date(2020, 1, 1));
+    Value vNull(NullType::__NULL__);
+    Value vIntMin(std::numeric_limits<int64_t>::min());
+    Value vIntMax(std::numeric_limits<int64_t>::max());
+    Value vFloatMin(std::numeric_limits<double_t>::lowest());   // non-negtive
+    Value vFloatMax(std::numeric_limits<double_t>::max());
+
+    {
+        auto vb1 = vInt.toBool();
+        EXPECT_EQ(Value::Type::NULLVALUE, vb1.type());
+
+        auto vb2 = vFloat.toBool();
+        EXPECT_EQ(Value::Type::NULLVALUE, vb2.type());
+
+        auto vb3 = vStr1.toBool();
+        EXPECT_EQ(Value::Type::BOOL, vb3.type());
+        EXPECT_EQ(true, vb3.getBool());
+
+        auto vb4 = vStr2.toBool();
+        EXPECT_EQ(Value::Type::NULLVALUE, vb4.type());
+
+        auto vb5 = vBool1.toBool();
+        EXPECT_EQ(Value::Type::BOOL, vb5.type());
+        EXPECT_EQ(false, vb5.getBool());
+
+        auto vb6 = vBool2.toBool();
+        EXPECT_EQ(Value::Type::BOOL, vb6.type());
+        EXPECT_EQ(true, vb6.getBool());
+
+        auto vb7 = vDate.toBool();
+        EXPECT_EQ(Value::Type::NULLVALUE, vb7.type());
+
+        auto vb8 = vNull.toBool();
+        EXPECT_EQ(Value::Type::NULLVALUE, vb8.type());
+    }
+    {
+        auto vf1 = vInt.toFloat();
+        EXPECT_EQ(Value::Type::FLOAT, vf1.type());
+        EXPECT_EQ(vf1.getFloat(), 1.0);
+
+        auto vf2 = vFloat.toFloat();
+        EXPECT_EQ(Value::Type::FLOAT, vf2.type());
+        EXPECT_EQ(vf2.getFloat(), 3.14);
+
+        auto vf3 = vStr1.toFloat();
+        EXPECT_EQ(Value::Type::NULLVALUE, vf3.type());
+
+        auto vf4 = vStr2.toFloat();
+        EXPECT_EQ(Value::Type::FLOAT, vf4.type());
+        EXPECT_EQ(vf4.getFloat(), 3.14);
+
+        auto vf5 = vBool1.toFloat();
+        EXPECT_EQ(Value::Type::NULLVALUE, vf5.type());
+
+        auto vf6 = vBool2.toFloat();
+        EXPECT_EQ(Value::Type::NULLVALUE, vf6.type());
+
+        auto vf7 = vDate.toFloat();
+        EXPECT_EQ(Value::Type::NULLVALUE, vf7.type());
+
+        auto vf8 = vNull.toFloat();
+        EXPECT_EQ(Value::Type::NULLVALUE, vf8.type());
+
+        auto vf9 = vIntMin.toFloat();
+        EXPECT_EQ(Value::Type::FLOAT, vf9.type());
+        EXPECT_EQ(vf9.getFloat(), std::numeric_limits<int64_t>::min());
+
+        auto vf10 = vIntMax.toFloat();
+        EXPECT_EQ(Value::Type::FLOAT, vf10.type());
+        EXPECT_EQ(vf10.getFloat(), std::numeric_limits<int64_t>::max());
+    }
+    {
+        auto vi1 = vInt.toInt();
+        EXPECT_EQ(Value::Type::INT, vi1.type());
+        EXPECT_EQ(vi1.getInt(), 1);
+
+        auto vi2 = vFloat.toInt();
+        EXPECT_EQ(Value::Type::INT, vi2.type());
+        EXPECT_EQ(vi2.getInt(), 3);
+
+        auto vi3 = vStr1.toInt();
+        EXPECT_EQ(Value::Type::NULLVALUE, vi3.type());
+
+        auto vi4 = vStr2.toInt();
+        EXPECT_EQ(Value::Type::INT, vi4.type());
+        EXPECT_EQ(vi4.getInt(), 3);
+
+        auto vi5 = vBool1.toInt();
+        EXPECT_EQ(Value::Type::NULLVALUE, vi5.type());
+
+        auto vi6 = vBool2.toInt();
+        EXPECT_EQ(Value::Type::NULLVALUE, vi6.type());
+
+        auto vi7 = vDate.toInt();
+        EXPECT_EQ(Value::Type::NULLVALUE, vi7.type());
+
+        auto vi8 = vNull.toInt();
+        EXPECT_EQ(Value::Type::NULLVALUE, vi8.type());
+
+        auto vi9 = vFloatMin.toInt();
+        EXPECT_EQ(Value::Type::INT, vi9.type());
+        EXPECT_EQ(vi9.getInt(), std::numeric_limits<int64_t>::min());
+
+        auto vi10 = vFloatMax.toInt();
+        EXPECT_EQ(Value::Type::INT, vi10.type());
+        EXPECT_EQ(vi10.getInt(), std::numeric_limits<int64_t>::max());
+    }
+}
+
 TEST(Value, Bit) {
     Value vNull(nebula::NullType::__NULL__);
     Value vEmpty;
@@ -838,120 +954,6 @@ TEST(Value, DecodeEncode) {
         std::size_t s = serializer::deserialize(buf, valCopy);
         ASSERT_EQ(s, buf.size());
         EXPECT_EQ(val, valCopy);
-    }
-}
-
-TEST(Value, TypeCast) {
-    Value vInt1(1);
-    Value vInt2(-1);
-    Value vIntMin(std::numeric_limits<int64_t>::min());
-    Value vIntMax(std::numeric_limits<int64_t>::max());
-    Value vFloat1(3.14);
-    Value vFloat2(10.0);
-    Value vFloatMin(std::numeric_limits<double_t>::min());   // non-negtive
-    Value vFloatMax(std::numeric_limits<double_t>::max());
-    Value vStr1("50");
-    Value vStr2("3.14");
-    Value vStr3("World");
-
-    // int to float
-    {
-        // 1
-        bool castSucceed = vInt1.toFloat().second;
-        EXPECT_EQ(true, castSucceed);
-        Value vIntToFloat = vInt1.toFloat().first;
-        EXPECT_EQ(Value::Type::FLOAT, vIntToFloat.type());
-        // -1
-        castSucceed = vIntMax.toFloat().second;
-        EXPECT_EQ(true, castSucceed);
-        vIntToFloat = vIntMax.toFloat().first;
-        EXPECT_EQ(Value::Type::FLOAT, vIntToFloat.type());
-    }
-    // int to string
-    {
-        Value vIntToStr = vInt1.toString();
-        EXPECT_EQ("1", vIntToStr);
-
-        vIntToStr = vInt2.toString();
-        EXPECT_EQ("-1", vIntToStr);
-
-        vIntToStr = vIntMax.toString();
-        EXPECT_EQ("9223372036854775807", vIntToStr);
-
-        vIntToStr = vIntMin.toString();
-        EXPECT_EQ("-9223372036854775808", vIntToStr);
-    }
-    // float to int
-    {
-        // 3.14
-        bool castSucceed = vFloat1.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        Value vFloatToInt = vFloat1.toInt().first;
-        EXPECT_EQ(Value::Type::INT, vFloatToInt.type());
-        // 10.0
-        castSucceed = vFloat2.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        vFloatToInt = vFloat2.toInt().first;
-        EXPECT_EQ(Value::Type::INT, vFloatToInt.type());
-        EXPECT_EQ(10, vFloatToInt);
-        // 1.7976931348623157E308
-        castSucceed = vFloatMax.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        EXPECT_EQ(std::numeric_limits<int64_t>::max(), vFloatMax.toInt().first);
-
-        castSucceed = vFloatMin.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        // -1.7976931348623157E308
-        castSucceed = (-vFloatMax).toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        EXPECT_EQ(std::numeric_limits<int64_t>::min(), (-vFloatMax).toInt().first);
-    }
-    // float to string
-    {
-        Value vFloatToStr = vFloat1.toString();
-        EXPECT_EQ("3.14", vFloatToStr);
-
-        vFloatToStr = vFloatMax.toString();
-        EXPECT_EQ("1.7976931348623157E308", vFloatToStr);
-
-        vFloatToStr = (-vFloatMax).toString();
-        EXPECT_EQ("-1.7976931348623157E308", vFloatToStr);
-    }
-    // string to int
-    {
-        // "1"
-        bool castSucceed = vStr1.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        Value vStrToInt = vStr1.toInt().first;
-        EXPECT_EQ(Value::Type::INT, vStrToInt.type());
-        EXPECT_EQ(50, vStrToInt);
-        // "3.14"
-        castSucceed = vStr2.toInt().second;
-        EXPECT_EQ(true, castSucceed);
-        vStrToInt = vStr2.toInt().first;
-        EXPECT_EQ(Value::Type::INT, vStrToInt.type());
-        EXPECT_EQ(3, vStrToInt);   // lose precision
-        // "world"
-        castSucceed = vStr3.toInt().second;
-        EXPECT_EQ(false, castSucceed);
-    }
-    // string to float
-    {
-        // "50"
-        bool castSucceed = vStr1.toFloat().second;
-        EXPECT_EQ(true, castSucceed);
-        Value vStrToFloat = vStr1.toFloat().first;
-        EXPECT_EQ(Value::Type::FLOAT, vStrToFloat.type());
-        EXPECT_EQ(50.0, vStrToFloat);
-        // "3.14"
-        castSucceed = vStr2.toFloat().second;
-        EXPECT_EQ(true, castSucceed);
-        vStrToFloat = vStr2.toFloat().first;
-        EXPECT_EQ(Value::Type::FLOAT, vStrToFloat.type());
-        EXPECT_EQ(3.14, vStrToFloat);
-        // "world"
-        castSucceed = vStr3.toFloat().second;
-        EXPECT_EQ(false, castSucceed);
     }
 }
 }  // namespace nebula
