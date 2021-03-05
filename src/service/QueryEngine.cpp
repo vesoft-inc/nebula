@@ -35,7 +35,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
     options.role_ = meta::cpp2::HostRole::GRAPH;
     std::string localIP = network::NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev).value();
     options.localHost_ = HostAddr{localIP, FLAGS_port};
-    options.gitInfoSHA_ = nebula::graph::gitInfoSha();
+    options.gitInfoSHA_ = gitInfoSha();
     metaClient_ =
         std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
     // load data try 3 time

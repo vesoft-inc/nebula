@@ -36,7 +36,7 @@ static void printHelp(const char *prog);
 DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
-    google::SetVersionString(nebula::graph::versionString());
+    google::SetVersionString(nebula::versionString());
     if (argc == 1) {
         printHelp(argv[0]);
         return EXIT_FAILURE;

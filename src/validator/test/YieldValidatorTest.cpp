@@ -200,15 +200,15 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
     }
     {
         std::string query = "YIELD (BOOL)123";
-        EXPECT_TRUE(checkResult(query, expected_));
+        EXPECT_FALSE(checkResult(query, expected_));
     }
     {
         std::string query = "YIELD (BOOL)0";
-        EXPECT_TRUE(checkResult(query, expected_));
+        EXPECT_FALSE(checkResult(query, expected_));
     }
     {
         std::string query = "YIELD (BOOL)\"12\"";
-        EXPECT_TRUE(checkResult(query, expected_));
+        EXPECT_FALSE(checkResult(query, expected_));
     }
     {
         std::string query = "YIELD (MAP)(\"12\")";
