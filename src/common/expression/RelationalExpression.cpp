@@ -15,31 +15,24 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     auto& lhs = lhs_->eval(ctx);
     auto& rhs = rhs_->eval(ctx);
 
-    if (kind_ != Kind::kRelEQ && kind_ != Kind::kRelNE) {
-        auto lhsEmptyOrNull = lhs.type() & Value::kEmptyNullType;
-        auto rhsEmptyOrNull = rhs.type() & Value::kEmptyNullType;
-        if (lhsEmptyOrNull || rhsEmptyOrNull) {
-            return lhsEmptyOrNull ? lhs : rhs;
-        }
-    }
     switch (kind_) {
         case Kind::kRelEQ:
-            result_ = lhs == rhs;
+            result_ = lhs.equal(rhs);
             break;
         case Kind::kRelNE:
-            result_ = lhs != rhs;
+            result_ = !lhs.equal(rhs);
             break;
         case Kind::kRelLT:
-            result_ = lhs < rhs;
+            result_ = lhs.lessThan(rhs);
             break;
         case Kind::kRelLE:
-            result_ = lhs <= rhs;
+            result_ = lhs.lessThan(rhs) || lhs.equal(rhs);
             break;
         case Kind::kRelGT:
-            result_ = lhs > rhs;
+            result_ = !lhs.lessThan(rhs) && !lhs.equal(rhs);
             break;
         case Kind::kRelGE:
-            result_ = lhs >= rhs;
+            result_ = !lhs.lessThan(rhs) || lhs.equal(rhs);
             break;
         case Kind::kRelREG: {
             if (lhs.isStr() && rhs.isStr()) {

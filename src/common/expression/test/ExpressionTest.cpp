@@ -179,8 +179,8 @@ protected:
         boost::split(splitString, expr, boost::is_any_of(" \t"));
         Expression *ep = ExpressionCalu(splitString);
         auto eval = Expression::eval(ep, gExpCtxt);
-        EXPECT_EQ(eval.type(), expected.type());
-        EXPECT_EQ(eval, expected);
+        EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
+        EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
         delete ep;
     }
 
@@ -661,35 +661,35 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         TEST_EXPR(true == 2.0, false);
         TEST_EXPR(true != 1.0, true);
         TEST_EXPR(true != 2.0, true);
-        TEST_EXPR(true > 1.0, false);
-        TEST_EXPR(true >= 1.0, false);
-        TEST_EXPR(true < 1.0, true);
-        TEST_EXPR(true <= 1.0, true);
+        TEST_EXPR(true > 1.0, Value::kNullBadType);
+        TEST_EXPR(true >= 1.0, Value::kNullBadType);
+        TEST_EXPR(true < 1.0, Value::kNullBadType);
+        TEST_EXPR(true <= 1.0, Value::kNullBadType);
         TEST_EXPR(false == 0.0, false);
         TEST_EXPR(false == 1.0, false);
         TEST_EXPR(false != 0.0, true);
         TEST_EXPR(false != 1.0, true);
-        TEST_EXPR(false > 0.0, false);
-        TEST_EXPR(false >= 0.0, false);
-        TEST_EXPR(false < 0.0, true);
-        TEST_EXPR(false <= 0.0, true);
+        TEST_EXPR(false > 0.0, Value::kNullBadType);
+        TEST_EXPR(false >= 0.0, Value::kNullBadType);
+        TEST_EXPR(false < 0.0, Value::kNullBadType);
+        TEST_EXPR(false <= 0.0, Value::kNullBadType);
 
         TEST_EXPR(true == 1, false);
         TEST_EXPR(true == 2, false);
         TEST_EXPR(true != 1, true);
         TEST_EXPR(true != 2, true);
-        TEST_EXPR(true > 1, false);
-        TEST_EXPR(true >= 1, false);
-        TEST_EXPR(true < 1, true);
-        TEST_EXPR(true <= 1, true);
+        TEST_EXPR(true > 1, Value::kNullBadType);
+        TEST_EXPR(true >= 1, Value::kNullBadType);
+        TEST_EXPR(true < 1, Value::kNullBadType);
+        TEST_EXPR(true <= 1, Value::kNullBadType);
         TEST_EXPR(false == 0, false);
         TEST_EXPR(false == 1, false);
         TEST_EXPR(false != 0, true);
         TEST_EXPR(false != 1, true);
-        TEST_EXPR(false > 0, false);
-        TEST_EXPR(false >= 0, false);
-        TEST_EXPR(false < 0, true);
-        TEST_EXPR(false <= 0, true);
+        TEST_EXPR(false > 0, Value::kNullBadType);
+        TEST_EXPR(false >= 0, Value::kNullBadType);
+        TEST_EXPR(false < 0, Value::kNullBadType);
+        TEST_EXPR(false <= 0, Value::kNullBadType);
     }
     {
         TEST_EXPR(-1 == -2, false);
@@ -740,6 +740,22 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         TEST_EXPR(1 >= 1, true);
         TEST_EXPR(1 < 1, false);
         TEST_EXPR(1 <= 1, true);
+    }
+    {
+        TEST_EXPR(empty == empty, true);
+        TEST_EXPR(empty == null, Value::kNullValue);
+        TEST_EXPR(empty != null, Value::kNullValue);
+        TEST_EXPR(empty != 1, true);
+        TEST_EXPR(empty != true, true);
+        TEST_EXPR(empty > "1", Value::kEmpty);
+        TEST_EXPR(empty < 1, Value::kEmpty);
+        TEST_EXPR(empty >= 1.11, Value::kEmpty);
+
+        TEST_EXPR(null != 1, Value::kNullValue);
+        TEST_EXPR(null != true, Value::kNullValue);
+        TEST_EXPR(null > "1", Value::kNullValue);
+        TEST_EXPR(null < 1, Value::kNullValue);
+        TEST_EXPR(null >= 1.11, Value::kNullValue);
     }
     {
         TEST_EXPR(8 % 2 + 1 == 1, true);
@@ -964,8 +980,7 @@ TEST_F(ExpressionTest, Relation) {
                 new EdgePropertyExpression(new std::string("e1"), new std::string("list")),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, false);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // e1.list_of_list == NULL
@@ -974,8 +989,7 @@ TEST_F(ExpressionTest, Relation) {
                 new EdgePropertyExpression(new std::string("e1"), new std::string("list_of_list")),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, false);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // e1.list == e1.list
@@ -1004,8 +1018,7 @@ TEST_F(ExpressionTest, Relation) {
                 new ConstantExpression(Value(1)),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, false);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // NULL == NULL
@@ -1014,8 +1027,7 @@ TEST_F(ExpressionTest, Relation) {
                 new ConstantExpression(Value(NullType::NaN)),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, true);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // 1 != NULL
@@ -1024,8 +1036,7 @@ TEST_F(ExpressionTest, Relation) {
                 new ConstantExpression(Value(1)),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, true);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // NULL != NULL
@@ -1034,8 +1045,7 @@ TEST_F(ExpressionTest, Relation) {
                 new ConstantExpression(Value(NullType::NaN)),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
-        EXPECT_EQ(eval.type(), Value::Type::BOOL);
-        EXPECT_EQ(eval, false);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
     }
     {
         // 1 < NULL

@@ -309,6 +309,10 @@ struct Value {
     Value toFloat();
     Value toInt();
 
+    Value lessThan(const Value& v) const;
+
+    Value equal(const Value& v) const;
+
 private:
     Type type_;
 
