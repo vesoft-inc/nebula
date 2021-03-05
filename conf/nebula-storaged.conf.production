@@ -101,4 +101,3 @@
 
 ############### misc ####################
 --max_handlers_per_req=1
---heartbeat_interval_secs=10

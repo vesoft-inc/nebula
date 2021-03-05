@@ -35,6 +35,8 @@
 --ws_http_port=12021
 # HTTP2 service port
 --ws_h2_port=12031
+# heartbeat with meta service
+--heartbeat_interval_secs=10
 
 ########## storage ##########
 --listener_path=data/listener

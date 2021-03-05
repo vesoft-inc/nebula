@@ -36,6 +36,8 @@
 --ws_http_port=19779
 # HTTP2 service port
 --ws_h2_port=19780
+# heartbeat with meta service
+--heartbeat_interval_secs=10
 
 ######### Raft #########
 # Raft election timeout
