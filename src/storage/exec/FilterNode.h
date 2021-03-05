@@ -68,7 +68,7 @@ private:
             auto result = filterExp_->eval(*expCtx_);
             // NULL is always false
             auto ret = result.toBool();
-            if (ret.second && ret.first) {
+            if (ret.isBool() && ret.getBool()) {
                 return true;
             }
             return false;
