@@ -270,7 +270,7 @@ TEST(Value, Comparison) {
 
         v = vInt1 < vNull;
         EXPECT_EQ(Value::Type::BOOL, v.type());
-        EXPECT_EQ(false, v.getBool());
+        EXPECT_EQ(true, v.getBool());
 
         v = vInt1 > vNull;
         EXPECT_EQ(Value::Type::BOOL, v.type());
@@ -286,7 +286,7 @@ TEST(Value, Comparison) {
 
         v = vInt1 > vEmpty;
         EXPECT_EQ(Value::Type::BOOL, v.type());
-        EXPECT_EQ(false, v.getBool());
+        EXPECT_EQ(true, v.getBool());
 
         v = vList1 > vList2;
         EXPECT_EQ(Value::Type::BOOL, v.type());

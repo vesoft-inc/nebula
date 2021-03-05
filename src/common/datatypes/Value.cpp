@@ -2412,19 +2412,165 @@ Value operator!(const Value& rhs) {
 }
 
 bool operator<(const Value& lhs, const Value& rhs) {
-    auto res = lhs.lessThan(rhs);
-    if (res.isBool()) {
-        return res.getBool();
+    auto lType = lhs.type();
+    auto rType = rhs.type();
+    auto hasNullOrEmpty = (lType | rType) & Value::kEmptyNullType;
+    auto notSameType = lType != rType;
+    auto notBothNumeric = ((lType | rType) & Value::kNumericType) != Value::kNumericType;
+    if (hasNullOrEmpty || (notSameType && notBothNumeric)) {
+        return lType < rType;
     }
+
+    switch (lType) {
+        case Value::Type::BOOL: {
+            return lhs.getBool() < rhs.getBool();
+        }
+        case Value::Type::INT: {
+            switch (rType) {
+                case Value::Type::INT: {
+                    return lhs.getInt() < rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return lhs.getInt() < rhs.getFloat();
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (rType) {
+                case Value::Type::INT: {
+                    return lhs.getFloat() < rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return lhs.getFloat() < rhs.getFloat();
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::STRING: {
+            return lhs.getStr() < rhs.getStr();
+        }
+        case Value::Type::VERTEX: {
+            return lhs.getVertex() < rhs.getVertex();
+        }
+        case Value::Type::EDGE: {
+            return lhs.getEdge() < rhs.getEdge();
+        }
+        case Value::Type::PATH: {
+            return lhs.getPath() < rhs.getPath();
+        }
+        case Value::Type::TIME: {
+            return lhs.getTime() < rhs.getTime();
+        }
+        case Value::Type::DATE: {
+            return lhs.getDate() < rhs.getDate();
+        }
+        case Value::Type::DATETIME: {
+            return lhs.getDateTime() < rhs.getDateTime();
+        }
+        case Value::Type::LIST: {
+            return lhs.getList() < rhs.getList();
+        }
+        case Value::Type::MAP:
+        case Value::Type::SET:
+        case Value::Type::DATASET: {
+            // TODO:
+            return false;
+        }
+        case Value::Type::NULLVALUE:
+        case Value::Type::__EMPTY__: {
+            return false;
+        }
+    }
+    DLOG(FATAL) << "Unknown type " << static_cast<int>(lType);
     return false;
 }
 
 bool operator==(const Value& lhs, const Value& rhs) {
-    if (lhs.isNull()) return rhs.isNull();
-    auto res = lhs.equal(rhs);
-    if (res.isBool()) {
-        return res.getBool();
+    auto lType = lhs.type();
+    auto rType = rhs.type();
+    auto hasNullOrEmpty = (lType | rType) & Value::kEmptyNullType;
+    auto notSameType = lType != rType;
+    auto notBothNumeric = ((lType | rType) & Value::kNumericType) != Value::kNumericType;
+    if (hasNullOrEmpty || (notSameType && notBothNumeric)) {
+        return lhs.type() == rhs.type();
     }
+
+    switch (lType) {
+        case Value::Type::BOOL: {
+            return lhs.getBool() == rhs.getBool();
+        }
+        case Value::Type::INT: {
+            switch (rType) {
+                case Value::Type::INT: {
+                    return lhs.getInt() == rhs.getInt();
+                }
+                case Value::Type::FLOAT: {
+                    return std::abs(lhs.getInt() - rhs.getFloat()) < kEpsilon;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (rType) {
+                case Value::Type::INT: {
+                    return std::abs(lhs.getFloat() - rhs.getInt()) < kEpsilon;
+                }
+                case Value::Type::FLOAT: {
+                    return std::abs(lhs.getFloat() - rhs.getFloat()) < kEpsilon;
+                }
+                default: {
+                    return false;
+                }
+            }
+        }
+        case Value::Type::STRING: {
+            return lhs.getStr() == rhs.getStr();
+        }
+        case Value::Type::DATE: {
+            return lhs.getDate() == rhs.getDate();
+        }
+        case Value::Type::TIME: {
+            // TODO(shylock) convert to UTC then compare
+            return lhs.getTime() == rhs.getTime();
+        }
+        case Value::Type::DATETIME: {
+            // TODO(shylock) convert to UTC then compare
+            return lhs.getDateTime() == rhs.getDateTime();
+        }
+        case Value::Type::VERTEX: {
+            return lhs.getVertex() == rhs.getVertex();
+        }
+        case Value::Type::EDGE: {
+            return lhs.getEdge() == rhs.getEdge();
+        }
+        case Value::Type::PATH: {
+            return lhs.getPath() == rhs.getPath();
+        }
+        case Value::Type::LIST: {
+            return lhs.getList() == rhs.getList();
+        }
+        case Value::Type::MAP: {
+            return lhs.getMap() == rhs.getMap();
+        }
+        case Value::Type::SET: {
+            return lhs.getSet() == rhs.getSet();
+        }
+        case Value::Type::DATASET: {
+            return lhs.getDataSet() == rhs.getDataSet();
+        }
+        case Value::Type::NULLVALUE:
+        case Value::Type::__EMPTY__: {
+            return false;
+        }
+    }
+    DLOG(FATAL) << "Unknown type " << static_cast<int>(lhs.type());
     return false;
 }
 
