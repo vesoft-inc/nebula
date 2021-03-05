@@ -18,10 +18,28 @@ public:
     HttpClient() = delete;
 
     ~HttpClient() = default;
-
+    // Send a http GET request
     static StatusOr<std::string> get(const std::string& path, const std::string& options = "-G");
 
+    // Send a http POST request
     static StatusOr<std::string> post(const std::string& path, const std::string& header);
+    // Send a http POST request with a different function signature
+    static StatusOr<std::string> post(const std::string& path,
+                                      const std::unordered_map<std::string, std::string>& header);
+    static StatusOr<std::string> post(const std::string& path,
+                                      const folly::dynamic& data = folly::dynamic::object());
+
+    // Send a http PUT request
+    static StatusOr<std::string> put(const std::string& path, const std::string& header);
+    static StatusOr<std::string> put(const std::string& path,
+                                      const std::unordered_map<std::string, std::string>& header);
+    static StatusOr<std::string> put(const std::string& path,
+                                      const folly::dynamic& data = folly::dynamic::object());
+
+protected:
+    static StatusOr<std::string> sendRequest(const std::string& path,
+                                             const folly::dynamic& data,
+                                             const std::string& reqType);
 };
 
 }   // namespace http

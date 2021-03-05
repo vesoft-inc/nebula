@@ -67,27 +67,15 @@ Status WebService::start() {
         return Status::OK();
     }
 
-    router().get("/get_flag").handler([](web::PathParams&& params) {
+    router().get("/flags").handler([](web::PathParams&& params) {
         DCHECK(params.empty());
         return new GetFlagsHandler();
     });
-    router().get("/get_flags").handler([](web::PathParams&& params) {
-        DCHECK(params.empty());
-        return new GetFlagsHandler();
-    });
-    router().get("/set_flag").handler([](web::PathParams&& params) {
+    router().put("/flags").handler([](web::PathParams&& params) {
         DCHECK(params.empty());
         return new SetFlagsHandler();
     });
-    router().get("/set_flags").handler([](web::PathParams&& params) {
-        DCHECK(params.empty());
-        return new SetFlagsHandler();
-    });
-    router().get("/get_stat").handler([](web::PathParams&& params) {
-        DCHECK(params.empty());
-        return new GetStatsHandler();
-    });
-    router().get("/get_stats").handler([](web::PathParams&& params) {
+    router().get("/stats").handler([](web::PathParams&& params) {
         DCHECK(params.empty());
         return new GetStatsHandler();
     });

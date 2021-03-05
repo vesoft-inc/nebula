@@ -33,8 +33,7 @@ public:
 
 protected:
     virtual folly::dynamic getStats() const;
-    void addOneStat(folly::dynamic& vals, const std::string& statName,
-                    int64_t statValue) const;
+    void addOneStat(folly::dynamic& vals, const std::string& statName, int64_t statValue) const;
     void addOneStat(folly::dynamic& vals,
                     const std::string& statName,
                     const std::string& error) const;

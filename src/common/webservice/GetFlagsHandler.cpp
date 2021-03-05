@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -27,17 +27,17 @@ void GetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         return;
     }
 
-    if (headers->getQueryParamPtr("verbose") != nullptr) {
-        verbose_ = true;
+    if (headers->hasQueryParam("verbose")) {
+        verbose_ = (headers->getQueryParam("verbose") == "true");
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
-        returnJson_ = true;
+    if (headers->hasQueryParam("format")) {
+        returnJson_ = (headers->getQueryParam("format") == "json");
     }
 
-    auto* flagsStr = headers->getQueryParamPtr("flags");
-    if (flagsStr != nullptr) {
-        folly::split(",", *flagsStr, flagnames_, true);
+    if (headers->hasQueryParam("flags")) {
+        const std::string& flags = headers->getQueryParam("flags");
+        folly::split(",", flags, flagnames_, true);
     }
 }
 
@@ -61,10 +61,11 @@ void GetFlagsHandler::onEOM() noexcept {
 
     folly::dynamic vals = getFlags();
     if (returnJson_) {
+        folly::dynamic res = folly::dynamic::object("flags", vals);
         ResponseBuilder(downstream_)
             .status(WebServiceUtils::to(HttpStatusCode::OK),
                     WebServiceUtils::toString(HttpStatusCode::OK))
-            .body(folly::toJson(vals))
+            .body(folly::toPrettyJson(res))
             .sendWithEOM();
     } else {
         ResponseBuilder(downstream_)
@@ -168,36 +169,28 @@ folly::dynamic GetFlagsHandler::getFlags() {
     return flags;
 }
 
+// static
+std::string GetFlagsHandler::valToString(const folly::dynamic& val) {
+    if (val.isNull()) {
+        return "nullptr";
+    }
+    if (!val.isString()) {
+        return val.asString();
+    }
+    return "\"" + val.asString() + "\"";
+}
 
-std::string GetFlagsHandler::toStr(folly::dynamic& vals) {
+std::string GetFlagsHandler::toStr(const folly::dynamic& vals) {
     std::stringstream ss;
     for (auto& fi : vals) {
         if (verbose_) {
-            bool isString = fi["type"].asString() == "string";
-            ss << "--" << fi["name"].asString() << ": "
-               << fi["description"].asString() << "\n";
-            ss << "  file: " << fi["file"].asString()
-               << ", type: " << fi["type"].asString()
-               << ", default: "
-               << (isString ? "\"" : "")
-               << fi["default"].asString()
-               << (isString ? "\"" : "")
-               << ", current: "
-               << (isString ? "\"" : "")
-               << fi["value"].asString()
-               << (isString ? "\"" : "")
-               << (fi["is_default"].asBool() ? "(default)" : "")
-               << "\n";
+            ss << "--" << fi["name"].asString() << ": " << fi["description"].asString() << "\n";
+            ss << "  file: " << fi["file"].asString() << ", type: " << fi["type"].asString()
+               << ", default: " << valToString(fi["default"])
+               << ", current: " << valToString(fi["value"])
+               << (fi["is_default"].asBool() ? "(default)" : "") << "\n";
         } else {
-            auto& val = fi["value"];
-            if (val != nullptr) {
-                ss << fi["name"].asString() << "="
-                   << (val.isString() ? "\"" : "")
-                   << val.asString()
-                   << (val.isString() ? "\"\n" : "\n");
-            } else {
-                ss << fi["name"].asString() << "=nullptr\n";
-            }
+            ss << fi["name"].asString() << "=" << valToString(fi["value"]) << "\n";
         }
     }
     return ss.str();

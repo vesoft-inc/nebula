@@ -32,8 +32,7 @@ public:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string name_;
-    std::string value_;
+    std::unique_ptr<folly::IOBuf> body_;
 };
 
 }  // namespace nebula

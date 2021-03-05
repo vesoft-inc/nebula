@@ -262,9 +262,9 @@ StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName
 void StatsManager::readAllValue(folly::dynamic& vals) {
     auto& sm = get();
 
-    for (auto &statsName : sm.nameMap_) {
+    for (auto const& statsName : sm.nameMap_) {
         // Add stats
-        for (auto& method : statsName.second.methods_) {
+        for (auto const& method : statsName.second.methods_) {
             std::string metricPrefix = statsName.first;
             switch (method) {
                 case StatsMethod::SUM:

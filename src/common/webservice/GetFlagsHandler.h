@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -36,7 +36,9 @@ private:
     void addOneFlag(folly::dynamic& vals,
                     const std::string& flagname,
                     const gflags::CommandLineFlagInfo* info);
-    std::string toStr(folly::dynamic& vals);
+    std::string toStr(const folly::dynamic& vals);
+
+    static std::string valToString(const folly::dynamic& val);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};

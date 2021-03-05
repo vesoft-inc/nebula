@@ -26,4 +26,16 @@ bool getUrl(const std::string& urlPath, std::string& respBody) {
     return true;
 }
 
+StatusOr<std::string> putUrl(const std::string& urlPath, const folly::dynamic& data) {
+    auto url = folly::stringPrintf(
+        "http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, urlPath.c_str());
+    VLOG(1) << "Retrieving url: " << url;
+
+    auto result = http::HttpClient::put(url.c_str(), data);
+    if (!result.ok()) {
+        LOG(ERROR) << "Failed to run curl: " << result.status();
+    }
+    return result;
+}
+
 }  // namespace nebula

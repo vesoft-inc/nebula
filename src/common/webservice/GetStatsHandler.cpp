@@ -29,13 +29,13 @@ void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         return;
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
-        returnJson_ = true;
+    if (headers->hasQueryParam("format")) {
+        returnJson_ = (headers->getQueryParam("format") == "json");
     }
 
-    auto* statsStr = headers->getQueryParamPtr("stats");
-    if (statsStr != nullptr) {
-        folly::split(",", *statsStr, statNames_, true);
+    if (headers->hasQueryParam("stats")) {
+        const std::string& stats = headers->getQueryParam("stats");
+        folly::split(",", stats, statNames_, true);
     }
 }
 
@@ -59,26 +59,29 @@ void GetStatsHandler::onEOM() noexcept {
 
     // read stats
     folly::dynamic vals = getStats();
-    if (returnJson_) {
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body(folly::toJson(vals))
-            .sendWithEOM();
-    } else {
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body(toStr(vals))
-            .sendWithEOM();
-    }
+    std::string body = returnJson_ ? folly::toPrettyJson(vals) : toStr(vals);
+    ResponseBuilder(downstream_)
+        .status(WebServiceUtils::to(HttpStatusCode::OK),
+                WebServiceUtils::toString(HttpStatusCode::OK))
+        .body(std::move(body))
+        .sendWithEOM();
 }
-
 
 void GetStatsHandler::onUpgrade(UpgradeProtocol) noexcept {
     // Do nothing
 }
 
+void GetStatsHandler::addOneStat(folly::dynamic& vals,
+                                 const std::string& statName,
+                                 int64_t statValue) const {
+    vals.push_back(folly::dynamic::object(statName, statValue));
+}
+
+void GetStatsHandler::addOneStat(folly::dynamic& vals,
+                                 const std::string& statName,
+                                 const std::string& error) const {
+    vals.push_back(folly::dynamic::object(statName, error));
+}
 
 void GetStatsHandler::requestComplete() noexcept {
     delete this;
@@ -90,27 +93,6 @@ void GetStatsHandler::onError(ProxygenError err) noexcept {
                << proxygen::getErrorString(err);
     delete this;
 }
-
-
-void GetStatsHandler::addOneStat(folly::dynamic& vals,
-                                 const std::string& statName,
-                                 int64_t statValue) const {
-    folly::dynamic stat = folly::dynamic::object();
-    stat["name"] = statName;
-    stat["value"] = statValue;
-    vals.push_back(std::move(stat));
-}
-
-
-void GetStatsHandler::addOneStat(folly::dynamic& vals,
-                                 const std::string& statName,
-                                 const std::string& error) const {
-    folly::dynamic stat = folly::dynamic::object();
-    stat["name"] = statName;
-    stat["value"] = error;
-    vals.push_back(std::move(stat));
-}
-
 
 folly::dynamic GetStatsHandler::getStats() const {
     auto stats = folly::dynamic::array();
@@ -128,18 +110,15 @@ folly::dynamic GetStatsHandler::getStats() const {
             }
         }
     }
-
     return stats;
 }
-
 
 std::string GetStatsHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
-        auto& val = counter["value"];
-        ss << counter["name"].asString() << "="
-           << val.asString()
-           << "\n";
+        for (auto& m : counter.items()) {
+            ss << m.first.asString() << "=" << m.second.asString() << "\n";
+        }
     }
     return ss.str();
 }
