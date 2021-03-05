@@ -532,25 +532,32 @@ class Filter final : public SingleInputNode {
 public:
     static Filter* make(QueryContext* qctx,
                         PlanNode* input,
-                        Expression* condition) {
-        return qctx->objPool()->add(new Filter(qctx, input, condition));
+                        Expression* condition,
+                        bool      needStableFilter = false) {
+        return qctx->objPool()->add(new Filter(qctx, input, condition, needStableFilter));
     }
 
     Expression* condition() const {
         return condition_;
     }
 
+    bool needStableFilter() const {
+        return needStableFilter_;
+    }
+
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
-    Filter(QueryContext* qctx, PlanNode* input, Expression* condition)
+    Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
       : SingleInputNode(qctx, Kind::kFilter, input) {
         condition_ = condition;
+        needStableFilter_ = needStableFilter;
     }
 
 private:
     // Remain result when true
     Expression*                 condition_{nullptr};
+    bool                        needStableFilter_;
 };
 
 /**
