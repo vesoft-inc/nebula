@@ -179,6 +179,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(toBoolean, {false}, false);
         TEST_FUNCTION(toBoolean, {"fAlse"}, false);
         TEST_FUNCTION(toBoolean, {"false "}, Value::kNullValue);
+        TEST_FUNCTION(toBoolean, {Value::kNullValue}, Value::kNullValue);
     }
     {
         TEST_FUNCTION(toFloat, args_["int"], 4.0);
@@ -187,6 +188,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(toFloat, {false}, Value::kNullBadType);
         TEST_FUNCTION(toFloat, {"3.14"}, 3.14);
         TEST_FUNCTION(toFloat, {"false "}, Value::kNullValue);
+        TEST_FUNCTION(toFloat, {Value::kNullValue}, Value::kNullValue);
     }
     {
         TEST_FUNCTION(toInteger, args_["int"], 4);
@@ -195,6 +197,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(toInteger, {false}, Value::kNullBadType);
         TEST_FUNCTION(toInteger, {"1"}, 1);
         TEST_FUNCTION(toInteger, {"false "}, Value::kNullValue);
+        TEST_FUNCTION(toInteger, {Value::kNullValue}, Value::kNullValue);
     }
     {
         auto result = FunctionManager::get("rand32", args_["rand"].size());

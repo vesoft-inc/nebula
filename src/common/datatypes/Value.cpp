@@ -1578,6 +1578,10 @@ Value Value::toBool() {
 
 Value Value::toFloat() {
     switch (type_) {
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE: {
+            return Value::kNullValue;
+        }
         case Value::Type::INT: {
             return static_cast<double>(getInt());
         }
@@ -1601,6 +1605,10 @@ Value Value::toFloat() {
 
 Value Value::toInt() {
     switch (type_) {
+        case Value::Type::__EMPTY__:
+        case Value::Type::NULLVALUE: {
+            return Value::kNullValue;
+        }
         case Value::Type::INT: {
             return *this;
         }
