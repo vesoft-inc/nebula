@@ -10,6 +10,7 @@
 #include "common/webservice/WebService.h"
 #include "common/fs/TempDir.h"
 #include "common/http/HttpClient.h"
+#include "common/version/Version.h"
 
 namespace nebula {
 
@@ -37,7 +38,7 @@ protected:
 
 
 TEST(StatusHandlerTest, SimpleTest) {
-    std::string gitInfoSha = NEBULA_STRINGIFY(GIT_INFO_SHA);
+    std::string gitInfoShaValue = gitInfoSha();
     {
         auto url = "/status";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
@@ -47,7 +48,7 @@ TEST(StatusHandlerTest, SimpleTest) {
         auto json = folly::parseJson(resp.value());
         LOG(INFO) << folly::toPrettyJson(json);
         ASSERT_EQ("running", json["status"].asString());
-        ASSERT_EQ(gitInfoSha, json["git_info_sha"].asString());
+        ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
     }
     {
         auto url = "";
@@ -57,7 +58,7 @@ TEST(StatusHandlerTest, SimpleTest) {
         ASSERT_TRUE(resp.ok());
         auto json = folly::parseJson(resp.value());
         ASSERT_EQ("running", json["status"].asString());
-        ASSERT_EQ(gitInfoSha, json["git_info_sha"].asString());
+        ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
     }
 }
 

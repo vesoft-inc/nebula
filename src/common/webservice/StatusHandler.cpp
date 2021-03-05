@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/version/Version.h"
 #include "common/webservice/StatusHandler.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -68,7 +69,7 @@ void StatusHandler::onError(ProxygenError error) noexcept {
 folly::dynamic StatusHandler::getStatus() {
     folly::dynamic json = folly::dynamic::object();
     json["status"] = "running";
-    json["git_info_sha"] = NEBULA_STRINGIFY(GIT_INFO_SHA);
+    json["git_info_sha"] = gitInfoSha();
     return json;
 }
 

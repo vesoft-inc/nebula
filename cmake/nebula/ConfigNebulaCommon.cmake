@@ -38,6 +38,7 @@ macro(config_nebula_common)
                 -DNEBULA_USE_LINKER=${NEBULA_USE_LINKER}
                 -DENABLE_GDB_SCRIPT_SECTION=${ENABLE_GDB_SCRIPT_SECTION}
                 -DDISABLE_CXX11_ABI=${DISABLE_CXX11_ABI}
+                -DNEBULA_SERVER_GIT_INFO_SHA=${GIT_INFO_SHA}
                 ${common_source_dir}
         WORKING_DIRECTORY ${common_build_dir}
         RESULT_VARIABLE cmake_status
