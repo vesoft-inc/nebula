@@ -70,14 +70,25 @@ TEST(StorageHttpStatsHandlerTest, GetStatsTest) {
         const std::string expect = "rocksdb.bytes.read=0\n";
         ASSERT_STREQ(expect.c_str(), resp.value().c_str());
     }
+    // Get multipple stats
     {
-        auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add&returnjson";
+        auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
                 FLAGS_ws_http_port, url);
         auto resp = http::HttpClient::get(request);
         ASSERT_TRUE(resp.ok());
-        const std::string expect = "[{\"value\":0,\"name\":\"rocksdb.block.cache.add\"},"
-                "{\"value\":0,\"name\":\"rocksdb.bytes.read\"}]";
+        const std::string expect = "rocksdb.block.cache.add=0\nrocksdb.bytes.read=0\n";
+        ASSERT_STREQ(expect.c_str(), resp.value().c_str());
+    }
+    // Get multiple stats and return json
+    {
+        auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add&format=json";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        const std::string expect = "[\n  {\n    \"rocksdb.block.cache.add\": 0\n  },"
+                "\n  {\n    \"rocksdb.bytes.read\": 0\n  }\n]";
         ASSERT_STREQ(expect.c_str(), resp.value().c_str());
     }
 }
