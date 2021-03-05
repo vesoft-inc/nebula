@@ -16,6 +16,7 @@ jobs:
           - graphd
           - console
           - graph
+          - tools
     steps:
       - uses: actions/checkout@v2
         with:
