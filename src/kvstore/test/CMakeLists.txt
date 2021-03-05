@@ -28,6 +28,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:common_process_obj>
     $<TARGET_OBJECTS:common_encryption_obj>
     $<TARGET_OBJECTS:common_ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:common_version_obj>
 )
 
 nebula_add_test(

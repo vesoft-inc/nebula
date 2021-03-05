@@ -7,7 +7,6 @@ nebula_add_executable(
         NebulaKeyUtilsV2.cpp
         DbUpgrader.cpp
     OBJECTS
-        $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:storage_admin_service_handler>
         $<TARGET_OBJECTS:graph_storage_service_handler>
@@ -46,6 +45,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_time_utils_obj>
         $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_ft_es_storage_adapter_obj>
+        $<TARGET_OBJECTS:common_version_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

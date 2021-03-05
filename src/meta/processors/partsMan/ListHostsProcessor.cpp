@@ -7,7 +7,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "version/Version.h"
+#include "common/version/Version.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
@@ -76,7 +76,7 @@ Status ListHostsProcessor::allMetaHostsStatus() {
         cpp2::HostItem item;
         item.set_hostAddr(std::move(host));
         item.set_role(cpp2::HostRole::META);
-        item.set_git_info_sha(nebula::storage::gitInfoSha());
+        item.set_git_info_sha(gitInfoSha());
         item.set_status(cpp2::HostStatus::ONLINE);
         hostItems_.emplace_back(item);
     }

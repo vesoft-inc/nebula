@@ -11,6 +11,7 @@
 #include "common/interface/gen-cpp2/common_types.h"
 #include "common/time/WallClock.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/version/Version.h"
 #include "mock/MockCluster.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -21,7 +22,6 @@
 #include "meta/ActiveHostsMan.h"
 #include "utils/DefaultValueContext.h"
 #include <gtest/gtest.h>
-#include "version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <folly/synchronization/Baton.h>
@@ -59,7 +59,7 @@ public:
     }
 
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
-        return setupHB(kv, hosts, cpp2::HostRole::STORAGE, nebula::storage::gitInfoSha());
+        return setupHB(kv, hosts, cpp2::HostRole::STORAGE, gitInfoSha());
     }
 
     static void setupHB(kvstore::KVStore* kv,

@@ -13,6 +13,7 @@
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/clients/storage/InternalStorageClient.h"
+#include "common/version/Version.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CompactionFilter.h"
 #include "storage/StorageFlags.h"
@@ -26,7 +27,6 @@
 #include "storage/transaction/TransactionManager.h"
 #include "kvstore/PartManager.h"
 #include "utils/Utils.h"
-#include "version/Version.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
@@ -126,7 +126,7 @@ bool StorageServer::start() {
     if (!listenerPath_.empty()) {
         options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
     }
-    options.gitInfoSHA_ = nebula::storage::gitInfoSha();
+    options.gitInfoSHA_ = gitInfoSha();
 
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,

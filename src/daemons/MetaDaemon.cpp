@@ -14,6 +14,7 @@
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimeUtils.h"
+#include "common/version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -27,7 +28,6 @@
 #include "meta/RootUserMan.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaVersionMan.h"
-#include "version/Version.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -194,7 +194,7 @@ Status initWebService(nebula::WebService* svc,
 }
 
 int main(int argc, char *argv[]) {
-    google::SetVersionString(nebula::storage::versionString());
+    google::SetVersionString(nebula::versionString());
     // Detect if the server has already been started
     // Check pid before glog init, in case of user may start daemon twice
     // the 2nd will make the 1st failed to output log anymore
