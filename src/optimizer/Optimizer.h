@@ -19,6 +19,7 @@ class QueryContext;
 
 namespace opt {
 
+class OptContext;
 class OptGroup;
 class OptGroupNode;
 class RuleSet;
@@ -31,10 +32,10 @@ public:
     StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
 
 private:
-    StatusOr<OptGroup *> prepare(graph::QueryContext *qctx, graph::PlanNode *root);
+    StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
     Status doExploration(OptGroup *rootGroup);
 
-    OptGroup *convertToGroup(graph::QueryContext *qctx,
+    OptGroup *convertToGroup(OptContext *ctx,
                              graph::PlanNode *node,
                              std::unordered_map<int64_t, OptGroup *> *visited);
 

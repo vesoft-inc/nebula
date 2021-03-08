@@ -11,20 +11,16 @@
 #include "optimizer/OptimizerUtils.h"
 
 namespace nebula {
-namespace graph {
-class IndexScan;
-}   // namespace graph
 namespace opt {
 
-using graph::IndexScan;
-using graph::OptimizerUtils;
-using graph::PlanNode;
 using graph::QueryContext;
 using storage::cpp2::IndexQueryContext;
 using storage::cpp2::IndexColumnHint;
 using BVO = graph::OptimizerUtils::BoundValueOperator;
 using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
 using IndexQueryCtx = std::unique_ptr<std::vector<IndexQueryContext>>;
+
+class OptContext;
 
 class IndexScanRule final : public OptRule {
     FRIEND_TEST(IndexScanRuleTest, BoundValueTest);
@@ -34,7 +30,7 @@ class IndexScanRule final : public OptRule {
 public:
     const Pattern& pattern() const override;
 
-    StatusOr<TransformResult> transform(graph::QueryContext* qctx,
+    StatusOr<TransformResult> transform(OptContext* ctx,
                                         const MatchedResult& matched) const override;
 
     std::string toString() const override;

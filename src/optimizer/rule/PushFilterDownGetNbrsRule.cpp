@@ -12,6 +12,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -39,7 +40,7 @@ const Pattern &PushFilterDownGetNbrsRule::pattern() const {
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
-    QueryContext *qctx,
+    OptContext *ctx,
     const MatchedResult &matched) const {
     auto filterGroupNode = matched.node;
     auto gnGroupNode = matched.dependencies.front().node;
@@ -53,6 +54,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
         return TransformResult::noTransform();
     }
 
+    auto qctx = ctx->qctx();
     auto pool = qctx->objPool();
     auto remainedExpr = std::move(visitor).remainedExpr();
     OptGroupNode *newFilterGroupNode = nullptr;
@@ -60,7 +62,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
         auto newFilter = Filter::make(qctx, nullptr, pool->add(remainedExpr.release()));
         newFilter->setOutputVar(filter->outputVar());
         newFilter->setInputVar(filter->inputVar());
-        newFilterGroupNode = OptGroupNode::create(qctx, newFilter, filterGroupNode->group());
+        newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
     }
 
     auto newGNFilter = condition->encode();
@@ -77,12 +79,12 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     OptGroupNode *newGnGroupNode = nullptr;
     if (newFilterGroupNode != nullptr) {
         // Filter(A&&B)<-GetNeighbors(C) => Filter(A)<-GetNeighbors(B&&C)
-        auto newGroup = OptGroup::create(qctx);
-        newGnGroupNode = newGroup->makeGroupNode(qctx, newGN);
+        auto newGroup = OptGroup::create(ctx);
+        newGnGroupNode = newGroup->makeGroupNode(newGN);
         newFilterGroupNode->dependsOn(newGroup);
     } else {
         // Filter(A)<-GetNeighbors(C) => GetNeighbors(A&&C)
-        newGnGroupNode = OptGroupNode::create(qctx, newGN, filterGroupNode->group());
+        newGnGroupNode = OptGroupNode::create(ctx, newGN, filterGroupNode->group());
         newGN->setOutputVar(filter->outputVar());
     }
 

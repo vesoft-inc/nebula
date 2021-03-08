@@ -16,12 +16,14 @@
 #include "planner/PlanNode.h"
 
 namespace nebula {
+
 namespace graph {
 class QueryContext;
 }   // namespace graph
 
 namespace opt {
 
+class OptContext;
 class OptGroupNode;
 class OptGroup;
 
@@ -57,18 +59,25 @@ public:
         std::vector<OptGroupNode *> newGroupNodes;
     };
 
-    StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
+    StatusOr<MatchedResult> match(OptContext *ctx, const OptGroupNode *groupNode) const;
 
     virtual ~OptRule() = default;
 
     virtual const Pattern &pattern() const = 0;
-    virtual bool match(const MatchedResult &matched) const;
-    virtual StatusOr<TransformResult> transform(graph::QueryContext *qctx,
+    virtual bool match(OptContext *ctx, const MatchedResult &matched) const;
+    virtual StatusOr<TransformResult> transform(OptContext *ctx,
                                                 const MatchedResult &matched) const = 0;
     virtual std::string toString() const = 0;
 
 protected:
     OptRule() = default;
+
+    // Return false if the output variable of this matched plan node is not the
+    // input of other plan node
+    bool checkDataflowDeps(OptContext *ctx,
+                           const MatchedResult &matched,
+                           const std::string &var,
+                           bool isRoot) const;
 };
 
 class RuleSet final {

@@ -12,6 +12,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -42,7 +43,7 @@ const Pattern &LimitPushDownRule::pattern() const {
 }
 
 StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
-    QueryContext *qctx,
+    OptContext *ctx,
     const MatchedResult &matched) const {
     auto limitGroupNode = matched.node;
     auto projGroupNode = matched.dependencies.front().node;
@@ -57,17 +58,18 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
         return TransformResult::noTransform();
     }
 
+    auto qctx = ctx->qctx();
     auto newLimit = limit->clone(qctx);
-    auto newLimitGroupNode = OptGroupNode::create(qctx, newLimit, limitGroupNode->group());
+    auto newLimitGroupNode = OptGroupNode::create(ctx, newLimit, limitGroupNode->group());
 
     auto newProj = proj->clone(qctx);
-    auto newProjGroup = OptGroup::create(qctx);
-    auto newProjGroupNode = newProjGroup->makeGroupNode(qctx, newProj);
+    auto newProjGroup = OptGroup::create(ctx);
+    auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
     auto newGn = gn->clone(qctx);
     newGn->setLimit(limitRows);
-    auto newGnGroup = OptGroup::create(qctx);
-    auto newGnGroupNode = newGnGroup->makeGroupNode(qctx, newGn);
+    auto newGnGroup = OptGroup::create(ctx);
+    auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 
     newLimitGroupNode->dependsOn(newProjGroup);
     newProjGroupNode->dependsOn(newGnGroup);

@@ -10,6 +10,7 @@ nebula_add_library(
     Optimizer.cpp
     OptGroup.cpp
     OptRule.cpp
+    OptContext.cpp
     rule/PushFilterDownGetNbrsRule.cpp
     rule/IndexScanRule.cpp
     rule/LimitPushDownRule.cpp

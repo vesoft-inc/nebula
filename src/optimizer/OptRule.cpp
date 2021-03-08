@@ -7,7 +7,10 @@
 #include "optimizer/OptRule.h"
 
 #include "common/base/Logging.h"
+#include "context/Symbols.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
+#include "planner/PlanNode.h"
 
 namespace nebula {
 namespace opt {
@@ -57,21 +60,58 @@ StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
     return Status::Error();
 }
 
-StatusOr<MatchedResult> OptRule::match(const OptGroupNode *groupNode) const {
+StatusOr<MatchedResult> OptRule::match(OptContext *ctx, const OptGroupNode *groupNode) const {
     const auto &pattern = this->pattern();
     auto status = pattern.match(groupNode);
     NG_RETURN_IF_ERROR(status);
     auto matched = std::move(status).value();
-    if (!this->match(matched)) {
+    if (!this->match(ctx, matched)) {
         return Status::Error();
     }
     return matched;
 }
 
-bool OptRule::match(const MatchedResult &matched) const {
-    UNUSED(matched);
-    // Return true if subclass doesn't override this interface,
-    // so optimizer will only check whether pattern is matched
+bool OptRule::match(OptContext *ctx, const MatchedResult &matched) const {
+    return checkDataflowDeps(ctx, matched, matched.node->node()->outputVar(), true);
+}
+
+bool OptRule::checkDataflowDeps(OptContext *ctx,
+                                const MatchedResult &matched,
+                                const std::string &var,
+                                bool isRoot) const {
+    auto node = matched.node;
+    auto planNode = node->node();
+    const auto &outVarName = planNode->outputVar();
+    if (outVarName != var) {
+        return false;
+    }
+    auto symTbl = ctx->qctx()->symTable();
+    auto outVar = symTbl->getVar(outVarName);
+    // Check whether the data flow is same as the control flow in execution plan.
+    if (!isRoot) {
+        for (auto pnode : outVar->readBy) {
+            auto optGNode = ctx->findOptGroupNodeByPlanNodeId(pnode->id());
+            if (!optGNode) continue;
+            const auto &deps = optGNode->dependencies();
+            if (deps.empty()) continue;
+            auto found = std::find(deps.begin(), deps.end(), node->group());
+            if (found == deps.end()) {
+                VLOG(2) << ctx->qctx()->symTable()->toString();
+                return false;
+            }
+        }
+    }
+
+    const auto &deps = matched.dependencies;
+    if (deps.empty()) {
+        return true;
+    }
+    DCHECK_EQ(deps.size(), node->dependencies().size());
+    for (size_t i = 0; i < deps.size(); ++i) {
+        if (!checkDataflowDeps(ctx, deps[i], planNode->inputVar(i), false)) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -81,7 +121,7 @@ RuleSet &RuleSet::DefaultRules() {
 }
 
 RuleSet &RuleSet::QueryRules() {
-    static RuleSet kQueryRules("QueryRules");
+    static RuleSet kQueryRules("QueryRuleSet");
     return kQueryRules;
 }
 

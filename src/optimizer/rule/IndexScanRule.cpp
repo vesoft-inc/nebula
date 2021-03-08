@@ -6,11 +6,13 @@
 
 #include "optimizer/rule/IndexScanRule.h"
 #include "common/expression/LabelAttributeExpression.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
 
 using nebula::graph::IndexScan;
+using nebula::graph::OptimizerUtils;
 
 namespace nebula {
 namespace opt {
@@ -27,7 +29,7 @@ const Pattern& IndexScanRule::pattern() const {
     return pattern;
 }
 
-StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext* qctx,
+StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
                                                             const MatchedResult& matched) const {
     auto groupNode = matched.node;
     if (isEmptyResultSet(groupNode)) {
@@ -35,6 +37,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext*
     }
 
     auto filter = filterExpr(groupNode);
+    auto qctx = ctx->qctx();
     IndexQueryCtx iqctx = std::make_unique<std::vector<IndexQueryContext>>();
     if (filter == nullptr) {
         // Only filter is nullptr when lookup on tagname
@@ -48,7 +51,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(graph::QueryContext*
 
     auto newIN = static_cast<const IndexScan*>(groupNode->node())->clone(qctx);
     newIN->setIndexQueryContext(std::move(iqctx));
-    auto newGroupNode = OptGroupNode::create(qctx, newIN, groupNode->group());
+    auto newGroupNode = OptGroupNode::create(ctx, newIN, groupNode->group());
     if (groupNode->dependencies().size() != 1) {
         return Status::Error("Plan node dependencies error");
     }

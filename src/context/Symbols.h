@@ -37,6 +37,7 @@ using ColsDef = std::vector<ColDef>;
 
 struct Variable {
     explicit Variable(std::string n) : name(std::move(n)) {}
+    std::string toString() const;
 
     std::string name;
     Value::Type type{Value::Type::DATASET};
@@ -117,6 +118,8 @@ public:
             return var->second;
         }
     }
+
+    std::string toString() const;
 
 private:
     ObjectPool*                                                             objPool_{nullptr};

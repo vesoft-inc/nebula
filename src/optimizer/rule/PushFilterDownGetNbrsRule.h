@@ -12,17 +12,13 @@
 #include "optimizer/OptRule.h"
 
 namespace nebula {
-namespace graph {
-class GetNeighbors;
-}   // namespace graph
-
 namespace opt {
 
 class PushFilterDownGetNbrsRule final : public OptRule {
 public:
     const Pattern &pattern() const override;
 
-    StatusOr<TransformResult> transform(graph::QueryContext *qctx,
+    StatusOr<TransformResult> transform(OptContext *ctx,
                                         const MatchedResult &matched) const override;
 
     std::string toString() const override;

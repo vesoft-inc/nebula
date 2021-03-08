@@ -8,6 +8,8 @@
 #include "optimizer/OptimizerUtils.h"
 #include "optimizer/rule/IndexScanRule.h"
 
+using nebula::graph::OptimizerUtils;
+
 namespace nebula {
 namespace opt {
 

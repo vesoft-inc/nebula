@@ -16,6 +16,7 @@
 #include "planner/Mutate.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
+#include "util/Utils.h"
 
 namespace nebula {
 namespace graph {
@@ -248,9 +249,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
 }
 
 std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& plan) {
-    std::vector<const char*> kinds(plan.size());
-    std::transform(plan.cbegin(), plan.cend(), kinds.begin(), PlanNode::toString);
-    os << "[" << folly::join(", ", kinds) << "]";
+    auto printPNKind = [](auto k) { return PlanNode::toString(k); };
+    os << "[" << util::join(plan, printPNKind, ", ") << "]";
     return os;
 }
 

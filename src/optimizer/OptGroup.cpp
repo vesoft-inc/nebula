@@ -9,6 +9,7 @@
 #include <limits>
 
 #include "context/QueryContext.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptRule.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
@@ -23,12 +24,12 @@ using nebula::graph::SingleDependencyNode;
 namespace nebula {
 namespace opt {
 
-OptGroup *OptGroup::create(QueryContext *qctx) {
-    return qctx->objPool()->add(new OptGroup(qctx));
+OptGroup *OptGroup::create(OptContext *ctx) {
+    return ctx->objPool()->add(new OptGroup(ctx));
 }
 
-OptGroup::OptGroup(QueryContext *qctx) noexcept : qctx_(qctx) {
-    DCHECK(qctx != nullptr);
+OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
+    DCHECK(ctx != nullptr);
 }
 
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
@@ -37,8 +38,8 @@ void OptGroup::addGroupNode(OptGroupNode *groupNode) {
     groupNodes_.emplace_back(groupNode);
 }
 
-OptGroupNode *OptGroup::makeGroupNode(QueryContext *qctx, PlanNode *node) {
-    groupNodes_.emplace_back(OptGroupNode::create(qctx, node, this));
+OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
+    groupNodes_.emplace_back(OptGroupNode::create(ctx_, node, this));
     return groupNodes_.back();
 }
 
@@ -59,13 +60,13 @@ Status OptGroup::explore(const OptRule *rule) {
         NG_RETURN_IF_ERROR(groupNode->explore(rule));
 
         // Find more equivalents
-        auto status = rule->match(groupNode);
+        auto status = rule->match(ctx_, groupNode);
         if (!status.ok()) {
             ++iter;
             continue;
         }
         auto matched = std::move(status).value();
-        auto resStatus = rule->transform(qctx_, matched);
+        auto resStatus = rule->transform(ctx_, matched);
         NG_RETURN_IF_ERROR(resStatus);
         auto result = std::move(resStatus).value();
         if (result.eraseAll) {
@@ -130,8 +131,10 @@ const PlanNode *OptGroup::getPlan() const {
     return minGroupNode->getPlan();
 }
 
-OptGroupNode *OptGroupNode::create(QueryContext *qctx, PlanNode *node, const OptGroup *group) {
-    return qctx->objPool()->add(new OptGroupNode(node, group));
+OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
+    auto optGNode = ctx->objPool()->add(new OptGroupNode(node, group));
+    ctx->addPlanNodeAndOptGroupNode(node->id(), optGNode);
+    return optGNode;
 }
 
 OptGroupNode::OptGroupNode(PlanNode *node, const OptGroup *group) noexcept

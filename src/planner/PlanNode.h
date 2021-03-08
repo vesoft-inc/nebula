@@ -164,14 +164,7 @@ public:
         return false;
     }
 
-    void setOutputVar(const std::string &var) {
-        DCHECK_EQ(1, outputVars_.size());
-        auto* outputVarPtr = qctx_->symTable()->getVar(var);
-        DCHECK(outputVarPtr != nullptr);
-        auto oldVar = outputVars_[0]->name;
-        outputVars_[0] = outputVarPtr;
-        qctx_->symTable()->updateWrittenBy(oldVar, var, this);
-    }
+    void setOutputVar(const std::string &var);
 
     std::string outputVar(size_t index = 0) const {
         DCHECK_LT(index, outputVars_.size());
@@ -225,7 +218,19 @@ public:
         return dependencies_;
     }
 
+    std::string inputVar(size_t idx = 0UL) const {
+        DCHECK_LT(idx, inputVars_.size());
+        return inputVars_[idx] ? inputVars_[idx]->name : "";
+    }
+
+    void setInputVar(const std::string& varname, size_t idx = 0UL);
+
+    const std::vector<Variable*>& inputVars() const {
+        return inputVars_;
+    }
+
     static const char* toString(Kind kind);
+    std::string toString() const;
 
     double cost() const {
         return cost_;
@@ -280,31 +285,6 @@ public:
         return true;
     }
 
-    void setInputVar(std::string inputVar) {
-        DCHECK(!inputVars_.empty());
-        auto* inputVarPtr = qctx_->symTable()->getVar(inputVar);
-        DCHECK(inputVarPtr != nullptr);
-        std::string oldVar;
-        if (inputVars_[0] != nullptr) {
-            oldVar = inputVars_[0]->name;
-        }
-        inputVars_[0] = inputVarPtr;
-        if (!oldVar.empty()) {
-            qctx_->symTable()->updateReadBy(oldVar, inputVar, this);
-        } else {
-            qctx_->symTable()->readBy(inputVar, this);
-        }
-    }
-
-    std::string inputVar() const {
-        DCHECK(!inputVars_.empty());
-        if (inputVars_[0] != nullptr) {
-            return inputVars_[0]->name;
-        } else {
-            return "";
-        }
-    }
-
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
@@ -334,36 +314,12 @@ public:
         setDep(1, right);
     }
 
-    void setLeftVar(std::string leftVar) {
-        DCHECK_GE(inputVars_.size(), 1);
-        auto* leftVarPtr = qctx_->symTable()->getVar(leftVar);
-        DCHECK(leftVarPtr != nullptr);
-        std::string oldVar;
-        if (inputVars_[0] != nullptr) {
-            oldVar = inputVars_[0]->name;
-        }
-        inputVars_[0] = leftVarPtr;
-        if (!oldVar.empty()) {
-            qctx_->symTable()->updateReadBy(oldVar, leftVar, this);
-        } else {
-            qctx_->symTable()->readBy(leftVar, this);
-        }
+    void setLeftVar(const std::string& leftVar) {
+        setInputVar(leftVar, 0);
     }
 
-    void setRightVar(std::string rightVar) {
-        DCHECK_EQ(inputVars_.size(), 2);
-        auto* rightVarPtr = qctx_->symTable()->getVar(rightVar);
-        DCHECK(rightVarPtr != nullptr);
-        std::string oldVar;
-        if (inputVars_[1] != nullptr) {
-            oldVar = inputVars_[1]->name;
-        }
-        inputVars_[1] = rightVarPtr;
-        if (!oldVar.empty()) {
-            qctx_->symTable()->updateReadBy(oldVar, rightVar, this);
-        } else {
-            qctx_->symTable()->readBy(rightVar, this);
-        }
+    void setRightVar(const std::string& rightVar) {
+        setInputVar(rightVar, 1);
     }
 
     const PlanNode* left() const {

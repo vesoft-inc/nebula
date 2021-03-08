@@ -12,6 +12,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -38,7 +39,7 @@ const Pattern &TopNRule::pattern() const {
     return pattern;
 }
 
-StatusOr<OptRule::TransformResult> TopNRule::transform(QueryContext *qctx,
+StatusOr<OptRule::TransformResult> TopNRule::transform(OptContext *ctx,
                                                        const MatchedResult &matched) const {
     auto limitGroupNode = matched.node;
     auto sortGroupNode = matched.dependencies.front().node;
@@ -51,11 +52,12 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(QueryContext *qctx,
         return TransformResult::noTransform();
     }
 
+    auto qctx = ctx->qctx();
     auto topn = TopN::make(qctx, nullptr, sort->factors(), limit->offset(), limit->count());
     topn->setOutputVar(limit->outputVar());
     topn->setInputVar(sort->inputVar());
     topn->setColNames(sort->colNames());
-    auto topnNode = OptGroupNode::create(qctx, topn, limitGroupNode->group());
+    auto topnNode = OptGroupNode::create(ctx, topn, limitGroupNode->group());
     for (auto dep : sortGroupNode->dependencies()) {
         topnNode->dependsOn(dep);
     }

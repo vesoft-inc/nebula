@@ -12,19 +12,13 @@
 #include "optimizer/OptRule.h"
 
 namespace nebula {
-namespace graph {
-class Limit;
-class Project;
-class GetNeighbors;
-}   // namespace graph
-
 namespace opt {
 
 class LimitPushDownRule final : public OptRule {
 public:
     const Pattern &pattern() const override;
 
-    StatusOr<OptRule::TransformResult> transform(graph::QueryContext *qctx,
+    StatusOr<OptRule::TransformResult> transform(OptContext *ctx,
                                                  const MatchedResult &matched) const override;
 
     std::string toString() const override;

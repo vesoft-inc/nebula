@@ -10,22 +10,23 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+
 #include "common/base/Status.h"
 
 namespace nebula {
 namespace graph {
 class PlanNode;
-class QueryContext;
 }   // namespace graph
 
 namespace opt {
 
+class OptContext;
 class OptGroupNode;
 class OptRule;
 
 class OptGroup final {
 public:
-    static OptGroup *create(graph::QueryContext *qctx);
+    static OptGroup *create(OptContext *ctx);
 
     bool isExplored(const OptRule *rule) const {
         return std::find(exploredRules_.cbegin(), exploredRules_.cend(), rule) !=
@@ -44,7 +45,7 @@ public:
     }
 
     void addGroupNode(OptGroupNode *groupNode);
-    OptGroupNode *makeGroupNode(graph::QueryContext *qctx, graph::PlanNode *node);
+    OptGroupNode *makeGroupNode(graph::PlanNode *node);
     const std::list<OptGroupNode *> &groupNodes() const {
         return groupNodes_;
     }
@@ -55,22 +56,20 @@ public:
     const graph::PlanNode *getPlan() const;
 
 private:
-    explicit OptGroup(graph::QueryContext *qctx) noexcept;
+    explicit OptGroup(OptContext *ctx) noexcept;
 
     static constexpr int16_t kMaxExplorationRound = 128;
 
     std::pair<double, const OptGroupNode *> findMinCostGroupNode() const;
 
-    graph::QueryContext *qctx_{nullptr};
+    OptContext *ctx_{nullptr};
     std::list<OptGroupNode *> groupNodes_;
     std::vector<const OptRule *> exploredRules_;
 };
 
 class OptGroupNode final {
 public:
-    static OptGroupNode *create(graph::QueryContext *qctx,
-                                graph::PlanNode *node,
-                                const OptGroup *group);
+    static OptGroupNode *create(OptContext *ctx, graph::PlanNode *node, const OptGroup *group);
 
     void dependsOn(OptGroup *dep) {
         dependencies_.emplace_back(dep);

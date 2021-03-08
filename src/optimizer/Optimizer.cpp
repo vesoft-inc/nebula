@@ -7,6 +7,7 @@
 #include "optimizer/Optimizer.h"
 
 #include "context/QueryContext.h"
+#include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
 #include "optimizer/OptRule.h"
 #include "planner/ExecutionPlan.h"
@@ -27,9 +28,10 @@ Optimizer::Optimizer(std::vector<const RuleSet *> ruleSets) : ruleSets_(std::mov
 
 StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
     DCHECK(qctx != nullptr);
+    auto optCtx = std::make_unique<OptContext>(qctx);
 
     auto root = qctx->plan()->root();
-    auto status = prepare(qctx, root);
+    auto status = prepare(optCtx.get(), root);
     NG_RETURN_IF_ERROR(status);
     auto rootGroup = std::move(status).value();
 
@@ -37,9 +39,9 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
     return rootGroup->getPlan();
 }
 
-StatusOr<OptGroup *> Optimizer::prepare(QueryContext *qctx, PlanNode *root) {
+StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
     std::unordered_map<int64_t, OptGroup *> visited;
-    return convertToGroup(qctx, root, &visited);
+    return convertToGroup(ctx, root, &visited);
 }
 
 Status Optimizer::doExploration(OptGroup *rootGroup) {
@@ -51,7 +53,7 @@ Status Optimizer::doExploration(OptGroup *rootGroup) {
     return Status::OK();
 }
 
-OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
+OptGroup *Optimizer::convertToGroup(OptContext *ctx,
                                     PlanNode *node,
                                     std::unordered_map<int64_t, OptGroup *> *visited) {
     auto iter = visited->find(node->id());
@@ -59,8 +61,8 @@ OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
         return iter->second;
     }
 
-    auto group = OptGroup::create(qctx);
-    auto groupNode = group->makeGroupNode(qctx, node);
+    auto group = OptGroup::create(ctx);
+    auto groupNode = group->makeGroupNode(node);
 
     switch (node->dependencies().size()) {
         case 0: {
@@ -70,29 +72,29 @@ OptGroup *Optimizer::convertToGroup(QueryContext *qctx,
         case 1: {
             if (node->kind() == PlanNode::Kind::kSelect) {
                 auto select = static_cast<Select *>(node);
-                auto then = convertToGroup(qctx, const_cast<PlanNode *>(select->then()), visited);
+                auto then = convertToGroup(ctx, const_cast<PlanNode *>(select->then()), visited);
                 groupNode->addBody(then);
                 auto otherNode = const_cast<PlanNode *>(select->otherwise());
-                auto otherwise = convertToGroup(qctx, otherNode, visited);
+                auto otherwise = convertToGroup(ctx, otherNode, visited);
                 groupNode->addBody(otherwise);
             } else if (node->kind() == PlanNode::Kind::kLoop) {
                 auto loop = static_cast<Loop *>(node);
-                auto body = convertToGroup(qctx, const_cast<PlanNode *>(loop->body()), visited);
+                auto body = convertToGroup(ctx, const_cast<PlanNode *>(loop->body()), visited);
                 groupNode->addBody(body);
             }
             auto dep = static_cast<SingleDependencyNode *>(node)->dep();
             DCHECK(dep != nullptr);
-            auto depGroup = convertToGroup(qctx, const_cast<graph::PlanNode *>(dep), visited);
+            auto depGroup = convertToGroup(ctx, const_cast<graph::PlanNode *>(dep), visited);
             groupNode->dependsOn(depGroup);
             break;
         }
         case 2: {
             auto bNode = static_cast<BiInputNode *>(node);
             auto leftNode = const_cast<graph::PlanNode *>(bNode->left());
-            auto leftGroup = convertToGroup(qctx, leftNode, visited);
+            auto leftGroup = convertToGroup(ctx, leftNode, visited);
             groupNode->dependsOn(leftGroup);
             auto rightNode = const_cast<graph::PlanNode *>(bNode->right());
-            auto rightGroup = convertToGroup(qctx, rightNode, visited);
+            auto rightGroup = convertToGroup(ctx, rightNode, visited);
             groupNode->dependsOn(rightGroup);
             break;
         }

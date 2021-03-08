@@ -4,7 +4,7 @@
 # The file to host the process id
 --pid_file=pids/nebula-graphd.pid
 # Whether to enable optimizer
---enable_optimizer=false
+--enable_optimizer=true
 
 ########## logging ##########
 # The directory to host logging files, which must already exists
@@ -24,7 +24,7 @@
 --stderrthreshold=2
 
 ########## query ##########
-# Whether to treat partial success as an error. 
+# Whether to treat partial success as an error.
 # This flag is only used for Read-only access, and Modify access always treats partial success as an error.
 --accept_partial_success=false
 
