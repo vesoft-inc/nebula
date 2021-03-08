@@ -1409,12 +1409,6 @@ TEST_F(QueryValidatorTest, TestMatch) {
             PK::kGetNeighbors,
             PK::kDedup,
             PK::kProject,
-            PK::kDataJoin,
-            PK::kProject,
-            PK::kFilter,
-            PK::kGetVertices,
-            PK::kDedup,
-            PK::kProject,
             PK::kIndexScan,
             PK::kStart,
         };

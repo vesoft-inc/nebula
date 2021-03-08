@@ -16,6 +16,8 @@
 #include "util/ExpressionUtils.h"
 #include "visitor/RewriteMatchLabelVisitor.h"
 
+using JoinPosStrategy = nebula::graph::InnerJoinStrategy::JoinPos;
+
 namespace nebula {
 namespace graph {
 
@@ -61,9 +63,9 @@ Status MatchClausePlanner::findStarts(MatchClauseContext* matchClauseCtx,
                 startIndex = i;
                 foundStart = true;
                 initialExpr_ = nodeCtx.initialExpr->clone();
-                VLOG(1) << "Find starts: " << startIndex
-                    << " node: " << matchClausePlan.root->outputVar()
-                    << " colNames: " << folly::join(",", matchClausePlan.root->colNames());
+                VLOG(1) << "Find starts: " << startIndex << ", Pattern has " << edgeInfos.size()
+                        << " edges, root: " << matchClausePlan.root->outputVar()
+                        << ", colNames: " << folly::join(",", matchClausePlan.root->colNames());
                 break;
             }
 
@@ -113,32 +115,29 @@ Status MatchClausePlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos
                                           MatchClauseContext* matchClauseCtx,
                                           size_t startIndex,
                                           SubPlan& subplan) {
-    SubPlan rightExpandPlan = subplan;
-    NG_RETURN_IF_ERROR(
-        rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, rightExpandPlan));
-    if (startIndex > 0) {
-        auto left = rightExpandPlan.root;
-        SubPlan leftExpandPlan = rightExpandPlan;
-        NG_RETURN_IF_ERROR(leftExpandFromNode(nodeInfos,
-                                              edgeInfos,
-                                              matchClauseCtx,
-                                              startIndex,
-                                              subplan.root->outputVar(),
-                                              leftExpandPlan));
-
-        rightExpandPlan.root = leftExpandPlan.root;
-        if (startIndex < nodeInfos.size() - 1) {
-            // Connect the left expand and right expand part.
-            auto right = leftExpandPlan.root;
-            rightExpandPlan.root =
-                SegmentsConnector::innerJoinSegments(matchClauseCtx->qctx,
-                                                     left,
-                                                     right,
-                                                     InnerJoinStrategy::JoinPos::kStart,
-                                                     InnerJoinStrategy::JoinPos::kStart);
-        }
+    DCHECK(!nodeInfos.empty() && startIndex < nodeInfos.size());
+    if (startIndex == 0) {
+        // Pattern: (start)-[]-...-()
+        return rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan);
     }
-    subplan = rightExpandPlan;
+
+    const auto& var = subplan.root->outputVar();
+    if (startIndex == nodeInfos.size() - 1) {
+        // Pattern: ()-[]-...-(start)
+        return leftExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, var, subplan);
+    }
+
+    // Pattern: ()-[]-...-(start)-...-[]-()
+    NG_RETURN_IF_ERROR(
+        rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan));
+    auto left = subplan.root;
+    NG_RETURN_IF_ERROR(
+        leftExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, var, subplan));
+
+    // Connect the left expand and right expand part.
+    auto right = subplan.root;
+    subplan.root = SegmentsConnector::innerJoinSegments(
+        matchClauseCtx->qctx, left, right, JoinPosStrategy::kStart, JoinPosStrategy::kStart);
     return Status::OK();
 }
 
