@@ -26,23 +26,28 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
     SCOPED_TIMER(&execTime_);
 
     auto *gv = asNode<GetVertices>(node());
-
     GraphStorageClient *storageClient = qctx()->getStorageClient();
     nebula::DataSet vertices({kVid});
-    const auto& spaceInfo = qctx()->rctx()->session()->space();
     if (gv->src() != nullptr) {
         // Accept Table such as | $a | $b | $c |... as input which one column indicate src
         auto valueIter = ectx_->getResult(gv->inputVar()).iter();
-        VLOG(1) << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
+        VLOG(3) << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
         auto expCtx = QueryExpressionContext(qctx()->ectx());
+        const auto &spaceInfo = qctx()->rctx()->session()->space();
+        std::unordered_set<Value> uniqueSet;
         for (; valueIter->valid(); valueIter->next()) {
             auto src = gv->src()->eval(expCtx(valueIter.get()));
-            VLOG(1) << "src vid: " << src;
             if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)) {
                 LOG(WARNING) << "Mismatched vid type: " << src.type();
                 continue;
             }
-            vertices.emplace_back(Row({std::move(src)}));
+            if (gv->dedup()) {
+                if (uniqueSet.emplace(src).second) {
+                    vertices.emplace_back(Row({std::move(src)}));
+                }
+            } else {
+                vertices.emplace_back(Row({std::move(src)}));
+            }
         }
     }
 

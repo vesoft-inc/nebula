@@ -19,7 +19,7 @@ Feature: Basic Aggregate and GroupBy
       | (COUNT(*)+1) | (1+2) | (INT)abs(COUNT(2)) |
       | 2            | 3     | 1                  |
 
-  Scenario: Basic GroupBy
+  Scenario: [1] Basic GroupBy
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
@@ -28,6 +28,8 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | count |
       | 2     |
+
+  Scenario: [2] Basic GroupBy
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
@@ -36,6 +38,8 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | count |
       | 1     |
+
+  Scenario: [3] Basic GroupBy
     When executing query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age;
@@ -44,6 +48,8 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | count |
       | 2     |
+
+  Scenario: [4] Basic GroupBy
     When executing query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD DISTINCT like._dst AS dst, $$.player.age AS age;
@@ -52,6 +58,8 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | count |
       | 1     |
+
+  Scenario: [5] Basic GroupBy
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
@@ -61,6 +69,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | age  |
       | "Tony Parker"   | 36.0 |
       | "Manu Ginobili" | 41.0 |
+
+  Scenario: [6] Basic GroupBy
     When executing query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
@@ -70,6 +80,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | age  |
       | "Tony Parker"   | 36.0 |
       | "Manu Ginobili" | 41.0 |
+
+  Scenario: [7] Basic GroupBy
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
@@ -79,6 +91,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | age  |
       | "Tony Parker"   | 36.0 |
       | "Manu Ginobili" | 41.0 |
+
+  Scenario: [8] Basic GroupBy
     When executing query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age;
@@ -88,6 +102,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | age  |
       | "Tony Parker"   | 36.0 |
       | "Manu Ginobili" | 41.0 |
+
+  Scenario: [9] Basic GroupBy
     When executing query:
       """
       GO 2 STEPS FROM "Tim Duncan" OVER like YIELD like._dst as dst,like._src AS src, $$.player.age AS age
@@ -98,6 +114,8 @@ Feature: Basic Aggregate and GroupBy
       | "Manu Ginobili"     | {"Tony Parker"}                  | [41]     |
       | "Tim Duncan"        | {"Tony Parker", "Manu Ginobili"} | [42, 42] |
       | "LaMarcus Aldridge" | {"Tony Parker"}                  | [33]     |
+
+  Scenario: [10] Basic GroupBy
     When executing query:
       """
       $var=GO 2 STEPS FROM "Tim Duncan" OVER like YIELD like._dst as dst,like._src AS src, $$.player.age AS age;
@@ -108,6 +126,8 @@ Feature: Basic Aggregate and GroupBy
       | "Manu Ginobili"     | {"Tony Parker"}                  | [41]     |
       | "Tim Duncan"        | {"Tony Parker", "Manu Ginobili"} | [42, 42] |
       | "LaMarcus Aldridge" | {"Tony Parker"}                  | [33]     |
+
+  Scenario: [11] Basic GroupBy
     When executing query:
       """
       GO FROM 'Aron Baynes', 'Tracy McGrady' OVER serve
@@ -132,6 +152,8 @@ Feature: Basic Aggregate and GroupBy
       | "Raptors" | 1997       | 1997               | 2000             | 2000.0       | 0.0          | 1            |
       | "Rockets" | 2004       | 2004               | 2010             | 2010.0       | 0.0          | 1            |
       | "Spurs"   | 2013       | 2013               | 2013             | 2014.0       | 1.0          | 2            |
+
+  Scenario: [12] Basic GroupBy
     When executing query:
       """
       GO FROM "Marco Belinelli" OVER serve
@@ -155,6 +177,8 @@ Feature: Basic Aggregate and GroupBy
       | 1            | 2013       | 2015.0 |
       | 1            | 2015       | 2016.0 |
       | 1            | 2010       | 2012.0 |
+
+  Scenario: [13] Basic GroupBy
     When executing query:
       """
       GO FROM 'Carmelo Anthony', 'Dwyane Wade' OVER like
@@ -180,6 +204,8 @@ Feature: Basic Aggregate and GroupBy
       | "Chris Paul"      | 66          | 33.0        | 33          | 33          | 1       | 2      | 0       | 2                  | 1                           |
       | "Dwyane Wade"     | 37          | 37.0        | 37          | 37          | 1       | 2      | 3       | 1                  | 1                           |
       | "Carmelo Anthony" | 34          | 34.0        | 34          | 34          | 1       | 2      | 3       | 1                  | 1                           |
+
+  Scenario: [14] Basic GroupBy
     When executing query:
       """
       GO FROM 'Carmelo Anthony', 'Dwyane Wade' OVER like
@@ -204,6 +230,8 @@ Feature: Basic Aggregate and GroupBy
       | "Chris Paul"      | 66          | 33.0        | 33          | 33          | 1       | 2      | 0       | 2                  |
       | "Dwyane Wade"     | 37          | 37.0        | 37          | 37          | 1       | 2      | 3       | 1                  |
       | "Carmelo Anthony" | 34          | 34.0        | 34          | 34          | 1       | 2      | 3       | 1                  |
+
+  Scenario: [15] Basic GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
@@ -215,6 +243,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | following |
       | "Tony Parker"   | BAD_TYPE  |
       | "Manu Ginobili" | BAD_TYPE  |
+
+  Scenario: [16] Basic GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
@@ -227,6 +257,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | following |
       | "Tony Parker"   | 1         |
       | "Manu Ginobili" | 1         |
+
+  Scenario: [17] Basic GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
@@ -239,6 +271,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | following |
       | "Tony Parker"   | BAD_TYPE  |
       | "Manu Ginobili" | BAD_TYPE  |
+
+  Scenario: [18] Basic GroupBy
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst as dst
@@ -251,6 +285,8 @@ Feature: Basic Aggregate and GroupBy
       | dst             | following |
       | "Tony Parker"   | 0         |
       | "Manu Ginobili" | 1         |
+
+  Scenario: [19] Basic GroupBy
     When executing query:
       """
       GO FROM 'Carmelo Anthony', 'Dwyane Wade' OVER like
@@ -267,6 +303,8 @@ Feature: Basic Aggregate and GroupBy
       | "Chris Paul"      | 3.0 | 2     | 2   |
       | "Dwyane Wade"     | 1.5 | 1     | 2   |
       | "Carmelo Anthony" | 1.5 | 1     | 2   |
+
+  Scenario: [20] Basic GroupBy
     When executing query:
       """
       GO FROM 'Paul Gasol' OVER like

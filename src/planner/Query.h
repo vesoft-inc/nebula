@@ -272,6 +272,10 @@ public:
         return src_;
     }
 
+    void setSrc(Expression* src) {
+        src_ = src;
+    }
+
     const std::vector<storage::cpp2::VertexProp>& props() const {
         return props_;
     }
@@ -280,7 +284,11 @@ public:
         return exprs_;
     }
 
+    GetVertices* clone() const;
+
 private:
+    using Explore::clone;
+
     GetVertices(QueryContext* qctx,
                 PlanNode* input,
                 GraphSpaceID space,

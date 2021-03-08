@@ -7,7 +7,7 @@ Feature: Match GroupBy
   Background:
     Given a graph with space named "nba"
 
-  Scenario: Basic groupby
+  Scenario: [1] Match GroupBy
     When executing query:
       """
       MATCH(n:player)
@@ -31,6 +31,8 @@ Feature: Match GroupBy
       | "Dwyane Wade"           | 1     | 37.0 | 37  | 37  | 37.0 | ["player"] |
       | "Giannis Antetokounmpo" | 1     | 24.0 | 24  | 24  | 24.0 | ["player"] |
       | "Grant Hill"            | 1     | 46.0 | 46  | 46  | 46.0 | ["player"] |
+
+  Scenario: [2] Match GroupBy
     When executing query:
       """
       MATCH(n:player)
@@ -54,6 +56,8 @@ Feature: Match GroupBy
       | "Dwyane Wade"           | 1     | 37.0 | 37  | 37  | 38.0 | ["player"] |
       | "Giannis Antetokounmpo" | 1     | 24.0 | 24  | 24  | 25.0 | ["player"] |
       | "Grant Hill"            | 1     | 46.0 | 46  | 46  | 47.0 | ["player"] |
+
+  Scenario: [3] Match GroupBy
     When executing query:
       """
       MATCH(n:player)
@@ -77,6 +81,8 @@ Feature: Match GroupBy
       | "Dwyane Wade"           | 1     | 37.0 | 37  | 37  | 38  | ["player"] |
       | "Giannis Antetokounmpo" | 1     | 24.0 | 24  | 24  | 25  | ["player"] |
       | "Grant Hill"            | 1     | 46.0 | 46  | 46  | 47  | ["player"] |
+
+  Scenario: [4] Match GroupBy
     When executing query:
       """
       MATCH(n:player)
@@ -99,6 +105,8 @@ Feature: Match GroupBy
       | "Tim Duncan"      | 1     | 42.0 | 42  | 42  | 43.0 | ["bachelor", "player"] |
       | "Tony Parker"     | 1     | 36.0 | 36  | 36  | 37.0 | ["player"]             |
       | "Tracy McGrady"   | 1     | 39.0 | 39  | 39  | 40.0 | ["player"]             |
+
+  Scenario: [5] Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like]->(m)
@@ -124,6 +132,8 @@ Feature: Match GroupBy
       | "Tracy McGrady"   | 3     | 117.0 | 46  | 39  | 40.0 | ["player"]             |
       | "Vince Carter"    | 2     | 84.0  | 45  | 42  | 43.0 | ["player"]             |
       | "Yao Ming"        | 2     | 76.0  | 47  | 38  | 39.0 | ["player"]             |
+
+  Scenario: [6] Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
@@ -141,6 +151,8 @@ Feature: Match GroupBy
     Then the result should be, in order, with relax comparison:
       | count |
       | 20    |
+
+  Scenario: [7] Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
@@ -168,6 +180,8 @@ Feature: Match GroupBy
       | 46  | 1     |
       | 45  | 2     |
       | 41  | 1     |
+
+  Scenario: [8] Match GroupBy
     When executing query:
       """
       MATCH p = (a:player)-[:like]->(other:player)

@@ -48,7 +48,7 @@ Status GetNeighborsExecutor::buildRequestDataSet() {
     DataSet input;
     reqDs_.colNames = {kVid};
     reqDs_.rows.reserve(iter->size());
-    auto* src = gn_->src();
+    auto* src = DCHECK_NOTNULL(gn_->src());
     std::unordered_set<Value> uniqueVid;
     const auto& spaceInfo = qctx()->rctx()->session()->space();
     for (; iter->valid(); iter->next()) {

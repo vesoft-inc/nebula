@@ -283,18 +283,13 @@ bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef 
 }
 
 bool SchemaUtil::isValidVid(const Value &value, meta::cpp2::PropertyType type) {
-    auto vidType = propTypeToValueType(type);
-    if (!isValidVid(value) || value.type() != vidType) {
-        return false;
-    }
-    return true;
+    return isValidVid(value) && value.type() == propTypeToValueType(type);
 }
 
 bool SchemaUtil::isValidVid(const Value &value) {
-    if (!value.isStr() && !value.isInt()) {  // compatible with 1.0
-        return false;
-    }
-    return true;
+    // compatible with 1.0
+    return value.isStr() || value.isInt();
 }
+
 }  // namespace graph
 }  // namespace nebula

@@ -160,6 +160,10 @@ public:
         return id_;
     }
 
+    QueryContext* qctx() const {
+        return qctx_;
+    }
+
     virtual bool isSingleInput() const {
         return false;
     }

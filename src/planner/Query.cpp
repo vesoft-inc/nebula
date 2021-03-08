@@ -92,6 +92,23 @@ std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
     return desc;
 }
 
+GetVertices* GetVertices::clone() const {
+    auto src = qctx_->objPool()->add(src_->clone().release());
+    std::vector<storage::cpp2::VertexProp> props;
+    props.reserve(props_.size());
+    for (const auto& prop : props_) {
+        props.emplace_back(prop);
+    }
+    std::vector<storage::cpp2::Expr> exprs;
+    exprs.reserve(exprs_.size());
+    for (const auto& expr : exprs) {
+        exprs.emplace_back(expr);
+    }
+    auto gv = make(qctx_, nullptr, space_, src, std::move(props), std::move(exprs));
+    gv->clone(*this);
+    return gv;
+}
+
 std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
     auto desc = Explore::explain();
     addDescription("src", src_ ? src_->toString() : "", desc.get());

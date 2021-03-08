@@ -68,6 +68,8 @@ public:
         return else_;
     }
 
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
 private:
     Select(QueryContext* qctx,
            PlanNode* input,
@@ -96,6 +98,8 @@ public:
     const PlanNode* body() const {
         return body_;
     }
+
+    std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
     Loop(QueryContext* qctx, PlanNode* input, PlanNode* body, Expression* condition)
