@@ -30,8 +30,9 @@ private:
     explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
             : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    folly::Optional<std::string> deleteEdges(PartitionID partId,
-                                             const std::vector<cpp2::EdgeKey>& edges);
+    ErrorOr<kvstore::ResultCode, std::string> deleteEdges(PartitionID partId,
+                                                          const std::vector<cpp2::EdgeKey>& edges);
+
 private:
     GraphSpaceID                                                spaceId_;
     std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;

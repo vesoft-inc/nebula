@@ -102,6 +102,10 @@ protected:
                      PartitionID partId,
                      kvstore::ResultCode code);
 
+    void handleAsync(GraphSpaceID spaceId,
+                     PartitionID partId,
+                     cpp2::ErrorCode code);
+
     StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                        const std::vector<std::string>& propNames,
                                        const std::vector<Value>& props,

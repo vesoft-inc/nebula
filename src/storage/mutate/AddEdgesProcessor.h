@@ -37,11 +37,11 @@ private:
     AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
         : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    folly::Optional<std::string> addEdges(PartitionID partId,
-                                          const std::vector<kvstore::KV>& edges);
+    ErrorOr<kvstore::ResultCode, std::string> addEdges(PartitionID partId,
+                                                       const std::vector<kvstore::KV>& edges);
 
-    folly::Optional<std::string> findOldValue(PartitionID partId,
-                                              const folly::StringPiece& rawKey);
+    ErrorOr<kvstore::ResultCode, std::string> findOldValue(PartitionID partId,
+                                                           const folly::StringPiece& rawKey);
 
     std::string indexKey(PartitionID partId,
                          RowReader* reader,

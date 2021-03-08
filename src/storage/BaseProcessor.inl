@@ -11,52 +11,7 @@ namespace storage {
 
 template<typename RESP>
 cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
-    switch (code) {
-    case kvstore::ResultCode::SUCCEEDED:
-        return cpp2::ErrorCode::SUCCEEDED;
-    case kvstore::ResultCode::ERR_LEADER_CHANGED:
-        return cpp2::ErrorCode::E_LEADER_CHANGED;
-    case kvstore::ResultCode::ERR_SPACE_NOT_FOUND:
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    case kvstore::ResultCode::ERR_PART_NOT_FOUND:
-        return cpp2::ErrorCode::E_PART_NOT_FOUND;
-    case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-        return cpp2::ErrorCode::E_KEY_NOT_FOUND;
-    case kvstore::ResultCode::ERR_CONSENSUS_ERROR:
-        return cpp2::ErrorCode::E_CONSENSUS_ERROR;
-    case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
-        return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
-    case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
-        return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
-    case kvstore::ResultCode::ERR_PARTIAL_RESULT:
-        return cpp2::ErrorCode::E_PARTIAL_RESULT;
-    case kvstore::ResultCode::ERR_INVALID_FIELD_VALUE:
-        return cpp2::ErrorCode::E_INVALID_FIELD_VALUE;
-    case kvstore::ResultCode::ERR_RESULT_FILTERED:
-        return cpp2::ErrorCode::E_FILTER_OUT;
-    case kvstore::ResultCode::ERR_EDGE_NOT_FOUND:
-        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-    case kvstore::ResultCode::ERR_TAG_NOT_FOUND:
-        return cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    case kvstore::ResultCode::ERR_ATOMIC_OP_FAILED:
-        return cpp2::ErrorCode::E_ATOMIC_OP_FAILED;
-    case kvstore::ResultCode::ERR_TAG_PROP_NOT_FOUND:
-        return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-    case kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND:
-        return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-    case kvstore::ResultCode::ERR_RESULT_OVERFLOW:
-        return cpp2::ErrorCode::E_OUT_OF_RANGE;
-    case kvstore::ResultCode::ERR_INVALID_DATA:
-        return cpp2::ErrorCode::E_INVALID_DATA;
-    case kvstore::ResultCode::ERR_BUILD_INDEX_FAILED:
-        return cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
-    case kvstore::ResultCode::ERR_INVALID_OPERATION:
-        return cpp2::ErrorCode::E_INVALID_OPERATION;
-    case kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR:
-        return cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-    default:
-        return cpp2::ErrorCode::E_UNKNOWN;
-    }
+    return CommonUtils::to(code);
 }
 
 template <typename RESP>
@@ -94,6 +49,27 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     {
         std::lock_guard<std::mutex> lg(this->lock_);
         handleErrorCode(code, spaceId, partId);
+        this->callingNum_--;
+        if (this->callingNum_ == 0) {
+            finished = true;
+        }
+    }
+
+    if (finished) {
+        this->onFinished();
+    }
+}
+
+template <typename RESP>
+void BaseProcessor<RESP>::handleAsync(GraphSpaceID,
+                                      PartitionID partId,
+                                      cpp2::ErrorCode code) {
+    VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
+
+    bool finished = false;
+    {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        pushResultCode(code, partId);
         this->callingNum_--;
         if (this->callingNum_ == 0) {
             finished = true;

@@ -40,7 +40,9 @@ private:
         : BaseProcessor<cpp2::ExecResponse>(env, counters)
         , vertexCache_(cache) {}
 
-    folly::Optional<std::string> findOldValue(PartitionID partId, const VertexID& vId, TagID tagId);
+    ErrorOr<kvstore::ResultCode, std::string> findOldValue(PartitionID partId,
+                                                           const VertexID& vId,
+                                                           TagID tagId);
 
     std::string indexKey(PartitionID partId, const VertexID& vId, RowReader* reader,
                          std::shared_ptr<nebula::meta::cpp2::IndexItem> index);

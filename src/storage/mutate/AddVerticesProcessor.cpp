@@ -67,6 +67,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
 
         std::vector<kvstore::KV> data;
         data.reserve(32);
+        cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
         for (auto& vertex : vertices) {
             auto vid = vertex.get_id().getStr();
             const auto& newTags = vertex.get_tags();
@@ -74,9 +75,8 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
             if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
                 LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                            << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
-                pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
-                onFinished();
-                return;
+                code = cpp2::ErrorCode::E_INVALID_VID;
+                break;
             }
 
             for (auto& newTag : newTags) {
@@ -87,9 +87,8 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
-                    pushResultCode(cpp2::ErrorCode::E_TAG_NOT_FOUND, partId);
-                    onFinished();
-                    return;
+                    code = cpp2::ErrorCode::E_TAG_NOT_FOUND;
+                    break;
                 }
 
                 auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
@@ -104,9 +103,8 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
                 auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
                 if (!retEnc.ok()) {
                     LOG(ERROR) << retEnc.status();
-                    pushResultCode(writeResultTo(wRet, false), partId);
-                    onFinished();
-                    return;
+                    code = writeResultTo(wRet, true);
+                    break;
                 }
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
 
@@ -117,7 +115,11 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
                 }
             }
         }
-        doPut(spaceId_, partId, std::move(data));
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            handleAsync(spaceId_, partId, code);
+        } else {
+            doPut(spaceId_, partId, std::move(data));
+        }
     }
 }
 
@@ -132,6 +134,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         const auto& vertices = part.second;
         std::vector<VMLI> dummyLock;
         dummyLock.reserve(vertices.size());
+        cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
         for (auto& vertex : vertices) {
             auto vid = vertex.get_id().getStr();
             const auto& newTags = vertex.get_tags();
@@ -139,9 +142,8 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
             if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid)) {
                 LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                            << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
-                pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
-                onFinished();
-                return;
+                code = cpp2::ErrorCode::E_INVALID_VID;
+                break;
             }
 
             for (auto& newTag : newTags) {
@@ -152,9 +154,8 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                 auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
-                    pushResultCode(cpp2::ErrorCode::E_TAG_NOT_FOUND, partId);
-                    onFinished();
-                    return;
+                    code = cpp2::ErrorCode::E_TAG_NOT_FOUND;
+                    break;
                 }
 
                 auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
@@ -169,19 +170,23 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                 auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
                 if (!retEnc.ok()) {
                     LOG(ERROR) << retEnc.status();
-                    pushResultCode(writeResultTo(wRet, false), partId);
-                    onFinished();
-                    return;
+                    code = writeResultTo(wRet, false);
+                    break;
                 }
 
                 RowReaderWrapper nReader;
                 RowReaderWrapper oReader;
                 auto obsIdx = findOldValue(partId, vid, tagId);
-                if (obsIdx != folly::none && !obsIdx.value().empty()) {
-                    oReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
-                                                                 spaceId_,
-                                                                 tagId,
-                                                                 std::move(obsIdx).value());
+                if (nebula::ok(obsIdx)) {
+                    if (!nebula::value(obsIdx).empty()) {
+                        oReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
+                                                                     spaceId_,
+                                                                     tagId,
+                                                                     nebula::value(obsIdx));
+                    }
+                } else {
+                    code = to(nebula::error(obsIdx));
+                    break;
                 }
                 if (!retEnc.value().empty()) {
                     nReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
@@ -205,9 +210,8 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
-                                    pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
-                                    onFinished();
-                                    return;
+                                    code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                                    break;
                                 } else {
                                     batchHolder->remove(std::move(oi));
                                 }
@@ -228,9 +232,8 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
-                                    pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
-                                    onFinished();
-                                    return;
+                                    code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                                    break;
                                 } else {
                                     batchHolder->put(std::move(ni), "");
                                 }
@@ -238,6 +241,9 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                         }
                     }
                 }  // for index data
+                if (code != cpp2::ErrorCode::SUCCEEDED) {
+                    break;
+                }
                 /*
                 * step 3 , Insert new vertex data
                 */
@@ -250,6 +256,13 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                             << ", tagId " << tagId;
                 }
             }
+            if (code != cpp2::ErrorCode::SUCCEEDED) {
+                break;
+            }
+        }
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            handleAsync(spaceId_, partId, code);
+            continue;
         }
         auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
         DCHECK(!batch.empty());
@@ -261,19 +274,18 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                         << std::get<1>(conflict) << ":"
                         << std::get<2>(conflict) << ":"
                         << std::get<3>(conflict);
-            pushResultCode(cpp2::ErrorCode::E_DATA_CONFLICT_ERROR, partId);
-            onFinished();
-            return;
+            handleAsync(spaceId_, partId, cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
+            continue;
         }
         env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch),
-            [l = std::move(lg), partId, this](kvstore::ResultCode code) {
+            [l = std::move(lg), partId, this](kvstore::ResultCode kvRet) {
                 UNUSED(l);
-                handleAsync(spaceId_, partId, code);
+                handleAsync(spaceId_, partId, kvRet);
             });
     }
 }
 
-folly::Optional<std::string>
+ErrorOr<kvstore::ResultCode, std::string>
 AddVerticesProcessor::findOldValue(PartitionID partId, const VertexID& vId, TagID tagId) {
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -281,7 +293,7 @@ AddVerticesProcessor::findOldValue(PartitionID partId, const VertexID& vId, TagI
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
                    << ", spaceId " << spaceId_;
-        return folly::none;
+        return ret;
     }
     if (iter && iter->valid()) {
         return iter->val().str();

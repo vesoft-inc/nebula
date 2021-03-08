@@ -35,10 +35,9 @@ private:
         : BaseProcessor<cpp2::ExecResponse>(env, counters)
         , vertexCache_(cache) {}
 
-    folly::Optional<std::string>
-    deleteVertices(PartitionID partId,
-                   const std::vector<Value>& vertices,
-                   std::vector<VMLI>& target);
+    ErrorOr<kvstore::ResultCode, std::string> deleteVertices(PartitionID partId,
+                                                             const std::vector<Value>& vertices,
+                                                             std::vector<VMLI>& target);
 
 private:
     GraphSpaceID                                                spaceId_;
