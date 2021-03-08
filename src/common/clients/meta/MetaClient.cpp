@@ -19,6 +19,7 @@
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
 
+DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1,
