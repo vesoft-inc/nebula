@@ -39,7 +39,8 @@ void UnaryExpression::resetFrom(Decoder& decoder) {
 
 
 const Value& UnaryExpression::eval(ExpressionContext& ctx) {
-   switch (kind_) {
+    DCHECK(!!operand_);
+    switch (kind_) {
         case Kind::kUnaryPlus: {
             Value val(operand_->eval(ctx));
             result_ = std::move(val);
@@ -75,6 +76,14 @@ const Value& UnaryExpression::eval(ExpressionContext& ctx) {
             ctx.setVar(varExpr->var(), result_);
             break;
         }
+        case Kind::kIsNull: {
+            result_ = (operand_->eval(ctx)).isNull() ? true : false;
+            break;
+        }
+        case Kind::kIsNotNull: {
+            result_ = (operand_->eval(ctx)).isNull() ? false : true;
+            break;
+        }
        default:
            LOG(FATAL) << "Unknown type: " << kind_;
    }
@@ -98,6 +107,12 @@ std::string UnaryExpression::toString() const {
             break;
         case Kind::kUnaryDecr:
             op = "--";
+            break;
+        case Kind::kIsNull:
+            op = "IS NULL";
+            break;
+        case Kind::kIsNotNull:
+            op = "IS NOT NULL";
             break;
         default:
             op = "illegal symbol ";

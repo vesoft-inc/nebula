@@ -31,6 +31,8 @@ public:
         kUnaryNot,
         kUnaryIncr,
         kUnaryDecr,
+        kIsNull,
+        kIsNotNull,
 
         kRelEQ,
         kRelNE,
