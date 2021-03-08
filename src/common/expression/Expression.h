@@ -31,8 +31,6 @@ public:
         kUnaryNot,
         kUnaryIncr,
         kUnaryDecr,
-        kIsNull,
-        kIsNotNull,
 
         kRelEQ,
         kRelNE,
@@ -100,6 +98,8 @@ public:
         kTSFuzzy,
 
         kAggregate,
+        kIsNull,
+        kIsNotNull,
     };
 
 
