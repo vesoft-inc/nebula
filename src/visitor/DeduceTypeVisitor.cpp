@@ -164,6 +164,12 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
     expr->operand()->accept(this);
     if (!ok()) return;
 
+    // if can't deduce the type of expr's operand, ignore it
+    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
+        type_ = expr->type();
+        return;
+    }
+
     EvaluableExprVisitor visitor;
     expr->operand()->accept(&visitor);
 
@@ -173,7 +179,7 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
             return;
         }
         std::stringstream out;
-        out << "Can not convert " << expr->operand() << " 's type : " << type_ << " to "
+        out << "Can not convert " << expr->operand()->toString() << " 's type : " << type_ << " to "
             << expr->type();
         status_ = Status::SemanticError(out.str());
         return;
