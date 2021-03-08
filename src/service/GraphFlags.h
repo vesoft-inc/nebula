@@ -19,6 +19,7 @@ DECLARE_int32(num_worker_threads);
 DECLARE_bool(reuse_port);
 DECLARE_int32(listen_backlog);
 DECLARE_string(listen_netdev);
+DECLARE_string(local_ip);
 DECLARE_string(pid_file);
 DECLARE_bool(local_config);
 DECLARE_bool(accept_partial_success);

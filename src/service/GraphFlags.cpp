@@ -23,6 +23,7 @@ DEFINE_int32(num_worker_threads, 0, "Number of threads to execute user queries")
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");
+DEFINE_string(local_ip, "", "Local ip specified for graphd");
 DEFINE_string(pid_file, "pids/nebula-graphd.pid", "File to hold the process id");
 
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
