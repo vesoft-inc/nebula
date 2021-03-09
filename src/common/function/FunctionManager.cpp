@@ -203,6 +203,10 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                     TypeSignature({Value::Type::EDGE}, Value::Type::MAP),
                     TypeSignature({Value::Type::MAP}, Value::Type::MAP),
              }},
+    {"exists", {TypeSignature({Value::Type::VERTEX, Value::Type::STRING}, Value::Type::BOOL),
+                TypeSignature({Value::Type::EDGE, Value::Type::STRING}, Value::Type::BOOL),
+                TypeSignature({Value::Type::MAP, Value::Type::STRING}, Value::Type::BOOL)
+                }},
     {"type", {TypeSignature({Value::Type::EDGE}, Value::Type::STRING),
              }},
     {"rank", {TypeSignature({Value::Type::EDGE}, Value::Type::INT),
@@ -1363,6 +1367,33 @@ FunctionManager::FunctionManager() {
             } else {
                 return Value::kNullBadType;
             }
+        };
+    }
+    {
+        auto &attr = functions_["exists"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            if (!args[1].isStr()) {
+                return Value::kNullBadType;
+            }
+            auto &key = args[1].getStr();
+            if (args[0].isVertex()) {
+                for (auto &tag : args[0].getVertex().tags) {
+                    if (tag.props.find(key) != tag.props.end()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            if (args[0].isEdge()) {
+                return args[0].getEdge().props.count(key) != 0;
+            }
+            if (args[0].isMap()) {
+                return args[0].getMap().kvs.count(key) != 0;
+            }
+            return Value::kNullBadType;
         };
     }
     {
