@@ -14,7 +14,7 @@ std::string Map::toString() const {
     std::vector<std::string> value(kvs.size());
     std::transform(kvs.begin(), kvs.end(), value.begin(), [](const auto &iter) -> std::string {
         std::stringstream out;
-        out << "\"" << iter.first << "\"" << ":" << iter.second;
+        out << iter.first << ":" << iter.second;
         return out.str();
     });
 

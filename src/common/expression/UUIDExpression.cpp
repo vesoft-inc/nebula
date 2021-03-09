@@ -43,7 +43,7 @@ const Value& UUIDExpression::eval(ExpressionContext& ctx) {
 }
 
 std::string UUIDExpression::toString() const {
-    return folly::stringPrintf("uuid(%s)", field_->c_str());
+    return folly::stringPrintf("uuid(\"%s\")", field_->c_str());
 }
 
 void UUIDExpression::accept(ExprVisitor* visitor) {

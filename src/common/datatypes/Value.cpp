@@ -1484,7 +1484,7 @@ std::string Value::toString() const {
         case Value::Type::NULLVALUE: {
             switch (getNull()) {
                 case NullType::__NULL__:
-                    return "__NULL__";
+                    return "NULL";
                 case NullType::BAD_DATA:
                     return "__NULL_BAD_DATA__";
                 case NullType::BAD_TYPE:
@@ -1512,7 +1512,7 @@ std::string Value::toString() const {
             return folly::to<std::string>(getFloat());
         }
         case Value::Type::STRING: {
-            return getStr();
+            return "\"" + getStr() + "\"";
         }
         case Value::Type::DATE: {
             return getDate().toString();
@@ -1550,7 +1550,7 @@ std::string Value::toString() const {
     LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
 }
 
-Value Value::toBool() {
+Value Value::toBool() const {
     switch (type_) {
         case Value::Type::__EMPTY__:
         case Value::Type::NULLVALUE: {
@@ -1560,7 +1560,7 @@ Value Value::toBool() {
             return *this;
         }
         case Value::Type::STRING: {
-            auto str = toString();
+            auto str = getStr();
             std::transform(str.begin(), str.end(), str.begin(), ::tolower);
             if (str.compare("true") == 0) {
                 return true;
@@ -1576,7 +1576,7 @@ Value Value::toBool() {
     }
 }
 
-Value Value::toFloat() {
+Value Value::toFloat() const {
     switch (type_) {
         case Value::Type::__EMPTY__:
         case Value::Type::NULLVALUE: {
@@ -1603,7 +1603,7 @@ Value Value::toFloat() {
     }
 }
 
-Value Value::toInt() {
+Value Value::toInt() const {
     switch (type_) {
         case Value::Type::__EMPTY__:
         case Value::Type::NULLVALUE: {

@@ -1256,11 +1256,11 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(Map({{"hello", "world"}, {"name", "zhang"}}));
-        EXPECT_EQ(ep.toString(), "{\"name\":zhang,\"hello\":world}");
+        EXPECT_EQ(ep.toString(), "{name:\"zhang\",hello:\"world\"}");
     }
     {
         ConstantExpression ep(Set({1, 2.3, "hello", true}));
-        EXPECT_EQ(ep.toString(), "{hello,2.3,true,1}");
+        EXPECT_EQ(ep.toString(), "{\"hello\",2.3,true,1}");
     }
     {
         ConstantExpression ep(Date(1234));
@@ -1268,11 +1268,11 @@ TEST_F(ExpressionTest, toStringTest) {
     }
     {
         ConstantExpression ep(Edge("100", "102", 2, "like", 3, {{"likeness", 95}}));
-        EXPECT_EQ(ep.toString(), "(100)-[like(2)]->(102)@3 likeness:95");
+        EXPECT_EQ(ep.toString(), "(\"100\")-[like(2)]->(\"102\")@3 likeness:95");
     }
     {
         ConstantExpression ep(Vertex("100", {Tag("player", {{"name", "jame"}})}));
-        EXPECT_EQ(ep.toString(), "(100) Tag: player, name:jame");
+        EXPECT_EQ(ep.toString(), "(\"100\") Tag: player, name:\"jame\"");
     }
     {
         TypeCastingExpression ep(Value::Type::FLOAT, new ConstantExpression(2));
@@ -1299,7 +1299,7 @@ TEST_F(ExpressionTest, toStringTest) {
 
         UnaryExpression isNotNull(Expression::Kind::kIsNotNull,
                                   new ConstantExpression(Value::kNullValue));
-        EXPECT_EQ(isNotNull.toString(), "IS NOT NULL(__NULL__)");
+        EXPECT_EQ(isNotNull.toString(), "IS NOT NULL(NULL)");
     }
     {
         VariableExpression var(new std::string("name"));
@@ -1402,7 +1402,7 @@ TEST_F(ExpressionTest, ListToString) {
             .add(new ConstantExpression("Hello"))
             .add(new ConstantExpression(true));
     auto expr = std::make_unique<ListExpression>(elist);
-    ASSERT_EQ("[12345,Hello,true]", expr->toString());
+    ASSERT_EQ("[12345,\"Hello\",true]", expr->toString());
 }
 
 TEST_F(ExpressionTest, SetToString) {
@@ -1412,7 +1412,7 @@ TEST_F(ExpressionTest, SetToString) {
             .add(new ConstantExpression("Hello"))
             .add(new ConstantExpression(true));
     auto expr = std::make_unique<SetExpression>(elist);
-    ASSERT_EQ("{12345,12345,Hello,true}", expr->toString());
+    ASSERT_EQ("{12345,12345,\"Hello\",true}", expr->toString());
 }
 
 TEST_F(ExpressionTest, AggregateToString) {
@@ -1432,7 +1432,7 @@ TEST_F(ExpressionTest, MapTostring) {
     auto expected = "{"
                         "key1:12345,"
                         "key2:12345,"
-                        "key3:Hello,"
+                        "key3:\"Hello\","
                         "key4:true"
                     "}";
     ASSERT_EQ(expected, expr->toString());
@@ -2839,7 +2839,7 @@ TEST_F(ExpressionTest, ContainsToString) {
                 Expression::Kind::kContains,
                 new ConstantExpression("abc"),
                 new ConstantExpression("a"));
-        ASSERT_EQ("(abc CONTAINS a)", expr.toString());
+        ASSERT_EQ("(\"abc\" CONTAINS \"a\")", expr.toString());
     }
 }
 
@@ -2850,7 +2850,7 @@ TEST_F(ExpressionTest, NotContainsToString) {
                 Expression::Kind::kNotContains,
                 new ConstantExpression("abc"),
                 new ConstantExpression("a"));
-        ASSERT_EQ("(abc NOT CONTAINS a)", expr.toString());
+        ASSERT_EQ("(\"abc\" NOT CONTAINS \"a\")", expr.toString());
     }
 }
 
@@ -2892,7 +2892,7 @@ TEST_F(ExpressionTest, CaseExprToString) {
                                                    new ConstantExpression("nebu")));
         expr.setDefault(new ConstantExpression(3));
         ASSERT_EQ(
-            "CASE (nebula STARTS WITH nebu) WHEN false THEN 1 WHEN true THEN 2 ELSE 3 END",
+            "CASE (\"nebula\" STARTS WITH \"nebu\") WHEN false THEN 1 WHEN true THEN 2 ELSE 3 END",
             expr.toString());
     }
     {
@@ -2904,7 +2904,7 @@ TEST_F(ExpressionTest, CaseExprToString) {
         expr.setCondition(new ArithmeticExpression(
             Expression::Kind::kAdd, new ConstantExpression(3), new ConstantExpression(5)));
         expr.setDefault(new ConstantExpression(false));
-        ASSERT_EQ("CASE (3+5) WHEN 7 THEN 1 WHEN 8 THEN 2 WHEN 8 THEN jack ELSE false END",
+        ASSERT_EQ("CASE (3+5) WHEN 7 THEN 1 WHEN 8 THEN 2 WHEN 8 THEN \"jack\" ELSE false END",
                   expr.toString());
     }
     {
@@ -2918,7 +2918,7 @@ TEST_F(ExpressionTest, CaseExprToString) {
         cases->add(new ConstantExpression(false), new ConstantExpression(18));
         CaseExpression expr(cases);
         expr.setDefault(new ConstantExpression("ok"));
-        ASSERT_EQ("CASE WHEN false THEN 18 ELSE ok END", expr.toString());
+        ASSERT_EQ("CASE WHEN false THEN 18 ELSE \"ok\" END", expr.toString());
     }
     {
         auto *cases = new CaseList();
@@ -2928,7 +2928,7 @@ TEST_F(ExpressionTest, CaseExprToString) {
                    new ConstantExpression("yes"));
         CaseExpression expr(cases);
         expr.setDefault(new ConstantExpression(false));
-        ASSERT_EQ("CASE WHEN (nebula STARTS WITH nebu) THEN yes ELSE false END",
+        ASSERT_EQ("CASE WHEN (\"nebula\" STARTS WITH \"nebu\") THEN \"yes\" ELSE false END",
                   expr.toString());
     }
     {
@@ -2965,7 +2965,7 @@ TEST_F(ExpressionTest, CaseExprToString) {
         cases->add(new ConstantExpression(false), new ConstantExpression(1));
         CaseExpression expr(cases, false);
         expr.setDefault(new ConstantExpression("ok"));
-        ASSERT_EQ("(false ? 1 : ok)", expr.toString());
+        ASSERT_EQ("(false ? 1 : \"ok\")", expr.toString());
     }
 }
 

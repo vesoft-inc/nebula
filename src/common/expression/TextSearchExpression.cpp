@@ -23,9 +23,10 @@ std::string TextSearchArgument::toString() const {
     buf = *from_ + "." + *prop_ + ", ";
     buf += "\"" + *val_ + "\"";
     if (fuzziness_ == -1) {
-        buf += " AUTO, ";
+        buf += ", AUTO, ";
         buf += ((*op_ == "or") ? "OR" : "AND");
     } else if (fuzziness_ > -1) {
+        buf += ", ";
         buf += folly::stringPrintf("%d, ", fuzziness_);
         buf += ((*op_ == "or") ? "OR" : "AND");
     }

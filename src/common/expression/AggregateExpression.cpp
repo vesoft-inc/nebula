@@ -64,7 +64,18 @@ const Value& AggregateExpression::eval(ExpressionContext& ctx) {
 }
 
 std::string AggregateExpression::toString() const {
-    std::string arg(arg_->toString());
+    // TODO fix it
+    std::string arg;
+    if (arg_->kind() == Expression::Kind::kConstant) {
+        const auto *argExpr = static_cast<const ConstantExpression*>(arg_.get());
+        if (argExpr->value().isStr()) {
+            arg = argExpr->value().getStr();
+        } else {
+            arg = arg_->toString();
+        }
+    } else {
+        arg = arg_->toString();
+    }
     std::string isDistinct;
     if (distinct_) {
         isDistinct = "distinct ";

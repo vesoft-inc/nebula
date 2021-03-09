@@ -66,7 +66,12 @@ std::string AttributeExpression::toString() const {
     buf.reserve(256);
     buf += left()->toString();
     buf += '.';
-    buf += right()->toString();
+    auto *constant = static_cast<const ConstantExpression*>(right());
+    if (constant->value().isStr()) {
+        buf += constant->value().getStr();
+    } else {
+        buf += right()->toString();
+    }
 
     return buf;
 }
