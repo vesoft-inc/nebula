@@ -20,7 +20,7 @@
   </a>
 </p>
 
-# Nebula Graph 是什么
+# Nebula Graph 是什么?
 
 **Nebula Graph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
 
