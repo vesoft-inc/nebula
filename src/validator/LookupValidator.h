@@ -44,7 +44,10 @@ private:
 
     Status rewriteRelExpr(RelationalExpression* expr);
 
-    StatusOr<Value> checkConstExpr(Expression* expr, const std::string& prop);
+    StatusOr<Value> checkConstExpr(Expression* expr,
+                                   const std::string& prop,
+                                   const Expression::Kind kind,
+                                   bool leftIsAE);
 
     Status checkTSService();
 

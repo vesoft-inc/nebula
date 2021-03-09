@@ -358,7 +358,9 @@ Status LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
 
     std::string prop = la->right()->value().getStr();
     // rewrite ConstantExpression
-    auto c = leftIsAE ? checkConstExpr(right, prop) : checkConstExpr(left, prop);
+    auto relExprType = expr->kind();
+    auto c = leftIsAE ? checkConstExpr(right, prop, relExprType, leftIsAE)
+                      : checkConstExpr(left, prop, relExprType, leftIsAE);
 
     if (!c.ok()) {
         return Status::SemanticError("expression error : %s", left->toString().c_str());
@@ -387,7 +389,10 @@ Status LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
     return Status::OK();
 }
 
-StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr, const std::string& prop) {
+StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr,
+                                                const std::string& prop,
+                                                const Expression::Kind kind,
+                                                bool leftIsAE) {
     if (!evaluableExpr(expr)) {
         return Status::SemanticError("'%s' is not an evaluable expression.",
                                      expr->toString().c_str());
@@ -397,6 +402,28 @@ StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr, const std::str
     auto type = schema->getFieldType(prop);
     QueryExpressionContext dummy(nullptr);
     auto v = Expression::eval(expr, dummy);
+    // TODO(Aiee) extract the type cast logic as a method if we decide to support more cross-type
+    // comparisons.
+
+    // Allow different numeric type to compare
+    if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::FLOAT && v.isInt()) {
+        return v.toFloat();
+    } else if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::INT && v.isFloat()) {
+        // col1 < 10.5 range: [min, 11), col1 < 10 range: [min, 10)
+        double f = v.getFloat();
+        int iCeil = ceil(f);
+        int iFloor = floor(f);
+        if ((leftIsAE && (kind == Expression::Kind::kRelGE || kind == Expression::Kind::kRelLT)) ||
+            (!leftIsAE && (kind == Expression::Kind::kRelGT || kind == Expression::Kind::kRelLE))) {
+            // edge case col1 >= 40.0, no need to round up
+            if (abs(f - iCeil) < kEpsilon) {
+                return iFloor;
+            }
+            return iCeil;
+        }
+        return iFloor;
+    }
+
     if (v.type() != SchemaUtil::propTypeToValueType(type)) {
         return Status::SemanticError("Column type error : %s", prop.c_str());
     }

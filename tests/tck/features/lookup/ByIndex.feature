@@ -1,7 +1,9 @@
 Feature: Lookup by index itself
 
   Background:
-    Given a graph with space named "nba"
+    Given an empty graph
+    And load "nba" csv data to a new space
+    And wait 3 seconds
 
   Scenario: [1] tag index
     When executing query:
@@ -438,3 +440,176 @@ Feature: Lookup by index itself
       LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year AS startYear
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: [1] Compare INT and FLOAT during IndexScan
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age == 40 YIELD player.age AS Age
+      """
+    Then the result should be, in any order:
+      | VertexID        | Age |
+      | "Dirk Nowitzki" | 40  |
+      | "Kobe Bryant"   | 40  |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age > 40 YIELD player.age AS Age
+      """
+    Then the result should be, in any order:
+      | VertexID          | Age |
+      | "Grant Hill"      | 46  |
+      | "Jason Kidd"      | 45  |
+      | "Manu Ginobili"   | 41  |
+      | "Ray Allen"       | 43  |
+      | "Shaquile O'Neal" | 47  |
+      | "Steve Nash"      | 45  |
+      | "Tim Duncan"      | 42  |
+      | "Vince Carter"    | 42  |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age >= 40.0 YIELD player.age AS Age
+      """
+    Then the result should be, in any order:
+      | VertexID          | Age |
+      | "Grant Hill"      | 46  |
+      | "Jason Kidd"      | 45  |
+      | "Manu Ginobili"   | 41  |
+      | "Ray Allen"       | 43  |
+      | "Shaquile O'Neal" | 47  |
+      | "Steve Nash"      | 45  |
+      | "Tim Duncan"      | 42  |
+      | "Vince Carter"    | 42  |
+      | "Dirk Nowitzki"   | 40  |
+      | "Kobe Bryant"     | 40  |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age > 40.5 YIELD player.age AS Age
+      """
+    Then the result should be, in any order:
+      | VertexID          | Age |
+      | "Grant Hill"      | 46  |
+      | "Jason Kidd"      | 45  |
+      | "Manu Ginobili"   | 41  |
+      | "Ray Allen"       | 43  |
+      | "Shaquile O'Neal" | 47  |
+      | "Steve Nash"      | 45  |
+      | "Tim Duncan"      | 42  |
+      | "Vince Carter"    | 42  |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age >= 40.5 YIELD player.age AS Age
+      """
+    Then the result should be, in any order:
+      | VertexID          | Age |
+      | "Grant Hill"      | 46  |
+      | "Jason Kidd"      | 45  |
+      | "Manu Ginobili"   | 41  |
+      | "Ray Allen"       | 43  |
+      | "Shaquile O'Neal" | 47  |
+      | "Steve Nash"      | 45  |
+      | "Tim Duncan"      | 42  |
+      | "Vince Carter"    | 42  |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age < 40
+      YIELD player.age AS Age, player.name AS Name | order by Age DESC, Name| limit 10
+      """
+    Then the result should be, in order, with relax comparison:
+      | VertexID            | Age | Name                |
+      | "Tracy McGrady"     | 39  | "Tracy McGrady"     |
+      | "David West"        | 38  | "David West"        |
+      | "Paul Gasol"        | 38  | "Paul Gasol"        |
+      | "Yao Ming"          | 38  | "Yao Ming"          |
+      | "Dwyane Wade"       | 37  | "Dwyane Wade"       |
+      | "Amar'e Stoudemire" | 36  | "Amar'e Stoudemire" |
+      | "Boris Diaw"        | 36  | "Boris Diaw"        |
+      | "Tony Parker"       | 36  | "Tony Parker"       |
+      | "Carmelo Anthony"   | 34  | "Carmelo Anthony"   |
+      | "LeBron James"      | 34  | "LeBron James"      |
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age <= 40
+      YIELD player.age AS Age, player.name AS Name | order by Age DESC, Name| limit 10
+      """
+    Then the result should be, in order, with relax comparison:
+      | VertexID            | Age | Name                |
+      | "Dirk Nowitzki"     | 40  | "Dirk Nowitzki"     |
+      | "Kobe Bryant"       | 40  | "Kobe Bryant"       |
+      | "Tracy McGrady"     | 39  | "Tracy McGrady"     |
+      | "David West"        | 38  | "David West"        |
+      | "Paul Gasol"        | 38  | "Paul Gasol"        |
+      | "Yao Ming"          | 38  | "Yao Ming"          |
+      | "Dwyane Wade"       | 37  | "Dwyane Wade"       |
+      | "Amar'e Stoudemire" | 36  | "Amar'e Stoudemire" |
+      | "Boris Diaw"        | 36  | "Boris Diaw"        |
+      | "Tony Parker"       | 36  | "Tony Parker"       |
+
+  Scenario: [2] Compare INT and FLOAT during IndexScan
+    Given having executed:
+      """
+      CREATE TAG weight (WEIGHT double)
+      """
+    And having executed:
+      """
+      CREATE TAG INDEX weight_index
+      ON weight(WEIGHT)
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX weight(WEIGHT)
+      VALUES "Tim Duncan" : (70.5)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX weight(WEIGHT)
+      VALUES "Tony Parker" : (80.0)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON weight
+      WHERE weight.WEIGHT > 70;
+      """
+    Then the result should be, in any order:
+      | VertexID      |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    When executing query:
+      """
+      LOOKUP ON weight
+      WHERE weight.WEIGHT > 70.4;
+      """
+    Then the result should be, in any order:
+      | VertexID      |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    When executing query:
+      """
+      LOOKUP ON weight
+      WHERE weight.WEIGHT >= 70.5;
+      """
+    Then the result should be, in any order:
+      | VertexID      |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    Then drop the used space
+
+# (TODO) Unsupported cases due to the lack of float precision
+# When executing query:
+# """
+# LOOKUP ON weight
+# WHERE weight.WEIGHT > 70.5;
+# """
+# Then the result should be, in any order:
+# | VertexID      |
+# | "Tony Parker" |
+# When executing query:
+# """
+# LOOKUP ON weight
+# WHERE weight.WEIGHT <= 80.0;
+# """
+# Then the result should be, in any order:
+# | VertexID      |
+# | "Tim Duncan"  |
+# | "Tony Parker" |
