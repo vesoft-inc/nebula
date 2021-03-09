@@ -59,6 +59,15 @@ func newFullRestoreCmd() *cobra.Command {
 				}
 			}
 
+			if restoreConfig.MaxConcurrent <= 0 {
+				restoreConfig.MaxConcurrent = 5
+			}
+
+			if len(restoreConfig.BackupName) == 0 {
+				logger.Error("The backup_name configuration must be set")
+				return fmt.Errorf("The backup_name configuration must be set")
+			}
+
 			return nil
 		},
 

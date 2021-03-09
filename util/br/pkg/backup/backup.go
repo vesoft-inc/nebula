@@ -55,7 +55,7 @@ type Backup struct {
 }
 
 func NewBackupClient(cf config.BackupConfig, log *zap.Logger) *Backup {
-	backend, err := storage.NewExternalStorage(cf.BackendUrl, log)
+	backend, err := storage.NewExternalStorage(cf.BackendUrl, log, cf.MaxConcurrent, cf.CommandArgs)
 	if err != nil {
 		log.Error("new external storage failed", zap.Error(err))
 		return nil
@@ -212,7 +212,7 @@ func (b *Backup) uploadMeta(g *errgroup.Group, files []string) {
 	cmd := b.backendStorage.BackupMetaCommand(files)
 	b.log.Info("start upload meta", zap.String("addr", b.metaLeader.Addrs))
 	ipAddr := strings.Split(b.metaLeader.Addrs, ":")
-	func(addr string, user string, log *zap.Logger) {
+	func(addr string, user string, cmd string, log *zap.Logger) {
 		g.Go(func() error {
 			client, err := remote.NewClient(addr, user, log)
 			if err != nil {
@@ -221,7 +221,7 @@ func (b *Backup) uploadMeta(g *errgroup.Group, files []string) {
 			defer client.Close()
 			return client.ExecCommandBySSH(cmd)
 		})
-	}(ipAddr[0], b.metaLeader.User, b.log)
+	}(ipAddr[0], b.metaLeader.User, cmd, b.log)
 }
 
 func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) error {
@@ -236,7 +236,7 @@ func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) e
 
 		ipAddrs := strings.Split(k, ":")
 		b.log.Info("uploadStorage idMap", zap.Int("idMap length", len(idMap)))
-		clients, err := remote.NewClientPool(ipAddrs[0], b.storageNodeMap[k].User, b.log, b.config.MaxConcurrent)
+		clients, err := remote.NewClientPool(ipAddrs[0], b.storageNodeMap[k].User, b.log, b.config.MaxSSHConnections)
 		if err != nil {
 			b.log.Error("new clients failed", zap.Error(err))
 			return err
@@ -254,7 +254,6 @@ func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) e
 					return client.ExecCommandBySSH(cmd)
 				})
 			}(client, cmd)
-			//g.Go(func() error { return client.ExecCommandBySSH(cmd) })
 			i++
 		}
 	}
@@ -263,6 +262,7 @@ func (b *Backup) uploadStorage(g *errgroup.Group, dirs map[string][]spaceInfo) e
 
 func (b *Backup) uploadMetaFile() error {
 	cmdStr := b.backendStorage.BackupMetaFileCommand(b.metaFileName)
+	b.log.Info("will upload metafile", zap.Strings("cmd", cmdStr))
 
 	cmd := exec.Command(cmdStr[0], cmdStr[1:]...)
 	err := cmd.Run()

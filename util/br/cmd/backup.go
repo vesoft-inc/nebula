@@ -67,6 +67,10 @@ func newFullBackupCmd() *cobra.Command {
 				}
 			}
 
+			if backupConfig.MaxSSHConnections <= 0 {
+				backupConfig.MaxSSHConnections = 5
+			}
+
 			if backupConfig.MaxConcurrent <= 0 {
 				backupConfig.MaxConcurrent = 5
 			}
