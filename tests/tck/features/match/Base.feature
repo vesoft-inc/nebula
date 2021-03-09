@@ -17,6 +17,16 @@ Feature: Basic match
       | ("Yao Ming") |
     When executing query:
       """
+      MATCH (v:player) WHERE v.age < 0 RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                      |
+      | ("Null1" :player{age: -1, name: NULL}) |
+      | ("Null2" :player{age: -2, name: NULL}) |
+      | ("Null3" :player{age: -3, name: NULL}) |
+      | ("Null4" :player{age: -4, name: NULL}) |
+    When executing query:
+      """
       MATCH (v:player) WHERE v.name == "Yao Ming" RETURN v.age AS Age
       """
     Then the result should be, in any order:
