@@ -146,10 +146,7 @@ void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
                                                   PartitionID partId) {
     LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
-    auto it = leaders_.find(std::make_pair(spaceId, partId));
-    if (it != leaders_.end()) {
-        leaders_.erase(it);
-    }
+    leaders_.erase(std::make_pair(spaceId, partId));
 }
 
 template<typename ClientType>
@@ -158,10 +155,7 @@ void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     for (const auto &partId : partsId) {
         LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
-        auto it = leaders_.find(std::make_pair(spaceId, partId));
-        if (it != leaders_.end()) {
-            leaders_.erase(it);
-        }
+        leaders_.erase(std::make_pair(spaceId, partId));
     }
 }
 
