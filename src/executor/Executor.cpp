@@ -63,7 +63,8 @@
 #include "executor/mutate/UpdateExecutor.h"
 #include "executor/query/AggregateExecutor.h"
 #include "executor/query/DataCollectExecutor.h"
-#include "executor/query/DataJoinExecutor.h"
+#include "executor/query/LeftJoinExecutor.h"
+#include "executor/query/InnerJoinExecutor.h"
 #include "executor/query/DedupExecutor.h"
 #include "executor/query/FilterExecutor.h"
 #include "executor/query/GetEdgesExecutor.h"
@@ -327,8 +328,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kShowSnapshots: {
             return pool->add(new ShowSnapshotsExecutor(node, qctx));
         }
-        case PlanNode::Kind::kDataJoin: {
-            return pool->add(new DataJoinExecutor(node, qctx));
+        case PlanNode::Kind::kLeftJoin: {
+            return pool->add(new LeftJoinExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kInnerJoin: {
+            return pool->add(new InnerJoinExecutor(node, qctx));
         }
         case PlanNode::Kind::kDeleteVertices: {
             return pool->add(new DeleteVerticesExecutor(node, qctx));

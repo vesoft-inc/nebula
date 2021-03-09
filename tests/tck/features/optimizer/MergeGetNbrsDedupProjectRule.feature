@@ -23,7 +23,7 @@ Feature: merge get neighbors, dedup and project rule
       | Project            | 1            |               |
       | Filter             | 2            |               |
       | Project            | 3            |               |
-      | DataJoin           | 4            |               |
+      | InnerJoin          | 4            |               |
       | Project            | 5            |               |
       | GetVertices        | 6            | dedup: true   |
       | Filter             | 7            |               |
@@ -31,7 +31,7 @@ Feature: merge get neighbors, dedup and project rule
       | Loop               | 15           | loopBody: 9   |
       | Filter             | 10           |               |
       | Project            | 11           |               |
-      | DataJoin           | 12           |               |
+      | InnerJoin          | 12           |               |
       | Project            | 13           |               |
       | GetNeighbors       | 14           | dedup: true   |
       | Start              |              |               |

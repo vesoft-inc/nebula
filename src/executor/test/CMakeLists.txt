@@ -72,7 +72,7 @@ nebula_add_test(
         SortTest.cpp
         TopNTest.cpp
         AggregateTest.cpp
-        DataJoinTest.cpp
+        JoinTest.cpp
         BFSShortestTest.cpp
         ConjunctPathTest.cpp
         ProduceSemiShortestPathTest.cpp

@@ -473,7 +473,7 @@ PlanNode* GoValidator::buildJoinDstProps(PlanNode* projectSrcDstProps) {
         new std::string(joinDstVidColName_));
     auto* probeKey = objPool->makeAndAdd<VariablePropertyExpression>(
         new std::string(project->outputVar()), new std::string(vidColName));
-    auto joinDst = DataJoin::make(qctx_, project,
+    auto joinDst = InnerJoin::make(qctx_, project,
             {projectSrcDstProps->outputVar(), ExecutionContext::kLatestVersion},
             {project->outputVar(), ExecutionContext::kLatestVersion},
             {joinHashKey}, {probeKey});
@@ -499,7 +499,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
         auto* probeKey = pool->add(new VariablePropertyExpression(
             new std::string(projectFromJoin->outputVar()), new std::string(dstVidColName_)));
         auto* join =
-            DataJoin::make(qctx_,
+            InnerJoin::make(qctx_,
                            dependencyForJoinInput,
                            {dependencyForJoinInput->outputVar(), ExecutionContext::kLatestVersion},
                            {projectFromJoin->outputVar(),
@@ -524,7 +524,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
                                                            : kVid)));
     std::string varName = from_.fromType == kPipe ? inputVarName_ : from_.userDefinedVarName;
     auto* joinInput =
-        DataJoin::make(qctx_, dependencyForJoinInput,
+        InnerJoin::make(qctx_, dependencyForJoinInput,
                         {dependencyForJoinInput->outputVar(),
                         ExecutionContext::kLatestVersion},
                         {varName,
@@ -555,7 +555,7 @@ PlanNode* GoValidator::traceToStartVid(PlanNode* projectLeftVarForJoin,
     auto probeKey = new VariablePropertyExpression(
         new std::string(dedupDstVids->outputVar()), new std::string(srcVidColName_));
     pool->add(probeKey);
-    auto* join = DataJoin::make(
+    auto* join = InnerJoin::make(
         qctx_, dedupDstVids,
         {projectLeftVarForJoin->outputVar(),
             ExecutionContext::kLatestVersion},

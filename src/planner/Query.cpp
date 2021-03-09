@@ -271,7 +271,7 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
     return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> DataJoin::explain() const {
+std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
     auto desc = SingleDependencyNode::explain();
     folly::dynamic inputVar = folly::dynamic::object();
     inputVar.insert("leftVar", util::toJson(leftVar_));
@@ -279,6 +279,19 @@ std::unique_ptr<PlanNodeDescription> DataJoin::explain() const {
     addDescription("inputVar", folly::toJson(inputVar), desc.get());
     addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
     addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+    addDescription("kind", "LeftJoin", desc.get());
+    return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    folly::dynamic inputVar = folly::dynamic::object();
+    inputVar.insert("leftVar", util::toJson(leftVar_));
+    inputVar.insert("rightVar", util::toJson(rightVar_));
+    addDescription("inputVar", folly::toJson(inputVar), desc.get());
+    addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
+    addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+    addDescription("kind", "InnerJoin", desc.get());
     return desc;
 }
 

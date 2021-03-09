@@ -38,7 +38,7 @@ PlanNode* InnerJoinStrategy::joinDataSet(const PlanNode* left, const PlanNode* r
 
     qctx_->objPool()->add(buildExpr);
     qctx_->objPool()->add(probeExpr);
-    auto join = DataJoin::make(qctx_,
+    auto join = InnerJoin::make(qctx_,
                                const_cast<PlanNode*>(right),
                                {left->outputVar(), 0},
                                {right->outputVar(), 0},

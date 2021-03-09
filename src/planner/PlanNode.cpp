@@ -179,8 +179,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "ShowBalance";
         case Kind::kSubmitJob:
             return "SubmitJob";
-        case Kind::kDataJoin:
-            return "DataJoin";
+        case Kind::kLeftJoin:
+            return "LeftJoin";
+        case Kind::kInnerJoin:
+            return "InnerJoin";
         case Kind::kDeleteVertices:
             return "DeleteVertices";
         case Kind::kDeleteEdges:
