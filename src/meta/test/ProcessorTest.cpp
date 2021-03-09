@@ -47,6 +47,7 @@
 #include "meta/processors/admin/CreateBackupProcessor.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 
@@ -78,7 +79,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+        sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
         cpp2::ListHostsReq req;
         req.set_type(cpp2::ListHostType::STORAGE);
         auto* processor = ListHostsProcessor::instance(kv.get());

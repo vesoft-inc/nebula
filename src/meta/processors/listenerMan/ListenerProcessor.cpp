@@ -8,6 +8,7 @@
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
@@ -92,7 +93,9 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
     }
 
     auto activeHosts = ActiveHostsMan::getActiveHosts(
-        kvstore_, FLAGS_heartbeat_interval_secs * 2, cpp2::HostRole::LISTENER);
+        kvstore_,
+        FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor,
+        cpp2::HostRole::LISTENER);
     decltype(resp_.listeners) listeners;
     while (iter->valid()) {
         cpp2::ListenerInfo listener;

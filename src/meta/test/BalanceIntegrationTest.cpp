@@ -17,6 +17,7 @@
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(raft_heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
@@ -194,7 +195,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         metaClients.back()->stop();
         serverContexts.back().reset();
         // Wait for the host be expired on meta.
-        sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+        sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     }
 
     LOG(INFO) << "Let's balance";

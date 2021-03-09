@@ -16,6 +16,7 @@
 
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 DECLARE_double(leader_balance_deviation);
 
 namespace nebula {
@@ -988,7 +989,7 @@ TEST(BalanceTest, NormalTest) {
     auto ret = balancer.balance();
     ASSERT_EQ(cpp2::ErrorCode::E_BALANCED, error(ret));
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     ret = balancer.balance();
@@ -1052,7 +1053,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
     NiceMock<MockAdminClient> client;
     Balancer balancer(kv, &client);
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
     // If {"2", 2} and {"3", 3} are both dead, minority hosts for some part are alive,
     // it would lead to a fail
@@ -1099,7 +1100,7 @@ TEST(BalanceTest, MockReplaceMachineTest) {
     TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
     LOG(INFO) << "Now, we want to replace host {2, 2} with {3, 3}";
     // Because for all parts majority hosts still alive, we could balance
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     // {2, 2} should be offline now
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}});
     auto ret = balancer.balance();
@@ -1165,7 +1166,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
     TestUtils::createSomeHosts(kv);
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
 
@@ -1196,7 +1197,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
                       BalanceTaskResult::FAILED,
                       partCount, 6);
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     LOG(INFO) << "Now let's try to recovery it. Sinc eall host would be regarded as offline, "
               << "so all task will be invalid";
     ret = balancer.balance();
@@ -1234,7 +1235,7 @@ TEST(BalanceTest, RecoveryTest) {
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     Balancer balancer(kv, &client);
@@ -1275,7 +1276,7 @@ TEST(BalanceTest, StopPlanTest) {
     TestUtils::assembleSpace(kv, 1, 8, 3, 4);
 
     // {3, 3} is lost for now
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
 
     DefaultValue<folly::Future<Status>>::SetFactory([] {
@@ -1362,7 +1363,7 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
         .Times(AtLeast(12))
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-    sleep(FLAGS_heartbeat_interval_secs * 2 + 1);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     Balancer balancer(kv, &client);
     auto ret = balancer.balance();

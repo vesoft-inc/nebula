@@ -12,6 +12,7 @@
 #include "meta/test/TestUtils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
@@ -82,7 +83,7 @@ TEST(ActiveHostsManTest, NormalTest) {
         ASSERT_EQ(3, i);
     }
 
-    sleep(3);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 }
 
@@ -130,7 +131,7 @@ TEST(ActiveHostsManTest, LeaderTest) {
         ASSERT_EQ(1, i);
     }
 
-    sleep(3);
+    sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 }
 
