@@ -20,13 +20,13 @@ public:
     folly::Future<Status> execute() override;
 
 private:
-    template<typename T, typename U>
+    template<typename U>
     void executeTopN(Iterator *iter);
 
     int64_t offset_;
     int64_t maxCount_;
     int64_t heapSize_;
-    std::function<bool(const LogicalRow&, const LogicalRow&)> comparator_;
+    std::function<bool(const Row&, const Row&)> comparator_;
 };
 
 }   // namespace graph

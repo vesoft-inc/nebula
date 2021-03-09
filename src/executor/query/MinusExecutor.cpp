@@ -22,7 +22,7 @@ folly::Future<Status> MinusExecutor::execute() {
     auto lIter = getLeftInputDataIter();
     auto rIter = getRightInputDataIter();
 
-    std::unordered_set<const LogicalRow *> hashSet;
+    std::unordered_set<const Row *> hashSet;
     for (; rIter->valid(); rIter->next()) {
         hashSet.insert(rIter->row());
         // TODO: should test duplicate rows

@@ -18,19 +18,15 @@ folly::Future<Status> TopNExecutor::execute() {
     if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal error: nullptr iterator in topn executor");
     }
-    if (UNLIKELY(iter->isDefaultIter())) {
-        std::string errMsg = "Internal error: Sort executor does not supported DefaultIter";
-        LOG(ERROR) << errMsg;
-        return Status::Error(errMsg);
-    }
-    if (UNLIKELY(iter->isGetNeighborsIter())) {
-        std::string errMsg = "Internal error: TopN executor does not supported GetNeighborsIter";
-        LOG(ERROR) << errMsg;
-        return Status::Error(errMsg);
+    if (UNLIKELY(!iter->isSequentialIter())) {
+        std::stringstream ss;
+        ss << "Internal error: Sort executor does not supported " << iter->kind();
+        LOG(ERROR) << ss.str();
+        return Status::Error(ss.str());
     }
 
     auto &factors = topn->factors();
-    comparator_ = [&factors] (const LogicalRow &lhs, const LogicalRow &rhs) {
+    comparator_ = [&factors] (const Row &lhs, const Row &rhs) {
         for (auto &item : factors) {
             auto index = item.first;
             auto orderType = item.second;
@@ -65,21 +61,15 @@ folly::Future<Status> TopNExecutor::execute() {
         return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
     }
 
-    if (iter->isSequentialIter()) {
-        executeTopN<SequentialIter::SeqLogicalRow, SequentialIter>(iter.get());
-    } else if (iter->isJoinIter()) {
-        executeTopN<JoinIter::JoinLogicalRow, JoinIter>(iter.get());
-    } else if (iter->isPropIter()) {
-        executeTopN<PropIter::PropLogicalRow, PropIter>(iter.get());
-    }
+    executeTopN<SequentialIter>(iter.get());
     iter->eraseRange(maxCount_, size);
     return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
 }
 
-template<typename T, typename U>
+template<typename U>
 void TopNExecutor::executeTopN(Iterator *iter) {
     auto uIter = static_cast<U*>(iter);
-    std::vector<T> heap(uIter->begin(), uIter->begin()+heapSize_);
+    std::vector<Row> heap(uIter->begin(), uIter->begin()+heapSize_);
     std::make_heap(heap.begin(), heap.end(), comparator_);
     auto it = uIter->begin() + heapSize_;
     while (it != uIter->end()) {

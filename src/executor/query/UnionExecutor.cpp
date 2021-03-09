@@ -8,6 +8,7 @@
 
 #include "context/ExecutionContext.h"
 #include "util/ScopedTimer.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -18,9 +19,23 @@ folly::Future<Status> UnionExecutor::execute() {
     NG_RETURN_IF_ERROR(checkInputDataSets());
     auto left = getLeftInputDataIter();
     auto right = getRightInputDataIter();
-    auto value = left->valuePtr();
-    auto iter = std::make_unique<SequentialIter>(std::move(left), std::move(right));
-    return finish(ResultBuilder().value(value).iter(std::move(iter)).finish());
+
+    DataSet ds;
+    ds.colNames = std::move(colNames_);
+
+    DCHECK(left->isSequentialIter());
+    auto leftIter = static_cast<SequentialIter*>(left.get());
+    ds.rows.insert(ds.rows.end(),
+                   std::make_move_iterator(leftIter->begin()),
+                   std::make_move_iterator(leftIter->end()));
+
+    DCHECK(right->isSequentialIter());
+    auto rightIter = static_cast<SequentialIter*>(right.get());
+    ds.rows.insert(ds.rows.end(),
+                   std::make_move_iterator(rightIter->begin()),
+                   std::make_move_iterator(rightIter->end()));
+
+    return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
 }   // namespace graph

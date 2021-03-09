@@ -71,16 +71,7 @@ TEST_F(SetExecutorTest, TestUnionAll) {
         auto& result = qctx_->ectx()->getResult(unionNode->outputVar());
         EXPECT_TRUE(result.value().isDataSet());
 
-        DataSet resultDS;
-        resultDS.colNames = result.value().getDataSet().colNames;
-        for (auto iter = result.iter(); iter->valid(); iter->next()) {
-            Row row;
-            for (auto& col : resultDS.colNames) {
-                row.values.emplace_back(iter->getColumn(col));
-            }
-            resultDS.emplace_back(std::move(row));
-        }
-
+        DataSet resultDS = result.value().getDataSet();
         EXPECT_TRUE(diffDataSet(resultDS, expected)) << "\nResult dataset: \n"
                                                      << resultDS << "Expected dataset: \n"
                                                      << expected;

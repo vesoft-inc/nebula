@@ -24,8 +24,7 @@ public:
 private:
     folly::Future<Status> join();
 
-    void probe(const std::vector<Expression*>& probeKeys, Iterator* probeiter,
-               JoinIter* resultIter);
+    DataSet probe(const std::vector<Expression*>& probeKeys, Iterator* probeIter);
 
 private:
     size_t rightColSize_{0};

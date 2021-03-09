@@ -132,7 +132,7 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
     DataSet ds;
     ds.colNames = std::move(colNames_);
     DCHECK(!ds.colNames.empty());
-    std::unordered_set<const LogicalRow*> unique;
+    std::unordered_set<const Row*> unique;
     // itersHolder keep life cycle of iters util this method return.
     std::vector<std::unique_ptr<Iterator>> itersHolder;
     for (auto& var : vars) {

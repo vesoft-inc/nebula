@@ -47,6 +47,7 @@ Status SetExecutor::checkInputDataSets() {
     auto& rds = rightData->getDataSet();
 
     if (LIKELY(lds.colNames == rds.colNames)) {
+        colNames_ = lds.colNames;
         return Status::OK();
     }
 

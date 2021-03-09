@@ -26,6 +26,8 @@ public:
 protected:
     SetExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
         : Executor(name, node, qctx) {}
+
+    std::vector<std::string> colNames_;
 };
 
 }   // namespace graph

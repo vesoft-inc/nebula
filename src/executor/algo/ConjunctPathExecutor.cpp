@@ -295,16 +295,6 @@ void ConjunctPathExecutor::delPathFromConditionalVar(const Value& start, const V
             iter->next();
         }
     }
-
-    DataSet ds;
-    if (iter->size() == 0) {
-        Row row;
-        row.values.emplace_back("all path are found");
-        ds.rows.emplace_back(std::move(row));
-    }
-    qctx_->ectx()->setResult(
-        conditionalVar_,
-        ResultBuilder().value(Value(std::move(ds))).iter(std::move(iter)).finish());
 }
 
 folly::Future<Status> ConjunctPathExecutor::allPaths() {

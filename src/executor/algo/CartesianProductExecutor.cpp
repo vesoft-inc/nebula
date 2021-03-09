@@ -15,64 +15,40 @@ folly::Future<Status> CartesianProductExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto* cartesianProduct = asNode<CartesianProduct>(node());
-    colNames_ = cartesianProduct->allColNames();
     auto vars = cartesianProduct->inputVars();
     if (vars.size() < 2) {
         return Status::Error("vars's size : %zu, must be greater than 2", vars.size());
     }
-    std::vector<std::string> emptyCol;
-    auto leftIter = std::make_unique<JoinIter>(emptyCol);
-    for (size_t i = 0; i < vars.size(); ++i) {
-        auto rightIter = ectx_->getResult(vars[i]).iter();
-        DCHECK(!!rightIter);
-        VLOG(1) << "Vars[" << i << "] : " << vars[i];
-        if (rightIter->isDefaultIter() || rightIter->isGetNeighborsIter()) {
-            std::stringstream ss;
-            ss << "CartesianProductExecutor does not support" << rightIter->kind();
-            return Status::Error(ss.str());
-        }
-        std::vector<std::string> colNames = leftIter->colNames();
-        colNames.reserve(colNames.size() + colNames_[i].size());
-        for (auto& name : colNames_[i]) {
-            colNames.emplace_back(name);
-        }
-        auto joinIter = std::make_unique<JoinIter>(std::move(colNames));
-        joinIter->joinIndex(leftIter.get(), rightIter.get());
-        if (i == 0) {
-            initJoinIter(joinIter.get(), rightIter.get());
-        } else {
-            doCartesianProduct(leftIter.get(), rightIter.get(), joinIter.get());
-        }
-
-        leftIter.reset(joinIter.release());
+    DataSet result;
+    auto* lds = const_cast<DataSet*>(&ectx_->getResult(vars[0]).value().getDataSet());
+    for (size_t i = 1; i < vars.size(); ++i) {
+        const auto& rds = ectx_->getResult(vars[i]).value().getDataSet();
+        DataSet ds;
+        doCartesianProduct(*lds, rds, ds);
+        result = std::move(ds);
+        lds = &result;
     }
-    return finish(ResultBuilder().value(DataSet()).iter(std::move(leftIter)).finish());
+    for (auto& cols : cartesianProduct->allColNames()) {
+        result.colNames.reserve(result.colNames.size() + cols.size());
+        result.colNames.insert(result.colNames.end(),
+                               std::make_move_iterator(cols.begin()),
+                               std::make_move_iterator(cols.end()));
+    }
+    return finish(ResultBuilder().value(Value(std::move(result))).finish());
 }
 
-void CartesianProductExecutor::initJoinIter(JoinIter* joinIter, Iterator* rightIter) {
-    for (; rightIter->valid(); rightIter->next()) {
-        auto size = rightIter->row()->size();
-        JoinIter::JoinLogicalRow newRow(
-            rightIter->row()->segments(), size, &joinIter->getColIdxIndices());
-        joinIter->addRow(std::move(newRow));
-    }
-}
-
-void CartesianProductExecutor::doCartesianProduct(Iterator* leftIter,
-                                                  Iterator* rightIter,
-                                                  JoinIter* joinIter) {
-    for (; leftIter->valid(); leftIter->next()) {
-        auto& lSegs = leftIter->row()->segments();
-        for (; rightIter->valid(); rightIter->next()) {
-            std::vector<const Row*> values;
-            auto& rSegs = rightIter->row()->segments();
-            values.insert(values.end(), lSegs.begin(), lSegs.end());
-            values.insert(values.end(), rSegs.begin(), rSegs.end());
-            auto size = leftIter->row()->size() + rightIter->row()->size();
-            JoinIter::JoinLogicalRow newRow(std::move(values), size, &joinIter->getColIdxIndices());
-            joinIter->addRow(std::move(newRow));
+void CartesianProductExecutor::doCartesianProduct(const DataSet& lds,
+                                                  const DataSet& rds,
+                                                  DataSet& result) {
+    result.rows.reserve(lds.size() * rds.size());
+    for (auto i = lds.begin(); i < lds.end(); ++i) {
+        for (auto j = rds.begin(); j < rds.end(); ++j) {
+            Row row;
+            row.reserve(i->size() + j->size());
+            row.values.insert(row.values.end(), i->values.begin(), i->values.end());
+            row.values.insert(row.values.end(), j->values.begin(), j->values.end());
+            result.rows.emplace_back(std::move(row));
         }
-        rightIter->reset();
     }
 }
 

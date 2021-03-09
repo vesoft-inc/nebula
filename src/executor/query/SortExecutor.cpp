@@ -19,19 +19,15 @@ folly::Future<Status> SortExecutor::execute() {
     if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal error: nullptr iterator in sort executor");
     }
-    if (UNLIKELY(iter->isDefaultIter())) {
-        std::string errMsg = "Internal error: Sort executor does not supported DefaultIter";
-        LOG(ERROR) << errMsg;
-        return Status::Error(errMsg);
-    }
-    if (UNLIKELY(iter->isGetNeighborsIter())) {
-        std::string errMsg = "Internal error: Sort executor does not supported GetNeighborsIter";
-        LOG(ERROR) << errMsg;
-        return Status::Error(errMsg);
+    if (UNLIKELY(!iter->isSequentialIter())) {
+        std::stringstream ss;
+        ss << "Internal error: Sort executor does not supported " << iter->kind();
+        LOG(ERROR) << ss.str();
+        return Status::Error(ss.str());
     }
 
     auto &factors = sort->factors();
-    auto comparator = [&factors] (const LogicalRow &lhs, const LogicalRow &rhs) {
+    auto comparator = [&factors] (const Row &lhs, const Row &rhs) {
         for (auto &item : factors) {
             auto index = item.first;
             auto orderType = item.second;
@@ -48,16 +44,8 @@ folly::Future<Status> SortExecutor::execute() {
         return false;
     };
 
-    if (iter->isSequentialIter()) {
-        auto seqIter = static_cast<SequentialIter*>(iter.get());
-        std::sort(seqIter->begin(), seqIter->end(), comparator);
-    } else if (iter->isJoinIter()) {
-        auto joinIter = static_cast<JoinIter*>(iter.get());
-        std::sort(joinIter->begin(), joinIter->end(), comparator);
-    } else if (iter->isPropIter()) {
-        auto propIter = static_cast<PropIter*>(iter.get());
-        std::sort(propIter->begin(), propIter->end(), comparator);
-    }
+    auto seqIter = static_cast<SequentialIter*>(iter.get());
+    std::sort(seqIter->begin(), seqIter->end(), comparator);
     return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
 }
 

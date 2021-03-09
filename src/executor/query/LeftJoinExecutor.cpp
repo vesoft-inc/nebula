@@ -26,25 +26,22 @@ Status LeftJoinExecutor::close() {
 
 folly::Future<Status> LeftJoinExecutor::join() {
     auto* join = asNode<Join>(node());
-    auto lhsIter = ectx_->getVersionedResult(join->leftVar().first, join->leftVar().second).iter();
     auto& rhsResult = ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second);
     rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
-    auto rhsIter = rhsResult.iter();
 
-    auto resultIter = std::make_unique<JoinIter>(join->colNames());
-    resultIter->joinIndex(lhsIter.get(), rhsIter.get());
-    hashTable_.reserve(rhsIter->size() == 0 ? 1 : rhsIter->size());
-    resultIter->reserve(lhsIter->size());
-    if (!lhsIter->empty()) {
-        buildHashTable(join->probeKeys(), rhsIter.get());
-        probe(join->hashKeys(), lhsIter.get(), resultIter.get());
+    hashTable_.reserve(rhsIter_->size() == 0 ? 1 : rhsIter_->size());
+    DataSet result;
+    if (!lhsIter_->empty()) {
+        buildHashTable(join->probeKeys(), rhsIter_.get());
+        result = probe(join->hashKeys(), lhsIter_.get());
     }
-    return finish(ResultBuilder().iter(std::move(resultIter)).finish());
+    result.colNames = join->colNames();
+    return finish(ResultBuilder().value(Value(std::move(result))).finish());
 }
 
-void LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
-                             Iterator* probeIter,
-                             JoinIter* resultIter) {
+DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                             Iterator* probeIter) {
+    DataSet ds;
     QueryExpressionContext ctx(ectx_);
     for (; probeIter->valid(); probeIter->next()) {
         List list;
@@ -56,33 +53,28 @@ void LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
 
         auto range = hashTable_.find(list);
         if (range == hashTable_.end()) {
-            std::vector<const Row*> values;
-            auto& lSegs = probeIter->row()->segments();
-            values.reserve(lSegs.size() + 1);
-            values.insert(values.end(), lSegs.begin(), lSegs.end());
-            Row* emptyRow = qctx_->objPool()->add(new List(std::vector<Value>(rightColSize_)));
-            values.insert(values.end(), emptyRow);
-            size_t size = probeIter->row()->size() + rightColSize_;
-            JoinIter::JoinLogicalRow newRow(
-                std::move(values), size, &resultIter->getColIdxIndices());
-            VLOG(1) << node()->outputVar() << " : " << newRow;
-            resultIter->addRow(std::move(newRow));
+            auto& lRow = *probeIter->row();
+            auto lRowSize = lRow.size();
+            Row newRow;
+            newRow.reserve(colSize_);
+            auto& values = newRow.values;
+            values.insert(values.end(), lRow.values.begin(), lRow.values.end());
+            values.insert(values.end(), colSize_ - lRowSize, Value::kNullValue);
+            ds.rows.emplace_back(std::move(newRow));
         } else {
             for (auto* row : range->second) {
-                std::vector<const Row*> values;
-                auto& lSegs = probeIter->row()->segments();
-                auto& rSegs = row->segments();
-                values.reserve(lSegs.size() + rSegs.size());
-                values.insert(values.end(), lSegs.begin(), lSegs.end());
-                values.insert(values.end(), rSegs.begin(), rSegs.end());
-                size_t size = row->size() + probeIter->row()->size();
-                JoinIter::JoinLogicalRow newRow(
-                    std::move(values), size, &resultIter->getColIdxIndices());
-                VLOG(1) << node()->outputVar() << " : " << newRow;
-                resultIter->addRow(std::move(newRow));
+                auto& lRow = *probeIter->row();
+                auto& rRow = *row;
+                Row newRow;
+                auto& values = newRow.values;
+                values.reserve(lRow.size() + rRow.size());
+                values.insert(values.end(), lRow.values.begin(), lRow.values.end());
+                values.insert(values.end(), rRow.values.begin(), rRow.values.end());
+                ds.rows.emplace_back(std::move(newRow));
             }
         }
     }
+    return ds;
 }
 }   // namespace graph
 }   // namespace nebula

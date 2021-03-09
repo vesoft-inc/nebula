@@ -23,9 +23,7 @@ public:
 
 private:
     folly::Future<Status> join();
-    void probe(const std::vector<Expression*>& probeKeys,
-               Iterator* probeiter,
-               JoinIter* resultIter);
+    DataSet probe(const std::vector<Expression*>& probeKeys, Iterator* probeiter);
 
 private:
     bool exchange_{false};

@@ -456,7 +456,7 @@ Expression* FindPathValidator::buildMultiPairLoopCondition(uint32_t steps,
     auto* args = new ArgumentList();
     args->addArgument(std::make_unique<VariableExpression>(new std::string(conditionalVar)));
     auto* notAllPathFind =
-        new RelationalExpression(Expression::Kind::kRelEQ,
+        new RelationalExpression(Expression::Kind::kRelGT,
                                  new FunctionCallExpression(new std::string("size"), args),
                                  new ConstantExpression(0));
 
