@@ -5,6 +5,7 @@
  */
 
 #include "parser/AdminSentences.h"
+#include <sstream>
 #include "util/SchemaUtil.h"
 
 namespace nebula {
@@ -68,9 +69,12 @@ std::string SpaceOptItem::toString() const {
             return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
         case COLLATE:
             return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
-        default:
-            FLOG_FATAL("Space parameter illegal");
+        case ATOMIC_EDGE:
+            return folly::stringPrintf("atomic_edge = %s", getAtomicEdge() ? "true" : "false");
+        case GROUP_NAME:
+            return "";
     }
+    DLOG(FATAL) << "Space parameter illegal";
     return "Unknown";
 }
 
@@ -98,6 +102,10 @@ std::string CreateSpaceSentence::toString() const {
         buf += spaceOpts_->toString();
         buf += ")";
     }
+    if (groupName_ != nullptr) {
+        buf += " ON ";
+        buf += *groupName_;
+    }
     return buf;
 }
 
@@ -112,15 +120,39 @@ std::string DescribeSpaceSentence::toString() const {
 }
 
 std::string ConfigRowItem::toString() const {
-    return "";
+    std::string buf;
+    buf.reserve(128);
+    if (module_ != meta::cpp2::ConfigModule::ALL) {
+        buf += meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_);
+        buf += ":";
+    }
+    if (name_ != nullptr) {
+        buf += *name_;
+    }
+    if (value_ != nullptr) {
+        buf += " = ";
+        buf += value_->toString();
+    }
+    if (updateItems_ != nullptr) {
+        buf += " = ";
+        buf += "{";
+        buf += updateItems_->toString();
+        buf += "}";
+    }
+    return buf;
 }
 
 std::string ShowConfigsSentence::toString() const {
-    return std::string("SHOW CONFIGS ") + configItem_->toString();
+    std::string buf;
+    buf += "SHOW CONFIGS ";
+    if (configItem_ != nullptr) {
+        configItem_->toString();
+    }
+    return buf;
 }
 
 std::string SetConfigSentence::toString() const {
-    return std::string("SET CONFIGS ") + configItem_->toString();
+    return std::string("UPDATE CONFIGS ") + configItem_->toString();
 }
 
 std::string GetConfigSentence::toString() const {
@@ -129,11 +161,31 @@ std::string GetConfigSentence::toString() const {
 
 std::string BalanceSentence::toString() const {
     switch (subType_) {
+        case SubType::kUnknown:
+            return "Unknown";
         case SubType::kLeader:
-            return std::string("BALANCE LEADER");
-        default:
-            FLOG_FATAL("Type illegal");
+            return "BALANCE LEADER";
+        case SubType::kData: {
+            if (hostDel_ == nullptr) {
+                return "BALANCE DATA";
+            } else {
+                std::stringstream ss;
+                ss << "BALANCE DATA REMOVE ";
+                ss << hostDel_->toString();
+                return ss.str();
+            }
+        }
+        case SubType::kDataStop:
+            return "BALANCE DATA STOP";
+        case SubType::kDataReset:
+            return "BALANCE DATA RESET PLAN";
+        case SubType::kShowBalancePlan: {
+            std::stringstream ss;
+            ss << "BALANCE DATA " << balanceId_;
+            return ss.str();
+        }
     }
+    DLOG(FATAL) << "Type illegal";
     return "Unknown";
 }
 
@@ -141,7 +193,9 @@ std::string HostList::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &host : hosts_) {
+        buf += "\"";
         buf += host->host;
+        buf += "\"";
         buf += ":";
         buf += std::to_string(host->port);
         buf += ",";
@@ -161,11 +215,34 @@ std::string DropSnapshotSentence::toString() const {
 }
 
 std::string AddListenerSentence::toString() const {
-    return "ADD LISTENER";
+    std::string buf;
+    buf.reserve(64);
+    buf += "ADD LISTENER ";
+    switch (type_) {
+        case meta::cpp2::ListenerType::ELASTICSEARCH:
+            buf += "ELASTICSEARCH ";
+            break;
+        case meta::cpp2::ListenerType::UNKNOWN:
+            LOG(FATAL) << "Unknown listener type.";
+            break;
+    }
+    buf += listeners_->toString();
+    return buf;
 }
 
 std::string RemoveListenerSentence::toString() const {
-    return "REMOVE LISTENER";
+    std::string buf;
+    buf.reserve(64);
+    buf += "REMOVE LISTENER ";
+    switch (type_) {
+        case meta::cpp2::ListenerType::ELASTICSEARCH:
+            buf += "ELASTICSEARCH ";
+            break;
+        case meta::cpp2::ListenerType::UNKNOWN:
+            DLOG(FATAL) << "Unknown listener type.";
+            break;
+    }
+    return buf;
 }
 
 std::string ShowListenerSentence::toString() const {

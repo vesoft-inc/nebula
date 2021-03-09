@@ -195,18 +195,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
                 LOG(ERROR) << "Internal error: the default value is wrong expression.";
                 continue;
             }
-            if (expr->kind() == Expression::Kind::kConstant) {
-                QueryExpressionContext ctx;
-                auto& value = expr->eval(ctx(nullptr));
-                auto toStr = value.toString();
-                if (value.isNumeric() || value.isBool()) {
-                    createStr += " DEFAULT " + toStr;
-                } else {
-                    createStr += " DEFAULT \"" + toStr + "\"";
-                }
-            } else {
-                createStr += " DEFAULT " + expr->toString();
-            }
+            createStr += " DEFAULT " + expr->toString();
         }
         createStr += ",\n";
     }

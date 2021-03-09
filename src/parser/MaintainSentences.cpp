@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <string>
 #include "common/base/Base.h"
 #include "parser/MaintainSentences.h"
 
@@ -20,7 +21,7 @@ std::string SchemaPropItem::toString() const {
             return folly::stringPrintf("ttl_duration = %ld",
                                        boost::get<int64_t>(propValue_));
         case TTL_COL:
-            return folly::stringPrintf("ttl_col = %s",
+            return folly::stringPrintf("ttl_col = \"%s\"",
                                        boost::get<std::string>(propValue_).c_str());
         default:
             FLOG_FATAL("Schema property type illegal");
@@ -43,25 +44,53 @@ std::string SchemaPropItem::toString() const {
     return buf;
 }
 
-
-std::string CreateTagSentence::toString() const {
+std::string ColumnSpecification::toString() const {
     std::string buf;
-    buf.reserve(256);
-    buf += "CREATE TAG ";
+    buf.reserve(128);
+    buf += "`";
     buf += *name_;
-    buf += " (";
-    auto colSpecs = columns_->columnSpecs();
-    for (auto *col : colSpecs) {
-        buf += *col->name();
-        buf += " ";
-        std::stringstream ss;
-        ss << col->type();
-        buf += ss.str();
+    buf += "` ";
+    if (meta::cpp2::PropertyType::FIXED_STRING == type_) {
+        buf += "FIXED_STRING(";
+        buf += std::to_string(typeLen_);
+        buf += ")";
+    } else {
+        buf += meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(type_);
+    }
+    if (isNull_) {
+        buf += " NULL";
+    } else {
+        buf += " NOT NULL";
+    }
+    if (defaultValue_ != nullptr) {
+        buf += " DEFAULT ";
+        buf += defaultValue_->toString();
+    }
+    return buf;
+}
+
+std::string ColumnSpecificationList::toString() const {
+    std::string buf;
+    buf.reserve(128);
+    const auto &colSpecs = columnSpecs();
+    for (auto &col : colSpecs) {
+        buf += col->toString();
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
+    return buf;
+}
+
+std::string CreateTagSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "CREATE TAG ";
+    buf += "`";
+    buf += *name_;
+    buf += "` (";
+    buf += columns_->toString();
     buf += ")";
     if (schemaProps_ != nullptr) {
         buf +=  schemaProps_->toString();
@@ -74,20 +103,10 @@ std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE EDGE ";
+    buf += "`";
     buf += *name_;
-    buf += " (";
-    auto colSpecs = columns_->columnSpecs();
-    for (auto &col : colSpecs) {
-        buf += *col->name();
-        buf += " ";
-        std::stringstream ss;
-        ss << col->type();
-        buf += ss.str();
-        buf += ",";
-    }
-    if (!colSpecs.empty()) {
-        buf.resize(buf.size() - 1);
-    }
+    buf += "` (";
+    buf += columns_->toString();
     buf += ")";
     if (schemaProps_ != nullptr) {
         buf +=  schemaProps_->toString();
@@ -101,30 +120,29 @@ std::string AlterSchemaOptItem::toString() const {
     switch (optType_) {
         case ADD:
             buf += "ADD";
+            buf += " (";
+            if (columns_ != nullptr) {
+                buf += columns_->toString();
+            }
+            buf += ")";
             break;
         case CHANGE:
             buf += "CHANGE";
+            buf += " (";
+            if (columns_ != nullptr) {
+                buf += columns_->toString();
+            }
+            buf += ")";
             break;
         case DROP:
             buf += "DROP";
+            buf += " (";
+            if (colNames_ != nullptr) {
+                buf += colNames_->toString();
+            }
+            buf += ")";
             break;
     }
-    buf += " (";
-    if (columns_ != nullptr) {
-        auto colSpecs = columns_->columnSpecs();
-        for (auto &col : colSpecs) {
-            buf += *col->name();
-            buf += " ";
-            std::stringstream ss;
-            ss << col->type();
-            buf += ss.str();
-            buf += ",";
-        }
-        if (!colSpecs.empty()) {
-            buf.resize(buf.size() - 1);
-        }
-    }
-    buf += ")";
     return buf;
 }
 
@@ -152,7 +170,7 @@ std::string AlterSchemaOptList::toString() const {
         buf += ",";
     }
     if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
+        buf.pop_back();
     }
     return buf;
 }
@@ -164,10 +182,8 @@ std::string AlterTagSentence::toString() const {
     buf += "ALTER TAG ";
     buf += *name_;
     if (opts_ != nullptr) {
-        for (auto &schemaOpt : opts_->alterSchemaItems()) {
-            buf += " ";
-            buf += schemaOpt->toString();
-        }
+        buf += " ";
+        buf += opts_->toString();
     }
     if (schemaProps_ != nullptr) {
         buf +=  schemaProps_->toString();
@@ -182,10 +198,8 @@ std::string AlterEdgeSentence::toString() const {
     buf += "ALTER EDGE ";
     buf += *name_;
     if (opts_ != nullptr) {
-        for (auto &schemaOpt : opts_->alterSchemaItems()) {
-            buf += " ";
-            buf += schemaOpt->toString();
-        }
+        buf += " ";
+        buf += opts_->toString();
     }
     if (schemaProps_ != nullptr) {
         buf +=  schemaProps_->toString();
@@ -319,11 +333,22 @@ std::string ShowCreateEdgeIndexSentence::toString() const {
 }
 
 std::string AddGroupSentence::toString() const {
-    return folly::stringPrintf("ADD GROUP %s", groupName_.get()->c_str());
+    std::string buf;
+    buf.reserve(64);
+    buf += "ADD GROUP ";
+    buf += *groupName_;
+    buf += " ";
+    buf += zoneNames_->toString();
+    return buf;
 }
 
 std::string AddZoneSentence::toString() const {
-    return folly::stringPrintf("ADD ZONE %s", zoneName_.get()->c_str());
+    std::string buf;
+    buf.reserve(128);
+    buf += "ADD ZONE ";
+    buf += *zoneName_;
+    buf += hosts_->toString();
+    return buf;
 }
 
 std::string DropGroupSentence::toString() const {
@@ -357,7 +382,13 @@ std::string AddZoneIntoGroupSentence::toString() const {
 }
 
 std::string AddHostIntoZoneSentence::toString() const {
-    return folly::stringPrintf("Add Host Into Zone %s", zoneName_.get()->c_str());
+    std::string buf;
+    buf.reserve(64);
+    buf += "ADD HOST ";
+    buf += address_->toString();
+    buf += " INTO ZONE ";
+    buf += *zoneName_;
+    return buf;
 }
 
 std::string DropZoneFromGroupSentence::toString() const {
@@ -367,7 +398,13 @@ std::string DropZoneFromGroupSentence::toString() const {
 }
 
 std::string DropHostFromZoneSentence::toString() const {
-    return folly::stringPrintf("Drop Host From Zone %s", zoneName_.get()->c_str());
+    std::string buf;
+    buf.reserve(64);
+    buf += "DROP HOST ";
+    buf += address_->toString();
+    buf += " FROM ZONE ";
+    buf += *zoneName_;
+    return buf;
 }
 
 }   // namespace nebula

@@ -16,14 +16,14 @@ Feature: Yield Sentence
       YIELD 1+1, (int)3.14, (string)(1+1), (string)true,"1+1"
       """
     Then the result should be, in any order:
-      | (1+1) | (INT)3.14 | (STRING)(1+1) | (STRING)true | 1+1   |
+      | (1+1) | (INT)3.14 | (STRING)(1+1) | (STRING)true | "1+1" |
       | 2     | 3         | "2"           | "true"       | "1+1" |
     When executing query:
       """
       YIELD "Hello", hash("Hello")
       """
     Then the result should be, in any order:
-      | Hello   | hash(Hello)         |
+      | "Hello" | hash("Hello")       |
       | "Hello" | 2275118702903107253 |
 
   Scenario: HashCall
@@ -32,7 +32,7 @@ Feature: Yield Sentence
       YIELD hash("Boris")
       """
     Then the result should be, in any order:
-      | hash(Boris)         |
+      | hash("Boris")       |
       | 9126854228122744212 |
     When executing query:
       """

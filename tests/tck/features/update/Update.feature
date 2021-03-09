@@ -257,7 +257,7 @@ Feature: Update string vid of vertex and edge
       WHEN "xyz"
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
-    Then a SemanticError should be raised at runtime: `xyz', expected Boolean, but was `STRING'
+    Then a SemanticError should be raised at runtime: `"xyz"', expected Boolean, but was `STRING'
     When executing query:
       """
       UPDATE VERTEX ON course "101"
@@ -273,7 +273,7 @@ Feature: Update string vid of vertex and edge
       WHEN "xyz"
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
-    Then a SemanticError should be raised at runtime: `xyz', expected Boolean, but was `STRING'
+    Then a SemanticError should be raised at runtime: `"xyz"', expected Boolean, but was `STRING'
     # make sure TagName and PropertyName must exist in all clauses
     When executing query:
       """
@@ -432,7 +432,7 @@ Feature: Update string vid of vertex and edge
       WHEN $^.student.age > 15 AND $^.student.gender == "male"
       YIELD select.grade AS Grade, select.year AS Year
       """
-    Then a SemanticError should be raised at runtime: Has wrong expr in `(($^.student.age>15) AND ($^.student.gender==male))'
+    Then a SemanticError should be raised at runtime: Has wrong expr in `(($^.student.age>15) AND ($^.student.gender=="male"))'
     When executing query:
       """
       UPSERT EDGE "201" -> "101"@0 OF select

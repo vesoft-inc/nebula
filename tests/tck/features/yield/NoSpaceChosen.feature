@@ -16,7 +16,7 @@ Feature: Yield
       YIELD 1+1, '1+1', (int)3.14, (string)(1+1), (string)true
       """
     Then the result should be, in any order:
-      | (1+1) | 1+1   | (INT)3.14 | (STRING)(1+1) | (STRING)true |
+      | (1+1) | "1+1" | (INT)3.14 | (STRING)(1+1) | (STRING)true |
       | 2     | "1+1" | 3         | "2"           | "true"       |
 
   Scenario: hash call
@@ -25,7 +25,7 @@ Feature: Yield
       YIELD hash("Boris")
       """
     Then the result should be, in any order:
-      | hash(Boris)         |
+      | hash("Boris")       |
       | 9126854228122744212 |
     When executing query:
       """

@@ -372,7 +372,7 @@ Feature: Basic match
       """
       MATCH (v{name: "Tim Duncan"}) return v
       """
-    Then a ExecutionError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v{name:Tim Duncan}) RETURN v
+    Then a ExecutionError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v{name:"Tim Duncan"}) RETURN v
     When executing query:
       """
       MATCH (v:player:bachelor) RETURN v

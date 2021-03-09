@@ -13,36 +13,36 @@ Feature: Starts With Expression
       YIELD 'apple' STARTS WITH 'app'
       """
     Then the result should be, in any order:
-      | (apple STARTS WITH app) |
-      | true                    |
+      | ("apple" STARTS WITH "app") |
+      | true                        |
     When executing query:
       """
       YIELD 'apple' STARTS WITH 'a'
       """
     Then the result should be, in any order:
-      | (apple STARTS WITH a) |
-      | true                  |
+      | ("apple" STARTS WITH "a") |
+      | true                      |
     When executing query:
       """
       YIELD 'apple' STARTS WITH 'A'
       """
     Then the result should be, in any order:
-      | (apple STARTS WITH A) |
-      | false                 |
+      | ("apple" STARTS WITH "A") |
+      | false                     |
     When executing query:
       """
       YIELD 'apple' STARTS WITH 'b'
       """
     Then the result should be, in any order:
-      | (apple STARTS WITH b) |
-      | false                 |
+      | ("apple" STARTS WITH "b") |
+      | false                     |
     When executing query:
       """
       YIELD '123' STARTS WITH '1'
       """
     Then the result should be, in any order:
-      | (123 STARTS WITH 1) |
-      | true                |
+      | ("123" STARTS WITH "1") |
+      | true                    |
     When executing query:
       """
       YIELD 123 STARTS WITH 1
@@ -57,36 +57,36 @@ Feature: Starts With Expression
       YIELD 'apple' NOT STARTS WITH 'app'
       """
     Then the result should be, in any order:
-      | (apple NOT STARTS WITH app) |
-      | false                       |
+      | ("apple" NOT STARTS WITH "app") |
+      | false                           |
     When executing query:
       """
       YIELD 'apple' NOT STARTS WITH 'a'
       """
     Then the result should be, in any order:
-      | (apple NOT STARTS WITH a) |
-      | false                     |
+      | ("apple" NOT STARTS WITH "a") |
+      | false                         |
     When executing query:
       """
       YIELD 'apple' NOT STARTS WITH 'A'
       """
     Then the result should be, in any order:
-      | (apple NOT STARTS WITH A) |
-      | true                      |
+      | ("apple" NOT STARTS WITH "A") |
+      | true                          |
     When executing query:
       """
       YIELD 'apple' NOT STARTS WITH 'b'
       """
     Then the result should be, in any order:
-      | (apple NOT STARTS WITH b) |
-      | true                      |
+      | ("apple" NOT STARTS WITH "b") |
+      | true                          |
     When executing query:
       """
       YIELD '123' NOT STARTS WITH '1'
       """
     Then the result should be, in any order:
-      | (123 NOT STARTS WITH 1) |
-      | false                   |
+      | ("123" NOT STARTS WITH "1") |
+      | false                       |
     When executing query:
       """
       YIELD 123 NOT STARTS WITH 1

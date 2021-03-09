@@ -119,7 +119,8 @@ TEST_F(YieldValidatorTest, FuncitonCall) {
         std::string query = "YIELD abs(\"test\")";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `abs(test)' is not a valid expression : Parameter's type error");
+                  "SemanticError: `abs(\"test\")' is not a valid expression : "
+                  "Parameter's type error");
     }
     {
         std::string query = "YIELD noexist(12)";
@@ -164,13 +165,13 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (int)\"123abc\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(INT)123abc' is not a valid expression ");
+                  "SemanticError: `(INT)\"123abc\"' is not a valid expression ");
     }
     {
         std::string query = "YIELD (int)\"abc123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(INT)abc123' is not a valid expression ");
+                  "SemanticError: `(INT)\"abc123\"' is not a valid expression ");
     }
     {
         std::string query = "YIELD (doublE)\"123\"";
@@ -184,7 +185,7 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
         std::string query = "YIELD (doublE)\".a123\"";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `(FLOAT).a123' is not a valid expression ");
+                  "SemanticError: `(FLOAT)\".a123\"' is not a valid expression ");
     }
     {
         std::string query = "YIELD (STRING)1.23";

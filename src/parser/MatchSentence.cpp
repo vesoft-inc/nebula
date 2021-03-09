@@ -59,11 +59,13 @@ std::string WithClause::toString() const {
 
     if (skip_ != nullptr) {
         buf += " ";
+        buf += "SKIP ";
         buf += skip_->toString();
     }
 
     if (limit_ != nullptr) {
         buf += " ";
+        buf += "LIMIT ";
         buf += limit_->toString();
     }
 
@@ -189,17 +191,19 @@ std::string MatchReturn::toString() const {
 
     if (orderFactors_ != nullptr) {
         buf += " ";
-        buf += "ORDER BY";
+        buf += "ORDER BY ";
         buf += orderFactors_->toString();
     }
 
     if (skip_ != nullptr) {
         buf += " ";
+        buf += "SKIP ";
         buf += skip_->toString();
     }
 
     if (limit_ != nullptr) {
         buf += " ";
+        buf += "LIMIT ";
         buf += limit_->toString();
     }
 

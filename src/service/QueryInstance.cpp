@@ -15,6 +15,7 @@
 #include "planner/PlanNode.h"
 #include "scheduler/Scheduler.h"
 #include "validator/Validator.h"
+#include "util/AstUtils.h"
 #include "stats/StatsDef.h"
 
 using nebula::opt::Optimizer;

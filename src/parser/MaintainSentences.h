@@ -56,6 +56,8 @@ public:
         return defaultValue_.get();
     }
 
+    std::string toString() const;
+
 private:
     meta::cpp2::PropertyType                    type_;
     std::unique_ptr<std::string>                name_;
@@ -80,6 +82,8 @@ public:
         return result;
     }
 
+    std::string toString() const;
+
 private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
@@ -99,6 +103,20 @@ public:
         auto get = [] (auto &ptr) { return ptr.get(); };
         std::transform(columns_.begin(), columns_.end(), result.begin(), get);
         return result;
+    }
+
+    std::string toString() const {
+        std::string buf;
+        buf.reserve(128);
+        for (const auto &col : columns_) {
+            buf += *col;
+            buf += ", ";
+        }
+        if (!columns_.empty()) {
+            buf.pop_back();
+            buf.pop_back();
+        }
+        return buf;
     }
 
 private:
@@ -798,6 +816,18 @@ public:
         auto get = [] (auto &ptr) { return *ptr.get(); };
         std::transform(zones_.begin(), zones_.end(), result.begin(), get);
         return result;
+    }
+
+    std::string toString() const {
+        std::string buf;
+        for (const auto &zone : zones_) {
+            buf += *zone;
+            buf += ",";
+        }
+        if (!zones_.empty()) {
+            buf.pop_back();
+        }
+        return buf;
     }
 
 private:

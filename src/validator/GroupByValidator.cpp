@@ -216,7 +216,7 @@ Status GroupByValidator::checkAggExpr(AggregateExpression* aggExpr) {
     }
 
     if (iter->second != AggregateExpression::Function::kCount) {
-        if (aggArg->toString() == "*") {
+        if (aggArg->toString() == "\"*\"") {
             return Status::SemanticError("Could not apply aggregation function `%s' on `*`",
                                          aggExpr->toString().c_str());
         }

@@ -374,11 +374,11 @@ TEST_F(ExpressionUtilsTest, pushOrs) {
         rels.emplace_back(std::move(r));
     }
     auto t = ExpressionUtils::pushOrs(rels);
-    auto expected = std::string("(((((tag0.col0==val0) OR "
-                                "(tag1.col1==val1)) OR "
-                                "(tag2.col2==val2)) OR "
-                                "(tag3.col3==val3)) OR "
-                                "(tag4.col4==val4))");
+    auto expected = std::string("(((((tag0.col0==\"val0\") OR "
+                                "(tag1.col1==\"val1\")) OR "
+                                "(tag2.col2==\"val2\")) OR "
+                                "(tag3.col3==\"val3\")) OR "
+                                "(tag4.col4==\"val4\"))");
     ASSERT_EQ(expected, t->toString());
 }
 
@@ -393,11 +393,11 @@ TEST_F(ExpressionUtilsTest, pushAnds) {
         rels.emplace_back(std::move(r));
     }
     auto t = ExpressionUtils::pushAnds(rels);
-    auto expected = std::string("(((((tag0.col0==val0) AND "
-                                "(tag1.col1==val1)) AND "
-                                "(tag2.col2==val2)) AND "
-                                "(tag3.col3==val3)) AND "
-                                "(tag4.col4==val4))");
+    auto expected = std::string("(((((tag0.col0==\"val0\") AND "
+                                "(tag1.col1==\"val1\")) AND "
+                                "(tag2.col2==\"val2\")) AND "
+                                "(tag3.col3==\"val3\")) AND "
+                                "(tag4.col4==\"val4\"))");
     ASSERT_EQ(expected, t->toString());
 }
 

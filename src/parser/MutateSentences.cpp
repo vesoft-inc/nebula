@@ -27,11 +27,11 @@ std::string VertexTagItem::toString() const {
     buf.reserve(256);
 
     buf += *tagName_;
+    buf += "(";
     if (properties_ != nullptr) {
-        buf += "(";
         buf += properties_->toString();
-        buf += ")";
     }
+    buf += ")";
 
     return buf;
 }
@@ -147,7 +147,7 @@ std::string InsertEdgesSentence::toString() const {
     buf += *edge_;
     buf += "(";
     buf += properties_->toString();
-    buf += ") VALUES";
+    buf += ") VALUES ";
     buf += rows_->toString();
     return buf;
 }
@@ -210,7 +210,9 @@ std::string UpdateVertexSentence::toString() const {
         buf += "UPDATE ";
     }
     buf += "VERTEX ";
-    buf += "ON " + *name_ + " ";
+    if (name_ != nullptr) {
+        buf += "ON " + *name_ + " ";
+    }
     buf += vid_->toString();
     buf += " SET ";
     buf += updateList_->toString();
@@ -239,7 +241,7 @@ std::string UpdateEdgeSentence::toString() const {
     buf += srcId_->toString();
     buf += "->";
     buf += dstId_->toString();
-    buf += " AT" + std::to_string(rank_);
+    buf += "@" + std::to_string(rank_);
     buf += " OF " + *name_;
     buf += " SET ";
     buf += updateList_->toString();
@@ -269,12 +271,16 @@ std::string DeleteEdgesSentence::toString() const {
     buf += "DELETE EDGE ";
     buf += *edge_;
     buf += " ";
-    buf += edgeKeys_->toString();
+    if (edgeKeyRef_ != nullptr) {
+        buf += edgeKeyRef_->toString();
+    } else {
+        buf += edgeKeys_->toString();
+    }
     return buf;
 }
 
 std::string DownloadSentence::toString() const {
-    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),
+    return folly::stringPrintf("DOWNLOAD HDFS \"hdfs://%s:%d%s\"", host_.get()->c_str(),
                                port_, path_.get()->c_str());
 }
 

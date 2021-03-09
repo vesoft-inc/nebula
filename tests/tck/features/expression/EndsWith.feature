@@ -13,50 +13,50 @@ Feature: Ends With Expression
       YIELD 'apple' ENDS WITH 'le'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH le) |
-      | true                 |
+      | ("apple" ENDS WITH "le") |
+      | true                     |
     When executing query:
       """
       YIELD 'apple' ENDS WITH 'app'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH app) |
-      | false                 |
+      | ("apple" ENDS WITH "app") |
+      | false                     |
     When executing query:
       """
       YIELD 'apple' ENDS WITH 'a'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH a) |
-      | false               |
+      | ("apple" ENDS WITH "a") |
+      | false                   |
     When executing query:
       """
       YIELD 'apple' ENDS WITH 'e'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH e) |
-      | true                |
+      | ("apple" ENDS WITH "e") |
+      | true                    |
     When executing query:
       """
       YIELD 'apple' ENDS WITH 'E'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH E) |
-      | false               |
+      | ("apple" ENDS WITH "E") |
+      | false                   |
     When executing query:
       """
       YIELD 'apple' ENDS WITH 'b'
       """
     Then the result should be, in any order:
-      | (apple ENDS WITH b) |
-      | false               |
+      | ("apple" ENDS WITH "b") |
+      | false                   |
     When executing query:
       """
       YIELD '123' ENDS WITH '3'
       """
     Then the result should be, in any order:
-      | (123 ENDS WITH 3) |
-      | true              |
+      | ("123" ENDS WITH "3") |
+      | true                  |
     When executing query:
       """
       YIELD 123 ENDS WITH 3
@@ -71,50 +71,50 @@ Feature: Ends With Expression
       YIELD 'apple' NOT ENDS WITH 'le'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH le) |
-      | false                    |
+      | ("apple" NOT ENDS WITH "le") |
+      | false                        |
     When executing query:
       """
       YIELD 'apple' NOT ENDS WITH 'app'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH app) |
-      | true                      |
+      | ("apple" NOT ENDS WITH "app") |
+      | true                          |
     When executing query:
       """
       YIELD 'apple' NOT ENDS WITH 'a'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH a) |
-      | true                    |
+      | ("apple" NOT ENDS WITH "a") |
+      | true                        |
     When executing query:
       """
       YIELD 'apple' NOT ENDS WITH 'e'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH e) |
-      | false                   |
+      | ("apple" NOT ENDS WITH "e") |
+      | false                       |
     When executing query:
       """
       YIELD 'apple' NOT ENDS WITH 'E'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH E) |
-      | true                    |
+      | ("apple" NOT ENDS WITH "E") |
+      | true                        |
     When executing query:
       """
       YIELD 'apple' NOT ENDS WITH 'b'
       """
     Then the result should be, in any order:
-      | (apple NOT ENDS WITH b) |
-      | true                    |
+      | ("apple" NOT ENDS WITH "b") |
+      | true                        |
     When executing query:
       """
       YIELD '123' NOT ENDS WITH '3'
       """
     Then the result should be, in any order:
-      | (123 NOT ENDS WITH 3) |
-      | false                 |
+      | ("123" NOT ENDS WITH "3") |
+      | false                     |
     When executing query:
       """
       YIELD 123 NOT ENDS WITH 3

@@ -191,7 +191,7 @@ private:
     bool                                          isOverAll_{false};
 };
 
-class WhereClause final {
+class WhereClause {
 public:
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
@@ -215,7 +215,12 @@ private:
     std::unique_ptr<Expression>                 filter_;
 };
 
-using WhenClause = WhereClause;
+class WhenClause : public WhereClause {
+public:
+    explicit WhenClause(Expression *filter) : WhereClause(filter) {}
+
+    std::string toString() const;
+};
 
 class YieldColumn final {
 public:

@@ -22,6 +22,7 @@
 #include "validator/Validator.h"
 #include "validator/test/MockSchemaManager.h"
 #include "validator/test/MockIndexManager.h"
+#include "util/AstUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -47,6 +48,7 @@ protected:
         if (!result.ok()) {
             return std::move(result).status();
         }
+        NG_RETURN_IF_ERROR(AstUtils::reprAstCheck(*result.value()));
         auto sentences = pool_->add(std::move(result).value().release());
         auto qctx = buildContext();
         NG_RETURN_IF_ERROR(Validator::validate(sentences, qctx));

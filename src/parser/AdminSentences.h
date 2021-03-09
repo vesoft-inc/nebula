@@ -6,6 +6,7 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
+#include <memory>
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "parser/MutateSentences.h"
@@ -262,7 +263,7 @@ public:
         return optType_;
     }
 
-    int64_t getAtomicEdge() const {
+    bool getAtomicEdge() const {
         if (isInt()) {
             return asInt();
         } else {
@@ -315,9 +316,8 @@ public:
         spaceOpts_.reset(spaceOpts);
     }
 
-    void setGroupName(std::string& name) {
-        auto *item = new SpaceOptItem(SpaceOptItem::OptionType::GROUP_NAME, name);
-        spaceOpts_->addOpt(std::move(item));
+    void setGroupName(std::string* name) {
+        groupName_.reset(name);
     }
 
     std::vector<SpaceOptItem*> getOpts() {
@@ -331,6 +331,7 @@ public:
 
 private:
     std::unique_ptr<std::string>     spaceName_;
+    std::unique_ptr<std::string>     groupName_;
     std::unique_ptr<SpaceOptList>    spaceOpts_;
 };
 

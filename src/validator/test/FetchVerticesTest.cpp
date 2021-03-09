@@ -16,9 +16,9 @@ namespace graph {
 class FetchVerticesValidatorTest : public ValidatorTestBase {
 protected:
     QueryContext *getQCtx(const std::string &query) {
-        auto status = validate(query);
-        EXPECT_TRUE(status.ok());
-        return std::move(status).value();
+        auto result = validate(query);
+        EXPECT_TRUE(result.ok()) << result.status();
+        return std::move(result).value();
     }
 };
 

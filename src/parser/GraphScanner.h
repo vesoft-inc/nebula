@@ -99,6 +99,7 @@ protected:
             if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
                 throw GraphParser::syntax_error(*yylloc, "Out of range:");
             }
+            // TODO for min of int64_t will overflow
             yylval->intval = val;
         } catch (...) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
@@ -134,6 +135,7 @@ protected:
         if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
         }
+        // TODO for min of int64_t will overflow
         yylval->intval = static_cast<int64_t>(val);
         return TokenType::INTEGER;
     }
@@ -157,6 +159,7 @@ protected:
         if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
         }
+        // TODO for min of int64_t will overflow
         yylval->intval = static_cast<int64_t>(val);
         return TokenType::INTEGER;
     }
