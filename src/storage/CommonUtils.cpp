@@ -99,7 +99,10 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
     }
     auto now = time::WallClock::fastNowInSec();
     auto v = reader->getValueByName(ttlCol);
-    if (now > (v.getInt() + ttlDuration)) {
+
+    // if the value is not INT type (sush as NULL), it will never expire.
+    // TODO (sky) : DateTime
+    if (v.isInt() && (now > (v.getInt() + ttlDuration))) {
         VLOG(2) << "ttl expired";
         return true;
     }
