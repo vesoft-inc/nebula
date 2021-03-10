@@ -34,9 +34,14 @@ public:
         return root_;
     }
 
+    int32_t* optimizeTimeInUs() {
+        return &optimizeTimeInUs_;
+    }
+
     void fillPlanDescription(PlanDescription* planDesc) const;
 
 private:
+    int32_t optimizeTimeInUs_{0};
     int64_t id_{-1};
     PlanNode* root_{nullptr};
 };

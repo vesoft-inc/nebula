@@ -86,6 +86,7 @@ static size_t makePlanNodeDesc(const PlanNode* node, PlanDescription* planDesc) 
 
 void ExecutionPlan::fillPlanDescription(PlanDescription* planDesc) const {
     DCHECK(planDesc != nullptr);
+    planDesc->optimize_time_in_us = optimizeTimeInUs_;
     makePlanNodeDesc(root_, planDesc);
 }
 
