@@ -59,7 +59,7 @@ DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
             newRow.reserve(colSize_);
             auto& values = newRow.values;
             values.insert(values.end(), lRow.values.begin(), lRow.values.end());
-            values.insert(values.end(), colSize_ - lRowSize, Value::kNullValue);
+            values.insert(values.end(), colSize_ - lRowSize, Value::kEmpty);
             ds.rows.emplace_back(std::move(newRow));
         } else {
             for (auto* row : range->second) {

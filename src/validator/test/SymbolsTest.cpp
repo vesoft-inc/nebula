@@ -172,7 +172,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_TRUE(checkNodes(variable->writtenBy, {12}));
         }
         {
-            auto varName = "__InnerJoin_13";
+            auto varName = "__LeftJoin_13";
             auto* variable = symTable->getVar(varName);
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
@@ -223,7 +223,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_TRUE(checkNodes(variable->writtenBy, {18}));
         }
         {
-            auto varName = "__InnerJoin_19";
+            auto varName = "__LeftJoin_19";
             auto* variable = symTable->getVar(varName);
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);
@@ -234,7 +234,7 @@ TEST_F(SymbolsTest, Variables) {
             EXPECT_TRUE(checkNodes(variable->writtenBy, {19}));
         }
         {
-            auto varName = "__InnerJoin_20";
+            auto varName = "__LeftJoin_20";
             auto* variable = symTable->getVar(varName);
             EXPECT_NE(variable, nullptr);
             EXPECT_EQ(variable->name, varName);

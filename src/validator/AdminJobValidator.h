@@ -40,6 +40,8 @@ private:
                     case meta::cpp2::AdminCmd::FLUSH:
                         return true;
                     case meta::cpp2::AdminCmd::DATA_BALANCE:
+                    case meta::cpp2::AdminCmd::DOWELOAD:
+                    case meta::cpp2::AdminCmd::INGEST:
                     case meta::cpp2::AdminCmd::UNKNOWN:
                         return false;
                 }
