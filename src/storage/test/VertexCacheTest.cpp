@@ -502,7 +502,7 @@ TEST(VertexCacheTest, GetVertexPropWithTTLTest) {
 
         // TODO At present, when the ttl data expires, tag returns a vid,
         // other attributes are empty value, edge returns a row with an empty value fields.
-        getVertices(env, parts, &cache, tagId, vertices, 51);
+        getVertices(env, parts, &cache, tagId, vertices, 0);
         checkCache(&cache, 51, 51, 102);
     }
 

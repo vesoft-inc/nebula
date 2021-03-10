@@ -61,33 +61,14 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                     code = cpp2::ErrorCode::E_INVALID_VID;
                     break;
                 }
-                auto start = NebulaKeyUtils::edgeKey(spaceVidLen_,
-                                                     partId,
-                                                     edgeKey.src.getStr(),
-                                                     edgeKey.edge_type,
-                                                     edgeKey.ranking,
-                                                     edgeKey.dst.getStr(),
-                                                     0);
-                auto end = NebulaKeyUtils::edgeKey(spaceVidLen_,
-                                                   partId,
-                                                   edgeKey.src.getStr(),
-                                                   edgeKey.edge_type,
-                                                   edgeKey.ranking,
-                                                   edgeKey.dst.getStr(),
-                                                   std::numeric_limits<char>::max());
-                std::unique_ptr<kvstore::KVIterator> iter;
-                auto retRes = env_->kvstore_->range(spaceId_, partId, start, end, &iter);
-                if (retRes != kvstore::ResultCode::SUCCEEDED) {
-                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(retRes)
-                            << ", spaceID " << spaceId_;
-                    code = to(retRes);
-                    break;
-                }
-                while (iter && iter->valid()) {
-                    auto key = iter->key();
-                    keys.emplace_back(key.data(), key.size());
-                    iter->next();
-                }
+                // todo(doodle): delete lock in toss
+                auto edge = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                                    partId,
+                                                    edgeKey.src.getStr(),
+                                                    edgeKey.edge_type,
+                                                    edgeKey.ranking,
+                                                    edgeKey.dst.getStr());
+                keys.emplace_back(edge.data(), edge.size());
             }
             if (code != cpp2::ErrorCode::SUCCEEDED) {
                 handleAsync(spaceId_, partId, code);

@@ -83,6 +83,11 @@ protected:
                   PartitionID partId,
                   std::vector<std::string>&& keys);
 
+    void doRemoveRange(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       const std::string& start,
+                       const std::string& end);
+
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
     cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
