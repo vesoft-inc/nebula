@@ -106,6 +106,8 @@ struct PlanDescription {
         (cpp.template = "std::unordered_map") node_index_map;
     // the print format of exec plan, lowercase string like `dot'
     3: required binary                        format;
+    // the time optimizer spent
+    4: required i32                           optimize_time_in_us;
 } (cpp.type = "nebula::PlanDescription")
 
 

@@ -161,6 +161,7 @@ struct PlanDescription {
         planNodeDescs.clear();
         nodeIndexMap.clear();
         format.clear();
+        optimize_time_in_us = 0;
     }
 
     bool operator==(const PlanDescription &rhs) const {
@@ -174,17 +175,19 @@ struct PlanDescription {
     std::unordered_map<int64_t, int64_t> nodeIndexMap;
     // the print format of exec plan, lowercase string like `dot'
     std::string                          format;
+    // the optimization spent time
+    int32_t                              optimize_time_in_us{0};
 };
 
 struct ExecutionResponse {
     void clear() {
         errorCode = ErrorCode::SUCCEEDED;
         latencyInUs = 0;
-        data = nullptr;
-        spaceName = nullptr;
-        errorMsg = nullptr;
-        planDesc = nullptr;
-        comment = nullptr;
+        data.reset();
+        spaceName.reset();
+        errorMsg.reset();
+        planDesc.reset();
+        comment.reset();
     }
 
     bool operator==(const ExecutionResponse &rhs) const {
@@ -206,7 +209,10 @@ struct ExecutionResponse {
         if (!checkPointer(planDesc.get(), rhs.planDesc.get())) {
             return false;
         }
-        return checkPointer(comment.get(), rhs.comment.get());
+        if (!checkPointer(comment.get(), rhs.comment.get())) {
+            return false;
+        }
+        return true;
     }
 
     ErrorCode errorCode{ErrorCode::SUCCEEDED};
