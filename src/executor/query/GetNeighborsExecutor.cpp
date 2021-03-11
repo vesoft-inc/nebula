@@ -97,26 +97,27 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
                        gn_->filter())
         .via(runner())
         .ensure([this, getNbrTime]() {
+            SCOPED_TIMER(&execTime_);
+            auto time = getNbrTime.elapsedInUSec();
             if (otherStats_ != nullptr) {
-                otherStats_->emplace("total_rpc_time",
-                                     folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
+                otherStats_->emplace("total_rpc_time", folly::stringPrintf("%lu(us)", time));
             }
-            VLOG(1) << "Get neighbors time: " << getNbrTime.elapsedInUSec() << "us";
+            VLOG(1) << "Get neighbors time: " << time << "us";
         })
         .then([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
+            SCOPED_TIMER(&execTime_);
             if (otherStats_ != nullptr) {
                 auto& hostLatency = resp.hostLatency();
                 for (size_t i = 0; i < hostLatency.size(); ++i) {
                     auto& info = hostLatency[i];
-                    otherStats_->emplace(folly::stringPrintf("%s exec/total/vertices",
-                                                             std::get<0>(info).toString().c_str()),
-                                         folly::stringPrintf("%d(us)/%d(us)/%lu,",
-                                                             std::get<1>(info),
-                                                             std::get<2>(info),
-                                                             resp.responses()[i].vertices.size()));
+                    const auto& host = std::get<0>(info).toString();
+                    const auto& key = folly::stringPrintf("%s exec/total/vertices", host.c_str());
+                    auto numVertices = resp.responses()[i].vertices.size();
+                    const auto& value = folly::stringPrintf(
+                        "%d(us)/%d(us)/%lu", std::get<1>(info), std::get<2>(info), numVertices);
+                    otherStats_->emplace(key, value);
                 }
             }
-            SCOPED_TIMER(&execTime_);
             return handleResponse(resp);
         });
 }

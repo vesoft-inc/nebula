@@ -7,6 +7,8 @@
 #ifndef PLANNER_PLANNER_H_
 #define PLANNER_PLANNER_H_
 
+#include <ostream>
+
 #include "common/base/Base.h"
 #include "planner/PlanNode.h"
 #include "context/ast/AstContext.h"
@@ -21,8 +23,11 @@ struct SubPlan {
     PlanNode*   tail{nullptr};
 };
 
+std::ostream& operator<<(std::ostream& os, const SubPlan& subplan);
+
 using MatchFunc = std::function<bool(AstContext* astContext)>;
 using PlannerInstantiateFunc = std::function<std::unique_ptr<Planner>()>;
+
 struct MatchAndInstantiate {
     MatchAndInstantiate(MatchFunc m, PlannerInstantiateFunc p)
         : match(std::move(m)), instantiate(std::move(p)) {}

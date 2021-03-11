@@ -72,17 +72,18 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                    gv->filter())
         .via(runner())
         .ensure([this, getPropsTime]() {
+            SCOPED_TIMER(&execTime_);
+            auto time = getPropsTime.elapsedInUSec();
             if (otherStats_ != nullptr) {
-                otherStats_->emplace("total_rpc",
-                                     folly::stringPrintf("%lu(us)", getPropsTime.elapsedInUSec()));
+                otherStats_->emplace("total_rpc", folly::stringPrintf("%lu(us)", time));
             }
-            VLOG(1) << "Get props time: " << getPropsTime.elapsedInUSec() << "us";
+            VLOG(1) << "Get props time: " << time << "us";
         })
         .then([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+            SCOPED_TIMER(&execTime_);
             if (otherStats_ != nullptr) {
                 addStats(rpcResp, *otherStats_);
             }
-            SCOPED_TIMER(&execTime_);
             return handleResp(std::move(rpcResp), gv->colNamesRef());
         });
 }

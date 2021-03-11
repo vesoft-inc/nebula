@@ -243,6 +243,8 @@ public:
 
 protected:
     static void addDescription(std::string key, std::string value, PlanNodeDescription* desc);
+    void readVariable(const std::string& varname);
+    void readVariable(Variable* varPtr);
 
     void clone(const PlanNode &node) {
         // TODO maybe shall copy cost_ and dependencies_ too
@@ -300,9 +302,7 @@ protected:
     SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep)
         : SingleDependencyNode(qctx, kind, dep) {
         if (dep != nullptr) {
-            auto* inputVarPtr = dep->outputVarPtr();
-            inputVars_.emplace_back(inputVarPtr);
-            qctx_->symTable()->readBy(inputVarPtr->name, this);
+            readVariable(dep->outputVarPtr());
         } else {
             inputVars_.emplace_back(nullptr);
         }
@@ -352,14 +352,10 @@ protected:
         DCHECK(right != nullptr);
 
         dependencies_.emplace_back(left);
-        auto* leftVarPtr = left->outputVarPtr();
-        inputVars_.emplace_back(leftVarPtr);
-        qctx_->symTable()->readBy(leftVarPtr->name, this);
+        readVariable(left->outputVarPtr());
 
         dependencies_.emplace_back(right);
-        auto* rightVarPtr = right->outputVarPtr();
-        inputVars_.emplace_back(rightVarPtr);
-        qctx_->symTable()->readBy(rightVarPtr->name, this);
+        readVariable(right->outputVarPtr());
     }
 };
 

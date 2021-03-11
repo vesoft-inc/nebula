@@ -154,13 +154,13 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
         case Kind::kShowEdges:
             return "ShowEdges";
         case Kind::kShowTagIndexes:
-            return "kShowTagIndexes";
+            return "ShowTagIndexes";
         case Kind::kShowEdgeIndexes:
-            return "kShowEdgeIndexes";
+            return "ShowEdgeIndexes";
         case Kind::kShowTagIndexStatus:
-            return "kShowTagIndexStatus";
+            return "ShowTagIndexStatus";
         case Kind::kShowEdgeIndexStatus:
-            return "kShowEdgeIndexStatus";
+            return "ShowEdgeIndexStatus";
         case Kind::kCreateSnapshot:
             return "CreateSnapshot";
         case Kind::kDropSnapshot:
@@ -276,6 +276,17 @@ void PlanNode::addDescription(std::string key, std::string value, PlanNodeDescri
         desc->description = std::make_unique<std::vector<Pair>>();
     }
     desc->description->emplace_back(Pair{std::move(key), std::move(value)});
+}
+
+void PlanNode::readVariable(const std::string& varname) {
+    auto varPtr = qctx_->symTable()->getVar(varname);
+    readVariable(varPtr);
+}
+
+void PlanNode::readVariable(Variable* varPtr) {
+    DCHECK(varPtr != nullptr);
+    inputVars_.emplace_back(varPtr);
+    qctx_->symTable()->readBy(varPtr->name, this);
 }
 
 void PlanNode::calcCost() {

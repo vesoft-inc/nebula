@@ -271,7 +271,24 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
     return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
+Join::Join(QueryContext* qctx,
+           Kind kind,
+           PlanNode* input,
+           std::pair<std::string, int64_t> leftVar,
+           std::pair<std::string, int64_t> rightVar,
+           std::vector<Expression*> hashKeys,
+           std::vector<Expression*> probeKeys)
+    : SingleDependencyNode(qctx, kind, input),
+      leftVar_(std::move(leftVar)),
+      rightVar_(std::move(rightVar)),
+      hashKeys_(std::move(hashKeys)),
+      probeKeys_(std::move(probeKeys)) {
+    inputVars_.clear();
+    readVariable(leftVar_.first);
+    readVariable(rightVar_.first);
+}
+
+std::unique_ptr<PlanNodeDescription> Join::explain() const {
     auto desc = SingleDependencyNode::explain();
     folly::dynamic inputVar = folly::dynamic::object();
     inputVar.insert("leftVar", util::toJson(leftVar_));
@@ -279,18 +296,17 @@ std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
     addDescription("inputVar", folly::toJson(inputVar), desc.get());
     addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
     addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+    return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
+    auto desc = Join::explain();
     addDescription("kind", "LeftJoin", desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
-    auto desc = SingleDependencyNode::explain();
-    folly::dynamic inputVar = folly::dynamic::object();
-    inputVar.insert("leftVar", util::toJson(leftVar_));
-    inputVar.insert("rightVar", util::toJson(rightVar_));
-    addDescription("inputVar", folly::toJson(inputVar), desc.get());
-    addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
-    addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+    auto desc = Join::explain();
     addDescription("kind", "InnerJoin", desc.get());
     return desc;
 }

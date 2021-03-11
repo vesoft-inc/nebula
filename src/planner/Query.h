@@ -948,10 +948,7 @@ private:
         collectKind_ = collectKind;
         inputVars_.clear();
         for (auto& var : vars) {
-            auto* inputVarPtr = qctx_->symTable()->getVar(var);
-            DCHECK(inputVarPtr != nullptr);
-            inputVars_.emplace_back(inputVarPtr);
-            qctx_->symTable()->readBy(inputVarPtr->name, this);
+            readVariable(var);
         }
     }
 
@@ -964,31 +961,6 @@ private:
 
 class Join : public SingleDependencyNode {
 public:
-    Join(QueryContext* qctx,
-         Kind kind,
-         PlanNode* input,
-         std::pair<std::string, int64_t> leftVar,
-         std::pair<std::string, int64_t> rightVar,
-         std::vector<Expression*> hashKeys,
-         std::vector<Expression*> probeKeys)
-        : SingleDependencyNode(qctx, kind, input),
-          leftVar_(std::move(leftVar)),
-          rightVar_(std::move(rightVar)),
-          hashKeys_(std::move(hashKeys)),
-          probeKeys_(std::move(probeKeys)) {
-        inputVars_.clear();
-
-        auto* leftVarPtr = qctx_->symTable()->getVar(leftVar_.first);
-        DCHECK(leftVarPtr != nullptr);
-        inputVars_.emplace_back(leftVarPtr);
-        qctx_->symTable()->readBy(leftVarPtr->name, this);
-
-        auto* rightVarPtr = qctx_->symTable()->getVar(rightVar_.first);
-        DCHECK(rightVarPtr != nullptr);
-        inputVars_.emplace_back(rightVarPtr);
-        qctx_->symTable()->readBy(rightVarPtr->name, this);
-    }
-
     const std::pair<std::string, int64_t>& leftVar() const {
         return leftVar_;
     }
@@ -1005,7 +977,17 @@ public:
         return probeKeys_;
     }
 
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
 protected:
+    Join(QueryContext* qctx,
+         Kind kind,
+         PlanNode* input,
+         std::pair<std::string, int64_t> leftVar,
+         std::pair<std::string, int64_t> rightVar,
+         std::vector<Expression*> hashKeys,
+         std::vector<Expression*> probeKeys);
+
     // var name, var version
     std::pair<std::string, int64_t>         leftVar_;
     std::pair<std::string, int64_t>         rightVar_;
@@ -1024,8 +1006,12 @@ public:
                           std::pair<std::string, int64_t> rightVar,
                           std::vector<Expression*> hashKeys,
                           std::vector<Expression*> probeKeys) {
-        return qctx->objPool()->add(
-            new LeftJoin(qctx, input, leftVar, rightVar, hashKeys, probeKeys));
+        return qctx->objPool()->add(new LeftJoin(qctx,
+                                                 input,
+                                                 std::move(leftVar),
+                                                 std::move(rightVar),
+                                                 std::move(hashKeys),
+                                                 std::move(probeKeys)));
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1037,7 +1023,13 @@ private:
              std::pair<std::string, int64_t> rightVar,
              std::vector<Expression*> hashKeys,
              std::vector<Expression*> probeKeys)
-        : Join(qctx, Kind::kLeftJoin, input, leftVar, rightVar, hashKeys, probeKeys) {}
+        : Join(qctx,
+               Kind::kLeftJoin,
+               input,
+               std::move(leftVar),
+               std::move(rightVar),
+               std::move(hashKeys),
+               std::move(probeKeys)) {}
 };
 
 /*
@@ -1051,8 +1043,12 @@ public:
                            std::pair<std::string, int64_t> rightVar,
                            std::vector<Expression*> hashKeys,
                            std::vector<Expression*> probeKeys) {
-        return qctx->objPool()->add(
-            new InnerJoin(qctx, input, leftVar, rightVar, hashKeys, probeKeys));
+        return qctx->objPool()->add(new InnerJoin(qctx,
+                                                  input,
+                                                  std::move(leftVar),
+                                                  std::move(rightVar),
+                                                  std::move(hashKeys),
+                                                  std::move(probeKeys)));
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1064,7 +1060,13 @@ private:
               std::pair<std::string, int64_t> rightVar,
               std::vector<Expression*> hashKeys,
               std::vector<Expression*> probeKeys)
-        : Join(qctx, Kind::kInnerJoin, input, leftVar, rightVar, hashKeys, probeKeys) {}
+        : Join(qctx,
+               Kind::kInnerJoin,
+               input,
+               std::move(leftVar),
+               std::move(rightVar),
+               std::move(hashKeys),
+               std::move(probeKeys)) {}
 };
 
 /*

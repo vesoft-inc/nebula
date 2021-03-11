@@ -11,6 +11,12 @@
 namespace nebula {
 namespace graph {
 
+std::ostream& operator<<(std::ostream& os, const SubPlan& subplan) {
+    os << "root(" << subplan.root->toString() << "): " << subplan.root->outputVar() << ", tail("
+       << subplan.tail->toString() << "): " << subplan.tail->outputVar();
+    return os;
+}
+
 StatusOr<SubPlan> Planner::toPlan(AstContext* astCtx) {
     if (astCtx == nullptr) {
         return Status::Error("AstContext nullptr.");
