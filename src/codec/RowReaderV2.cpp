@@ -183,4 +183,8 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
     LOG(FATAL) << "Should not reach here";
 }
 
+int64_t RowReaderV2::getTimestamp() const noexcept {
+    return *reinterpret_cast<const int64_t*>(data_.begin() + (data_.size() - sizeof(int64_t)));
+}
+
 }  // namespace nebula

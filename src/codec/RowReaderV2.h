@@ -30,6 +30,7 @@ public:
 
     Value getValueByName(const std::string& prop) const noexcept override;
     Value getValueByIndex(const int64_t index) const noexcept override;
+    int64_t getTimestamp() const noexcept override;
 
     int32_t readerVer() const noexcept override {
         return 2;

@@ -6,6 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/time/WallClock.h"
 #include <gtest/gtest.h>
 #include "codec/RowWriterV2.h"
 #include "codec/RowReaderWrapper.h"
@@ -333,7 +334,8 @@ TEST(RowWriterV2, Update) {
 
     std::string encoded2 = updater1.moveEncodedStr();
     std::string encoded3 = updater2.moveEncodedStr();
-    EXPECT_EQ(encoded2, encoded3);
+    EXPECT_EQ(encoded2.substr(0, encoded2.size() - sizeof(int64_t)),
+              encoded3.substr(0, encoded3.size() - sizeof(int64_t)));
 
     auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded2);
     auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded3);
@@ -618,6 +620,117 @@ TEST(RowWriterV2, NumericLimit) {
 
         EXPECT_EQ(WriteResult::OUT_OF_RANGE, writer.set(4, std::numeric_limits<double>::lowest()));
         EXPECT_EQ(WriteResult::OUT_OF_RANGE, writer.set(4, std::numeric_limits<double>::max()));
+    }
+}
+
+TEST(RowWriterV2, TimestampTest) {
+    {
+        SchemaWriter schema(1);
+        schema.appendCol("Col01", PropertyType::STRING);
+
+        RowWriterV2 writer(&schema);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
+        auto ts = time::WallClock::fastNowInMicroSec();
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+
+        std::string encoded = std::move(writer).moveEncodedStr();
+        auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+        Value v1 = reader->getValueByName("Col01");
+        Value v2 = reader->getValueByIndex(0);
+        EXPECT_EQ("", v1.getStr());
+        EXPECT_EQ("", v2.getStr());
+        auto ret = (reader->getTimestamp() >= ts) &&
+                   (reader->getTimestamp() <= time::WallClock::fastNowInMicroSec());
+        EXPECT_TRUE(ret);
+    }
+    {
+        SchemaWriter schema(1);
+        schema.appendCol("Col01", PropertyType::STRING);
+
+        RowWriterV2 writer(&schema);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
+        // rewrite, for processOutOfSpace test
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", "new"));
+        auto ts = time::WallClock::fastNowInMicroSec();
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+
+        std::string encoded = std::move(writer).moveEncodedStr();
+        auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+        Value v1 = reader->getValueByName("Col01");
+        Value v2 = reader->getValueByIndex(0);
+        EXPECT_EQ("new", v1.getStr());
+        EXPECT_EQ("new", v2.getStr());
+        auto ret = (reader->getTimestamp() >= ts) &&
+                   (reader->getTimestamp() <= time::WallClock::fastNowInMicroSec());
+        EXPECT_TRUE(ret);
+    }
+    {
+        SchemaWriter schema(1);
+        schema.appendCol("Col01", PropertyType::STRING);
+
+        RowWriterV2 writer(&schema);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
+        // rewrite, for processOutOfSpace test
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", "abc"));
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+        std::string encoded = std::move(writer).moveEncodedStr();
+
+        RowWriterV2 writer2(&schema, encoded);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col01", "abc"));
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
+        std::string encoded2 = std::move(writer2).moveEncodedStr();
+        EXPECT_EQ(encoded.substr(0, encoded.size() - sizeof(int64_t)),
+                  encoded2.substr(0, encoded2.size() - sizeof(int64_t)));
+    }
+    {
+        SchemaWriter schema(1);
+        schema.appendCol("Col01", PropertyType::INT64);
+
+        RowWriterV2 writer(&schema);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1));
+        // rewrite, for processOutOfSpace test
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 2));
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+        std::string encoded = std::move(writer).moveEncodedStr();
+
+        RowWriterV2 writer2(&schema, encoded);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col01", 2));
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
+        std::string encoded2 = std::move(writer2).moveEncodedStr();
+        EXPECT_EQ(encoded.substr(0, encoded.size() - sizeof(int64_t)),
+                  encoded2.substr(0, encoded2.size() - sizeof(int64_t)));
+    }
+    {
+        // test checkUnsetFields
+        SchemaWriter schema(1);
+        schema.appendCol("Col01", PropertyType::INT64);
+        schema.appendCol("Col02", PropertyType::INT64);
+
+        RowWriterV2 writer(&schema);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1));
+        ASSERT_EQ(WriteResult::FIELD_UNSET, writer.finish());
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col02", 2));
+        auto ts = time::WallClock::fastNowInMicroSec();
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
+        std::string encoded = std::move(writer).moveEncodedStr();
+        auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
+        Value v1 = reader->getValueByName("Col01");
+        Value v2 = reader->getValueByIndex(0);
+        EXPECT_EQ(1, v1.getInt());
+        EXPECT_EQ(1, v2.getInt());
+        v1 = reader->getValueByName("Col02");
+        v2 = reader->getValueByIndex(1);
+        EXPECT_EQ(2, v1.getInt());
+        EXPECT_EQ(2, v2.getInt());
+        auto ret = (reader->getTimestamp() >= ts) &&
+                   (reader->getTimestamp() <= time::WallClock::fastNowInMicroSec());
+        EXPECT_TRUE(ret);
+        RowWriterV2 writer2(&schema, encoded);
+        EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col02", 2));
+        ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
+        std::string encoded2 = std::move(writer2).moveEncodedStr();
+        EXPECT_EQ(encoded.substr(0, encoded.size() - sizeof(int64_t)),
+                  encoded2.substr(0, encoded2.size() - sizeof(int64_t)));
     }
 }
 

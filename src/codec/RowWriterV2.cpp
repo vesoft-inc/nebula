@@ -5,7 +5,7 @@
  */
 
 #include "common/time/TimeUtils.h"
-
+#include "common/time/WallClock.h"
 #include "codec/RowWriterV2.h"
 #include "utils/DefaultValueContext.h"
 
@@ -88,16 +88,17 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
 
 RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded)
         : schema_(schema)
-        , buf_(std::move(encoded))
         , finished_(false)
         , outOfSpaceStr_(false) {
+    auto len = encoded.size();
+    buf_ = std::move(encoded).substr(0, len - sizeof(int64_t));
     processV2EncodedStr();
 }
 
 
 RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded)
         : schema_(schema)
-        , buf_(encoded)
+        , buf_(encoded.substr(0, encoded.size() - sizeof(int64_t)))
         , finished_(false)
         , outOfSpaceStr_(false) {
     processV2EncodedStr();
@@ -163,7 +164,7 @@ void RowWriterV2::processV2EncodedStr() noexcept {
         numNullBytes_ = 0;
     }
 
-    approxStrLen_ = buf_.size() - headerLen_ - numNullBytes_ - schema_->size();
+    approxStrLen_ = buf_.size() - headerLen_ - numNullBytes_ - schema_->size() - sizeof(int64_t);
     isSet_.resize(schema_->getNumFields(), true);
 }
 
@@ -869,7 +870,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
 std::string RowWriterV2::processOutOfSpace() noexcept {
     std::string temp;
     // Reserve enough space to avoid memory re-allocation
-    temp.reserve(headerLen_ + numNullBytes_ + schema_->size() + approxStrLen_);
+    temp.reserve(headerLen_ + numNullBytes_ + schema_->size() + approxStrLen_ + sizeof(int64_t));
     // Copy the data except the strings
     temp.append(buf_.data(), headerLen_ + numNullBytes_ + schema_->size());
 
@@ -911,12 +912,13 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
                reinterpret_cast<void*>(&strLen),
                sizeof(int32_t));
     }
-
     return temp;
 }
 
 
 WriteResult RowWriterV2::finish() noexcept {
+    CHECK(!finished_) << "You have called finish()";
+
     // First to check whether all fields are set. If not, to check whether
     // it can be NULL or there is a default value for the field
     WriteResult res = checkUnsetFields();
@@ -928,6 +930,10 @@ WriteResult RowWriterV2::finish() noexcept {
     if (outOfSpaceStr_) {
         buf_ = processOutOfSpace();
     }
+
+    // The timestamp will be saved to the tail of buf_
+    auto ts = time::WallClock::fastNowInMicroSec();
+    buf_.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
 
     finished_ = true;
     return WriteResult::SUCCEEDED;

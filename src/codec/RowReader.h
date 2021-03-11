@@ -70,6 +70,7 @@ public:
 
     virtual Value getValueByName(const std::string& prop) const noexcept = 0;
     virtual Value getValueByIndex(const int64_t index) const noexcept = 0;
+    virtual int64_t getTimestamp() const noexcept = 0;
 
     virtual int32_t readerVer() const noexcept = 0;
 

@@ -96,6 +96,11 @@ public:
         return currReader_->getValueByIndex(index);
     }
 
+    int64_t getTimestamp() const noexcept override {
+        DCHECK(!!currReader_);
+        return currReader_->getTimestamp();
+    }
+
     int32_t readerVer() const noexcept override {
         DCHECK(!!currReader_);
         return currReader_->readerVer();
