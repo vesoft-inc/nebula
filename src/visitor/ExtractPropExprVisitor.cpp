@@ -65,7 +65,9 @@ void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
     switch (expr->kind()) {
         case Expression::Kind::kUnaryPlus:
         case Expression::Kind::kUnaryNegate:
-        case Expression::Kind::kUnaryNot: {
+        case Expression::Kind::kUnaryNot:
+        case Expression::Kind::kIsNull:
+        case Expression::Kind::kIsNotNull: {
             expr->operand()->accept(this);
             break;
         }

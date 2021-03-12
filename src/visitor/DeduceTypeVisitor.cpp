@@ -129,6 +129,14 @@ void DeduceTypeVisitor::visit(UnaryExpression *expr) {
             DETECT_UNARYEXPR_TYPE(!);
             break;
         }
+        case Expression::Kind::kIsNull: {
+            type_ = Value::Type::BOOL;
+            break;
+        }
+        case Expression::Kind::kIsNotNull: {
+            type_ = Value::Type::BOOL;
+            break;
+        }
         case Expression::Kind::kUnaryIncr: {
             auto detectVal = kConstantValues.at(type_) + 1;
             if (detectVal.isBadNull()) {

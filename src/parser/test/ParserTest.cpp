@@ -1910,14 +1910,6 @@ TEST(Parser, GroupBy) {
     }
 }
 
-TEST(Parser, Return) {
-    {
-        std::string query = "RETURN $A IF $A IS NOT NULL";
-        auto result = parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-}
-
 TEST(Parser, ErrorMsg) {
     {
         std::string query = "CREATE SPACE " + std::string(4097, 'A');
