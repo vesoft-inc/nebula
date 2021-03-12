@@ -663,8 +663,6 @@ std::vector<storage::cpp2::VertexProp> GoValidator::buildDstVertexProps() {
 
 GetNeighbors::EdgeProps GoValidator::buildEdgeProps() {
     GetNeighbors::EdgeProps edgeProps;
-    VLOG(1) << exprProps_.srcTagProps().empty() << exprProps_.dstTagProps().empty() <<
-                exprProps_.edgeProps().empty();
     bool onlyInputPropsOrConstant = exprProps_.srcTagProps().empty() &&
                                     exprProps_.dstTagProps().empty() &&
                                     exprProps_.edgeProps().empty();
