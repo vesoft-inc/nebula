@@ -714,8 +714,8 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeDst() {
             std::transform(over_.edgeTypes.begin(), over_.edgeTypes.end(), edgeProps->begin(),
                         [](auto& type) {
                             storage::cpp2::EdgeProp ep;
-                            ep.type = -type;
-                            ep.props = {kDst};
+                            ep.set_type(-type);
+                            ep.set_props({kDst});
                             return ep;
                         });
         } else if (over_.direction == storage::cpp2::EdgeDirection::BOTH) {
@@ -724,16 +724,16 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeDst() {
             std::transform(over_.edgeTypes.begin(), over_.edgeTypes.end(), edgeProps->begin(),
                         [](auto& type) {
                             storage::cpp2::EdgeProp ep;
-                            ep.type = type;
-                            ep.props = {kDst};
+                            ep.set_type(type);
+                            ep.set_props({kDst});
                             return ep;
                         });
             std::transform(over_.edgeTypes.begin(), over_.edgeTypes.end(),
                            edgeProps->begin() + over_.edgeTypes.size(),
                            [](auto& type) {
                                storage::cpp2::EdgeProp ep;
-                               ep.type = -type;
-                               ep.props = {kDst};
+                               ep.set_type(-type);
+                               ep.set_props({kDst});
                                return ep;
                            });
         } else {
@@ -742,8 +742,8 @@ GetNeighbors::EdgeProps GoValidator::buildEdgeDst() {
             std::transform(over_.edgeTypes.begin(), over_.edgeTypes.end(), edgeProps->begin(),
                         [](auto& type) {
                             storage::cpp2::EdgeProp ep;
-                            ep.type = type;
-                            ep.props = {kDst};
+                            ep.set_type(type);
+                            ep.set_props({kDst});
                             return ep;
                         });
         }
