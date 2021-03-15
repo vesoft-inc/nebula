@@ -81,7 +81,6 @@ private:
 
     static std::unordered_map<std::string, std::vector<TypeSignature>> typeSignature_;
 
-    mutable folly::RWSpinLock lock_;
     std::unordered_map<std::string, FunctionAttributes> functions_;
 };
 
