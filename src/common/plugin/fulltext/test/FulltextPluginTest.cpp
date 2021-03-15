@@ -15,6 +15,26 @@
 namespace nebula {
 namespace plugin {
 
+void verifyBodyStr(const std::string& actual, const folly::dynamic& expect) {
+    ASSERT_EQ(" -d'", actual.substr(0, 4));
+    ASSERT_EQ("'", actual.substr(actual.size() - 1, 1));
+    auto body = folly::parseJson(actual.substr(4, actual.size() - 5));
+    ASSERT_EQ(expect, body);
+}
+
+void verifyBodyStr(const std::string& actual, const std::vector<folly::dynamic>& expect) {
+    std::vector<std::string> lines;
+    folly::split("\n", actual, lines, true);
+    if (lines.size() > 0) {
+        ASSERT_LE(2, lines.size());
+        ASSERT_EQ("'", lines[lines.size() - 1]);
+        for (size_t i = 1; i < lines.size() - 1; i++) {
+            auto body = folly::parseJson(lines[i]);
+            ASSERT_EQ(expect[i - 1], body);
+        }
+    }
+}
+
 TEST(FulltextPluginTest, ESIndexCheckTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient client(localHost_);
@@ -57,8 +77,7 @@ TEST(FulltextPluginTest, ESPutTest) {
     folly::dynamic d = folly::dynamic::object("schema_id", item.schema)
                                              ("column_id", DocIDTraits::column(item.column))
                                              ("value", DocIDTraits::val(item.val));
-    expected = " -d'" + DocIDTraits::normalizedJson(folly::toJson(d)) + "'";
-    ASSERT_EQ(expected, body);
+    verifyBodyStr(std::move(body), std::move(d));
 }
 
 TEST(FulltextPluginTest, ESBulkTest) {
@@ -77,19 +96,19 @@ TEST(FulltextPluginTest, ESBulkTest) {
                            "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
     ASSERT_EQ(expected, header);
 
-    expected = " -d '\n";
+    std::vector<folly::dynamic> bodys;
     for (const auto& item : items) {
         folly::dynamic meta = folly::dynamic::object("_id", DocIDTraits::docId(item))
                                                     ("_index", item.index);
         folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))
-                                                    ("column_id", DocIDTraits::column(item.column))
-                                                    ("schema_id", item.schema);
-        expected.append(folly::toJson(folly::dynamic::object("index", meta))).append("\n");
-        expected.append(DocIDTraits::normalizedJson(folly::toJson(data))).append("\n");
+                                                    ("schema_id", item.schema)
+                                                    ("column_id", DocIDTraits::column(item.column));
+        bodys.emplace_back(folly::dynamic::object("index", std::move(meta)));
+        bodys.emplace_back(std::move(data));
     }
-    expected.append("'");
+
     auto body = ESStorageAdapter().bulkBody(items);
-    ASSERT_EQ(expected, body);
+    verifyBodyStr(body, std::move(bodys));
 }
 
 TEST(FulltextPluginTest, ESPutToTest) {
