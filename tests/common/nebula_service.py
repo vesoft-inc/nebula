@@ -8,6 +8,7 @@
 import os
 import subprocess
 import time
+import random
 import shutil
 import socket
 import glob
@@ -81,7 +82,7 @@ class NebulaService(object):
     @staticmethod
     def get_free_port():
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-            s.bind(('', 0))
+            s.bind(('', random.randint(1024, 10000)))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             return s.getsockname()[1]
 
