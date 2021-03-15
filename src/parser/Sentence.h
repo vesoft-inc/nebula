@@ -144,7 +144,7 @@ public:
     explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
     virtual ~CreateSentence() {}
 
-    bool isIfNotExist() {
+    bool isIfNotExist() const {
         return ifNotExist_;
     }
 

@@ -232,14 +232,19 @@ std::string CreateTagIndexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE TAG INDEX ";
+    if (isIfNotExist()) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += *indexName_;
     buf += " ON ";
     buf += *tagName_;
-    buf += " (";
+    buf += "(";
     std::vector<std::string> fieldDefs;
     for (const auto& field : this->fields()) {
         std::string f = field.get_name();
-        if (field.__isset.type_length) f + "(" +field.get_type_length() + ")";
+        if (field.__isset.type_length) {
+            f += "(" + std::to_string(*field.get_type_length()) + ")";
+        }
         fieldDefs.emplace_back(std::move(f));
     }
     std::string fields;
@@ -254,14 +259,19 @@ std::string CreateEdgeIndexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE EDGE INDEX ";
+    if (isIfNotExist()) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += *indexName_;
     buf += " ON ";
     buf += *edgeName_;
-    buf += " (";
+    buf += "(";
     std::vector<std::string> fieldDefs;
     for (const auto& field : this->fields()) {
         std::string f = field.get_name();
-        if (field.__isset.type_length) f + "(" +field.get_type_length() + ")";
+        if (field.__isset.type_length) {
+            f += "(" + std::to_string(*field.get_type_length()) + ")";
+        }
         fieldDefs.emplace_back(std::move(f));
     }
     std::string fields;
