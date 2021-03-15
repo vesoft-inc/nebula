@@ -13,6 +13,9 @@
 #include "kvstore/RocksEngineConfig.h"
 #include "utils/NebulaKeyUtils.h"
 
+DEFINE_bool(move_files, false,
+            "Move the SST files instead of copy when ingest into dataset");
+
 namespace nebula {
 namespace kvstore {
 
@@ -336,6 +339,7 @@ int32_t RocksEngine::totalPartsNum() {
 
 ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
+    options.move_files = FLAGS_move_files;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
