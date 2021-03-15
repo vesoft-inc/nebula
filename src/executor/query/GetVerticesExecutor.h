@@ -8,6 +8,7 @@
 #define EXECUTOR_QUERY_GETVERTICESEXECUTOR_H_
 
 #include "executor/query/GetPropExecutor.h"
+#include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -20,6 +21,8 @@ public:
     folly::Future<Status> execute() override;
 
 private:
+    DataSet buildRequestDataSet(const GetVertices* gv);
+
     folly::Future<Status> getVertices();
 };
 

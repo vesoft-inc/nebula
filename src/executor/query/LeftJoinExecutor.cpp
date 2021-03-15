@@ -42,6 +42,7 @@ folly::Future<Status> LeftJoinExecutor::join() {
 DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
                              Iterator* probeIter) {
     DataSet ds;
+    ds.rows.reserve(probeIter->size());
     QueryExpressionContext ctx(ectx_);
     for (; probeIter->valid(); probeIter->next()) {
         List list;
@@ -58,7 +59,9 @@ DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
             Row newRow;
             newRow.reserve(colSize_);
             auto& values = newRow.values;
-            values.insert(values.end(), lRow.values.begin(), lRow.values.end());
+            values.insert(values.end(),
+                    std::make_move_iterator(lRow.values.begin()),
+                    std::make_move_iterator(lRow.values.end()));
             values.insert(values.end(), colSize_ - lRowSize, Value::kEmpty);
             ds.rows.emplace_back(std::move(newRow));
         } else {
@@ -68,7 +71,9 @@ DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
                 Row newRow;
                 auto& values = newRow.values;
                 values.reserve(lRow.size() + rRow.size());
-                values.insert(values.end(), lRow.values.begin(), lRow.values.end());
+                values.insert(values.end(),
+                        std::make_move_iterator(lRow.values.begin()),
+                        std::make_move_iterator(lRow.values.end()));
                 values.insert(values.end(), rRow.values.begin(), rRow.values.end());
                 ds.rows.emplace_back(std::move(newRow));
             }

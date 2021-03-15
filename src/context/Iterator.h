@@ -21,27 +21,6 @@
 namespace nebula {
 namespace graph {
 
-class LogicalRow {
-public:
-    enum class Kind : uint8_t {
-        kGetNeighbors,
-        kSequential,
-        kJoin,
-        kProp,
-    };
-
-    LogicalRow() = default;
-    explicit LogicalRow(std::vector<const Row*>&& segments) : segments_(std::move(segments)) {}
-    virtual ~LogicalRow() {}
-    virtual const Value& operator[](size_t) const = 0;
-    virtual size_t size() const = 0;
-    virtual Kind kind() const = 0;
-    virtual const std::vector<const Row*>& segments() const = 0;
-
-protected:
-    std::vector<const Row*> segments_;
-};
-
 class Iterator {
 public:
     template <typename T>
@@ -369,7 +348,7 @@ private:
     int64_t                              bitIdx_{-1};
 };
 
-class SequentialIter final : public Iterator {
+class SequentialIter : public Iterator {
 public:
     explicit SequentialIter(std::shared_ptr<Value> value);
 
@@ -432,18 +411,6 @@ public:
 
     const Value& getColumn(int32_t index) const override;
 
-    // TODO: We should build new iter for get props, the seq iter will
-    // not meet the requirements of match any more.
-    const Value& getTagProp(const std::string& tag,
-                            const std::string& prop) const override {
-        return getColumn(tag+ "." + prop);
-    }
-
-    const Value& getEdgeProp(const std::string& edge,
-                             const std::string& prop) const override {
-        return getColumn(edge + "." + prop);
-    }
-
 protected:
     const Row* row() const override {
         return &*iter_;
@@ -455,120 +422,25 @@ protected:
         return std::move(*iter_);
     }
 
-private:
     void doReset(size_t pos) override;
-
-    void init(std::vector<std::unique_ptr<Iterator>>&& iterators);
 
     std::vector<Row>::iterator                   iter_;
     std::vector<Row>*                            rows_{nullptr};
+
+private:
+    void init(std::vector<std::unique_ptr<Iterator>>&& iterators);
+
     std::unordered_map<std::string, size_t>      colIndices_;
 };
 
-class PropIter final : public Iterator {
+class PropIter final : public SequentialIter {
 public:
-    class PropLogicalRow final : public LogicalRow {
-    public:
-        explicit PropLogicalRow(const Row* row) : LogicalRow({row}) {}
-
-        PropLogicalRow(const PropLogicalRow &r) = default;
-        PropLogicalRow& operator=(const PropLogicalRow &r) = default;
-
-        PropLogicalRow(PropLogicalRow &&r) noexcept {
-            *this = std::move(r);
-        }
-
-        PropLogicalRow& operator=(PropLogicalRow &&r) noexcept {
-            segments_ = std::move(r.segments_);
-            return *this;
-        }
-
-        const Value& operator[](size_t idx) const override {
-            DCHECK_EQ(segments_.size(), 1);
-            auto* row = segments_[0];
-            if (idx < row->size()) {
-                return row->values[idx];
-            }
-            return Value::kEmpty;
-        }
-
-        size_t size() const override {
-            DCHECK_EQ(segments_.size(), 1);
-            auto* row = segments_[0];
-            return row->size();
-        }
-
-        LogicalRow::Kind kind() const override {
-            return Kind::kProp;
-        }
-
-        const std::vector<const Row*>& segments() const override {
-            return segments_;
-        }
-
-    private:
-        friend class PropIter;
-    };
-
     explicit PropIter(std::shared_ptr<Value> value);
-
-    Status makeDataSetIndex(const DataSet& ds);
 
     std::unique_ptr<Iterator> copy() const override {
         auto copy = std::make_unique<PropIter>(*this);
         copy->reset();
         return copy;
-    }
-
-    bool valid() const override {
-        return iter_ < rows_.end();
-    }
-
-    void next() override {
-        if (valid()) {
-            ++iter_;
-        }
-    }
-
-    void erase() override {
-        iter_ = rows_.erase(iter_);
-    }
-
-    void unstableErase() override {
-        iter_ = eraseBySwap(rows_, iter_);
-    }
-
-    void eraseRange(size_t first, size_t last) override {
-        if (first >= last || first >= size()) {
-            return;
-        }
-        if (last > size()) {
-            rows_.erase(rows_.begin() + first, rows_.end());
-        } else {
-            rows_.erase(rows_.begin() + first, rows_.begin() + last);
-        }
-        reset();
-    }
-
-    void clear() override {
-        rows_.clear();
-        reset();
-    }
-
-    RowsIter<PropLogicalRow> begin() {
-        return rows_.begin();
-    }
-
-    RowsIter<PropLogicalRow> end() {
-        return rows_.end();
-    }
-
-    size_t size() const override {
-        return rows_.size();
-    }
-
-    const Row* row() const override {
-        return nullptr;
     }
 
     const std::unordered_map<std::string, size_t>& getColIndices() const {
@@ -597,13 +469,10 @@ public:
         return getProp(edge, prop);
     }
 
-    Status buildPropIndex(const std::string& props, size_t columnIdx);
-
 private:
-    void doReset(size_t pos) override {
-        DCHECK((pos == 0 && size() == 0) || (pos < size()));
-        iter_ = rows_.begin() + pos;
-    }
+    Status makeDataSetIndex(const DataSet& ds);
+
+    Status buildPropIndex(const std::string& props, size_t columnIdx);
 
     struct DataSetIndex {
         const DataSet* ds;
@@ -618,17 +487,12 @@ private:
     };
 
 private:
-    RowsType<PropLogicalRow>                                       rows_;
-    RowsIter<PropLogicalRow>                                       iter_;
     DataSetIndex                                                   dsIndex_;
 };
 
 
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind);
-std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind);
-std::ostream& operator<<(std::ostream& os, const LogicalRow& row);
-
 }  // namespace graph
 }  // namespace nebula
 
@@ -644,33 +508,9 @@ struct equal_to<const nebula::Row*> {
 };
 
 template <>
-struct equal_to<const nebula::graph::LogicalRow*> {
-    bool operator()(const nebula::graph::LogicalRow* lhs,
-                    const nebula::graph::LogicalRow* rhs) const;
-};
-
-template <>
 struct hash<const nebula::Row*> {
     size_t operator()(const nebula::Row* row) const {
         return !row ? 0 : hash<nebula::Row>()(*row);
-    }
-};
-
-template <>
-struct hash<nebula::graph::LogicalRow> {
-    size_t operator()(const nebula::graph::LogicalRow& row) const {
-        size_t seed = 0;
-        for (auto& value : row.segments()) {
-            seed ^= std::hash<const nebula::Row*>()(value);
-        }
-        return seed;
-    }
-};
-
-template <>
-struct hash<const nebula::graph::LogicalRow*> {
-    size_t operator()(const nebula::graph::LogicalRow* row) const {
-        return !row ? 0 : hash<nebula::graph::LogicalRow>()(*row);
     }
 };
 

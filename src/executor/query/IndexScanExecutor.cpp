@@ -64,12 +64,10 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
         DCHECK_EQ(node()->colNamesRef().size(), v.colNames.size());
         v.colNames = node()->colNamesRef();
     }
-    // TODO(yee): Unify the response structure of IndexScan and GetProps and change the following
-    // iterator to PropIter type
     VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
     return finish(ResultBuilder()
                       .value(std::move(v))
-                      .iter(Iterator::Kind::kSequential)
+                      .iter(Iterator::Kind::kProp)
                       .state(state)
                       .finish());
 }

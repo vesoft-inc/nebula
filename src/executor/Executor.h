@@ -123,7 +123,7 @@ protected:
     uint64_t numRows_{0};
     uint64_t execTime_{0};
     time::Duration totalDuration_;
-    std::unique_ptr<std::unordered_map<std::string, std::string>> otherStats_;
+    std::unordered_map<std::string, std::string> otherStats_;
 };
 
 }   // namespace graph

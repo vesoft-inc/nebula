@@ -24,7 +24,6 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
-    otherStats_ = std::make_unique<std::unordered_map<std::string, std::string>>();
     auto status = buildRequestDataSet();
     if (!status.ok()) {
         return error(std::move(status));
@@ -98,25 +97,20 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
         .via(runner())
         .ensure([this, getNbrTime]() {
             SCOPED_TIMER(&execTime_);
-            auto time = getNbrTime.elapsedInUSec();
-            if (otherStats_ != nullptr) {
-                otherStats_->emplace("total_rpc_time", folly::stringPrintf("%lu(us)", time));
-            }
-            VLOG(1) << "Get neighbors time: " << time << "us";
+            otherStats_.emplace("total_rpc_time",
+                                folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
         })
         .then([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
             SCOPED_TIMER(&execTime_);
-            if (otherStats_ != nullptr) {
-                auto& hostLatency = resp.hostLatency();
-                for (size_t i = 0; i < hostLatency.size(); ++i) {
-                    auto& info = hostLatency[i];
-                    const auto& host = std::get<0>(info).toString();
-                    const auto& key = folly::stringPrintf("%s exec/total/vertices", host.c_str());
-                    auto numVertices = resp.responses()[i].vertices.size();
-                    const auto& value = folly::stringPrintf(
-                        "%d(us)/%d(us)/%lu", std::get<1>(info), std::get<2>(info), numVertices);
-                    otherStats_->emplace(key, value);
-                }
+            auto& hostLatency = resp.hostLatency();
+            for (size_t i = 0; i < hostLatency.size(); ++i) {
+                auto& info = hostLatency[i];
+                otherStats_.emplace(folly::stringPrintf("%s exec/total/vertices",
+                                                        std::get<0>(info).toString().c_str()),
+                                    folly::stringPrintf("%d(us)/%d(us)/%lu,",
+                                                        std::get<1>(info),
+                                                        std::get<2>(info),
+                                                        resp.responses()[i].vertices.size()));
             }
             return handleResponse(resp);
         });

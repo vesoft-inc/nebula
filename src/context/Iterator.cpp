@@ -10,40 +10,6 @@
 #include "common/datatypes/Vertex.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "util/SchemaUtil.h"
-
-namespace std {
-
-bool equal_to<const nebula::graph::LogicalRow*>::operator()(
-    const nebula::graph::LogicalRow* lhs,
-    const nebula::graph::LogicalRow* rhs) const {
-    DCHECK_EQ(lhs->kind(), rhs->kind()) << lhs->kind() << " vs. " << rhs->kind();
-    switch (lhs->kind()) {
-        case nebula::graph::LogicalRow::Kind::kSequential:
-        case nebula::graph::LogicalRow::Kind::kJoin: {
-            auto& lhsValues = lhs->segments();
-            auto& rhsValues = rhs->segments();
-            if (lhsValues.size() != rhsValues.size()) {
-                return false;
-            }
-            for (size_t i = 0; i < lhsValues.size(); ++i) {
-                const auto* l = lhsValues[i];
-                const auto* r = rhsValues[i];
-                auto equal =
-                    l == r ? true : (l != nullptr) && (r != nullptr) && (*l == *r);
-                if (!equal) {
-                    return false;
-                }
-            }
-            break;
-        }
-        default:
-            LOG(FATAL) << "Not support equal_to for " << lhs->kind();
-            return false;
-    }
-    return true;
-}
-}  // namespace std
-
 namespace nebula {
 namespace graph {
 GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
@@ -542,7 +508,7 @@ const Value& SequentialIter::getColumn(int32_t index) const {
     return getColumnByIndex(index, iter_);
 }
 
-PropIter::PropIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kProp) {
+PropIter::PropIter(std::shared_ptr<Value> value) : SequentialIter(value) {
     DCHECK(value->isDataSet());
     auto& ds = value->getDataSet();
     auto status = makeDataSetIndex(ds);
@@ -551,10 +517,7 @@ PropIter::PropIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kProp) 
         clear();
         return;
     }
-    for (auto& row : ds.rows) {
-        rows_.emplace_back(&row);
-    }
-    iter_ = rows_.begin();
+    kind_ = Kind::kProp;
 }
 
 Status PropIter::makeDataSetIndex(const DataSet& ds) {
@@ -593,23 +556,19 @@ const Value& PropIter::getColumn(const std::string& col) const {
         return Value::kNullValue;
     }
 
-    auto& logicalRow = *iter_;
     auto index = dsIndex_.colIndices.find(col);
     if (index == dsIndex_.colIndices.end()) {
         return Value::kNullValue;
     }
-    DCHECK_EQ(logicalRow.segments_.size(), 1);
-    auto* row = logicalRow.segments_[0];
-    DCHECK_LT(index->second, row->values.size());
-    return row->values[index->second];
+    auto& row = *iter_;
+    DCHECK_LT(index->second, row.values.size());
+    return row.values[index->second];
 }
 
 const Value& PropIter::getProp(const std::string& name, const std::string& prop) const {
     if (!valid()) {
         return Value::kNullValue;
     }
-    DCHECK_EQ(iter_->segments_.size(), 1);
-    auto& row = *(iter_->segments_[0]);
     auto& propsMap = dsIndex_.propsMap;
     auto index = propsMap.find(name);
     if (index == propsMap.end()) {
@@ -622,6 +581,7 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
         return Value::kNullValue;
     }
     auto colId = propIndex->second;
+    auto& row = *iter_;
     DCHECK_GT(row.size(), colId);
     return row[colId];
 }
@@ -639,8 +599,7 @@ Value PropIter::getVertex() const {
     vertex.vid = vidVal;
     auto& tagPropsMap = dsIndex_.propsMap;
     bool isVertexProps = true;
-    DCHECK_EQ(iter_->segments_.size(), 1);
-    auto& row = *(iter_->segments_[0]);
+    auto& row = *iter_;
     // tagPropsMap -> <std::string, std::unordered_map<std::string, size_t> >
     for (auto& tagProp : tagPropsMap) {
         // propIndex -> std::unordered_map<std::string, size_t>
@@ -676,8 +635,7 @@ Value PropIter::getEdge() const {
     Edge edge;
     auto& edgePropsMap = dsIndex_.propsMap;
     bool isEdgeProps = true;
-    DCHECK_EQ(iter_->segments_.size(), 1);
-    auto& row = *(iter_->segments_[0]);
+    auto& row = *iter_;
     for (auto& edgeProp : edgePropsMap) {
         for (auto& propIndex : edgeProp.second) {
             if (row[propIndex.second].empty()) {
@@ -730,7 +688,7 @@ Value PropIter::getEdge() const {
 }
 
 List PropIter::getVertices() {
-    DCHECK(iter_ == rows_.begin());
+    DCHECK(iter_ == rows_->begin());
     List vertices;
     vertices.values.reserve(size());
     for (; valid(); next()) {
@@ -741,7 +699,7 @@ List PropIter::getVertices() {
 }
 
 List PropIter::getEdges() {
-    DCHECK(iter_ == rows_.begin());
+    DCHECK(iter_ == rows_->begin());
     List edges;
     edges.values.reserve(size());
     for (; valid(); next()) {
@@ -778,42 +736,6 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
             break;
     }
     os << " iterator";
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, LogicalRow::Kind kind) {
-    switch (kind) {
-        case LogicalRow::Kind::kGetNeighbors:
-            os << "get neighbors row";
-            break;
-        case LogicalRow::Kind::kSequential:
-            os << "sequential row";
-            break;
-        case LogicalRow::Kind::kJoin:
-            os << "join row";
-            break;
-        case LogicalRow::Kind::kProp:
-            os << "prop row";
-            break;
-    }
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const LogicalRow& row) {
-    std::stringstream ss;
-    size_t cnt = 0;
-    for (auto* seg : row.segments()) {
-        if (seg == nullptr) {
-            ss << "nullptr";
-        } else {
-            ss << *seg;
-        }
-        if (cnt < row.size() - 1) {
-            ss << ",";
-        }
-        ++cnt;
-    }
-    os << ss.str();
     return os;
 }
 }  // namespace graph

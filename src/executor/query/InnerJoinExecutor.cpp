@@ -49,6 +49,7 @@ DataSet InnerJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
                              Iterator* probeIter) {
     DataSet ds;
     QueryExpressionContext ctx(ectx_);
+    ds.rows.reserve(probeIter->size());
     for (; probeIter->valid(); probeIter->next()) {
         List list;
         list.values.reserve(probeKeys.size());
@@ -69,13 +70,16 @@ DataSet InnerJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
             newRow.reserve(lRow.size() + rRow.size());
             auto& values = newRow.values;
             if (exchange_) {
-                values.insert(values.end(), rRow.values.begin(), rRow.values.end());
+                values.insert(values.end(),
+                        std::make_move_iterator(rRow.values.begin()),
+                        std::make_move_iterator(rRow.values.end()));
                 values.insert(values.end(), lRow.values.begin(), lRow.values.end());
             } else {
                 values.insert(values.end(), lRow.values.begin(), lRow.values.end());
-                values.insert(values.end(), rRow.values.begin(), rRow.values.end());
+                values.insert(values.end(),
+                        std::make_move_iterator(rRow.values.begin()),
+                        std::make_move_iterator(rRow.values.end()));
             }
-            VLOG(1) << "Row: " << newRow;
             ds.rows.emplace_back(std::move(newRow));
         }
     }
