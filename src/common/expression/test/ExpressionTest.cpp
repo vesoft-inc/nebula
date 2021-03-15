@@ -1295,11 +1295,11 @@ TEST_F(ExpressionTest, toStringTest) {
         EXPECT_EQ(no.toString(), "!(2)");
 
         UnaryExpression isNull(Expression::Kind::kIsNull, new ConstantExpression(2));
-        EXPECT_EQ(isNull.toString(), "IS NULL(2)");
+        EXPECT_EQ(isNull.toString(), "2 IS NULL");
 
         UnaryExpression isNotNull(Expression::Kind::kIsNotNull,
                                   new ConstantExpression(Value::kNullValue));
-        EXPECT_EQ(isNotNull.toString(), "IS NOT NULL(NULL)");
+        EXPECT_EQ(isNotNull.toString(), "NULL IS NOT NULL");
     }
     {
         VariableExpression var(new std::string("name"));

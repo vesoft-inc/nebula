@@ -109,11 +109,9 @@ std::string UnaryExpression::toString() const {
             op = "--";
             break;
         case Kind::kIsNull:
-            op = "IS NULL";
-            break;
+            return operand_->toString() + " IS NULL";
         case Kind::kIsNotNull:
-            op = "IS NOT NULL";
-            break;
+            return operand_->toString() + " IS NOT NULL";
         default:
             op = "illegal symbol ";
     }
