@@ -61,8 +61,8 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
             oss << resolved;
             LOG(INFO) << oss.str();
         } catch(const std::exception& e) {
+            // if we resolve failed, just return a connection, we will retry later
             LOG(ERROR) << e.what();
-            return nullptr;
         }
     }
 
