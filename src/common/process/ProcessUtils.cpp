@@ -277,8 +277,8 @@ struct BgRun {
 
         try {
             return fut.get();
-        } catch (std::exception& e) {
-            return Status::Error(e.what());
+        } catch (const std::exception& e) {
+            return Status::Error("%s", e.what());
         }
     }
 
