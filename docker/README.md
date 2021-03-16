@@ -8,3 +8,4 @@ Following docker images will be ready in production.
 - [vesoft/nebula-metad](https://hub.docker.com/r/vesoft/nebula-metad): nebula-metad service built with `Dockerfile.metad`
 - [vesoft/nebula-storaged](https://hub.docker.com/r/vesoft/nebula-storaged): nebula-storaged service built with `Dockerfile.storaged`
 - [vesoft/nebula-console](https://hub.docker.com/r/vesoft/nebula-console): nebula console client built with `Dockerfile.console`
+- [vesoft/nebula-tools](https://hub.docker.com/r/vesoft/nebula-tools): nebula tools built with `Dockerfile.tools`

@@ -77,6 +77,7 @@ jobs:
           - graphd
           - console
           - graph
+          - tools
     steps:
       - uses: actions/checkout@v1
         with:
