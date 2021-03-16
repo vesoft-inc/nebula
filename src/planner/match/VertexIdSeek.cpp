@@ -8,101 +8,69 @@
 
 #include "planner/Logic.h"
 #include "planner/match/MatchSolver.h"
+#include "visitor/VidExtractVisitor.h"
 #include "util/ExpressionUtils.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {
-bool VertexIdSeek::matchEdge(EdgeContext* edgeCtx) {
+bool VertexIdSeek::matchEdge(EdgeContext *edgeCtx) {
     UNUSED(edgeCtx);
     return false;
 }
 
-StatusOr<SubPlan> VertexIdSeek::transformEdge(EdgeContext* edgeCtx) {
+StatusOr<SubPlan> VertexIdSeek::transformEdge(EdgeContext *edgeCtx) {
     UNUSED(edgeCtx);
-    return Status::Error("Unimplement for edge pattern.");
+    return Status::Error("Unimplemented for edge pattern.");
 }
 
-bool VertexIdSeek::matchNode(NodeContext* nodeCtx) {
-    auto* matchClauseCtx = nodeCtx->matchClauseCtx;
-    auto where = matchClauseCtx->where.get();
-    if (where == nullptr || where->filter == nullptr) {
+bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
+    auto &node = *nodeCtx->info;
+    auto *matchClauseCtx = nodeCtx->matchClauseCtx;
+    if (matchClauseCtx->where == nullptr || matchClauseCtx->where->filter == nullptr) {
         return false;
     }
 
-    DCHECK(nodeCtx->info != nullptr);
-    auto alias = nodeCtx->info->alias;
-    if (alias == nullptr) {
+    if (node.alias == nullptr || node.anonymous) {
+        // require one named node
         return false;
     }
 
-    auto vidResult = extractVids(*alias, where->filter.get());
-    if (!vidResult.ok()) {
+    VidExtractVisitor vidExtractVisitor;
+    matchClauseCtx->where->filter->accept(&vidExtractVisitor);
+    auto vidResult = vidExtractVisitor.moveVidPattern();
+    if (vidResult.spec != VidExtractVisitor::VidPattern::Special::kInUsed) {
         return false;
     }
-
-    nodeCtx->ids = vidResult.value();
-    return true;
-}
-
-static Status checkIDFun(const std::string& alias, const FunctionCallExpression* fCallExpr) {
-    if (*fCallExpr->name() != "id") {
-        return Status::Error("Only id function is allowed");
-    }
-    const auto& args = DCHECK_NOTNULL(fCallExpr->args())->args();
-    if (args.size() != 1U) {
-        return Status::Error("Invalid parameter number of id function");
-    }
-    auto arg = args.back().get();
-    if (arg->toString() != alias) {
-        return Status::Error("Invalid parameter `%s' of id function", alias.c_str());
-    }
-    return Status::OK();
-}
-
-StatusOr<const Expression*> VertexIdSeek::extractVids(const std::string& alias,
-                                                      const Expression* filter) {
-    if (filter->kind() == Expression::Kind::kRelIn) {
-        const auto* inExpr = static_cast<const RelationalExpression*>(filter);
-        if (inExpr->left()->kind() != Expression::Kind::kFunctionCall ||
-            inExpr->right()->kind() != Expression::Kind::kConstant) {
-            return Status::Error("Not supported expression.");
+    for (auto &nodeVid : vidResult.nodes) {
+        if (nodeVid.second.kind == VidExtractVisitor::VidPattern::Vids::Kind::kIn) {
+            if (nodeVid.first == *node.alias) {
+                nodeCtx->ids = std::move(nodeVid.second.vids);
+                return true;
+            }
         }
-        const auto* fCallExpr = static_cast<const FunctionCallExpression*>(inExpr->left());
-        NG_RETURN_IF_ERROR(checkIDFun(alias, fCallExpr));
-        auto* constExpr = const_cast<Expression*>(inExpr->right());
-        return constExpr;
-    } else if (filter->kind() == Expression::Kind::kRelEQ) {
-        const auto* eqExpr = static_cast<const RelationalExpression*>(filter);
-        if (eqExpr->left()->kind() != Expression::Kind::kFunctionCall ||
-            eqExpr->right()->kind() != Expression::Kind::kConstant) {
-            return Status::Error("Not supported expression.");
-        }
-        const auto* fCallExpr = static_cast<const FunctionCallExpression*>(eqExpr->left());
-        NG_RETURN_IF_ERROR(checkIDFun(alias, fCallExpr));
-        auto* constExpr = const_cast<Expression*>(eqExpr->right());
-        return constExpr;
-    } else {
-        return Status::Error("Not supported expression.");
     }
+
+    return false;
 }
 
-std::pair<std::string, Expression*> VertexIdSeek::listToAnnoVarVid(QueryContext* qctx,
-                                                                    const List& list) {
+std::pair<std::string, Expression *> VertexIdSeek::listToAnnoVarVid(QueryContext *qctx,
+                                                                    const List &list) {
     auto input = qctx->vctx()->anonVarGen()->getVar();
     DataSet vids({kVid});
     QueryExpressionContext dummy;
-    for (auto& v : list.values) {
+    for (auto &v : list.values) {
         vids.emplace_back(Row({std::move(v)}));
     }
 
     qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
 
-    auto* src = new VariablePropertyExpression(new std::string(input), new std::string(kVid));
-    return std::pair<std::string, Expression*>(input, src);
+    auto *src = new VariablePropertyExpression(new std::string(input), new std::string(kVid));
+    return std::pair<std::string, Expression *>(input, src);
 }
 
-std::pair<std::string, Expression*> VertexIdSeek::constToAnnoVarVid(QueryContext* qctx,
-                                                                     const Value& v) {
+std::pair<std::string, Expression *> VertexIdSeek::constToAnnoVarVid(QueryContext *qctx,
+                                                                     const Value &v) {
     auto input = qctx->vctx()->anonVarGen()->getVar();
     DataSet vids({kVid});
     QueryExpressionContext dummy;
@@ -110,23 +78,17 @@ std::pair<std::string, Expression*> VertexIdSeek::constToAnnoVarVid(QueryContext
 
     qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
 
-    auto* src = new VariablePropertyExpression(new std::string(input), new std::string(kVid));
-    return std::pair<std::string, Expression*>(input, src);
+    auto *src = new VariablePropertyExpression(new std::string(input), new std::string(kVid));
+    return std::pair<std::string, Expression *>(input, src);
 }
 
-StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
+StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext *nodeCtx) {
     SubPlan plan;
-    auto* matchClauseCtx = nodeCtx->matchClauseCtx;
-    auto* qctx = matchClauseCtx->qctx;
+    auto *matchClauseCtx = nodeCtx->matchClauseCtx;
+    auto *qctx = matchClauseCtx->qctx;
 
     QueryExpressionContext dummy;
-    const auto& value = const_cast<Expression*>(nodeCtx->ids)->eval(dummy);
-    std::pair<std::string, Expression*> vidsResult;
-    if (value.isList()) {
-        vidsResult = listToAnnoVarVid(qctx, value.getList());
-    } else {
-        vidsResult = constToAnnoVarVid(qctx, value);
-    }
+    std::pair<std::string, Expression *> vidsResult = listToAnnoVarVid(qctx, nodeCtx->ids);
 
     auto* passThrough = PassThroughNode::make(qctx, nullptr);
     passThrough->setOutputVar(vidsResult.first);
@@ -137,5 +99,6 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext* nodeCtx) {
     nodeCtx->initialExpr = std::unique_ptr<Expression>(vidsResult.second);
     return plan;
 }
-}  // namespace graph
-}  // namespace nebula
+
+}   // namespace graph
+}   // namespace nebula
