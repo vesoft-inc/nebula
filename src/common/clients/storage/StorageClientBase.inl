@@ -355,9 +355,15 @@ StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
             std::vector<typename Container::value_type>
         >
     > clusters;
+
+    auto status = metaClient_->partsNum(spaceId);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
+    auto numParts = status.value();
     for (auto& id : ids) {
         CHECK(!!metaClient_);
-        auto status = metaClient_->partId(spaceId, f(id));
+        status = metaClient_->partId(numParts, f(id));
         if (!status.ok()) {
             return status.status();
         }

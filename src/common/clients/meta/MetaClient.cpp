@@ -947,13 +947,7 @@ void MetaClient::loadRemoteListeners() {
 
 /// ================================== public methods =================================
 
-StatusOr<PartitionID> MetaClient::partId(GraphSpaceID spaceId, const VertexID id) const {
-    auto status = partsNum(spaceId);
-    if (!status.ok()) {
-        return Status::Error("Space not found, spaceid: %d", spaceId);
-    }
-
-    auto numParts = status.value();
+StatusOr<PartitionID> MetaClient::partId(int32_t numParts, const VertexID id) const {
     // If the length of the id is 8, we will treat it as int64_t to be compatible
     // with the version 1.0
     uint64_t vid = 0;

@@ -307,7 +307,12 @@ GraphStorageClient::updateVertex(GraphSpaceID space,
     std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
 
     DCHECK(!!metaClient_);
-    auto status = metaClient_->partId(space, std::move(cbStatus).value()(vertexId));
+    auto status = metaClient_->partsNum(space);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", space);
+    }
+    auto numParts = status.value();
+    status = metaClient_->partId(numParts, std::move(cbStatus).value()(vertexId));
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -360,7 +365,12 @@ GraphStorageClient::updateEdge(GraphSpaceID space,
     std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
 
     DCHECK(!!metaClient_);
-    auto status = metaClient_->partId(space, std::move(cbStatus).value()(edgeKey));
+    auto status = metaClient_->partsNum(space);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", space);
+    }
+    auto numParts = status.value();
+    status = metaClient_->partId(numParts, std::move(cbStatus).value()(edgeKey));
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -402,7 +412,12 @@ GraphStorageClient::getUUID(GraphSpaceID space,
                             folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::GetUUIDReq> request;
     DCHECK(!!metaClient_);
-    auto status = metaClient_->partId(space, name);
+    auto status = metaClient_->partsNum(space);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", space);
+    }
+    auto numParts = status.value();
+    status = metaClient_->partId(numParts, name);
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(status.status());
     }
