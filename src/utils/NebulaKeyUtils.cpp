@@ -5,6 +5,7 @@
  */
 
 #include "utils/NebulaKeyUtils.h"
+#include "utils/IndexKeyUtils.h"
 
 namespace nebula {
 
@@ -193,6 +194,9 @@ std::vector<std::string> NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
     } else {
         result.emplace_back(vertexPrefix(partId));
         result.emplace_back(edgePrefix(partId));
+        result.emplace_back(IndexKeyUtils::indexPrefix(partId));
+        // kSystem will be written when balance data
+        // kOperation will be blocked by jobmanager later
     }
     return result;
 }

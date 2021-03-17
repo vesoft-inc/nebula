@@ -41,7 +41,7 @@ struct Node {
     Node() = default;
 
     bool isFull() {
-        return pos_.load(std::memory_order_relaxed) == kMaxLength;
+        return pos_.load(std::memory_order_acquire) == kMaxLength;
     }
 
     bool push_back(Record&& rec) {
@@ -372,6 +372,7 @@ private:
         auto* tail = tail_.load(std::memory_order_acquire);
         auto readers = refs_.fetch_sub(1, std::memory_order_relaxed);
         VLOG(3) << "Release ref, readers = " << readers;
+        // todo(doodle): https://github.com/vesoft-inc/nebula-storage/issues/390
         if (readers > 1) {
             return;
         }
