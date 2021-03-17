@@ -63,6 +63,26 @@ Feature: RelationalExpression
     Then the result should be, in order:
       | null_test                                                    |
       | [NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, true] |
+    When executing query:
+      """
+      YIELD [1 in [1,2], 1 in [2,3], [1] in [2,[1]],
+             null in [1,2], null in [null], null in [1,null],
+             1 in [1,null], 1 in [null,2],
+             [1,null] in [1,null], [1,null] in [1], [1,null] in [null,[1,null]]] AS in_test
+      """
+    Then the result should be, in order:
+      | in_test                                                              |
+      | [true, false, true, NULL, NULL, NULL, true, NULL, NULL, false, true] |
+    When executing query:
+      """
+      YIELD [1 not in [1,2], 1 not in [2,3], [1] not in [2,[1]],
+             null not in [1,2], null not in [null], null not in [1,null],
+             1 not in [1,null], 1 not in [null,2],
+             [1,null] not in [1,null], [1,null] not in [1], [1,null] not in [null,[1,null]]] AS not_in_test
+      """
+    Then the result should be, in order:
+      | not_in_test                                                            |
+      | [false, true, false, NULL, NULL, NULL, false, NULL, NULL, true, false] |
 
   Scenario: Using Relational comparison in GO clause
     When executing query:
