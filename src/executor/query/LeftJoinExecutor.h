@@ -24,7 +24,20 @@ public:
 private:
     folly::Future<Status> join();
 
-    DataSet probe(const std::vector<Expression*>& probeKeys, Iterator* probeIter);
+    DataSet probe(const std::vector<Expression*>& probeKeys,
+                  Iterator* probeIter,
+                  const std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+
+    DataSet singleKeyProbe(
+        Expression* probeKey,
+        Iterator* probeIter,
+        const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+
+    template <class T>
+    void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
+                     const T& val,
+                     const Row& lRow,
+                     DataSet& ds) const;
 
 private:
     size_t rightColSize_{0};

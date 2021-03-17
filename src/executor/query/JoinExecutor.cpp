@@ -36,7 +36,10 @@ Status JoinExecutor::checkInputDataSets() {
     return Status::OK();
 }
 
-void JoinExecutor::buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter) {
+void JoinExecutor::buildHashTable(
+    const std::vector<Expression*>& hashKeys,
+    Iterator* iter,
+    std::unordered_map<List, std::vector<const Row*>>& hashTable) const {
     QueryExpressionContext ctx(ectx_);
     for (; iter->valid(); iter->next()) {
         List list;
@@ -46,7 +49,20 @@ void JoinExecutor::buildHashTable(const std::vector<Expression*>& hashKeys, Iter
             list.values.emplace_back(std::move(val));
         }
 
-        auto& vals = hashTable_[list];
+        auto& vals = hashTable[list];
+        vals.emplace_back(iter->row());
+    }
+}
+
+void JoinExecutor::buildSingleKeyHashTable(
+    Expression* hashKey,
+    Iterator* iter,
+    std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
+    QueryExpressionContext ctx(ectx_);
+    for (; iter->valid(); iter->next()) {
+        auto& val = hashKey->eval(ctx(iter));
+
+        auto& vals = hashTable[val];
         vals.emplace_back(iter->row());
     }
 }
