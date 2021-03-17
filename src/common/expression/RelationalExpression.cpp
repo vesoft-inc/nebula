@@ -50,25 +50,69 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
         }
         case Kind::kRelIn: {
             if (rhs.isList()) {
-                result_ = rhs.getList().contains(lhs);
+                auto& list = rhs.getList();
+                result_ = list.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             !result_.getBool() &&
+                             list.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else if (rhs.isSet()) {
-                result_ = rhs.getSet().contains(lhs);
+                auto& set = rhs.getSet();
+                result_ = set.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             !result_.getBool() &&
+                             set.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else if (rhs.isMap()) {
-                result_ = rhs.getMap().contains(lhs);
+                auto& map = rhs.getMap();
+                result_ = map.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             !result_.getBool() &&
+                             map.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else {
                 result_ = Value(NullType::BAD_TYPE);
+            }
+
+            if (UNLIKELY(!result_.isBadNull() && lhs.isNull())) {
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kRelNotIn: {
             if (rhs.isList()) {
-                result_ = !rhs.getList().contains(lhs);
+                auto& list = rhs.getList();
+                result_ = !list.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             result_.getBool() &&
+                             list.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else if (rhs.isSet()) {
-                result_ = !rhs.getSet().contains(lhs);
+                auto& set = rhs.getSet();
+                result_ = !set.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             result_.getBool() &&
+                             set.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else if (rhs.isMap()) {
-                result_ = !rhs.getMap().contains(lhs);
+                auto& map = rhs.getMap();
+                result_ = !map.contains(lhs);
+                if (UNLIKELY(result_.isBool() &&
+                             result_.getBool() &&
+                             map.contains(Value::kNullValue))) {
+                    result_ = Value::kNullValue;
+                }
             } else {
                 result_ = Value(NullType::BAD_TYPE);
+            }
+
+            if (UNLIKELY(!result_.isBadNull() && lhs.isNull())) {
+                result_ = Value::kNullValue;
             }
             break;
         }
