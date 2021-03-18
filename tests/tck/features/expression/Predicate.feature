@@ -88,7 +88,7 @@ Feature: Predicate
       """
       YIELD single(n IN "Tom" WHERE n == 3) AS r
       """
-    Then a SemanticError should be raised at runtime: `single(n IN "Tom" WHERE (n==3))': Invalid colletion type, expected type of LIST, but was: STRING
+    Then a SemanticError should be raised at runtime: `"Tom"', expected LIST, but was STRING
     When executing query:
       """
       YIELD single(n IN NULL WHERE n == 3) AS r

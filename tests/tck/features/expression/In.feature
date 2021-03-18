@@ -132,3 +132,24 @@ Feature: In Expression
       | 'LaMarcus Aldridge' | 90            |
       | 'Manu Ginobili'     | 95            |
       | 'Tim Duncan'        | 95            |
+
+  Scenario: Using IN list in MATCH
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE "Parker" IN split(v.name, " ")
+      RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name        |
+      | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE "ing" IN [n IN split(v.name, "M") WHERE true]
+      RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name     |
+      | "Yao Ming" |

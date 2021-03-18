@@ -245,10 +245,13 @@ void DeduceTypeVisitor::visit(RelationalExpression *expr) {
 
     if (expr->kind() == Expression::Kind::kRelIn || expr->kind() == Expression::Kind::kRelNotIn) {
         auto right = type_;
-        if (right != Value::Type::LIST && right != Value::Type::SET && right != Value::Type::MAP) {
-            status_ = Status::SemanticError(
-                "`%s': Invalid expression for IN operator, expecting List/Set/Map",
-                expr->toString().c_str());
+        if (right != Value::Type::LIST && right != Value::Type::SET && right != Value::Type::MAP &&
+            !isSuperiorType(right)) {
+            std::stringstream ss;
+            ss << "`" << expr->right()->toString()
+               << "', expected List/Set/Map, but was "
+               << type_;
+            status_ = Status::SemanticError(ss.str());
             return;
         }
     }
@@ -601,10 +604,10 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
     for (const auto &whenThen : expr->cases()) {
         whenThen.when->accept(this);
         if (!ok()) return;
-        if (!expr->hasCondition() && type_ != Value::Type::BOOL) {
-            status_ = Status::SemanticError(
-                "`%s': Invalid expression type, expecting expression of type BOOL",
-                expr->toString().c_str());
+        if (!expr->hasCondition() && type_ != Value::Type::BOOL && !isSuperiorType(type_)) {
+            std::stringstream ss;
+            ss << "`" << whenThen.when->toString() << "', expected BOOL, but was " << type_;
+            status_ = Status::SemanticError(ss.str());
             return;
         }
         whenThen.then->accept(this);
@@ -626,8 +629,8 @@ void DeduceTypeVisitor::visit(PredicateExpression *expr) {
     }
     if (type_ != Value::Type::LIST) {
         std::stringstream ss;
-        ss << "`" << expr->toString().c_str()
-           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
+        ss << "`" << expr->collection()->toString()
+           << "', expected LIST, but was " << type_;
         status_ = Status::SemanticError(ss.str());
         return;
     }
@@ -660,8 +663,8 @@ void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
 
     if (type_ != Value::Type::LIST) {
         std::stringstream ss;
-        ss << "`" << expr->toString().c_str()
-           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
+        ss << "`" << expr->collection()->toString()
+           << "', expected LIST, but was " << type_;
         status_ = Status::SemanticError(ss.str());
         return;
     }
@@ -684,8 +687,8 @@ void DeduceTypeVisitor::visit(ReduceExpression *expr) {
 
     if (type_ != Value::Type::LIST) {
         std::stringstream ss;
-        ss << "`" << expr->toString().c_str()
-           << "': Invalid colletion type, expected type of LIST, but was: " << type_;
+        ss << "`" << expr->collection()->toString()
+           << "', expected LIST, but was " << type_;
         status_ = Status::SemanticError(ss.str());
         return;
     }

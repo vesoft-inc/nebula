@@ -47,6 +47,7 @@ nebula-python
 .classpath
 cmake-build*/
 .vscode/
+.cache/
 core.*
 workspace.*
 

@@ -86,7 +86,7 @@ Feature: Reduce
       """
       YIELD reduce(totalNum = 10, n IN "jerry" | totalNum + n) AS r
       """
-    Then a SemanticError should be raised at runtime: `reduce(totalNum = 10, n IN "jerry" | (totalNum+n))': Invalid colletion type, expected type of LIST, but was: STRING
+    Then a SemanticError should be raised at runtime: `"jerry"', expected LIST, but was STRING
     When executing query:
       """
       YIELD reduce(totalNum = 10, n IN NULL | totalNum + n) AS r

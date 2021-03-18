@@ -87,7 +87,7 @@ Feature: ListComprehension
       """
       YIELD [n IN 18 WHERE n > 2 | n + 10] AS a
       """
-    Then a SemanticError should be raised at runtime: `[n IN 18 WHERE (n>2) | (n+10)]': Invalid colletion type, expected type of LIST, but was: INT
+    Then a SemanticError should be raised at runtime: `18', expected LIST, but was INT
     When executing query:
       """
       YIELD [n IN NULL WHERE n > 2 | n + 10] AS a
