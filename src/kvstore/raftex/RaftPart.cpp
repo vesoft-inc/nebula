@@ -1039,7 +1039,7 @@ bool RaftPart::needToStartElection() {
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
         (lastMsgRecvDur_.elapsedInMSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
-         term_ == 0)) {
+         isBlindFollower_)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInMSec()
                   << ", term " << term_;
@@ -1154,6 +1154,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                   << proposedTerm;
         term_ = proposedTerm;
         role_ = Role::LEADER;
+        isBlindFollower_ = false;
     }
 
     return role_;
@@ -1476,6 +1477,7 @@ void RaftPart::processAskForVoteRequest(
     // Reset the last message time
     lastMsgRecvDur_.reset();
     weight_ = 1;
+    isBlindFollower_ = false;
     return;
 }
 
@@ -1769,6 +1771,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     term_ = proposedTerm_ = req.get_current_term();
     votedAddr_ = HostAddr("", 0);
     weight_ = 1;
+    isBlindFollower_ = false;
     // Before accept the logs from the new leader, check the logs locally.
     if (wal_->lastLogId() > lastLogId_) {
         LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()

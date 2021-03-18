@@ -556,6 +556,8 @@ protected:
     uint64_t lastMsgAcceptedCostMs_{0};
     // Make sure only one election is in progress
     std::atomic_bool inElection_{false};
+    // Speed up first election when I don't know who is leader
+    bool isBlindFollower_{true};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
