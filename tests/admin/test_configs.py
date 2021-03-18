@@ -75,7 +75,7 @@ class TestConfigs(NebulaTestSuite):
                            ['STORAGE', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
                            ['STORAGE', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
                            ['STORAGE', 'rocksdb_db_options', 'map', 'MUTABLE', {}],
-                           ['STORAGE', 'enable_multi_versions', 'bool', 'MUTABLE', False],
+                           ['STORAGE', 'clean_wal_interval_secs', 'int', 'MUTABLE', 600],
                            ['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE',
                             {"write_buffer_size":"67108864","max_bytes_for_level_base":"268435456","max_write_buffer_number":"4"}],
                            ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size":"8192"}],

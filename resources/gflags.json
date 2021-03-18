@@ -7,9 +7,8 @@
         "slow_op_threshhold_ms",
         "clean_wal_interval_secs",
         "wal_ttl",
-        "enable_reservoir_sampling",
+        "clean_wal_interval_secs",
         "custom_filter_interval_secs",
-        "enable_multi_versions",
         "accept_partial_success"
     ],
     "NESTED": [
