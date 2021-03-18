@@ -57,7 +57,9 @@ GflagsManager::parseConfigJson(const std::string& path) {
         {"meta_client_retry_times", {cpp2::ConfigMode::MUTABLE, false}},
         {"slow_op_threshhold_ms", {cpp2::ConfigMode::MUTABLE, false}},
         {"wal_ttl", {cpp2::ConfigMode::MUTABLE, false}},
-        {"enable_reservoir_sampling", {cpp2::ConfigMode::MUTABLE, false}},
+        {"clean_wal_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
+        {"custom_filter_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
+        {"accept_partial_success", {cpp2::ConfigMode::MUTABLE, false}},
 
         {"rocksdb_db_options", {cpp2::ConfigMode::MUTABLE, true}},
         {"rocksdb_column_family_options", {cpp2::ConfigMode::MUTABLE, true}},
