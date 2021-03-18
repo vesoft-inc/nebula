@@ -11,7 +11,6 @@
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
 #include "utils/NebulaKeyUtils.h"
 #include "utils/IndexKeyUtils.h"
-#include "codec/RowWriterV2.h"
 
 DEFINE_string(src_db_path, "", "Source data path(data_path in storage 1.x conf), "
                                "multi paths should be split by comma");
@@ -691,6 +690,165 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
     }
 }
 
+// If the field types are inconsistent, can be converted
+WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchema,
+                                        const meta::SchemaProviderIf* oSchema,
+                                        std::string& name,
+                                        Value& val) {
+    auto newpropType = nSchema->getFieldType(name);
+    auto oldpropType = oSchema->getFieldType(name);
+    if (newpropType == oldpropType) {
+        return WriteResult::SUCCEEDED;
+    }
+
+    bool bval;
+    double fval;
+    int64_t ival;
+    std::string sval;
+
+    // need convert
+    switch (val.type()) {
+        case Value::Type::NULLVALUE:
+            return WriteResult::SUCCEEDED;;
+        case Value::Type::BOOL: {
+            switch (newpropType) {
+                case meta::cpp2::PropertyType::INT8:
+                case meta::cpp2::PropertyType::INT16:
+                case meta::cpp2::PropertyType::INT32:
+                case meta::cpp2::PropertyType::INT64:
+                case meta::cpp2::PropertyType::TIMESTAMP:
+                case meta::cpp2::PropertyType::VID: {
+                    bval = val.getBool();
+                    if (bval) {
+                        val.setInt(1);
+                    } else {
+                        val.setInt(0);
+                    }
+                    return WriteResult::SUCCEEDED;
+                }
+                case meta::cpp2::PropertyType::STRING:
+                case meta::cpp2::PropertyType::FIXED_STRING: {
+                    try {
+                        bval = val.getBool();
+                        sval = folly::to<std::string>(bval);
+                        val.setStr(sval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                case meta::cpp2::PropertyType::FLOAT:
+                case meta::cpp2::PropertyType::DOUBLE: {
+                    try {
+                        bval = val.getBool();
+                        fval = folly::to<double>(bval);
+                        val.setFloat(fval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                // other not need convert
+                default:
+                    return WriteResult::SUCCEEDED;
+            }
+        }
+        case Value::Type::INT: {
+            switch (newpropType) {
+                case meta::cpp2::PropertyType::STRING:
+                case meta::cpp2::PropertyType::FIXED_STRING: {
+                    try {
+                       ival = val.getInt();
+                       sval = folly::to<std::string>(ival);
+                       val.setStr(sval);
+                       return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                // other not need convert
+                default:
+                    return WriteResult::SUCCEEDED;
+            }
+        }
+        case Value::Type::FLOAT: {
+            switch (newpropType) {
+                case meta::cpp2::PropertyType::STRING:
+                case meta::cpp2::PropertyType::FIXED_STRING: {
+                    try {
+                        fval = val.getFloat();
+                        sval = folly::to<std::string>(fval);
+                        val.setStr(sval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                case meta::cpp2::PropertyType::BOOL: {
+                    try {
+                        fval = val.getFloat();
+                        bval = folly::to<bool>(fval);
+                        val.setBool(bval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                // other not need convert
+                default:
+                    return WriteResult::SUCCEEDED;
+            }
+        }
+        case Value::Type::STRING: {
+            switch (newpropType) {
+                case meta::cpp2::PropertyType::INT8:
+                case meta::cpp2::PropertyType::INT16:
+                case meta::cpp2::PropertyType::INT32:
+                case meta::cpp2::PropertyType::INT64:
+                case meta::cpp2::PropertyType::TIMESTAMP:
+                case meta::cpp2::PropertyType::VID: {
+                    try {
+                        sval = val.getStr();
+                        ival = folly::to<int64_t>(sval);
+                        val.setInt(ival);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                case meta::cpp2::PropertyType::BOOL: {
+                    try {
+                        sval = val.getStr();
+                        bval = folly::to<bool>(sval);
+                        val.setBool(bval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                case meta::cpp2::PropertyType::FLOAT:
+                case meta::cpp2::PropertyType::DOUBLE: {
+                    try {
+                        sval = val.getStr();
+                        fval = folly::to<double>(sval);
+                        val.setFloat(fval);
+                        return WriteResult::SUCCEEDED;
+                    } catch (const std::exception& e) {
+                        return WriteResult::TYPE_MISMATCH;
+                    }
+                }
+                // other not need convert
+                default:
+                    return WriteResult::SUCCEEDED;
+            }
+        }
+        // other not need convert
+        default:
+            return WriteResult::SUCCEEDED;
+    }
+}
+
+
 // Used for vertex and edge
 std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
                                         const meta::NebulaSchemaProvider* schema,
@@ -711,6 +869,12 @@ std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
     for (auto& name : fieldName) {
         auto val = reader->getValueByName(name);
         if (val.type() != Value::Type::NULLVALUE) {
+            // If the field types are inconsistent, can be converted
+            wRet = convertValue(schema, oldSchema, name, val);
+            if (wRet != WriteResult::SUCCEEDED) {
+                LOG(ERROR)  << "Convert value failed";
+                return "";
+            }
             wRet = rowWrite.setValue(name, val);
             if (wRet != WriteResult::SUCCEEDED) {
                 LOG(ERROR)  << "Write rowWriterV2 failed";

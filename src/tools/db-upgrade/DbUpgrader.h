@@ -17,7 +17,7 @@
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include "kvstore/RocksEngine.h"
 #include "codec/RowReaderWrapper.h"
-
+#include "codec/RowWriterV2.h"
 
 DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);
@@ -103,6 +103,10 @@ private:
                             VertexID& dstId,
                             std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
+    WriteResult convertValue(const meta::NebulaSchemaProvider* newSchema,
+                             const meta::SchemaProviderIf* oldSchema,
+                             std::string& name,
+                             Value& val);
     void runPartV1();
 
     void runPartV2();
