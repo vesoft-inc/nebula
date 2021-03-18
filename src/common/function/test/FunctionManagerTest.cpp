@@ -88,6 +88,70 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
         testFunction(#expr, args, expected);                                                       \
     } while (0);
 
+TEST_F(FunctionManagerTest, testNull) {
+    // scalar functions
+    TEST_FUNCTION(coalesce, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(endNode, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(startNode, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(head, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(id, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(last, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(length, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(properties, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(size, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toBoolean, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toString, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toFloat, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toInteger, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(type, args_["nullvalue"], Value::kNullValue);
+
+    // list functions
+    TEST_FUNCTION(keys, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(labels, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(nodes, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(relationships, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(reverse, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(tail, args_["nullvalue"], Value::kNullValue);
+
+    // mathematical function
+    TEST_FUNCTION(abs, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(ceil, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(floor, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(round, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(sign, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(exp, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(log, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(log2, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(log10, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(sqrt, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(acos, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(asin, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(atan, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(cos, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(sin, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(tan, args_["nullvalue"], Value::kNullValue);
+
+    // string functions
+    TEST_FUNCTION(left, std::vector<Value>({Value::kNullValue, 3}), Value::kNullValue);
+    TEST_FUNCTION(
+        left, std::vector<Value>({Value::kNullValue, Value::kNullValue}), Value::kNullValue);
+    TEST_FUNCTION(left, std::vector<Value>({"abc", Value::kNullValue}), Value::kNullBadType);
+    TEST_FUNCTION(left, std::vector<Value>({"abc", -2}), Value::kNullBadType);
+    TEST_FUNCTION(right, std::vector<Value>({Value::kNullValue, 3}), Value::kNullValue);
+    TEST_FUNCTION(
+        right, std::vector<Value>({Value::kNullValue, Value::kNullValue}), Value::kNullValue);
+    TEST_FUNCTION(right, std::vector<Value>({"abc", Value::kNullValue}), Value::kNullBadType);
+    TEST_FUNCTION(right, std::vector<Value>({"abc", -2}), Value::kNullBadType);
+    TEST_FUNCTION(ltrim, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(rtrim, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(trim, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(reverse, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toLower, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(toUpper, args_["nullvalue"], Value::kNullValue);
+    TEST_FUNCTION(split, std::vector<Value>({Value::kNullValue, ","}), Value::kNullValue);
+    TEST_FUNCTION(split, std::vector<Value>({"123,22", Value::kNullValue}), Value::kNullValue);
+}
+
 TEST_F(FunctionManagerTest, functionCall) {
     {
         TEST_FUNCTION(abs, args_["neg_int"], 1);
@@ -152,8 +216,8 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(substring, args_["substring_outRange"], "");
         TEST_FUNCTION(left, args_["side"], "abcde");
         TEST_FUNCTION(right, args_["side"], "mnopq");
-        TEST_FUNCTION(left, args_["neg_side"], "");
-        TEST_FUNCTION(right, args_["neg_side"], "");
+        TEST_FUNCTION(left, args_["neg_side"], Value::kNullBadType);
+        TEST_FUNCTION(right, args_["neg_side"], Value::kNullBadType);
 
         TEST_FUNCTION(lpad, args_["pad"], "1231abcdefghijkl");
         TEST_FUNCTION(rpad, args_["pad"], "abcdefghijkl1231");
@@ -170,7 +234,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(toString, args_["string"], "AbcDeFG");
         TEST_FUNCTION(toString, args_["date"], "1984-10-11");
         TEST_FUNCTION(toString, args_["datetime"], "1984-10-11T12:31:14.341");
-        TEST_FUNCTION(toString, args_["nullvalue"], "NULL");
+        TEST_FUNCTION(toString, args_["nullvalue"], Value::kNullValue);
     }
     {
         TEST_FUNCTION(toBoolean, args_["int"], Value::kNullBadType);
@@ -706,49 +770,6 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(pi, args_["empty"], M_PI);
         TEST_FUNCTION(radians, args_["radians"], M_PI);
         TEST_FUNCTION(radians, args_["nullvalue"], Value::kNullBadType);
-    }
-    // exists
-    {
-        Vertex vertex;
-        vertex.vid = "vid";
-        vertex.tags.resize(2);
-        vertex.tags[0].name = "tag1";
-        vertex.tags[0].props = {
-            {"p1", 123},
-        };
-        vertex.tags[1].name = "tag2";
-        vertex.tags[1].props = {
-            {"p2", 456},
-        };
-
-        TEST_FUNCTION(exists, std::vector<Value>({vertex, "p1"}), true);
-        TEST_FUNCTION(exists, std::vector<Value>({vertex, "p2"}), true);
-        TEST_FUNCTION(exists, std::vector<Value>({vertex, "p3"}), false);
-
-        Vertex emptyVertex;
-        TEST_FUNCTION(exists, std::vector<Value>({emptyVertex, "p1"}), false);
-
-        Edge edge;
-        edge.src = "src";
-        edge.dst = "dst";
-        edge.type = 0;
-        edge.name = "type";
-        edge.ranking = 123;
-        edge.props = {
-            {"p1", 123},
-        };
-        TEST_FUNCTION(exists, std::vector<Value>({edge, "p1"}), true);
-        TEST_FUNCTION(exists, std::vector<Value>({edge, "p2"}), false);
-
-        Edge emptyEdge;
-        TEST_FUNCTION(exists, std::vector<Value>({emptyEdge, "p1"}), false);
-
-        Map map({{"p1", 123}});
-        TEST_FUNCTION(exists, std::vector<Value>({map, "p1"}), true);
-        TEST_FUNCTION(exists, std::vector<Value>({map, "p2"}), false);
-
-        Map emptyMap;
-        TEST_FUNCTION(exists, std::vector<Value>({emptyMap, "p1"}), false);
     }
 }
 

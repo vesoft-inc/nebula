@@ -811,8 +811,8 @@ TEST_F(ExpressionTest, FunctionCallTest) {
         TEST_FUNCTION(substr, args_["substr"], "cdef");
         TEST_FUNCTION(left, args_["side"], "abcde");
         TEST_FUNCTION(right, args_["side"], "mnopq");
-        TEST_FUNCTION(left, args_["neg_side"], "");
-        TEST_FUNCTION(right, args_["neg_side"], "");
+        TEST_FUNCTION(left, args_["neg_side"], Value::kNullValue);
+        TEST_FUNCTION(right, args_["neg_side"], Value::kNullValue);
 
         TEST_FUNCTION(lpad, args_["pad"], "1231abcdefghijkl");
         TEST_FUNCTION(rpad, args_["pad"], "abcdefghijkl1231");
