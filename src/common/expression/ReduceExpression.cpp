@@ -35,6 +35,19 @@ const Value& ReduceExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
+std::unique_ptr<Expression> ReduceExpression::clone() const {
+    auto expr = std::make_unique<ReduceExpression>(
+        new std::string(*accumulator_),
+        initial_->clone().release(),
+        new std::string(*innerVar_),
+        collection_->clone().release(),
+        mapping_ != nullptr ? mapping_->clone().release() : nullptr);
+    if (originString_ != nullptr) {
+        expr->setOriginString(new std::string(*originString_));
+    }
+    return expr;
+}
+
 bool ReduceExpression::operator==(const Expression& rhs) const {
     if (kind() != rhs.kind()) {
         return false;

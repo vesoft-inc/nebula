@@ -78,47 +78,19 @@ struct Vertex {
         tags.clear();
     }
 
-    std::string toString() const {
-        std::stringstream os;
-        os << "(" << vid << ")";
-        if (!tags.empty()) {
-            os << " ";
-            for (const auto& tag : tags) {
-                os << tag.toString();
-            }
-        }
-        return os.str();
-    }
+    std::string toString() const;
 
-    Vertex& operator=(Vertex&& rhs) noexcept {
-        if (&rhs != this) {
-            vid = std::move(rhs.vid);
-            tags = std::move(rhs.tags);
-        }
-        return *this;
-    }
+    Vertex& operator=(Vertex&& rhs) noexcept;
 
-    Vertex& operator=(const Vertex& rhs) {
-        if (&rhs != this) {
-            vid = rhs.vid;
-            tags = rhs.tags;
-        }
-        return *this;
-    }
+    Vertex& operator=(const Vertex& rhs);
 
     bool operator==(const Vertex& rhs) const {
         return vid == rhs.vid && tags == rhs.tags;
     }
 
-    bool operator<(const Vertex& rhs) const {
-        if (vid != rhs.vid) {
-            return vid < rhs.vid;
-        }
-        if (tags.size() != rhs.tags.size()) {
-            return tags.size() < rhs.tags.size();
-        }
-        return false;
-    }
+    bool operator<(const Vertex& rhs) const;
+
+    bool contains(const Value &key) const;
 };
 
 

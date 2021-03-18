@@ -16,7 +16,39 @@ std::unordered_map<std::string, PredicateExpression::Type> PredicateExpression::
     {"none", Type::NONE},
 };
 
+const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
+    DCHECK(collection_->kind() == Expression::Kind::kAttribute);
+    auto* attributeExpr = static_cast<AttributeExpression* >(collection_.get());
+    auto& container = attributeExpr->left()->eval(ctx);
+    auto& key = attributeExpr->right()->eval(ctx);
+    switch (container.type()) {
+        case Value::Type::VERTEX: {
+            result_ = container.getVertex().contains(key);
+            break;
+        }
+        case Value::Type::EDGE: {
+            result_ = container.getEdge().contains(key);
+            break;
+        }
+        case Value::Type::MAP: {
+            result_ = container.getMap().contains(key);
+            break;
+        }
+        case Value::Type::NULLVALUE: {
+            result_ = Value::kNullValue;
+            break;
+        }
+        default: {
+            result_ = Value::kNullBadType;
+        }
+    }
+    return result_;
+}
+
 const Value& PredicateExpression::eval(ExpressionContext& ctx) {
+    if (*name_ == "exists") {
+        return evalExists(ctx);
+    }
     Type type;
     auto iter = typeMap_.find(*name_);
     if (iter != typeMap_.end()) {
@@ -124,40 +156,77 @@ bool PredicateExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    if (*innerVar_ != *expr.innerVar_) {
+    if (hasInnerVar() != expr.hasInnerVar()) {
         return false;
+    }
+
+    if (hasInnerVar()) {
+        if (*innerVar_ != *expr.innerVar_) {
+            return false;
+        }
     }
 
     if (*collection_ != *expr.collection_) {
         return false;
     }
-    if (*filter_ != *expr.filter_) {
+
+    if (hasFilter() != expr.hasFilter()) {
         return false;
+    }
+
+    if (hasFilter()) {
+        if (*filter_ != *expr.filter_) {
+            return false;
+        }
     }
 
     return true;
 }
 
+std::unique_ptr<Expression> PredicateExpression::clone() const {
+    auto expr = std::make_unique<PredicateExpression>(
+        new std::string(*name_),
+        innerVar_ == nullptr ? nullptr : new std::string(*innerVar_),
+        collection_->clone().release(),
+        filter_ != nullptr ? filter_->clone().release() : nullptr);
+    if (originString_ != nullptr) {
+        expr->setOriginString(new std::string(*originString_));
+    }
+    return expr;
+}
+
 void PredicateExpression::writeTo(Encoder& encoder) const {
     encoder << kind_;
+    encoder << Value(hasInnerVar());
+    encoder << Value(hasFilter());
     encoder << Value(hasOriginString());
 
     encoder << name_.get();
-    encoder << innerVar_.get();
+    if (hasInnerVar()) {
+        encoder << innerVar_.get();
+    }
     encoder << *collection_;
-    encoder << *filter_;
+    if (hasFilter()) {
+        encoder << *filter_;
+    }
     if (hasOriginString()) {
         encoder << originString_.get();
     }
 }
 
 void PredicateExpression::resetFrom(Decoder& decoder) {
+    bool hasInnerVar = decoder.readValue().getBool();
+    bool hasFilter = decoder.readValue().getBool();
     bool hasString = decoder.readValue().getBool();
 
     name_ = decoder.readStr();
-    innerVar_ = decoder.readStr();
+    if (hasInnerVar) {
+        innerVar_ = decoder.readStr();
+    }
     collection_ = decoder.readExpression();
-    filter_ = decoder.readExpression();
+    if (hasFilter) {
+        filter_ = decoder.readExpression();
+    }
     if (hasString) {
         originString_ = decoder.readStr();
     }
@@ -166,9 +235,8 @@ void PredicateExpression::resetFrom(Decoder& decoder) {
 std::string PredicateExpression::toString() const {
     if (originString_ != nullptr) {
         return *originString_;
-    } else {
-        return makeString();
     }
+    return makeString();
 }
 
 std::string PredicateExpression::makeString() const {
@@ -177,11 +245,15 @@ std::string PredicateExpression::makeString() const {
 
     buf += *name_;
     buf += "(";
-    buf += *innerVar_;
-    buf += " IN ";
-    buf += collection_->toString();
-    buf += " WHERE ";
-    buf += filter_->toString();
+    if (*name_ != "exists") {
+        buf += *innerVar_;
+        buf += " IN ";
+        buf += collection_->toString();
+        buf += " WHERE ";
+        buf += filter_->toString();
+    } else {
+        buf += collection_->toString();
+    }
     buf += ")";
 
     return buf;

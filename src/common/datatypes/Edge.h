@@ -50,26 +50,11 @@ struct Edge {
         , ranking(std::move(r))
         , props(std::move(p)) {}
 
-    void clear() {
-        src.clear();
-        dst.clear();
-        type = 0;
-        name.clear();
-        ranking = 0;
-        props.clear();
-    }
+    void clear();
 
     std::string toString() const;
 
-    bool operator==(const Edge& rhs) const {
-        if (type != rhs.type && type != -rhs.type) {
-            return false;
-        }
-        if (type == rhs.type) {
-            return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking && props == rhs.props;
-        }
-        return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking && props == rhs.props;
-    }
+    bool operator==(const Edge& rhs) const;
 
     void format() {
         if (type < 0) {
@@ -77,31 +62,11 @@ struct Edge {
         }
     }
 
-    void reverse() {
-        type = -type;
-        auto tmp = std::move(src);
-        src = std::move(dst);
-        dst = std::move(tmp);
-    }
+    void reverse();
 
-    bool operator<(const Edge& rhs) const {
-        if (src != rhs.src) {
-            return src < rhs.src;
-        }
-        if (dst != rhs.dst) {
-            return dst < rhs.dst;
-        }
-        if (type != rhs.type) {
-            return type < rhs.type;
-        }
-        if (ranking != rhs.ranking) {
-            return ranking < rhs.ranking;
-        }
-        if (props.size() != rhs.props.size()) {
-            return props.size() < rhs.props.size();
-        }
-        return false;
-    }
+    bool operator<(const Edge& rhs) const;
+
+    bool contains(const Value &key) const;
 };
 
 inline std::ostream &operator<<(std::ostream& os, const Edge& v) {

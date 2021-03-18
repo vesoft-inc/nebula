@@ -33,17 +33,7 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        auto expr = std::make_unique<ListComprehensionExpression>(
-            new std::string(*innerVar_),
-            collection_->clone().release(),
-            filter_ != nullptr ? filter_->clone().release() : nullptr,
-            mapping_ != nullptr ? mapping_->clone().release() : nullptr);
-        if (originString_ != nullptr) {
-            expr->setOriginString(new std::string(*originString_));
-        }
-        return expr;
-    }
+    std::unique_ptr<Expression> clone() const override;
 
     const std::string* innerVar() const {
         return innerVar_.get();

@@ -35,18 +35,7 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        auto expr = std::make_unique<ReduceExpression>(
-            new std::string(*accumulator_),
-            initial_->clone().release(),
-            new std::string(*innerVar_),
-            collection_->clone().release(),
-            mapping_ != nullptr ? mapping_->clone().release() : nullptr);
-        if (originString_ != nullptr) {
-            expr->setOriginString(new std::string(*originString_));
-        }
-        return expr;
-    }
+    std::unique_ptr<Expression> clone() const override;
 
     const std::string* accumulator() const {
         return accumulator_.get();

@@ -17,6 +17,11 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
         result_ = listVal;
         return result_;
     }
+    if (!listVal.isList()) {
+        result_ = Value::kNullBadType;
+        return result_;
+    }
+
     auto& list = listVal.getList();
 
     if  (filter_ == nullptr && mapping_ == nullptr) {
@@ -46,6 +51,18 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
 
     result_ = std::move(ret);
     return result_;
+}
+
+std::unique_ptr<Expression> ListComprehensionExpression::clone() const {
+    auto expr = std::make_unique<ListComprehensionExpression>(
+        new std::string(*innerVar_),
+        collection_->clone().release(),
+        filter_ != nullptr ? filter_->clone().release() : nullptr,
+        mapping_ != nullptr ? mapping_->clone().release() : nullptr);
+    if (originString_ != nullptr) {
+        expr->setOriginString(new std::string(*originString_));
+    }
+    return expr;
 }
 
 bool ListComprehensionExpression::operator==(const Expression& rhs) const {
@@ -124,9 +141,8 @@ void ListComprehensionExpression::resetFrom(Decoder& decoder) {
 std::string ListComprehensionExpression::toString() const {
     if (originString_ != nullptr) {
         return *originString_;
-    } else {
-        return makeString();
     }
+    return makeString();
 }
 
 std::string ListComprehensionExpression::makeString() const {
