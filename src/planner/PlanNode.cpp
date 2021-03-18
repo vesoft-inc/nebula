@@ -323,6 +323,16 @@ std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
     return desc;
 }
 
+void PlanNode::releaseSymbols() {
+    auto symTbl = qctx_->symTable();
+    for (auto in : inputVars_) {
+        in && symTbl->deleteReadBy(in->name, this);
+    }
+    for (auto out : outputVars_) {
+        out && symTbl->deleteWrittenBy(out->name, this);
+    }
+}
+
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
     os << PlanNode::toString(kind);
     return os;

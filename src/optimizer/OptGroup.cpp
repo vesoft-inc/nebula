@@ -70,6 +70,9 @@ Status OptGroup::explore(const OptRule *rule) {
         NG_RETURN_IF_ERROR(resStatus);
         auto result = std::move(resStatus).value();
         if (result.eraseAll) {
+            for (auto gnode : groupNodes_) {
+                gnode->node()->releaseSymbols();
+            }
             groupNodes_.clear();
             for (auto ngn : result.newGroupNodes) {
                 addGroupNode(ngn);
@@ -86,6 +89,7 @@ Status OptGroup::explore(const OptRule *rule) {
         }
 
         if (result.eraseCurr) {
+            (*iter)->node()->releaseSymbols();
             iter = groupNodes_.erase(iter);
         } else {
             ++iter;

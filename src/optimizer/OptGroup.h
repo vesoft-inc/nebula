@@ -100,7 +100,7 @@ public:
         return group_;
     }
 
-    const graph::PlanNode *node() const {
+    graph::PlanNode *node() const {
         return node_;
     }
 

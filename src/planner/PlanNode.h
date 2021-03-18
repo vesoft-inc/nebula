@@ -234,6 +234,8 @@ public:
         return inputVars_;
     }
 
+    void releaseSymbols();
+
     static const char* toString(Kind kind);
     std::string toString() const;
 
