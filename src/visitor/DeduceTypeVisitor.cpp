@@ -619,8 +619,12 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
-    expr->filter()->accept(this);
-    if (!ok()) return;
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
 
     expr->collection()->accept(this);
     if (!ok()) return;

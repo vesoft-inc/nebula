@@ -11,6 +11,7 @@ nebula_add_library(
     IndexUtil.cpp
     ZoneUtil.cpp
     ToJson.cpp
+    ParserUtil.cpp
 )
 
 nebula_add_library(

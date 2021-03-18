@@ -292,9 +292,11 @@ void RewriteSymExprVisitor::visit(PredicateExpression *expr) {
     if (expr_) {
         expr->setCollection(expr_.release());
     }
-    expr->filter()->accept(this);
-    if (expr_) {
-        expr->setFilter(expr_.release());
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (expr_) {
+            expr->setFilter(expr_.release());
+        }
     }
 }
 

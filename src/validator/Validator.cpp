@@ -343,9 +343,8 @@ std::vector<std::string> Validator::deduceColNames(const YieldColumns* cols) con
 std::string Validator::deduceColName(const YieldColumn* col) const {
     if (col->alias() != nullptr) {
         return *col->alias();
-    } else {
-        return col->toString();
     }
+    return col->toString();
 }
 
 StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {

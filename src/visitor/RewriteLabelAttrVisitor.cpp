@@ -152,11 +152,13 @@ void RewriteLabelAttrVisitor::visit(PredicateExpression* expr) {
     } else {
         expr->collection()->accept(this);
     }
-    if (isLabelAttrExpr(expr->filter())) {
-        auto newExpr = static_cast<LabelAttributeExpression*>(expr->filter());
-        expr->setFilter(createExpr(newExpr));
-    } else {
-        expr->filter()->accept(this);
+    if (expr->hasFilter()) {
+        if (isLabelAttrExpr(expr->filter())) {
+            auto newExpr = static_cast<LabelAttributeExpression*>(expr->filter());
+            expr->setFilter(createExpr(newExpr));
+        } else {
+            expr->filter()->accept(this);
+        }
     }
 }
 

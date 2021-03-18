@@ -157,10 +157,12 @@ void RewriteMatchLabelVisitor::visit(PredicateExpression *expr) {
     } else {
         expr->collection()->accept(this);
     }
-    if (isLabel(expr->filter())) {
-        expr->setFilter(rewriter_(expr->filter()));
-    } else {
-        expr->filter()->accept(this);
+    if (expr->hasFilter()) {
+        if (isLabel(expr->filter())) {
+            expr->setFilter(rewriter_(expr->filter()));
+        } else {
+            expr->filter()->accept(this);
+        }
     }
 }
 

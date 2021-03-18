@@ -149,8 +149,12 @@ void ExprVisitorImpl::visit(PredicateExpression *expr) {
     DCHECK(ok());
     expr->collection()->accept(this);
     if (!ok()) return;
-    expr->filter()->accept(this);
-    if (!ok()) return;
+    if (expr->hasFilter()) {
+        expr->filter()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
 }
 
 void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {

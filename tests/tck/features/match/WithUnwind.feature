@@ -267,3 +267,37 @@ Feature: With clause and Unwind clause
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | 36  |
       | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               | 34  |
       | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     | 34  |
+
+  Scenario: with exists
+    When executing query:
+      """
+      WITH {abc:123} AS m, "hello" AS b
+      RETURN exists(m.abc), b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | exists(m.abc) | b       |
+      | true          | "hello" |
+    When executing query:
+      """
+      WITH {abc:123} AS m, "hello" AS b
+      RETURN exists(m.abc), exists(m.a), exists({label:"hello"}.label) as t, exists({hello:123}.a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | exists(m.abc) | exists(m.a) | t    | exists({hello:123}.a) |
+      | true          | false       | true | false                 |
+    When executing query:
+      """
+      WITH [1,2,3] AS m
+      RETURN exists(m.abc)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | exists(m.abc) |
+      | BAD_TYPE      |
+    When executing query:
+      """
+      WITH null AS m
+      RETURN exists(m.abc), exists((null).abc)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | exists(m.abc) | exists(NULL.abc) |
+      | NULL          | NULL             |

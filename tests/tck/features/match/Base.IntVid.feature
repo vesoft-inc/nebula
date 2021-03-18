@@ -355,6 +355,57 @@ Feature: Basic match
       | p                                                                      |
       | <("LeBron James")-[:like@0]->("Ray Allen")-[:like@0]->("Rajon Rondo")> |
 
+  Scenario: exists
+    When executing query:
+      """
+      MATCH (:player{name:"Tony Parker"})-[r]->() where exists(r.likeness) return r, exists({a:12}.a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r                                                            | exists({a:12}.a) |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] | true             |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     | true             |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        | true             |
+    When executing query:
+      """
+      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.likeness) return r, exists({a:12}.a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r | exists({a:12}.a) |
+    When executing query:
+      """
+      match (:player{name:"Tony Parker"})-[r]->(m) where exists({abc:123}.abc) return r
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r                                                                                    |
+      | [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]     |
+      | [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}] |
+      | [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]     |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]        |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                         |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
+      | [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]              |
+      | [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]                |
+    When executing query:
+      """
+      match (:player{name:"Tony Parker"})-[r]->(m) where exists({abc:123}.ab) return r
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r |
+    When executing query:
+      """
+      match (:player{name:"Tony Parker"})-[r]->(m) where exists(m.age) return r
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r                                                                                    |
+      | [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]     |
+      | [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}] |
+      | [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]     |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]        |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                         |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
+
   Scenario: No return
     When executing query:
       """

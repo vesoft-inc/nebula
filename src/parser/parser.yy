@@ -31,8 +31,6 @@
 #include "util/ParserUtil.h"
 #include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
-#include "util/ParserUtil.h"
-#include "context/QueryContext.h"
 
 namespace nebula {
 
@@ -800,6 +798,12 @@ predicate_expression
         nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
         $$ = expr;
         delete $3;
+    }
+    | KW_EXISTS L_PAREN expression R_PAREN {
+        if ($3->kind() != Expression::Kind::kLabelAttribute && $3->kind() != Expression::Kind::kAttribute) {
+            throw nebula::GraphParser::syntax_error(@3, "The exists only accept LabelAttribe OR Attribute");
+        }
+        $$ = new PredicateExpression(new std::string("exists"), nullptr, $3, nullptr);
     }
     ;
 

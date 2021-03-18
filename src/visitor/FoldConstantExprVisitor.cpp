@@ -391,12 +391,14 @@ void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
             canBeFolded = false;
         }
     }
-    if (!isConstant(expr->filter())) {
-        expr->filter()->accept(this);
-        if (canBeFolded_) {
-            expr->setFilter(fold(expr->filter()));
-        } else {
-            canBeFolded = false;
+    if (expr->hasFilter()) {
+        if (!isConstant(expr->filter())) {
+            expr->filter()->accept(this);
+            if (canBeFolded_) {
+                expr->setFilter(fold(expr->filter()));
+            } else {
+                canBeFolded = false;
+            }
         }
     }
     canBeFolded_ = canBeFolded;
