@@ -99,6 +99,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"sign",
      {TypeSignature({Value::Type::INT}, Value::Type::INT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::INT)}},
+    {"rand",
+     {TypeSignature({}, Value::Type::FLOAT)}},
     {"rand32",
      {TypeSignature({}, Value::Type::INT),
       TypeSignature({Value::Type::INT}, Value::Type::INT),
@@ -602,6 +604,16 @@ FunctionManager::FunctionManager() {
                 }
             }
             return Value::kNullBadType;
+        };
+    }
+    {
+        auto &attr = functions_["rand"];
+        attr.minArity_ = 0;
+        attr.maxArity_ = 0;
+        attr.isPure_ = true;
+        attr.body_ = [](const auto &args) -> Value {
+            UNUSED(args);
+            return folly::Random::randDouble01();
         };
     }
     {
