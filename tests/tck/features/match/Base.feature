@@ -365,6 +365,23 @@ Feature: Basic match
       | p                                                                      |
       | <("LeBron James")-[:like@0]->("Ray Allen")-[:like@0]->("Rajon Rondo")> |
 
+  Scenario: Unsupported combination of some cypher clauses
+    When executing query:
+      """
+      MATCH (v:player) MATCH (t:team) RETURN v, t
+      """
+    Then a SemanticError should be raised at runtime: Match clause is not supported to be followed by other cypher clauses
+    When executing query:
+      """
+      UNWIND ["Tony Parker", "Tim Duncan", "Yao Ming"] AS a MATCH (v:player) RETURN a, v
+      """
+    Then a SemanticError should be raised at runtime: Match clause is not supported to be followed by other cypher clauses
+    When executing query:
+      """
+      WITH "Tony Parker" AS a MATCH (v:player) RETURN a, v
+      """
+    Then a SemanticError should be raised at runtime: Match clause is not supported to be followed by other cypher clauses
+
   Scenario: No return
     When executing query:
       """

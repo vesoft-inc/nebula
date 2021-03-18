@@ -36,7 +36,12 @@ Status MatchValidator::validateImpl() {
     retClauseCtx->yield = std::move(retYieldCtx);
 
     for (size_t i = 0; i < clauses.size(); ++i) {
-        switch (clauses[i]->kind()) {
+        auto kind = clauses[i]->kind();
+        if (i > 0 && kind == ReadingClause::Kind::kMatch) {
+            return Status::SemanticError(
+                "Match clause is not supported to be followed by other cypher clauses");
+        }
+        switch (kind) {
             case ReadingClause::Kind::kMatch: {
                 auto *matchClause = static_cast<MatchClause *>(clauses[i].get());
 

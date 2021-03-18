@@ -17,13 +17,9 @@ StatusOr<SubPlan> SegmentsConnector::connectSegments(CypherClauseContextBase* le
                                                      SubPlan& left,
                                                      SubPlan& right) {
     UNUSED(rightCtx);
-    if (leftCtx->kind == CypherClauseKind::kReturn) {
-        VLOG(1) << "left tail: " << left.tail->outputVar()
-                << "right root: " << right.root->outputVar();
-        addInput(left.tail, right.root);
-        left.tail = right.tail;
-        return left;
-    } else {
+    if (leftCtx->kind == CypherClauseKind::kReturn ||
+        leftCtx->kind == CypherClauseKind::kWith ||
+        leftCtx->kind == CypherClauseKind::kUnwind) {
         VLOG(1) << "left tail: " << left.tail->outputVar()
                 << "right root: " << right.root->outputVar();
         addInput(left.tail, right.root);
