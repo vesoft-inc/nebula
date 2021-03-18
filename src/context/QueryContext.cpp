@@ -6,8 +6,6 @@
 
 #include "context/QueryContext.h"
 
-#include "common/interface/gen-cpp2/graph_types.h"
-
 namespace nebula {
 namespace graph {
 
@@ -37,25 +35,6 @@ void QueryContext::init() {
     idGen_ = std::make_unique<IdGenerator>(0);
     symTable_ = std::make_unique<SymbolTable>(objPool_.get());
     vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));
-}
-
-void QueryContext::addProfilingData(int64_t planNodeId, ProfilingStats&& profilingStats) {
-    // return directly if not enable profile
-    if (!planDescription_) return;
-
-    auto found = planDescription_->nodeIndexMap.find(planNodeId);
-    DCHECK(found != planDescription_->nodeIndexMap.end());
-    auto idx = found->second;
-    auto& planNodeDesc = planDescription_->planNodeDescs[idx];
-    if (planNodeDesc.profiles == nullptr) {
-        planNodeDesc.profiles.reset(new std::vector<ProfilingStats>());
-    }
-    planNodeDesc.profiles->emplace_back(std::move(profilingStats));
-}
-
-void QueryContext::fillPlanDescription() {
-    DCHECK(ep_ != nullptr);
-    ep_->fillPlanDescription(planDescription_.get());
 }
 
 }   // namespace graph

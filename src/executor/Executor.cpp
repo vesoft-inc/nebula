@@ -532,7 +532,7 @@ Status Executor::close() {
         stats.otherStats =
             std::make_unique<std::unordered_map<std::string, std::string>>(std::move(otherStats_));
     }
-    qctx()->addProfilingData(node_->id(), std::move(stats));
+    qctx()->plan()->addProfileStats(node_->id(), std::move(stats));
     return Status::OK();
 }
 

@@ -52,6 +52,9 @@ private:
     Status validateAndOptimize();
     // return true if continue to execute
     bool explainOrContinue();
+    void addSlowQueryStats(uint64_t latency) const;
+    void fillRespData(ExecutionResponse* resp);
+    Status findBestPlan();
 
     std::unique_ptr<Sentence>                   sentence_;
     std::unique_ptr<QueryContext>               qctx_;

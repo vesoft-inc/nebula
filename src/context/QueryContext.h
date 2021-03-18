@@ -8,28 +8,23 @@
 #define CONTEXT_QUERYCONTEXT_H_
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/charset/Charset.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/clients/storage/GraphStorageClient.h"
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
-#include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
+#include "common/meta/SchemaManager.h"
 #include "context/ExecutionContext.h"
+#include "context/Symbols.h"
 #include "context/ValidateContext.h"
 #include "parser/SequentialSentences.h"
 #include "service/RequestContext.h"
 #include "util/IdGenerator.h"
-#include "common/base/ObjectPool.h"
-#include "context/Symbols.h"
 
 namespace nebula {
 namespace graph {
-
-namespace cpp2 {
-class ProfilingStats;
-class PlanDescription;
-}   // namespace cpp2
 
 /***************************************************************************
  *
@@ -98,10 +93,6 @@ public:
         return ep_.get();
     }
 
-    void setPlan(std::unique_ptr<ExecutionPlan> plan) {
-        ep_ = std::move(plan);
-    }
-
     meta::SchemaManager* schemaMng() const {
         return sm_;
     }
@@ -130,18 +121,6 @@ public:
         return idGen_->id();
     }
 
-    void addProfilingData(int64_t planNodeId, ProfilingStats&& profilingStats);
-
-    PlanDescription* planDescription() const {
-        return planDescription_.get();
-    }
-
-    void setPlanDescription(std::unique_ptr<PlanDescription> planDescription) {
-        planDescription_ = std::move(planDescription);
-    }
-
-    void fillPlanDescription();
-
     SymbolTable* symTable() const {
         return symTable_.get();
     }
@@ -162,9 +141,6 @@ private:
     // The Object Pool holds all internal generated objects.
     // e.g. expressions, plan nodes, executors
     std::unique_ptr<ObjectPool>                             objPool_;
-
-    // plan description for explain and profile query
-    std::unique_ptr<PlanDescription>                        planDescription_;
     std::unique_ptr<IdGenerator>                            idGen_;
     std::unique_ptr<SymbolTable>                            symTable_;
 };

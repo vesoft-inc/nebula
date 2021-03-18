@@ -58,9 +58,7 @@ Status ExplainValidator::validateImpl() {
 
     auto status = toExplainFormatType(explain->formatType());
     NG_RETURN_IF_ERROR(status);
-    auto planDesc = std::make_unique<PlanDescription>();
-    planDesc->format = std::move(status).value();
-    qctx_->setPlanDescription(std::move(planDesc));
+    qctx_->plan()->setExplainFormat(std::move(status).value());
 
     NG_RETURN_IF_ERROR(validator_->validate());
 

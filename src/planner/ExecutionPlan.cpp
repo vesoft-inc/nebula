@@ -7,6 +7,7 @@
 #include "planner/ExecutionPlan.h"
 
 #include "common/graph/Response.h"
+#include "common/interface/gen-cpp2/graph_types.h"
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
@@ -29,6 +30,7 @@ static size_t makePlanNodeDesc(const PlanNode* node, PlanDescription* planDesc) 
     planDesc->nodeIndexMap.emplace(node->id(), planNodeDescPos);
     planDesc->planNodeDescs.emplace_back(std::move(*node->explain()));
     auto& planNodeDesc = planDesc->planNodeDescs.back();
+    planNodeDesc.profiles = std::make_unique<std::vector<ProfilingStats>>();
 
     switch (node->kind()) {
         case PlanNode::Kind::kStart: {
@@ -84,10 +86,22 @@ static size_t makePlanNodeDesc(const PlanNode* node, PlanDescription* planDesc) 
     return planNodeDescPos;
 }
 
-void ExecutionPlan::fillPlanDescription(PlanDescription* planDesc) const {
-    DCHECK(planDesc != nullptr);
-    planDesc->optimize_time_in_us = optimizeTimeInUs_;
+void ExecutionPlan::describe(PlanDescription* planDesc) {
+    planDescription_ = DCHECK_NOTNULL(planDesc);
+    planDescription_->optimize_time_in_us = optimizeTimeInUs_;
+    planDescription_->format = explainFormat_;
     makePlanNodeDesc(root_, planDesc);
+}
+
+void ExecutionPlan::addProfileStats(int64_t planNodeId, ProfilingStats&& profilingStats) {
+    // return directly if not enable profile
+    if (!planDescription_) return;
+
+    auto found = planDescription_->nodeIndexMap.find(planNodeId);
+    DCHECK(found != planDescription_->nodeIndexMap.end());
+    auto idx = found->second;
+    auto& planNodeDesc = planDescription_->planNodeDescs[idx];
+    planNodeDesc.profiles->emplace_back(std::move(profilingStats));
 }
 
 }   // namespace graph

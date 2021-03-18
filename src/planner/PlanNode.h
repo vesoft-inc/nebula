@@ -171,7 +171,7 @@ public:
 
     void setOutputVar(const std::string &var);
 
-    std::string outputVar(size_t index = 0) const {
+    const std::string& outputVar(size_t index = 0) const {
         DCHECK_LT(index, outputVars_.size());
         return outputVars_[index]->name;
     }
