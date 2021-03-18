@@ -37,7 +37,7 @@ jobs:
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
           filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
           sha256sum $filename > $filename.$SHA_EXT
-          subdir = $(echo $tag |sed 's/^v//')
+          subdir=$(echo $tag |sed 's/^v//')
           echo "::set-output name=filepath::$filename"
           echo "::set-output name=shafilepath::$filename.$SHA_EXT"
           echo "::set-output name=subdir::$subdir"
