@@ -106,6 +106,11 @@ public:
         noSpaceRequired_ = true;
     }
 
+    // Whether require choosen space
+    bool noSpaceRequired() const {
+        return noSpaceRequired_;
+    }
+
     const Sentence* sentence() const {
         return sentence_;
     }

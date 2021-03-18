@@ -16,7 +16,18 @@ namespace graph {
 class PipeValidator final : public Validator {
 public:
     PipeValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        auto pipeSentence = static_cast<PipedSentence*>(sentence_);
+        auto left = pipeSentence->left();
+        lValidator_ = makeValidator(left, qctx_);
+
+        auto right = pipeSentence->right();
+        rValidator_ = makeValidator(right, qctx_);
+
+        if (lValidator_->noSpaceRequired() && rValidator_->noSpaceRequired()) {
+            setNoSpaceRequired();
+        }
+    }
 
 private:
     Status validateImpl() override;

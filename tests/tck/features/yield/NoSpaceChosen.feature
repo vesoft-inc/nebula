@@ -44,6 +44,44 @@ Feature: Yield
       | ((!(false) OR (false AND false)) XOR false) |
       | true                                        |
 
+  Scenario: nested
+    When executing query:
+      """
+      YIELD 1 AS number | YIELD $-.number AS number
+      """
+    Then the result should be, in any order:
+      | number |
+      | 1      |
+    When executing query:
+      """
+      $a = YIELD 1 AS number;
+      YIELD $a.number AS number;
+      """
+    Then the result should be, in any order:
+      | number |
+      | 1      |
+    When executing query:
+      """
+      YIELD 1 AS number UNION YIELD 2 AS number
+      """
+    Then the result should be, in any order:
+      | number |
+      | 1      |
+      | 2      |
+    When executing query:
+      """
+      YIELD 1 AS number INTERSECT YIELD 2 AS number
+      """
+    Then the result should be, in any order:
+      | number |
+    When executing query:
+      """
+      YIELD 1 AS number MINUS YIELD 2 AS number
+      """
+    Then the result should be, in any order:
+      | number |
+      | 1      |
+
   Scenario: tagProp
     When executing query:
       """

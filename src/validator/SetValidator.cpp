@@ -13,10 +13,7 @@ namespace nebula {
 namespace graph {
 
 Status SetValidator::validateImpl() {
-    auto setSentence = static_cast<SetSentence *>(sentence_);
-    lValidator_ = makeValidator(setSentence->left(), qctx_);
     NG_RETURN_IF_ERROR(lValidator_->validate());
-    rValidator_ = makeValidator(setSentence->right(), qctx_);
     NG_RETURN_IF_ERROR(rValidator_->validate());
 
     auto lCols = lValidator_->outputCols();
