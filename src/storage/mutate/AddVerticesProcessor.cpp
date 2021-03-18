@@ -103,7 +103,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
                 auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
                 if (!retEnc.ok()) {
                     LOG(ERROR) << retEnc.status();
-                    code = writeResultTo(wRet, true);
+                    code = writeResultTo(wRet, false);
                     break;
                 }
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
