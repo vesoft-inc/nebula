@@ -123,11 +123,11 @@ TEST_F(YieldValidatorTest, FuncitonCall) {
                   "Parameter's type error");
     }
     {
+        // TODO: move to parser UT
         std::string query = "YIELD noexist(12)";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
-                  "SemanticError: `noexist(12)' is not a valid expression : Function `noexist' not "
-                  "defined");
+                  "SyntaxError: Unknown function  near `noexist'");
     }
 }
 

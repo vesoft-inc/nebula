@@ -55,6 +55,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_charset_obj>
         $<TARGET_OBJECTS:common_encryption_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
+        $<TARGET_OBJECTS:common_agg_function_manager_obj>
         $<TARGET_OBJECTS:common_conf_obj>
         $<TARGET_OBJECTS:common_time_utils_obj>
         $<TARGET_OBJECTS:common_graph_obj>

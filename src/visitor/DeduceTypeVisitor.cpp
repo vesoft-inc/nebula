@@ -414,60 +414,7 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
 void DeduceTypeVisitor::visit(AggregateExpression *expr) {
     expr->arg()->accept(this);
     if (!ok()) return;
-    auto arg_type = type_;
-
-    auto func = AggregateExpression::NAME_ID_MAP[expr->name()->c_str()];
-    switch (func) {
-        case AggregateExpression::Function::kCount: {
-            type_ = Value::Type::INT;
-            break;
-        }
-        case AggregateExpression::Function::kSum: {
-            type_ = arg_type;
-            break;
-        }
-        case AggregateExpression::Function::kAvg: {
-            type_ = Value::Type::FLOAT;
-            break;
-        }
-        case AggregateExpression::Function::kMax: {
-            type_ = arg_type;
-            break;
-        }
-        case AggregateExpression::Function::kMin: {
-            type_ = arg_type;
-            break;
-        }
-        case AggregateExpression::Function::kStdev: {
-            type_ = Value::Type::FLOAT;
-            break;
-        }
-        case AggregateExpression::Function::kBitAnd: {
-            type_ = Value::Type::INT;
-            break;
-        }
-        case AggregateExpression::Function::kBitOr: {
-            type_ = Value::Type::INT;
-            break;
-        }
-        case AggregateExpression::Function::kBitXor: {
-            type_ = Value::Type::INT;
-            break;
-        }
-        case AggregateExpression::Function::kCollect: {
-            type_ = Value::Type::LIST;
-            break;
-        }
-        case AggregateExpression::Function::kCollectSet: {
-            type_ = Value::Type::SET;
-            break;
-        }
-        default: {
-            LOG(FATAL) << "Invalid Aggregate expression kind: "
-                       << expr->name()->c_str();
-            break;
-        }
-    }
+    type_ = Value::Type::__EMPTY__;
 }
 
 void DeduceTypeVisitor::visit(UUIDExpression *) {

@@ -908,7 +908,7 @@ Feature: Match By Id
       RETURN 1 | YIELD count(1)
       """
     Then the result should be, in any order, with relax comparison:
-      | COUNT(1) |
+      | count(1) |
       | 292      |
     When executing query:
       """
@@ -916,7 +916,7 @@ Feature: Match By Id
       RETURN 1 | YIELD count(1)
       """
     Then the result should be, in any order, with relax comparison:
-      | COUNT(1) |
+      | count(1) |
       | 927      |
 
   Scenario: the referred vertex of id fn is not the first

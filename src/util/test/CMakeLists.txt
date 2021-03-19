@@ -10,6 +10,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_datatypes_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
+        $<TARGET_OBJECTS:common_agg_function_manager_obj>
         $<TARGET_OBJECTS:common_time_obj>
         $<TARGET_OBJECTS:common_meta_thrift_obj>
         $<TARGET_OBJECTS:common_meta_client_obj>

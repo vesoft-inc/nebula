@@ -17,6 +17,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:common_datatypes_obj>
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
+    $<TARGET_OBJECTS:common_agg_function_manager_obj>
     $<TARGET_OBJECTS:common_meta_thrift_obj>
     $<TARGET_OBJECTS:common_graph_thrift_obj>
     $<TARGET_OBJECTS:common_http_client_obj>

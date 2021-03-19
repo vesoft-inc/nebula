@@ -50,7 +50,7 @@ Feature: Groupby & limit Sentence
       """
       GO FROM hash("Marco Belinelli") OVER serve YIELD $$.team.name AS name, serve._dst AS id | GROUP BY $-.name YIELD SUM(*)
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime:
 
   Scenario: Syntax test9
     When executing query:
@@ -263,10 +263,10 @@ Feature: Groupby & limit Sentence
       YIELD $$.player.name AS name, $$.player.age AS dst_age, $$.player.age AS src_age, like.likeness AS likeness
       | GROUP BY $-.name YIELD $-.name AS name, SUM($-.dst_age) AS sum_dst_age, AVG($-.dst_age) AS avg_dst_age,
       MAX($-.src_age) AS max_src_age, MIN($-.src_age) AS min_src_age, BIT_AND(1) AS bit_and, BIT_OR(2) AS bit_or, BIT_XOR(3) AS bit_xor,
-      COUNT($-.likeness), COUNT_DISTINCT($-.likeness)
+      COUNT($-.likeness), COUNT(DISTINCT $-.likeness)
       """
     Then the result should be, in any order, with relax comparison:
-      | name              | sum_dst_age | avg_dst_age | max_src_age | min_src_age | bit_and | bit_or | bit_xor | COUNT($-.likeness) | COUNT_DISTINCT($-.likeness) |
+      | name              | sum_dst_age | avg_dst_age | max_src_age | min_src_age | bit_and | bit_or | bit_xor | COUNT($-.likeness) | COUNT(DISTINCT $-.likeness) |
       | "Carmelo Anthony" | 34          | 34.0        | 34          | 34          | 1       | 2      | 3       | 1                  | 1                           |
       | "Dwyane Wade"     | 37          | 37.0        | 37          | 37          | 1       | 2      | 3       | 1                  | 1                           |
       | "Chris Paul"      | 66          | 33.0        | 33          | 33          | 1       | 2      | 0       | 2                  | 1                           |

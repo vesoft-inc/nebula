@@ -1887,10 +1887,10 @@ TEST(Parser, GroupBy) {
                             "BIT_OR(DISTINCT $^.person.name ), "
                             "BIT_XOR(DISTINCT $$.person.name ),"
                             "BIT_XOR(DISTINCT $-.name ),"
-                            "F_STD($^.person.name ), "
-                            "F_BIT_AND($^.person.name ), "
-                            "F_BIT_OR($^.person.name ), "
-                            "F_BIT_XOR($^.person.name )";
+                            "STD($^.person.name ), "
+                            "BIT_AND($^.person.name ), "
+                            "BIT_OR($^.person.name ), "
+                            "BIT_XOR($^.person.name )";
 
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -1922,10 +1922,10 @@ TEST(Parser, GroupBy) {
                             "BIT_OR(DISTINCT $^.person.name ), "
                             "BIT_XOR(DISTINCT $$.person.name ),"
                             "BIT_XOR(DISTINCT $-.name ),"
-                            "F_STD($^.person.name ), "
-                            "F_BIT_AND($^.person.name ), "
-                            "F_BIT_OR($^.person.name ), "
-                            "F_BIT_XOR($^.person.name )";
+                            "STD($^.person.name ), "
+                            "BIT_AND($^.person.name ), "
+                            "BIT_OR($^.person.name ), "
+                            "BIT_XOR($^.person.name )";
 
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

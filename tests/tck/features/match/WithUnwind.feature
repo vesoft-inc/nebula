@@ -52,7 +52,7 @@ Feature: With clause and Unwind clause
       RETURN count(a)
       """
     Then the result should be, in any order:
-      | COUNT(a) |
+      | count(a) |
       | 1        |
 
   Scenario: match with return

@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "common/expression/PropertyExpression.h"
+#include "common/function/AggFunctionManager.h"
 #include "visitor/FoldConstantExprVisitor.h"
 #include "visitor/EvaluableExprVisitor.h"
 
@@ -204,16 +205,10 @@ std::vector<std::unique_ptr<Expression>> ExpressionUtils::expandImplOr(const Exp
 
 
 Status ExpressionUtils::checkAggExpr(const AggregateExpression* aggExpr) {
-    auto func = aggExpr->name();
-    if (!func) {
-        return Status::SemanticError("`%s' aggregate function not set.",
-                                     aggExpr->toString().c_str());
-    }
+    auto func = *aggExpr->name();
+    std::transform(func.begin(), func.end(), func.begin(), ::toupper);
 
-    auto iter = AggregateExpression::NAME_ID_MAP.find(func->c_str());
-    if (iter == AggregateExpression::NAME_ID_MAP.end()) {
-        return Status::SemanticError("Unknown aggregate function `%s'", func->c_str());
-    }
+    NG_RETURN_IF_ERROR(AggFunctionManager::find(func));
 
     auto* aggArg = aggExpr->arg();
     if (graph::ExpressionUtils::findAny(aggArg,
@@ -222,7 +217,7 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression* aggExpr) {
                                      aggExpr->toString().c_str());
     }
 
-    if (iter->second != AggregateExpression::Function::kCount) {
+    if (func.compare("COUNT")) {
         if (aggArg->toString() == "*") {
             return Status::SemanticError("Could not apply aggregation function `%s' on `*`",
                                          aggExpr->toString().c_str());
