@@ -46,7 +46,7 @@ jobs:
           file-path: ${{ steps.vars.outputs.filepath }}
           tag: ${{ steps.tag.outputs.tag }}
       - name: upload package to oss
-        uses: tvrcgo/upload-to-oss@v0.1.1
+        uses: tvrcgo/upload-to-oss@v0.2.0
         with:
           key-id: ${{ secrets.OSS_ID }}
           key-secret: ${{ secrets.OSS_SECRET }}
