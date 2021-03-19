@@ -34,6 +34,7 @@ set(perf_test_deps
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
+    $<TARGET_OBJECTS:common_agg_function_manager_obj>
     $<TARGET_OBJECTS:common_time_utils_obj>
     $<TARGET_OBJECTS:common_encryption_obj>
     $<TARGET_OBJECTS:common_ft_es_storage_adapter_obj>

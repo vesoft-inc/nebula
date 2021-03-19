@@ -37,6 +37,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_general_storage_client_obj>
         $<TARGET_OBJECTS:common_expression_obj>
         $<TARGET_OBJECTS:common_function_manager_obj>
+        $<TARGET_OBJECTS:common_agg_function_manager_obj>
         $<TARGET_OBJECTS:common_version_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

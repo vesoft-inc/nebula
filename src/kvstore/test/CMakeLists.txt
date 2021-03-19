@@ -24,6 +24,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:common_stats_obj>
     $<TARGET_OBJECTS:common_expression_obj>
     $<TARGET_OBJECTS:common_function_manager_obj>
+    $<TARGET_OBJECTS:common_agg_function_manager_obj>
     $<TARGET_OBJECTS:common_time_utils_obj>
     $<TARGET_OBJECTS:common_process_obj>
     $<TARGET_OBJECTS:common_encryption_obj>
