@@ -39,7 +39,10 @@
 --heartbeat_interval_secs=10
 
 ########## storage ##########
+# Listener wal directory. only one path is allowed.
 --listener_path=data/listener
+# This parameter can be ignored for compatibility. let's fill A default value of "data"
+--data_path=data
 # The type of part manager, [memory | meta]
 --part_man_type=memory
 # The default reserved bytes for one batch operation
