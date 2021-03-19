@@ -20,3 +20,17 @@ nebula_add_test(
         gtest_main
 )
 
+nebula_add_test(
+    NAME
+        agg_function_manager_test
+    SOURCES
+        AggFunctionManagerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)
+

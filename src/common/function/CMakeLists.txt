@@ -8,4 +8,9 @@ nebula_add_library(
     FunctionManager.cpp
 )
 
+nebula_add_library(
+    agg_function_manager_obj OBJECT
+    AggFunctionManager.cpp
+)
+
 nebula_add_subdirectory(test)

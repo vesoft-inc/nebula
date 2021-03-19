@@ -38,6 +38,12 @@ public:
      */
     static StatusOr<Function> get(const std::string &func, size_t arity);
 
+    /**
+     * To Check the validity of the function named `func', with the actual arity.
+     * Only used for parser check.
+     */
+    static Status find(const std::string &func, const size_t arity);
+
     static StatusOr<bool> getIsPure(const std::string &func, size_t arity);
 
     /**

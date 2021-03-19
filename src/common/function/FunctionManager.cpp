@@ -2053,6 +2053,13 @@ StatusOr<FunctionManager::Function> FunctionManager::get(const std::string &func
     return result.value().body_;
 }
 
+// static
+Status FunctionManager::find(const std::string &func, const size_t arity) {
+    auto result = instance().getInternal(func, arity);
+    NG_RETURN_IF_ERROR(result);
+    return Status::OK();
+}
+
 /*static*/ StatusOr<bool> FunctionManager::getIsPure(const std::string &func, size_t arity) {
     auto result = instance().getInternal(func, arity);
     NG_RETURN_IF_ERROR(result);

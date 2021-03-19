@@ -4029,13 +4029,13 @@ TEST_F(ExpressionTest, AggregateExpression) {
              expected1 = {{"a", 3},
                           {"b", 4},
                           {"c", 8}};
-        TEST_AGG("", false, abs, vals1_, expected1);
+        TEST_AGG(, false, abs, vals1_, expected1);
 
         const std::unordered_map<std::string, Value>
              expected2 = {{"a", 3},
                           {"b", 4},
                           {"c", 5}};
-        TEST_AGG("", true, abs, vals1_, expected2);
+        TEST_AGG(, true, abs, vals1_, expected2);
     }
     {
         const std::unordered_map<std::string, Value>
