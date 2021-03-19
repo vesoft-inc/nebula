@@ -31,8 +31,6 @@ DECLARE_bool(enable_vertex_cache);
 
 DECLARE_int32(reader_handlers);
 
-DECLARE_bool(enable_multi_versions);
-
 DECLARE_uint64(default_mvcc_ver);
 
 DECLARE_string(reader_handlers_type);

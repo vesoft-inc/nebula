@@ -34,9 +34,6 @@ DEFINE_bool(enable_vertex_cache, true, "Enable vertex cache");
 
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
 
-DEFINE_bool(enable_multi_versions, false, "If true, the insert timestamp will be the wall clock. "
-                                          "If false, always has the same timestamp of max");
-
 DEFINE_uint64(default_mvcc_ver, 0L, "vertex/edge version if enable_multi_versions set to false."
                                "this, has to be more than 0 if toss enabled. "
                                "because we need lock before edge. ");
