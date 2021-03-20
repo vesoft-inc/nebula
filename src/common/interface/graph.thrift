@@ -58,6 +58,8 @@ enum ErrorCode {
 
     // Exceeding the maximum number of connections
     E_TOO_MANY_CONNECTIONS = -13,
+
+    E_PARTIAL_SUCCEEDED = -14,
 } (cpp.enum_strict)
 
 

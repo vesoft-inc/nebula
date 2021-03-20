@@ -31,6 +31,7 @@ enum class ErrorCode {
     E_BAD_PERMISSION = -11,
     E_SEMANTIC_ERROR = -12,
     E_TOO_MANY_CONNECTIONS = -13,
+    E_PARTIAL_SUCCEEDED = -14,
 };
 
 template <typename T>
