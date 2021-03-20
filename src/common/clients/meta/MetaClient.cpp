@@ -2991,7 +2991,7 @@ Status MetaClient::refreshCache() {
 }
 
 
-StatusOr<LeaderMap> MetaClient::loadLeader() {
+StatusOr<LeaderInfo> MetaClient::loadLeader() {
     // Return error if has not loadData before
     if (!ready_) {
         return Status::Error("Not ready!");
@@ -3002,7 +3002,7 @@ StatusOr<LeaderMap> MetaClient::loadLeader() {
         return Status::Error("List hosts failed");
     }
 
-    LeaderMap leaderMap;
+    LeaderInfo leaderInfo;
     auto hostItems = std::move(ret).value();
     for (auto& item : hostItems) {
         for (auto& spaceEntry : item.get_leader_parts()) {
@@ -3013,14 +3013,26 @@ StatusOr<LeaderMap> MetaClient::loadLeader() {
             }
             auto spaceId = status.value();
             for (const auto& partId : spaceEntry.second) {
-                leaderMap[{spaceId, partId}] = item.hostAddr;
+                leaderInfo.leaderMap_[{spaceId, partId}] = item.hostAddr;
+                auto partHosts = getPartHostsFromCache(spaceId, partId);
+                size_t leaderIndex = 0;
+                if (partHosts.ok()) {
+                    const auto& peers = partHosts.value().hosts_;
+                    for (size_t i = 0; i < peers.size(); i++) {
+                        if (peers[i] == item.hostAddr) {
+                            leaderIndex = i;
+                            break;
+                        }
+                    }
+                }
+                leaderInfo.leaderIndex_[{spaceId, partId}] = leaderIndex;
             }
         }
         LOG(INFO) << "Load leader of " << item.hostAddr
                   << " in " << item.get_leader_parts().size() << " space";
     }
     LOG(INFO) << "Load leader ok";
-    return leaderMap;
+    return leaderInfo;
 }
 
 folly::Future<StatusOr<bool>>

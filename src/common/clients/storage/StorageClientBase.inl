@@ -101,7 +101,9 @@ void StorageClientBase<ClientType>::loadLeader() const {
         auto status = metaClient_->loadLeader();
         if (status.ok()) {
             folly::RWSpinLock::WriteHolder wh(leadersLock_);
-            leaders_ = std::move(status).value();
+            auto info = status.value();
+            leaders_ = std::move(info.leaderMap_);
+            leaderIndex_ = std::move(info.leaderIndex_);
             loadLeaderBefore_ = true;
         }
         isLoadingLeader_ = false;
@@ -123,10 +125,12 @@ StorageClientBase<ClientType>::getLeader(const meta::PartHosts& partHosts) const
     }
     {
         folly::RWSpinLock::WriteHolder wh(leadersLock_);
-        VLOG(1) << "No leader exists. Choose one random.";
-        const auto& random = partHosts.hosts_[folly::Random::rand32(partHosts.hosts_.size())];
-        leaders_[part] = random;
-        return random;
+        VLOG(1) << "No leader exists. Choose one in round-robin.";
+        auto index = (leaderIndex_[part] + 1) % partHosts.hosts_.size();
+        auto picked = partHosts.hosts_[index];
+        leaders_[part] = picked;
+        leaderIndex_[part] = index;
+        return picked;
     }
 }
 
