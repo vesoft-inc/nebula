@@ -7,8 +7,9 @@
 #ifndef EXECUTOR_STORAGEACCESSEXECUTOR_H_
 #define EXECUTOR_STORAGEACCESSEXECUTOR_H_
 
-#include "executor/Executor.h"
 #include "common/clients/storage/StorageClientBase.h"
+#include "context/QueryContext.h"
+#include "executor/Executor.h"
 
 namespace nebula {
 namespace graph {
@@ -44,6 +45,7 @@ protected:
                 return Status::Error("Request to storage failed, without failedCodes.");
             }
             // partial success is accepted
+            qctx()->setPartialSuccess();
             return Result::State::kPartialSuccess;
         }
         return Result::State::kSuccess;

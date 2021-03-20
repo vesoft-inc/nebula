@@ -125,6 +125,8 @@ const char* GraphService::getErrorStr(ErrorCode result) {
             return "User not found";
         case ErrorCode::E_TOO_MANY_CONNECTIONS:
             return "Too many connections";
+        case ErrorCode::E_PARTIAL_SUCCEEDED:
+            return "Partial results";
     }
     /**********************
      * Unknown error
