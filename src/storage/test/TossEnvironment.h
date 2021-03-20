@@ -82,7 +82,8 @@ struct TossEnvironment {
                 LOG(FATAL) << "mClient_->loadLeader() failed!!!!!!";
             }
 
-            for (auto& leader : statusOrLeaderMap.value()) {
+            auto leaderMap = statusOrLeaderMap.value().leaderMap_;
+            for (auto& leader : leaderMap) {
                 LOG(INFO) << "spaceId=" << leader.first.first
                             << ", part=" << leader.first.second
                             << ", host=" << leader.second;
