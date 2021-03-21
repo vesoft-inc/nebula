@@ -8,7 +8,9 @@ import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite
 
+
 class TestIndex(NebulaTestSuite):
+
     @classmethod
     def prepare(self):
         resp = self.execute(
@@ -101,7 +103,6 @@ class TestIndex(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         resp = self.execute('INSERT VERTEX team(name) VALUES "204":("opl")')
         self.check_resp_succeeded(resp)
-
 
     def test_edge_index(self):
         resp = self.execute('LOOKUP ON serve where serve.start_year > 0')

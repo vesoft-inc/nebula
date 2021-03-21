@@ -42,6 +42,10 @@ def normalize_outline_scenario(request, name):
     return name
 
 
+def combine_query(query: str) -> str:
+    return " ".join(line.strip() for line in query.splitlines())
+
+
 @pytest.fixture
 def graph_spaces():
     return dict(result_set=None)
@@ -77,7 +81,7 @@ def empty_graph(session, graph_spaces):
 
 @given(parse("having executed:\n{query}"))
 def having_executed(query, session, request):
-    ngql = " ".join(query.splitlines())
+    ngql = combine_query(query)
     ngql = normalize_outline_scenario(request, ngql)
     response(session, ngql)
 
@@ -125,13 +129,13 @@ def exec_query(request, ngql, session, graph_spaces):
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
-    ngql = " ".join(query.splitlines())
+    ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
-    ngql = "PROFILE {" + " ".join(query.splitlines()) + "}"
+    ngql = "PROFILE {" + combine_query(query) + "}"
     exec_query(request, ngql, session, graph_spaces)
 
 

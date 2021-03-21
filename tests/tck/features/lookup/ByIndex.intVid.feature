@@ -3,7 +3,7 @@ Feature: Lookup by index itself in integer vid
   Background:
     Given an empty graph
     And load "nba_int_vid" csv data to a new space
-    And wait 3 seconds
+    And wait 6 seconds
 
   Scenario: [1] tag index
     When executing query:

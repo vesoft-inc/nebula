@@ -21,7 +21,7 @@ Feature: Update int vid of vertex and edge
       CREATE EDGE IF NOT EXISTS select(grade int, year int);
       CREATE EDGE IF NOT EXISTS select_default(grade int NOT NULL,year TIMESTAMP DEFAULT 1546308000);
       """
-    And wait 3 seconds
+    And wait 6 seconds
 
   Scenario: update and upsert test
     When executing query:

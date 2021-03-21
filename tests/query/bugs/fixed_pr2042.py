@@ -8,6 +8,7 @@ import time
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 class TestSimpleQuery(NebulaTestSuite):
+
     @classmethod
     def prepare(self):
         resp = self.execute(

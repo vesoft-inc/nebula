@@ -1,0 +1,5 @@
+:VID(string),player.name:string,player.age:int
+Null1,null,-1
+Null2,Null,-2
+Null3,NULL,-3
+Null4,__NULL__,-4
