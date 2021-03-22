@@ -23,6 +23,7 @@ class CounterId final {
 public:
     CounterId() : index_{0} {}
     CounterId(int32_t index) : index_{index} {}  // NOLINT
+    CounterId(const CounterId &) = default;
 
     CounterId& operator=(const CounterId& right) {
         if (!right.valid()) {

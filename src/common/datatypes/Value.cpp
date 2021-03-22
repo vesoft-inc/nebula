@@ -1617,7 +1617,7 @@ Value Value::toInt() const {
             // Return min/max int_64 value and false to accommodate Cypher
             if (getFloat() <= std::numeric_limits<int64_t>::min()) {
                 return std::numeric_limits<int64_t>::min();
-            } else if (getFloat() >= std::numeric_limits<int64_t>::max()) {
+            } else if (getFloat() >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
                 return std::numeric_limits<int64_t>::max();
             }
             return static_cast<int64_t>(getFloat());

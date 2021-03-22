@@ -72,7 +72,7 @@ BENCHMARK(Test3_RangeTestInt) {
     }
     for (auto& i : v) {
         (void)(i);
-        int a;
+        int a{0};
         folly::doNotOptimizeAway(a);
     }
 }
@@ -83,7 +83,7 @@ BENCHMARK_RELATIVE(Test3_ForEachInt) {
         v.resize(1000, 0);
     }
     std::for_each(v.begin(), v.end(), [] (const auto&) {
-        int a;
+        int a{0};
         folly::doNotOptimizeAway(a);
     });
 }
