@@ -160,6 +160,29 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(abs, args_["float"], 1.1);
     }
     {
+        TEST_FUNCTION(bit_and, args_["two"], 0);
+        TEST_FUNCTION(bit_or, args_["two"], 6);
+        TEST_FUNCTION(bit_xor, args_["two"], 6);
+
+        TEST_FUNCTION(bit_and, std::vector<Value>({"abc", -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_and, std::vector<Value>({2.1, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_and, std::vector<Value>({true, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_and, std::vector<Value>({Value::kNullValue, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_and, std::vector<Value>({Value::kEmpty, -2}), Value::kEmpty);
+
+        TEST_FUNCTION(bit_or, std::vector<Value>({"abc", -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_or, std::vector<Value>({2.1, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_or, std::vector<Value>({true, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_or, std::vector<Value>({Value::kNullValue, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_or, std::vector<Value>({Value::kEmpty, -2}), Value::kEmpty);
+
+        TEST_FUNCTION(bit_xor, std::vector<Value>({"abc", -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_xor, std::vector<Value>({2.1, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_xor, std::vector<Value>({true, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_xor, std::vector<Value>({Value::kNullValue, -2}), Value::kNullBadType);
+        TEST_FUNCTION(bit_xor, std::vector<Value>({Value::kEmpty, -2}), Value::kEmpty);
+    }
+    {
         TEST_FUNCTION(floor, args_["neg_int"], -1.0);
         TEST_FUNCTION(floor, args_["float"], 1.0);
         TEST_FUNCTION(floor, args_["neg_float"], -2.0);
@@ -776,6 +799,24 @@ TEST_F(FunctionManagerTest, functionCall) {
 TEST_F(FunctionManagerTest, returnType) {
     {
         auto result = FunctionManager::getReturnType("abs", {Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("bit_and",
+                                                    {Value::Type::INT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("bit_or",
+                                                    {Value::Type::INT, Value::Type::INT});
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), Value::Type::INT);
+    }
+    {
+        auto result = FunctionManager::getReturnType("bit_xor",
+                                                    {Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
