@@ -193,7 +193,7 @@ cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus jobStatus) 
         return cpp2::ErrorCode::E_UNKNOWN;
     }
     if (!optJobDesc->getParas().empty()) {
-        auto spaceName = optJobDesc->getParas().front();
+        auto spaceName = optJobDesc->getParas().back();
         auto spaceId = getSpaceId(spaceName);
         LOG(INFO) << folly::sformat("spaceName={}, spaceId={}", spaceName, spaceId);
         if (spaceId == -1) {
@@ -232,7 +232,7 @@ cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
         return cpp2::ErrorCode::E_TASK_REPORT_OUT_DATE;
     } else {
         if (!optJobDesc->getParas().empty()) {
-            auto spaceName = optJobDesc->getParas().front();
+            auto spaceName = optJobDesc->getParas().back();
             auto spaceId = getSpaceId(spaceName);
             LOG(INFO) << folly::sformat("spaceName={}, spaceId={}", spaceName, spaceId);
             if (spaceId != -1) {
