@@ -33,6 +33,8 @@ jobs:
         run: ./package/package.sh -b ${{ steps.tag.outputs.tag }}
       - name: output some vars
         id: vars
+        env:
+          SHA_EXT: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
           filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
@@ -46,14 +48,14 @@ jobs:
           file-path: ${{ steps.vars.outputs.filepath }}
           tag: ${{ steps.tag.outputs.tag }}
       - name: upload package to oss
-        uses: tvrcgo/upload-to-oss@v0.2.0
+        uses: tvrcgo/upload-to-oss@v0.3.0
         with:
           key-id: ${{ secrets.OSS_ID }}
           key-secret: ${{ secrets.OSS_SECRET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
           asset-path: build/cpack_output
-          target-path: /package/{{ steps.vars.outputs.subdir }}
+          target-path: /package/${{ steps.vars.outputs.subdir }}
 
   docker_build_graph:
     name: docker-graph
