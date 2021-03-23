@@ -23,7 +23,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
             default:
                 LOG(ERROR) << "unsupported conversion of code "
                            << cpp2::_ErrorCode_VALUES_TO_NAMES.at(storageCode);
-                return meta::cpp2::ErrorCode::SUCCEEDED;
+                return meta::cpp2::ErrorCode::E_UNKNOWN;
         }
     };
 
