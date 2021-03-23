@@ -17,6 +17,21 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
+      GO FROM "Tim Duncan" OVER like YIELD $^.player.name as name, $^.player.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         | age |
+      | "Tim Duncan" | 42  |
+    When executing query:
+      """
+      GO FROM "Tim Duncan", "Tony Parker" OVER like YIELD $^.player.name as name, $^.player.age as age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name          | age |
+      | "Tim Duncan"  | 42  |
+      | "Tony Parker" | 36  |
+    When executing query:
+      """
       GO FROM "Tim Duncan", "Tim Duncan" OVER serve
       """
     Then the result should be, in any order, with relax comparison:

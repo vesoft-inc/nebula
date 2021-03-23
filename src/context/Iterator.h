@@ -340,6 +340,7 @@ private:
     int64_t                              colIdx_{-1};
     const List*                          currentCol_{nullptr};
 
+    bool                                 noEdge_{false};
     int64_t                              edgeIdx_{-1};
     int64_t                              edgeIdxUpperBound_{-1};
     const List*                          currentEdge_{nullptr};
