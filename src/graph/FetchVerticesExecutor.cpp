@@ -108,7 +108,7 @@ Status FetchVerticesExecutor::prepareTags() {
         return Status::Error("tags shall never be empty");
     }
 
-    if (tagNames.size() == 1 && *tagNames[0] == "*") {
+    if (sentence_->isAllTags()) {
         auto tagsStatus = ectx()->schemaManager()->getAllTag(spaceId_);
         if (!tagsStatus.ok()) {
             return tagsStatus.status();
@@ -363,48 +363,10 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 
     std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagSchemaMap;
     std::set<TagID> tagIdSet;
-    for (auto &resp : all) {
-        if (!resp.__isset.vertices || resp.vertices.empty()) {
-            continue;
-        }
-        auto *vertexSchema = resp.get_vertex_schema();
-        if (vertexSchema != nullptr) {
-            std::transform(vertexSchema->cbegin(), vertexSchema->cend(),
-                           std::inserter(tagSchemaMap, tagSchemaMap.begin()), [](auto &s) {
-                    return std::make_pair(
-                        s.first, std::make_shared<ResultSchemaProvider>(s.second));
-                });
-        }
-
-        for (auto &vdata : resp.vertices) {
-            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
-                continue;
-            }
-            for (auto& tagData : vdata.tag_data) {
-                auto& data = tagData.data;
-                VertexID vid = vdata.vertex_id;
-                TagID tagId = tagData.tag_id;
-                if (tagSchemaMap.find(tagId) == tagSchemaMap.end()) {
-                    auto ver = RowReader::getSchemaVer(data);
-                    if (ver < 0) {
-                        LOG(ERROR) << "Found schema version negative " << ver;
-                        doError(Status::Error("Found schema version negative: %d", ver));
-                        return;
-                    }
-                    auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId, ver);
-                    if (schema == nullptr) {
-                        VLOG(3) << "Schema not found for tag id: " << tagId;
-                        // Ignore the bad data.
-                        continue;
-                    }
-                    tagSchemaMap[tagId] = schema;
-                }
-                auto vschema = tagSchemaMap[tagId];
-                auto vreader = RowReader::getRowReader(data, vschema);
-                dataMap[vid].emplace(std::make_pair(tagId, std::move(vreader)));
-                tagIdSet.insert(tagId);
-            }
-        }
+    if (sentence_->isAllTags() && yieldClause_ == nullptr) {
+        processAll(all, dataMap, tagSchemaMap, tagIdSet);
+    } else {
+        process(all, dataMap, tagSchemaMap, tagIdSet);
     }
 
     if (yieldClause_ == nullptr) {
@@ -473,7 +435,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto tagIter = ds.find(tagId);
                 if (tagIter != ds.end()) {
                     auto vreader = tagIter->second.get();
-                    auto vschema = vreader->getSchema().get();
+                    auto vschema = tagSchemaMap[tagId].get();
                     return Collector::getProp(vschema, prop, vreader);
                 } else {
                     auto ts = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
@@ -543,7 +505,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto tagIter = ds.find(tagId);
                 if (tagIter != ds.end()) {
                     auto vreader = tagIter->second.get();
-                    auto vschema = vreader->getSchema().get();
+                    auto vschema = tagSchemaMap[tagId].get();
                     return Collector::getProp(vschema, prop, vreader);
                 } else {
                     auto ts = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
@@ -586,6 +548,88 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     }
 
     finishExecution(std::move(rsWriter));
+}
+
+void FetchVerticesExecutor::process(
+        const std::vector<storage::cpp2::QueryResponse> &all,
+        std::unordered_map<VertexID, std::map<TagID, RowReader>> &dataMap,
+        std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> &tagSchemaMap,
+        std::set<TagID> &tagIdSet) {
+    for (auto &resp : all) {
+        if (!resp.__isset.vertices || resp.vertices.empty()) {
+            continue;
+        }
+        auto *vertexSchema = resp.get_vertex_schema();
+        if (vertexSchema != nullptr) {
+            std::transform(vertexSchema->cbegin(), vertexSchema->cend(),
+                           std::inserter(tagSchemaMap, tagSchemaMap.begin()), [](auto &s) {
+                    return std::make_pair(
+                        s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                });
+        }
+
+        for (auto &vdata : resp.vertices) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                continue;
+            }
+            for (auto& tagData : vdata.tag_data) {
+                auto& data = tagData.data;
+                VertexID vid = vdata.vertex_id;
+                TagID tagId = tagData.tag_id;
+                auto vschema = tagSchemaMap[tagId];
+                auto vreader = RowReader::getRowReader(data, vschema);
+                dataMap[vid].emplace(std::make_pair(tagId, std::move(vreader)));
+                tagIdSet.insert(tagId);
+            }
+        }
+    }
+}
+
+void FetchVerticesExecutor::processAll(
+        const std::vector<storage::cpp2::QueryResponse> &all,
+        std::unordered_map<VertexID, std::map<TagID, RowReader>> &dataMap,
+        std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> &tagSchemaMap,
+        std::set<TagID> &tagIdSet) {
+    for (auto &resp : all) {
+        if (!resp.__isset.vertices || resp.vertices.empty()) {
+            continue;
+        }
+
+        for (auto &vdata : resp.vertices) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                continue;
+            }
+            for (auto& tagData : vdata.tag_data) {
+                auto& data = tagData.data;
+                VertexID vid = vdata.vertex_id;
+                TagID tagId = tagData.tag_id;
+                auto ver = RowReader::getSchemaVer(data);
+                if (ver < 0) {
+                    LOG(ERROR) << "Found schema version negative " << ver;
+                    doError(Status::Error("Found schema version negative: %d", ver));
+                    return;
+                }
+                auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId, ver);
+                if (schema == nullptr) {
+                    VLOG(3) << "Schema not found for tag id: " << tagId;
+                    // Ignore the bad data.
+                    continue;
+                }
+                if (tagSchemaMap.find(tagId) == tagSchemaMap.end()) {
+                    auto latestSchema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+                    if (latestSchema == nullptr) {
+                        VLOG(3) << "Schema not found for tag id: " << tagId;
+                        // Ignore the bad data.
+                        continue;
+                    }
+                    tagSchemaMap[tagId] = latestSchema;
+                }
+                auto vreader = RowReader::getRowReader(data, schema);
+                dataMap[vid].emplace(std::make_pair(tagId, std::move(vreader)));
+                tagIdSet.insert(tagId);
+            }
+        }
+    }
 }
 
 void FetchVerticesExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

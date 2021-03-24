@@ -248,38 +248,56 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
     switch (type) {
         case SupportedType::BOOL: {
             bool v;
-            reader->getBool(prop, v);
+            auto ret = reader->getBool(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::TIMESTAMP:
         case SupportedType::INT: {
             int64_t v;
-            reader->getInt(prop, v);
+            auto ret = reader->getInt(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::VID: {
             VertexID v;
-            reader->getVid(prop, v);
+            auto ret = reader->getVid(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::FLOAT: {
             float v;
-            reader->getFloat(prop, v);
+            auto ret = reader->getFloat(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return static_cast<double>(v);
         }
         case SupportedType::DOUBLE: {
             double v;
-            reader->getDouble(prop, v);
+            auto ret = reader->getDouble(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::STRING: {
             folly::StringPiece v;
-            reader->getString(prop, v);
+            auto ret = reader->getString(prop, v);
+            if (ret != ResultType::SUCCEEDED) {
+                return RowReader::getDefaultProp(type);
+            }
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v.toString();
         }

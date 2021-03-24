@@ -52,6 +52,18 @@ private:
         kRef,
     };
 
+    void process(
+        const std::vector<storage::cpp2::QueryResponse> &all,
+        std::unordered_map<VertexID, std::map<TagID, RowReader>> &dataMap,
+        std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> &tagSchemaMap,
+        std::set<TagID> &tagIdSet);
+
+    void processAll(
+        const std::vector<storage::cpp2::QueryResponse> &all,
+        std::unordered_map<VertexID, std::map<TagID, RowReader>> &dataMap,
+        std::unordered_map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> &tagSchemaMap,
+        std::set<TagID> &tagIdSet);
+
 private:
     GraphSpaceID                                spaceId_{-1};
     FromType                                    fromType_{kInstantExpr};
