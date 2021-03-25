@@ -6,6 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
+#include "common/fs/FileUtils.h"
 
 DECLARE_string(log_dir);
 
@@ -14,8 +15,17 @@ DEFINE_string(stdout_log_file, "stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "stderr.log", "Destination filename of stderr");
 
 using nebula::Status;
+using nebula::fs::FileUtils;
 
 Status setupLogging() {
+    // If the log directory does not exist, try to create
+    if (!FileUtils::exist(FLAGS_log_dir)) {
+        if (!FileUtils::makeDir(FLAGS_log_dir)) {
+            return Status::Error(
+                "Failed to create log directory `%s'", FLAGS_log_dir.c_str());
+        }
+    }
+
     if (!FLAGS_redirect_stdout) {
         return Status::OK();
     }
