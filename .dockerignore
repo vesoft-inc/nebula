@@ -1,7 +1,6 @@
 *.md
 LICENSES/
 docs/
-modules/
 
 *.swp
 *.so

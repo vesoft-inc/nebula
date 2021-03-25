@@ -6,16 +6,18 @@
 #   -v: The version of package, the version should be match tag name, default value is the `commitId`
 #   -n: Package to one or multi packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
+#   -g: Whether build storage, default is ON
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>
 #
 
 set -e
 
 version=""
+build_storage=ON
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/build
 enablesanitizer="OFF"
@@ -23,7 +25,7 @@ static_sanitizer="OFF"
 build_type="Release"
 branch="master"
 
-while getopts v:n:s:b:d:t: opt;
+while getopts v:n:s:b:d:t:g: opt;
 do
     case $opt in
         v)
@@ -47,6 +49,9 @@ do
             ;;
         t)
             build_type=$OPTARG
+            ;;
+        g)
+            build_storage=$OPTARG
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -88,11 +93,7 @@ function build {
         mkdir ${build_dir}
     fi
 
-    if [[ -d $modules_dir ]]; then
-        rm -rf ${modules_dir}/*
-    else
-        mkdir ${modules_dir}
-    fi
+    mkdir -p ${build_dir}
 
     pushd ${build_dir}
 
@@ -106,7 +107,7 @@ function build {
           -DNEBULA_COMMON_REPO_TAG=${branch} \
           -DNEBULA_STORAGE_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
-          -DENABLE_BUILD_STORAGE=ON \
+          -DENABLE_BUILD_STORAGE=${build_storage} \
           -DENABLE_PACK_ONE=${package_one} \
           $project_dir
 
@@ -132,6 +133,7 @@ function package {
         -DNEBULA_BUILD_VERSION=${version} \
         -DENABLE_PACK_ONE=${package_one} \
         -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
+        -DENABLE_PACKAGE_STORAGE=${build_storage} \
         ${project_dir}/package/
 
     strip_enable=$1

@@ -5,7 +5,7 @@ COPY . /home/nebula/BUILD
 ARG BRANCH=master
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
+  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH} -g OFF
 
 FROM centos:7
 

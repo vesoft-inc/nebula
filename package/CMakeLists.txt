@@ -18,6 +18,8 @@ cmake_minimum_required(VERSION 3.5.0)
 # Set the project name
 project("Nebula Package")
 
+OPTION(ENABLE_PACKAGE_STORAGE "Whether package storage." ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/../../modules/common/cmake")
 
 message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
@@ -42,6 +44,8 @@ message(STATUS "NEBULA_STORAGE_SOURCE_DIR : ${NEBULA_STORAGE_SOURCE_DIR}")
 message(STATUS "NEBULA_STORAGE_BINARY_DIR : ${NEBULA_STORAGE_BINARY_DIR}")
 message(STATUS "NEBULA_SOURCE_DIR         : ${NEBULA_SOURCE_DIR}")
 message(STATUS "NEBULA_BINARY_DIR         : ${NEBULA_BINARY_DIR}")
+
+if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
@@ -69,6 +73,8 @@ install(
         meta
 )
 
+endif()
+
 install(
     FILES
         ${NEBULA_BINARY_DIR}/bin/nebula-graphd
@@ -81,6 +87,8 @@ install(
     COMPONENT
         graph
 )
+
+if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
@@ -149,6 +157,8 @@ install(
         meta
 )
 
+endif()
+
 install(
     FILES
         ${NEBULA_SOURCE_DIR}/conf/nebula-graphd.conf.default
@@ -162,6 +172,8 @@ install(
     COMPONENT
         graph
 )
+
+if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
@@ -188,6 +200,8 @@ install(
     COMPONENT
         meta
 )
+
+endif()
 
 install(
     FILES
