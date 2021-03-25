@@ -92,7 +92,10 @@ void StatisJobExecutor::addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem&
     lhs.space_vertices += rhs.space_vertices;
     lhs.space_edges += rhs.space_edges;
 
-    lhs.part_corelativity.insert(rhs.part_corelativity.begin(), rhs.part_corelativity.end());
+    lhs.positive_part_correlativity.insert(rhs.positive_part_correlativity.begin(),
+                                           rhs.positive_part_correlativity.end());
+    lhs.negative_part_correlativity.insert(rhs.negative_part_correlativity.begin(),
+                                           rhs.negative_part_correlativity.end());
 }
 
 /**

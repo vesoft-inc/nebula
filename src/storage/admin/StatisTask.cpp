@@ -119,7 +119,8 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 
     std::unordered_map<TagID, int64_t>       tagsVertices;
     std::unordered_map<EdgeType, int64_t>    edgetypeEdges;
-    std::unordered_map<PartitionID, int64_t> relevancy;
+    std::unordered_map<PartitionID, int64_t> positiveRelevancy;
+    std::unordered_map<PartitionID, int64_t> negativeRelevancy;
     int64_t                                  spaceVertices = 0;
     int64_t                                  spaceEdges = 0;
 
@@ -176,26 +177,35 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
         auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
         // Because edge lock in toss and edge are the same except for the last byte.
         // But only the in-edge has a lock.
-        if (edgeType < 0 || edgetypeEdges.find(edgeType) == edgetypeEdges.end()) {
+        if (edgetypeEdges.find(std::abs(edgeType)) == edgetypeEdges.end()) {
             edgeIter->next();
             continue;
         }
 
+        auto source = NebulaKeyUtils::getSrcId(vIdLen, key).str();
         auto destination = NebulaKeyUtils::getDstId(vIdLen, key).str();
+        if (edgeType > 0) {
+            spaceEdges++;
+            edgetypeEdges[edgeType] += 1;
 
-        spaceEdges++;
-        edgetypeEdges[edgeType] += 1;
-
-        uint64_t vid = 0;
-        if (isIntId) {
-            memcpy(static_cast<void*>(&vid), destination.data(), 8);
+            uint64_t destinationVid = 0;
+            if (isIntId) {
+                memcpy(static_cast<void*>(&destinationVid), destination.data(), 8);
+            } else {
+                nebula::MurmurHash2 hash;
+                destinationVid = hash(destination.data());
+            }
+            positiveRelevancy[destinationVid % partitionNum + 1]++;
         } else {
-            nebula::MurmurHash2 hash;
-            vid = hash(destination.data());
+            uint64_t sourceVid = 0;
+            if (isIntId) {
+                memcpy(static_cast<void*>(&sourceVid), source.data(), 8);
+            } else {
+                nebula::MurmurHash2 hash;
+                sourceVid = hash(source.data());
+            }
+            negativeRelevancy[sourceVid % partitionNum + 1]++;
         }
-
-        PartitionID partId = vid % partitionNum + 1;
-        relevancy[partId]++;
         edgeIter->next();
     }
 
@@ -217,27 +227,43 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 
     statisItem.set_space_vertices(spaceVertices);
     statisItem.set_space_edges(spaceEdges);
-
     using Correlativiyties = std::vector<nebula::meta::cpp2::Correlativity>;
-    Correlativiyties correlativity;
-    for (const auto& entry : relevancy) {
+    Correlativiyties positiveCorrelativity;
+    for (const auto& entry : positiveRelevancy) {
         nebula::meta::cpp2::Correlativity partProportion;
         partProportion.set_part_id(entry.first);
-        LOG(INFO) << "parts edges " << entry.second << " total " << spaceEdges;
         double proportion = static_cast<double>(entry.second) / static_cast<double>(spaceEdges);
         partProportion.set_proportion(proportion);
-        LOG(INFO) << "Part " << entry.first << " proportion " << proportion;
-        correlativity.emplace_back(std::move(partProportion));
+        positiveCorrelativity.emplace_back(std::move(partProportion));
     }
 
-    std::sort(correlativity.begin(), correlativity.end(),
+    Correlativiyties negativeCorrelativity;
+    for (const auto& entry : negativeRelevancy) {
+        nebula::meta::cpp2::Correlativity partProportion;
+        partProportion.set_part_id(entry.first);
+        double proportion = static_cast<double>(entry.second) / static_cast<double>(spaceEdges);
+        partProportion.set_proportion(proportion);
+        negativeCorrelativity.emplace_back(std::move(partProportion));
+    }
+
+    std::sort(positiveCorrelativity.begin(), positiveCorrelativity.end(),
               [&] (const auto& l, const auto& r) {
                   return l.proportion < r.proportion;
               });
 
-    std::unordered_map<PartitionID, Correlativiyties> partCorelativity;
-    partCorelativity[part] = correlativity;
-    statisItem.set_part_corelativity(std::move(partCorelativity));
+    std::sort(negativeCorrelativity.begin(), negativeCorrelativity.end(),
+              [&] (const auto& l, const auto& r) {
+                  return l.proportion < r.proportion;
+              });
+
+    std::unordered_map<PartitionID, Correlativiyties> positivePartCorrelativiyties;
+    positivePartCorrelativiyties[part] = positiveCorrelativity;
+    statisItem.set_positive_part_correlativity(std::move(positivePartCorrelativiyties));
+
+    std::unordered_map<PartitionID, Correlativiyties> negativePartCorrelativiyties;
+    negativePartCorrelativiyties[part] = negativeCorrelativity;
+    statisItem.set_negative_part_correlativity(std::move(negativePartCorrelativiyties));
+
     statistics_.emplace(part, std::move(statisItem));
     LOG(INFO) << "Statis task finished";
     return kvstore::ResultCode::SUCCEEDED;
@@ -276,6 +302,11 @@ void StatisTask::finish(cpp2::ErrorCode rc) {
                     result.edges[edgetype] += edgeElem.second;
                 }
             }
+
+            result.positive_part_correlativity.insert(item.positive_part_correlativity.begin(),
+                                                      item.positive_part_correlativity.end());
+            result.negative_part_correlativity.insert(item.negative_part_correlativity.begin(),
+                                                      item.negative_part_correlativity.end());
         }
         result.set_status(nebula::meta::cpp2::JobStatus::FINISHED);
         ctx_.onFinish_(rc, result);
