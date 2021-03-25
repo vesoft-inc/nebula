@@ -7,7 +7,7 @@
 --enable_optimizer=true
 
 ########## logging ##########
-# The directory to host logging files, which must already exists
+# The directory to host logging files
 --log_dir=logs
 # Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0

@@ -25,6 +25,7 @@ using nebula::Status;
 using nebula::ProcessUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
+using nebula::fs::FileUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
@@ -197,6 +198,14 @@ void signalHandler(int sig) {
 
 
 Status setupLogging() {
+    // If the log directory does not exist, try to create
+    if (!FileUtils::exist(FLAGS_log_dir)) {
+        if (!FileUtils::makeDir(FLAGS_log_dir)) {
+            return Status::Error("Failed to create log directory `%s'",
+                                 FLAGS_log_dir.c_str());
+        }
+    }
+
     if (!FLAGS_redirect_stdout) {
         return Status::OK();
     }
