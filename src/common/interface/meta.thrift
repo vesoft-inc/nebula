@@ -375,9 +375,15 @@ struct StatisItem {
     3: i64                                    space_vertices,
     // The number of edges of current space
     4: i64                                    space_edges,
+    // Used to describe the proportion of positive edges
+    // between the current partition and other partitions.
     5: map<common.PartitionID, list<Correlativity>>
-        (cpp.template = "std::unordered_map") part_corelativity,
-    6: JobStatus                              status,
+        (cpp.template = "std::unordered_map") positive_part_correlativity,
+    // Used to describe the proportion of negative edges
+    // between the current partition and other partitions.
+    6: map<common.PartitionID, list<Correlativity>>
+        (cpp.template = "std::unordered_map") negative_part_correlativity,
+    7: JobStatus                              status,
 }
 
 // Graph space related operations.
