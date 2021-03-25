@@ -92,7 +92,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -DENABLE_BUILD_STORAGE=on \
                   -B build
-              echo "::set-output name=j::8"
+              echo "::set-output name=j::10"
               ;;
             ubuntu1804)
               # build with Debug type
@@ -103,7 +103,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -DENABLE_BUILD_STORAGE=on \
                   -B build
-              echo "::set-output name=j::8"
+              echo "::set-output name=j::10"
               ;;
             esac
             ;;
@@ -117,7 +117,7 @@ jobs:
                 -DENABLE_TESTING=on \
                 -DENABLE_BUILD_STORAGE=on \
                 -B build
-            echo "::set-output name=j::4"
+            echo "::set-output name=j::6"
             ;;
           esac
       - name: Make graph

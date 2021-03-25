@@ -321,37 +321,72 @@ def space_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def check_resp(resp, stmt):
-    assert resp is not None, "response is None"
+def check_resp(resp, stmt: str):
+    assert resp is not None, f"response is None, stmt: {stmt}"
     msg = f"Fail to exec: {stmt}, error: {resp.error_msg()}"
     assert resp.is_succeeded(), msg
 
 
-def response(sess, stmt):
+def retry(times: int, predicate=lambda x: x and x.is_succeeded()):
+    def _retry(func):
+        def wrapper(*args, **kwargs):
+            resp = None
+            for i in range(times):
+                resp = func(*args, **kwargs)
+                if predicate(resp):
+                    return resp
+                time.sleep(0.5)
+            return resp
+
+        return wrapper
+
+    return _retry
+
+
+@retry(30)
+def try_execute(sess: Session, stmt: str):
+    return sess.execute(stmt)
+
+
+def return_if_not_leader_changed(resp) -> bool:
+    if not resp:
+        return True
+    if resp.is_succeeded():
+        return True
+
+    err_msg = resp.error_msg()
+    return err_msg.find('Storage Error: The leader has changed') < 0
+
+
+@retry(30, return_if_not_leader_changed)
+def process_leader_changed(sess: Session, stmt: str):
+    return sess.execute(stmt)
+
+
+def response(sess: Session, stmt: str, need_try: bool = False):
     try:
-        resp = sess.execute(stmt)
-        check_resp(resp, stmt)
-        return resp
+        if need_try:
+            return try_execute(sess, stmt)
+        return process_leader_changed(sess, stmt)
     except Exception as ex:
         assert not ex, f"Fail to exec: {stmt}, exception: {ex}"
 
 
+def resp_ok(sess: Session, stmt: str, need_try: bool = False):
+    resp = response(sess, stmt, need_try)
+    check_resp(resp, stmt)
+    return resp
+
+
 def create_space(space_desc: SpaceDesc, sess: Session):
-    def exec(stmt):
-        response(sess, stmt)
-
-    stmts = [
-        space_desc.drop_stmt(),
-        space_desc.create_stmt(),
-        space_desc.use_stmt(),
-    ]
-
-    exec(";".join(stmts))
+    resp_ok(sess, space_desc.drop_stmt(), True)
+    resp_ok(sess, space_desc.create_stmt(), True)
+    resp_ok(sess, space_desc.use_stmt(), True)
 
 
 def _load_data_from_file(sess, data_dir, fd):
     for stmt in CSVImporter(fd, data_dir):
-        response(sess, stmt)
+        response(sess, stmt, True)
 
 
 def load_csv_data(
@@ -374,6 +409,7 @@ def load_csv_data(
         assert space is not None
         if not space_name:
             space_name = space.get('name', "A" + space_generator())
+
         space_desc = SpaceDesc(
             name=space_name,
             vid_type=space.get('vidType', 'FIXED_STRING(32)'),
@@ -386,10 +422,8 @@ def load_csv_data(
         create_space(space_desc, sess)
 
         schemas = config['schema']
-        stmts = ' '.join(map(lambda x: x.strip(), schemas.splitlines()))
-        response(sess, stmts)
-
-        time.sleep(3)
+        for line in schemas.splitlines():
+            resp_ok(sess, line.strip(), True)
 
         for fd in config["files"]:
             _load_data_from_file(sess, data_dir, fd)

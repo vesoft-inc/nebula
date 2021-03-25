@@ -16,7 +16,7 @@ from nebula2.graph.ttypes import ErrorCode
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
-from tests.common.comparator import DataSetComparator
+from tests.common.comparator import DataSetComparator, CmpType
 from tests.common.plan_differ import PlanDiffer
 from tests.common.configs import DATA_DIR
 from tests.common.types import SpaceDesc
@@ -26,6 +26,7 @@ from tests.common.utils import (
     space_generator,
     check_resp,
     response,
+    resp_ok,
 )
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
@@ -44,6 +45,48 @@ def normalize_outline_scenario(request, name):
 
 def combine_query(query: str) -> str:
     return " ".join(line.strip() for line in query.splitlines())
+
+
+def is_job_finished(sess, job):
+    rsp = resp_ok(sess, f"SHOW JOB {job}")
+    assert rsp.row_size() > 0
+
+    def is_finished(val) -> bool:
+        return val.is_string() and "FINISHED" == val.as_string()
+
+    return any(is_finished(val) for val in rsp.row_values(0))
+
+
+def wait_all_jobs_finished(sess, jobs=[]):
+    times = 30
+    while jobs and times > 0:
+        jobs = [job for job in jobs if not is_job_finished(sess, job)]
+        time.sleep(0.5)
+        times -= 1
+    return len(jobs) == 0
+
+
+def job_id(resp):
+    for key in resp.keys():
+        for job in resp.column_values(key):
+            assert job.is_int(), f"job id is not int: {job}"
+            return job.as_int()
+
+
+def wait_tag_or_edge_indexes_ready(sess, schema: str = "TAG"):
+    resp = resp_ok(sess, f"SHOW {schema} INDEXES")
+    jobs = []
+    for key in resp.keys():
+        for val in resp.column_values(key):
+            job = val.as_string()
+            resp = resp_ok(sess, f"REBUILD {schema} INDEX {job}", True)
+            jobs.append(job_id(resp))
+    wait_all_jobs_finished(sess, jobs)
+
+
+def wait_indexes_ready(sess):
+    wait_tag_or_edge_indexes_ready(sess, "TAG")
+    wait_tag_or_edge_indexes_ready(sess, "EDGE")
 
 
 @pytest.fixture
@@ -70,8 +113,8 @@ def preload_space(
         graph_spaces["space_desc"] = load_student_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
-    stmt = f'USE {space};'
-    response(session, stmt)
+    resp_ok(session, f'USE {space};', True)
+    wait_indexes_ready(session)
 
 
 @given("an empty graph")
@@ -83,7 +126,8 @@ def empty_graph(session, graph_spaces):
 def having_executed(query, session, request):
     ngql = combine_query(query)
     ngql = normalize_outline_scenario(request, ngql)
-    response(session, ngql)
+    for stmt in ngql.split(';'):
+        stmt and resp_ok(session, stmt, True)
 
 
 @given(parse("create a space with following options:\n{options}"))
@@ -116,14 +160,17 @@ def import_csv_data(request, data, graph_spaces, session, pytestconfig):
         data_dir,
         "I" + space_generator(),
     )
+    wait_indexes_ready(session)
     assert space_desc is not None
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
 
-def exec_query(request, ngql, session, graph_spaces):
+def exec_query(request, ngql, session, graph_spaces, need_try: bool = False):
+    if not ngql:
+        return
     ngql = normalize_outline_scenario(request, ngql)
-    graph_spaces['result_set'] = session.execute(ngql)
+    graph_spaces['result_set'] = response(session, ngql, need_try)
     graph_spaces['ngql'] = ngql
 
 
@@ -137,6 +184,38 @@ def executing_query(query, graph_spaces, session, request):
 def profiling_query(query, graph_spaces, session, request):
     ngql = "PROFILE {" + combine_query(query) + "}"
     exec_query(request, ngql, session, graph_spaces)
+
+
+@when(parse("try to execute query:\n{query}"))
+def try_to_execute_query(query, graph_spaces, session, request):
+    ngql = normalize_outline_scenario(request, combine_query(query))
+    for stmt in ngql.split(';'):
+        exec_query(request, stmt, session, graph_spaces, True)
+
+
+@given("wait all indexes ready")
+@when("wait all indexes ready")
+@then("wait all indexes ready")
+def wait_index_ready(graph_spaces, session):
+    space_desc = graph_spaces.get("space_desc", None)
+    assert space_desc is not None
+    space = space_desc.name
+    resp_ok(session, f"USE {space}", True)
+    wait_indexes_ready(session)
+
+
+@when(parse("submit a job:\n{query}"))
+def submit_job(query, graph_spaces, session, request):
+    ngql = normalize_outline_scenario(request, combine_query(query))
+    exec_query(request, ngql, session, graph_spaces, True)
+
+
+@then("wait the job to finish")
+def wait_job_to_finish(graph_spaces, session):
+    resp = graph_spaces['result_set']
+    jid = job_id(resp)
+    is_finished = wait_all_jobs_finished(session, [jid])
+    assert is_finished, f"Fail to finish job {jid}"
 
 
 @given(parse("wait {secs:d} seconds"))
@@ -153,24 +232,23 @@ def line_number(steps, result):
             return step.line_number
     return -1
 
+
 # IN literal `1, 2, 3...'
 def parse_list(s: str):
-    numbers = s.split(',')
-    numbers_list = []
-    for num in numbers:
-        numbers_list.append(int(num))
-    return numbers_list
+    return [int(num) for num in s.split(',')]
+
 
 def hash_columns(ds, hashed_columns):
     if len(hashed_columns) == 0:
         return ds
-    for col in hashed_columns:
-        assert col < len(ds.column_names), "The hashed column should in range."
+    assert all(col < len(ds.column_names) for col in hashed_columns)
     for row in ds.rows:
         for col in hashed_columns:
-            if row.values[col].getType() != Value.NVAL and row.values[col].getType() != Value.__EMPTY__:
-                row.values[col] = Value(iVal = murmurhash2(row.values[col]))
+            val = row.values[col]
+            if val.getType() not in [Value.NVAL, Value.__EMPTY__]:
+                row.values[col] = Value(iVal=murmurhash2(val))
     return ds
+
 
 def cmp_dataset(
         request,
@@ -178,16 +256,14 @@ def cmp_dataset(
         result,
         order: bool,
         strict: bool,
-        included=False,
-        hashed_columns = [],
+        contains=CmpType.EQUAL,
+        hashed_columns=[],
 ) -> None:
     rs = graph_spaces['result_set']
     ngql = graph_spaces['ngql']
     check_resp(rs, ngql)
     space_desc = graph_spaces.get('space_desc', None)
-    vid_fn = None
-    if space_desc is not None:
-        vid_fn = murmurhash2 if space_desc.vid_type == 'int' else None
+    vid_fn = murmurhash2 if space_desc and space_desc.is_int_vid() else None
     ds = dataset(
         table(result, lambda x: normalize_outline_scenario(request, x)),
         graph_spaces.get("variables", {}),
@@ -195,7 +271,7 @@ def cmp_dataset(
     ds = hash_columns(ds, hashed_columns)
     dscmp = DataSetComparator(strict=strict,
                               order=order,
-                              included=included,
+                              contains=contains,
                               decode_type=rs._decode_type,
                               vid_fn=vid_fn)
 
@@ -246,51 +322,70 @@ def define_list_var_alias(text, graph_spaces):
 def result_should_be_in_order(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=True, strict=True)
 
+
 @then(parse("the result should be, in order, and the columns {hashed_columns} should be hashed:\n{result}"))
 def result_should_be_in_order_and_hash(request, result, graph_spaces, hashed_columns):
     cmp_dataset(request, graph_spaces, result, order=True, strict=True, hashed_columns=parse_list(hashed_columns))
+
 
 @then(parse("the result should be, in order, with relax comparison:\n{result}"))
 def result_should_be_in_order_relax_cmp(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=True, strict=False)
 
+
 @then(parse("the result should be, in order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"))
 def result_should_be_in_order_relax_cmp_and_hash(request, result, graph_spaces, hashed_columns):
     cmp_dataset(request, graph_spaces, result, order=True, strict=False, hashed_columns=parse_list(hashed_columns))
+
 
 @then(parse("the result should be, in any order:\n{result}"))
 def result_should_be(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=False, strict=True)
 
+
 @then(parse("the result should be, in any order, and the columns {hashed_columns} should be hashed:\n{result}"))
 def result_should_be_and_hash(request, result, graph_spaces, hashed_columns):
     cmp_dataset(request, graph_spaces, result, order=False, strict=True, hashed_columns=parse_list(hashed_columns))
+
 
 @then(parse("the result should be, in any order, with relax comparison:\n{result}"))
 def result_should_be_relax_cmp(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=False, strict=False)
 
+
 @then(parse("the result should be, in any order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"))
 def result_should_be_relax_cmp_and_hash(request, result, graph_spaces, hashed_columns):
     cmp_dataset(request, graph_spaces, result, order=False, strict=False, hashed_columns=parse_list(hashed_columns))
 
-@then(parse("the result should include:\n{result}"))
-def result_should_include(request, result, graph_spaces):
-    cmp_dataset(request,
-                graph_spaces,
-                result,
-                order=False,
-                strict=True,
-                included=True)
 
-@then(parse("the result should include, and the columns {hashed_columns} should be hashed:\n{result}"))
-def result_should_include_and_hash(request, result, graph_spaces, hashed_columns):
+@then(parse("the result should contain:\n{result}"))
+def result_should_contain(request, result, graph_spaces):
     cmp_dataset(request,
                 graph_spaces,
                 result,
                 order=False,
                 strict=True,
-                included=True,
+                contains=CmpType.CONTAINS)
+
+
+@then(parse("the result should not contain:\n{result}"))
+def result_should_not_contain(request, result, graph_spaces):
+    cmp_dataset(request,
+                graph_spaces,
+                result,
+                order=False,
+                strict=True,
+                contains=CmpType.NOT_CONTAINS)
+
+
+@then(parse("the result should contain, and the columns {hashed_columns} should be hashed:\n{result}"))
+def result_should_contain_and_hash(request, result, graph_spaces, hashed_columns):
+    cmp_dataset(request,
+                graph_spaces,
+                result,
+                order=False,
+                strict=True,
+                contains=True,
                 hashed_columns=parse_list(hashed_columns))
 
 

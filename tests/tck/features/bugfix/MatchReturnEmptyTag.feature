@@ -15,7 +15,6 @@ Feature: Fix match losing undefined vertex tag info
       """
       CREATE TAG IF NOT EXISTS empty_tag();
       """
-    And wait 3 seconds
     And having executed:
       """
       INSERT VERTEX empty_tag() values <vid>:()
@@ -39,6 +38,7 @@ Feature: Fix match losing undefined vertex tag info
     Then the result should be, in any order:
       | Labels                              |
       | ["player", "empty_tag", "bachelor"] |
+    And drop the used space
 
   Scenario Outline: one step with direction
     When executing query:
@@ -69,6 +69,7 @@ Feature: Fix match losing undefined vertex tag info
       | ["player", "empty_tag", "bachelor"] |
       | ["player", "empty_tag", "bachelor"] |
       | ["player", "empty_tag", "bachelor"] |
+    And drop the used space
 
   Scenario Outline: one step without direction
     When executing query:
@@ -123,3 +124,4 @@ Feature: Fix match losing undefined vertex tag info
       | ["empty_tag", "bachelor", "player"] |
       | ["empty_tag", "bachelor", "player"] |
       | ["empty_tag", "bachelor", "player"] |
+    And drop the used space

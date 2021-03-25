@@ -15,32 +15,44 @@ Feature: Update string vid of vertex and edge
       CREATE TAG IF NOT EXISTS course(name string, credits int);
       CREATE TAG IF NOT EXISTS building(name string);
       CREATE TAG IF NOT EXISTS student(name string, age int, gender string);
-      CREATE TAG IF NOT EXISTS student_default(name string NOT NULL,
-      age int NOT NULL,gender string DEFAULT "one", birthday int DEFAULT 2010);
+      CREATE TAG IF NOT EXISTS student_default(
+        name string NOT NULL,
+        age int NOT NULL,
+        gender string DEFAULT "one",
+        birthday int DEFAULT 2010
+      );
       CREATE EDGE IF NOT EXISTS like(likeness double);
       CREATE EDGE IF NOT EXISTS select(grade int, year int);
       CREATE EDGE IF NOT EXISTS select_default(grade int NOT NULL,year TIMESTAMP DEFAULT 1546308000);
       """
-    And wait 3 seconds
     And having executed:
       """
-      INSERT VERTEX student(name, age, gender) VALUES
-      "200":("Monica", 16, "female"),
-      "201":("Mike", 18, "male"),
-      "202":("Jane", 17, "female");
-      INSERT VERTEX course(name, credits),building(name) VALUES
-      "101":("Math", 3, "No5"),
-      "102":("English", 6, "No11");
+      INSERT VERTEX
+        student(name, age, gender)
+      VALUES
+        "200":("Monica", 16, "female"),
+        "201":("Mike", 18, "male"),
+        "202":("Jane", 17, "female");
+      INSERT VERTEX
+        course(name, credits),
+        building(name)
+      VALUES
+        "101":("Math", 3, "No5"),
+        "102":("English", 6, "No11");
       INSERT VERTEX course(name, credits) VALUES "103":("CS", 5);
-      INSERT EDGE select(grade, year) VALUES
-      "200"->"101"@0:(5, 2018),
-      "200" -> "102"@0:(3, 2018),
-      "201" -> "102"@0:(3, 2019),
-      "202" -> "102"@0:(3, 2019);
-      INSERT EDGE like(likeness) VALUES
-      "200" -> "201"@0:(92.5),
-      "201" -> "200"@0:(85.6),
-      "201" -> "202"@0:(93.2);
+      INSERT EDGE
+        select(grade, year)
+      VALUES
+        "200"->"101"@0:(5, 2018),
+        "200" -> "102"@0:(3, 2018),
+        "201" -> "102"@0:(3, 2019),
+        "202" -> "102"@0:(3, 2019);
+      INSERT EDGE
+        like(likeness)
+      VALUES
+        "200" -> "201"@0:(92.5),
+        "201" -> "200"@0:(85.6),
+        "201" -> "202"@0:(93.2);
       """
 
   Scenario: update and upsert test with 1.0 syntax
@@ -600,7 +612,7 @@ Feature: Update string vid of vertex and edge
       ALTER TAG building ADD (new_field string default "123");
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     # upsert after alter schema
     When executing query:
       """
@@ -647,7 +659,7 @@ Feature: Update string vid of vertex and edge
       ALTER EDGE like ADD (new_field string default "123");
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     When executing query:
       """
       UPSERT EDGE "1"->"100" OF like SET likeness = 2.0;
@@ -1102,7 +1114,7 @@ Feature: Update string vid of vertex and edge
       ALTER TAG building ADD (new_field string default "123");
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     # upsert after alter schema
     When executing query:
       """
@@ -1149,7 +1161,7 @@ Feature: Update string vid of vertex and edge
       ALTER EDGE like ADD (new_field string default "123");
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     When executing query:
       """
       UPSERT EDGE ON like "1"->"100" SET likeness = 2.0;

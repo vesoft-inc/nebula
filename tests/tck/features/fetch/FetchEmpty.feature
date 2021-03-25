@@ -16,7 +16,6 @@ Feature: Fetch prop on empty tag/edge
       CREATE TAG person(money int);
       CREATE EDGE zero_prop_edge();
       """
-    And wait 3 seconds
     And having executed:
       """
       INSERT VERTEX zero_prop_tag_0() values "1":(), "2":();
@@ -24,7 +23,6 @@ Feature: Fetch prop on empty tag/edge
       INSERT VERTEX person(money) values "1":(78), "3":(88);
       INSERT EDGE zero_prop_edge() values "1"->"2":();
       """
-    And wait 3 seconds
 
   Scenario: fetch prop on all tags
     When executing query:
@@ -34,6 +32,7 @@ Feature: Fetch prop on empty tag/edge
     Then the result should be, in any order, with relax comparison:
       | vertices_                                    |
       | ("1":zero_prop_tag_0:zero_prop_tag_1:person) |
+    And drop the used space
 
   Scenario: fetch prop on a empty tag
     When executing query:
@@ -52,6 +51,7 @@ Feature: Fetch prop on empty tag/edge
     Then the result should be, in any order, with relax comparison:
       | vertices_             |
       | ("2":zero_prop_tag_0) |
+    And drop the used space
 
   Scenario: fetch prop on empty edge
     When executing query:
@@ -82,3 +82,4 @@ Feature: Fetch prop on empty tag/edge
     Then the result should be, in any order:
       | edges_                          |
       | [:zero_prop_edge "1"->"2" @0{}] |
+    And drop the used space

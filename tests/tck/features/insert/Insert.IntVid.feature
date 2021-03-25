@@ -13,10 +13,12 @@ Feature: Insert int vid of vertex and edge
     And having executed:
       """
       CREATE TAG IF NOT EXISTS person(name string, age int);
-      CREATE TAG IF NOT EXISTS personWithDefault(name string DEFAULT "",
-      age int DEFAULT 18, isMarried bool DEFAULT false,
-      BMI double DEFAULT 18.5, department string DEFAULT "engineering",
-      birthday timestamp DEFAULT timestamp("2020-01-10T10:00:00"));
+      CREATE TAG IF NOT EXISTS personWithDefault(
+        name string DEFAULT "",
+        age int DEFAULT 18, isMarried bool DEFAULT false,
+        BMI double DEFAULT 18.5, department string DEFAULT "engineering",
+        birthday timestamp DEFAULT timestamp("2020-01-10T10:00:00")
+      );
       CREATE TAG IF NOT EXISTS student(grade string, number int);
       CREATE TAG IF NOT EXISTS studentWithDefault(grade string DEFAULT "one", number int);
       CREATE TAG IF NOT EXISTS employee(name int);
@@ -26,9 +28,9 @@ Feature: Insert int vid of vertex and edge
       CREATE EDGE IF NOT EXISTS schoolmateWithDefault(likeness int DEFAULT 80);
       CREATE EDGE IF NOT EXISTS study(start_time timestamp, end_time timestamp);
       """
-    And wait 3 seconds
 
   Scenario: insert vertex and edge test
+    Given wait 3 seconds
     # insert vertex wrong type value
     When executing query:
       """
@@ -78,10 +80,11 @@ Feature: Insert int vid of vertex and edge
       hash("Laura")->hash("sun_school"):(timestamp("2300-01-01T10:00:00"), now()+3600*24*365*3);
       """
     Then a ExecutionError should be raised at runtime:
+    And drop the used space
 
   Scenario: insert vertex unordered order prop vertex succeeded
     # insert vertex succeeded
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX person(name, age) VALUES hash("Tom"):("Tom", 22)
       """
@@ -108,8 +111,7 @@ Feature: Insert int vid of vertex and edge
     # insert vertex with string timestamp succeeded
     When executing query:
       """
-      INSERT VERTEX school(name, create_time) VALUES
-      hash("sun_school"):("sun_school", timestamp("2010-01-01T10:00:00"))
+      INSERT VERTEX school(name, create_time) VALUES hash("sun_school"):("sun_school", timestamp("2010-01-01T10:00:00"))
       """
     Then the execution should be successful
     # insert edge succeeded
@@ -259,11 +261,16 @@ Feature: Insert int vid of vertex and edge
     # test same prop name diff type
     When executing query:
       """
-      INSERT VERTEX person(name, age), employee(name) VALUES
-      hash("Joy"):("Joy", 18, 123),
-      hash("Petter"):("Petter", 19, 456);
-      INSERT EDGE schoolmate(likeness, nickname) VALUES
-      hash("Joy")->hash("Petter"):(90, "Petter");
+      INSERT VERTEX
+        person(name, age),
+        employee(name)
+      VALUES
+        hash("Joy"):("Joy", 18, 123),
+        hash("Petter"):("Petter", 19, 456);
+      INSERT EDGE
+        schoolmate(likeness, nickname)
+      VALUES
+        hash("Joy")->hash("Petter"):(90, "Petter");
       """
     Then the execution should be successful
     # get result through go
@@ -324,8 +331,12 @@ Feature: Insert int vid of vertex and edge
     # insert vertices multi tags with default value
     When executing query:
       """
-      INSERT VERTEX personWithDefault(name, BMI), studentWithDefault(number) VALUES
-      hash("Laura"):("Laura", 21.5, 20190901008),hash("Amber"):("Amber", 22.5, 20180901003)
+      INSERT VERTEX
+        personWithDefault(name, BMI),
+        studentWithDefault(number)
+      VALUES
+        hash("Laura"):("Laura", 21.5, 20190901008),
+        hash("Amber"):("Amber", 22.5, 20180901003);
       """
     Then the execution should be successful
     # multi vertices one tag with default value
@@ -361,11 +372,13 @@ Feature: Insert int vid of vertex and edge
     # insert multi edges with default value
     When executing query:
       """
-      INSERT EDGE schoolmateWithDefault() VALUES
-      hash("Tom")->hash("Kitty"):(),
-      hash("Tom")->hash("Peter"):(),
-      hash("Lucy")->hash("Laura"):(),
-      hash("Lucy")->hash("Amber"):()
+      INSERT EDGE
+        schoolmateWithDefault()
+      VALUES
+        hash("Tom")->hash("Kitty"):(),
+        hash("Tom")->hash("Peter"):(),
+        hash("Lucy")->hash("Laura"):(),
+        hash("Lucy")->hash("Amber"):()
       """
     Then the execution should be successful
     # get result through go

@@ -24,7 +24,7 @@ Feature: Feature examples
       """
       SHOW HOSTS
       """
-    Then the result should include:
+    Then the result should contain:
       | Host  | Port  | Status   | Leader count | Leader distribution | Partition distribution |
       | /\w+/ | /\d+/ | "ONLINE" | /\d+/        | /.*/                | /.*/                   |
     When executing query:

@@ -4,7 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Delete int vid of edge
 
-  Background: Prepare space
+  Scenario: delete edges
     Given an empty graph
     And create a space with following options:
       | partition_num  | 9   |
@@ -17,28 +17,32 @@ Feature: Delete int vid of edge
       CREATE EDGE IF NOT EXISTS schoolmate(likeness int);
       CREATE EDGE IF NOT EXISTS transfer(money int);
       """
-    And wait 3 seconds
-
-  Scenario: delete edges
-    When executing query:
+    And having executed:
       """
-      INSERT VERTEX person(name, age) VALUES
-      hash("Zhangsan"):("Zhangsan", 22),
-      hash("Lisi"):("Lisi", 23),
-      hash("Jack"):("Jack", 18),
-      hash("Rose"):("Rose", 19);
-      INSERT EDGE friend(intimacy) VALUES
-      hash("Zhangsan")->hash("Lisi")@15:(90),
-      hash("Zhangsan")->hash("Jack")@12:(50),
-      hash("Jack")->hash("Rose")@13:(100);
-      INSERT EDGE schoolmate(likeness) VALUES
-      hash("Zhangsan")->hash("Jack"):(60),
-      hash("Lisi")->hash("Rose"):(70);
-      INSERT EDGE transfer(money) VALUES
-      hash("Zhangsan")->hash("Lisi")@1561013236:(33),
-      hash("Zhangsan")->hash("Lisi")@1561013237:(77);
+      INSERT VERTEX
+        person(name, age)
+      VALUES
+        hash("Zhangsan"):("Zhangsan", 22),
+        hash("Lisi"):("Lisi", 23),
+        hash("Jack"):("Jack", 18),
+        hash("Rose"):("Rose", 19);
+      INSERT EDGE
+        friend(intimacy)
+      VALUES
+        hash("Zhangsan")->hash("Lisi")@15:(90),
+        hash("Zhangsan")->hash("Jack")@12:(50),
+        hash("Jack")->hash("Rose")@13:(100);
+      INSERT EDGE
+        schoolmate(likeness)
+      VALUES
+        hash("Zhangsan")->hash("Jack"):(60),
+        hash("Lisi")->hash("Rose"):(70);
+      INSERT EDGE
+        transfer(money)
+      VALUES
+        hash("Zhangsan")->hash("Lisi")@1561013236:(33),
+        hash("Zhangsan")->hash("Lisi")@1561013237:(77);
       """
-    Then the execution should be successful
     # before get result by go
     When executing query:
       """

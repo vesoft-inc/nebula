@@ -11,7 +11,7 @@ gherkin_fmt = ~/.local/bin/reformat-gherkin
 
 RM_DIR ?= true
 TEST_DIR ?= $(CURR_DIR)
-J ?= 8
+J ?= 10
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)

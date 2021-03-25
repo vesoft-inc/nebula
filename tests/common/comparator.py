@@ -6,6 +6,7 @@
 import math
 import re
 
+from enum import Enum
 from typing import Union, Dict, List
 from nebula2.common.ttypes import (
     DataSet,
@@ -20,17 +21,19 @@ from tests.common.dataset_printer import DataSetPrinter
 KV = Dict[Union[str, bytes], Value]
 Pattern = type(re.compile(r'/'))
 
+CmpType = Enum('CmpType', ('EQUAL', 'CONTAINS', 'NOT_CONTAINS'))
+
 
 class DataSetComparator:
     def __init__(self,
                  strict=True,
                  order=False,
-                 included=False,
-                 decode_type: str = 'utf-8',
+                 contains=CmpType.EQUAL,
+                 decode_type='utf-8',
                  vid_fn=None):
         self._strict = strict
         self._order = order
-        self._included = included
+        self._contains = contains
         self._decode_type = decode_type
         self._vid_fn = vid_fn
 
@@ -43,12 +46,18 @@ class DataSetComparator:
     def s(self, b: bytes) -> str:
         return b.decode(self._decode_type)
 
+    def _whether_return(self, cmp: bool) -> bool:
+        return ((self._contains == CmpType.EQUAL and not cmp)
+                or (self._contains == CmpType.NOT_CONTAINS and cmp))
+
     def compare(self, resp: DataSet, expect: DataSet):
+        if self._contains == CmpType.NOT_CONTAINS and len(resp.rows) == 0:
+            return True, None
         if all(x is None for x in [expect, resp]):
             return True, None
         if None in [expect, resp]:
             return False, -1
-        if len(resp.rows) < len(expect.rows):
+        if len(resp.rows) < len(expect.rows) and self._contains == CmpType.EQUAL:
             return False, -1
         if len(resp.column_names) != len(expect.column_names):
             return False, -1
@@ -57,13 +66,14 @@ class DataSetComparator:
                 return False, -2
         if self._order:
             for i in range(0, len(expect.rows)):
-                if not self.compare_row(resp.rows[i], expect.rows[i]):
+                cmp = self.compare_row(resp.rows[i], expect.rows[i])
+                if self._whether_return(cmp):
                     return False, i
-            if self._included:
+            if self._contains == CmpType.CONTAINS:
                 return True, None
             return len(resp.rows) == len(expect.rows), -1
         return self._compare_list(resp.rows, expect.rows, self.compare_row,
-                                  self._included)
+                                  self._contains)
 
     def compare_value(self, lhs: Value, rhs: Union[Value, Pattern]) -> bool:
         """
@@ -327,7 +337,7 @@ class DataSetComparator:
         return all(
             self.compare_value(l, r) for (l, r) in zip(lhs.values, rhs.values))
 
-    def _compare_list(self, lhs, rhs, cmp_fn, included=False):
+    def _compare_list(self, lhs, rhs, cmp_fn, contains=False):
         visited = []
         for j, rr in enumerate(rhs):
             found = False
@@ -336,9 +346,11 @@ class DataSetComparator:
                     visited.append(i)
                     found = True
                     break
-            if not found:
+            if self._whether_return(found):
                 return False, j
         size = len(lhs)
-        if included:
+        if contains == CmpType.CONTAINS:
             return len(visited) <= size, -1
+        if contains == CmpType.NOT_CONTAINS:
+            return True, -1
         return len(visited) == size, -1

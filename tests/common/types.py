@@ -48,6 +48,9 @@ class SpaceDesc:
     def drop_stmt(self) -> str:
         return f"DROP SPACE IF EXISTS `{self.name}`;"
 
+    def is_int_vid(self) -> bool:
+        return self.vid_type == 'int'
+
 
 class Column:
     def __init__(self, index: int):

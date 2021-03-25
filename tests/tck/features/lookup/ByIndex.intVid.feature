@@ -3,7 +3,6 @@ Feature: Lookup by index itself in integer vid
   Background:
     Given an empty graph
     And load "nba_int_vid" csv data to a new space
-    And wait 6 seconds
 
   Scenario: [1] tag index
     When executing query:
@@ -78,6 +77,7 @@ Feature: Lookup by index itself in integer vid
       | '76ers'         | '76ers'         |
       | 'Trail Blazers' | 'Trail Blazers' |
       | 'Bulls'         | 'Bulls'         |
+    And drop the used space
 
   Scenario: [1] Tag TODO
     When executing query:
@@ -100,6 +100,7 @@ Feature: Lookup by index itself in integer vid
       LOOKUP ON team WHERE team.name CONTAINS 'Jazz' YIELD team.name AS Name
       """
     Then a SemanticError should be raised at runtime:
+    And drop the used space
 
   Scenario: [2] edge index
     When executing query:
@@ -418,6 +419,7 @@ Feature: Lookup by index itself in integer vid
       | 'Dwight Howard'         | 'Hawks'         | 0       | 2016      |
       | 'Dwight Howard'         | 'Hornets'       | 0       | 2017      |
       | 'Dwight Howard'         | 'Wizards'       | 0       | 2018      |
+    And drop the used space
 
   Scenario: [2] Edge TODO
     When executing query:
@@ -440,6 +442,7 @@ Feature: Lookup by index itself in integer vid
       LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year AS startYear
       """
     Then a SemanticError should be raised at runtime:
+    And drop the used space
 
   Scenario: [1] Compare INT and FLOAT during IndexScan
     When executing query:
@@ -542,34 +545,23 @@ Feature: Lookup by index itself in integer vid
       | "Amar'e Stoudemire" | 36  | "Amar'e Stoudemire" |
       | "Boris Diaw"        | 36  | "Boris Diaw"        |
       | "Tony Parker"       | 36  | "Tony Parker"       |
+    And drop the used space
 
   Scenario: [2] Compare INT and FLOAT during IndexScan
     Given having executed:
       """
-      CREATE TAG weight (WEIGHT double)
-      """
-    And having executed:
-      """
-      CREATE TAG INDEX weight_index
-      ON weight(WEIGHT)
+      CREATE TAG weight (WEIGHT double);
+      CREATE TAG INDEX weight_index ON weight(WEIGHT);
       """
     And wait 6 seconds
     When executing query:
       """
-      INSERT VERTEX weight(WEIGHT)
-      VALUES hash("Tim Duncan") : (70.5)
+      INSERT VERTEX weight(WEIGHT) VALUES hash("Tim Duncan") : (70.5);
+      INSERT VERTEX weight(WEIGHT) VALUES hash("Tony Parker") : (80.0);
       """
-    Then the execution should be successful
     When executing query:
       """
-      INSERT VERTEX weight(WEIGHT)
-      VALUES hash("Tony Parker") : (80.0)
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      LOOKUP ON weight
-      WHERE weight.WEIGHT > 70;
+      LOOKUP ON weight WHERE weight.WEIGHT > 70;
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      |
@@ -577,8 +569,7 @@ Feature: Lookup by index itself in integer vid
       | "Tony Parker" |
     When executing query:
       """
-      LOOKUP ON weight
-      WHERE weight.WEIGHT > 70.4;
+      LOOKUP ON weight WHERE weight.WEIGHT > 70.4;
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      |
@@ -586,8 +577,7 @@ Feature: Lookup by index itself in integer vid
       | "Tony Parker" |
     When executing query:
       """
-      LOOKUP ON weight
-      WHERE weight.WEIGHT >= 70.5;
+      LOOKUP ON weight WHERE weight.WEIGHT >= 70.5;
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      |

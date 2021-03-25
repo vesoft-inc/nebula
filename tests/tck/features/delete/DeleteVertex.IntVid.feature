@@ -4,10 +4,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Delete int vid of vertex
 
-  Background: Prepare space
-    Given load "nba_int_vid" csv data to a new space
-
   Scenario: delete int vid vertex
+    Given load "nba_int_vid" csv data to a new space
     # get vertex info
     When executing query:
       """

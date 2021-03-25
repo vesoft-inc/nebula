@@ -10,7 +10,6 @@ Feature: Insert string vid of vertex and edge
       | partition_num  | 9                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
-    And wait 3 seconds
     # empty prop
     When executing query:
       """
@@ -176,10 +175,12 @@ Feature: Insert string vid of vertex and edge
     # Tag with expression DEFAULT value
     When executing query:
       """
-      CREATE TAG default_tag_expr(id int64 DEFAULT 3/2*4-5,
-      male bool DEFAULT 3 > 2,
-      height double DEFAULT abs(-176.0),
-      adult bool DEFAULT true AND false)
+      CREATE TAG default_tag_expr(
+        id int64 DEFAULT 3/2*4-5,
+        male bool DEFAULT 3 > 2,
+        height double DEFAULT abs(-176.0),
+        adult bool DEFAULT true AND false
+      );
       """
     Then the execution should be successful
     # drop tag succeeded
@@ -360,10 +361,11 @@ Feature: Insert string vid of vertex and edge
     When executing query:
       """
       CREATE EDGE default_edge_expr(
-      id int DEFAULT 3/2*4-5,
-      male bool DEFAULT 3 > 2,
-      height double DEFAULT abs(-176.0),
-      adult bool DEFAULT true AND false)
+        id int DEFAULT 3/2*4-5,
+        male bool DEFAULT 3 > 2,
+        height double DEFAULT abs(-176.0),
+        adult bool DEFAULT true AND false
+      );
       """
     Then the execution should be successful
     # test drop edge
@@ -391,6 +393,7 @@ Feature: Insert string vid of vertex and edge
       DROP EDGE IF EXISTS exist_edge;
       """
     Then the execution should be successful
+    And drop the used space
     # test same tag in different space
     When executing query:
       """
@@ -399,7 +402,6 @@ Feature: Insert string vid of vertex and edge
       CREATE TAG animal(name string, kind string);
       """
     Then the execution should be successful
-    Given wait 3 seconds
     # check result
     When executing query:
       """
@@ -434,9 +436,8 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | Name       |
       | "test_tag" |
-    Given wait 3 seconds
     # test same tag in different space
-    When executing query:
+    When try to execute query:
       """
       USE test_multi;
       CREATE TAG test_tag1();
@@ -455,7 +456,8 @@ Feature: Insert string vid of vertex and edge
     # reserved keyword
     When executing query:
       """
-      USE my_space; CREATE TAG `tag` (`edge` string);
+      USE my_space;
+      CREATE TAG `tag` (`edge` string);
       """
     Then the execution should be successful
     # test drop space
@@ -463,7 +465,7 @@ Feature: Insert string vid of vertex and edge
       """
       SHOW SPACES;
       """
-    Then the result should include:
+    Then the result should contain:
       | Name       |
       | "my_space" |
     # test drop space
@@ -477,15 +479,16 @@ Feature: Insert string vid of vertex and edge
       """
       SHOW SPACES;
       """
-    Then the result should include:
-      | Name            |
-      | /EmptyGraph_.*/ |
+    Then the result should not contain:
+      | Name         |
+      | "my_space"   |
+      | "test_multi" |
     # test alter tag with default
     When executing query:
       """
       CREATE SPACE tag_space(partition_num=9);
       USE tag_space;
-      CREATE TAG t(name string DEFAULT "N/A", age int DEFAULT -1)
+      CREATE TAG t(name string DEFAULT "N/A", age int DEFAULT -1);
       """
     Then the execution should be successful
     # test alter add
@@ -494,7 +497,7 @@ Feature: Insert string vid of vertex and edge
       ALTER TAG t ADD (description string DEFAULT "none")
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     # insert
     When executing query:
       """
@@ -515,7 +518,7 @@ Feature: Insert string vid of vertex and edge
       ALTER TAG t CHANGE (description string NOT NULL)
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     # insert
     When executing query:
       """
@@ -547,7 +550,7 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE e ADD (description string DEFAULT "none")
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     When executing query:
       """
       INSERT VERTEX t(description) VALUES "1":("some one")
@@ -567,7 +570,7 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE e CHANGE (description string NOT NULL)
       """
     Then the execution should be successful
-    Given wait 3 seconds
+    And wait 3 seconds
     # insert without default prop, failed
     When executing query:
       """
@@ -577,21 +580,22 @@ Feature: Insert string vid of vertex and edge
     # test alter edge with timestamp default
     When executing query:
       """
+      DROP SPACE tag_space;
       CREATE SPACE issue2009(vid_type = FIXED_STRING(20));
-      USE issue2009
+      USE issue2009;
       """
     Then the execution should be successful
     When executing query:
       """
       CREATE EDGE IF NOT EXISTS relation (
-      intimacy int DEFAULT 0,
-      isReversible bool DEFAULT false,
-      name string DEFAULT "N/A",
-      startTime timestamp DEFAULT 0)
+        intimacy int DEFAULT 0,
+        isReversible bool DEFAULT false,
+        name string DEFAULT "N/A",
+        startTime timestamp DEFAULT 0
+      )
       """
     Then the execution should be successful
-    Given wait 3 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE relation (intimacy) VALUES "person.Tom" -> "person.Marry"@0:(3)
       """
@@ -765,4 +769,8 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid parm!
-    Then drop the used space
+    When executing query:
+      """
+      DROP SPACE issue2009;
+      """
+    Then the execution should be successful
