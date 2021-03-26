@@ -327,3 +327,25 @@ Feature: Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"<-"LaMarcus Aldridge"], [:like "LaMarcus Aldridge"<-"Tony Parker"]] | [:serve "Tony Parker"->"Spurs"] |
       | [[:like "Tim Duncan"->"Tony Parker"]]                                                   | [:serve "Tony Parker"->"Spurs"] |
       | [[:like "Tim Duncan"<-"Tony Parker"]]                                                   | [:serve "Tony Parker"->"Spurs"] |
+
+  Scenario: Test semantic error for invalid variables
+    When executing query:
+      """
+      MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+      WHERE e[0].likeness>90
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `e'
+    When executing query:
+      """
+      MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+      RETURN e
+      """
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `e'
+    When executing query:
+      """
+      MATCH p=(v:player{name: 'Tim Duncan'})-[:like|:serve*1..3]->(v1)
+      WHERE e[0].likeness+e[1].likeness>90
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `e'
