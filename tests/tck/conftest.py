@@ -155,7 +155,6 @@ def new_space(request, options, session, graph_spaces):
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
     data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
     space_desc = load_csv_data(
-        pytestconfig,
         session,
         data_dir,
         "I" + space_generator(),
@@ -236,6 +235,7 @@ def line_number(steps, result):
 # IN literal `1, 2, 3...'
 def parse_list(s: str):
     return [int(num) for num in s.split(',')]
+
 
 
 def hash_columns(ds, hashed_columns):

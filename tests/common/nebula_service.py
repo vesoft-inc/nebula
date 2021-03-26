@@ -20,8 +20,8 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 class NebulaService(object):
     def __init__(self, build_dir, src_dir, cleanup=True):
-        self.build_dir = build_dir
-        self.src_dir = src_dir
+        self.build_dir = str(build_dir)
+        self.src_dir = str(src_dir)
         self.work_dir = os.path.join(self.build_dir, 'server_' + time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime()))
         self.pids = {}
         self._cleanup = cleanup
@@ -61,16 +61,24 @@ class NebulaService(object):
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
 
     def _format_nebula_command(self, name, meta_port, ports, debug_log=True):
-        param_format = "--meta_server_addrs={} --port={} --ws_http_port={} --ws_h2_port={} --heartbeat_interval_secs=1 --expired_time_factor=60"
+        params = [
+            "--meta_server_addrs={}",
+            "--port={}",
+            "--ws_http_port={}",
+            "--ws_h2_port={}",
+            "--heartbeat_interval_secs=1",
+            "--expired_time_factor=60"
+        ]
+        if name == 'graphd':
+            params.append('--enable_optimizer=true')
+            params.append('--enable_authorize=true')
+        if name == 'storaged':
+            params.append('--raft_heartbeat_interval_secs=30')
+        if debug_log:
+            params.append('--v=4')
+        param_format = " ".join(params)
         param = param_format.format("127.0.0.1:" + str(meta_port), ports[0],
                                     ports[1], ports[2])
-        if name == 'graphd':
-            param += ' --enable_optimizer=true'
-            param += ' --enable_authorize=true'
-        if name == 'storaged':
-            param += ' --raft_heartbeat_interval_secs=30'
-        if debug_log:
-            param += ' --v=4'
         command = NEBULA_START_COMMAND_FORMAT.format(name, name, param)
         return command
 
@@ -190,6 +198,7 @@ class NebulaService(object):
 
     def stop(self):
         print("try to stop nebula services...")
+        self._collect_pids()
         self.kill_all(signal.SIGTERM)
 
         max_retries = 20

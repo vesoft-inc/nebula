@@ -12,8 +12,10 @@ import time
 import yaml
 from typing import Pattern
 
+from nebula2.Config import Config
 from nebula2.common import ttypes as CommonTtypes
 from nebula2.gclient.net import Session
+from nebula2.gclient.net import ConnectionPool
 
 from tests.common.csv_import import CSVImporter
 from tests.common.path_value import PathVal
@@ -390,7 +392,6 @@ def _load_data_from_file(sess, data_dir, fd):
 
 
 def load_csv_data(
-    pytestconfig,
     sess: Session,
     data_dir: str,
     space_name: str = "",
@@ -429,3 +430,14 @@ def load_csv_data(
             _load_data_from_file(sess, data_dir, fd)
 
         return space_desc
+
+
+def get_conn_pool(host: str, port: int):
+    config = Config()
+    config.max_connection_pool_size = 20
+    config.timeout = 120000
+    # init connection pool
+    pool = ConnectionPool()
+    if not pool.init([(host, port)], config):
+        raise Exception("Fail to init connection pool.")
+    return pool
