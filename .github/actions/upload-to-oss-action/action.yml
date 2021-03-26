@@ -1,0 +1,50 @@
+name: 'Upload to oss'
+description: 'Upload files to oss'
+inputs:
+  key-id:
+    description: 'access key ID'
+    required: true
+    default: ''
+  key-secret:
+    description: 'access key secret'
+    required: true
+    default: ''
+  endpoint:
+    description: 'endpooint'
+    required: true
+    default: ''
+  bucket:
+    description: 'bucket'
+    required: true
+    default: ''
+  asset-path:
+    description: 'file path to be uploaded'
+    required: true
+    default: ''
+  target-path:
+    description: 'file path stored on the OSS'
+    required: true
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        j=0
+        if [ -d ${{ inputs.asset-path }} ]; then
+            for filename in `ls ${{ inputs.asset-path }}`;
+            do
+                folder_list[j]=${{ inputs.asset-path }}/$filename
+                j=`expr $j + 1`
+            done
+        else
+            folder_list[0]=${{ inputs.asset-path }}
+        fi
+        echo "Uploading to oss... "
+        for filepath in ${folder_list[@]};
+        do
+            ossutil64 -e ${{ inputs.endpoint}} \
+                -i ${{ inputs.key-id }} \
+                -k ${{ inputs.key-secret }} \
+                -f cp $filepath oss://${{ inputs.bucket }}/${{ inputs.target-path }}/$(basename ${filepath})
+        done
+      shell: bash

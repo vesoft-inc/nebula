@@ -8,7 +8,7 @@ Upload file to release assets
 
 **Required** tag name of release branch. Default `${{ github.ref }}`.
 
-### `file-path`
+### `asset-path`
 
 **Required** file path to be uploaded. Default `''`.
 
@@ -17,6 +17,6 @@ Upload file to release assets
 ```yaml
 uses: ./.github/actions/upload-assets-action
 with:
-  file-path: ${{ steps.pkg.outputs.filepath }}
+  asset-path: build/cpack_output
   tag: ${{ steps.tag.outputs.tag  }}
 ```

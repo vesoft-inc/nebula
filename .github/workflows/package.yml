@@ -18,7 +18,7 @@ jobs:
           - ubuntu1604
           - ubuntu1804
           - ubuntu2004
-          # - centos6
+          - centos6
           - centos7
           - centos8
     container:
@@ -35,19 +35,16 @@ jobs:
           filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
           sha256sum $filename > $filename.$SHA_EXT
           subdir=$(date -u +%Y.%m.%d)
-          echo "::set-output name=filepath::$filename"
-          echo "::set-output name=shafilepath::$filename.$SHA_EXT"
           echo "::set-output name=subdir::$subdir"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}-v2-nightly
           path: build/cpack_output
-      - name: upload package to oss
-        uses: tvrcgo/upload-to-oss@v0.3.0
+      - uses: ./.github/actions/upload-to-oss-action
         with:
           key-id: ${{ secrets.OSS_ID }}
           key-secret: ${{ secrets.OSS_SECRET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
           asset-path: build/cpack_output
-          target-path: /package/v2-nightly/${{ steps.vars.outputs.subdir }}
+          target-path: package/v2-nightly/${{ steps.vars.outputs.subdir }}

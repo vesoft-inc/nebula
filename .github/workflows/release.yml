@@ -40,22 +40,19 @@ jobs:
           filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
           sha256sum $filename > $filename.$SHA_EXT
           subdir=$(echo $tag |sed 's/^v//')
-          echo "::set-output name=filepath::$filename"
-          echo "::set-output name=shafilepath::$filename.$SHA_EXT"
           echo "::set-output name=subdir::$subdir"
       - uses: ./.github/actions/upload-assets-action
         with:
-          file-path: ${{ steps.vars.outputs.filepath }}
+          asset-path: build/cpack_output
           tag: ${{ steps.tag.outputs.tag }}
-      - name: upload package to oss
-        uses: tvrcgo/upload-to-oss@v0.3.0
+      - uses: ./.github/actions/upload-to-oss-action
         with:
           key-id: ${{ secrets.OSS_ID }}
           key-secret: ${{ secrets.OSS_SECRET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
           asset-path: build/cpack_output
-          target-path: /package/${{ steps.vars.outputs.subdir }}
+          target-path: package/${{ steps.vars.outputs.subdir }}
 
   docker_build_graph:
     name: docker-graph
