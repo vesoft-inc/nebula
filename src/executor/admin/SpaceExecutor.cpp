@@ -73,7 +73,7 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                 }
                 row.values.emplace_back(sAtomicEdge);
                 if (properties.__isset.group_name) {
-                    row.values.emplace_back(properties.get_group_name());
+                    row.values.emplace_back(*properties.get_group_name());
                 } else {
                     row.values.emplace_back("default");
                 }
