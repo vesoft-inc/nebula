@@ -281,7 +281,7 @@ def cmp_dataset(
 
     def rowp(ds, i):
         if i is None or i < 0:
-            return ""
+            return "" if i != -2 else "Invalid column names"
         assert i < len(ds.rows), f"{i} out of range {len(ds.rows)}"
         row = ds.rows[i].values
         printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)

@@ -3,9 +3,13 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-from typing import List
+import re
+
+from typing import List, Union
 
 from nebula2.common.ttypes import DataSet, Edge, NullType, Path, Value, Vertex
+
+Pattern = type(re.compile(r'\d+'))
 
 
 class DataSetPrinter:
@@ -39,7 +43,12 @@ class DataSetPrinter:
             for (i, row) in enumerate(ds.rows))
         return '\n'.join([col_names, data_rows])
 
-    def to_string(self, val: Value):
+    def to_string(self, val: Union[Value, Pattern]):
+        if isinstance(val, Pattern):
+            return str(val)
+        return self.value_to_string(val)
+
+    def value_to_string(self, val: Value) -> str:
         if val.getType() == Value.NVAL:
             return NullType._VALUES_TO_NAMES[val.get_nVal()]
         if val.getType() == Value.__EMPTY__:

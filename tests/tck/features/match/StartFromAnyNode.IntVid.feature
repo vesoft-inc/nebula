@@ -509,12 +509,11 @@ Feature: Start From Any Node
       | count |
       | 1693  |
 
-  @skip
   Scenario: start from middle node, with vertex id, with totally 2 steps
     When executing query:
       """
       MATCH (n)-[]-(m)-[]-(l)
-      WHERE id(m)=="Kyle Anderson"
+      WHERE id(m)==hash('Kyle Anderson')
       RETURN n,m,l
       """
     Then the result should be, in any order, with relax comparison:

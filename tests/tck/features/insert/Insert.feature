@@ -196,7 +196,11 @@ Feature: Insert string vid of vertex and edge
     # insert multi edges
     When executing query:
       """
-      INSERT EDGE schoolmate(likeness, nickname) VALUES "Tom"->"Kitty":(81, "Kitty"), "Tom"->"Peter":(83, "Kitty")
+      INSERT EDGE
+        schoolmate(likeness, nickname)
+      VALUES
+        "Tom"->"Kitty":(81, "Kitty"),
+        "Tom"->"Peter":(83, "Kitty");
       """
     Then the execution should be successful
     # check edge result with go
@@ -252,8 +256,7 @@ Feature: Insert string vid of vertex and edge
     # test same prop name diff type
     When executing query:
       """
-      INSERT VERTEX person(name, age), employee(name) VALUES
-      "Joy":("Joy", 18, 123), "Petter":("Petter", 19, 456);
+      INSERT VERTEX person(name, age), employee(name) VALUES "Joy":("Joy", 18, 123), "Petter":("Petter", 19, 456);
       INSERT EDGE schoolmate(likeness, nickname) VALUES "Joy"->"Petter":(90, "Petter");
       """
     Then the execution should be successful
