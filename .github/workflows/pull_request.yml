@@ -130,7 +130,7 @@ jobs:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
-        timeout-minutes: 15
+        timeout-minutes: 20
       - name: Pytest
         env:
           NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
@@ -142,7 +142,7 @@ jobs:
           NEBULA_TEST_LOGS_DIR: ${{ github.workspace }}/build
         run: make RM_DIR=false J=${{ steps.cmake.outputs.j }} tck
         working-directory: tests/
-        timeout-minutes: 15
+        timeout-minutes: 20
       - name: Sanitizer
         if: ${{ always() }}
         run: |

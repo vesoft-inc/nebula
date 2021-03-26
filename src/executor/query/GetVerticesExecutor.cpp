@@ -68,40 +68,8 @@ DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices* gv) {
     // Accept Table such as | $a | $b | $c |... as input which one column indicate src
     auto valueIter = ectx_->getResult(gv->inputVar()).iter();
     VLOG(3) << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
-    auto expCtx = QueryExpressionContext(qctx()->ectx());
-    const auto &spaceInfo = qctx()->rctx()->session()->space();
-    vertices.rows.reserve(valueIter->size());
-    auto dedup = gv->dedup();
-    if (spaceInfo.spaceDesc.vid_type.type == meta::cpp2::PropertyType::INT64) {
-        std::unordered_set<int64_t> uniqueSet;
-        uniqueSet.reserve(valueIter->size());
-        for (; valueIter->valid(); valueIter->next()) {
-            auto src = gv->src()->eval(expCtx(valueIter.get()));
-            if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)) {
-                LOG(WARNING) << "Mismatched vid type: " << src.type();
-                continue;
-            }
-            if (dedup && !uniqueSet.emplace(src.getInt()).second) {
-                continue;
-            }
-            vertices.emplace_back(Row({std::move(src)}));
-        }
-    } else {
-        std::unordered_set<std::string> uniqueSet;
-        uniqueSet.reserve(valueIter->size());
-        for (; valueIter->valid(); valueIter->next()) {
-            auto src = gv->src()->eval(expCtx(valueIter.get()));
-            if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)) {
-                LOG(WARNING) << "Mismatched vid type: " << src.type();
-                continue;
-            }
-            if (dedup && !uniqueSet.emplace(src.getStr()).second) {
-                continue;
-            }
-            vertices.emplace_back(Row({std::move(src)}));
-        }
-    }
-    return vertices;
+    return buildRequestDataSetByVidType(valueIter.get(), gv->src(), gv->dedup());
 }
+
 }   // namespace graph
 }   // namespace nebula

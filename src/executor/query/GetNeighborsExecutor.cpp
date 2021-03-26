@@ -12,7 +12,6 @@
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
 #include "context/QueryContext.h"
-#include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 #include "service/GraphFlags.h"
 
@@ -23,53 +22,17 @@ using nebula::storage::GraphStorageClient;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> GetNeighborsExecutor::execute() {
-    auto status = buildRequestDataSet();
-    if (!status.ok()) {
-        return error(std::move(status));
-    }
-    return getNeighbors();
-}
-
-Status GetNeighborsExecutor::close() {
-    // clear the members
-    reqDs_.rows.clear();
-    return Executor::close();
-}
-
-Status GetNeighborsExecutor::buildRequestDataSet() {
+DataSet GetNeighborsExecutor::buildRequestDataSet() {
     SCOPED_TIMER(&execTime_);
     auto inputVar = gn_->inputVar();
     VLOG(1) << node()->outputVar() << " : " << inputVar;
-    auto& inputResult = ectx_->getResult(inputVar);
-    auto iter = inputResult.iter();
-    QueryExpressionContext ctx(ectx_);
-    DataSet input;
-    reqDs_.colNames = {kVid};
-    reqDs_.rows.reserve(iter->size());
-    auto* src = DCHECK_NOTNULL(gn_->src());
-    std::unordered_set<Value> uniqueVid;
-    const auto& spaceInfo = qctx()->rctx()->session()->space();
-    for (; iter->valid(); iter->next()) {
-        auto val = Expression::eval(src, ctx(iter.get()));
-        if (!SchemaUtil::isValidVid(val, spaceInfo.spaceDesc.vid_type)) {
-            continue;
-        }
-        if (gn_->dedup()) {
-            auto ret = uniqueVid.emplace(val);
-            if (ret.second) {
-                reqDs_.rows.emplace_back(Row({std::move(val)}));
-            }
-        } else {
-            reqDs_.rows.emplace_back(Row({std::move(val)}));
-        }
-    }
-    return Status::OK();
+    auto iter = ectx_->getResult(inputVar).iter();
+    return buildRequestDataSetByVidType(iter.get(), gn_->src(), gn_->dedup());
 }
 
-folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
-    if (reqDs_.rows.empty()) {
-        VLOG(1) << "Empty input.";
+folly::Future<Status> GetNeighborsExecutor::execute() {
+    DataSet reqDs = buildRequestDataSet();
+    if (reqDs.rows.empty()) {
         List emptyResult;
         return finish(ResultBuilder()
                           .value(Value(std::move(emptyResult)))
@@ -81,8 +44,8 @@ folly::Future<Status> GetNeighborsExecutor::getNeighbors() {
     GraphStorageClient* storageClient = qctx_->getStorageClient();
     return storageClient
         ->getNeighbors(gn_->space(),
-                       std::move(reqDs_.colNames),
-                       std::move(reqDs_.rows),
+                       std::move(reqDs.colNames),
+                       std::move(reqDs.rows),
                        gn_->edgeTypes(),
                        gn_->edgeDirection(),
                        gn_->statProps(),

@@ -7,19 +7,15 @@
 #ifndef EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 #define EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 
-#include <vector>
-
 #include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
-#include "common/datatypes/Vertex.h"
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "common/clients/storage/GraphStorageClient.h"
 
 #include "executor/StorageAccessExecutor.h"
 #include "planner/Query.h"
 
 namespace nebula {
 namespace graph {
+
 class GetNeighborsExecutor final : public StorageAccessExecutor {
 public:
     GetNeighborsExecutor(const PlanNode *node, QueryContext *qctx)
@@ -29,19 +25,13 @@ public:
 
     folly::Future<Status> execute() override;
 
-    Status close() override;
+    DataSet buildRequestDataSet();
 
 private:
-    friend class GetNeighborsTest_BuildRequestDataSet_Test;
-    Status buildRequestDataSet();
-
-    folly::Future<Status> getNeighbors();
-
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
     Status handleResponse(RpcResponse& resps);
 
 private:
-    DataSet                 reqDs_;
     const GetNeighbors*     gn_;
 };
 
