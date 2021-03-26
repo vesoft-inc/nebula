@@ -112,6 +112,17 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
         });
 }
 
+template <typename RESP>
+void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const std::string& start,
+                                        const std::string& end) {
+    this->kvstore_->asyncRemoveRange(
+        spaceId, partId, start, end, [spaceId, partId, this](kvstore::ResultCode code) {
+            handleAsync(spaceId, partId, code);
+        });
+}
+
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
                                                  PartitionID partId,

@@ -64,6 +64,7 @@ Status YieldExecutor::prepareYield() {
     // then we can do the preparation before execution
     // TODO: make it possible that this preparation not depends on interim result
     auto *clause = sentence_->yield();
+    distinct_ = clause->isDistinct();
     yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
     auto *varHolder = ectx()->variableHolder();
     auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
@@ -195,8 +196,12 @@ Status YieldExecutor::executeInputs() {
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+    std::unordered_set<std::string> uniqueRowSet;
     auto visitor =
-        [inputs, &outputSchema, &rsWriter, &status, this] (const RowReader *reader) -> Status {
+        [inputs,
+         &outputSchema,
+         &rsWriter,
+         &status, &uniqueRowSet, this] (const RowReader *reader) -> Status {
         Getters getters;
         getters.getVariableProp = [inputs, reader] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
@@ -227,7 +232,14 @@ Status YieldExecutor::executeInputs() {
                     return status;
                 }
             }
-            rsWriter->addRow(*writer);
+            if (distinct_) {
+                auto result = uniqueRowSet.emplace(writer->encode());
+                if (result.second) {
+                    rsWriter->addRow(*writer);
+                }
+            } else {
+                rsWriter->addRow(*writer);
+            }
         } else {
             auto i = 0u;
             for (auto col : yields_) {
@@ -332,7 +344,10 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
         }
         return Status::OK();
     };
-    inputs->applyTo(visitor, 1);
+    auto status = inputs->applyTo(visitor, 1);
+    if (!status.ok()) {
+        return status;
+    }
 
     return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }

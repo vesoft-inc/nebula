@@ -85,6 +85,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    ProcessUtils::bgRunCommand();
+
     // Get the IPv4 address the server will listen on
     std::string localIP;
     {

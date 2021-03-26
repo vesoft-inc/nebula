@@ -106,18 +106,18 @@ function get_package_name {
         if [[ ${sys_name} == "CentOS" ]]; then
             sys_ver=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
             if [[ ${sys_ver} == 7 ]] || [[ ${sys_ver} == 6 ]]; then
-                package_name=.el${sys_ver}-5.x86_64
+                package_name=.el${sys_ver}-5.$(uname -m)
             else
-                package_name=.el${sys_ver}.x86_64
+                package_name=.el${sys_ver}.$(uname -m)
             fi
         elif [[ ${sys_name} == "Fedora" ]]; then
             sys_ver=`cat /etc/redhat-release | cut -d ' ' -f3`
-            package_name=.fc${sys_ver}.x86_64
+            package_name=.fc${sys_ver}.$(uname -m)
         fi
         file_type="RPM"
     elif [[ -f "/etc/lsb-release" ]]; then
         sys_name=`cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//'`
-        package_name=.ubuntu${sys_name}.amd64
+        package_name=.ubuntu${sys_name}.$(uname -m)
         file_type="DEB"
     fi
 }

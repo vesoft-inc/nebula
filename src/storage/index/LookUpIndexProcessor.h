@@ -18,8 +18,9 @@ public:
                                           meta::SchemaManager* schemaMan,
                                           meta::IndexManager* indexMan,
                                           stats::Stats* stats,
+                                          folly::Executor* executor,
                                           VertexCache* cache = nullptr) {
-        return new LookUpIndexProcessor(kvstore, schemaMan, indexMan, stats, cache);
+        return new LookUpIndexProcessor(kvstore, schemaMan, indexMan, stats, executor, cache);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
@@ -29,8 +30,10 @@ private:
                                   meta::SchemaManager* schemaMan,
                                   meta::IndexManager* indexMan,
                                   stats::Stats* stats,
+                                  folly::Executor* executor,
                                   VertexCache* cache = nullptr)
-        : IndexExecutor<cpp2::LookUpIndexResp>(kvstore, schemaMan, indexMan, stats, cache) {}
+        : IndexExecutor<cpp2::LookUpIndexResp>(kvstore, schemaMan,
+                                               indexMan, stats, cache, executor) {}
 };
 
 }  // namespace storage

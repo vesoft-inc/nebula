@@ -16,6 +16,7 @@ jobs:
           - graphd
           - console
           - graph
+          - tools
     steps:
       - uses: actions/checkout@v2
         with:
@@ -25,7 +26,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}
+          repository: vesoft/nebula-${{ matrix.service }}
           tags: nightly
           dockerfile: docker/Dockerfile.${{ matrix.service }}
           cache_froms: vesoft/nebula-dev:centos7,centos:7

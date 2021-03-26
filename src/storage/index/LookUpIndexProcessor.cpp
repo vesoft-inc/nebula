@@ -33,21 +33,38 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     /**
      * step 3 : execute index scan.
      */
-    for (auto partId : req.get_parts()) {
-        auto code = executeExecutionPlan(partId);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Execute Execution Plan! ret = " << static_cast<int32_t>(code)
-                       << ", spaceId = " << spaceId_
-                       << ", partId =  " << partId;
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                this->handleLeaderChanged(spaceId_, partId);
-            } else {
-                this->pushResultCode(this->to(code), partId);
+    if (executor_ == nullptr) {
+        for (auto partId : req.get_parts()) {
+            auto code = executeExecutionPlan(partId);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Execute Execution Plan! ret = " << static_cast<int32_t>(code)
+                           << ", spaceId = " << spaceId_
+                           << ", partId =  " << partId;
+                if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                    this->handleLeaderChanged(spaceId_, partId);
+                } else {
+                    this->pushResultCode(this->to(code), partId);
+                }
+                this->onFinished();
+                return;
+            }
+        }
+    } else {
+        auto future = executeExecutionPlanConcurrently(req.get_parts());
+        auto map = std::move(future).get();
+        if (!map.empty()) {
+            for (auto& errorPart : map) {
+                if (errorPart.second == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                    this->handleLeaderChanged(spaceId_, errorPart.first);
+                } else {
+                    this->pushResultCode(this->to(errorPart.second), errorPart.first);
+                }
             }
             this->onFinished();
             return;
         }
     }
+
 
     /**
      * step 4 : collect result.

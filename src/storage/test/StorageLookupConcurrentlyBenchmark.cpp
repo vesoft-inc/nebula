@@ -18,7 +18,7 @@
 #include "storage/test/TestUtils.h"
 #include "storage/StorageFlags.h"
 
-DEFINE_int64(total_vertices_size, 1000000, "The number of vertices");
+DEFINE_int64(total_vertices_size, 20000000, "The number of vertices");
 DEFINE_string(root_data_path, "/tmp/LookUpPref", "Engine data path");
 
 namespace nebula {
@@ -27,8 +27,10 @@ namespace storage {
 GraphSpaceID spaceId = 0;
 TagID tagId = 1;
 IndexID indexId = 1;
-PartitionID partId = 0;
+int32_t partNums = 100;
 static int64_t modeInt = 100;
+auto tf = std::make_shared<folly::NamedThreadFactory>("lookup-pool");
+auto pool = std::make_shared<folly::IOThreadPoolExecutor>(40, std::move(tf));
 
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
@@ -58,7 +60,8 @@ IndexValues collectIndexValues(RowReader* reader,
 std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
                               const std::string &prop,
                               std::shared_ptr<nebula::cpp2::IndexItem> &index,
-                              VertexID vId) {
+                              VertexID vId,
+                              PartitionID partId) {
     auto reader = RowReader::getTagPropReader(schemaMan,
                                               prop,
                                               spaceId,
@@ -110,24 +113,27 @@ std::string genVertexProp(int64_t vId) {
 bool genData(kvstore::KVStore* kv,
              meta::SchemaManager* schemaMan,
              std::shared_ptr<nebula::cpp2::IndexItem> &index) {
-    std::vector<kvstore::KV> data;
-    for (auto i = 0; i < FLAGS_total_vertices_size; i++) {
-        auto val = genVertexProp(i);
-        auto indexKey = genVertexIndexKey(schemaMan, val, index, i);
-        data.emplace_back(std::move(indexKey), "");
+    std::unordered_map<PartitionID, std::vector<kvstore::KV>> partData;
+    for (int vid = 1; vid <= FLAGS_total_vertices_size; vid++) {
+        PartitionID partId = vid % partNums;
+        auto val = genVertexProp(vid);
+        auto indexKey = genVertexIndexKey(schemaMan, val, index, vid, partId);
+        partData[partId].emplace_back(std::move(indexKey), "");
     }
-    folly::Baton<true, std::atomic> baton;
-    bool ret = false;
-    kv->asyncMultiPut(spaceId, partId, std::move(data),
-                      [&ret, &baton] (kvstore::ResultCode code) {
-                          if (kvstore::ResultCode::SUCCEEDED == code) {
-                              ret = true;
-                          }
-                          baton.post();
-                      });
-    baton.wait();
-    if (!ret) {
-        return false;
+    for (auto data : partData) {
+        folly::Baton<true, std::atomic> baton;
+        bool ret = false;
+        kv->asyncMultiPut(spaceId, data.first, std::move(data.second),
+                          [&ret, &baton] (kvstore::ResultCode code) {
+                              if (kvstore::ResultCode::SUCCEEDED == code) {
+                                  ret = true;
+                              }
+                              baton.post();
+                          });
+        baton.wait();
+        if (!ret) {
+            return false;
+        }
     }
 
     auto code = kv->compact(spaceId);
@@ -141,29 +147,52 @@ bool processLookup(kvstore::KVStore* kv,
                    meta::SchemaManager* schemaMan,
                    meta::IndexManager* indexMan,
                    const std::string& filter,
-                   size_t expectRowNum) {
+                   size_t expectRowNum,
+                   bool con) {
     cpp2::LookUpIndexRequest req;
     decltype(req.parts) parts;
-    parts.emplace_back(partId);
+    for (int partId = 0; partId < partNums; partId++) {
+        parts.emplace_back(partId);
+    }
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(indexId);
     req.set_filter(filter);
-    auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr, nullptr);
-    auto fut = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(fut).get();
-    BENCHMARK_SUSPEND {
-        if (resp.result.failed_codes.size() > 0) {
-            LOG(ERROR) << "Process error";
-            return false;
-        }
-        if (resp.get_vertices()->size() != expectRowNum) {
-            LOG(ERROR) << "Row number error , expected : " << expectRowNum
-                       << " actual ： " << resp.get_vertices()->size();
-            return false;
-        }
-    };
+
+    if (con) {
+        auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan,
+                                                         nullptr, pool.get());
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        BENCHMARK_SUSPEND {
+            if (resp.result.failed_codes.size() > 0) {
+                LOG(ERROR) << "Process error";
+                return false;
+            }
+            if (resp.get_vertices()->size() != expectRowNum) {
+                LOG(ERROR) << "Row number error , expected : " << expectRowNum
+                           << " actual ： " << resp.get_vertices()->size();
+                return false;
+            }
+        };
+    } else {
+        auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        BENCHMARK_SUSPEND {
+            if (resp.result.failed_codes.size() > 0) {
+                LOG(ERROR) << "Process error";
+                return false;
+            }
+            if (resp.get_vertices()->size() != expectRowNum) {
+                LOG(ERROR) << "Row number error , expected : " << expectRowNum
+                           << " actual ： " << resp.get_vertices()->size();
+                return false;
+            }
+        };
+    }
     return true;
 }
 
@@ -172,7 +201,8 @@ bool processLookup(kvstore::KVStore* kv,
  * where col1 = XXXXX
  */
 void lookupExec(int32_t expectRowNum,
-                const std::string& filter) {
+                const std::string& filter,
+                bool con) {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
@@ -182,7 +212,7 @@ void lookupExec(int32_t expectRowNum,
         rootPath = folly::stringPrintf("%s/%s_%d",
                                        FLAGS_root_data_path.c_str(),
                                        "Precise", expectRowNum);
-        kv = TestUtils::initKV(std::move(rootPath).c_str());
+        kv = TestUtils::initKV(std::move(rootPath).c_str(), partNums);
         schemaMan = mockSchemaMan();
         indexMan = mockIndexMan();
         auto iRet = indexMan->getTagIndex(spaceId, indexId);
@@ -196,14 +226,14 @@ void lookupExec(int32_t expectRowNum,
             return;
         }
     };
-    auto ret = processLookup(kv.get(), schemaMan.get(), indexMan.get(), filter, expectRowNum);
+    auto ret = processLookup(kv.get(), schemaMan.get(), indexMan.get(), filter, expectRowNum, con);
     if (!ret) {
         LOG(ERROR) << "Processor error";
         return;
     }
 }
 
-void lookupPrecise(int32_t expectRowNum) {
+void lookupPrecise(int32_t expectRowNum, bool con = false) {
     auto* col = new std::string("col_0");
     auto* alias = new std::string("col0");
     auto* ape = new AliasPropertyExpression(new std::string(""), alias, col);
@@ -211,39 +241,60 @@ void lookupPrecise(int32_t expectRowNum) {
     auto r =  std::make_unique<RelationalExpression>(ape,
                                                      RelationalExpression::Operator::EQ,
                                                      pe);
-    lookupExec(expectRowNum, Expression::encode(r.get()));
+    lookupExec(expectRowNum, Expression::encode(r.get()), con);
 }
 
-void lookupFilter(int32_t expectRowNum) {
+void lookupFilter(int32_t expectRowNum, bool con = false) {
     auto* col = new std::string("col_0");
     auto* alias = new std::string("col0");
     auto* ape = new AliasPropertyExpression(new std::string(""), alias, col);
-    auto* pe = new PrimaryExpression(1L);
+    auto* pe = new PrimaryExpression(3L);
     auto r =  std::make_unique<RelationalExpression>(ape,
                                                      RelationalExpression::Operator::LT,
                                                      pe);
-    lookupExec(expectRowNum, Expression::encode(r.get()));
+    lookupExec(expectRowNum, Expression::encode(r.get()), con);
 }
 
-BENCHMARK(PreciseScan_10000) {
-    modeInt = 100;
-    lookupPrecise(10000);
+BENCHMARK(PreciseScan_5000000) {
+    modeInt = 4;
+    lookupPrecise(5000000);
 }
 
-BENCHMARK(PreciseScan_100) {
-    modeInt = 10000;
-    lookupPrecise(100);
+BENCHMARK(PreciseScanConcurrently_5000000) {
+    modeInt = 4;
+    lookupPrecise(5000000, true);
 }
 
-BENCHMARK(PreciseScan_10) {
-    modeInt = 100000;
-    lookupPrecise(10);
+BENCHMARK(FilterScan_3000000) {
+    modeInt = 20;
+    lookupFilter(3000000);
 }
 
-BENCHMARK(FilterScan_1) {
-    modeInt = FLAGS_total_vertices_size;
-    lookupFilter(1);
+BENCHMARK(FilterScanConcurrently_3000000) {
+    modeInt = 20;
+    lookupFilter(3000000, true);
 }
+
+BENCHMARK(PreciseScan_2000000) {
+    modeInt = 10;
+    lookupPrecise(2000000);
+}
+
+BENCHMARK(PreciseScanConcurrently_2000000) {
+    modeInt = 10;
+    lookupPrecise(2000000, true);
+}
+
+BENCHMARK(PreciseScan_1000000) {
+    modeInt = 20;
+    lookupPrecise(1000000);
+}
+
+BENCHMARK(PreciseScanConcurrently_1000000) {
+    modeInt = 20;
+    lookupPrecise(1000000, true);
+}
+
 
 }  // namespace storage
 }  // namespace nebula
@@ -258,37 +309,56 @@ int main(int argc, char** argv) {
 /**
  * CPU : Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
  * MemTotal : 8G
- * Total vertices : 1000000
- * Total partition number : 1
+ * Total vertices : 20000000
+ * Total partition number : 100
  * tag (col_0 int, col_1 int, col_2 int)
  * index on tag (col_0, col_1, col_2)
  *
- * PreciseScan_10000 : Prefix scan and no expression filtering is required.
- *                     Return 10000 vertices.
- *                     Where clause col_1 == 1
+ * PreciseScan_5000000 : Prefix scan and no expression filtering is required.
+ *                       Return 5000000 vertices.
+ *                       Where clause col_1 == 1
  *
- * PreciseScan_100   : Prefix scan and no expression filtering is required.
- *                     Return 100 vertices.
- *                     Where clause col_1 == 1
+ * PreciseScanConcurrently_5000000 : Prefix scan concurrently and no expression filtering is required.
+ *                                   Return 5000000 vertices.
+ *                                   Where clause col_1 == 1
  *
- * PreciseScan_10    : Prefix scan and no expression filtering is required.
- *                     Return 10 vertices.
- *                     Where clause col_1 == 1
+ * FilterScan_3000000     : Index scan and expression filtering is required.
+ *                          Return 3000000 vertex.
+ *                          Where clause col_1 < 3
  *
- * FilterScan_10     : Index scan and expression filtering is required.
- *                     Return 1 vertex.
- *                     Where clause col_1 < 1
+ * FilterScanConcurrently_3000000     : Index scan concurrently and expression filtering is required.
+ *                                      Return 3000000 vertex.
+ *                                      Where clause col_1 < 3
+ *
+ * PreciseScan_2000000   :  Prefix scan and no expression filtering is required.
+ *                          Return 2000000 vertices.
+ *                          Where clause col_1 == 1
+ *
+ * PreciseScanConcurrently_2000000   :  Prefix scan Concurrently and no expression filtering is required.
+ *                                      Return 2000000 vertices.
+ *                                      Where clause col_1 == 1
+ *
+ * PreciseScan_1000000    : Prefix scan and no expression filtering is required.
+ *                          Return 1000000 vertices.
+ *                          Where clause col_1 == 1
+ *
+ * PreciseScanConcurrently_1000000    : Prefix scan Concurrently and no expression filtering is required.
+ *                                      Return 1000000 vertices.
+ *                                      Where clause col_1 == 1
  *
  **/
+
 
 /**
+ * /opt/packages/nebula/src/storage/test/StorageLookupConcurrentlyBenchmark.cpprelative  time/iter  iters/s
  * ============================================================================
- * src/storage/test/StorageLookupBenchmark.cpp relative  time/iter  iters/s
+ * PreciseScan_5000000                                           1.32s  757.14m
+ * PreciseScanConcurrently_5000000                            615.66ms     1.62
+ * FilterScan_3000000                                         792.04ms     1.26
+ * FilterScanConcurrently_3000000                             388.27ms     2.58
+ * PreciseScan_2000000                                        511.91ms     1.95
+ * PreciseScanConcurrently_2000000                            329.12ms     3.04
+ * PreciseScan_1000000                                        270.57ms     3.70
+ * PreciseScanConcurrently_1000000                            237.87ms     4.20
  * ============================================================================
- * PreciseScan_10000                                          9.65ms   103.65
- * PreciseScan_100                                            5.23ms   191.03
- * PreciseScan_10                                             4.14ms   241.64
- * FilterScan_10                                              1.47s  679.35m
- * ============================================================================
- **/
-
+ */

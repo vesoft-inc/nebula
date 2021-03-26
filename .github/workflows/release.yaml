@@ -77,6 +77,7 @@ jobs:
           - graphd
           - console
           - graph
+          - tools
     steps:
       - uses: actions/checkout@v1
         with:
@@ -86,7 +87,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}
+          repository: vesoft/nebula-${{ matrix.service }}
           tags: latest
           tag_with_ref: true
           dockerfile: docker/Dockerfile.${{ matrix.service }}
