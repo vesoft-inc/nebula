@@ -92,6 +92,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
         }
     } else {
         for (auto& pv : partVertices) {
+            IndexCountWrapper wrapper(env_);
             auto partId = pv.first;
             std::vector<VMLI> dummyLock;
             auto batch = deleteVertices(partId, std::move(pv).second, dummyLock);
@@ -112,8 +113,10 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                 continue;
             }
             env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(nebula::value(batch)),
-                [l = std::move(lg), partId, this](kvstore::ResultCode code) {
+                [l = std::move(lg), icw = std::move(wrapper), partId, this] (
+                    kvstore::ResultCode code) {
                     UNUSED(l);
+                    UNUSED(icw);
                     handleAsync(spaceId_, partId, code);
                 });
         }
@@ -125,7 +128,6 @@ ErrorOr<kvstore::ResultCode, std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                         const std::vector<Value>& vertices,
                                         std::vector<VMLI>& target) {
-    IndexCountWrapper wrapper(env_);
     target.reserve(vertices.size());
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& vertex : vertices) {

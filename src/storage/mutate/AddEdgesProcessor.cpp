@@ -128,6 +128,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         std::vector<EMLI> dummyLock;
         dummyLock.reserve(newEdges.size());
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+
         for (auto& newEdge : newEdges) {
             auto edgeKey = newEdge.key;
             VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edgeKey.src
@@ -267,8 +268,9 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
             continue;
         }
         env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch),
-            [l = std::move(lg), partId, this](kvstore::ResultCode kvRet) {
+            [l = std::move(lg), icw = std::move(wrapper), partId, this](kvstore::ResultCode kvRet) {
                 UNUSED(l);
+                UNUSED(icw);
                 handleAsync(spaceId_, partId, kvRet);
             });
     }

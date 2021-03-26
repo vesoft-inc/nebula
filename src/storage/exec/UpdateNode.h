@@ -461,9 +461,9 @@ public:
     kvstore::ResultCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         CHECK_NOTNULL(planContext_->env_->kvstore_);
         auto ret = kvstore::ResultCode::SUCCEEDED;
-        // folly::Function<folly::Optional<std::string>(void)>
+        IndexCountWrapper wrapper(planContext_->env_);
+
         auto op = [&partId, &edgeKey, this]() -> folly::Optional<std::string> {
-            IndexCountWrapper wrapper(planContext_->env_);
             this->exeResult_ = RelNode::execute(partId, edgeKey);
             if (this->exeResult_ == kvstore::ResultCode::SUCCEEDED) {
                 if (edgeKey.edge_type != this->edgeType_) {

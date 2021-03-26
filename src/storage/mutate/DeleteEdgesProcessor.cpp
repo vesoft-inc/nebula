@@ -78,9 +78,11 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         }
     } else {
         for (auto& part : partEdges) {
+            IndexCountWrapper wrapper(env_);
             auto partId = part.first;
             std::vector<EMLI> dummyLock;
             dummyLock.reserve(part.second.size());
+
             for (const auto& edgeKey : part.second) {
                 dummyLock.emplace_back(std::make_tuple(spaceId_,
                                                        partId,
@@ -109,8 +111,10 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                 continue;
             }
             env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(nebula::value(batch)),
-                [l = std::move(lg), partId, this](kvstore::ResultCode code) {
+                [l = std::move(lg), icw = std::move(wrapper), partId, this] (
+                    kvstore::ResultCode code) {
                     UNUSED(l);
+                    UNUSED(icw);
                     handleAsync(spaceId_, partId, code);
                 });
         }
@@ -120,7 +124,6 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
 
 ErrorOr<kvstore::ResultCode, std::string>
 DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::EdgeKey>& edges) {
-    IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
         auto type = edge.edge_type;
