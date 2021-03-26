@@ -251,6 +251,18 @@ bool MetaClient::loadData() {
         spaceIndexByName.emplace(space.second, spaceId);
     }
 
+    auto hostsRet = listHosts().get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "List hosts failed, status:" << hostsRet.status();
+        return false;
+    }
+
+    auto &hostItems = hostsRet.value();
+    std::vector<HostAddr> hosts(hostItems.size());
+    std::transform(hostItems.begin(), hostItems.end(), hosts.begin(),
+        [] (auto &hostItem) -> HostAddr {
+            return hostItem.hostAddr;
+        });
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
@@ -264,6 +276,7 @@ bool MetaClient::loadData() {
         spaceEdgeIndexByType_   = std::move(spaceEdgeIndexByType);
         spaceTagIndexById_      = std::move(spaceTagIndexById);
         spaceAllEdgeMap_        = std::move(spaceAllEdgeMap);
+        storageHosts_           = std::move(hosts);
     }
 
     diff(oldCache, localCache_);
@@ -2244,6 +2257,15 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
         return true;
     }
     return false;
+}
+
+StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() const {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    return storageHosts_;
 }
 
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
