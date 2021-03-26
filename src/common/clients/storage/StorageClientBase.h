@@ -125,7 +125,7 @@ protected:
     virtual ~StorageClientBase();
 
     virtual void loadLeader() const;
-    const HostAddr getLeader(const meta::PartHosts& partHosts) const;
+    StatusOr<HostAddr> getLeader(GraphSpaceID spaceId, PartitionID partId) const;
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
     void invalidLeader(GraphSpaceID spaceId, PartitionID partId);
     void invalidLeader(GraphSpaceID spaceId, std::vector<PartitionID> &partsId);

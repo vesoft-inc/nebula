@@ -318,15 +318,11 @@ GraphStorageClient::updateVertex(GraphSpaceID space,
     }
 
     auto part = status.value();
-    auto hStatus = getPartHosts(space, part);
-    if (!hStatus.ok()) {
-        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(hStatus.status());
+    auto host = this->getLeader(space, part);
+    if (!host.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(host.status());
     }
-
-    auto partHosts = hStatus.value();
-    CHECK_GT(partHosts.hosts_.size(), 0U);
-    const auto& host = this->getLeader(partHosts);
-    request.first = std::move(host);
+    request.first = std::move(host).value();
     cpp2::UpdateVertexRequest req;
     req.set_space_id(space);
     req.set_vertex_id(vertexId);
@@ -376,15 +372,11 @@ GraphStorageClient::updateEdge(GraphSpaceID space,
     }
 
     auto part = status.value();
-    auto hStatus = getPartHosts(space, part);
-    if (!hStatus.ok()) {
-        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(hStatus.status());
+    auto host = this->getLeader(space, part);
+    if (!host.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(host.status());
     }
-    auto partHosts = hStatus.value();
-    CHECK_GT(partHosts.hosts_.size(), 0U);
-
-    const auto& host = this->getLeader(partHosts);
-    request.first = std::move(host);
+    request.first = std::move(host).value();
     cpp2::UpdateEdgeRequest req;
     req.set_space_id(space);
     req.set_edge_key(edgeKey);
@@ -423,15 +415,11 @@ GraphStorageClient::getUUID(GraphSpaceID space,
     }
 
     auto part = status.value();
-    auto hStatus = getPartHosts(space, part);
-    if (!hStatus.ok()) {
-        return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(hStatus.status());
+    auto host = this->getLeader(space, part);
+    if (!host.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::GetUUIDResp>>(host.status());
     }
-    auto partHosts = hStatus.value();
-    CHECK_GT(partHosts.hosts_.size(), 0U);
-
-    const auto& leader = this->getLeader(partHosts);
-    request.first = leader;
+    request.first = std::move(host).value();
     cpp2::GetUUIDReq req;
     req.set_space_id(space);
     req.set_part_id(part);

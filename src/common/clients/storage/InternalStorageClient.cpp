@@ -38,11 +38,7 @@ cpp2::ErrorCode extractErrorCode(T& tryResp) {
 
 StatusOr<HostAddr> InternalStorageClient::getFuzzyLeader(GraphSpaceID spaceId,
                                                          PartitionID partId) const {
-    auto stPartHosts = getPartHosts(spaceId, partId);
-    if (!stPartHosts.ok()) {
-        NG_LOG_AND_RETURN_IF_ERROR(stPartHosts.status());
-    }
-    return getLeader(stPartHosts.value());
+    return getLeader(spaceId, partId);
 }
 
 folly::SemiFuture<cpp2::ErrorCode> InternalStorageClient::forwardTransaction(
