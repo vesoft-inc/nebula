@@ -76,8 +76,10 @@ Feature: Insert int vid of vertex and edge
     # insert edge invalid timestamp
     When executing query:
       """
-      INSERT EDGE study(start_time, end_time) VALUES
-      hash("Laura")->hash("sun_school"):(timestamp("2300-01-01T10:00:00"), now()+3600*24*365*3);
+      INSERT EDGE
+        study(start_time, end_time)
+      VALUES
+        hash("Laura")->hash("sun_school"):(timestamp("2300-01-01T10:00:00"), now()+3600*24*365*3);
       """
     Then a ExecutionError should be raised at runtime:
     And drop the used space
@@ -109,13 +111,13 @@ Feature: Insert int vid of vertex and edge
     # """
     # Then the execution should be successful
     # insert vertex with string timestamp succeeded
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX school(name, create_time) VALUES hash("sun_school"):("sun_school", timestamp("2010-01-01T10:00:00"))
       """
     Then the execution should be successful
     # insert edge succeeded
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE schoolmate(likeness, nickname) VALUES hash("Tom")->hash("Lucy"):(85, "Lily")
       """
@@ -135,10 +137,12 @@ Feature: Insert int vid of vertex and edge
       | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |
       | 'Tom'           | 'Bob'           | 0                | 87                  | "Superman"          |
     # insert edge with timestamp succeed
-    When executing query:
+    When try to execute query:
       """
-      INSERT EDGE study(start_time, end_time) VALUES
-      hash("Laura")->hash("sun_school"):(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3)
+      INSERT EDGE
+        study(start_time, end_time)
+      VALUES
+        hash("Laura")->hash("sun_school"):(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3)
       """
     Then the execution should be successful
     # check edge result with go
@@ -242,6 +246,11 @@ Feature: Insert int vid of vertex and edge
       | schoolmate.likeness | $$.person.name | $$.student.grade | $$.student.number |
       | 90                  | 'Laura'        | 'three'          | 20190901008       |
       | 95                  | 'Amber'        | 'four'           | 20180901003       |
+    When try to execute query:
+      """
+      INSERT VERTEX student(grade, number) VALUES hash("Aero"):("four", 20190901003);
+      """
+    Then the execution should be successful
     # test multi sentences multi tags succeeded
     When executing query:
       """
@@ -259,7 +268,7 @@ Feature: Insert int vid of vertex and edge
       | $$.student.number | $$.person.name |
       | 20190901003       | 'Aero'         |
     # test same prop name diff type
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         person(name, age),
@@ -299,7 +308,7 @@ Feature: Insert int vid of vertex and edge
       | $^.person.name | $^.employee.name | schoolmate.likeness | $$.person.name | $$.interest.name | $$.person.age |
       | 'Petter'       | 456              | 90                  | 'Bob'          | 'basketball'     | 19            |
     # insert vertex using name and age default value
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX personWithDefault() VALUES 111:();
       """
@@ -308,12 +317,6 @@ Feature: Insert int vid of vertex and edge
     When executing query:
       """
       INSERT VERTEX personWithDefault(age, isMarried, BMI) VALUES hash("Tom"):(18, false);
-      """
-    Then a SemanticError should be raised at runtime:
-    # insert column doesn't match value count
-    When executing query:
-      """
-      INSERT VERTEX studentWithDefault(grade, number) VALUES hash("Tom"):("one", 111, "");
       """
     Then a SemanticError should be raised at runtime:
     # insert vertex using age default value
@@ -329,7 +332,7 @@ Feature: Insert int vid of vertex and edge
       """
     Then the execution should be successful
     # insert vertices multi tags with default value
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         personWithDefault(name, BMI),
@@ -345,6 +348,18 @@ Feature: Insert int vid of vertex and edge
       INSERT VERTEX personWithDefault(name) VALUES hash("Kitty"):("Kitty"), hash("Peter"):("Peter")
       """
     Then the execution should be successful
+    # insert column doesn't match value count
+    When executing query:
+      """
+      INSERT VERTEX studentWithDefault(grade, number) VALUES hash("Tom"):("one", 111, "");
+      """
+    Then a SemanticError should be raised at runtime:
+    # insert edge with all default value
+    When try to execute query:
+      """
+      INSERT EDGE schoolmateWithDefault() VALUES hash("Tom")->hash("Lucy"):()
+      """
+    Then the execution should be successful
     # insert edge lack of the column value
     When executing query:
       """
@@ -357,12 +372,6 @@ Feature: Insert int vid of vertex and edge
       INSERT EDGE schoolmateWithDefault(likeness) VALUES hash("Tom")->hash("Lucy"):(60, "")
       """
     Then a SemanticError should be raised at runtime:
-    # insert edge with all default value
-    When executing query:
-      """
-      INSERT EDGE schoolmateWithDefault() VALUES hash("Tom")->hash("Lucy"):()
-      """
-    Then the execution should be successful
     # insert edge with unknown filed name
     When executing query:
       """
