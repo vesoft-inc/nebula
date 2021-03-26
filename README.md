@@ -31,13 +31,12 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Notice of Release
 
-> **CAUTION**: This is the Nebula Graph 2.0 pre-release. Use it only if you need to test the latest features or performance improvements. DO NOT use it in production.
-
-
-The Nebula Graph team is glad to announce the Nebula Graph 2.0 pre-release. This is a brand new start with several important updates, and more of them are on the way. Welcome to join us.
-To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
+The Nebula Graph team is glad to announce the Nebula Graph 2.0.0 GA. This is a brand new start with several important updates, and more of them are on the way. Welcome to join us.
 
 <!--
+To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
+
+
 ## Roadmap
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020) for what's coming soon in **Nebula Graph**.
