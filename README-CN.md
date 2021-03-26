@@ -34,12 +34,12 @@
 
 ## 发布通告
 
-> **警告**: 这是 Nebula Graph 2.0 的预发布版本(pre-release)。该版本仅供测试，请勿用于生产环境。
-
-Nebula Graph 2.0 pre-release版本已发布，目前已经有若干项重要更新，更多新特性正在开发中。欢迎加入我们，一同开发Nebula Graph 2.0。
-如需使用稳定版本，请参见[Nebula Graph 1.0](https://github.com/vesoft-inc/nebula)。
+Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，更多新特性正在开发中。欢迎加入我们，一同开发Nebula Graph 2.0。
 
 <!--
+如需使用稳定版本，请参见[Nebula Graph 1.0](https://github.com/vesoft-inc/nebula)。
+
+
 ## 产品路线图
 
 **Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020)。
