@@ -15,7 +15,8 @@ DEFINE_int64(int64_test, 10, "Test flag for int64 type");
 DEFINE_bool(bool_test, false, "Test flag for bool type");
 DEFINE_double(double_test, 3.14159, "Test flag for double type");
 DEFINE_string(string_test, "Hello World", "Test flag for string type");
-DEFINE_uint32(crash_test, 1024, "The flag could not be read, test for issue #312");
+DEFINE_uint32(uint32_test, 10, "Test flag for uint32 type");
+DEFINE_uint64(uint64_test, 10, "Test flag for uint64 type");
 
 namespace nebula {
 
@@ -59,8 +60,11 @@ TEST(FlagsAccessTest, GetSetTest) {
     ASSERT_TRUE(getUrl("/flags?flags=int64_test", resp));
     EXPECT_EQ(std::string("int64_test=20\n"), resp);
 
-    ASSERT_TRUE(getUrl("/flags", resp));
-    ASSERT_TRUE(resp.find("crash_test=nullptr") != std::string::npos);
+    ASSERT_TRUE(getUrl("/flags?flags=uint32_test", resp));
+    EXPECT_EQ(folly::stringPrintf("uint32_test=%u\n", FLAGS_uint32_test), resp);
+
+    ASSERT_TRUE(getUrl("/flags?flags=uint64_test", resp));
+    EXPECT_EQ(folly::stringPrintf("uint64_test=%lu\n", FLAGS_uint64_test), resp);
 }
 
 TEST(FlagsAccessTest, TestSetFlagsFailure) {

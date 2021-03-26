@@ -106,10 +106,20 @@ void GetFlagsHandler::addOneFlag(folly::dynamic& vals,
             if (verbose_) {
                 flag["default"] = folly::to<int32_t>(info->default_value);
             }
+        } else if (type == "uint32") {
+            flag["value"] = folly::to<uint32_t>(info->current_value);
+            if (verbose_) {
+                flag["default"] = folly::to<uint32_t>(info->default_value);
+            }
         } else if (type == "int64") {
             flag["value"] = folly::to<int64_t>(info->current_value);
             if (verbose_) {
                 flag["default"] = folly::to<int64_t>(info->default_value);
+            }
+        } else if (type == "uint64") {
+            flag["value"] = folly::to<uint64_t>(info->current_value);
+            if (verbose_) {
+                flag["default"] = folly::to<uint64_t>(info->default_value);
             }
         } else if (type == "bool") {
             flag["value"] = folly::to<bool>(info->current_value);
