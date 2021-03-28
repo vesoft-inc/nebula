@@ -577,8 +577,19 @@ void FetchVerticesExecutor::process(
                 VertexID vid = vdata.vertex_id;
                 TagID tagId = tagData.tag_id;
                 auto vschema = tagSchemaMap[tagId];
+                auto& readers = dataMap[vid];
+                if (vschema == nullptr) {
+                    auto latestSchema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+                    if (latestSchema == nullptr) {
+                        VLOG(3) << "Schema not found for tag id: " << tagId;
+                        // Ignore the bad data.
+                        continue;
+                    }
+                    tagSchemaMap[tagId] = latestSchema;
+                    vschema = latestSchema;
+                }
                 auto vreader = RowReader::getRowReader(data, vschema);
-                dataMap[vid].emplace(std::make_pair(tagId, std::move(vreader)));
+                readers.emplace(std::make_pair(tagId, std::move(vreader)));
                 tagIdSet.insert(tagId);
             }
         }
