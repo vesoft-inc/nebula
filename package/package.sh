@@ -19,11 +19,13 @@ package_one=ON
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
-build_dir=${project_dir}/build
+modules_dir=${project_dir}/modules
+storage_dir=${modules_dir}/storage
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
 branch="master"
+jobs=$(nproc)
 
 while getopts v:n:s:b:d:t:g: opt;
 do
@@ -79,24 +81,12 @@ fi
 
 echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer], static_sanitizer is [$static_sanitizer]"
 
-# args: <version>
-function build {
-    version=$1
-    san=$2
-    ssan=$3
-    build_type=$4
-    branch=$5
-    modules_dir=${project_dir}/modules
-    if [[ -d $build_dir ]]; then
-        rm -rf ${build_dir}/*
-    else
-        mkdir ${build_dir}
+function _build_storage {
+    if [ ! -d ${storage_dir} ]; then
+        git clone --single-branch --branch ${branch} https://github.com/vesoft-inc/nebula-storage.git ${storage_dir}
     fi
 
-    mkdir -p ${build_dir}
-
-    pushd ${build_dir}
-
+    rm -rf ${storage_dir}/build && mkdir -p ${storage_dir}/build
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
           -DENABLE_ASAN=${san} \
@@ -105,18 +95,54 @@ function build {
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
           -DNEBULA_COMMON_REPO_TAG=${branch} \
-          -DNEBULA_STORAGE_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
-          -DENABLE_BUILD_STORAGE=${build_storage} \
           -DENABLE_PACK_ONE=${package_one} \
-          $project_dir
+          -S ${storage_dir} \
+          -B ${storage_dir}/build
 
-    if !( make -j$(nproc) ); then
-        echo ">>> build nebula failed <<<"
+    if !( cmake --build ${storage_dir}/build -j ${jobs} ); then
+        echo ">>> build nebula storage failed <<<"
         exit -1
     fi
+    echo ">>> build nebula storage successfully <<<"
+}
 
-    popd
+function _build_graph {
+    build_dir=${project_dir}/build
+    rm -rf ${build_dir} && mkdir -p ${build_dir}
+    cmake -DCMAKE_BUILD_TYPE=${build_type} \
+          -DNEBULA_BUILD_VERSION=${version} \
+          -DENABLE_ASAN=${san} \
+          -DENABLE_UBSAN=${san} \
+          -DENABLE_STATIC_ASAN=${ssan} \
+          -DENABLE_STATIC_UBSAN=${ssan} \
+          -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
+          -DNEBULA_COMMON_REPO_TAG=${branch} \
+          -DENABLE_TESTING=OFF \
+          -DENABLE_BUILD_STORAGE=OFF \
+          -DENABLE_PACK_ONE=${package_one} \
+          -S ${project_dir} \
+          -B ${build_dir}
+
+    if !( cmake --build ${build_dir} -j ${jobs} ); then
+        echo ">>> build nebula graph failed <<<"
+        exit -1
+    fi
+    echo ">>> build nebula graph successfully <<<"
+}
+
+# args: <version>
+function build {
+    version=$1
+    san=$2
+    ssan=$3
+    build_type=$4
+    branch=$5
+
+    if [[ "$build_storage" == "ON" ]]; then
+        _build_storage
+    fi
+    _build_graph
 }
 
 # args: <strip_enable>
@@ -134,6 +160,8 @@ function package {
         -DENABLE_PACK_ONE=${package_one} \
         -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
         -DENABLE_PACKAGE_STORAGE=${build_storage} \
+        -DNEBULA_STORAGE_SOURCE_DIR=${storage_dir} \
+        -DNEBULA_STORAGE_BINARY_DIR=${storage_dir}/build \
         ${project_dir}/package/
 
     strip_enable=$1

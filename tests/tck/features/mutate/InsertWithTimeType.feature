@@ -25,14 +25,19 @@ Feature: Insert with time-dependent types
       INSERT VERTEX TAG_TIMESTAMP(a) VALUES "TEST_VERTEX":("2000.0.0 10:0:0")
       """
     Then a ExecutionError should be raised at runtime:Storage Error: The data type does not meet the requirements. Use the correct type of data.
+    When try to execute query:
+      """
+      INSERT VERTEX TAG_TIME(a) VALUES "TEST_VERTEX":(NULL)
+      """
+    Then the execution should be successful
     When executing query:
       """
       INSERT VERTEX TAG_TIME(a) VALUES "TEST_VERTEX":("10:0:0")
       """
     Then a ExecutionError should be raised at runtime:Storage Error: The data type does not meet the requirements. Use the correct type of data.
-    When executing query:
+    When try to execute query:
       """
-      INSERT VERTEX TAG_TIME(a) VALUES "TEST_VERTEX":(NULL)
+      INSERT VERTEX TAG_DATE(a) VALUES "TEST_VERTEX":(NULL)
       """
     Then the execution should be successful
     When executing query:
@@ -40,9 +45,9 @@ Feature: Insert with time-dependent types
       INSERT VERTEX TAG_DATE(a) VALUES "TEST_VERTEX":("2000.0.0")
       """
     Then a ExecutionError should be raised at runtime:Storage Error: The data type does not meet the requirements. Use the correct type of data.
-    When executing query:
+    When try to execute query:
       """
-      INSERT VERTEX TAG_DATE(a) VALUES "TEST_VERTEX":(NULL)
+      INSERT VERTEX TAG_DATETIME(a) VALUES "TEST_VERTEX":(NULL)
       """
     Then the execution should be successful
     When executing query:
@@ -50,11 +55,6 @@ Feature: Insert with time-dependent types
       INSERT VERTEX TAG_DATETIME(a) VALUES "TEST_VERTEX":("2000.0.0")
       """
     Then a ExecutionError should be raised at runtime:Storage Error: The data type does not meet the requirements. Use the correct type of data.
-    When executing query:
-      """
-      INSERT VERTEX TAG_DATETIME(a) VALUES "TEST_VERTEX":(NULL)
-      """
-    Then the execution should be successful
     And drop the used space
 
   Scenario: Basic CRUD for timestamp type

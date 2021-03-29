@@ -61,6 +61,15 @@ We also provide a parameter named `address` to allow these tests to connect to t
 $ pytest --address="192.168.0.1:9669" -m 'not skip' .
 ```
 
+You can use following commands to only rerun the test cases if they failed:
+
+```shell
+$ pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded .
+```
+
+`gherkin-terminal-reporter` options will print the pytest report prettily.
+
+
 ### Stop nebula servers
 
 Following command will stop the nebula servers started in above steps:
@@ -83,7 +92,7 @@ $ make clean
 
 ## How to add test case
 
-You can find all nebula test cases in [these feature files](tck/features) and some openCypher cases in [other files](tck/openCypher/features). Some references about [TCK](https://github.com/opencypher/openCypher/tree/master/tck) may be what you need.
+You can find all nebula test cases in [tck/features](tck/features) and some openCypher cases in [tck/openCypher/features](tck/openCypher/features). Some references about [TCK](https://github.com/opencypher/openCypher/tree/master/tck) may be what you need.
 
 The test cases are organized in feature files and described in gherkin language. The structure of feature file is like following example:
 
