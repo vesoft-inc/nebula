@@ -265,7 +265,7 @@ TEST(FulltextPluginTest, ESFuzzyTest) {
     auto body = ESGraphAdapter().fuzzyBody("+a", "AUTO", "OR");
     auto expected = "{\"match\":{\"value\":{\"operator\":\"OR\","
                     "\"query\":\"+a\",\"fuzziness\":\"AUTO\"}}}";
-    ASSERT_EQ(expected, folly::toJson(body));
+    ASSERT_EQ(folly::parseJson(expected), body);
 }
 }   // namespace plugin
 }   // namespace nebula
