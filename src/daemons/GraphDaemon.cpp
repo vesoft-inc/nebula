@@ -33,6 +33,7 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
+static void setupThreadManager();
 
 DECLARE_string(flagfile);
 
@@ -148,11 +149,10 @@ int main(int argc, char *argv[]) {
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
-    gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-    gServer->setCPUWorkerThreadName("executor");
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
     gServer->setThreadStackSizeMB(5);
+    setupThreadManager();
 
     // Setup the signal handlers
     status = setupSignalHandler();
@@ -234,4 +234,14 @@ Status setupLogging() {
 
 void printHelp(const char *prog) {
     fprintf(stderr, "%s --flagfile <config_file>\n", prog);
+}
+
+void setupThreadManager() {
+    int numThreads =
+        FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+        PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+    threadManager->setNamePrefix("executor");
+    threadManager->start();
+    gServer->setThreadManager(threadManager);
 }
