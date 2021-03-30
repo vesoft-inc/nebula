@@ -62,6 +62,35 @@ Feature: Push Filter down GetNeighbors rule
       | Project      | 1            |                                 |
       | GetNeighbors | 2            | filter: (serve.start_year>2005) |
       | Start        |              |                                 |
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER like
+      WHERE like.likeness IN [v IN [95,99] WHERE v > 0]
+      YIELD like._dst, like.likeness
+      """
+    Then the result should be, in any order:
+      | like._dst       | like.likeness |
+      | "Manu Ginobili" | 95            |
+      | "Tim Duncan"    | 95            |
+    And the execution plan should be:
+      | name         | dependencies | operator info                                         |
+      | Project      | 1            |                                                       |
+      | GetNeighbors | 2            | filter: (like.likeness IN [v IN [95,99] WHERE (v>0)]) |
+      | Start        |              |                                                       |
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER like
+      WHERE any(v in [5,6] WHERE like.likeness + v < 100)
+      YIELD like._dst, like.likeness
+      """
+    Then the result should be, in any order:
+      | like._dst           | like.likeness |
+      | "LaMarcus Aldridge" | 90            |
+    And the execution plan should be:
+      | name         | dependencies | operator info                                         |
+      | Project      | 1            |                                                       |
+      | GetNeighbors | 2            | filter: any(v IN [5,6] WHERE ((like.likeness+v)<100)) |
+      | Start        |              |                                                       |
 
   Scenario: push edge props filter down when reversely
     When profiling query:
