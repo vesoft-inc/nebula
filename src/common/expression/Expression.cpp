@@ -270,6 +270,16 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             exp->resetFrom(decoder);
             return exp;
         }
+        case Expression::Kind::kIsEmpty: {
+            exp = std::make_unique<UnaryExpression>(Expression::Kind::kIsEmpty);
+            exp->resetFrom(decoder);
+            return exp;
+        }
+        case Expression::Kind::kIsNotEmpty: {
+            exp = std::make_unique<UnaryExpression>(Expression::Kind::kIsNotEmpty);
+            exp->resetFrom(decoder);
+            return exp;
+        }
         case Expression::Kind::kRelEQ: {
             exp = std::make_unique<RelationalExpression>(Expression::Kind::kRelEQ);
             exp->resetFrom(decoder);
@@ -565,6 +575,12 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
             break;
         case Expression::Kind::kIsNotNull:
             os << "IsNotNull";
+            break;
+        case Expression::Kind::kIsEmpty:
+            os << "IsEmpty";
+            break;
+        case Expression::Kind::kIsNotEmpty:
+            os << "IsNotEmpty";
             break;
         case Expression::Kind::kRelEQ:
             os << "Equal";

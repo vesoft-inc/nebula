@@ -100,6 +100,8 @@ public:
         kAggregate,
         kIsNull,
         kIsNotNull,
+        kIsEmpty,
+        kIsNotEmpty,
     };
 
 
