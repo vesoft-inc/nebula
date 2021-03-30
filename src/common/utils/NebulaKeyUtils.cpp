@@ -140,6 +140,15 @@ std::string NebulaKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
 }
 
 // static
+std::string NebulaKeyUtils::indexPrefix(PartitionID partId) {
+    PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(sizeof(PartitionID));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+    return key;
+}
+
+// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     tagId &= kTagMaskSet;
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
@@ -195,12 +204,18 @@ std::string NebulaKeyUtils::prefix(PartitionID partId) {
 }
 
 // static
-std::string NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
+std::vector<std::string> NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
+    std::vector<std::string> result;
     // snapshot of meta would be all key-value pairs
     if (partId == 0) {
-        return "";
+        result.emplace_back("");
+    } else {
+        result.emplace_back(prefix(partId));
+        result.emplace_back(indexPrefix(partId));
+        // kSystem will be written when balance data
+        // kOperation will be blocked by jobmanager later
     }
-    return prefix(partId);
+    return result;
 }
 
 // static
