@@ -30,13 +30,13 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
             if (channel == nullptr || !channel->good()) {
                 // Remove bad connection to create a new one.
                 clientMap_->erase(it);
-                LOG(ERROR) << "Invalid Channel: " << channel << " for host: " << host;
+                VLOG(2) << "Invalid Channel: " << channel << " for host: " << host;
                 break;
             }
             auto transport = dynamic_cast<folly::AsyncSocket*>(channel->getTransport());
             if (transport == nullptr || transport->hangup()) {
                 clientMap_->erase(it);
-                LOG(ERROR) << "Transport is closed by peers " << transport << " for host: " << host;
+                VLOG(2) << "Transport is closed by peers " << transport << " for host: " << host;
                 break;
             }
             VLOG(2) << "Getting a client to " << host;

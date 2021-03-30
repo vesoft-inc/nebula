@@ -30,7 +30,7 @@ public:
     }
 
     void output(const std::string& prefix, const std::string& msg) {
-        LOG(INFO) << prefix << ", total time:" << dur_ << "ms, " << msg;
+        LOG(INFO) << prefix << "total time:" << dur_ << "ms, " << msg;
     }
 
 private:
