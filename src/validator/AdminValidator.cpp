@@ -235,8 +235,25 @@ Status ShowSnapshotsValidator::toPlan() {
 
 Status AddListenerValidator::validateImpl() {
     auto sentence = static_cast<AddListenerSentence*>(sentence_);
-    if (sentence->listeners()->hosts().empty()) {
+    auto hosts = sentence->listeners()->hosts();
+    if (hosts.empty()) {
         return Status::SemanticError("Listener hosts should not be empty");
+    }
+
+    // check the hosts, if the hosts the same with storage, return error
+    auto status = qctx_->getMetaClient()->getStorageHosts();
+    if (!status.ok()) {
+        return status.status();
+    }
+
+    auto storageHosts = std::move(status).value();
+    for (auto &host : hosts) {
+        auto iter = std::find(storageHosts.begin(), storageHosts.end(), host);
+        if (iter != storageHosts.end()) {
+            return Status::Error(
+                    "The listener host:%s couldn't on same with storage host info",
+                    host.toString().c_str());
+        }
     }
     return Status::OK();
 }
