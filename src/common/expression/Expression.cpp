@@ -454,7 +454,8 @@ std::unique_ptr<Expression> Expression::decode(Expression::Decoder& decoder) {
             return exp;
         }
         case Expression::Kind::kVar: {
-            LOG(FATAL) << "Should not decode variable expression";
+            exp = std::make_unique<VariableExpression>();
+            exp->resetFrom(decoder);
             return exp;
         }
         case Expression::Kind::kVersionedVar: {

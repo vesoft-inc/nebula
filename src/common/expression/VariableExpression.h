@@ -12,13 +12,18 @@
 namespace nebula {
 class VariableExpression final : public Expression {
 public:
-    explicit VariableExpression(std::string* var = nullptr)
+    explicit VariableExpression(std::string* var = nullptr, bool isInner = false)
         : Expression(Kind::kVar) {
         var_.reset(var);
+        isInner_ = isInner;
     }
 
     const std::string& var() const {
         return *var_.get();
+    }
+
+    bool isInner() const {
+        return isInner_;
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -35,19 +40,16 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VariableExpression>(new std::string(var()));
+        return std::make_unique<VariableExpression>(new std::string(var()), isInner_);
     }
 
 private:
-    void writeTo(Encoder&) const override {
-        LOG(FATAL) << "VariableExpression not support to encode.";
-    }
+    void writeTo(Encoder& encoder) const override;
 
-    void resetFrom(Decoder&) override {
-        LOG(FATAL) << "VariableExpression not support to decode.";
-    }
+    void resetFrom(Decoder& decoder) override;
 
     std::unique_ptr<std::string>                 var_;
+    bool                                         isInner_;
 };
 
 /*

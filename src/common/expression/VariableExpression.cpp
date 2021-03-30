@@ -17,6 +17,17 @@ void VariableExpression::accept(ExprVisitor* visitor) {
     visitor->visit(this);
 }
 
+void VariableExpression::writeTo(Encoder& encoder) const {
+    DCHECK(isInner_);
+    encoder << kind_;
+    encoder << var_.get();
+}
+
+void VariableExpression::resetFrom(Decoder& decoder) {
+    var_ = decoder.readStr();
+    isInner_ = true;
+}
+
 const Value& VersionedVariableExpression::eval(ExpressionContext& ctx) {
     if (version_ != nullptr) {
         auto version = version_->eval(ctx);
