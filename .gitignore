@@ -3,6 +3,7 @@
 *.DS_Store
 
 # build
+pkg-build
 build
 _build
 _build.log

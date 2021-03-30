@@ -9,8 +9,8 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
 
 WORKDIR /usr/local/nebula
 

@@ -37,13 +37,13 @@ jobs:
           SHA_EXT: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filename=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
+          filename=$(find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
           sha256sum $filename > $filename.$SHA_EXT
           subdir=$(echo $tag |sed 's/^v//')
           echo "::set-output name=subdir::$subdir"
       - uses: ./.github/actions/upload-assets-action
         with:
-          asset-path: build/cpack_output
+          asset-path: pkg-build/cpack_output
           tag: ${{ steps.tag.outputs.tag }}
       - uses: ./.github/actions/upload-to-oss-action
         with:
@@ -51,7 +51,7 @@ jobs:
           key-secret: ${{ secrets.OSS_SECRET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
-          asset-path: build/cpack_output
+          asset-path: pkg-build/cpack_output
           target-path: package/${{ steps.vars.outputs.subdir }}
 
   docker_build_graph:
