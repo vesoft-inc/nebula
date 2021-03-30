@@ -1,0 +1,20 @@
+FROM vesoft/nebula-dev:centos7 as builder
+
+ARG BRANCH=master
+
+COPY . /home/nebula/BUILD
+
+RUN cd /home/nebula/BUILD/package \
+  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
+
+FROM centos:7
+
+COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
+
+WORKDIR /usr/local/nebula
+
+RUN rpm -ivh *.rpm \
+  && rm -rf *.rpm
+
+# default entrypoint
+ENTRYPOINT ["/usr/local/nebula/bin/db_dump"]
