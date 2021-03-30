@@ -257,8 +257,14 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                                         bool filtered,
                                                         bool updated) {
     switch (exp->kind()) {
-        case Expression::Kind::kConstant:
+        case Expression::Kind::kConstant: {
             return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kVar: {
+            auto* varExp = static_cast<const VariableExpression*>(exp);
+            return varExp->isInner() ? cpp2::ErrorCode::SUCCEEDED
+                                     : cpp2::ErrorCode::E_INVALID_FILTER;
+        }
         case Expression::Kind::kAdd:
         case Expression::Kind::kMinus:
         case Expression::Kind::kMultiply:
@@ -354,6 +360,50 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                 if (ret != cpp2::ErrorCode::SUCCEEDED) {
                     return ret;
                 }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kListComprehension: {
+            auto* lcExp = static_cast<const ListComprehensionExpression*>(exp);
+            auto ret = checkExp(lcExp->collection(), returned, filtered, updated);
+            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                return ret;
+            }
+            if (lcExp->hasFilter()) {
+                ret = checkExp(lcExp->filter(), returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            if (lcExp->hasMapping()) {
+                ret = checkExp(lcExp->mapping(), returned, filtered, updated);
+                if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                    return ret;
+                }
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kPredicate: {
+            auto* predExp = static_cast<const PredicateExpression*>(exp);
+            auto ret = checkExp(predExp->collection(), returned, filtered, updated);
+            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                return ret;
+            }
+            ret = checkExp(predExp->filter(), returned, filtered, updated);
+            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                return ret;
+            }
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case Expression::Kind::kReduce: {
+            auto* reduceExp = static_cast<const ReduceExpression*>(exp);
+            auto ret = checkExp(reduceExp->collection(), returned, filtered, updated);
+            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                return ret;
+            }
+            ret = checkExp(reduceExp->mapping(), returned, filtered, updated);
+            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+                return ret;
             }
             return cpp2::ErrorCode::SUCCEEDED;
         }
@@ -507,7 +557,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kVarProperty:
         case Expression::Kind::kDstProperty:
         case Expression::Kind::kUUID:
-        case Expression::Kind::kVar:
         case Expression::Kind::kVersionedVar:
         default: {
             LOG(INFO) << "Unimplemented expression type! kind = " << exp->kind();

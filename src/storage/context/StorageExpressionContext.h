@@ -51,8 +51,13 @@ public:
     }
 
     // Get the latest version value for the given variable name, such as $a, $b
-    const Value& getVar(const std::string&) const override {
-        return Value::kNullValue;
+    const Value& getVar(const std::string& name) const override {
+        auto it = valueMap_.find(name);
+        if (it != valueMap_.end() && !it->second.empty()) {
+            return it->second.back();
+        } else {
+            return Value::kNullValue;
+        }
     }
 
     // Get the given version value for the given variable name, such as $a, $b
@@ -103,7 +108,9 @@ public:
         return fields_;
     }
 
-    void setVar(const std::string&, Value) override {}
+    void setVar(const std::string& name, Value val) override {
+        valueMap_[name].emplace_back(std::move(val));
+    }
 
     Value getVertex() const override {
         LOG(FATAL) << "Unimplemented";
@@ -185,6 +192,9 @@ private:
 
     // <edgeName, property> -> value
     std::unordered_map<std::pair<std::string, std::string>, nebula::Value> edgeFilters_;
+
+    // name -> Value with multiple versions
+    std::unordered_map<std::string, std::vector<Value>> valueMap_;
 };
 
 }  // namespace storage
