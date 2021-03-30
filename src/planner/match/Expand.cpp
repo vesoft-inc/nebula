@@ -12,7 +12,7 @@
 #include "planner/match/SegmentsConnector.h"
 #include "util/AnonColGenerator.h"
 #include "util/ExpressionUtils.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
+#include "visitor/RewriteVisitor.h"
 
 using nebula::storage::cpp2::EdgeProp;
 using nebula::storage::cpp2::VertexProp;
@@ -25,11 +25,11 @@ static std::unique_ptr<std::vector<VertexProp>> genVertexProps() {
     return std::make_unique<std::vector<VertexProp>>();
 }
 
-std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> Expand::genEdgeProps(const EdgeInfo &edge) {
+std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> Expand::genEdgeProps(const EdgeInfo& edge) {
     auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
     for (auto edgeType : edge.edgeTypes) {
-        auto edgeSchema = matchCtx_->qctx->schemaMng()->getEdgeSchema(
-            matchCtx_->space.id, edgeType);
+        auto edgeSchema =
+            matchCtx_->qctx->schemaMng()->getEdgeSchema(matchCtx_->space.id, edgeType);
 
         switch (edge.direction) {
             case Direction::OUT_EDGE: {
@@ -82,9 +82,7 @@ static Expression* buildPathExpr() {
     return expr.release();
 }
 
-Status Expand::doExpand(const NodeInfo& node,
-                        const EdgeInfo& edge,
-                        SubPlan* plan) {
+Status Expand::doExpand(const NodeInfo& node, const EdgeInfo& edge, SubPlan* plan) {
     NG_RETURN_IF_ERROR(expandSteps(node, edge, plan));
     NG_RETURN_IF_ERROR(filterDatasetByPathLength(edge, plan->root, plan));
     return Status::OK();
@@ -92,9 +90,7 @@ Status Expand::doExpand(const NodeInfo& node,
 
 // Build subplan: Project->Dedup->GetNeighbors->[Filter]->Project2->
 // DataJoin->Project3->[Filter]->Passthrough->Loop->UnionAllVer
-Status Expand::expandSteps(const NodeInfo& node,
-                           const EdgeInfo& edge,
-                           SubPlan* plan) {
+Status Expand::expandSteps(const NodeInfo& node, const EdgeInfo& edge, SubPlan* plan) {
     SubPlan subplan;
     int64_t startIndex = 0;
     auto minHop = edge.range ? edge.range->min() : 1;
@@ -112,7 +108,7 @@ Status Expand::expandSteps(const NodeInfo& node,
                                                               initialExpr_.release(),
                                                               inputVar_,
                                                               subplan));
-    } else {  // Case 1 to n steps
+    } else {   // Case 1 to n steps
         startIndex = 1;
         // Expand first step from src
         NG_RETURN_IF_ERROR(expandStep(edge, dependency_, inputVar_, node.filter, &subplan));
@@ -140,7 +136,7 @@ Status Expand::expandSteps(const NodeInfo& node,
                                   nullptr,
                                   &loopBodyPlan));
 
-    NG_RETURN_IF_ERROR(collectData(startNode,         // left join node
+    NG_RETURN_IF_ERROR(collectData(startNode,           // left join node
                                    loopBodyPlan.root,   // right join node
                                    &firstStep,          // passThrough
                                    &subplan));
@@ -184,37 +180,18 @@ Status Expand::expandStep(const EdgeInfo& edge,
     gn->setEdgeDirection(edge.direction);
 
     PlanNode* root = gn;
-    // [Filter]
     if (nodeFilter != nullptr) {
-        auto filter = qctx->objPool()->add(nodeFilter->clone().release());
-        RewriteMatchLabelVisitor visitor(
-            [](const Expression* expr) -> Expression *{
-            DCHECK(expr->kind() == Expression::Kind::kLabelAttribute ||
-                expr->kind() == Expression::Kind::kLabel);
-            // filter prop
-            if (expr->kind() == Expression::Kind::kLabelAttribute) {
-                auto la = static_cast<const LabelAttributeExpression*>(expr);
-                return new AttributeExpression(
-                    new VertexExpression(), la->right()->clone().release());
-            }
-            // filter tag
-            return new VertexExpression();
-        });
-        filter->accept(&visitor);
-        auto filterNode = Filter::make(matchCtx_->qctx, root, filter);
+        auto* newFilter = MatchSolver::rewriteLabel2Vertex(nodeFilter);
+        qctx->objPool()->add(newFilter);
+        auto filterNode = Filter::make(matchCtx_->qctx, root, newFilter);
         filterNode->setColNames(root->colNames());
         root = filterNode;
     }
 
     if (edge.filter != nullptr) {
-        RewriteMatchLabelVisitor visitor([](const Expression* expr) {
-            DCHECK_EQ(expr->kind(), Expression::Kind::kLabelAttribute);
-            auto la = static_cast<const LabelAttributeExpression*>(expr);
-            return new AttributeExpression(new EdgeExpression(), la->right()->clone().release());
-        });
-        auto filter = saveObject(edge.filter->clone().release());
-        filter->accept(&visitor);
-        auto filterNode = Filter::make(qctx, root, filter);
+        auto* newFilter = MatchSolver::rewriteLabel2Edge(edge.filter);
+        qctx->objPool()->add(newFilter);
+        auto filterNode = Filter::make(qctx, root, newFilter);
         filterNode->setColNames(root->colNames());
         root = filterNode;
     }
@@ -257,9 +234,7 @@ Status Expand::collectData(const PlanNode* joinLeft,
     return Status::OK();
 }
 
-Status Expand::filterDatasetByPathLength(const EdgeInfo& edge,
-                                         PlanNode* input,
-                                         SubPlan* plan) {
+Status Expand::filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, SubPlan* plan) {
     auto qctx = matchCtx_->qctx;
 
     // Filter rows whose edges number less than min hop
@@ -292,5 +267,5 @@ Expression* Expand::buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) 
         new ConstantExpression(static_cast<int64_t>(maxHop))));
 }
 
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

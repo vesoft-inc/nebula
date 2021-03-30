@@ -24,11 +24,11 @@ public:
     MatchSolver() = delete;
     ~MatchSolver() = delete;
 
-    // static Status buildReturn(MatchAstContext* matchCtx, SubPlan& subPlan);
+    static Expression* rewriteLabel2Vertex(const Expression* expr);
 
-    static Expression* rewrite(const LabelExpression* label);
+    static Expression* rewriteLabel2Edge(const Expression* expr);
 
-    static Expression* rewrite(const LabelAttributeExpression* la);
+    static Expression* rewriteLabel2VarProp(const Expression* expr);
 
     static Expression* doRewrite(const std::unordered_map<std::string, AliasType>& aliases,
                                  const Expression* expr);
@@ -42,16 +42,13 @@ public:
                                        Expression* filter,
                                        QueryContext* qctx);
 
-    static Status buildFilter(const MatchClauseContext* mctx, SubPlan* plan);
-
     static void extractAndDedupVidColumn(QueryContext* qctx,
                                          Expression* initialExpr,
                                          PlanNode* dep,
                                          const std::string& inputVar,
                                          SubPlan& plan);
 
-    static Expression* initialExprOrEdgeDstExpr(Expression* initialExpr,
-                                                const std::string& vidCol);
+    static Expression* initialExprOrEdgeDstExpr(Expression* initialExpr, const std::string& vidCol);
 
     static Expression* getEndVidInPath(const std::string& colName);
 
@@ -81,6 +78,6 @@ public:
                                                                         const SpaceInfo& space);
 };
 
-}  // namespace graph
-}  // namespace nebula
-#endif  // PLANNER_MATCHSOLVER_H_
+}   // namespace graph
+}   // namespace nebula
+#endif   // PLANNER_MATCHSOLVER_H_

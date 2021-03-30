@@ -7,8 +7,8 @@
 #include "planner/match/YieldClausePlanner.h"
 
 #include "planner/Query.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
 #include "planner/match/MatchSolver.h"
+#include "visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -27,23 +27,8 @@ void YieldClausePlanner::rewriteYieldColumns(const YieldClauseContext* yctx,
                                              const YieldColumns* yields,
                                              YieldColumns* newYields) {
     auto* aliasesUsed = yctx->aliasesUsed;
-    auto rewriter = [aliasesUsed](const Expression* expr) {
-        return MatchSolver::doRewrite(*aliasesUsed, expr);
-    };
-
     for (auto* col : yields->columns()) {
-        auto colExpr = col->expr();
-        auto kind = colExpr->kind();
-        YieldColumn* newColumn = nullptr;
-        if (kind == Expression::Kind::kLabel || kind == Expression::Kind::kLabelAttribute) {
-            newColumn = new YieldColumn(rewriter(colExpr));
-        } else {
-            auto newExpr = colExpr->clone();
-            RewriteMatchLabelVisitor visitor(rewriter);
-            newExpr->accept(&visitor);
-            newColumn = new YieldColumn(newExpr.release());
-        }
-        newYields->addColumn(newColumn);
+        newYields->addColumn(new YieldColumn(MatchSolver::doRewrite(*aliasesUsed, col->expr())));
     }
 }
 
@@ -51,21 +36,11 @@ void YieldClausePlanner::rewriteGroupExprs(const YieldClauseContext* yctx,
                                            const std::vector<Expression*>* exprs,
                                            std::vector<Expression*>* newExprs) {
     auto* aliasesUsed = yctx->aliasesUsed;
-    auto rewriter = [aliasesUsed](const Expression* expr) {
-        return MatchSolver::doRewrite(*aliasesUsed, expr);
-    };
 
     for (auto* expr : *exprs) {
-        auto kind = expr->kind();
-        if (kind == Expression::Kind::kLabel || kind == Expression::Kind::kLabelAttribute) {
-            auto* newExpr = yctx->qctx->objPool()->add(rewriter(expr));
-            newExprs->emplace_back(newExpr);
-        } else {
-            auto* newExpr = yctx->qctx->objPool()->add(expr->clone().release());
-            RewriteMatchLabelVisitor visitor(rewriter);
-            newExpr->accept(&visitor);
-            newExprs->emplace_back(newExpr);
-        }
+        auto* newExpr = MatchSolver::doRewrite(*aliasesUsed, expr);
+        yctx->qctx->objPool()->add(newExpr);
+        newExprs->emplace_back(newExpr);
     }
 }
 
@@ -75,9 +50,7 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
     auto* newProjCols = yctx->qctx->objPool()->add(new YieldColumns());
     rewriteYieldColumns(yctx, yctx->projCols_, newProjCols);
     if (!yctx->hasAgg_) {
-        auto* project = Project::make(yctx->qctx,
-                                      currentRoot,
-                                      newProjCols);
+        auto* project = Project::make(yctx->qctx, currentRoot, newProjCols);
         project->setColNames(std::move(yctx->projOutputColumnNames_));
         subplan.root = project;
         subplan.tail = project;
@@ -87,13 +60,11 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
         rewriteGroupExprs(yctx, &yctx->groupKeys_, &newGroupKeys);
         rewriteGroupExprs(yctx, &yctx->groupItems_, &newGroupItems);
 
-        auto* agg = Aggregate::make(yctx->qctx,
-                                    currentRoot,
-                                    std::move(newGroupKeys),
-                                    std::move(newGroupItems));
+        auto* agg = Aggregate::make(
+            yctx->qctx, currentRoot, std::move(newGroupKeys), std::move(newGroupItems));
         agg->setColNames(std::vector<std::string>(yctx->aggOutputColumnNames_));
         if (yctx->needGenProject_) {
-            auto *project = Project::make(yctx->qctx, agg, newProjCols);
+            auto* project = Project::make(yctx->qctx, agg, newProjCols);
             project->setInputVar(agg->outputVar());
             project->setColNames(std::move(yctx->projOutputColumnNames_));
             subplan.root = project;
@@ -113,5 +84,5 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
 
     return Status::OK();
 }
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

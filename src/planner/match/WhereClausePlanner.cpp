@@ -8,44 +8,27 @@
 
 #include "planner/Query.h"
 #include "planner/match/MatchSolver.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
+#include "visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
-StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* clauseCtx) {
-    if (clauseCtx->kind != CypherClauseKind::kWhere) {
+StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
+    if (ctx->kind != CypherClauseKind::kWhere) {
         return Status::Error("Not a valid context for WhereClausePlanner.");
     }
-    auto* whereCtx = static_cast<WhereClauseContext*>(clauseCtx);
 
-    SubPlan wherePlan;
-    NG_RETURN_IF_ERROR(buildFilter(whereCtx, wherePlan));
-    return wherePlan;
-}
+    auto* wctx = static_cast<WhereClauseContext*>(ctx);
+    if (wctx->filter) {
+        SubPlan wherePlan;
+        auto* newFilter = MatchSolver::doRewrite(*wctx->aliasesUsed, wctx->filter.get());
+        wctx->qctx->objPool()->add(newFilter);
+        wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, true);
+        wherePlan.tail = wherePlan.root;
 
-Status WhereClausePlanner::buildFilter(WhereClauseContext* wctx, SubPlan& subplan) {
-    if (wctx->filter == nullptr) {
-        return Status::OK();
+        return wherePlan;
     }
 
-    auto newFilter = wctx->filter->clone();
-    auto rewriter = [wctx](const Expression* expr) {
-        return MatchSolver::doRewrite(*wctx->aliasesUsed, expr);
-    };
-
-    auto kind = newFilter->kind();
-    if (kind == Expression::Kind::kLabel
-        || kind == Expression::Kind::kLabelAttribute) {
-        newFilter.reset(rewriter(newFilter.get()));
-    } else {
-        RewriteMatchLabelVisitor visitor(std::move(rewriter));
-        newFilter->accept(&visitor);
-    }
-
-    auto* cond = wctx->qctx->objPool()->add(newFilter.release());
-    subplan.root = Filter::make(wctx->qctx, nullptr, cond, true);
-    subplan.tail = subplan.root;
     return Status::OK();
 }
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

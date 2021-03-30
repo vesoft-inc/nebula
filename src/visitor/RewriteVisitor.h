@@ -1,11 +1,11 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_REWRITEMATCHLABELVISITOR_H_
-#define VISITOR_REWRITEMATCHLABELVISITOR_H_
+#ifndef VISITOR_REWRITEVISITOR_H_
+#define VISITOR_REWRITEVISITOR_H_
 
 #include <vector>
 #include <functional>
@@ -14,21 +14,43 @@
 namespace nebula {
 namespace graph {
 
-class RewriteMatchLabelVisitor final : public ExprVisitorImpl {
+class RewriteVisitor final : public ExprVisitorImpl {
 public:
+    using Matcher = std::function<bool(const Expression*)>;
     using Rewriter = std::function<Expression*(const Expression*)>;
-    explicit RewriteMatchLabelVisitor(Rewriter rewriter)
-        : rewriter_(std::move(rewriter)) {
+
+    static Expression* transform(const Expression* expr,
+                                 Matcher matcher,
+                                 Rewriter rewriter);
+
+    static Expression* transform(const Expression* expr,
+                                 Matcher matcher,
+                                 Rewriter rewriter,
+                                 const std::unordered_set<Expression::Kind>& needVisitedTypes);
+
+    const Matcher matcher() const {
+        return matcher_;
+    }
+
+    const Rewriter rewriter() const {
+        return rewriter_;
     }
 
 private:
+    explicit RewriteVisitor(Matcher matcher,
+                            Rewriter rewriter)
+        : matcher_(std::move(matcher)),
+          rewriter_(std::move(rewriter)) {}
+
+    explicit RewriteVisitor(Matcher matcher,
+                            Rewriter rewriter,
+                            const std::unordered_set<Expression::Kind>& needVisitedTypes)
+        : matcher_(std::move(matcher)),
+          rewriter_(std::move(rewriter)),
+          needVisitedTypes_(std::move(needVisitedTypes)) {}
+
     bool ok() const override {
         return true;
-    }
-
-    static bool isLabel(const Expression *expr) {
-        return expr->kind() == Expression::Kind::kLabel
-            || expr->kind() == Expression::Kind::kLabelAttribute;
     }
 
 private:
@@ -42,9 +64,16 @@ private:
     void visit(MapExpression*) override;
     void visit(CaseExpression *) override;
     void visit(ReduceExpression *) override;
+    void visit(PredicateExpression *) override;
+    void visit(ListComprehensionExpression*) override;
+    void visit(LogicalExpression*) override;
+    void visit(ArithmeticExpression*) override;
+    void visit(AttributeExpression*) override;
+    void visit(RelationalExpression*) override;
+    void visit(SubscriptExpression*) override;
+    void visit(PathBuildExpression*) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression*) override {}
-    void visit(AttributeExpression*) override;
     void visit(UUIDExpression*) override {}
     void visit(LabelAttributeExpression*) override {}
     void visit(VariableExpression*) override {}
@@ -62,20 +91,19 @@ private:
     void visit(VertexExpression*) override {}
     void visit(EdgeExpression*) override {}
     void visit(ColumnExpression*) override {}
-    void visit(PredicateExpression *) override;
-    void visit(ListComprehensionExpression*) override;
 
     void visitBinaryExpr(BinaryExpression *) override;
-
-    std::vector<std::unique_ptr<Expression>>
-    rewriteExprList(const std::vector<std::unique_ptr<Expression>> &list);
+    bool care(Expression::Kind kind);
 
 private:
+    Matcher                             matcher_;
     Rewriter                            rewriter_;
+
+    std::unordered_set<Expression::Kind> needVisitedTypes_{};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
 
-#endif  // VISITOR_REWRITEMATCHLABELVISITOR_H_
+#endif  // VISITOR_REWRITEVISITOR_H_

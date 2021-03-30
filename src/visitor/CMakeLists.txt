@@ -14,11 +14,8 @@ nebula_add_library(
     FindAnyExprVisitor.cpp
     FindAnySubExprVisitor.cpp
     FoldConstantExprVisitor.cpp
-    RewriteLabelAttrVisitor.cpp
-    RewriteAggExprVisitor.cpp
-    RewriteInputPropVisitor.cpp
     RewriteSymExprVisitor.cpp
-    RewriteMatchLabelVisitor.cpp
+    RewriteVisitor.cpp
     VidExtractVisitor.cpp
 )
 

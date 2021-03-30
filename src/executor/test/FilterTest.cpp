@@ -28,24 +28,11 @@ public:
         auto yieldSentence = getYieldSentence(sentence);                                           \
         auto columns = yieldSentence->columns();                                                   \
         for (auto& col : columns) {                                                                \
-            if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {                        \
-                auto laExpr = static_cast<LabelAttributeExpression*>(col->expr());                 \
-                col->setExpr(                                                                      \
-                    ExpressionUtils ::rewriteLabelAttribute<EdgePropertyExpression>(               \
-                        laExpr));                                                                  \
-            } else {                                                                               \
-                ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(col->expr());       \
-            }                                                                                      \
+            col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));                 \
         }                                                                                          \
-        auto* filter = yieldSentence->where()->filter();                                           \
-        if (filter->kind() == Expression::Kind::kLabelAttribute) {                                 \
-            auto laExpr = static_cast<LabelAttributeExpression*>(filter);                          \
-            yieldSentence->where()->setFilter(                                                     \
-                ExpressionUtils ::rewriteLabelAttribute<EdgePropertyExpression>(                   \
-                    laExpr));                                                                      \
-        } else {                                                                                   \
-            ExpressionUtils::rewriteLabelAttribute<EdgePropertyExpression>(filter);                \
-        }                                                                                          \
+        auto* whereSentence = yieldSentence->where();                                              \
+        whereSentence->setFilter(                                                                  \
+            ExpressionUtils::rewriteLabelAttr2EdgeProp(whereSentence->filter()));                  \
         auto* filterNode = Filter::make(qctx_.get(), nullptr, yieldSentence->where()->filter());   \
         filterNode->setInputVar(inputName);                                                        \
         filterNode->setOutputVar(outputName);                                                      \

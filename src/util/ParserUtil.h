@@ -11,7 +11,7 @@
 #include "common/base/StatusOr.h"
 #include "context/QueryContext.h"
 #include "parser/MaintainSentences.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
+#include "visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {

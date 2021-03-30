@@ -74,7 +74,7 @@ Status FetchVerticesValidator::check() {
     if (!sentence->isAllTagProps()) {
         onStar_ = false;
         auto tags = sentence->tags()->labels();
-        for (const auto& tag : tags) {
+        for (const auto &tag : tags) {
             auto tagStatus = qctx_->schemaMng()->toTagID(space_.id, *tag);
             NG_RETURN_IF_ERROR(tagStatus);
             auto tagId = tagStatus.value();
@@ -160,13 +160,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
     for (auto col : yield->columns()) {
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
-
-        if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-            auto laExpr = static_cast<LabelAttributeExpression *>(col->expr());
-            col->setExpr(ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(laExpr));
-        } else {
-            ExpressionUtils::rewriteLabelAttribute<TagPropertyExpression>(col->expr());
-        }
+        col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
         col->expr()->accept(&deducePropsVisitor);
         if (!deducePropsVisitor.ok()) {
             return std::move(deducePropsVisitor).status();
@@ -231,7 +225,7 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
         storage::cpp2::VertexProp vProp;
         vProp.set_tag(tagSchema.first);
         std::vector<std::string> propNames;
-        propNames.reserve(tagSchema.second->getNumFields()+1);
+        propNames.reserve(tagSchema.second->getNumFields() + 1);
         auto tagNameResult = qctx_->schemaMng()->toTagName(space_.id, tagSchema.first);
         NG_RETURN_IF_ERROR(tagNameResult);
         auto tagName = std::move(tagNameResult).value();
@@ -241,7 +235,7 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
             gvColNames_.emplace_back(tagName + "." + propName);
         }
         gvColNames_.emplace_back(tagName + "._tag");
-        propNames.emplace_back(nebula::kTag);  // "_tag"
+        propNames.emplace_back(nebula::kTag);   // "_tag"
         vProp.set_props(std::move(propNames));
         props_.emplace_back(std::move(vProp));
     }

@@ -11,7 +11,7 @@
 #include "planner/match/OrderByClausePlanner.h"
 #include "planner/match/PaginationPlanner.h"
 #include "planner/match/SegmentsConnector.h"
-#include "visitor/RewriteMatchLabelVisitor.h"
+#include "visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -31,22 +31,12 @@ Status UnwindClausePlanner::buildUnwind(UnwindClauseContext* uctx, SubPlan& subP
     uctx->qctx->objPool()->add(yields);
     std::vector<std::string> colNames;
 
-    auto rewriter = [uctx](const Expression* expr) {
-        return MatchSolver::doRewrite(*uctx->aliasesUsed, expr);
-    };
-
     for (auto* col : uctx->yieldColumns->columns()) {
-        auto kind = col->expr()->kind();
-        YieldColumn* newColumn = nullptr;
-        if (kind == Expression::Kind::kLabel || kind == Expression::Kind::kLabelAttribute) {
-            newColumn = new YieldColumn(rewriter(col->expr()), new std::string(*col->alias()));
-        } else {
-            auto newExpr = col->expr()->clone();
-            RewriteMatchLabelVisitor visitor(rewriter);
-            newExpr->accept(&visitor);
-            newColumn = new YieldColumn(newExpr.release());
-        }
+        YieldColumn* newColumn =
+            new YieldColumn(MatchSolver::doRewrite(*uctx->aliasesUsed, col->expr()),
+                            new std::string(*col->alias()));
         yields->addColumn(newColumn);
+
         if (col->alias() != nullptr) {
             colNames.emplace_back(*col->alias());
         } else {
