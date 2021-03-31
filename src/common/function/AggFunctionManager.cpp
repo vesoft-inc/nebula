@@ -54,6 +54,9 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
+            if (res.isNull()) {
+                res = 0;
+            }
             if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isNumeric()))) {
                 res = Value::kNullBadType;
                 return;

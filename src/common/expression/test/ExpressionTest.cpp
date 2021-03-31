@@ -4327,8 +4327,8 @@ TEST_F(ExpressionTest, AggregateExpression) {
         TEST_AGG(COUNT, true, isConst, vals5_, expected2);
         TEST_AGG(COUNT, false, abs, vals9_, expected5);
         TEST_AGG(COUNT, true, abs, vals9_, expected5);
-        TEST_AGG(SUM, false, isConst, vals5_, expected1);
-        TEST_AGG(SUM, true, isConst, vals5_, expected1);
+        TEST_AGG(SUM, false, isConst, vals5_, expected2);
+        TEST_AGG(SUM, true, isConst, vals5_, expected2);
         TEST_AGG(SUM, false, isConst, vals9_, expected5);
         TEST_AGG(SUM, true, isConst, vals9_, expected5);
         TEST_AGG(AVG, false, isConst, vals5_, expected1);
