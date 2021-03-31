@@ -7,6 +7,7 @@
 #ifndef COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 #define COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 
+#include "common/function/FunctionManager.h"
 #include "common/expression/Expression.h"
 
 namespace nebula {
@@ -56,15 +57,14 @@ class FunctionCallExpression final : public Expression {
 
 public:
     FunctionCallExpression(std::string* name = nullptr,
-                           ArgumentList* args = nullptr)
-        : Expression(Kind::kFunctionCall) {
-        if (args == nullptr) {
-            args_ = std::make_unique<ArgumentList>();
-        } else {
-            args_.reset(args);
+                           ArgumentList* args = new ArgumentList())
+        : Expression(Kind::kFunctionCall), name_(name), args_(args) {
+        if (name_ != nullptr) {
+            auto funcResult = FunctionManager::get(*name_, DCHECK_NOTNULL(args_)->numArgs());
+            if (funcResult.ok()) {
+                func_ = std::move(funcResult).value();
+            }
         }
-
-        name_.reset(name);
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -95,18 +95,17 @@ public:
         return args_.get();
     }
 
-    void setArgs(ArgumentList* args) {
-        args_.reset(args);
-    }
-
 private:
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>    name_;
-    std::unique_ptr<ArgumentList>   args_;
-    Value                           result_;
+    std::unique_ptr<std::string>                 name_;
+    std::unique_ptr<ArgumentList>                args_;
+
+    // runtime cache
+    Value                                        result_;
+    FunctionManager::Function                    func_;
 };
 
 }  // namespace nebula

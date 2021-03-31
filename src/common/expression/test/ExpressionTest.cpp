@@ -203,6 +203,9 @@ protected:
         auto eval = Expression::eval(&functionCall, gExpCtxt);
         // EXPECT_EQ(eval.type(), expected.type());
         EXPECT_EQ(eval, expected);
+        eval = Expression::eval(&functionCall, gExpCtxt);
+        // EXPECT_EQ(eval.type(), expected.type());
+        EXPECT_EQ(eval, expected);
     }
 
     void testAggExpr(const char* name,
@@ -217,8 +220,6 @@ protected:
         if (!func->compare("isConst")) {
             isConst = true;
             arg = new ConstantExpression();
-        } else {
-            arg = new FunctionCallExpression(func.release());
         }
         AggregateExpression aggExpr(agg, arg, isDistinct);
         std::unordered_map<std::string, std::unique_ptr<AggData>> agg_data_map;
@@ -232,7 +233,7 @@ protected:
             } else {
                 auto args = std::make_unique<ArgumentList>(1);
                 args->addArgument(std::make_unique<ConstantExpression>(row.second));
-                static_cast<FunctionCallExpression*>(arg)->setArgs(std::move(args).release());
+                aggExpr.setArg(new FunctionCallExpression(new std::string(*func), args.release()));
             }
             aggExpr.setAggData(agg_data_map[row.first].get());
             auto eval = aggExpr.eval(gExpCtxt);

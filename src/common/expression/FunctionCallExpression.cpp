@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "common/function/FunctionManager.h"
+
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/ExprVisitor.h"
 
@@ -66,19 +66,19 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
     for (size_t i = 0;  i < sz; i++) {
         args_->addArgument(decoder.readExpression());
     }
+
+    auto funcResult = FunctionManager::get(*DCHECK_NOTNULL(name_), args_->numArgs());
+    if (funcResult.ok()) {
+        func_ = std::move(funcResult).value();
+    }
 }
 
 const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
-    auto function = FunctionManager::get(*name_, args_->numArgs());
-    if (!function.ok()) {
-        result_ = Value::kNullBadData;
-    } else {
-        std::vector<Value> parameter;
-        for (const auto& arg : args_->args()) {
-            parameter.emplace_back(std::move(arg->eval(ctx)));
-        }
-        result_ = function.value()(parameter);
+    std::vector<Value> parameter;
+    for (const auto& arg : DCHECK_NOTNULL(args_)->args()) {
+        parameter.emplace_back(std::move(arg->eval(ctx)));
     }
+    result_ = DCHECK_NOTNULL(func_)(parameter);
     return result_;
 }
 
