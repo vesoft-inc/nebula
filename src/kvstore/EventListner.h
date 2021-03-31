@@ -209,8 +209,9 @@ private:
                 return "ManualFlush";
             case rocksdb::FlushReason::kErrorRecovery:
                 return "ErrorRecovery";
+            default:
+                return "Unknown";
         }
-        return "Unknown";
     }
 
     std::string backgroundErrorReasonString(const rocksdb::BackgroundErrorReason& reason) {
@@ -223,8 +224,9 @@ private:
                 return "WriteCallback";
             case rocksdb::BackgroundErrorReason::kMemTable:
                 return "MemTable";
+            default:
+                return "Unknown";
         }
-        return "Unknown";
     }
 
     std::string writeStallConditionString(const rocksdb::WriteStallCondition& condition) {
@@ -235,8 +237,9 @@ private:
                 return "Delayed";
             case rocksdb::WriteStallCondition::kStopped:
                 return "Stopped";
+            default:
+                return "Unknown";
         }
-        return "Unknown";
     }
 
     std::string tableFileCreationReasonString(const rocksdb::TableFileCreationReason& reason) {
@@ -249,8 +252,9 @@ private:
                 return "Recovery";
             case rocksdb::TableFileCreationReason::kMisc:
                 return "Misc";
+            default:
+                return "Unknown";
         }
-        return "Unknown";
     }
 };
 

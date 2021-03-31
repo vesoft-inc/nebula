@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include <folly/container/Enumerate.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "codec/RowWriterV2.h"
 #include "common/clients/storage/InternalStorageClient.h"
@@ -228,7 +229,7 @@ folly::Future<cpp2::ErrorCode> TransactionManager::updateEdgeAtomic(size_t vIdLe
                                                                     PartitionID partId,
                                                                     const cpp2::EdgeKey& edgeKey,
                                                                     GetBatchFunc batchGetter) {
-    auto stRemotePart = env_->metaClient_->partId(spaceId, edgeKey.dst.getStr());
+    auto stRemotePart = env_->metaClient_->partId(spaceId, (*edgeKey.dst_ref()).getStr());
     if (!stRemotePart.ok()) {
         return folly::makeFuture(CommonUtils::to(stRemotePart.status()));
     }
@@ -303,7 +304,7 @@ folly::Future<cpp2::ErrorCode> TransactionManager::resumeTransaction(size_t vIdL
         .thenValue([=](auto&&) {
             // 4th, remove persist lock
             LOG_IF(INFO, FLAGS_trace_toss) << "erase lock " << folly::hexlify(lockKey)
-                << ", *spPromiseVal=" << cpp2::_ErrorCode_VALUES_TO_NAMES.at(*spPromiseVal);
+                << ", *spPromiseVal=" << apache::thrift::util::enumNameSafe(*spPromiseVal);
             if (*spPromiseVal == cpp2::ErrorCode::SUCCEEDED ||
                 *spPromiseVal == cpp2::ErrorCode::E_KEY_NOT_FOUND ||
                 *spPromiseVal == cpp2::ErrorCode::E_OUTDATED_LOCK) {

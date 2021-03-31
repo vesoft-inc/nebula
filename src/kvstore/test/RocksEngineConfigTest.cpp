@@ -66,7 +66,7 @@ TEST(RocksEngineConfigTest, SimpleOptionTest) {
     EXPECT_EQ(1, loadedCfDescs[0].options.max_write_buffer_number_to_maintain);
 
     auto loadedBbtOpt = reinterpret_cast<rocksdb::BlockBasedTableOptions*>(
-        loadedCfDescs[0].options.table_factory->GetOptions());
+        loadedCfDescs[0].options.table_factory->GetOptions<rocksdb::BlockBasedTableOptions>());
     EXPECT_EQ(2, loadedBbtOpt->block_restart_interval);
 
     // Clean up
@@ -82,7 +82,7 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
 
     rocksdb::Status s = initRocksdbOptions(options);
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
-    EXPECT_EQ("Invalid argument: Unable to parse DBOptions:: stats_dump_period_sec",
+    EXPECT_EQ("Invalid argument: Error parsing stats_dump_period_sec:stoull",
               s.ToString());
 
     // Clean up

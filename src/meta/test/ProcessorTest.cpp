@@ -70,11 +70,11 @@ TEST(ProcessorTest, ListHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
+        ASSERT_EQ(10, (*resp.hosts_ref()).size());
         for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(std::to_string(i), resp.hosts[i].hostAddr.host);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-            ASSERT_EQ(cpp2::HostStatus::ONLINE, resp.hosts[i].status);
+            ASSERT_EQ(std::to_string(i), (*(*resp.hosts_ref())[i].hostAddr_ref()).host);
+            ASSERT_EQ(i, (*(*resp.hosts_ref())[i].hostAddr_ref()).port);
+            ASSERT_EQ(cpp2::HostStatus::ONLINE, *(*resp.hosts_ref())[i].status_ref());
         }
     }
     {
@@ -86,11 +86,11 @@ TEST(ProcessorTest, ListHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
+        ASSERT_EQ(10, (*resp.hosts_ref()).size());
         for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(std::to_string(i), resp.hosts[i].hostAddr.host);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-            ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
+            ASSERT_EQ(std::to_string(i), (*(*resp.hosts_ref())[i].hostAddr_ref()).host);
+            ASSERT_EQ(i, (*(*resp.hosts_ref())[i].hostAddr_ref()).port);
+            ASSERT_EQ(cpp2::HostStatus::OFFLINE, *(*resp.hosts_ref())[i].status_ref());
         }
     }
 }
@@ -127,12 +127,12 @@ TEST(ProcessorTest, ListSpecficHostsTest) {
         processor->process(req);
         f.wait();
         auto resp = std::move(f).get();
-        ASSERT_EQ(graphHosts.size(), resp.hosts.size());
-        for (auto i = 0U; i < resp.hosts.size(); ++i) {
-            ASSERT_EQ(std::to_string(i), resp.hosts[i].hostAddr.host);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-            ASSERT_EQ(cpp2::HostStatus::ONLINE, resp.hosts[i].status);
-            ASSERT_EQ(gitInfoShaVec[0], resp.hosts[i].git_info_sha);
+        ASSERT_EQ(graphHosts.size(), (*resp.hosts_ref()).size());
+        for (auto i = 0U; i < (*resp.hosts_ref()).size(); ++i) {
+            ASSERT_EQ(std::to_string(i), (*(*resp.hosts_ref())[i].hostAddr_ref()).host);
+            ASSERT_EQ(i, (*(*resp.hosts_ref())[i].hostAddr_ref()).port);
+            ASSERT_EQ(cpp2::HostStatus::ONLINE, *(*resp.hosts_ref())[i].status_ref());
+            ASSERT_EQ(gitInfoShaVec[0], *(*resp.hosts_ref())[i].git_info_sha_ref());
         }
     }
 
@@ -144,13 +144,13 @@ TEST(ProcessorTest, ListSpecficHostsTest) {
         processor->process(req);
         f.wait();
         auto resp = std::move(f).get();
-        ASSERT_EQ(storageHosts.size(), resp.hosts.size());
+        ASSERT_EQ(storageHosts.size(), (*resp.hosts_ref()).size());
         auto b = graphHosts.size() + metaHosts.size();
-        for (auto i = 0U; i < resp.hosts.size(); ++i) {
-            ASSERT_EQ(std::to_string(i+b), resp.hosts[i].hostAddr.host);
-            ASSERT_EQ(i+b, resp.hosts[i].hostAddr.port);
-            ASSERT_EQ(cpp2::HostStatus::ONLINE, resp.hosts[i].status);
-            ASSERT_EQ(gitInfoShaVec[2], resp.hosts[i].git_info_sha);
+        for (auto i = 0U; i < (*resp.hosts_ref()).size(); ++i) {
+            ASSERT_EQ(std::to_string(i+b), (*(*resp.hosts_ref())[i].hostAddr_ref()).host);
+            ASSERT_EQ(i+b, (*(*resp.hosts_ref())[i].hostAddr_ref()).port);
+            ASSERT_EQ(cpp2::HostStatus::ONLINE, *(*resp.hosts_ref())[i].status_ref());
+            ASSERT_EQ(gitInfoShaVec[2], *(*resp.hosts_ref())[i].git_info_sha_ref());
         }
     }
 }
@@ -169,9 +169,9 @@ TEST(ProcessorTest, ListPartsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(9, resp.parts.size());
+        ASSERT_EQ(9, (*resp.parts_ref()).size());
 
-        auto parts = std::move(resp.parts);
+        auto parts = std::move((*resp.parts_ref()));
         std::sort(parts.begin(), parts.end(), [] (const auto& a, const auto& b) {
             return a.get_part_id() < b.get_part_id();
         });
@@ -179,9 +179,9 @@ TEST(ProcessorTest, ListPartsTest) {
         for (auto& part : parts) {
             partId++;
             EXPECT_EQ(partId, part.get_part_id());
-            EXPECT_FALSE(part.__isset.leader);
-            EXPECT_EQ(3, part.peers.size());
-            EXPECT_EQ(0, part.losts.size());
+            EXPECT_FALSE(part.leader_ref().has_value());
+            EXPECT_EQ(3, (*part.peers_ref()).size());
+            EXPECT_EQ(0, (*part.losts_ref()).size());
         }
     }
 
@@ -211,9 +211,9 @@ TEST(ProcessorTest, ListPartsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(9, resp.parts.size());
+        ASSERT_EQ(9, (*resp.parts_ref()).size());
 
-        auto parts = std::move(resp.parts);
+        auto parts = std::move((*resp.parts_ref()));
         std::sort(parts.begin(), parts.end(), [] (const auto& a, const auto& b) {
             return a.get_part_id() < b.get_part_id();
         });
@@ -222,27 +222,27 @@ TEST(ProcessorTest, ListPartsTest) {
             partId++;
             EXPECT_EQ(partId, part.get_part_id());
 
-            EXPECT_TRUE(part.__isset.leader);
+            EXPECT_TRUE(part.leader_ref().has_value());
             if (partId <= 5) {
-                EXPECT_EQ("0", part.leader.host);
-                EXPECT_EQ(0, part.leader.port);
+                EXPECT_EQ("0", (*part.leader_ref()).host);
+                EXPECT_EQ(0, (*part.leader_ref()).port);
             } else if (partId > 5 && partId <= 8) {
-                EXPECT_EQ("1", part.leader.host);
-                EXPECT_EQ(1, part.leader.port);
+                EXPECT_EQ("1", (*part.leader_ref()).host);
+                EXPECT_EQ(1, (*part.leader_ref()).port);
             } else {
-                EXPECT_EQ("2", part.leader.host);
-                EXPECT_EQ(2, part.leader.port);
+                EXPECT_EQ("2", (*part.leader_ref()).host);
+                EXPECT_EQ(2, (*part.leader_ref()).port);
             }
 
-            EXPECT_EQ(3, part.peers.size());
-            for (auto& peer : part.peers) {
+            EXPECT_EQ(3, (*part.peers_ref()).size());
+            for (auto& peer : *part.peers_ref()) {
                 auto it = std::find_if(hosts.begin(), hosts.end(),
                         [&] (const auto& host) {
                             return host.host == peer.host && host.port == peer.port;
                     });
                 EXPECT_TRUE(it != hosts.end());
             }
-            EXPECT_EQ(0, part.losts.size());
+            EXPECT_EQ(0, (*part.losts_ref()).size());
         }
     }
 }
@@ -287,7 +287,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
@@ -297,14 +297,15 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ("default_space", resp.item.properties.space_name);
-        ASSERT_EQ(8, resp.item.properties.partition_num);
-        ASSERT_EQ(3, resp.item.properties.replica_factor);
-        ASSERT_EQ(8, *resp.item.properties.vid_type.get_type_length());
-        ASSERT_EQ(cpp2::PropertyType::FIXED_STRING, resp.item.properties.vid_type.get_type());
-        ASSERT_EQ("utf8", resp.item.properties.charset_name);
-        ASSERT_EQ("utf8_bin", resp.item.properties.collate_name);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ("default_space", resp.get_item().get_properties().get_space_name());
+        ASSERT_EQ(8, resp.get_item().get_properties().get_partition_num());
+        ASSERT_EQ(3, resp.get_item().get_properties().get_replica_factor());
+        ASSERT_EQ(8, *resp.get_item().get_properties().get_vid_type().get_type_length());
+        ASSERT_EQ(cpp2::PropertyType::FIXED_STRING,
+                resp.get_item().get_properties().get_vid_type().get_type());
+        ASSERT_EQ("utf8", resp.get_item().get_properties().get_charset_name());
+        ASSERT_EQ("utf8_bin", resp.get_item().get_properties().get_collate_name());
     }
 
     {
@@ -313,10 +314,10 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(1, resp.spaces.size());
-        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
-        ASSERT_EQ("default_space", resp.spaces[0].name);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(1, resp.get_spaces().size());
+        ASSERT_EQ(1, resp.get_spaces()[0].get_id().get_space_id());
+        ASSERT_EQ("default_space", resp.get_spaces()[0].get_name());
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {
@@ -326,7 +327,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         std::unordered_map<HostAddr, std::set<PartitionID>> hostsParts;
         for (auto& p : resp.get_parts()) {
             for (auto& h : p.second) {
@@ -346,7 +347,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         cpp2::ListSpacesReq req;
@@ -354,8 +355,8 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(0, resp.spaces.size());
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(0, resp.get_spaces().size());
     }
     // With IF EXISTS
     {
@@ -366,7 +367,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         constexpr char spaceName[] = "exist_space";
@@ -378,7 +379,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         cpp2::DropSpaceReq req1;
         req1.set_space_name(spaceName);
@@ -387,7 +388,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto f1 = processor1->getFuture();
         processor1->process(req1);
         auto resp1 = std::move(f1).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.get_code());
     }
     // Test default value
     {
@@ -399,7 +400,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto cf = cprocessor->getFuture();
         cprocessor->process(creq);
         auto cresp = std::move(cf).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, cresp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, cresp.get_code());
 
         cpp2::GetSpaceReq greq;
         greq.set_space_name("space_with_no_option");
@@ -407,13 +408,13 @@ TEST(ProcessorTest, SpaceTest) {
         auto gf = gprocessor->getFuture();
         gprocessor->process(greq);
         auto gresp = std::move(gf).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, gresp.code);
-        ASSERT_EQ("space_with_no_option", gresp.item.properties.space_name);
-        ASSERT_EQ(100, gresp.item.properties.partition_num);
-        ASSERT_EQ(1, gresp.item.properties.replica_factor);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, gresp.get_code());
+        ASSERT_EQ("space_with_no_option", gresp.get_item().get_properties().get_space_name());
+        ASSERT_EQ(100, gresp.get_item().get_properties().get_partition_num());
+        ASSERT_EQ(1, gresp.get_item().get_properties().get_replica_factor());
         // Because setting default value in graph
-        ASSERT_EQ("", gresp.item.properties.charset_name);
-        ASSERT_EQ("", gresp.item.properties.collate_name);
+        ASSERT_EQ("", gresp.get_item().get_properties().get_charset_name());
+        ASSERT_EQ("", gresp.get_item().get_properties().get_collate_name());
 
         cpp2::DropSpaceReq dreq;
         dreq.set_space_name("space_with_no_option");
@@ -421,7 +422,7 @@ TEST(ProcessorTest, SpaceTest) {
         auto df = dprocessor->getFuture();
         dprocessor->process(dreq);
         auto dresp = std::move(df).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dresp.get_code());
     }
 }
 
@@ -448,7 +449,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
         {
             std::vector<HostAddr> nodes;
@@ -462,7 +463,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
         {
             std::vector<HostAddr> nodes;
@@ -476,7 +477,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
         {
             std::vector<HostAddr> nodes;
@@ -490,7 +491,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
         {
             std::vector<HostAddr> nodes;
@@ -504,7 +505,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
     }
     // List Zones
@@ -514,13 +515,13 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(5, resp.zones.size());
-        ASSERT_EQ("zone_0", resp.zones[0].zone_name);
-        ASSERT_EQ("zone_1", resp.zones[1].zone_name);
-        ASSERT_EQ("zone_2", resp.zones[2].zone_name);
-        ASSERT_EQ("zone_3", resp.zones[3].zone_name);
-        ASSERT_EQ("zone_4", resp.zones[4].zone_name);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(5, resp.get_zones().size());
+        ASSERT_EQ("zone_0", resp.get_zones()[0].get_zone_name());
+        ASSERT_EQ("zone_1", resp.get_zones()[1].get_zone_name());
+        ASSERT_EQ("zone_2", resp.get_zones()[2].get_zone_name());
+        ASSERT_EQ("zone_3", resp.get_zones()[3].get_zone_name());
+        ASSERT_EQ("zone_4", resp.get_zones()[4].get_zone_name());
     }
 
     // Add Group
@@ -533,7 +534,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         cpp2::AddGroupReq req;
@@ -544,7 +545,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // List Groups
     {
@@ -553,10 +554,10 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(2, resp.groups.size());
-        ASSERT_EQ("group_0", resp.groups[0].group_name);
-        ASSERT_EQ("group_1", resp.groups[1].group_name);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(2, resp.get_groups().size());
+        ASSERT_EQ("group_0", resp.get_groups()[0].get_group_name());
+        ASSERT_EQ("group_1", resp.get_groups()[1].get_group_name());
     }
 
     // Create Space without Group
@@ -571,7 +572,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Create Space on group_0, replica factor is equal with zone size
     {
@@ -586,7 +587,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Drop Group should failed
     {
@@ -596,7 +597,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_DROP, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_DROP, resp.get_code());
     }
     // Create Space on group_0, replica factor is less than zone size
     {
@@ -611,7 +612,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Create Space on group_0, replica factor is larger than zone size
     {
@@ -626,7 +627,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
     }
     {
         cpp2::AddZoneIntoGroupReq req;
@@ -636,7 +637,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         cpp2::SpaceDesc properties;
@@ -650,7 +651,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Create Space on a group which is not exist
     {
@@ -665,7 +666,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
 
@@ -686,7 +687,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
@@ -701,11 +702,11 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(2, resp.get_id().get_space_id());
     }
     cpp2::Schema schema;
-    decltype(schema.columns) cols;
+    std::vector<cpp2::ColumnDef> cols;
     cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
     cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
     cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
@@ -720,7 +721,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
     {
         // Succeeded
@@ -732,7 +733,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(3, resp.get_id().get_tag_id());
     }
     {
@@ -745,7 +746,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     {
         // Create same name tag in diff spaces
@@ -757,7 +758,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(4, resp.get_id().get_tag_id());
     }
     {
@@ -770,7 +771,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
     {
         // Set schema ttl property
@@ -788,13 +789,13 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(5, resp.get_id().get_tag_id());
     }
     // Wrong default value type
     {
         cpp2::Schema schemaWithDefault;
-        decltype(schema.columns) colsWithDefault;
+        std::vector<cpp2::ColumnDef> colsWithDefault;
 
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
@@ -813,12 +814,12 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
     }
     // Wrong default value
     {
         cpp2::Schema schemaWithDefault;
-        decltype(schema.columns) colsWithDefault;
+        std::vector<cpp2::ColumnDef> colsWithDefault;
 
         cpp2::ColumnDef columnWithDefault;
         columnWithDefault.set_name(folly::stringPrintf("col_value_mismatch"));
@@ -837,7 +838,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
     }
     {
         cpp2::CreateTagReq req;
@@ -849,7 +850,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         cpp2::GetTagReq getReq;
         getReq.set_space_id(1);
@@ -859,7 +860,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto getFut = getProcessor->getFuture();
         getProcessor->process(getReq);
         auto getResp = std::move(getFut).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, getResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, getResp.get_code());
         TestUtils::checkSchemaWithAllType(getResp.get_schema());
     }
 }
@@ -882,7 +883,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
    }
    {
@@ -898,12 +899,12 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(2, resp.get_id().get_space_id());
     }
 
     cpp2::Schema schema;
-    decltype(schema.columns) cols;
+    std::vector<cpp2::ColumnDef> cols;
     cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
     cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
     cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
@@ -917,7 +918,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
     {
         // Succeeded
@@ -929,7 +930,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(3, resp.get_id().get_edge_type());
     }
     {
@@ -942,7 +943,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     {
         // Create same name edge in diff spaces
@@ -954,7 +955,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(4, resp.get_id().get_edge_type());
     }
     {
@@ -967,7 +968,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
     }
 
     // Set schema ttl property
@@ -985,12 +986,12 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(5, resp.get_id().get_edge_type());
     }
     {
         cpp2::Schema schemaWithDefault;
-        decltype(schema.columns) colsWithDefault;
+        std::vector<cpp2::ColumnDef> colsWithDefault;
         colsWithDefault.emplace_back(TestUtils::columnDef(0, PropertyType::BOOL, Value(false)));
         colsWithDefault.emplace_back(TestUtils::columnDef(1, PropertyType::INT64, Value(11)));
         colsWithDefault.emplace_back(TestUtils::columnDef(2, PropertyType::DOUBLE, Value(11.0)));
@@ -1005,12 +1006,12 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(6, resp.get_id().get_edge_type());
     }
     {
         cpp2::Schema schemaWithDefault;
-        decltype(schema.columns) colsWithDefault;
+        std::vector<cpp2::ColumnDef> colsWithDefault;
         colsWithDefault.push_back(TestUtils::columnDef(0,
                     PropertyType::BOOL, Value("default value")));
         schemaWithDefault.set_columns(std::move(colsWithDefault));
@@ -1023,7 +1024,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
     }
     {
         cpp2::CreateTagReq req;
@@ -1035,7 +1036,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         cpp2::GetTagReq getReq;
         getReq.set_space_id(1);
@@ -1045,7 +1046,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto getFut = getProcessor->getFuture();
         getProcessor->process(getReq);
         auto getResp = std::move(getFut).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, getResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, getResp.get_code());
         TestUtils::checkSchemaWithAllType(getResp.get_schema());
     }
 }
@@ -1067,7 +1068,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
@@ -1086,7 +1087,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         // Get Test
@@ -1098,8 +1099,8 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ("value_0", resp.value);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ("value_0", resp.get_value());
 
         cpp2::GetReq missedReq;
         missedReq.set_segment("test");
@@ -1109,7 +1110,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, missedResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, missedResp.get_code());
     }
     {
         // Multi Get Test
@@ -1126,10 +1127,10 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(2, resp.values.size());
-        ASSERT_EQ("value_0", resp.values[0]);
-        ASSERT_EQ("value_1", resp.values[1]);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(2, resp.get_values().size());
+        ASSERT_EQ("value_0", resp.get_values()[0]);
+        ASSERT_EQ("value_1", resp.get_values()[1]);
     }
     {
         // Scan Test
@@ -1142,11 +1143,11 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(3, resp.values.size());
-        ASSERT_EQ("value_1", resp.values[0]);
-        ASSERT_EQ("value_2", resp.values[1]);
-        ASSERT_EQ("value_3", resp.values[2]);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(3, resp.get_values().size());
+        ASSERT_EQ("value_1", resp.get_values()[0]);
+        ASSERT_EQ("value_2", resp.get_values()[1]);
+        ASSERT_EQ("value_3", resp.get_values()[2]);
     }
     {
         // Remove Test
@@ -1158,7 +1159,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         // Remove Range Test
@@ -1171,7 +1172,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
 }
 
@@ -1189,7 +1190,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        decltype(resp.tags) tags;
+        std::vector<nebula::meta::cpp2::TagItem> tags;
         tags = resp.get_tags();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(10, tags.size());
@@ -1199,7 +1200,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
             ASSERT_EQ(t, tag.get_tag_id());
             ASSERT_EQ(t, tag.get_version());
             ASSERT_EQ(folly::stringPrintf("tag_%d", t), tag.get_tag_name());
-            ASSERT_EQ(2, tag.get_schema().columns.size());
+            ASSERT_EQ(2, (*tag.get_schema().columns_ref()).size());
         }
     }
 
@@ -1263,7 +1264,7 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        decltype(resp.edges) edges;
+        std::vector<nebula::meta::cpp2::EdgeItem> edges;
         edges = resp.get_edges();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(10, edges.size());
@@ -1273,7 +1274,7 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             ASSERT_EQ(t, edge.get_edge_type());
             ASSERT_EQ(t, edge.get_version());
             ASSERT_EQ(folly::stringPrintf("edge_%d", t), edge.get_edge_name());
-            ASSERT_EQ(2, edge.get_schema().columns.size());
+            ASSERT_EQ(2, (*edge.get_schema().columns_ref()).size());
         }
     }
 
@@ -1400,7 +1401,7 @@ TEST(ProcessorTest, DropTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         cpp2::DropTagReq req1;
         req1.set_space_id(spaceId);
@@ -1489,7 +1490,7 @@ TEST(ProcessorTest, DropEdgeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         cpp2::DropEdgeReq req1;
         req1.set_space_id(spaceId);
@@ -1518,19 +1519,19 @@ TEST(ProcessorTest, AlterTagTest) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
             column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
         cpp2::Schema changeSch;
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i);
             column.type.set_type(i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE);
-            changeSch.columns.emplace_back(std::move(column));
+            (*changeSch.columns_ref()).emplace_back(std::move(column));
         }
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
         items.back().set_schema(std::move(addSch));
@@ -1563,13 +1564,13 @@ TEST(ProcessorTest, AlterTagTest) {
         auto tags = resp.get_tags();
         ASSERT_EQ(2, tags.size());
         // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
-        auto tag = tags[0].version > 0 ? tags[0] : tags[1];
+        auto tag = tags[0].get_version() > 0 ? tags[0] : tags[1];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
-        EXPECT_EQ(1, tag.version);
+        EXPECT_EQ(1, tag.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
@@ -1631,15 +1632,15 @@ TEST(ProcessorTest, AlterTagTest) {
         auto tags = resp.get_tags();
         ASSERT_EQ(3, tags.size());
         // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
-        auto tag = tags[0].version > tags[1].version ? tags[0] : tags[1];
-        tag =  tag.version > tags[2].version ? tag : tags[2];
+        auto tag = tags[0].get_version() > tags[1].get_version() ? tags[0] : tags[1];
+        tag =  tag.get_version() > tags[2].get_version() ? tag : tags[2];
 
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
-        EXPECT_EQ(2, tag.version);
+        EXPECT_EQ(2, tag.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
@@ -1674,7 +1675,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_10";
         column.type.set_type(PropertyType::DOUBLE);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -1712,7 +1713,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "tag_0_col_10";
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -1741,18 +1742,18 @@ TEST(ProcessorTest, AlterTagTest) {
         int version = 0;
         int max_index = 0;
         for (uint32_t i = 0; i < tags.size(); i++) {
-            if (tags[i].version > version) {
+            if (tags[i].get_version() > version) {
                 max_index = i;
-                version  = tags[i].version;
+                version  = tags[i].get_version();
             }
         }
         auto tag = tags[max_index];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
-        EXPECT_EQ(3, tag.version);
+        EXPECT_EQ(3, tag.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
@@ -1783,7 +1784,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
         column.type.set_type(PropertyType::INT64);
-        addSch.columns.emplace_back(std::move(column));
+        (*addSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -1805,7 +1806,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -1827,7 +1828,7 @@ TEST(ProcessorTest, AlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -1851,7 +1852,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.set_type(PropertyType::INT64);
         ConstantExpression strValue("default value");
         column.set_default_value(Expression::encode(strValue));
-        schema.columns.emplace_back(std::move(column));
+        (*schema.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -1876,7 +1877,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.set_type_length(5);;
         ConstantExpression strValue("Hello world!");
         column.set_default_value(Expression::encode(strValue));
-        schema.columns.emplace_back(std::move(column));
+        (*schema.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -1933,7 +1934,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         std::vector<cpp2::AlterSchemaItem> items;
         for (int32_t i = 0; i < 2; i++) {
             column.name = folly::stringPrintf("edge_0_col_%d", i);
-            dropSch.columns.emplace_back(std::move(column));
+            (*dropSch.columns_ref()).emplace_back(std::move(column));
         }
 
         items.emplace_back();
@@ -1958,11 +1959,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto edges = resp.get_edges();
         ASSERT_EQ(2, edges.size());
-        auto edge = edges[0].version > 0 ? edges[0] : edges[1];
+        auto edge = edges[0].get_version() > 0 ? edges[0] : edges[1];
         EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
-        EXPECT_EQ(1, edge.version);
-        EXPECT_EQ(0, edge.get_schema().columns.size());
+        EXPECT_EQ(1, edge.get_version());
+        EXPECT_EQ(0, (*edge.get_schema().columns_ref()).size());
     }
     {
         cpp2::AlterEdgeReq req;
@@ -1972,7 +1973,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_0_col_%d", i);
             column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
 
         items.emplace_back();
@@ -1995,19 +1996,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_%d_col_%d", 0, i + 10);
             column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
         cpp2::Schema changeSch;
         for (auto i = 0; i < 2; i++) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_%d_col_%d", 0, i);
             column.type.set_type(i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE);
-            changeSch.columns.emplace_back(std::move(column));
+            (*changeSch.columns_ref()).emplace_back(std::move(column));
         }
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_0";
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -2045,18 +2046,18 @@ TEST(ProcessorTest, AlterEdgeTest) {
         int version = 0;
         int max_index = 0;
         for (uint32_t i = 0; i < edges.size(); i++) {
-            if (edges[i].version > version) {
+            if (edges[i].get_version() > version) {
                 max_index = i;
-                version  = edges[i].version;
+                version  = edges[i].get_version();
             }
         }
         auto edge = edges[max_index];
         EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
-        EXPECT_EQ(3, edge.version);
+        EXPECT_EQ(3, edge.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
@@ -2120,19 +2121,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
         int version = 0;
         int max_index = 0;
         for (uint32_t i = 0; i < edges.size(); i++) {
-            if (edges[i].version > version) {
+            if (edges[i].get_version() > version) {
                 max_index = i;
-                version  = edges[i].version;
+                version  = edges[i].get_version();
             }
         }
         auto edge = edges[max_index];
 
         EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
-        EXPECT_EQ(4, edge.version);
+        EXPECT_EQ(4, edge.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
@@ -2167,7 +2168,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_10";
         column.type.set_type(PropertyType::DOUBLE);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -2205,7 +2206,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::Schema dropSch;
         cpp2::ColumnDef column;
         column.name = "edge_0_col_10";
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -2234,19 +2235,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
         int version = 0;
         int max_index = 0;
         for (uint32_t i = 0; i < edges.size(); i++) {
-            if (edges[i].version > version) {
+            if (edges[i].get_version() > version) {
                 max_index = i;
-                version  = edges[i].version;
+                version  = edges[i].get_version();
             }
         }
         auto edge = edges[max_index];
 
         EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
-        EXPECT_EQ(5, edge.version);
+        EXPECT_EQ(5, edge.get_version());
 
         cpp2::Schema schema;
-        decltype(schema.columns) cols;
+        std::vector<cpp2::ColumnDef> cols;
 
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
@@ -2277,7 +2278,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
         column.type.set_type(PropertyType::INT64);
-        addSch.columns.emplace_back(std::move(column));
+        (*addSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -2300,7 +2301,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -2323,7 +2324,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -2348,7 +2349,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.type.set_type(PropertyType::INT64);
         ConstantExpression strValue("default value");
         column.set_default_value(Expression::encode(strValue));
-        schema.columns.emplace_back(std::move(column));
+        (*schema.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -2373,7 +2374,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.type.set_type_length(5);;
         ConstantExpression strValue("Hello world!");
         column.set_default_value(Expression::encode(strValue));
-        schema.columns.emplace_back(std::move(column));
+        (*schema.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -2431,7 +2432,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
@@ -2445,13 +2446,13 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(2, resp.get_id().get_space_id());
     }
 
     // Add same tag name in different space
     cpp2::Schema schema;
-    decltype(schema.columns) cols;
+    std::vector<cpp2::ColumnDef> cols;
     cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
     cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
     cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
@@ -2465,7 +2466,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(3, resp.get_id().get_tag_id());
     }
     {
@@ -2477,7 +2478,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(4, resp.get_id().get_tag_id());
     }
 
@@ -2501,7 +2502,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        decltype(resp.tags) tags;
+        std::vector<nebula::meta::cpp2::TagItem> tags;
         tags = resp.get_tags();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(0, tags.size());
@@ -2513,7 +2514,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        decltype(resp.tags) tags;
+        std::vector<nebula::meta::cpp2::TagItem> tags;
         tags = resp.get_tags();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, tags.size());
@@ -3319,7 +3320,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         std::vector<cpp2::AlterSchemaItem> items;
         for (int32_t i = 2; i < 4; i++) {
             column.name = folly::stringPrintf("edge_0_col_%d", i);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
 
         items.emplace_back();
@@ -3341,7 +3342,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -3364,7 +3365,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_3";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -3387,7 +3388,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_0";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
@@ -3410,7 +3411,7 @@ TEST(ProcessorTest, IndexCheckAlterEdgeTest) {
         cpp2::ColumnDef column;
         column.name = "edge_0_col_0";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -3454,7 +3455,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        addSch.columns.emplace_back(std::move(column));
+        (*addSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -3475,7 +3476,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
         items.back().set_schema(std::move(changeSch));
@@ -3495,7 +3496,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -3516,7 +3517,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.set_type(PropertyType::INT64);
-        changeSch.columns.emplace_back(std::move(column));
+        (*changeSch.columns_ref()).emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
         items.back().set_schema(std::move(changeSch));
@@ -3536,7 +3537,7 @@ TEST(ProcessorTest, IndexCheckAlterTagTest) {
         cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.set_type(PropertyType::INT64);
-        dropSch.columns.emplace_back(std::move(column));
+        (*dropSch.columns_ref()).emplace_back(std::move(column));
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -3646,7 +3647,7 @@ TEST(ProcessorTest, IndexTTLTagTest) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
             column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -3852,7 +3853,7 @@ TEST(ProcessorTest, IndexTTLEdgeTest) {
             cpp2::ColumnDef column;
             column.name = folly::stringPrintf("edge_0_col_%d", i + 10);
             column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
-            addSch.columns.emplace_back(std::move(column));
+            (*addSch.columns_ref()).emplace_back(std::move(column));
         }
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);

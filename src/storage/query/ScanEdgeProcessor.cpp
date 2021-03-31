@@ -109,7 +109,7 @@ cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::ScanEdgeReq
         return ret;
     }
 
-    std::vector<cpp2::EdgeProp> returnProps = {req.return_columns};
+    std::vector<cpp2::EdgeProp> returnProps = {*req.return_columns_ref()};
     ret = handleEdgeProps(returnProps);
     buildEdgeColName(returnProps);
     return ret;
@@ -117,9 +117,9 @@ cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::ScanEdgeReq
 
 void ScanEdgeProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps) {
     for (const auto& edgeProp : edgeProps) {
-        auto edgeType = edgeProp.type;
+        auto edgeType = edgeProp.get_type();
         auto edgeName = edgeContext_.edgeNames_[edgeType];
-        for (const auto& prop : edgeProp.props) {
+        for (const auto& prop : *edgeProp.props_ref()) {
             resultDataSet_.colNames.emplace_back(edgeName + "." + prop);
         }
     }

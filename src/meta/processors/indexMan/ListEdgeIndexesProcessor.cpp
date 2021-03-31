@@ -24,7 +24,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
         return;
     }
 
-    decltype(resp_.items) items;
+    std::vector<nebula::meta::cpp2::IndexItem> items;
     while (iter->valid()) {
         auto val = iter->val();
         auto item = MetaServiceUtils::parseIndex(val);

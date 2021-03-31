@@ -42,7 +42,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto charsetName = properties.get_charset_name();
     auto collateName = properties.get_collate_name();
     auto& vid = properties.get_vid_type();
-    auto vidSize = vid.__isset.type_length ? *vid.get_type_length() : 0;
+    auto vidSize = vid.type_length_ref().has_value() ? *vid.type_length_ref() : 0;
     auto vidType = vid.get_type();
 
     // Use default values or values from meta's configuration file
@@ -76,7 +76,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     if (vidType != cpp2::PropertyType::INT64 && vidType != cpp2::PropertyType::FIXED_STRING) {
         LOG(ERROR) << "Create Space Failed : vid_type is illegal: "
-                   << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(vidType);
+                   << apache::thrift::util::enumNameSafe(vidType);
         handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
@@ -89,7 +89,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
 
-    properties.vid_type.set_type_length(vidSize);
+    properties.vid_type_ref().value().set_type_length(vidSize);
     auto idRet = autoIncrementId();
     if (!nebula::ok(idRet)) {
         LOG(ERROR) << "Create Space Failed : Get space id failed";
@@ -105,13 +105,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
                       MetaServiceUtils::spaceVal(properties));
 
-    if (properties.__isset.group_name) {
-        std::string* groupName = properties.get_group_name();
-        LOG(INFO) << "Create Space on group: " << *groupName;
-        auto groupKey = MetaServiceUtils::groupKey(*groupName);
+    if (properties.group_name_ref().has_value()) {
+        auto &groupName = *properties.group_name_ref();
+        LOG(INFO) << "Create Space on group: " << groupName;
+        auto groupKey = MetaServiceUtils::groupKey(groupName);
         auto ret = doGet(groupKey);
         if (!ret.ok()) {
-            LOG(ERROR) << "Group Name: " << *groupName << " not found";
+            LOG(ERROR) << "Group Name: " << groupName << " not found";
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;

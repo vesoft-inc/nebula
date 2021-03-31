@@ -25,23 +25,23 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                           /* 0 not specify prop_names, 1 specify prop_names, 2 mix */
                           int mode = 0 ) {
     EXPECT_TRUE(mode == 0 || mode == 1 || mode == 2);
-    auto spaceId = req.space_id;
+    auto spaceId = req.get_space_id();
     auto ret = env->schemaMan_->getSpaceVidLen(spaceId);
     EXPECT_TRUE(ret.ok());
     auto spaceVidLen = ret.value();
 
     int totalCount = 0;
-    for (auto& part : req.parts) {
+    for (auto& part : *req.parts_ref()) {
         auto partId = part.first;
         auto newVertexVec = part.second;
 
         auto count = 0;
         for (auto& newVertex : newVertexVec) {
-            auto vid = newVertex.id;
-            auto newTagVec = newVertex.tags;
+            auto vid = newVertex.get_id();
+            auto newTagVec = *newVertex.tags_ref();
 
             for (auto& newTag : newTagVec) {
-                auto tagId = newTag.tag_id;
+                auto tagId = newTag.get_tag_id();
                 auto prefix =
                     NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr(), tagId);
                 std::unique_ptr<kvstore::KVIterator> iter;
@@ -60,20 +60,20 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                         if (tagId == 1) {
                             for (auto i = 0; i < 9; i++) {
                                 val = reader->getValueByIndex(i);
-                                EXPECT_EQ(newTag.props[i], val);
+                                EXPECT_EQ((*newTag.props_ref())[i], val);
                             }
-                            if (newTag.props.size() >= 10) {
+                            if ((*newTag.props_ref()).size() >= 10) {
                                 val = reader->getValueByIndex(9);
-                                EXPECT_EQ(newTag.props[9], val);
-                                if (newTag.props.size() == 11) {
+                                EXPECT_EQ((*newTag.props_ref())[9], val);
+                                if ((*newTag.props_ref()).size() == 11) {
                                     val = reader->getValueByIndex(10);
-                                    EXPECT_EQ(newTag.props[10], val);
+                                    EXPECT_EQ((*newTag.props_ref())[10], val);
                                 }
                             }
                         } else if (tagId == 2) {
                             // For teams tagId is 2
                             val = reader->getValueByIndex(0);
-                            EXPECT_EQ(newTag.props[0], val);
+                            EXPECT_EQ((*newTag.props_ref())[0], val);
                         } else {
                             // Impossible to get here
                             ASSERT_TRUE(false);
@@ -84,12 +84,12 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                             // nullable columns always use the default value or null value
                             for (auto i = 0; i < 9; i++) {
                                 val = reader->getValueByIndex(i);
-                                EXPECT_EQ(newTag.props[8 - i], val);
+                                EXPECT_EQ((*newTag.props_ref())[8 - i], val);
                             }
                         } else if (tagId == 2) {
                             // For teams tagId is 2
                             val = reader->getValueByIndex(0);
-                            EXPECT_EQ(newTag.props[0], val);
+                            EXPECT_EQ((*newTag.props_ref())[0], val);
                         } else {
                             // Impossible to get here
                             ASSERT_TRUE(false);
@@ -101,21 +101,21 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                                 // nullable columns always use the default value or null value
                                 for (auto i = 0; i < 9; i++) {
                                     val = reader->getValueByIndex(i);
-                                    EXPECT_EQ(newTag.props[i], val);
+                                    EXPECT_EQ((*newTag.props_ref())[i], val);
                                 }
                                 val = reader->getValueByIndex(9);
                                 EXPECT_EQ("America", val.getStr());
                             } else {
                                 for (auto i = 0; i < 9; i++) {
                                     val = reader->getValueByIndex(i);
-                                    EXPECT_EQ(newTag.props[i], val);
+                                    EXPECT_EQ((*newTag.props_ref())[i], val);
                                 }
-                                if (newTag.props.size() >= 10) {
+                                if ((*newTag.props_ref()).size() >= 10) {
                                     val = reader->getValueByIndex(9);
-                                    EXPECT_EQ(newTag.props[9], val);
-                                    if (newTag.props.size() == 11) {
+                                    EXPECT_EQ((*newTag.props_ref())[9], val);
+                                    if ((*newTag.props_ref()).size() == 11) {
                                         val = reader->getValueByIndex(10);
-                                        EXPECT_EQ(newTag.props[10], val);
+                                        EXPECT_EQ((*newTag.props_ref())[10], val);
                                     }
                                 }
                             }
@@ -124,7 +124,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                         if (tagId == 2) {
                             // For teams tagId is 2
                             val = reader->getValueByIndex(0);
-                            EXPECT_EQ(newTag.props[0], val);
+                            EXPECT_EQ((*newTag.props_ref())[0], val);
                         }
                     }
                     num++;
@@ -174,30 +174,31 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
                        /* 0 not specify prop_names, 1 specify prop_names, 2 mix */
                        int mode = 0 ) {
     EXPECT_TRUE(mode == 0 || mode == 1 || mode == 2);
-    auto spaceId = req.space_id;
+    auto spaceId = req.get_space_id();
     auto ret = env->schemaMan_->getSpaceVidLen(spaceId);
     EXPECT_TRUE(ret.ok());
     auto spaceVidLen = ret.value();
 
     int totalCount = 0;
-    for (auto& part : req.parts) {
+    for (auto& part : *req.parts_ref()) {
         auto partId = part.first;
         auto newEdgeVec = part.second;
         for (auto& newEdge : newEdgeVec) {
-            auto edgekey = newEdge.key;
-            auto newEdgeProp = newEdge.props;
+            auto edgekey = newEdge.get_key();
+            auto newEdgeProp = newEdge.get_props();
 
             auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen,
                                                      partId,
-                                                     edgekey.src.getStr(),
-                                                     edgekey.edge_type,
-                                                     edgekey.ranking,
-                                                     edgekey.dst.getStr());
+                                                     edgekey.get_src().getStr(),
+                                                     edgekey.get_edge_type(),
+                                                     edgekey.get_ranking(),
+                                                     edgekey.get_dst().getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
-            auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edgekey.edge_type));
+            auto schema = env->schemaMan_->getEdgeSchema(spaceId,
+                    std::abs(edgekey.get_edge_type()));
             EXPECT_TRUE(schema != NULL);
 
             Value val;
@@ -267,10 +268,10 @@ void checkEdgesData(int32_t spaceVidLen,
         for (auto& edgeKey : deleteEdgeKeyVec) {
             auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen,
                                                      partId,
-                                                     edgeKey.src.getStr(),
-                                                     edgeKey.edge_type,
-                                                     edgeKey.ranking,
-                                                     edgeKey.dst.getStr());
+                                                     edgeKey.get_src().getStr(),
+                                                     edgeKey.get_edge_type(),
+                                                     edgeKey.get_ranking(),
+                                                     edgeKey.get_dst().getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));

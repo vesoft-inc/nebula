@@ -134,8 +134,8 @@ protected:
 
     cpp2::AddVerticesRequest mockVerticesReq(int32_t parts, int64_t begin, int64_t end) {
         nebula::storage::cpp2::AddVerticesRequest req;
-        req.space_id = 1;
-        req.overwritable = true;
+        req.set_space_id(1);
+        req.set_overwritable(true);
 
         auto vertices = mockVertices(begin, end);
 
@@ -150,9 +150,9 @@ protected:
             std::vector<nebula::storage::cpp2::NewTag> newTags;
             newTags.push_back(std::move(newTag));
 
-            newVertex.id = vertex.vId_;
+            newVertex.set_id(vertex.vId_);
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         return req;
     }

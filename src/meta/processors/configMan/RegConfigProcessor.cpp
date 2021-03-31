@@ -19,8 +19,8 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
             auto mode = item.get_mode();
             auto value = item.get_value();
             VLOG(1) << "Config name: " << name
-                    << ", mode: " << meta::cpp2::_ConfigMode_VALUES_TO_NAMES.at(mode)
-                    << ", module: " << meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module)
+                    << ", mode: " << apache::thrift::util::enumNameSafe(mode)
+                    << ", module: " << apache::thrift::util::enumNameSafe(module)
                     << ", value: " << value;
 
             std::string configKey = MetaServiceUtils::configKey(module, name);

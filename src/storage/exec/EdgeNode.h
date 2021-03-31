@@ -123,16 +123,16 @@ public:
 
         VLOG(1) << "partId " << partId << ", edgeType " << edgeType_
                 << ", prop size " << props_->size();
-        if (edgeType_ !=  edgeKey.edge_type) {
+        if (edgeType_ !=  *edgeKey.edge_type_ref()) {
             iter_.reset();
             return kvstore::ResultCode::SUCCEEDED;
         }
         prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_,
                                              partId,
-                                             edgeKey.src.getStr(),
-                                             edgeKey.edge_type,
-                                             edgeKey.ranking,
-                                             edgeKey.dst.getStr());
+                                             (*edgeKey.src_ref()).getStr(),
+                                             *edgeKey.edge_type_ref(),
+                                             *edgeKey.ranking_ref(),
+                                             (*edgeKey.dst_ref()).getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED && iter && iter->valid()) {

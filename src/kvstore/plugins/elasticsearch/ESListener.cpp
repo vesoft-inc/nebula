@@ -27,9 +27,9 @@ void ESListener::init() {
     for (const auto& c : cRet.value()) {
         nebula::plugin::HttpClient hc;
         hc.host = c.host;
-        if (c.__isset.user) {
-            hc.user = c.user;
-            hc.password = c.pwd;
+        if (c.user_ref().has_value()) {
+            hc.user = *c.user_ref();
+            hc.password = *c.pwd_ref();
         }
         esClients_.emplace_back(std::move(hc));
     }

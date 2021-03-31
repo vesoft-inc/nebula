@@ -18,7 +18,7 @@ FlushTask::genSubTasks() {
     }
 
     auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
-    auto errOrSpace = store->space(ctx_.parameters_.space_id);
+    auto errOrSpace = store->space(*ctx_.parameters_.space_id_ref());
     if (!ok(errOrSpace)) {
         return toStorageErr(error(errOrSpace));
     }

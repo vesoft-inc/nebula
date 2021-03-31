@@ -66,7 +66,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     for (auto& edgeItem : edgeItems) {
         auto &cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, edgeItem.op);
+            auto retCode =
+                MetaServiceUtils::alterColumnDefs(columns, prop, col, *edgeItem.op_ref());
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter edge column error " << static_cast<int32_t>(retCode);
                 handleErrorCode(retCode);

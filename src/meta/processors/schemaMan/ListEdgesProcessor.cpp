@@ -22,7 +22,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         return;
     }
 
-    decltype(resp_.edges) edges;
+    std::vector<nebula::meta::cpp2::EdgeItem> edges;
     while (iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();

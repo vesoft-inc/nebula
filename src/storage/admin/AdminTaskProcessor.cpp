@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "storage/admin/AdminTaskProcessor.h"
 #include "storage/admin/AdminTaskManager.h"
 #include "common/interface/gen-cpp2/common_types.h"
@@ -22,7 +24,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
                 return meta::cpp2::ErrorCode::E_UNKNOWN;
             default:
                 LOG(ERROR) << "unsupported conversion of code "
-                           << cpp2::_ErrorCode_VALUES_TO_NAMES.at(storageCode);
+                           << apache::thrift::util::enumNameSafe(storageCode);
                 return meta::cpp2::ErrorCode::E_UNKNOWN;
         }
     };
@@ -33,7 +35,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
                   nebula::meta::cpp2::StatisItem& result) {
         meta::cpp2::StatisItem* pStatis = nullptr;
         if (errCode == cpp2::ErrorCode::SUCCEEDED &&
-            result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+            *result.status_ref() == nebula::meta::cpp2::JobStatus::FINISHED) {
             pStatis = &result;
         }
 
@@ -41,7 +43,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
                                     jobId,
                                     taskId,
-                                    meta::cpp2::_ErrorCode_VALUES_TO_NAMES.at(metaCode));
+                                    apache::thrift::util::enumNameSafe(metaCode));
         auto maxRetry = 5;
         auto retry = 0;
         while (retry++ < maxRetry) {
@@ -67,7 +69,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
             LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
                                         jobId,
                                         taskId,
-                                        meta::cpp2::_ErrorCode_VALUES_TO_NAMES.at(rc));
+                                        apache::thrift::util::enumNameSafe(rc));
             if (rc == meta::cpp2::ErrorCode::E_LEADER_CHANGED ||
                 rc == meta::cpp2::ErrorCode::E_STORE_FAILURE) {
                 continue;

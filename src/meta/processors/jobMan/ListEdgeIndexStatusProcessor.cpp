@@ -21,7 +21,7 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
     }
 
     std::vector<cpp2::JobDesc> jobs;
-    decltype(resp_.statuses) statuses;
+    std::vector<nebula::meta::cpp2::IndexStatus> statuses;
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
@@ -63,7 +63,7 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
     for (auto &kv : tmp) {
         cpp2::IndexStatus status;
         status.set_name(std::move(kv.first));
-        status.set_status(meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(kv.second));
+        status.set_status(apache::thrift::util::enumNameSafe(kv.second));
         statuses.emplace_back(std::move(status));
     }
     resp_.set_statuses(std::move(statuses));

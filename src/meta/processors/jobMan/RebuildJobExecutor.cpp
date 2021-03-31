@@ -62,27 +62,17 @@ meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
         futures.emplace_back(std::move(future));
     }
 
-    folly::collectAll(std::move(futures))
-        .thenValue([] (const auto& tries) mutable {
-            if (std::any_of(tries.begin(), tries.end(), [](auto& t){
-                return t.hasException();
-            })) {
-                LOG(ERROR) << "RebuildJobExecutor::stop() RPC failure.";
-                return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-            }
-            for (const auto& t : tries) {
-                if (!t.value().ok()) {
-                    LOG(ERROR) << "Stop Build Index Failed";
-                    return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-                }
-            }
-            return cpp2::ErrorCode::SUCCEEDED;
-        })
-        .thenError([] (auto &&e) {
-            LOG(ERROR) << "Exception caught: " << e.what();
+    auto tries = folly::collectAll(std::move(futures)).get();
+    if (std::any_of(tries.begin(), tries.end(), [](auto& t){ return t.hasException(); })) {
+        LOG(ERROR) << "RebuildJobExecutor::stop() RPC failure.";
+        return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
+    }
+    for (const auto& t : tries) {
+        if (!t.value().ok()) {
+            LOG(ERROR) << "Stop Build Index Failed";
             return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-        }).wait();
-
+        }
+    }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 

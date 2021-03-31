@@ -19,8 +19,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_version_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
         gtest
 )

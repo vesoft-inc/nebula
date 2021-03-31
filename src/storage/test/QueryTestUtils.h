@@ -311,17 +311,17 @@ public:
             bool returnNoneProps = false) {
         std::hash<std::string> hash;
         cpp2::GetNeighborsRequest req;
-        decltype(req.traverse_spec) traverseSpec;
-        req.space_id = 1;
-        req.column_names.emplace_back(kVid);
+        nebula::storage::cpp2::TraverseSpec traverseSpec;
+        req.set_space_id(1);
+        (*req.column_names_ref()).emplace_back(kVid);
         for (const auto& vertex : vertices) {
             PartitionID partId = (hash(vertex) % totalParts) + 1;
             nebula::Row row;
             row.values.emplace_back(vertex);
-            req.parts[partId].emplace_back(std::move(row));
+            (*req.parts_ref())[partId].emplace_back(std::move(row));
         }
         for (const auto& edge : over) {
-            traverseSpec.edge_types.emplace_back(edge);
+            (*traverseSpec.edge_types_ref()).emplace_back(edge);
         }
 
         std::vector<cpp2::VertexProp> vertexProps;
@@ -331,9 +331,9 @@ public:
             for (const auto& tag : tags) {
                 TagID tagId = tag.first;
                 cpp2::VertexProp tagProp;
-                tagProp.tag = tagId;
+                tagProp.set_tag(tagId);
                 for (const auto& prop : tag.second) {
-                    tagProp.props.emplace_back(std::move(prop));
+                    (*tagProp.props_ref()).emplace_back(std::move(prop));
                 }
                 vertexProps.emplace_back(std::move(tagProp));
             }
@@ -347,9 +347,9 @@ public:
             for (const auto& edge : edges) {
                 EdgeType edgeType = edge.first;
                 cpp2::EdgeProp edgeProp;
-                edgeProp.type = edgeType;
+                edgeProp.set_type(edgeType);
                 for (const auto& prop : edge.second) {
-                    edgeProp.props.emplace_back(std::move(prop));
+                    (*edgeProp.props_ref()).emplace_back(std::move(prop));
                 }
                 edgeProps.emplace_back(std::move(edgeProp));
             }
@@ -398,11 +398,11 @@ public:
     static void checkResponse(const cpp2::LookupIndexResp& resp,
                               const std::vector<std::string>& expectCols,
                               std::vector<Row> expectRows) {
-        EXPECT_EQ(0, resp.result.failed_parts.size());
-        auto columns = resp.get_data()->colNames;
+        EXPECT_EQ(0, (*(*resp.result_ref()).failed_parts_ref()).size());
+        auto columns = (*resp.data_ref()).colNames;
         EXPECT_EQ(expectCols, columns);
-        EXPECT_EQ(expectRows.size(), resp.get_data()->rows.size());
-        auto actualRows = resp.get_data()->rows;
+        EXPECT_EQ(expectRows.size(), (*resp.data_ref()).rows.size());
+        auto actualRows = (*resp.data_ref()).rows;
         struct Descending {
             bool operator()(const Row& r1, const Row& r2) {
                 if (r1.size() != r2.size()) {

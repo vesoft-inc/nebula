@@ -271,7 +271,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         futures.emplace_back(std::move(f));
     }
 
-    folly::collectAll(std::move(futures)).thenTry([p = std::move(pro)] (auto&& t) mutable {
+    folly::collectAll(std::move(futures)).via(ioThreadPool_.get())
+        .thenTry([p = std::move(pro)] (auto&& t) mutable {
         if (t.hasException()) {
             p.setValue(Status::Error("Check failed!"));
         } else {
@@ -544,8 +545,8 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
         hostFutures.emplace_back(std::move(fut));
     }
 
-    folly::collectAll(std::move(hostFutures)).thenValue([p = std::move(promise), result, allHosts]
-            (std::vector<folly::Try<StatusOr<storage::cpp2::GetLeaderPartsResp>>>&& tries) mutable {
+    folly::collectAll(std::move(hostFutures)).via(ioThreadPool_.get())
+            .thenValue([p = std::move(promise), result, allHosts] (auto&& tries) mutable {
         size_t idx = 0;
         for (auto& t : tries) {
             if (t.hasException()) {
@@ -558,7 +559,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
                 continue;
             }
             auto resp = status.value();
-            result->emplace(allHosts[idx], std::move(resp.leader_parts));
+            result->emplace(allHosts[idx], std::move(*resp.leader_parts_ref()));
             ++idx;
         }
 
@@ -662,8 +663,8 @@ AdminClient::addTask(cpp2::AdminCmd cmd,
     folly::Promise<Status> pro;
     std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
     [statisResult] (storage::cpp2::AdminExecResp&& resp) -> void {
-        if (statisResult && resp.__isset.statis) {
-            *statisResult = *(resp.get_statis());
+        if (statisResult && resp.statis_ref().has_value()) {
+            *statisResult = *resp.statis_ref();
         }
     };
 

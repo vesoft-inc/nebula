@@ -123,7 +123,7 @@ void goFilter(int32_t iters,
                     new std::string(folly::to<std::string>(serve)),
                     new std::string("startYear")),
                 new nebula::ConstantExpression(nebula::Value(value)));
-            req.traverse_spec.set_filter(nebula::Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
         } else {
             // where serve.startYear < value && serve.endYear < value
             // since startYear always equal to endYear, the data of which can pass filter is same,
@@ -142,7 +142,7 @@ void goFilter(int32_t iters,
                         new std::string(folly::to<std::string>(serve)),
                         new std::string("endYear")),
                     new nebula::ConstantExpression(nebula::Value(value))));
-            req.traverse_spec.set_filter(nebula::Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
         }
     }
     auto* env = gCluster->storageEnv_.get();

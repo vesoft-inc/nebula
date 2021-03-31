@@ -16,6 +16,7 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"

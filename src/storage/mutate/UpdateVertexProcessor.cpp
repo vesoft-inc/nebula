@@ -33,8 +33,8 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     auto vId = req.get_vertex_id();
     tagId_ = req.get_tag_id();
     updatedProps_ = req.get_updated_props();
-    if (req.__isset.insertable) {
-        insertable_ = *req.get_insertable();
+    if (req.insertable_ref().has_value()) {
+        insertable_ = *req.insertable_ref();
     }
 
     auto retCode = getSpaceVidLen(spaceId_);
@@ -219,8 +219,8 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     }
 
     // Return props
-    if (req.__isset.return_props) {
-        for (auto& prop : *req.get_return_props()) {
+    if (req.return_props_ref().has_value()) {
+        for (auto& prop : *req.return_props_ref()) {
             auto colExp = Expression::decode(prop);
             if (!colExp) {
                 VLOG(1) << "Can't decode the return expression";
@@ -235,8 +235,8 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     }
 
     // Condition
-    if (req.__isset.condition) {
-        const auto& filterStr = *req.get_condition();
+    if (req.condition_ref().has_value()) {
+        const auto& filterStr = *req.condition_ref();
         if (!filterStr.empty()) {
             filterExp_ = Expression::decode(filterStr);
             if (!filterExp_) {

@@ -15,12 +15,12 @@ namespace storage {
 ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
 RebuildIndexTask::genSubTasks() {
     CHECK_NOTNULL(env_->kvstore_);
-    space_ = ctx_.parameters_.space_id;
-    auto parts = ctx_.parameters_.parts;
+    space_ = *ctx_.parameters_.space_id_ref();
+    auto parts = *ctx_.parameters_.parts_ref();
 
     IndexItems items;
-    if (!ctx_.parameters_.__isset.task_specfic_paras
-            || ctx_.parameters_.task_specfic_paras.empty()) {
+    if (!ctx_.parameters_.task_specfic_paras_ref().has_value()
+            || (*ctx_.parameters_.task_specfic_paras_ref()).empty()) {
         auto itemsRet = getIndexes(space_);
         if (!itemsRet.ok()) {
             LOG(ERROR) << "Indexes not found";
@@ -29,7 +29,7 @@ RebuildIndexTask::genSubTasks() {
 
         items = std::move(itemsRet).value();
     } else {
-        for (const auto& index : ctx_.parameters_.task_specfic_paras) {
+        for (const auto& index : *ctx_.parameters_.task_specfic_paras_ref()) {
             auto indexID = folly::to<IndexID>(index);
             auto indexRet = getIndex(space_, indexID);
             if (!indexRet.ok()) {

@@ -98,7 +98,7 @@ struct TossTestUtils {
     }
 
     static std::string hexEdgeId(const cpp2::EdgeKey& ek) {
-        return hexVid(ek.src.getInt()) + hexVid(ek.dst.getInt());
+        return hexVid(ek.get_src().getInt()) + hexVid(ek.get_dst().getInt());
     }
 
     static std::vector<std::string> splitNeiResults(std::vector<std::string>& svec) {
@@ -148,15 +148,17 @@ struct TossTestUtils {
 
     static cpp2::NewEdge toVertexIdEdge(const cpp2::NewEdge& e) {
         cpp2::NewEdge ret(e);
-        ret.key.src = Value(std::string(reinterpret_cast<const char*>(&e.key.src.getInt()), 8));
-        ret.key.dst = Value(std::string(reinterpret_cast<const char*>(&e.key.dst.getInt()), 8));
+        (*ret.key_ref()).set_src(
+                std::string(reinterpret_cast<const char*>(&e.get_key().get_src().getInt()), 8));
+        (*ret.key_ref()).set_dst(
+                std::string(reinterpret_cast<const char*>(&e.get_key().get_dst().getInt()), 8));
         return ret;
     }
 
     static cpp2::EdgeKey toVidKey(const cpp2::EdgeKey& input) {
         cpp2::EdgeKey ret(input);
-        ret.src = Value(std::string(reinterpret_cast<const char*>(&input.src.getInt()), 8));
-        ret.dst = Value(std::string(reinterpret_cast<const char*>(&input.dst.getInt()), 8));
+        ret.set_src(std::string(reinterpret_cast<const char*>(&input.get_src().getInt()), 8));
+        ret.set_dst(std::string(reinterpret_cast<const char*>(&input.get_dst().getInt()), 8));
         return ret;
     }
 };  // end TossTestUtils

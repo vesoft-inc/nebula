@@ -30,7 +30,7 @@ TEST(HBProcessorTest, HBTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
         auto hosts = ActiveHostsMan::getActiveHosts(kv.get(), 1);
         ASSERT_EQ(5, hosts.size());
@@ -46,7 +46,7 @@ TEST(HBProcessorTest, HBTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_WRONGCLUSTER, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_WRONGCLUSTER, resp.get_code());
     }
 }
 

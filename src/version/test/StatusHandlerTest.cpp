@@ -41,7 +41,7 @@ protected:
 
 TEST(StatusHandlerTest, SimpleTest) {
     std::string gitInfoShaValue = gitInfoSha();
-    std::string pattern = R"([a-f0-9]{7})";
+    std::string pattern = R"([a-f0-9]{7,})";
     std::regex gitInfoShaRegex(pattern);
     {
         auto url = "/status";

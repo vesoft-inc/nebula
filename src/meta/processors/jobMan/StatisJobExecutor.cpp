@@ -48,7 +48,7 @@ cpp2::ErrorCode StatisJobExecutor::prepare() {
 
     // Set the status of the statis job to running
     cpp2::StatisItem statisItem;
-    statisItem.status = cpp2::JobStatus::RUNNING;
+    statisItem.set_status(cpp2::JobStatus::RUNNING);
     auto statisKey = MetaServiceUtils::statisKey(space_);
     auto statisVal = MetaServiceUtils::statisVal(statisItem);
     save(statisKey, statisVal);
@@ -68,41 +68,41 @@ void showStatisItem(const cpp2::StatisItem& item, const std::string& msg) {
     std::stringstream oss;
     oss << msg << ": ";
     oss << "tag_vertices: ";
-    for (auto& it : item.tag_vertices) {
+    for (auto& it : *item.tag_vertices_ref()) {
         oss << folly::sformat("[{}, {}] ", it.first, it.second);
     }
     oss << ", edges: ";
-    for (auto& it : item.edges) {
+    for (auto& it : *item.edges_ref()) {
         oss << folly::sformat("[{}, {}] ", it.first, it.second);
     }
-    oss << folly::sformat(", space_vertices={}", item.space_vertices);
-    oss << folly::sformat(", space_edges={}", item.space_edges);
+    oss << folly::sformat(", space_vertices={}", *item.space_vertices_ref());
+    oss << folly::sformat(", space_edges={}", *item.space_edges_ref());
     LOG(INFO) << oss.str();
 }
 
 void StatisJobExecutor::addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem& rhs) {
-    for (auto& it : rhs.tag_vertices) {
-        lhs.tag_vertices[it.first] += it.second;
+    for (auto& it : *rhs.tag_vertices_ref()) {
+        (*lhs.tag_vertices_ref())[it.first] += it.second;
     }
 
-    for (auto& it : rhs.edges) {
-        lhs.edges[it.first] += it.second;
+    for (auto& it : *rhs.edges_ref()) {
+        (*lhs.edges_ref())[it.first] += it.second;
     }
 
-    lhs.space_vertices += rhs.space_vertices;
-    lhs.space_edges += rhs.space_edges;
+    *lhs.space_vertices_ref() += *rhs.space_vertices_ref();
+    *lhs.space_edges_ref() += *rhs.space_edges_ref();
 
-    lhs.positive_part_correlativity.insert(rhs.positive_part_correlativity.begin(),
-                                           rhs.positive_part_correlativity.end());
-    lhs.negative_part_correlativity.insert(rhs.negative_part_correlativity.begin(),
-                                           rhs.negative_part_correlativity.end());
+    (*lhs.positive_part_correlativity_ref()).insert((*rhs.positive_part_correlativity_ref()).begin(),   // NOLINT
+                                           (*rhs.positive_part_correlativity_ref()).end());
+    (*lhs.negative_part_correlativity_ref()).insert((*rhs.negative_part_correlativity_ref()).begin(),   // NOLINT
+                                           (*rhs.negative_part_correlativity_ref()).end());
 }
 
 /**
  * @brief caller will guarantee there won't be any conflict read / write.
  */
 cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) {
-    if (!req.__isset.statis) {
+    if (!req.statis_ref().has_value()) {
         return cpp2::ErrorCode::SUCCEEDED;
     }
     cpp2::StatisItem statisItem;
@@ -116,7 +116,7 @@ cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskR
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         statisItem = MetaServiceUtils::parseStatisVal(val);
     }
-    addStatis(statisItem, *req.get_statis());
+    addStatis(statisItem, *req.statis_ref());
     auto statisVal = MetaServiceUtils::statisVal(statisItem);
     save(tempKey, statisVal);
     return cpp2::ErrorCode::SUCCEEDED;
@@ -146,9 +146,9 @@ void StatisJobExecutor::finish(bool exeSuccessed) {
     }
     auto statisItem = MetaServiceUtils::parseStatisVal(val);
     if (exeSuccessed) {
-        statisItem.status = cpp2::JobStatus::FINISHED;
+        statisItem.set_status(cpp2::JobStatus::FINISHED);
     } else {
-        statisItem.status = cpp2::JobStatus::FAILED;
+        statisItem.set_status(cpp2::JobStatus::FAILED);
     }
     auto statisVal = MetaServiceUtils::statisVal(statisItem);
     save(statisKey, statisVal);
@@ -170,29 +170,20 @@ cpp2::ErrorCode StatisJobExecutor::stop() {
         futures.emplace_back(std::move(future));
     }
 
-    folly::collectAll(std::move(futures))
-        .thenValue([](const auto& tries) mutable {
-            if (std::any_of(tries.begin(), tries.end(), [](auto& t) {
+    auto tries = folly::collectAll(std::move(futures)).get();
+    if (std::any_of(tries.begin(), tries.end(), [](auto& t) {
                 return t.hasException();
-            })) {
-                LOG(ERROR) << "statis job stop() RPC failure.";
-                return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-            }
+                })) {
+        LOG(ERROR) << "statis job stop() RPC failure.";
+        return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
+    }
 
-            for (const auto& t : tries) {
-                if (!t.value().ok()) {
-                    LOG(ERROR) << "Stop statis job Failed";
-                    return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-                }
-            }
-            return cpp2::ErrorCode::SUCCEEDED;
-        })
-        .thenError([](auto&& e) {
-            LOG(ERROR) << "Exception caught: " << e.what();
+    for (const auto& t : tries) {
+        if (!t.value().ok()) {
+            LOG(ERROR) << "Stop statis job Failed";
             return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
-        })
-        .wait();
-
+        }
+    }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 

@@ -62,10 +62,10 @@ struct JobCallBack {
         req.set_task_id(taskId_);
 
         cpp2::StatisItem item;
-        item.tag_vertices = {{"t1", n_}, {"t2", n_}};
-        item.edges = {{"e1", n_}, {"e2", n_}};
-        item.space_vertices = 2 * n_;
-        item.space_edges = 2 * n_;
+        item.set_tag_vertices({{"t1", n_}, {"t2", n_}});
+        item.set_edges({{"e1", n_}, {"e2", n_}});
+        item.set_space_vertices(2 * n_);
+        item.set_space_edges(2 * n_);
         req.set_statis(item);
         jobMgr_->reportTaskFinish(req);
         return folly::Future<Status>(Status::OK());
@@ -130,7 +130,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         // Directly find statis data in kvstore, statis data does not exist.
         auto key = MetaServiceUtils::statisKey(spaceId);
@@ -171,17 +171,17 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(INFO) << "resp.code=" << static_cast<int>(resp.code);
+        if (resp.get_code() != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(INFO) << "resp.code=" << static_cast<int>(resp.get_code());
         }
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(0, statisItem.tag_vertices.size());
-        ASSERT_EQ(0, statisItem.edges.size());
-        ASSERT_EQ(0, statisItem.space_vertices);
-        ASSERT_EQ(0, statisItem.space_edges);
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(0, statisItem.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem.get_edges().size());
+        ASSERT_EQ(0, statisItem.get_space_vertices());
+        ASSERT_EQ(0, statisItem.get_space_edges());
 
         // Directly find statis data in kvstore, statis data exists.
         auto key = MetaServiceUtils::statisKey(spaceId);
@@ -190,11 +190,11 @@ TEST_F(GetStatisTest, StatisJob) {
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.status);
-        ASSERT_EQ(0, statisItem1.tag_vertices.size());
-        ASSERT_EQ(0, statisItem1.edges.size());
-        ASSERT_EQ(0, statisItem1.space_vertices);
-        ASSERT_EQ(0, statisItem1.space_edges);
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
+        ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem1.get_edges().size());
+        ASSERT_EQ(0, statisItem1.get_space_vertices());
+        ASSERT_EQ(0, statisItem1.get_space_edges());
     }
 
     // Execute new statis job in same space.
@@ -217,14 +217,14 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(0, statisItem.tag_vertices.size());
-        ASSERT_EQ(0, statisItem.edges.size());
-        ASSERT_EQ(0, statisItem.space_vertices);
-        ASSERT_EQ(0, statisItem.space_edges);
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(0, statisItem.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem.get_edges().size());
+        ASSERT_EQ(0, statisItem.get_space_vertices());
+        ASSERT_EQ(0, statisItem.get_space_edges());
 
         // Directly find statis data in kvstore, statis data exists.
         auto key = MetaServiceUtils::statisKey(spaceId);
@@ -233,11 +233,11 @@ TEST_F(GetStatisTest, StatisJob) {
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.status);
-        ASSERT_EQ(0, statisItem1.tag_vertices.size());
-        ASSERT_EQ(0, statisItem1.edges.size());
-        ASSERT_EQ(0, statisItem1.space_vertices);
-        ASSERT_EQ(0, statisItem1.space_edges);
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
+        ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem1.get_edges().size());
+        ASSERT_EQ(0, statisItem1.get_space_vertices());
+        ASSERT_EQ(0, statisItem1.get_space_edges());
 
         auto res = job1->setStatus(cpp2::JobStatus::RUNNING);
         ASSERT_TRUE(res);
@@ -269,7 +269,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
 
     // Run statis job.
@@ -302,14 +302,14 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(0, statisItem.tag_vertices.size());
-        ASSERT_EQ(0, statisItem.edges.size());
-        ASSERT_EQ(0, statisItem.space_vertices);
-        ASSERT_EQ(0, statisItem.space_edges);
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(0, statisItem.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem.get_edges().size());
+        ASSERT_EQ(0, statisItem.get_space_vertices());
+        ASSERT_EQ(0, statisItem.get_space_edges());
 
         // Directly find statis data in kvstore, statis data exists.
         auto key = MetaServiceUtils::statisKey(spaceId);
@@ -318,11 +318,11 @@ TEST_F(GetStatisTest, StatisJob) {
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.status);
-        ASSERT_EQ(0, statisItem1.tag_vertices.size());
-        ASSERT_EQ(0, statisItem1.edges.size());
-        ASSERT_EQ(0, statisItem1.space_vertices);
-        ASSERT_EQ(0, statisItem1.space_edges);
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
+        ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
+        ASSERT_EQ(0, statisItem1.get_edges().size());
+        ASSERT_EQ(0, statisItem1.get_space_vertices());
+        ASSERT_EQ(0, statisItem1.get_space_edges());
     }
 }
 
@@ -373,24 +373,24 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(2, statisItem.tag_vertices.size());
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(2, statisItem.get_tag_vertices().size());
         int64_t tagCount = 0;
-        for (const auto& entry : statisItem.tag_vertices) {
+        for (const auto& entry : statisItem.get_tag_vertices()) {
             tagCount += entry.second;
         }
         ASSERT_EQ(200, tagCount);
-        ASSERT_EQ(2, statisItem.edges.size());
+        ASSERT_EQ(2, statisItem.get_edges().size());
         int64_t edgeCount = 0;
-        for (const auto& entry : statisItem.edges) {
+        for (const auto& entry : statisItem.get_edges()) {
             edgeCount += entry.second;
         }
         ASSERT_EQ(200, edgeCount);
-        ASSERT_EQ(200, statisItem.space_vertices);
-        ASSERT_EQ(200, statisItem.space_edges);
+        ASSERT_EQ(200, statisItem.get_space_vertices());
+        ASSERT_EQ(200, statisItem.get_space_edges());
     }
 
     // add statis job2 of same space
@@ -412,24 +412,24 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(2, statisItem.tag_vertices.size());
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(2, statisItem.get_tag_vertices().size());
         int64_t tagCount = 0;
-        for (const auto& entry : statisItem.tag_vertices) {
+        for (const auto& entry : statisItem.get_tag_vertices()) {
             tagCount += entry.second;
         }
         ASSERT_EQ(400, tagCount);
-        ASSERT_EQ(2, statisItem.edges.size());
+        ASSERT_EQ(2, statisItem.get_edges().size());
         int64_t edgeCount = 0;
-        for (const auto& entry : statisItem.edges) {
+        for (const auto& entry : statisItem.get_edges()) {
             edgeCount += entry.second;
         }
         ASSERT_EQ(400, edgeCount);
-        ASSERT_EQ(400, statisItem.space_vertices);
-        ASSERT_EQ(400, statisItem.space_edges);
+        ASSERT_EQ(400, statisItem.get_space_vertices());
+        ASSERT_EQ(400, statisItem.get_space_edges());
     }
 }
 
@@ -486,24 +486,24 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        auto statisItem = resp.statis;
-        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.status);
-        ASSERT_EQ(2, statisItem.tag_vertices.size());
+        auto statisItem = resp.get_statis();
+        ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
+        ASSERT_EQ(2, statisItem.get_tag_vertices().size());
         int64_t tagCount = 0;
-        for (const auto& entry : statisItem.tag_vertices) {
+        for (const auto& entry : statisItem.get_tag_vertices()) {
             tagCount += entry.second;
         }
         ASSERT_EQ((100 + 200 + 300) * 2, tagCount);
-        ASSERT_EQ(2, statisItem.edges.size());
+        ASSERT_EQ(2, statisItem.get_edges().size());
         int64_t edgeCount = 0;
-        for (const auto& entry : statisItem.edges) {
+        for (const auto& entry : statisItem.get_edges()) {
             edgeCount += entry.second;
         }
         ASSERT_EQ((100 + 200 + 300) * 2, edgeCount);
-        ASSERT_EQ((100 + 200 + 300) * 2, statisItem.space_vertices);
-        ASSERT_EQ((100 + 200 + 300) * 2, statisItem.space_edges);
+        ASSERT_EQ((100 + 200 + 300) * 2, statisItem.get_space_vertices());
+        ASSERT_EQ((100 + 200 + 300) * 2, statisItem.get_space_edges());
     }
 }
 

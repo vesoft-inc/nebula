@@ -1020,8 +1020,8 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
 
 nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesReq(bool upper, int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
 
     auto retRecs = mockVertices(upper);
 
@@ -1036,62 +1036,62 @@ nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesReq(bool uppe
         std::vector<nebula::storage::cpp2::NewTag> newTags;
         newTags.push_back(std::move(newTag));
 
-        newVertex.id = rec.vId_;
+        newVertex.set_id(rec.vId_);
         newVertex.set_tags(std::move(newTags));
-        req.parts[partId].emplace_back(std::move(newVertex));
+        (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     return req;
 }
 
 nebula::storage::cpp2::DeleteVerticesRequest MockData::mockDeleteVerticesReq(int32_t parts) {
     nebula::storage::cpp2::DeleteVerticesRequest req;
-    req.space_id = 1;
+    req.set_space_id(1);
 
     auto retRecs = mockVerticeIds();
     for (auto& rec : retRecs) {
         auto partId = std::hash<std::string>()(rec) % parts + 1;
-        req.parts[partId].emplace_back(std::move(rec));
+        (*req.parts_ref())[partId].emplace_back(std::move(rec));
     }
     return req;
 }
 
 nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(bool upper, int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
     auto retRecs = mockEdges(upper);
     for (auto& rec : retRecs) {
         nebula::storage::cpp2::NewEdge newEdge;
         nebula::storage::cpp2::EdgeKey edgeKey;
         auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
 
-        edgeKey.src = rec.srcId_;
-        edgeKey.edge_type = rec.type_;
-        edgeKey.ranking = rec.rank_;
-        edgeKey.dst = rec.dstId_;
+        edgeKey.set_src(rec.srcId_);
+        edgeKey.set_edge_type(rec.type_);
+        edgeKey.set_ranking(rec.rank_);
+        edgeKey.set_dst(rec.dstId_);
 
         newEdge.set_key(std::move(edgeKey));
         newEdge.set_props(std::move(rec.props_));
 
-        req.parts[partId].emplace_back(std::move(newEdge));
+        (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
     }
     return req;
 }
 
 nebula::storage::cpp2::DeleteEdgesRequest MockData::mockDeleteEdgesReq(int32_t parts) {
     nebula::storage::cpp2::DeleteEdgesRequest req;
-    req.space_id = 1;
+    req.set_space_id(1);
 
     auto retRecs = mockEdgeKeys();
     for (auto& rec : retRecs) {
         auto partId = std::hash<std::string>()(rec.srcId_) % parts + 1;
 
         nebula::storage::cpp2::EdgeKey edgeKey;
-        edgeKey.src = rec.srcId_;
-        edgeKey.edge_type = rec.type_;
-        edgeKey.ranking = rec.rank_;
-        edgeKey.dst = rec.dstId_;
-        req.parts[partId].emplace_back(std::move(edgeKey));
+        edgeKey.set_src(rec.srcId_);
+        edgeKey.set_edge_type(rec.type_);
+        edgeKey.set_ranking(rec.rank_);
+        edgeKey.set_dst(rec.dstId_);
+        (*req.parts_ref())[partId].emplace_back(std::move(edgeKey));
     }
     return req;
 }
@@ -1168,8 +1168,8 @@ std::vector<EdgeData> MockData::mockEdgesSpecifiedOrder() {
 nebula::storage::cpp2::AddVerticesRequest
 MockData::mockAddVerticesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
     auto retRecs = mockVerticesSpecifiedOrder();
 
     for (auto& rec : retRecs) {
@@ -1179,10 +1179,10 @@ MockData::mockAddVerticesSpecifiedOrderReq(int32_t parts) {
             std::vector<std::string> colNames{"serveTeams", "avgScore", "games", "endYear",
                                               "startYear",  "career", "playing", "age",
                                               "name"};
-            req.prop_names[1] = std::move(colNames);
+            (*req.prop_names_ref())[1] = std::move(colNames);
         } else {
             std::vector<std::string> colNames{"name"};
-            req.prop_names[2] = std::move(colNames);
+            (*req.prop_names_ref())[2] = std::move(colNames);
         }
 
         nebula::storage::cpp2::NewVertex newVertex;
@@ -1193,9 +1193,9 @@ MockData::mockAddVerticesSpecifiedOrderReq(int32_t parts) {
         std::vector<nebula::storage::cpp2::NewTag> newTags;
         newTags.push_back(std::move(newTag));
 
-        newVertex.id = rec.vId_;
+        newVertex.set_id(rec.vId_);
         newVertex.set_tags(std::move(newTags));
-        req.parts[partId].emplace_back(std::move(newVertex));
+        (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     return req;
 }
@@ -1204,8 +1204,8 @@ nebula::storage::cpp2::AddEdgesRequest
 MockData::mockAddEdgesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     // Use space id is 1 when mock
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
 
     auto retRecs = mockEdgesSpecifiedOrder();
 
@@ -1214,14 +1214,14 @@ MockData::mockAddEdgesSpecifiedOrderReq(int32_t parts) {
 
         nebula::storage::cpp2::NewEdge newEdge;
         nebula::storage::cpp2::EdgeKey edgeKey;
-        edgeKey.src = rec.srcId_;
-        edgeKey.edge_type = rec.type_;
-        edgeKey.ranking = rec.rank_;
-        edgeKey.dst = rec.dstId_;
+        edgeKey.set_src(rec.srcId_);
+        edgeKey.set_edge_type(rec.type_);
+        edgeKey.set_ranking(rec.rank_);
+        edgeKey.set_dst(rec.dstId_);
 
         newEdge.set_key(std::move(edgeKey));
         newEdge.set_props(std::move(rec.props_));
-        req.parts[partId].emplace_back(std::move(newEdge));
+        (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
 
         std::vector<std::string> colNames{"teamAvgScore", "teamGames", "teamCareer",
                                           "endYear", "startYear", "teamName", "playerName"};

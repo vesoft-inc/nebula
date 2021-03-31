@@ -22,8 +22,8 @@ namespace storage {
 void checkResult(StorageRpcResponse<storage::cpp2::KVGetResponse>& resp, size_t expectCount) {
     size_t count = 0;
     for (const auto& result : resp.responses()) {
-        count += result.key_values.size();
-        for (const auto& pair : result.key_values) {
+        count += (*result.key_values_ref()).size();
+        for (const auto& pair : *result.key_values_ref()) {
             EXPECT_EQ(pair.first, pair.second);
         }
     }

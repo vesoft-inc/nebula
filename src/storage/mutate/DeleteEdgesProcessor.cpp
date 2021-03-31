@@ -54,20 +54,23 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
             for (auto& edgeKey : part.second) {
                 if (!NebulaKeyUtils::isValidVidLen(
-                        spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                        spaceVidLen_,
+                        (*edgeKey.src_ref()).getStr(),
+                        (*edgeKey.dst_ref()).getStr())) {
                     LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                                << "space vid len: " << spaceVidLen_
-                               << ", edge srcVid: " << edgeKey.src << " dstVid: " << edgeKey.dst;
+                               << ", edge srcVid: " << *edgeKey.src_ref()
+                               << " dstVid: " << *edgeKey.dst_ref();
                     code = cpp2::ErrorCode::E_INVALID_VID;
                     break;
                 }
                 // todo(doodle): delete lock in toss
                 auto edge = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                     partId,
-                                                    edgeKey.src.getStr(),
-                                                    edgeKey.edge_type,
-                                                    edgeKey.ranking,
-                                                    edgeKey.dst.getStr());
+                                                    (*edgeKey.src_ref()).getStr(),
+                                                    *edgeKey.edge_type_ref(),
+                                                    *edgeKey.ranking_ref(),
+                                                    (*edgeKey.dst_ref()).getStr());
                 keys.emplace_back(edge.data(), edge.size());
             }
             if (code != cpp2::ErrorCode::SUCCEEDED) {
@@ -86,10 +89,10 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             for (const auto& edgeKey : part.second) {
                 dummyLock.emplace_back(std::make_tuple(spaceId_,
                                                        partId,
-                                                       edgeKey.src.getStr(),
-                                                       edgeKey.edge_type,
-                                                       edgeKey.ranking,
-                                                       edgeKey.dst.getStr()));
+                                                       (*edgeKey.src_ref()).getStr(),
+                                                       *edgeKey.edge_type_ref(),
+                                                       *edgeKey.ranking_ref(),
+                                                       (*edgeKey.dst_ref()).getStr()));
             }
             auto batch = deleteEdges(partId, std::move(part.second));
             if (!nebula::ok(batch)) {
@@ -126,10 +129,10 @@ ErrorOr<kvstore::ResultCode, std::string>
 DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::EdgeKey>& edges) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
-        auto type = edge.edge_type;
-        auto srcId = edge.src.getStr();
-        auto rank = edge.ranking;
-        auto dstId = edge.dst.getStr();
+        auto type = *edge.edge_type_ref();
+        auto srcId = (*edge.src_ref()).getStr();
+        auto rank = *edge.ranking_ref();
+        auto dstId = (*edge.dst_ref()).getStr();
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, srcId, type, rank, dstId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);

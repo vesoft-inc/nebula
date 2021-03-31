@@ -262,8 +262,8 @@ void setUp(storage::StorageEnv* ev) {
 
 cpp2::AddVerticesRequest buildAddVertexReq() {
     cpp2::AddVerticesRequest req;
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
 
     vertexId = "Tony Parker";
 
@@ -289,9 +289,9 @@ cpp2::AddVerticesRequest buildAddVertexReq() {
     std::vector<nebula::storage::cpp2::NewTag> newTags;
     newTags.push_back(std::move(newTag));
 
-    newVertex.id = vertexId;
+    newVertex.set_id(vertexId);
     newVertex.set_tags(std::move(newTags));
-    req.parts[partId].emplace_back(std::move(newVertex));
+    (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     return req;
 }
 
@@ -299,15 +299,15 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
     cpp2::AddEdgesRequest req;
     srcId = "Tony Parker";
     dstId = "Spurs";
-    req.space_id = 1;
-    req.overwritable = true;
+    req.set_space_id(1);
+    req.set_overwritable(true);
 
     nebula::storage::cpp2::NewEdge newEdge;
     partId = std::hash<std::string>()(srcId) % parts + 1;
-    edgeKey.src = srcId;
-    edgeKey.edge_type = 101;
-    edgeKey.ranking = 0;
-    edgeKey.dst = dstId;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
 
     std::vector<Value> props;
     props.emplace_back(srcId);
@@ -322,7 +322,7 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
     newEdge.set_key(std::move(edgeKey));
     newEdge.set_props(std::move(props));
 
-    req.parts[partId].emplace_back(std::move(newEdge));
+    (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
     return req;
 }
 
@@ -359,7 +359,7 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
 
     // Build yield
     // Return player props: name, age, country
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yTag1 = new std::string("1");
     auto* yProp1 = new std::string("name");
     SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -421,7 +421,7 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
     req.set_updated_props(std::move(updatedProps));
 
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);

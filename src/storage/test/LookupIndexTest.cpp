@@ -21,6 +21,11 @@
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 
+using nebula::storage::cpp2::NewVertex;
+using nebula::cpp2::PartitionID;
+using nebula::cpp2::TagID;
+using nebula::storage::cpp2::IndexColumnHint;
+
 namespace nebula {
 namespace storage {
 
@@ -115,15 +120,15 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
     **/
     {
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(1);
         indices.set_tag_or_edge_id(3);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back("col_bool");
         returnCols.emplace_back("col_int");
@@ -132,7 +137,7 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
         columnHint.set_begin_value(Value(true));
         columnHint.set_column_name("col_bool");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -209,16 +214,16 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
@@ -228,7 +233,7 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         columnHint.set_begin_value(Value(name));
         columnHint.set_column_name("name");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -281,16 +286,16 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
@@ -307,9 +312,9 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
         columnHint2.set_begin_value(Value(name2));
         columnHint2.set_column_name("name");
         columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints1;
+        std::vector<IndexColumnHint> columnHints1;
         columnHints1.emplace_back(std::move(columnHint1));
-        decltype(indices.contexts[0].column_hints) columnHints2;
+        std::vector<IndexColumnHint> columnHints2;
         columnHints2.emplace_back(std::move(columnHint2));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints1));
@@ -387,18 +392,18 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -409,7 +414,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         columnHint.set_begin_value(Value(tony));
         columnHint.set_column_name("player1");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -475,11 +480,11 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
@@ -488,7 +493,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         std::string manu = "Manu Ginobili";
         std::string yao = "Yao Ming";
         std::string tracy = "Tracy McGrady";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -505,9 +510,9 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
         columnHint2.set_begin_value(Value(yao));
         columnHint2.set_column_name("player1");
         columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints1;
+        std::vector<IndexColumnHint> columnHints1;
         columnHints1.emplace_back(std::move(columnHint1));
-        decltype(indices.contexts[0].column_hints) columnHints2;
+        std::vector<IndexColumnHint> columnHints2;
         columnHints2.emplace_back(std::move(columnHint2));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints1));
@@ -610,16 +615,16 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
@@ -629,7 +634,7 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         columnHint.set_begin_value(Value(name));
         columnHint.set_column_name("name");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -692,16 +697,16 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
@@ -711,7 +716,7 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         columnHint.set_begin_value(Value(name));
         columnHint.set_column_name("name");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -780,18 +785,18 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -802,7 +807,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         columnHint.set_begin_value(Value(tony));
         columnHint.set_column_name("player1");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -879,18 +884,18 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -901,7 +906,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         columnHint.set_begin_value(Value(tony));
         columnHint.set_column_name("player1");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -970,16 +975,16 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("games");
@@ -989,7 +994,7 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
         columnHint.set_begin_value(Value(name));
         columnHint.set_column_name("name");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -1060,18 +1065,18 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -1082,7 +1087,7 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
         columnHint.set_begin_value(Value(tony));
         columnHint.set_column_name("player1");
         columnHint.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints;
+        std::vector<IndexColumnHint> columnHints;
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
@@ -1161,11 +1166,11 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
@@ -1236,11 +1241,11 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
@@ -1313,11 +1318,11 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(101);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
@@ -1398,11 +1403,11 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(101);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
@@ -1492,7 +1497,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
         req.set_overwritable(true);
-        decltype(req.prop_names) propNames;
+        std::unordered_map<TagID, std::vector<std::string>> propNames;
         propNames[tagId] = {"col1", "col2", "col3", "col4"};
         req.set_prop_names(std::move(propNames));
         {
@@ -1511,7 +1516,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // string null
@@ -1529,7 +1534,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // int null
@@ -1547,7 +1552,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // half_null
@@ -1565,7 +1570,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // half_null
@@ -1583,7 +1588,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // all null
@@ -1601,7 +1606,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
 
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -1988,7 +1993,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
         req.set_overwritable(true);
-        decltype(req.prop_names) propNames;
+        std::unordered_map<TagID, std::vector<std::string>> propNames;
         propNames[tagId] = {"col_bool", "col_int", "col_double", "col_str"};
         req.set_prop_names(std::move(propNames));
         {
@@ -2007,7 +2012,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // bool null
@@ -2025,7 +2030,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // int null
@@ -2043,7 +2048,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // double null
@@ -2061,7 +2066,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // string null
@@ -2079,7 +2084,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         {
             // all null
@@ -2097,7 +2102,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(genVid(vId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
 
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -2792,16 +2797,16 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(1);
         indices.set_is_edge(false);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kVid);
         returnCols.emplace_back(kTag);
         returnCols.emplace_back("age");
@@ -2818,9 +2823,9 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
         columnHint2.set_begin_value(Value(name2));
         columnHint2.set_column_name("name");
         columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints1;
+        std::vector<IndexColumnHint> columnHints1;
         columnHints1.emplace_back(std::move(columnHint1));
-        decltype(indices.contexts[0].column_hints) columnHints2;
+        std::vector<IndexColumnHint> columnHints2;
         columnHints2.emplace_back(std::move(columnHint2));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints1));
@@ -2893,18 +2898,18 @@ TEST(LookupIndexTest, DedupEdgeIndexTest) {
     {
         auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
         cpp2::LookupIndexRequest req;
-        decltype(req.indices) indices;
+        nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
         indices.set_tag_or_edge_id(102);
         indices.set_is_edge(true);
-        decltype(req.parts) parts;
+        std::vector<PartitionID> parts;
         for (int32_t p = 1; p <= totalParts; p++) {
             parts.emplace_back(p);
         }
         req.set_parts(std::move(parts));
         std::string tony = "Tony Parker";
         std::string manu = "Manu Ginobili";
-        decltype(req.return_columns) returnCols;
+        std::vector<std::string> returnCols;
         returnCols.emplace_back(kSrc);
         returnCols.emplace_back(kType);
         returnCols.emplace_back(kRank);
@@ -2920,9 +2925,9 @@ TEST(LookupIndexTest, DedupEdgeIndexTest) {
         columnHint2.set_begin_value(Value(tony));
         columnHint2.set_column_name("player1");
         columnHint2.set_scan_type(cpp2::ScanType::PREFIX);
-        decltype(indices.contexts[0].column_hints) columnHints1;
+        std::vector<IndexColumnHint> columnHints1;
         columnHints1.emplace_back(std::move(columnHint1));
-        decltype(indices.contexts[0].column_hints) columnHints2;
+        std::vector<IndexColumnHint> columnHints2;
         columnHints2.emplace_back(std::move(columnHint2));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints1));

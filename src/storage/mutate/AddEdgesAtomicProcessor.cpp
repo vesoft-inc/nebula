@@ -45,10 +45,11 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
     std::unordered_map<ChainId, std::vector<KV>> edgesByChain;
     std::unordered_map<PartitionID, cpp2::ErrorCode> failedPart;
     // split req into chains
-    for (auto& part : req.parts) {
+    for (auto& part : *req.parts_ref()) {
         auto localPart = part.first;
         for (auto& edge : part.second) {
-            auto stPartId = env_->metaClient_->partId(spaceId_, edge.key.dst.getStr());
+            auto stPartId = env_->metaClient_->partId(spaceId_,
+                    (*(*edge.key_ref()).dst_ref()).getStr());
             if (!stPartId.ok()) {
                 failedPart[localPart] = cpp2::ErrorCode::E_SPACE_NOT_FOUND;
                 break;
@@ -56,9 +57,9 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
             auto remotePart = stPartId.value();
             ChainId cid{localPart, remotePart};
             if (FLAGS_trace_toss) {
-                auto& ekey = edge.key;
-                LOG(INFO) << "ekey.src.hex=" << folly::hexlify(ekey.src.toString())
-                          << ", ekey.dst.hex=" << folly::hexlify(ekey.dst.toString());
+                auto& ekey = *edge.key_ref();
+                LOG(INFO) << "ekey.src.hex=" << folly::hexlify((*ekey.src_ref()).toString())
+                          << ", ekey.dst.hex=" << folly::hexlify((*ekey.dst_ref()).toString());
             }
             auto key = TransactionUtils::edgeKey(vIdLen_, localPart, edge.get_key());
             std::string val;
@@ -82,7 +83,7 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
     CHECK_NOTNULL(env_->indexMan_);
     auto stIndex = env_->indexMan_->getEdgeIndexes(spaceId_);
     if (!stIndex.ok()) {
-         for (auto& part : req.parts)  {
+         for (auto& part : *req.parts_ref())  {
             pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
         }
         onFinished();
@@ -121,7 +122,7 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
                     }
                 }));
     }
-    folly::collectAll(futures).thenValue([=](auto&&){
+    folly::collectAll(futures).via(env_->txnMan_->getExecutor()).thenValue([=](auto&&){
         onFinished();
     });
 }

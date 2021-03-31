@@ -5,6 +5,8 @@
  */
 
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/base/Base.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Map.h"
@@ -30,7 +32,7 @@ Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key,
     auto info = HostInfo::decodeV1(val);
     auto newVal = HostInfo::encodeV2(info);
     auto newKey = MetaServiceUtils::hostKeyV2(
-            network::NetworkUtils::intToIPv4(host.ip), host.port);
+            network::NetworkUtils::intToIPv4(host.get_ip()), host.get_port());
     NG_LOG_AND_RETURN_IF_ERROR(put(newKey, newVal));
     NG_LOG_AND_RETURN_IF_ERROR(remove(key));
     return Status::OK();
@@ -40,7 +42,7 @@ Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
     auto host = oldmeta::MetaServiceUtilsV1::parseLeaderKey(key);
     auto newKey = MetaServiceUtils::leaderKey(
-            network::NetworkUtils::intToIPv4(host.ip), host.port);
+            network::NetworkUtils::intToIPv4(host.get_ip()), host.get_port());
     NG_LOG_AND_RETURN_IF_ERROR(put(newKey, val));
     NG_LOG_AND_RETURN_IF_ERROR(remove(key));
     return Status::OK();
@@ -55,8 +57,8 @@ Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
     spaceDesc.set_replica_factor(oldProps.get_replica_factor());
     spaceDesc.set_charset_name(oldProps.get_charset_name());
     spaceDesc.set_collate_name(oldProps.get_collate_name());
-    spaceDesc.vid_type.set_type_length(8);
-    spaceDesc.vid_type.set_type(cpp2::PropertyType::INT64);
+    (*spaceDesc.vid_type_ref()).set_type_length(8);
+    (*spaceDesc.vid_type_ref()).set_type(cpp2::PropertyType::INT64);
     NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaServiceUtils::spaceVal(spaceDesc)));
     return Status::OK();
 }
@@ -67,8 +69,8 @@ Status MetaDataUpgrade::rewriteParts(const folly::StringPiece &key,
     std::vector<HostAddr> newHosts;
     for (auto &host : oldHosts) {
         HostAddr hostAddr;
-        hostAddr.host = network::NetworkUtils::intToIPv4(host.ip);
-        hostAddr.port = host.port;
+        hostAddr.host = network::NetworkUtils::intToIPv4(host.get_ip());
+        hostAddr.port = host.get_port();
         newHosts.emplace_back(std::move(hostAddr));
     }
     NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaServiceUtils::partVal(newHosts)));
@@ -81,14 +83,15 @@ Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
     cpp2::Schema newSchema;
     cpp2::SchemaProp newSchemaProps;
     auto &schemaProp = oldSchema.get_schema_prop();
-    if (schemaProp.__isset.ttl_duration) {
+    if (schemaProp.ttl_duration_ref().has_value()) {
         newSchemaProps.set_ttl_duration(*schemaProp.get_ttl_duration());
     }
-    if (schemaProp.__isset.ttl_col) {
+    if (schemaProp.ttl_col_ref().has_value()) {
         newSchemaProps.set_ttl_col(*schemaProp.get_ttl_col());
     }
     newSchema.set_schema_prop(std::move(newSchemaProps));
-    NG_LOG_AND_RETURN_IF_ERROR(convertToNewColumns(oldSchema.columns, newSchema.columns));
+    NG_LOG_AND_RETURN_IF_ERROR(convertToNewColumns((*oldSchema.columns_ref()),
+                (*newSchema.columns_ref())));
 
     auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto schemaName = val.subpiece(sizeof(int32_t), nameLen).str();
@@ -110,7 +113,8 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
         schemaId.set_edge_type(oldItem.get_schema_id().get_edge_type());
     }
     newItem.set_schema_id(schemaId);
-    NG_LOG_AND_RETURN_IF_ERROR(convertToNewIndexColumns(oldItem.fields, newItem.fields));
+    NG_LOG_AND_RETURN_IF_ERROR(convertToNewIndexColumns((*oldItem.fields_ref()),
+                (*newItem.fields_ref())));
     NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaServiceUtils::indexVal(newItem)));
     return Status::OK();
 }
@@ -213,7 +217,7 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
         cpp2::ColumnDef columnDef;
         columnDef.set_name(colDef.get_name());
         columnDef.type.set_type(static_cast<cpp2::PropertyType>(colDef.get_type().get_type()));
-        if (colDef.__isset.default_value) {
+        if (colDef.default_value_ref().has_value()) {
             std::string encodeStr;
             switch (colDef.get_type().get_type()) {
                 case oldmeta::cpp2::SupportedType::BOOL:
@@ -238,8 +242,8 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
                     break;
                 default:
                     return Status::Error("Wrong default type: %s",
-                            oldmeta::cpp2::_SupportedType_VALUES_TO_NAMES.at(
-                                    colDef.get_type().get_type()));
+                            apache::thrift::util::enumNameSafe(
+                                    colDef.get_type().get_type()).c_str());
             }
 
             columnDef.set_default_value(std::move(encodeStr));
@@ -266,7 +270,7 @@ MetaDataUpgrade::convertToNewIndexColumns(const std::vector<oldmeta::cpp2::Colum
         } else {
             columnDef.type.set_type(static_cast<cpp2::PropertyType>(colDef.get_type().get_type()));
         }
-        DCHECK(!colDef.__isset.default_value);
+        DCHECK(!colDef.default_value_ref().has_value());
         if (FLAGS_null_type) {
             columnDef.set_nullable(true);
         }
@@ -278,10 +282,10 @@ MetaDataUpgrade::convertToNewIndexColumns(const std::vector<oldmeta::cpp2::Colum
 void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::StringPiece &val) {
     auto host = oldmeta::MetaServiceUtilsV1::parseHostKey(key);
     auto info = HostInfo::decodeV1(val);
-    LOG(INFO) << "Host ip: " << network::NetworkUtils::intToIPv4(host.ip);
-    LOG(INFO) << "Host port: " << host.port;
+    LOG(INFO) << "Host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
+    LOG(INFO) << "Host port: " << host.get_port();
     LOG(INFO) << "Host info: lastHBTimeInMilliSec: " << info.lastHBTimeInMilliSec_;
-    LOG(INFO) << "Host info: role_: " << cpp2::_HostRole_VALUES_TO_NAMES.at(info.role_);
+    LOG(INFO) << "Host info: role_: " << apache::thrift::util::enumNameSafe(info.role_);
     LOG(INFO) << "Host info: gitInfoSha_: " << info.gitInfoSha_;
 }
 
@@ -301,15 +305,15 @@ void MetaDataUpgrade::printParts(const folly::StringPiece &key, const folly::Str
     LOG(INFO) << "Part spaceId: " << spaceId;
     LOG(INFO) << "Part      id: " << partId;
     for (auto &host : oldHosts) {
-        LOG(INFO) << "Part host   ip: " << network::NetworkUtils::intToIPv4(host.ip);
-        LOG(INFO) << "Part host port: " << host.port;
+        LOG(INFO) << "Part host   ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
+        LOG(INFO) << "Part host port: " << host.get_port();
     }
 }
 
 void MetaDataUpgrade::printLeaders(const folly::StringPiece &key) {
     auto host = oldmeta::MetaServiceUtilsV1::parseLeaderKey(key);
-    LOG(INFO) << "Leader host ip: " << network::NetworkUtils::intToIPv4(host.ip);
-    LOG(INFO) << "Leader host port: " << host.port;
+    LOG(INFO) << "Leader host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
+    LOG(INFO) << "Leader host port: " << host.get_port();
 }
 
 void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
@@ -320,10 +324,10 @@ void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
     for (auto &colDef : oldSchema.get_columns()) {
         LOG(INFO) << "Schema column name: " << colDef.get_name();
         LOG(INFO) << "Schema column type: "
-                  << oldmeta::cpp2::_SupportedType_VALUES_TO_NAMES.at(
+                  << apache::thrift::util::enumNameSafe(
                           colDef.get_type().get_type());
         Value defaultValue;
-        if (colDef.__isset.default_value) {
+        if (colDef.default_value_ref().has_value()) {
             switch (colDef.get_type().get_type()) {
                 case oldmeta::cpp2::SupportedType::BOOL:
                     defaultValue = colDef.get_default_value()->get_bool_value();
@@ -342,7 +346,7 @@ void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
                     break;
                 default:
                     LOG(ERROR) << "Wrong default type: "
-                               << oldmeta::cpp2::_SupportedType_VALUES_TO_NAMES.at(
+                               << apache::thrift::util::enumNameSafe(
                                        colDef.get_type().get_type());
             }
             LOG(INFO) << "Schema default value: " << defaultValue;
@@ -362,7 +366,7 @@ void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
     for (auto &colDef : oldItem.get_fields()) {
         LOG(INFO) << "Index field name: " << colDef.get_name();
         LOG(INFO) << "Index field type: "
-                  << oldmeta::cpp2::_SupportedType_VALUES_TO_NAMES.at(
+                  << apache::thrift::util::enumNameSafe(
                           colDef.get_type().get_type());
     }
 }
@@ -412,9 +416,9 @@ void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::S
     }
     LOG(INFO) << "Config   name: " << configName.second;
     LOG(INFO) << "Config module: "
-              << oldmeta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(configName.first);
+              << apache::thrift::util::enumNameSafe(configName.first);
     LOG(INFO) << "Config   mode: "
-              << oldmeta::cpp2::_ConfigMode_VALUES_TO_NAMES.at(item.get_mode());
+              << apache::thrift::util::enumNameSafe(item.get_mode());
     LOG(INFO) << "Config  value: " << configVal;
 }
 
@@ -433,7 +437,7 @@ void MetaDataUpgrade::printJobDesc(const folly::StringPiece &key, const folly::S
     for (auto &para : paras) {
         LOG(INFO) << "JobDesc para: " << para;
     }
-    LOG(INFO) << "JobDesc status: " << nebula::meta::cpp2::_JobStatus_VALUES_TO_NAMES.at(status);
+    LOG(INFO) << "JobDesc status: " << apache::thrift::util::enumNameSafe(status);
     LOG(INFO) << "JobDesc startTime: " << startTime;
     LOG(INFO) << "JobDesc stopTime: " << stopTime;
 }

@@ -113,10 +113,10 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHostsWithGroup(kvstore::KVStore* 
 
     std::string groupValue;
     auto space = MetaServiceUtils::parseSpace(std::move(spaceValue));
-    auto groupKey = MetaServiceUtils::groupKey(space.group_name);
+    auto groupKey = MetaServiceUtils::groupKey(*space.group_name_ref());
     ret = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get group " << space.group_name << " failed";
+        LOG(ERROR) << "Get group " << *space.group_name_ref() << " failed";
         return activeHosts;
     }
 

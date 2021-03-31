@@ -21,7 +21,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         onFinished();
         return;
     }
-    decltype(resp_.tags) tags;
+    std::vector<nebula::meta::cpp2::TagItem> tags;
     while (iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();

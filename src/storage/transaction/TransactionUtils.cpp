@@ -12,14 +12,20 @@ namespace nebula {
 namespace storage {
 
 std::string TransactionUtils::dumpKey(const cpp2::EdgeKey& key) {
-    return folly::sformat("dumpKey(): src={}, dst={}", key.src.toString(), key.dst.toString());
+    return folly::sformat("dumpKey(): src={}, dst={}",
+            (*key.src_ref()).toString(), (*key.dst_ref()).toString());
 }
 
 std::string TransactionUtils::edgeKey(size_t vIdLen,
                                       PartitionID partId,
                                       const cpp2::EdgeKey& key) {
     return NebulaKeyUtils::edgeKey(
-        vIdLen, partId, key.src.getStr(), key.edge_type, key.ranking, key.dst.getStr());
+        vIdLen,
+        partId,
+        (*key.src_ref()).getStr(),
+        *key.edge_type_ref(),
+        *key.ranking_ref(),
+        (*key.dst_ref()).getStr());
 }
 
 std::string TransactionUtils::reverseRawKey(size_t vIdLen,

@@ -50,7 +50,7 @@ void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
         onFinished();
         return;
     }
-    decltype(resp_.clients) clients;
+    std::vector<nebula::meta::cpp2::FTClient> clients;
     if (iter->valid()) {
         clients = MetaServiceUtils::parseFTClients(iter->val());
     }

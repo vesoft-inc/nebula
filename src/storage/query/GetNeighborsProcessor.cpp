@@ -52,12 +52,12 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
 
     int64_t limit = FLAGS_max_edge_returned_per_vertex;
     bool random = false;
-    if (req.traverse_spec.__isset.limit) {
-        if (req.traverse_spec.limit >= 0) {
-            limit = req.traverse_spec.limit;
+    if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
+        if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
+            limit = *(*req.traverse_spec_ref()).limit_ref();
         }
-        if (req.traverse_spec.__isset.random) {
-            random = req.traverse_spec.random;
+        if ((*req.traverse_spec_ref()).random_ref().has_value()) {
+            random = *(*req.traverse_spec_ref()).random_ref();
         }
     }
 
@@ -207,10 +207,10 @@ cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(const cpp2::GetNeig
 
 cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::TraverseSpec& req) {
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
-    if (!req.__isset.vertex_props) {
+    if (!req.vertex_props_ref().has_value()) {
         // If the list is not given, no prop will be returned.
         return cpp2::ErrorCode::SUCCEEDED;
-    } else if (req.vertex_props.empty()) {
+    } else if ((*req.vertex_props_ref()).empty()) {
         // If no props specified, get all property of all tagId in space
         auto returnProps = buildAllTagProps();
         // generate tag prop context
@@ -219,7 +219,7 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::TraverseSpec&
     } else {
         // Generate related props according to property specified.
         // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(req.vertex_props);
+        auto returnProps = std::move(*req.vertex_props_ref());
         ret = handleVertexProps(returnProps);
         buildTagColName(returnProps);
     }
@@ -234,19 +234,19 @@ cpp2::ErrorCode GetNeighborsProcessor::buildTagContext(const cpp2::TraverseSpec&
 cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::TraverseSpec& req) {
     edgeContext_.offset_ = tagContext_.propContexts_.size() + 2;
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
-    if (!req.__isset.edge_props) {
+    if (!req.edge_props_ref().has_value()) {
         // If the list is not given, no prop will be returned.
         return cpp2::ErrorCode::SUCCEEDED;
-    } else if (req.edge_props.empty()) {
+    } else if ((*req.edge_props_ref()).empty()) {
         // If no props specified, get all property of all edge type in space
-        auto returnProps = buildAllEdgeProps(req.edge_direction);
+        auto returnProps = buildAllEdgeProps(*req.edge_direction_ref());
         // generate edge prop context
         ret = handleEdgeProps(returnProps);
         buildEdgeColName(returnProps);
     } else {
         // Generate related props according to property specified.
         // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(req.edge_props);
+        auto returnProps = std::move(*req.edge_props_ref());
         ret = handleEdgeProps(returnProps);
         buildEdgeColName(returnProps);
     }
@@ -255,9 +255,11 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::TraverseSpec
         return ret;
     }
     // TODO : verify req.__isset.stat_props
-    ret = handleEdgeStatProps(req.stat_props);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
+    if (req.stat_props_ref().has_value()) {
+        ret = handleEdgeStatProps(*req.stat_props_ref());
+        if (ret != cpp2::ErrorCode::SUCCEEDED) {
+            return ret;
+        }
     }
     buildEdgeTTLInfo();
     return cpp2::ErrorCode::SUCCEEDED;
@@ -265,10 +267,10 @@ cpp2::ErrorCode GetNeighborsProcessor::buildEdgeContext(const cpp2::TraverseSpec
 
 void GetNeighborsProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
     for (const auto& tagProp : tagProps) {
-        auto tagId = tagProp.tag;
+        auto tagId = tagProp.get_tag();
         auto tagName = tagContext_.tagNames_[tagId];
         std::string colName = "_tag:" + tagName;
-        for (const auto& prop : tagProp.props) {
+        for (const auto& prop : *tagProp.props_ref()) {
             colName += ":" + std::move(prop);
         }
         VLOG(1) << "append col name: " << colName;
@@ -278,12 +280,12 @@ void GetNeighborsProcessor::buildTagColName(const std::vector<cpp2::VertexProp>&
 
 void GetNeighborsProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps) {
     for (const auto& edgeProp : edgeProps) {
-        auto edgeType = edgeProp.type;
+        auto edgeType = edgeProp.get_type();
         auto edgeName = edgeContext_.edgeNames_[edgeType];
         std::string colName = "_edge:";
         colName.append(edgeType > 0 ? "+" : "-")
                .append(edgeName);
-        for (const auto& prop : edgeProp.props) {
+        for (const auto& prop : *edgeProp.props_ref()) {
             colName += ":" + std::move(prop);
         }
         VLOG(1) << "append col name: " << colName;
@@ -297,7 +299,7 @@ cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
     std::string colName = "_stats";
     for (size_t statIdx = 0; statIdx < statProps.size(); statIdx++) {
         const auto& statProp = statProps[statIdx];
-        auto exp = Expression::decode(statProp.prop);
+        auto exp = Expression::decode(*statProp.prop_ref());
         if (exp == nullptr) {
             return cpp2::ErrorCode::E_INVALID_STAT_TYPE;
         }
@@ -333,12 +335,12 @@ cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
                                 << " on edge " << *edgeName;
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
-                    auto ret = checkStatType(field, statProp.stat);
+                    auto ret = checkStatType(field, statProp.get_stat());
                     if (ret != cpp2::ErrorCode::SUCCEEDED) {
                         return ret;
                     }
                 }
-                auto statInfo = std::make_pair(statIdx, statProp.stat);
+                auto statInfo = std::make_pair(statIdx, statProp.get_stat());
                 addPropContextIfNotExists(edgeContext_.propContexts_,
                                           edgeContext_.indexMap_,
                                           edgeContext_.edgeNames_,
@@ -355,7 +357,7 @@ cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
                 return cpp2::ErrorCode::E_INVALID_STAT_TYPE;
             }
         }
-        colName += ":" + std::move(statProp.alias);
+        colName += ":" + std::move(statProp.get_alias());
     }
     resultDataSet_.colNames[1] = std::move(colName);
 

@@ -52,7 +52,7 @@ nebula_add_executable(
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         wangle
 )
 

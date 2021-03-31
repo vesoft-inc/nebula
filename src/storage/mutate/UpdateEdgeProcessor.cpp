@@ -32,8 +32,8 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     auto partId = req.get_part_id();
     edgeKey_ = req.get_edge_key();
     updatedProps_ = req.get_updated_props();
-    if (req.__isset.insertable) {
-        insertable_ = *req.get_insertable();
+    if (req.insertable_ref().has_value()) {
+        insertable_ = *req.insertable_ref();
     }
 
     auto retCode = getSpaceVidLen(spaceId_);
@@ -44,10 +44,11 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     }
 
     if (!NebulaKeyUtils::isValidVidLen(
-            spaceVidLen_, edgeKey_.src.getStr(), edgeKey_.dst.getStr())) {
+            spaceVidLen_, edgeKey_.get_src().getStr(), edgeKey_.get_dst().getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                   << " space vid len: " << spaceVidLen_ << ",  edge srcVid: " << edgeKey_.src
-                   << " dstVid: " << edgeKey_.dst;
+                   << " space vid len: " << spaceVidLen_
+                   << ",  edge srcVid: " << edgeKey_.get_src()
+                   << " dstVid: " << edgeKey_.get_dst();
         pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
         onFinished();
         return;
@@ -183,18 +184,18 @@ cpp2::ErrorCode UpdateEdgeProcessor::buildEdgeSchema() {
 cpp2::ErrorCode
 UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     // Build default edge context
-    auto edgeNameRet = env_->schemaMan_->toEdgeName(spaceId_, std::abs(edgeKey_.edge_type));
+    auto edgeNameRet = env_->schemaMan_->toEdgeName(spaceId_, std::abs(edgeKey_.get_edge_type()));
     if (!edgeNameRet.ok()) {
         VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType "
-                << std::abs(edgeKey_.edge_type);
+                << std::abs(edgeKey_.get_edge_type());
         return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     }
     auto edgeName = edgeNameRet.value();
 
     std::vector<PropContext> ctxs;
-    edgeContext_.propContexts_.emplace_back(edgeKey_.edge_type, std::move(ctxs));
-    edgeContext_.indexMap_.emplace(edgeKey_.edge_type, edgeContext_.propContexts_.size() - 1);
-    edgeContext_.edgeNames_.emplace(edgeKey_.edge_type, edgeName);
+    edgeContext_.propContexts_.emplace_back(edgeKey_.get_edge_type(), std::move(ctxs));
+    edgeContext_.indexMap_.emplace(edgeKey_.get_edge_type(), edgeContext_.propContexts_.size() - 1);
+    edgeContext_.edgeNames_.emplace(edgeKey_.get_edge_type(), edgeName);
 
     // Build context of the update edge prop
     for (auto& edgeProp : updatedProps_) {
@@ -223,8 +224,8 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     }
 
     // Return props
-    if (req.__isset.return_props) {
-        for (auto& prop : *req.get_return_props()) {
+    if (req.return_props_ref().has_value()) {
+        for (auto& prop : *req.return_props_ref()) {
             auto colExp = Expression::decode(prop);
             if (!colExp) {
                 VLOG(1) << "Can't decode the return expression";
@@ -239,8 +240,8 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     }
 
     // Condition
-    if (req.__isset.condition) {
-        const auto& filterStr = *req.get_condition();
+    if (req.condition_ref().has_value()) {
+        const auto& filterStr = *req.condition_ref();
         if (!filterStr.empty()) {
             filterExp_ = Expression::decode(filterStr);
             if (!filterExp_) {
@@ -256,27 +257,27 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
 
     // update edge only handle one edgetype
     // maybe no updated prop, filter prop, return prop
-    auto iter = edgeContext_.edgeNames_.find(edgeKey_.edge_type);
+    auto iter = edgeContext_.edgeNames_.find(edgeKey_.get_edge_type());
     if (edgeContext_.edgeNames_.size() != 1 ||
         iter == edgeContext_.edgeNames_.end()) {
         VLOG(1) << "should only contain one edge in update edge!";
         return cpp2::ErrorCode::E_INVALID_UPDATER;
     }
 
-    planContext_->edgeType_ = edgeKey_.edge_type;
+    planContext_->edgeType_ = edgeKey_.get_edge_type();
     planContext_->edgeName_ = iter->second;
     auto schemaMap = edgeContext_.schemas_;
-    auto iterSchema = schemaMap.find(std::abs(edgeKey_.edge_type));
+    auto iterSchema = schemaMap.find(std::abs(edgeKey_.get_edge_type()));
     if (iterSchema != schemaMap.end()) {
         auto schemas = iterSchema->second;
         auto schema = schemas.back().get();
         if (!schema) {
-            VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.edge_type;
+            VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.get_edge_type();
             return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         planContext_->edgeSchema_ = schema;
     } else {
-        VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.edge_type;
+        VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.get_edge_type();
         return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     }
 

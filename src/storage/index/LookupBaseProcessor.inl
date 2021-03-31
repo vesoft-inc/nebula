@@ -52,15 +52,15 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         schemas_ = std::move(allTags).value()[planContext_->tagId_];
     }
 
-    if (indices.get_contexts().empty() || !req.__isset.return_columns ||
-        req.get_return_columns()->empty()) {
+    if (indices.get_contexts().empty() || !req.return_columns_ref().has_value() ||
+        (*req.return_columns_ref()).empty()) {
         return cpp2::ErrorCode::E_INVALID_OPERATION;
     }
     contexts_ = indices.get_contexts();
 
     // setup yield columns.
-    if (req.__isset.return_columns) {
-        yieldCols_ = *req.get_return_columns();
+    if (req.return_columns_ref().has_value()) {
+        yieldCols_ = *req.return_columns_ref();
     }
 
     for (size_t i = 0; i < yieldCols_.size(); i++) {
@@ -162,7 +162,7 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
 
     for (const auto& ctx : contexts_) {
         const auto& indexId = ctx.get_index_id();
-        auto needFilter = ctx.__isset.filter && !ctx.get_filter().empty();
+        auto needFilter = ctx.filter_ref().is_set() && !(*ctx.filter_ref()).empty();
 
         // Check whether a data node is required.
         // If a non-indexed column appears in the WHERE clause or YIELD clause,
@@ -206,8 +206,8 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan() {
         auto colHints = ctx.get_column_hints();
 
         // Check WHERE clause contains columns that ware not indexed
-        if (ctx.__isset.filter && !ctx.get_filter().empty()) {
-            auto filter = Expression::decode(ctx.get_filter());
+        if (ctx.filter_ref().is_set() && !(*ctx.filter_ref()).empty()) {
+            auto filter = Expression::decode(*ctx.filter_ref());
             auto isFieldsOutsideIndex = isOutsideIndex(filter.get(), indexItem);
             if (isFieldsOutsideIndex) {
                 needData = needFilter = true;

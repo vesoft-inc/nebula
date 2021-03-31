@@ -37,7 +37,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
 
         LOG(INFO) << "Check data in kv store...";
         // The number of data in serve is 334
@@ -55,15 +55,15 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
 
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
 
         // All the added datas are deleted, the number of edge is 0
-        checkEdgesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkEdgesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 }
 
@@ -85,7 +85,7 @@ TEST(DeleteEdgesTest, MultiVersionTest) {
             auto fut = processor->getFuture();
             processor->process(req);
             auto resp = std::move(fut).get();
-            EXPECT_EQ(0, resp.result.failed_parts.size());
+            EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         }
         {
             LOG(INFO) << "AddEdgesProcessor...";
@@ -93,7 +93,7 @@ TEST(DeleteEdgesTest, MultiVersionTest) {
             auto fut = processor->getFuture();
             processor->process(specifiedOrderReq);
             auto resp = std::move(fut).get();
-            EXPECT_EQ(0, resp.result.failed_parts.size());
+            EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         }
 
         LOG(INFO) << "Check data in kv store...";
@@ -112,15 +112,15 @@ TEST(DeleteEdgesTest, MultiVersionTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
 
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
 
         // All the added datas are deleted, the number of edge is 0
-        checkEdgesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkEdgesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 }
 

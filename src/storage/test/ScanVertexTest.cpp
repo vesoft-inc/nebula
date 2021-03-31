@@ -27,9 +27,9 @@ cpp2::ScanVertexRequest buildRequest(
     req.set_cursor(cursor);
     TagID tagId = tag.first;
     cpp2::VertexProp vertexProp;
-    vertexProp.tag = tagId;
+    vertexProp.set_tag(tagId);
     for (const auto& prop : tag.second) {
-        vertexProp.props.emplace_back(std::move(prop));
+        (*vertexProp.props_ref()).emplace_back(std::move(prop));
     }
     req.set_return_columns(std::move(vertexProp));
     req.set_limit(rowLimit);
@@ -105,7 +105,7 @@ TEST(ScanVertexTest, PropertyTest) {
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.vertex_data, tag, tag.second.size(), totalRowCount);
+            checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
         }
         CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
     }
@@ -122,7 +122,7 @@ TEST(ScanVertexTest, PropertyTest) {
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
             // all 11 columns in value
-            checkResponse(resp.vertex_data, tag, 11, totalRowCount);
+            checkResponse(*resp.vertex_data_ref(), tag, 11, totalRowCount);
         }
         CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
     }
@@ -155,11 +155,11 @@ TEST(ScanVertexTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.vertex_data, tag, tag.second.size(), totalRowCount);
+                checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
-                    CHECK(resp.__isset.next_cursor);
-                    cursor = *resp.get_next_cursor();
+                    CHECK(resp.next_cursor_ref());
+                    cursor = *resp.next_cursor_ref();
                 }
             }
         }
@@ -181,11 +181,11 @@ TEST(ScanVertexTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.vertex_data, tag, tag.second.size(), totalRowCount);
+                checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
-                    CHECK(resp.__isset.next_cursor);
-                    cursor = *resp.get_next_cursor();
+                    CHECK(resp.next_cursor_ref());
+                    cursor = *resp.next_cursor_ref();
                 }
             }
         }

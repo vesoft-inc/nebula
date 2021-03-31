@@ -40,7 +40,7 @@ void AdHocIndexManager::removeTagIndex(GraphSpaceID space,
     if (iter != tagIndexes_.end()) {
         std::vector<std::shared_ptr<IndexItem>>::iterator iItemIter = iter->second.begin();
         for (; iItemIter != iter->second.end(); iItemIter++) {
-            if ((*iItemIter)->index_id == indexID) {
+            if (*(*iItemIter)->index_id_ref() == indexID) {
                 iter->second.erase(iItemIter);
                 return;
             }

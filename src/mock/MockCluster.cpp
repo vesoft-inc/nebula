@@ -154,15 +154,15 @@ void MockCluster::initStorageKV(const char* dataPath,
     if (metaClient_ != nullptr) {
         LOG(INFO) << "Pull meta information from meta server";
         nebula::meta::cpp2::SpaceDesc spaceDesc;
-        spaceDesc.space_name = "test_space";
-        spaceDesc.partition_num = 6;
-        spaceDesc.replica_factor = 1;
-        spaceDesc.charset_name = "utf8";
-        spaceDesc.collate_name = "utf8_bin";
+        spaceDesc.set_space_name("test_space");
+        spaceDesc.set_partition_num(6);
+        spaceDesc.set_replica_factor(1);
+        spaceDesc.set_charset_name("utf8");
+        spaceDesc.set_collate_name("utf8_bin");
         meta::cpp2::ColumnTypeDef type;
         type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
         type.set_type_length(32);
-        spaceDesc.vid_type = std::move(type);
+        spaceDesc.set_vid_type(std::move(type));
         auto ret = metaClient_->createSpace(spaceDesc).get();
         if (!ret.ok()) {
             LOG(FATAL) << "can't create space";

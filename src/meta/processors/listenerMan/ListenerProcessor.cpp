@@ -96,13 +96,14 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
         kvstore_,
         FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor,
         cpp2::HostRole::LISTENER);
-    decltype(resp_.listeners) listeners;
+    std::vector<nebula::meta::cpp2::ListenerInfo> listeners;
     while (iter->valid()) {
         cpp2::ListenerInfo listener;
         listener.set_type(MetaServiceUtils::parseListenerType(iter->key()));
         listener.set_host(MetaServiceUtils::deserializeHostAddr(iter->val()));
         listener.set_part_id(MetaServiceUtils::parseListenerPart(iter->key()));
-        if (std::find(activeHosts.begin(), activeHosts.end(), listener.host) != activeHosts.end()) {
+        if (std::find(activeHosts.begin(), activeHosts.end(), *listener.host_ref())
+                != activeHosts.end()) {
             listener.set_status(cpp2::HostStatus::ONLINE);
         } else {
             listener.set_status(cpp2::HostStatus::OFFLINE);

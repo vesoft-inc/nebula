@@ -19,7 +19,7 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
         onFinished();
         return;
     }
-    decltype(resp_.snapshots) snapshots;
+    std::vector<nebula::meta::cpp2::Snapshot> snapshots;
     while (iter->valid()) {
         auto name = MetaServiceUtils::parseSnapshotName(iter->key());
         auto status = MetaServiceUtils::parseSnapshotStatus(iter->val());

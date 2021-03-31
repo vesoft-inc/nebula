@@ -10,6 +10,7 @@
 #include <boost/stacktrace.hpp>
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
@@ -147,7 +148,7 @@ void JobManager::cleanJob(JobID jobId) {
 
 cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus jobStatus) {
     LOG(INFO) << folly::sformat("{}, jobId={}, result={}", __func__, jobId,
-                                cpp2::_JobStatus_VALUES_TO_NAMES.at(jobStatus));
+                                apache::thrift::util::enumNameSafe(jobStatus));
     // normal job finish may race to job stop
     std::lock_guard<std::mutex> lk(muJobFinished_);
     SCOPE_EXIT {
@@ -399,7 +400,8 @@ JobManager::showJobs() {
 }
 
 bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
-    if (jobDesc.status == cpp2::JobStatus::QUEUE || jobDesc.status == cpp2::JobStatus::RUNNING) {
+    if (*jobDesc.status_ref() == cpp2::JobStatus::QUEUE ||
+            *jobDesc.status_ref() == cpp2::JobStatus::RUNNING) {
         return false;
     }
     auto jobStart = jobDesc.get_start_time();

@@ -58,12 +58,12 @@ TEST(DeleteVerticesTest, SimpleTest) {
         EXPECT_EQ(0, resp.result.failed_parts.size());
 
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
 
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 }
 
@@ -116,12 +116,12 @@ TEST(DeleteVerticesTest, MultiVersionTest) {
         EXPECT_EQ(0, resp.result.failed_parts.size());
 
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
 
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 }
 

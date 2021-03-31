@@ -69,11 +69,11 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret = client->getSpace("default_space").get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             meta::cpp2::SpaceDesc spaceDesc = ret.value().get_properties();
-            ASSERT_EQ("default_space", spaceDesc.space_name);
-            ASSERT_EQ(8, spaceDesc.partition_num);
-            ASSERT_EQ(3, spaceDesc.replica_factor);
-            ASSERT_EQ("utf8", spaceDesc.charset_name);
-            ASSERT_EQ("utf8_bin", spaceDesc.collate_name);
+            ASSERT_EQ("default_space", spaceDesc.get_space_name());
+            ASSERT_EQ(8, spaceDesc.get_partition_num());
+            ASSERT_EQ(3, spaceDesc.get_replica_factor());
+            ASSERT_EQ("utf8", spaceDesc.get_charset_name());
+            ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
         }
         {
             auto ret = client->listSpaces().get();
@@ -97,7 +97,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 cpp2::ColumnDef column;
                 column.name = "tagItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
-                schema.columns.emplace_back(std::move(column));
+                (*schema.columns_ref()).emplace_back(std::move(column));
             }
             auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
@@ -114,7 +114,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.set_type(PropertyType::STRING);
                 ConstantExpression defaultValue(std::to_string(i));
                 column.set_default_value(Expression::encode(defaultValue));
-                schema.columns.emplace_back(std::move(column));
+                (*schema.columns_ref()).emplace_back(std::move(column));
             }
             auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
@@ -130,7 +130,7 @@ TEST(MetaClientTest, InterfacesTest) {
                                               new ConstantExpression(1),
                                               new ConstantExpression(0));
             column.set_default_value(Expression::encode(defaultValue));
-            schema.columns.emplace_back(std::move(column));
+            (*schema.columns_ref()).emplace_back(std::move(column));
             auto ret = client->createTagSchema(spaceId, "tagWithWrongDefault", schema).get();
             ASSERT_FALSE(ret.ok()) << ret.status();
         }
@@ -141,7 +141,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 cpp2::ColumnDef column;
                 column.name = "edgeItem" + std::to_string(i);
                 column.type.set_type(PropertyType::STRING);
-                schema.columns.emplace_back(std::move(column));
+                (*schema.columns_ref()).emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
@@ -157,7 +157,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.set_type(PropertyType::STRING);
                 ConstantExpression defaultValue(std::to_string(i));
                 column.set_default_value(Expression::encode(defaultValue));
-                schema.columns.emplace_back(std::move(column));
+                (*schema.columns_ref()).emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
@@ -170,17 +170,17 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret1 = client->listTagSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 2);
-            ASSERT_NE(ret1.value().begin()->tag_id, 0);
-            ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
+            ASSERT_NE(ret1.value().begin()->get_tag_id(), 0);
+            ASSERT_EQ((*ret1.value().begin()->get_schema().columns_ref()).size(), 5);
 
             // getTagSchemaFromCache
             sleep(FLAGS_heartbeat_interval_secs + 1);
             auto ret = client->getLatestTagVersionFromCache(spaceId,
-                                                            ret1.value().begin()->tag_id);
+                                                            ret1.value().begin()->get_tag_id());
             CHECK(ret.ok());
             auto ver = ret.value();
             auto ret2 = client->getTagSchemaFromCache(spaceId,
-                                                      ret1.value().begin()->tag_id, ver);
+                                                      ret1.value().begin()->get_tag_id(), ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
@@ -212,15 +212,16 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret1 = client->listEdgeSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 2);
-            ASSERT_NE(ret1.value().begin()->edge_type, 0);
+            ASSERT_NE(ret1.value().begin()->get_edge_type(), 0);
 
             // getEdgeSchemaFromCache
-            auto retVer = client->getLatestEdgeVersionFromCache(spaceId,
-                                                                ret1.value().begin()->edge_type);
+            auto retVer =
+                client->getLatestEdgeVersionFromCache(spaceId,
+                        ret1.value().begin()->get_edge_type());
             CHECK(retVer.ok());
             auto ver = retVer.value();
             auto ret2 = client->getEdgeSchemaFromCache(spaceId,
-                                                       ret1.value().begin()->edge_type, ver);
+                                                       ret1.value().begin()->get_edge_type(), ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
@@ -366,7 +367,7 @@ TEST(MetaClientTest, SpaceWithGroupTest) {
             auto ret = client->listHosts().get();
             ASSERT_TRUE(ret.ok());
             for (auto i = 0u; i < addresses.size(); i++) {
-                auto tHost = ret.value()[i].hostAddr;
+                auto tHost = ret.value()[i].get_hostAddr();
                 auto hostAddr = HostAddr(tHost.host, tHost.port);
                 ASSERT_EQ(addresses[i], hostAddr);
             }
@@ -590,11 +591,13 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result2.ok());
-        ASSERT_EQ(3, result2.value().columns.size());
-        ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
-        for (auto i = 0u; i < result1.value().columns.size(); i++) {
-            ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
-            ASSERT_EQ(result1.value().columns[i].type, result2.value().columns[i].type);
+        ASSERT_EQ(3, (*result2.value().columns_ref()).size());
+        ASSERT_EQ((*result1.value().columns_ref()).size(), (*result2.value().columns_ref()).size());
+        for (auto i = 0u; i < (*result1.value().columns_ref()).size(); i++) {
+            ASSERT_EQ((*result1.value().columns_ref())[i].name,
+                    (*result2.value().columns_ref())[i].name);
+            ASSERT_EQ((*result1.value().columns_ref())[i].type,
+                    (*result2.value().columns_ref())[i].type);
         }
     }
     // Get wrong version
@@ -827,10 +830,12 @@ TEST(MetaClientTest, EdgeTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getEdgeSchema(space, "test_edge").get();
         ASSERT_TRUE(result2.ok());
-        ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
-        for (auto i = 0u; i < result1.value().columns.size(); i++) {
-            ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
-            ASSERT_EQ(result1.value().columns[i].type, result2.value().columns[i].type);
+        ASSERT_EQ((*result1.value().columns_ref()).size(), (*result2.value().columns_ref()).size());
+        for (auto i = 0u; i < (*result1.value().columns_ref()).size(); i++) {
+            ASSERT_EQ((*result1.value().columns_ref())[i].name,
+                    (*result2.value().columns_ref())[i].name);
+            ASSERT_EQ((*result1.value().columns_ref())[i].type,
+                    (*result2.value().columns_ref())[i].type);
         }
     }
     {
@@ -1589,7 +1594,7 @@ TEST(MetaClientTest, DiffTest) {
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            auto tHost = ret.value()[i].hostAddr;
+            auto tHost = ret.value()[i].get_hostAddr();
             auto hostAddr = HostAddr(tHost.host, tHost.port);
             ASSERT_EQ(hosts[i], hostAddr);
         }
@@ -1752,7 +1757,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            auto tHost = ret.value()[i].hostAddr;
+            auto tHost = ret.value()[i].get_hostAddr();
             auto hostAddr = HostAddr(tHost.host, tHost.port);
             ASSERT_EQ(hosts[i], hostAddr);
         }

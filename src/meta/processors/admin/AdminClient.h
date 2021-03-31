@@ -39,6 +39,10 @@ public:
 
     virtual ~AdminClient() = default;
 
+    folly::Executor* executor() const {
+        return ioThreadPool_.get();
+    }
+
     virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& leader,

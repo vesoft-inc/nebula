@@ -17,7 +17,7 @@ std::string IndexKeyUtils::encodeValues(std::vector<Value>&& values,
     std::string index;
 
     for (size_t i = 0; i < values.size(); i++) {
-        auto isNullable = cols[i].__isset.nullable && *(cols[i].get_nullable());
+        auto isNullable = cols[i].nullable_ref().value_or(false);
         if (isNullable) {
             hasNullCol = true;
         }
@@ -106,7 +106,7 @@ IndexKeyUtils::collectIndexValues(RowReader* reader,
     std::vector<Value> values;
     for (const auto& col : cols) {
         auto v = reader->getValueByName(col.get_name());
-        auto isNullable = col.__isset.nullable && *(col.get_nullable());
+        auto isNullable = col.nullable_ref().value_or(false);
         auto ret = checkValue(v, isNullable);
         if (!ret.ok()) {
             LOG(ERROR) << "prop error by : " << col.get_name()

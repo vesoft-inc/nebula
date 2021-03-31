@@ -21,7 +21,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
         onFinished();
         return;
     }
-    decltype(resp_.parts) parts;
+    std::unordered_map<int, std::vector<nebula::HostAddr>> parts;
     while (iter->valid()) {
         auto key = iter->key();
         PartitionID partId;

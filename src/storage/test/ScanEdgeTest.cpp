@@ -27,9 +27,9 @@ cpp2::ScanEdgeRequest buildRequest(
     req.set_cursor(cursor);
     EdgeType edgeType = edge.first;
     cpp2::EdgeProp edgeProp;
-    edgeProp.type = edgeType;
+    edgeProp.set_type(edgeType);
     for (const auto& prop : edge.second) {
-        edgeProp.props.emplace_back(std::move(prop));
+        (*edgeProp.props_ref()).emplace_back(std::move(prop));
     }
     req.set_return_columns(std::move(edgeProp));
     req.set_limit(rowLimit);
@@ -104,7 +104,7 @@ TEST(ScanEdgeTest, PropertyTest) {
             auto resp = std::move(f).get();
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
-            checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
+            checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }
@@ -121,7 +121,7 @@ TEST(ScanEdgeTest, PropertyTest) {
 
             ASSERT_EQ(0, resp.result.failed_parts.size());
             // all 9 columns in value
-            checkResponse(resp.edge_data, edge, 9, totalRowCount);
+            checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
         }
         CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
     }
@@ -154,11 +154,11 @@ TEST(ScanEdgeTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
+                checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
-                    CHECK(resp.__isset.next_cursor);
-                    cursor = *resp.get_next_cursor();
+                    CHECK(resp.next_cursor_ref().has_value());
+                    cursor = *resp.next_cursor_ref();
                 }
             }
         }
@@ -180,11 +180,11 @@ TEST(ScanEdgeTest, CursorTest) {
                 auto resp = std::move(f).get();
 
                 ASSERT_EQ(0, resp.result.failed_parts.size());
-                checkResponse(resp.edge_data, edge, edge.second.size(), totalRowCount);
+                checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
                 hasNext = resp.get_has_next();
                 if (hasNext) {
-                    CHECK(resp.__isset.next_cursor);
-                    cursor = *resp.get_next_cursor();
+                    CHECK(resp.next_cursor_ref().has_value());
+                    cursor = *resp.next_cursor_ref();
                 }
             }
         }

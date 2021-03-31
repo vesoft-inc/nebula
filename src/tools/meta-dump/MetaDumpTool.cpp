@@ -5,6 +5,7 @@
  */
 
 #include <rocksdb/db.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "common/time/TimeUtils.h"
 #include "common/fs/FileUtils.h"
 #include "meta/ActiveHostsMan.h"
@@ -43,9 +44,9 @@ public:
                 LOG(INFO) << folly::sformat(
                     "space id: {}, space name: {}, partition num: {}, replica_factor: {}",
                     spaceId,
-                    desc.space_name,
-                    desc.partition_num,
-                    desc.replica_factor);
+                    *desc.space_name_ref(),
+                    *desc.partition_num_ref(),
+                    *desc.replica_factor_ref());
                 iter->Next();
             }
         }
@@ -77,7 +78,7 @@ public:
                 auto val = folly::StringPiece(iter->value().data(), iter->value().size());
                 auto host = MetaServiceUtils::parseHostKey(key);
                 auto info = HostInfo::decode(val);
-                auto role = cpp2::_HostRole_VALUES_TO_NAMES.at(info.role_);
+                auto role = apache::thrift::util::enumNameSafe(info.role_);
                 auto time =
                     time::TimeUtils::unixSecondsToDateTime(info.lastHBTimeInMilliSec_ / 1000);
                 LOG(INFO) << folly::sformat("host addr: {}, role: {}, last hb time: {}",

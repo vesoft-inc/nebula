@@ -154,7 +154,7 @@ TEST(MetaServiceUtilsTest, HostKeyTest) {
 
 TEST(MetaServiceUtilsTest, TagTest) {
     cpp2::Schema schema;
-    decltype(schema.columns) cols;
+    std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (auto i = 1; i <= 3; i++) {
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));

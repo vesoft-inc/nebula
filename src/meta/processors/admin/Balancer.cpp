@@ -185,8 +185,8 @@ bool Balancer::getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         auto properties = MetaServiceUtils::parseSpace(iter->val());
-        bool zoned = properties.__isset.group_name ? true : false;
-        spaces.emplace_back(spaceId, properties.replica_factor, zoned);
+        bool zoned = properties.group_name_ref().has_value();
+        spaces.emplace_back(spaceId, *properties.replica_factor_ref(), zoned);
         iter->next();
     }
     return true;
@@ -477,8 +477,8 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
         return false;
     }
 
-    if (properties.__isset.group_name) {
-        auto groupName = *properties.get_group_name();
+    if (properties.group_name_ref().has_value()) {
+        auto groupName = *properties.group_name_ref();
         if (dependentOnGroup && !assembleZoneParts(groupName, hostParts)) {
             LOG(ERROR) << "Assemble Zone Parts failed group: " << groupName;
             return false;
@@ -676,7 +676,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         }
 
         int32_t failed = 0;
-        folly::collectAll(futures).thenTry([&](const auto& result) {
+        folly::collectAll(futures).via(executor_.get()).thenTry([&](const auto& result) {
             auto tries = result.value();
             for (const auto& t : tries) {
                 if (!t.value().ok()) {

@@ -73,17 +73,19 @@ void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
             auto partId = partEntry.first;
             for (const auto& row : partEntry.second) {
                 cpp2::EdgeKey edgeKey;
-                edgeKey.src = row.values[0].getStr();
-                edgeKey.edge_type = row.values[1].getInt();
-                edgeKey.ranking = row.values[2].getInt();
-                edgeKey.dst = row.values[3].getStr();
+                edgeKey.set_src(row.values[0].getStr());
+                edgeKey.set_edge_type(row.values[1].getInt());
+                edgeKey.set_ranking(row.values[2].getInt());
+                edgeKey.set_dst(row.values[3].getStr());
 
                 if (!NebulaKeyUtils::isValidVidLen(
-                        spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                        spaceVidLen_,
+                        (*edgeKey.src_ref()).getStr(),
+                        (*edgeKey.dst_ref()).getStr())) {
                     LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                                << "space vid len: " << spaceVidLen_
-                               << ", edge srcVid: " << edgeKey.src
-                               << ", dstVid: " << edgeKey.dst;
+                               << ", edge srcVid: " << *edgeKey.src_ref()
+                               << ", dstVid: " << *edgeKey.dst_ref();
                     pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
                     onFinished();
                     return;
@@ -138,12 +140,12 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(nebula::DataSet* resu
 }
 
 cpp2::ErrorCode GetPropProcessor::checkRequest(const cpp2::GetPropRequest& req) {
-    if (!req.__isset.vertex_props && !req.__isset.edge_props) {
+    if (!req.vertex_props_ref().has_value() && !req.edge_props_ref().has_value()) {
         return cpp2::ErrorCode::E_INVALID_OPERATION;
-    } else if (req.__isset.vertex_props && req.__isset.edge_props) {
+    } else if (req.vertex_props_ref().has_value() && req.edge_props_ref().has_value()) {
         return cpp2::ErrorCode::E_INVALID_OPERATION;
     }
-    if (req.__isset.vertex_props) {
+    if (req.vertex_props_ref().has_value()) {
         isEdge_ = false;
     } else {
         isEdge_ = true;
@@ -173,7 +175,7 @@ cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetPropReque
 
 cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
-    if (req.vertex_props.empty()) {
+    if ((*req.vertex_props_ref()).empty()) {
         // If no props specified, get all property of all tagId in space
         auto returnProps = buildAllTagProps();
         // generate tag prop context
@@ -181,7 +183,7 @@ cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& re
         buildTagColName(returnProps);
     } else {
         // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(req.vertex_props);
+        auto returnProps = std::move(*req.vertex_props_ref());
         ret = handleVertexProps(returnProps);
         buildTagColName(returnProps);
     }
@@ -195,7 +197,7 @@ cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& re
 
 cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& req) {
     cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
-    if (req.edge_props.empty()) {
+    if ((*req.edge_props_ref()).empty()) {
         // If no props specified, get all property of all tagId in space
         auto returnProps = buildAllEdgeProps(cpp2::EdgeDirection::BOTH);
         // generate edge prop context
@@ -203,7 +205,7 @@ cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& r
         buildEdgeColName(returnProps);
     } else {
         // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(req.edge_props);
+        auto returnProps = std::move(*req.edge_props_ref());
         ret = handleEdgeProps(returnProps);
         buildEdgeColName(returnProps);
     }
@@ -218,9 +220,9 @@ cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& r
 void GetPropProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
     resultDataSet_.colNames.emplace_back(kVid);
     for (const auto& tagProp : tagProps) {
-        auto tagId = tagProp.tag;
+        auto tagId = tagProp.get_tag();
         auto tagName = tagContext_.tagNames_[tagId];
-        for (const auto& prop : tagProp.props) {
+        for (const auto& prop : *tagProp.props_ref()) {
             resultDataSet_.colNames.emplace_back(tagName + "." + prop);
         }
     }
@@ -228,9 +230,9 @@ void GetPropProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagP
 
 void GetPropProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps) {
     for (const auto& edgeProp : edgeProps) {
-        auto edgeType = edgeProp.type;
+        auto edgeType = edgeProp.get_type();
         auto edgeName = edgeContext_.edgeNames_[edgeType];
-        for (const auto& prop : edgeProp.props) {
+        for (const auto& prop : *edgeProp.props_ref()) {
             resultDataSet_.colNames.emplace_back(edgeName + "." + prop);
         }
     }

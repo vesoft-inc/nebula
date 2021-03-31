@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "TossTestUtils.h"
 
 #include "common/meta/ServerBasedSchemaManager.h"
@@ -166,8 +168,8 @@ struct TossEnvironment {
 
     cpp2::NewEdge reverseEdge(const cpp2::NewEdge& e0) {
         cpp2::NewEdge e(e0);
-        std::swap(e.key.src, e.key.dst);
-        e.key.edge_type *= -1;
+        std::swap(*(*e.key_ref()).src_ref(), *(*e.key_ref()).dst_ref());
+        (*e.key_ref()).set_edge_type(-e.get_key().get_edge_type());
         return e;
     }
 
@@ -184,7 +186,7 @@ struct TossEnvironment {
             auto f = addEdgesAsync(edges, useToss);
             f.wait();
             if (!f.valid()) {
-                LOG(INFO) << cpp2::_ErrorCode_VALUES_TO_NAMES.at(cpp2::ErrorCode::E_UNKNOWN);
+                LOG(INFO) << apache::thrift::util::enumNameSafe(cpp2::ErrorCode::E_UNKNOWN);
                 return cpp2::ErrorCode::E_UNKNOWN;
             }
             if (!f.value().succeeded()) {
@@ -192,7 +194,7 @@ struct TossEnvironment {
                 LOG(INFO) << "f.value().failedParts().size()=" << f.value().failedParts().size();
                 for (auto& part : f.value().failedParts()) {
                     LOG(INFO) << "partId=" << part.first
-                              << ", ec=" << cpp2::_ErrorCode_VALUES_TO_NAMES.at(part.second);
+                              << ", ec=" << apache::thrift::util::enumNameSafe(part.second);
                     if (part.second == cpp2::ErrorCode::E_LEADER_CHANGED) {
                         retLeaderChange = true;
                     }
@@ -202,7 +204,7 @@ struct TossEnvironment {
             std::vector<cpp2::ExecResponse>& execResps = f.value().responses();
             for (auto& execResp : execResps) {
                 // ResponseCommon
-                auto& respComn = execResp.result;
+                auto& respComn = execResp.get_result();
                 auto& failedParts = respComn.get_failed_parts();
                 for (auto& part : failedParts) {
                     if (part.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -228,7 +230,7 @@ struct TossEnvironment {
 
     folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
     addEdgesAsync(const std::vector<cpp2::NewEdge>& edges, bool useToss = true) {
-        auto propNames = makeColNames(edges.back().props.size());
+        auto propNames = makeColNames(edges.back().get_props().size());
         return sClient_->addEdges(spaceId_, edges, propNames, true, nullptr, useToss);
     }
 
@@ -244,18 +246,18 @@ struct TossEnvironment {
         // nebula::DataSet ds;  ===> will crash if not set
         std::vector<Value> ret;
         nebula::Row row;
-        row.values.emplace_back(edge.key.src);
-        row.values.emplace_back(edge.key.edge_type);
-        row.values.emplace_back(edge.key.ranking);
+        row.values.emplace_back(edge.get_key().get_src());
+        row.values.emplace_back(edge.get_key().get_edge_type());
+        row.values.emplace_back(edge.get_key().get_ranking());
         // auto sDst = std::string(reinterpret_cast<const char*>(&edge.key.dst.getInt()), 8);
-        row.values.emplace_back(edge.key.dst);
+        row.values.emplace_back(edge.get_key().get_dst());
 
         nebula::DataSet ds;
         ds.rows.emplace_back(std::move(row));
 
         std::vector<cpp2::EdgeProp> props;
         cpp2::EdgeProp oneProp;
-        oneProp.type = edge.key.edge_type;
+        oneProp.set_type(edge.get_key().get_edge_type());
         props.emplace_back(oneProp);
 
         auto needRetry = false;
@@ -285,7 +287,7 @@ struct TossEnvironment {
                 LOG(INFO) << "rpcResp.failedParts().size()=" << rpcResp.failedParts().size();
                 for (auto& p : rpcResp.failedParts()) {
                     LOG(INFO) << "failedPart: " << p.first
-                              << ", err=" << cpp2::_ErrorCode_VALUES_TO_NAMES.at(p.second);
+                              << ", err=" << apache::thrift::util::enumNameSafe(p.second);
                     if (p.second == cpp2::ErrorCode::E_LEADER_CHANGED) {
                         needRetry = true;
                         continue;
@@ -300,17 +302,17 @@ struct TossEnvironment {
                 LOG(FATAL) << "getProps() resps.empty())";
             }
             cpp2::GetPropResponse& propResp = resps.front();
-            cpp2::ResponseCommon result = propResp.result;
+            cpp2::ResponseCommon result = propResp.get_result();
             std::vector<cpp2::PartitionResult>& fparts = result.failed_parts;
             if (!fparts.empty()) {
                 for (cpp2::PartitionResult& res : fparts) {
-                    LOG(INFO) << "part_id: " << res.part_id << ", part leader " << res.leader
+                    LOG(INFO) << "part_id: " << res.part_id << ", part leader " << res.get_leader()
                               << ", code " << static_cast<int>(res.code);
                 }
                 LOG(FATAL) << "getProps() !failed_parts.empty())";
             }
-            nebula::DataSet& dataSet = propResp.props;
-            std::vector<Row>& rows = dataSet.rows;
+            auto& dataSet = *propResp.props_ref();
+            auto& rows = dataSet.rows;
             if (rows.empty()) {
                 LOG(FATAL) << "getProps() dataSet.rows.empty())";
             }
@@ -329,7 +331,7 @@ struct TossEnvironment {
         std::vector<Row> vertices;
         std::set<Value> vids;
         for (auto& e : edges) {
-            vids.insert(e.key.src);
+            vids.insert(e.get_key().get_src());
         }
         for (auto& vid : vids) {
             Row row;
@@ -355,7 +357,7 @@ struct TossEnvironment {
         // para 12
         const std::vector<cpp2::OrderBy> orderBy = std::vector<cpp2::OrderBy>();
 
-        auto colNames = makeColNames(edges.back().props.size());
+        auto colNames = makeColNames(edges.back().get_props().size());
 
         return sClient_->getNeighbors(spaceId_,
                                       colNames,
@@ -381,13 +383,14 @@ struct TossEnvironment {
         bool retLeaderChange = false;
         auto edges(_edges);
         std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
-            if (a.key.src == b.key.src) {
-                return a.key.dst < b.key.dst;
+            if (a.get_key().get_src() == b.get_key().get_src()) {
+                return a.get_key().get_dst() < b.get_key().get_dst();
             }
-            return a.key.src < b.key.src;
+            return a.get_key().get_src() < b.get_key().get_src();
         });
         auto last = std::unique(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
-            return a.key.src == b.key.src && a.key.dst == b.key.dst;
+            return a.get_key().get_src() == b.get_key().get_src() &&
+                a.get_key().get_dst() == b.get_key().get_dst();
         });
         edges.erase(last, edges.end());
         LOG(INFO) << "_edges.size()=" << _edges.size() << ", edges.size()=" << edges.size();
@@ -431,7 +434,7 @@ struct TossEnvironment {
 
     static std::vector<std::string> extractNeiProps(cpp2::GetNeighborsResponse& resp) {
         std::vector<std::string> ret;
-        auto& ds = resp.vertices;
+        auto& ds = *resp.vertices_ref();
         LOG(INFO) << "ds.rows.size()=" << ds.rows.size();
         for (auto& row : ds.rows) {
             if (row.values.size() < 4) {
@@ -508,8 +511,8 @@ struct TossEnvironment {
 
     cpp2::NewEdge dupEdge(const cpp2::NewEdge& e) {
         cpp2::NewEdge dupEdge{e};
-        int n = e.props[0].getInt() / 1024 + 1;
-        dupEdge.props = TossTestUtils::genSingleVal(n);
+        int n = e.get_props()[0].getInt() / 1024 + 1;
+        dupEdge.set_props(TossTestUtils::genSingleVal(n));
         return dupEdge;
     }
 
@@ -527,9 +530,9 @@ struct TossEnvironment {
         for (int i = 0; i < num; ++i) {
             auto dst = extraSameKey ? 1 : src + i + 1;
             edges.emplace_back(generateEdge(src, 0, vals[i], dst));
-            auto keyPair = makeRawKey(edges.back().key);
+            auto keyPair = makeRawKey(edges.back().get_key());
             LOG(INFO) << "gen key=" << folly::hexlify(keyPair.first)
-                      << ", val=" << edges.back().props.back().toString();
+                      << ", val=" << edges.back().get_props().back().toString();
         }
         return edges;
     }
@@ -552,24 +555,24 @@ struct TossEnvironment {
      */
     std::pair<std::string, int32_t> makeRawKey(const cpp2::EdgeKey& e) {
         auto edgeKey = TossTestUtils::toVidKey(e);
-        auto partId = getPartId(edgeKey.src.getStr());
+        auto partId = getPartId(edgeKey.get_src().getStr());
 
         auto rawKey = TransactionUtils::edgeKey(vIdLen_, partId, edgeKey);
         return std::make_pair(rawKey, partId);
     }
 
     std::string encodeProps(const cpp2::NewEdge& e) {
-        auto edgeType = e.key.get_edge_type();
+        auto edgeType = e.get_key().get_edge_type();
         auto pSchema = schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType)).get();
         LOG_IF(FATAL, !pSchema) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
-        auto propNames = makeColNames(e.props.size());
-        return encodeRowVal(pSchema, propNames, e.props);
+        auto propNames = makeColNames(e.get_props().size());
+        return encodeRowVal(pSchema, propNames, e.get_props());
     }
 
     std::string insertEdge(const cpp2::NewEdge& e) {
         std::string rawKey;
         int32_t partId = 0;
-        std::tie(rawKey, partId) = makeRawKey(e.key);
+        std::tie(rawKey, partId) = makeRawKey(e.get_key());
         auto encodedProps = encodeProps(e);
         putValue(rawKey, encodedProps, partId);
         return rawKey;
@@ -577,14 +580,14 @@ struct TossEnvironment {
 
     cpp2::EdgeKey reverseEdgeKey(const cpp2::EdgeKey& input) {
         cpp2::EdgeKey ret(input);
-        std::swap(ret.src, ret.dst);
-        ret.edge_type = 0 - ret.edge_type;
+        std::swap(*ret.src_ref(), *ret.dst_ref());
+        ret.set_edge_type(-ret.get_edge_type());
         return ret;
     }
 
     std::string insertReverseEdge(const cpp2::NewEdge& _e) {
         cpp2::NewEdge e(_e);
-        e.key = reverseEdgeKey(_e.key);
+        e.set_key(reverseEdgeKey(_e.get_key()));
         return insertEdge(e);
     }
 
@@ -600,7 +603,7 @@ struct TossEnvironment {
 
         std::string rawKey;
         int32_t lockPartId;
-        std::tie(rawKey, lockPartId) = makeRawKey(e.key);
+        std::tie(rawKey, lockPartId) = makeRawKey(e.get_key());
 
         auto lockKey = NebulaKeyUtils::toLockKey(rawKey);
         auto lockVal = encodeProps(e);

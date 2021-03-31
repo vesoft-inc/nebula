@@ -15,7 +15,7 @@ template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
         std::vector<cpp2::VertexProp>& vertexProps) {
     for (auto& vertexProp : vertexProps) {
-        auto tagId = vertexProp.tag;
+        auto tagId = vertexProp.get_tag();
         auto iter = tagContext_.schemas_.find(tagId);
         if (iter == tagContext_.schemas_.end()) {
             VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId;
@@ -30,8 +30,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
         }
 
         std::vector<PropContext> ctxs;
-        if (!vertexProp.props.empty()) {
-            for (const auto& name : vertexProp.props) {
+        if (!(*vertexProp.props_ref()).empty()) {
+            for (const auto& name : *vertexProp.props_ref()) {
                 if (name != kVid && name != kTag) {
                     auto field = tagSchema->field(name);
                     if (field == nullptr) {
@@ -49,7 +49,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
             auto count = tagSchema->getNumFields();
             for (size_t i = 0; i < count; i++) {
                 auto name = tagSchema->getFieldName(i);
-                vertexProp.props.emplace_back(name);
+                (*vertexProp.props_ref()).emplace_back(name);
                 auto field = tagSchema->field(i);
                 addReturnPropContext(ctxs, name, field);
             }
@@ -65,7 +65,7 @@ template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
         std::vector<cpp2::EdgeProp>& edgeProps) {
     for (auto& edgeProp : edgeProps) {
-        auto edgeType = edgeProp.type;
+        auto edgeType = edgeProp.get_type();
         auto iter = edgeContext_.schemas_.find(std::abs(edgeType));
         if (iter == edgeContext_.schemas_.end()) {
             VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
@@ -80,8 +80,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
         }
 
         std::vector<PropContext> ctxs;
-        if (!edgeProp.props.empty()) {
-            for (const auto& name : edgeProp.props) {
+        if (!(*edgeProp.props_ref()).empty()) {
+            for (const auto& name : (*edgeProp.props_ref())) {
                 if (name != kSrc && name != kType && name != kRank && name != kDst) {
                     auto field = edgeSchema->field(name);
                     if (field == nullptr) {
@@ -99,7 +99,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
             auto count = edgeSchema->getNumFields();
             for (size_t i = 0; i < count; i++) {
                 auto name = edgeSchema->getFieldName(i);
-                edgeProp.props.emplace_back(name);
+                (*edgeProp.props_ref()).emplace_back(name);
                 auto field = edgeSchema->field(i);
                 addReturnPropContext(ctxs, name, field);
             }
@@ -126,7 +126,7 @@ template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& req) {
     const auto& traverseSpec = req.get_traverse_spec();
     resultDataSet_.colNames.emplace_back("_expr");
-    if (!traverseSpec.__isset.expressions) {
+    if (!traverseSpec.expressions_ref().has_value()) {
         return cpp2::ErrorCode::SUCCEEDED;
     }
     // todo(doodle): support expression yields later
@@ -136,10 +136,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& req) {
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(const REQ& req) {
     const auto& traverseSpec = req.get_traverse_spec();
-    if (!traverseSpec.__isset.filter) {
+    if (!traverseSpec.filter_ref().has_value()) {
         return cpp2::ErrorCode::SUCCEEDED;
     }
-    const auto& filterStr = *traverseSpec.get_filter();
+    const auto& filterStr = *traverseSpec.filter_ref();
     if (!filterStr.empty()) {
         // the filter expression **must** return a bool
         filter_ = std::move(Expression::decode(filterStr));
@@ -188,17 +188,17 @@ std::vector<cpp2::VertexProp> QueryBaseProcessor<REQ, RESP>::buildAllTagProps() 
     std::vector<cpp2::VertexProp> result;
     for (const auto& entry : tagContext_.schemas_) {
         cpp2::VertexProp tagProp;
-        tagProp.tag = entry.first;
+        tagProp.set_tag(entry.first);
         const auto& schema = entry.second.back();
         auto count = schema->getNumFields();
         for (size_t i = 0; i < count; i++) {
             auto name = schema->getFieldName(i);
-            tagProp.props.emplace_back(name);
+            (*tagProp.props_ref()).emplace_back(name);
         }
         result.emplace_back(std::move(tagProp));
     }
     std::sort(result.begin(), result.end(),
-              [&] (const auto& a, const auto& b) { return a.tag < b.tag; });
+              [&] (const auto& a, const auto& b) { return a.get_tag() < b.get_tag(); });
     return result;
 }
 
@@ -208,25 +208,25 @@ std::vector<cpp2::EdgeProp> QueryBaseProcessor<REQ, RESP>::buildAllEdgeProps(
     std::vector<cpp2::EdgeProp> result;
     for (const auto& entry : edgeContext_.schemas_) {
         cpp2::EdgeProp edgeProp;
-        edgeProp.type = entry.first;
+        edgeProp.set_type(entry.first);
         if (direction == cpp2::EdgeDirection::IN_EDGE) {
-            edgeProp.type = -edgeProp.type;
+            edgeProp.set_type(-edgeProp.get_type());
         }
         const auto& schema = entry.second.back();
         auto count = schema->getNumFields();
         for (size_t i = 0; i < count; i++) {
             auto name = schema->getFieldName(i);
-            edgeProp.props.emplace_back(name);
+            (*edgeProp.props_ref()).emplace_back(name);
         }
         if (direction == cpp2::EdgeDirection::BOTH) {
             cpp2::EdgeProp reverse = edgeProp;
-            reverse.type = -edgeProp.type;
+            reverse.set_type(-edgeProp.get_type());
             result.emplace_back(std::move(reverse));
         }
         result.emplace_back(std::move(edgeProp));
     }
     std::sort(result.begin(), result.end(),
-              [&] (const auto& a, const auto& b) { return a.type < b.type; });
+              [&] (const auto& a, const auto& b) { return a.get_type() < b.get_type(); });
     return result;
 }
 

@@ -67,32 +67,33 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
         data.reserve(32);
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
         for (auto& newEdge : newEdges) {
-            auto edgeKey = newEdge.key;
-            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edgeKey.src
-                    << ", EdgeType: " << edgeKey.edge_type << ", EdgeRanking: "
-                    << edgeKey.ranking << ", VertexID: "
-                    << edgeKey.dst;
+            auto edgeKey = *newEdge.key_ref();
+            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
+                    << ", EdgeType: " << *edgeKey.edge_type_ref() << ", EdgeRanking: "
+                    << *edgeKey.ranking_ref() << ", VertexID: "
+                    << *edgeKey.dst_ref();
 
             if (!NebulaKeyUtils::isValidVidLen(
-                    spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                    spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
                 LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                           << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << edgeKey.src
-                           << ", dstVid: " << edgeKey.dst;
+                           << "space vid len: " << spaceVidLen_
+                           << ", edge srcVid: " << *edgeKey.src_ref()
+                           << ", dstVid: " << *edgeKey.dst_ref();
                 code = cpp2::ErrorCode::E_INVALID_VID;
                 break;
             }
 
             auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                partId,
-                                               edgeKey.src.getStr(),
-                                               edgeKey.edge_type,
-                                               edgeKey.ranking,
-                                               edgeKey.dst.getStr());
+                                               (*edgeKey.src_ref()).getStr(),
+                                               *edgeKey.edge_type_ref(),
+                                               *edgeKey.ranking_ref(),
+                                               (*edgeKey.dst_ref()).getStr());
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
-                                                          std::abs(edgeKey.edge_type));
+                                                          std::abs(*edgeKey.edge_type_ref()));
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
-                           << edgeKey.edge_type << " invalid";
+                           << *edgeKey.edge_type_ref() << " invalid";
                 code = cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 break;
             }
@@ -130,32 +131,33 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
 
         for (auto& newEdge : newEdges) {
-            auto edgeKey = newEdge.key;
-            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edgeKey.src
-                    << ", EdgeType: " << edgeKey.edge_type << ", EdgeRanking: "
-                    << edgeKey.ranking << ", VertexID: "
-                    << edgeKey.dst;
+            auto edgeKey = *newEdge.key_ref();
+            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
+                    << ", EdgeType: " << *edgeKey.edge_type_ref() << ", EdgeRanking: "
+                    << *edgeKey.ranking_ref() << ", VertexID: "
+                    << *edgeKey.dst_ref();
 
             if (!NebulaKeyUtils::isValidVidLen(
-                    spaceVidLen_, edgeKey.src.getStr(), edgeKey.dst.getStr())) {
+                    spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
                 LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                           << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << edgeKey.src
-                           << ", dstVid: " << edgeKey.dst;
+                           << "space vid len: " << spaceVidLen_
+                           << ", edge srcVid: " << *edgeKey.src_ref()
+                           << ", dstVid: " << *edgeKey.dst_ref();
                 code = cpp2::ErrorCode::E_INVALID_VID;
                 break;
             }
 
             auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                                partId,
-                                               edgeKey.src.getStr(),
-                                               edgeKey.edge_type,
-                                               edgeKey.ranking,
-                                               edgeKey.dst.getStr());
+                                               (*edgeKey.src_ref()).getStr(),
+                                               *edgeKey.edge_type_ref(),
+                                               *edgeKey.ranking_ref(),
+                                               (*edgeKey.dst_ref()).getStr());
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
-                                                          std::abs(edgeKey.edge_type));
+                                                          std::abs(*edgeKey.edge_type_ref()));
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
-                           << edgeKey.edge_type << " invalid";
+                           << *edgeKey.edge_type_ref() << " invalid";
                 code = cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 break;
             }
@@ -168,7 +170,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                 code = writeResultTo(wRet, true);
                 break;
             }
-            if (edgeKey.edge_type > 0) {
+            if (*edgeKey.edge_type_ref() > 0) {
                 RowReaderWrapper nReader;
                 RowReaderWrapper oReader;
                 auto obsIdx = findOldValue(partId, key);
@@ -176,7 +178,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                     if (!nebula::value(obsIdx).empty()) {
                         oReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
                                                                       spaceId_,
-                                                                      edgeKey.edge_type,
+                                                                      *edgeKey.edge_type_ref(),
                                                                       nebula::value(obsIdx));
                     }
                 } else {
@@ -186,11 +188,11 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                 if (!retEnc.value().empty()) {
                     nReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
                                                                   spaceId_,
-                                                                  edgeKey.edge_type,
+                                                                  *edgeKey.edge_type_ref(),
                                                                   retEnc.value());
                 }
                 for (auto& index : indexes_) {
-                    if (edgeKey.edge_type == index->get_schema_id().get_edge_type()) {
+                    if (*edgeKey.edge_type_ref() == index->get_schema_id().get_edge_type()) {
                         /*
                         * step 1 , Delete old version index if exists.
                         */
@@ -243,10 +245,10 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
             batchHolder->put(std::move(key), std::move(retEnc.value()));
             dummyLock.emplace_back(std::make_tuple(spaceId_,
                                                    partId,
-                                                   edgeKey.src.getStr(),
-                                                   edgeKey.edge_type,
-                                                   edgeKey.ranking,
-                                                   edgeKey.dst.getStr()));
+                                                   (*edgeKey.src_ref()).getStr(),
+                                                   *edgeKey.edge_type_ref(),
+                                                   *edgeKey.ranking_ref(),
+                                                   (*edgeKey.dst_ref()).getStr()));
         }
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             handleAsync(spaceId_, partId, code);

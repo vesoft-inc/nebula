@@ -50,8 +50,8 @@ StatisTask::getSchemas(GraphSpaceID spaceId) {
 
 ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
 StatisTask::genSubTasks() {
-    spaceId_ = ctx_.parameters_.space_id;
-    auto parts = ctx_.parameters_.parts;
+    spaceId_ = *ctx_.parameters_.space_id_ref();
+    auto parts = *ctx_.parameters_.parts_ref();
     subTaskSize_ = parts.size();
 
     auto ret = getSchemas(spaceId_);
@@ -215,13 +215,13 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     for (auto &tagElem : tagsVertices) {
         auto iter = tags_.find(tagElem.first);
         if (iter != tags_.end()) {
-            statisItem.tag_vertices.emplace(iter->second, tagElem.second);
+            (*statisItem.tag_vertices_ref()).emplace(iter->second, tagElem.second);
         }
     }
     for (auto &edgeElem : edgetypeEdges) {
         auto iter = edges_.find(edgeElem.first);
         if (iter != edges_.end()) {
-            statisItem.edges.emplace(iter->second, edgeElem.second);
+            (*statisItem.edges_ref()).emplace(iter->second, edgeElem.second);
         }
     }
 
@@ -248,12 +248,12 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 
     std::sort(positiveCorrelativity.begin(), positiveCorrelativity.end(),
               [&] (const auto& l, const auto& r) {
-                  return l.proportion < r.proportion;
+                  return *l.proportion_ref() < *r.proportion_ref();
               });
 
     std::sort(negativeCorrelativity.begin(), negativeCorrelativity.end(),
               [&] (const auto& l, const auto& r) {
-                  return l.proportion < r.proportion;
+                  return *l.proportion_ref() < *r.proportion_ref();
               });
 
     std::unordered_map<PartitionID, Correlativiyties> positivePartCorrelativiyties;
@@ -276,37 +276,39 @@ void StatisTask::finish(cpp2::ErrorCode rc) {
     result.set_status(nebula::meta::cpp2::JobStatus::FAILED);
 
     if (rc == cpp2::ErrorCode::SUCCEEDED && statistics_.size() == subTaskSize_) {
-        result.space_vertices = 0;
-        result.space_edges = 0;
+        result.set_space_vertices(0);
+        result.set_space_edges(0);
         for (auto& elem : statistics_) {
             auto item = elem.second;
-            result.space_vertices += item.space_vertices;
-            result.space_edges += item.space_edges;
+            *result.space_vertices_ref() += *item.space_vertices_ref();
+            *result.space_edges_ref() += *item.space_edges_ref();
 
-            for (auto& tagElem : item.tag_vertices) {
+            for (auto& tagElem : *item.tag_vertices_ref()) {
                 auto tagId = tagElem.first;
-                auto iter = result.tag_vertices.find(tagId);
-                if (iter == result.tag_vertices.end()) {
-                    result.tag_vertices.emplace(tagId, tagElem.second);
+                auto iter = (*result.tag_vertices_ref()).find(tagId);
+                if (iter == (*result.tag_vertices_ref()).end()) {
+                    (*result.tag_vertices_ref()).emplace(tagId, tagElem.second);
                 } else {
-                    result.tag_vertices[tagId] += tagElem.second;
+                    (*result.tag_vertices_ref())[tagId] += tagElem.second;
                 }
             }
 
-            for (auto& edgeElem : item.edges) {
+            for (auto& edgeElem : *item.edges_ref()) {
                 auto edgetype = edgeElem.first;
-                auto iter = result.edges.find(edgetype);
-                if (iter == result.edges.end()) {
-                    result.edges.emplace(edgetype, edgeElem.second);
+                auto iter = (*result.edges_ref()).find(edgetype);
+                if (iter == (*result.edges_ref()).end()) {
+                    (*result.edges_ref()).emplace(edgetype, edgeElem.second);
                 } else {
-                    result.edges[edgetype] += edgeElem.second;
+                    (*result.edges_ref())[edgetype] += edgeElem.second;
                 }
             }
 
-            result.positive_part_correlativity.insert(item.positive_part_correlativity.begin(),
-                                                      item.positive_part_correlativity.end());
-            result.negative_part_correlativity.insert(item.negative_part_correlativity.begin(),
-                                                      item.negative_part_correlativity.end());
+            (*result.positive_part_correlativity_ref()).insert(
+                    (*item.positive_part_correlativity_ref()).begin(),
+                    (*item.positive_part_correlativity_ref()).end());
+            (*result.negative_part_correlativity_ref()).insert(
+                    (*item.negative_part_correlativity_ref()).begin(),
+                    (*item.negative_part_correlativity_ref()).end());
         }
         result.set_status(nebula::meta::cpp2::JobStatus::FINISHED);
         ctx_.onFinish_(rc, result);

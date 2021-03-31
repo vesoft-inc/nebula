@@ -86,9 +86,9 @@ private:
         if (!spaceResult.ok()) {
             LOG(ERROR) << "Get spaceId failed, try to create one";
             meta::cpp2::SpaceDesc spaceDesc;
-            spaceDesc.space_name = FLAGS_space_name;
-            spaceDesc.partition_num = FLAGS_partition_num;
-            spaceDesc.replica_factor = 1;
+            spaceDesc.set_space_name(FLAGS_space_name);
+            spaceDesc.set_partition_num(FLAGS_partition_num);
+            spaceDesc.set_replica_factor(1);
             auto ret = mClient_->createSpace(spaceDesc).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create space failed: " << ret.status();
@@ -107,7 +107,7 @@ private:
             nebula::meta::cpp2::ColumnDef column;
             column.name = FLAGS_prop_name;
             column.type.set_type(meta::cpp2::PropertyType::INT64);
-            schema.columns.emplace_back(std::move(column));
+            (*schema.columns_ref()).emplace_back(std::move(column));
             auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create tag failed: " << ret.status();
@@ -192,12 +192,12 @@ private:
 
             storage::cpp2::NewVertex v;
             v.set_id(vId);
-            decltype(v.tags) tags;
+            std::vector<nebula::storage::cpp2::NewTag> tags;
 
             storage::cpp2::NewTag tag;
             tag.set_tag_id(tagId_);
 
-            decltype(tag.props) props;
+            std::vector<nebula::Value> props;
             Value val(prev[i]);
             props.emplace_back(val);
             tag.set_props(props);
@@ -221,8 +221,8 @@ private:
             // TODO support getProps
             std::vector<cpp2::VertexProp> props;
             cpp2::VertexProp tagProp;
-            tagProp.tag = tagId_;
-            tagProp.props.emplace_back(propName_);
+            tagProp.set_tag(tagId_);
+            (*tagProp.props_ref()).emplace_back(propName_);
             DataSet dataset({kVid});
             auto future = client_->getProps(spaceId_, dataset, &props, nullptr, nullptr);
             auto resp = std::move(future).get();

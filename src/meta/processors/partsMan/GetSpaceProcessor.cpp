@@ -31,9 +31,9 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     VLOG(3) << "Get Space SpaceName: " << req.get_space_name()
             << ", Partition Num " << properties.get_partition_num()
             << ", Replica Factor " << properties.get_replica_factor();
-    if (properties.__isset.group_name) {
+    if (properties.group_name_ref().has_value()) {
         LOG(INFO) << "Space " << req.get_space_name()
-                  << " is bind to the group " << *properties.get_group_name();
+                  << " is bind to the group " << *properties.group_name_ref();
     }
 
     cpp2::SpaceItem item;

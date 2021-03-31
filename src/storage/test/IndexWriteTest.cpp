@@ -82,7 +82,7 @@ TEST(IndexTest, SimpleVerticesTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(convertVertexId(vIdLen, partId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
         auto fut = processor->getFuture();
@@ -113,7 +113,7 @@ TEST(IndexTest, SimpleVerticesTest) {
         for (auto partId = 1; partId <= 6; partId++) {
             std::vector<Value> vertices;
             vertices.emplace_back(Value(convertVertexId(vIdLen, partId)));
-            req.parts[partId] = std::move(vertices);
+            (*req.parts_ref())[partId] = std::move(vertices);
         }
         auto fut = processor->getFuture();
         processor->process(req);
@@ -167,9 +167,9 @@ TEST(IndexTest, SimpleEdgesTest) {
             props.emplace_back(Value(6L));
             props.emplace_back(Value(7.7F));
             newEdge.set_props(std::move(props));
-            req.parts[partId].emplace_back(newEdge);
-            newEdge.key.set_edge_type(-101);
-            req.parts[partId].emplace_back(std::move(newEdge));
+            (*req.parts_ref())[partId].emplace_back(newEdge);
+            (*newEdge.key_ref()).set_edge_type(-101);
+            (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
         }
         auto* processor = AddEdgesProcessor::instance(env, nullptr);
         auto fut = processor->getFuture();
@@ -202,9 +202,9 @@ TEST(IndexTest, SimpleEdgesTest) {
             edgeKey.set_edge_type(101);
             edgeKey.set_ranking(0);
             edgeKey.set_dst(convertVertexId(vIdLen, partId + 6));
-            req.parts[partId].emplace_back(edgeKey);
+            (*req.parts_ref())[partId].emplace_back(edgeKey);
             edgeKey.set_edge_type(-101);
-            req.parts[partId].emplace_back(std::move(edgeKey));
+            (*req.parts_ref())[partId].emplace_back(std::move(edgeKey));
         }
         auto fut = processor->getFuture();
         processor->process(req);
@@ -256,7 +256,7 @@ TEST(IndexTest, VerticesValueTest) {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
         req.set_overwritable(true);
-        decltype(req.prop_names) propNames;
+        std::unordered_map<int, std::vector<std::string>> propNames;
         propNames[tagId] = {"col_bool", "col_int", "col_float",
                             "col_float_null", "col_str", "col_date"};
         req.set_prop_names(std::move(propNames));
@@ -278,7 +278,7 @@ TEST(IndexTest, VerticesValueTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(convertVertexId(vIdLen, partId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
         auto fut = processor->getFuture();
@@ -393,7 +393,7 @@ TEST(IndexTest, AlterTagIndexTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(convertVertexId(vIdLen, partId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
         auto fut = processor->getFuture();
@@ -457,7 +457,7 @@ TEST(IndexTest, AlterTagIndexTest) {
             newTags.push_back(std::move(newTag));
             newVertex.set_id(convertVertexId(vIdLen, partId));
             newVertex.set_tags(std::move(newTags));
-            req.parts[partId].emplace_back(std::move(newVertex));
+            (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
         }
         auto* processor = AddVerticesProcessor::instance(env, nullptr);
         auto fut = processor->getFuture();

@@ -28,7 +28,7 @@ void HBProcessor::onFinished() {
 
 
 void HBProcessor::process(const cpp2::HBReq& req) {
-    HostAddr host(req.host.host, req.host.port);
+    HostAddr host((*req.host_ref()).host, (*req.host_ref()).port);
     if (FLAGS_hosts_whitelist_enabled
             && hostExist(MetaServiceUtils::hostKey(host.host, host.port))
                 == Status::HostNotFound()) {
@@ -39,7 +39,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     }
 
     VLOG(3) << "Receive heartbeat from " << host
-            << ", role = " << meta::cpp2::_HostRole_VALUES_TO_NAMES.at(req.get_role());
+            << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
     auto ret = kvstore::ResultCode::SUCCEEDED;
     if (req.get_role() == cpp2::HostRole::STORAGE) {
         ClusterID peerCluserId = req.get_cluster_id();
@@ -56,9 +56,9 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
     HostInfo info(time::WallClock::fastNowInMilliSec(),
                   req.get_role(), req.get_git_info_sha());
-    if (req.__isset.leader_partIds) {
+    if (req.leader_partIds_ref().has_value()) {
         ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
-                                             req.get_leader_partIds());
+                                             &*req.leader_partIds_ref());
     } else {
         ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
     }

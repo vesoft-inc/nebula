@@ -42,9 +42,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "OneOutEdgeKeyInProperty";
@@ -62,9 +62,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "OneInEdgeMultiProperty";
@@ -81,9 +81,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, team, - serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "OneInEdgeKeyInProperty";
@@ -101,9 +101,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, team, - serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "GetNotExistTag";
@@ -122,9 +122,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, team, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 6);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
     }
     {
         LOG(INFO) << "OneOutEdgeMultiProperty";
@@ -141,9 +141,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "OutEdgeReturnAllProperty";
@@ -153,16 +153,16 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::OUT_EDGE;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::OUT_EDGE);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 6);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
     }
     {
         LOG(INFO) << "InEdgeReturnAllProperty";
@@ -172,16 +172,16 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::IN_EDGE;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::IN_EDGE);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, - teammate, - serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 6);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
     }
     {
         LOG(INFO) << "InOutEdgeReturnAllProperty";
@@ -191,16 +191,16 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, - teammate, - serve, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "InEdgeReturnAllProperty";
@@ -210,16 +210,16 @@ TEST(GetNeighborsTest, PropertyTest) {
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         tags.emplace_back(team, std::vector<std::string>{"name"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, - teammate, - serve, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "Nullable";
@@ -236,9 +236,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "DefaultValue";
@@ -255,9 +255,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "Misc";
@@ -278,9 +278,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "MultiOutEdgeMultiProperty";
@@ -298,9 +298,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 6);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 6);
     }
     {
         LOG(INFO) << "InOutEdgeMultiProperty";
@@ -319,9 +319,9 @@ TEST(GetNeighborsTest, PropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, teammate, -teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 7);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 7);
     }
 }
 
@@ -354,9 +354,9 @@ TEST(GetNeighborsTest, GoFromMultiVerticesTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 2, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 2, 5);
     }
     {
         LOG(INFO) << "OneInEdgeMultiProperty";
@@ -373,9 +373,9 @@ TEST(GetNeighborsTest, GoFromMultiVerticesTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, -serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 2, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 2, 5);
     }
     {
         LOG(INFO) << "Misc";
@@ -398,9 +398,9 @@ TEST(GetNeighborsTest, GoFromMultiVerticesTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 2, 6);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 2, 6);
     }
 }
 
@@ -433,7 +433,7 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamGames"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::SUM;
+            statProp.set_stat(cpp2::StatType::SUM);
             statProps.emplace_back(std::move(statProp));
         }
         {
@@ -443,7 +443,7 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamAvgScore"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::AVG;
+            statProp.set_stat(cpp2::StatType::AVG);
             statProps.emplace_back(std::move(statProp));
         }
         {
@@ -453,7 +453,7 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamCareer"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::MAX;
+            statProp.set_stat(cpp2::StatType::MAX);
             statProps.emplace_back(std::move(statProp));
         }
         {
@@ -462,10 +462,10 @@ TEST(GetNeighborsTest, StatTest) {
             statProp.set_alias("Sum of rank in serve edge");
             EdgeRankExpression exp(new std::string(folly::to<std::string>(serve)));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::SUM;
+            statProp.set_stat(cpp2::StatType::SUM);
             statProps.emplace_back(std::move(statProp));
         }
-        req.traverse_spec.stat_props = std::move(statProps);
+        (*req.traverse_spec_ref()).set_stat_props(std::move(statProps));
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
@@ -476,9 +476,9 @@ TEST(GetNeighborsTest, StatTest) {
         expectStat.emplace("LeBron James", std::vector<Value>{
             548 + 294 + 301 + 115, (29.7 + 27.1 + 27.5 + 25.7) / 4, 7, 2003 + 2010 + 2014 + 2018});
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges,
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges,
                                       1, 5, &expectStat);
     }
     {
@@ -499,7 +499,7 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamAvgScore"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::AVG;
+            statProp.set_stat(cpp2::StatType::AVG);
             statProps.emplace_back(std::move(statProp));
         }
         {
@@ -509,7 +509,7 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamAvgScore"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::MIN;
+            statProp.set_stat(cpp2::StatType::MIN);
             statProps.emplace_back(std::move(statProp));
         }
         {
@@ -519,10 +519,10 @@ TEST(GetNeighborsTest, StatTest) {
             EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
                                        new std::string("teamAvgScore"));
             statProp.set_prop(Expression::encode(exp));
-            statProp.stat = cpp2::StatType::MAX;
+            statProp.set_stat(cpp2::StatType::MAX);
             statProps.emplace_back(std::move(statProp));
         }
-        req.traverse_spec.stat_props = std::move(statProps);
+        (*req.traverse_spec_ref()).set_stat_props(std::move(statProps));
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
@@ -533,9 +533,9 @@ TEST(GetNeighborsTest, StatTest) {
         expectStat.emplace("LeBron James", std::vector<Value>{
             (29.7 + 27.1 + 27.5 + 25.7) / 4, 25.7, 29.7});
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges,
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges,
                                       1, 5, &expectStat);
     }
 }
@@ -564,17 +564,17 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         edges.emplace_back(-serve, std::vector<std::string>{
                            "playerName", "startYear", "teamCareer"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_limit(10);
+        (*req.traverse_spec_ref()).set_limit(10);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
         // vId, stat, team, -serve, expr
-        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
     }
     {
         LOG(INFO) << "MultiEdgeTypeLimit";
@@ -587,7 +587,7 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_limit(4);
+        (*req.traverse_spec_ref()).set_limit(4);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -596,11 +596,11 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         // vId, stat, player, serve, teammate, expr
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with limit = 4, return all serve edges, none of the teammate edges will be returned
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(4, resp.vertices.rows[0].values[3].getList().values.size());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[4].type());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(4, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
     }
     {
         LOG(INFO) << "SingleEdgeTypeSample";
@@ -612,18 +612,18 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         edges.emplace_back(-serve, std::vector<std::string>{
                            "playerName", "startYear", "teamCareer"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_limit(10);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_limit(10);
+        (*req.traverse_spec_ref()).set_random(true);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
         // vId, stat, team, -serve, expr
-        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
     }
     {
         LOG(INFO) << "MultiEdgeTypeSample";
@@ -636,8 +636,8 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_limit(4);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_limit(4);
+        (*req.traverse_spec_ref()).set_random(true);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -646,15 +646,15 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         // vId, stat, player, serve, teammate, expr
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with sample = 4
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
         size_t actual = 0;
-        if (resp.vertices.rows[0].values[3].type() == Value::Type::LIST) {
-            actual += resp.vertices.rows[0].values[3].getList().values.size();
+        if ((*resp.vertices_ref()).rows[0].values[3].type() == Value::Type::LIST) {
+            actual += (*resp.vertices_ref()).rows[0].values[3].getList().values.size();
         }
-        if (resp.vertices.rows[0].values[4].type() == Value::Type::LIST) {
-            actual += resp.vertices.rows[0].values[4].getList().values.size();
+        if ((*resp.vertices_ref()).rows[0].values[4].type() == Value::Type::LIST) {
+            actual += (*resp.vertices_ref()).rows[0].values[4].getList().values.size();
         }
         ASSERT_EQ(4, actual);
     }
@@ -669,8 +669,8 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_limit(5);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_limit(5);
+        (*req.traverse_spec_ref()).set_random(true);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -679,11 +679,11 @@ TEST(GetNeighborsTest, LimitSampleTest) {
         // 5 column, vId, stat, player, serve, teammate
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with sample = 5
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(5, resp.vertices.rows[0].values[3].getList().values.size() +
-                     resp.vertices.rows[0].values[4].getList().values.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values[3].getList().values.size() +
+                     (*resp.vertices_ref()).rows[0].values[4].getList().values.size());
     }
 }
 
@@ -718,11 +718,11 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
         // vId, stat, team, -serve, expr
-        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
     }
 
     FLAGS_max_edge_returned_per_vertex = 4;
@@ -745,11 +745,11 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         // vId, stat, player, serve, teammate, expr
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with limit = 4, return all serve edges, none of the teammate edges will be returned
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(4, resp.vertices.rows[0].values[3].getList().values.size());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[4].type());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(4, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
     }
 
     FLAGS_max_edge_returned_per_vertex = 10;
@@ -763,17 +763,17 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         edges.emplace_back(-serve, std::vector<std::string>{
                            "playerName", "startYear", "teamCareer"});
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_random(true);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
         // vId, stat, team, -serve, expr
-        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].values[3].getList().values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values[3].getList().values.size());
     }
 
     FLAGS_max_edge_returned_per_vertex = 4;
@@ -788,7 +788,7 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_random(true);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -797,15 +797,15 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         // vId, stat, player, serve, teammate, expr
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with sample = 4
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
         size_t actual = 0;
-        if (resp.vertices.rows[0].values[3].type() == Value::Type::LIST) {
-            actual += resp.vertices.rows[0].values[3].getList().values.size();
+        if ((*resp.vertices_ref()).rows[0].values[3].type() == Value::Type::LIST) {
+            actual += (*resp.vertices_ref()).rows[0].values[3].getList().values.size();
         }
-        if (resp.vertices.rows[0].values[4].type() == Value::Type::LIST) {
-            actual += resp.vertices.rows[0].values[4].getList().values.size();
+        if ((*resp.vertices_ref()).rows[0].values[4].type() == Value::Type::LIST) {
+            actual += (*resp.vertices_ref()).rows[0].values[4].getList().values.size();
         }
         ASSERT_EQ(4, actual);
     }
@@ -822,7 +822,7 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         edges.emplace_back(teammate, std::vector<std::string>{"player1", "player2", "teamName"});
 
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.set_random(true);
+        (*req.traverse_spec_ref()).set_random(true);
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -831,11 +831,11 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
         // 5 column, vId, stat, player, serve, teammate
         // Dwyane Wad has 4 serve edge, 2 teammate edge
         // with sample = 5
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(6, resp.vertices.rows[0].values.size());
-        ASSERT_EQ(5, resp.vertices.rows[0].values[3].getList().values.size() +
-                     resp.vertices.rows[0].values[4].getList().values.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(6, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values[3].getList().values.size() +
+                     (*resp.vertices_ref()).rows[0].values[4].getList().values.size());
     }
 
     FLAGS_max_edge_returned_per_vertex = defaultVal;
@@ -869,9 +869,9 @@ TEST(GetNeighborsTest, VertexCacheTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         std::vector<VertexID> vertices = {"Tim Duncan"};
@@ -887,9 +887,9 @@ TEST(GetNeighborsTest, VertexCacheTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
 }
 
@@ -922,9 +922,9 @@ TEST(GetNeighborsTest, TtlTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
     }
     {
         LOG(INFO) << "GoFromPlayerOverAll";
@@ -933,16 +933,16 @@ TEST(GetNeighborsTest, TtlTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
     }
     sleep(FLAGS_mock_ttl_duration + 1);
     {
@@ -960,15 +960,15 @@ TEST(GetNeighborsTest, TtlTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
-        ASSERT_EQ(1, resp.vertices.rows.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
         // vId, stat, player, serve, expr
-        ASSERT_EQ(5, resp.vertices.rows[0].values.size());
-        ASSERT_EQ("Tim Duncan", resp.vertices.rows[0].values[0].getStr());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[1].type());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[2].type());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[3].type());
-        ASSERT_EQ(Value::Type::__EMPTY__, resp.vertices.rows[0].values[4].type());
+        ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[1].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[2].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type());
+        ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
     }
     {
         LOG(INFO) << "GoFromPlayerOverAll";
@@ -977,27 +977,27 @@ TEST(GetNeighborsTest, TtlTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        ASSERT_EQ(1, resp.vertices.rows.size());
-        ASSERT_EQ(10, resp.vertices.rows[0].values.size());
-        ASSERT_EQ("Tim Duncan", resp.vertices.rows[0].values[0].getStr());
-        ASSERT_TRUE(resp.vertices.rows[0].values[1].empty());      // stat
-        ASSERT_TRUE(resp.vertices.rows[0].values[2].empty());      // player expired
-        ASSERT_TRUE(resp.vertices.rows[0].values[3].empty());      // team not exists
-        ASSERT_TRUE(resp.vertices.rows[0].values[4].empty());      // general tag not exists
-        ASSERT_TRUE(resp.vertices.rows[0].values[5].isList());     // - teammate valid
-        ASSERT_TRUE(resp.vertices.rows[0].values[6].empty());      // - serve expired
-        ASSERT_TRUE(resp.vertices.rows[0].values[7].empty());      // + serve expired
-        ASSERT_TRUE(resp.vertices.rows[0].values[8].isList());     // + teammate valid
-        ASSERT_TRUE(resp.vertices.rows[0].values[9].empty());      // expr
+        ASSERT_EQ(1, (*resp.vertices_ref()).rows.size());
+        ASSERT_EQ(10, (*resp.vertices_ref()).rows[0].values.size());
+        ASSERT_EQ("Tim Duncan", (*resp.vertices_ref()).rows[0].values[0].getStr());
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[1].empty());   // stat
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[2].empty());   // player expired
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[3].empty());   // team not exists
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[4].empty());   // general tag not exists
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[5].isList());  // - teammate valid
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[6].empty());   // - serve expired
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[7].empty());   // + serve expired
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[8].isList());  // + teammate valid
+        ASSERT_TRUE((*resp.vertices_ref()).rows[0].values[9].empty());   // expr
     }
     FLAGS_mock_ttl_col = false;
 }
@@ -1028,8 +1028,8 @@ TEST(GetNeighborsTest, FailedTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(1, resp.result.failed_parts.size());
-        ASSERT_EQ(cpp2::ErrorCode::E_TAG_NOT_FOUND, resp.result.failed_parts.front().code);
+        ASSERT_EQ(1, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(cpp2::ErrorCode::E_TAG_NOT_FOUND, (*resp.result_ref()).failed_parts.front().code);
     }
     {
         LOG(INFO) << "EdgeNotExists";
@@ -1045,8 +1045,9 @@ TEST(GetNeighborsTest, FailedTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(1, resp.result.failed_parts.size());
-        ASSERT_EQ(cpp2::ErrorCode::E_EDGE_NOT_FOUND, resp.result.failed_parts.front().code);
+        ASSERT_EQ(1, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(cpp2::ErrorCode::E_EDGE_NOT_FOUND,
+                (*resp.result_ref()).failed_parts.front().code);
     }
     {
         LOG(INFO) << "TagPropNotExists";
@@ -1062,8 +1063,9 @@ TEST(GetNeighborsTest, FailedTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(1, resp.result.failed_parts.size());
-        ASSERT_EQ(cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND, resp.result.failed_parts.front().code);
+        ASSERT_EQ(1, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND,
+                (*resp.result_ref()).failed_parts.front().code);
     }
     {
         LOG(INFO) << "EdgePropNotExists";
@@ -1079,8 +1081,9 @@ TEST(GetNeighborsTest, FailedTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(1, resp.result.failed_parts.size());
-        ASSERT_EQ(cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND, resp.result.failed_parts.front().code);
+        ASSERT_EQ(1, (*resp.result_ref()).failed_parts.size());
+        ASSERT_EQ(cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND,
+                (*resp.result_ref()).failed_parts.front().code);
     }
 }
 
@@ -1115,9 +1118,9 @@ TEST(GetNeighborsTest, ReturnAllPropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 7);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 7);
     }
     {
         LOG(INFO) << "ReturnAllPropertyInTagAndEdge";
@@ -1136,9 +1139,9 @@ TEST(GetNeighborsTest, ReturnAllPropertyTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, -serve, teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 7);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 7);
     }
 }
 
@@ -1158,16 +1161,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges, true);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 3);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 3);
     }
     {
         LOG(INFO) << "GoFromPlayerOverAll";
@@ -1176,16 +1179,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
     }
     {
         LOG(INFO) << "GoFromTeamOverAll";
@@ -1194,16 +1197,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
     }
     {
         LOG(INFO) << "GoFromPlayerOverInEdge";
@@ -1212,16 +1215,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::IN_EDGE;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::IN_EDGE);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - serve, - teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "GoFromPlayerOverOutEdge";
@@ -1230,16 +1233,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::OUT_EDGE;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::OUT_EDGE);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 8);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 8);
     }
     {
         LOG(INFO) << "GoFromMultiPlayerOverAll";
@@ -1248,16 +1251,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 3, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 10);
     }
     {
         LOG(INFO) << "GoFromMultiTeamOverAll";
@@ -1266,16 +1269,16 @@ TEST(GetNeighborsTest, GoOverAllTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 3, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 3, 10);
     }
 }
 
@@ -1295,16 +1298,16 @@ TEST(GetNeighborsTest, MultiVersionTest) {
         std::vector<std::pair<TagID, std::vector<std::string>>> tags;
         std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
         auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-        req.traverse_spec.edge_direction = cpp2::EdgeDirection::BOTH;
+        (*req.traverse_spec_ref()).set_edge_direction(cpp2::EdgeDirection::BOTH);
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, team, general tag, - teammate, - serve, + serve, + teammate, expr
-        QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 10);
+        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 10);
     }
 }
 
@@ -1339,7 +1342,7 @@ TEST(GetNeighborsTest, FilterTest) {
                 new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
                                            new std::string("teamAvgScore")),
                 new ConstantExpression(Value(20)));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1347,7 +1350,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1362,7 +1365,7 @@ TEST(GetNeighborsTest, FilterTest) {
                                        nebula::List({"Rockets", 2004, 2010})}),
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "ArithExpression";
@@ -1385,7 +1388,7 @@ TEST(GetNeighborsTest, FilterTest) {
                     new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
                                             new std::string("startYear"))),
                 new ConstantExpression(Value(5)));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1393,7 +1396,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1409,7 +1412,7 @@ TEST(GetNeighborsTest, FilterTest) {
                          serveEdges,
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "LogicalExp";
@@ -1437,7 +1440,7 @@ TEST(GetNeighborsTest, FilterTest) {
                         new std::string(folly::to<std::string>(serve)),
                         new std::string("teamCareer")),
                     new ConstantExpression(Value(4))));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1445,7 +1448,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1461,7 +1464,7 @@ TEST(GetNeighborsTest, FilterTest) {
                          serveEdges,
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         std::vector<VertexID> vertices = {"Tracy McGrady"};
@@ -1478,7 +1481,7 @@ TEST(GetNeighborsTest, FilterTest) {
                 Expression::Kind::kRelEQ,
                 new EdgeDstIdExpression(new std::string(folly::to<std::string>(serve))),
                 new ConstantExpression(Value("Rockets")));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1486,7 +1489,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1502,7 +1505,7 @@ TEST(GetNeighborsTest, FilterTest) {
                          serveEdges,
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "Tag + Edge exp";
@@ -1529,7 +1532,7 @@ TEST(GetNeighborsTest, FilterTest) {
                         new std::string(folly::to<std::string>(player)),
                         new std::string("games")),
                     new ConstantExpression(Value(1000))));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1537,7 +1540,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1552,7 +1555,7 @@ TEST(GetNeighborsTest, FilterTest) {
                                        nebula::List({"Rockets", 2004, 2010})}),
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "Filter apply to multi vertices";
@@ -1580,7 +1583,7 @@ TEST(GetNeighborsTest, FilterTest) {
                         new std::string(folly::to<std::string>(player)),
                         new std::string("avgScore")),
                     new ConstantExpression(Value(18))));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1588,7 +1591,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1596,8 +1599,8 @@ TEST(GetNeighborsTest, FilterTest) {
                              "_tag:1:name:age:avgScore",
                              "_edge:+101:teamName:startYear:endYear",
                              "_expr"};
-        ASSERT_EQ(expected.colNames, resp.vertices.colNames);
-        ASSERT_EQ(4, resp.vertices.rows.size());
+        ASSERT_EQ(expected.colNames, (*resp.vertices_ref()).colNames);
+        ASSERT_EQ(4, (*resp.vertices_ref()).rows.size());
         {
             nebula::Row row({"Tracy McGrady",
                             Value(),
@@ -1606,8 +1609,8 @@ TEST(GetNeighborsTest, FilterTest) {
                                           nebula::List({"Rockets", 2004, 2010})}),
                             Value()});
             for (size_t i = 0; i < 4; i++) {
-                if (resp.vertices.rows[i].values[0].getStr() == "Tracy McGrady") {
-                    ASSERT_EQ(row, resp.vertices.rows[i]);
+                if ((*resp.vertices_ref()).rows[i].values[0].getStr() == "Tracy McGrady") {
+                    ASSERT_EQ(row, (*resp.vertices_ref()).rows[i]);
                     break;
                 }
             }
@@ -1621,8 +1624,8 @@ TEST(GetNeighborsTest, FilterTest) {
                             serveEdges,
                             Value()});
             for (size_t i = 0; i < 4; i++) {
-                if (resp.vertices.rows[i].values[0].getStr() == "Tim Duncan") {
-                    ASSERT_EQ(row, resp.vertices.rows[i]);
+                if ((*resp.vertices_ref()).rows[i].values[0].getStr() == "Tim Duncan") {
+                    ASSERT_EQ(row, (*resp.vertices_ref()).rows[i]);
                     break;
                 }
             }
@@ -1636,8 +1639,8 @@ TEST(GetNeighborsTest, FilterTest) {
                             Value(),
                             Value()});
             for (size_t i = 0; i < 4; i++) {
-                if (resp.vertices.rows[i].values[0].getStr() == "Tony Parker") {
-                    ASSERT_EQ(row, resp.vertices.rows[i]);
+                if ((*resp.vertices_ref()).rows[i].values[0].getStr() == "Tony Parker") {
+                    ASSERT_EQ(row, (*resp.vertices_ref()).rows[i]);
                     break;
                 }
             }
@@ -1651,8 +1654,8 @@ TEST(GetNeighborsTest, FilterTest) {
                             Value(),
                             Value()});
             for (size_t i = 0; i < 4; i++) {
-                if (resp.vertices.rows[i].values[0].getStr() == "Manu Ginobili") {
-                    ASSERT_EQ(row, resp.vertices.rows[i]);
+                if ((*resp.vertices_ref()).rows[i].values[0].getStr() == "Manu Ginobili") {
+                    ASSERT_EQ(row, (*resp.vertices_ref()).rows[i]);
                     break;
                 }
             }
@@ -1676,7 +1679,7 @@ TEST(GetNeighborsTest, FilterTest) {
                 new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
                                            new std::string("teamGames")),
                 new ConstantExpression(Value(1000)));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1684,7 +1687,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {kVid,
@@ -1704,7 +1707,7 @@ TEST(GetNeighborsTest, FilterTest) {
                          Value(),
                          Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "FilterOnReverseEdge";
@@ -1725,7 +1728,7 @@ TEST(GetNeighborsTest, FilterTest) {
                 new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
                                            new std::string("teamAvgScore")),
                 new ConstantExpression(Value(15)));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -1733,7 +1736,7 @@ TEST(GetNeighborsTest, FilterTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, serve, expr
         nebula::DataSet expected;
         expected.colNames = {
@@ -1751,7 +1754,7 @@ TEST(GetNeighborsTest, FilterTest) {
                             nebula::List({"Spurs", 2015, 2020, "Spurs", "LaMarcus Aldridge"})}),
             Value()});
         expected.rows.emplace_back(std::move(row));
-        ASSERT_EQ(expected, resp.vertices);
+        ASSERT_EQ(expected, *resp.vertices_ref());
     }
     {
         LOG(INFO) << "FilterOnBidirectEdge";
@@ -1774,14 +1777,14 @@ TEST(GetNeighborsTest, FilterTest) {
                 new EdgePropertyExpression(new std::string(folly::to<std::string>(teammate)),
                                            new std::string("startYear")),
                 new ConstantExpression(Value(2002)));
-            req.traverse_spec.set_filter(Expression::encode(exp));
+            (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
         auto* processor = GetNeighborsProcessor::instance(env, nullptr, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
 
-        ASSERT_EQ(0, resp.result.failed_parts.size());
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
         // vId, stat, player, teammate, -teammate, expr
         nebula::DataSet expected;
         expected.colNames = {

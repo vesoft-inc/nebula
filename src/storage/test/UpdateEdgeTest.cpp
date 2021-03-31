@@ -170,7 +170,7 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
 
         LOG(INFO) << "Build yield...";
         // Return serve props: playerName, teamName, teamCareer, type
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yEdge1 = new std::string("101");
         auto* yProp1 = new std::string("playerName");
         EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -203,29 +203,29 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         auto resp = std::move(f).get();
 
         LOG(INFO) << "Check the results...";
-        EXPECT_EQ(0, resp.result.failed_parts.size());
-        EXPECT_EQ(9, resp.props.colNames.size());
-        EXPECT_EQ("_inserted", resp.props.colNames[0]);
-        EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-        EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-        EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-        EXPECT_EQ("101.type", resp.props.colNames[4]);
-        EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-        EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-        EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-        EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+        EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+        EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+        EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+        EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+        EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+        EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+        EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+        EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+        EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-        EXPECT_EQ(1, resp.props.rows.size());
-        EXPECT_EQ(9, resp.props.rows[0].values.size());
-        EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-        EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-        EXPECT_EQ(20, resp.props.rows[0].values[3].getInt());
-        EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[5].getStr());
-        EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-        EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-        EXPECT_EQ("Spurs", resp.props.rows[0].values[8].getStr());
+        EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+        EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
+        EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+        EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+        EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[3].getInt());
+        EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[5].getStr());
+        EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+        EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+        EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[8].getStr());
 
         // get serve from kvstore directly
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -288,7 +288,7 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
 
         LOG(INFO) << "Build yield...";
         // Return serve props: playerName, teamName, teamCareer, type
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yEdge1 = new std::string("101");
         auto* yProp1 = new std::string("playerName");
         EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -321,29 +321,29 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         auto resp = std::move(f).get();
 
         LOG(INFO) << "Check the results...";
-        EXPECT_EQ(0, resp.result.failed_parts.size());
-        EXPECT_EQ(9, resp.props.colNames.size());
-        EXPECT_EQ("_inserted", resp.props.colNames[0]);
-        EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-        EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-        EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-        EXPECT_EQ("101.type", resp.props.colNames[4]);
-        EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-        EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-        EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-        EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+        EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+        EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+        EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+        EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+        EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+        EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+        EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+        EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+        EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-        EXPECT_EQ(1, resp.props.rows.size());
-        EXPECT_EQ(9, resp.props.rows[0].values.size());
-        EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-        EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-        EXPECT_EQ(20, resp.props.rows[0].values[3].getInt());
-        EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-        EXPECT_EQ("Spurs", resp.props.rows[0].values[5].getStr());
-        EXPECT_EQ(-101, resp.props.rows[0].values[6].getInt());
-        EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[8].getStr());
+        EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+        EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
+        EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+        EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+        EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[3].getInt());
+        EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+        EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[5].getStr());
+        EXPECT_EQ(-101, (*resp.props_ref()).rows[0].values[6].getInt());
+        EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[8].getStr());
 
         // get serve from kvstore directly
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -443,7 +443,7 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -476,33 +476,33 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // Note: If filtered out, the result is old
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
     // filter, return old value
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(19, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("zzzzz", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[8].getStr());
+    EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(19, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("zzzzz", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[8].getStr());
 
     // get serve from kvstore directly
     // Because no update, the value is old
@@ -594,7 +594,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -627,29 +627,29 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ(2016, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[8].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ(2016, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[8].getStr());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -723,7 +723,7 @@ TEST(UpdateEdgeTest, Invalid_Update_Prop_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -754,7 +754,7 @@ TEST(UpdateEdgeTest, Invalid_Update_Prop_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // get serve from kvstore directly
     // Because no update, the value is old
@@ -854,7 +854,7 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -885,7 +885,7 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // get serve from kvstore directly
     // Because no update, the value is old
@@ -1002,7 +1002,7 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1035,30 +1035,30 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ(2016, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[8].getStr());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ(2016, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[8].getStr());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -1141,7 +1141,7 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1168,7 +1168,7 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // TTL test
@@ -1227,7 +1227,7 @@ TEST(UpdateEdgeTest, TTL_NoInsert_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge3 = new std::string("101");
     auto* yProp3 = new std::string("teamCareer");
     EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
@@ -1250,7 +1250,7 @@ TEST(UpdateEdgeTest, TTL_NoInsert_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // TTL test
@@ -1318,7 +1318,7 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1353,30 +1353,30 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Tim", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[8].getStr());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Tim", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[8].getStr());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -1462,7 +1462,7 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1497,30 +1497,30 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[7]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[8]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[8]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(40, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[8].getStr());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(40, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[8].getStr());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -1610,7 +1610,7 @@ TEST(UpdateEdgeTest, Yield_Key_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1658,30 +1658,30 @@ TEST(UpdateEdgeTest, Yield_Key_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(9, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ("101.type", resp.props.colNames[4]);
-    EXPECT_EQ("101._src", resp.props.colNames[5]);
-    EXPECT_EQ("101._dst", resp.props.colNames[6]);
-    EXPECT_EQ("101._rank", resp.props.colNames[7]);
-    EXPECT_EQ("101._type", resp.props.colNames[8]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(9, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ("101.type", (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ("101._src", (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ("101._dst", (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ("101._rank", (*resp.props_ref()).colNames[7]);
+    EXPECT_EQ("101._type", (*resp.props_ref()).colNames[8]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(9, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(9, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(20, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("trade", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[5].getStr());
-    EXPECT_EQ("Spurs", resp.props.rows[0].values[6].getStr());
-    EXPECT_EQ(1997, resp.props.rows[0].values[7].getInt());
-    EXPECT_EQ(101, resp.props.rows[0].values[8].getInt());
+    EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("trade", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[5].getStr());
+    EXPECT_EQ("Spurs", (*resp.props_ref()).rows[0].values[6].getStr());
+    EXPECT_EQ(1997, (*resp.props_ref()).rows[0].values[7].getInt());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[8].getInt());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -1755,7 +1755,7 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1802,7 +1802,7 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);
@@ -1886,7 +1886,7 @@ TEST(UpdateEdgeTest, Insertable_No_Default_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -1912,7 +1912,7 @@ TEST(UpdateEdgeTest, Insertable_No_Default_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // Upsert, insert success
@@ -1984,7 +1984,7 @@ TEST(UpdateEdgeTest, Insertable_In_Set_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yEdge1 = new std::string("101");
     auto* yProp1 = new std::string("playerName");
     EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
@@ -2012,27 +2012,27 @@ TEST(UpdateEdgeTest, Insertable_In_Set_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(8, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("101.playerName", resp.props.colNames[1]);
-    EXPECT_EQ("101.teamName", resp.props.colNames[2]);
-    EXPECT_EQ("101.teamCareer", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("101.").append(kSrc), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("101.").append(kType), resp.props.colNames[5]);
-    EXPECT_EQ(std::string("101.").append(kRank), resp.props.colNames[6]);
-    EXPECT_EQ(std::string("101.").append(kDst), resp.props.colNames[7]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(8, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("101.playerName", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("101.teamName", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("101.teamCareer", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("101.").append(kSrc), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("101.").append(kType), (*resp.props_ref()).colNames[5]);
+    EXPECT_EQ(std::string("101.").append(kRank), (*resp.props_ref()).colNames[6]);
+    EXPECT_EQ(std::string("101.").append(kDst), (*resp.props_ref()).colNames[7]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(8, resp.props.rows[0].values.size());
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[2].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[3].getInt());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(101, resp.props.rows[0].values[5].getInt());
-    EXPECT_EQ(2016, resp.props.rows[0].values[6].getInt());
-    EXPECT_EQ("Lakers", resp.props.rows[0].values[7].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(8, (*resp.props_ref()).rows[0].values.size());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[2].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[3].getInt());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(101, (*resp.props_ref()).rows[0].values[5].getInt());
+    EXPECT_EQ(2016, (*resp.props_ref()).rows[0].values[6].getInt());
+    EXPECT_EQ("Lakers", (*resp.props_ref()).rows[0].values[7].getStr());
 
     // get serve from kvstore directly
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen, partId, srcId, edgeType, rank, dstId);

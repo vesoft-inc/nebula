@@ -408,8 +408,8 @@ BaseProcessor<RESP>::indexCheck(const std::vector<cpp2::IndexItem>& items,
                                 const std::vector<cpp2::AlterSchemaItem>& alterItems) {
     for (const auto& index : items) {
         for (const auto& tagItem : alterItems) {
-            if (tagItem.op == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
-                tagItem.op == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+            if (*tagItem.op_ref() == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+                *tagItem.op_ref() == nebula::meta::cpp2::AlterSchemaOp::DROP) {
                 const auto& tagCols = tagItem.get_schema().get_columns();
                 const auto& indexCols = index.get_fields();
                 for (const auto& tCol : tagCols) {

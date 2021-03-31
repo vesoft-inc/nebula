@@ -181,7 +181,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         space1 = resp.get_id().get_space_id();
     }
     // create space2
@@ -198,7 +198,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         space2 = resp.get_id().get_space_id();
     }
     // create a user1.
@@ -240,7 +240,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user for space1, user not exists.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::GUEST);
@@ -254,7 +254,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user1 for space, space not exists.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(-1);
         role.set_role_type(cpp2::RoleType::GUEST);
@@ -268,7 +268,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user1 for space1.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::GUEST);
@@ -282,7 +282,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user2 for space1.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user2");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::ADMIN);
@@ -296,7 +296,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user2 for space2.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user2");
         role.set_space_id(space2);
         role.set_role_type(cpp2::RoleType::DBA);
@@ -316,7 +316,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        decltype(resp.roles) expectRoles;
+        std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
         cpp2::RoleItem role;
         role.set_space_id(space1);
         role.set_user_id("user1");
@@ -337,7 +337,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        decltype(resp.roles) expectRoles;
+        std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
         cpp2::RoleItem role;
         role.set_space_id(space2);
         role.set_user_id("user2");
@@ -348,7 +348,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // user not exists.
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user");
         role.set_space_id(space2);
         req.set_role_item(role);
@@ -361,7 +361,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // space not exists.
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(-1);
         req.set_role_item(role);
@@ -374,7 +374,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // actual role is GUEST, but revoke role ADMIN, expect error.
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::ADMIN);
@@ -388,7 +388,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // actual role is GUEST, but revoke unknown, expect error.
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         req.set_role_item(role);
@@ -401,7 +401,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // revoke
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::GUEST);
@@ -421,7 +421,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        decltype(resp.roles) expectRoles;
+        std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
         cpp2::RoleItem role;
         role.set_space_id(space1);
         role.set_user_id("user2");
@@ -438,7 +438,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        decltype(resp.roles) expectRoles;
+        std::vector<nebula::meta::cpp2::RoleItem> expectRoles;
         cpp2::RoleItem role;
         role.set_space_id(space2);
         role.set_user_id("user2");
@@ -449,7 +449,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // role not exists.
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         req.set_role_item(role);
@@ -494,7 +494,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant role to user2 for space1.
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role;
+        nebula::meta::cpp2::RoleItem role;
         role.set_user_id("user1");
         role.set_space_id(space1);
         role.set_role_type(cpp2::RoleType::ADMIN);
@@ -523,7 +523,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         // check role deleted after drop space
         auto rolePrefix = MetaServiceUtils::roleSpacePrefix(space1);

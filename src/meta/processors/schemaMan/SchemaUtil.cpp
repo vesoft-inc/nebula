@@ -15,15 +15,15 @@ namespace meta {
 bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
     DefaultValueContext mContext;
     for (auto& column : columns) {
-        if (column.__isset.default_value) {
+        if (column.default_value_ref().has_value()) {
             auto name = column.get_name();
-            auto defaultValueExpr = Expression::decode(*column.get_default_value());
+            auto defaultValueExpr = Expression::decode(*column.default_value_ref());
             if (defaultValueExpr == nullptr) {
                 LOG(ERROR) << "Wrong format default value expression for column name: " << name;
                 return false;
             }
             auto value = Expression::eval(defaultValueExpr.get(), mContext);
-            auto nullable = column.__isset.nullable ? *column.get_nullable() : false;
+            auto nullable = column.nullable_ref().value_or(false);
             if (nullable && value.isNull()) {
                 if (value.getNull() != NullType::__NULL__) {
                     LOG(ERROR) << "Invalid default value for `" << name
@@ -114,7 +114,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                         return false;
                     }
                     auto &colType = column.get_type();
-                    size_t typeLen = colType.__isset.type_length ? *colType.get_type_length() : 0;
+                    size_t typeLen = colType.type_length_ref().value_or(0);
                     if (value.getStr().size() > typeLen) {
                         const auto trimStr = value.getStr().substr(0, typeLen);
                         value.setStr(trimStr);

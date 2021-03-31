@@ -117,7 +117,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         }
         cpp2::ColumnDef col = *iter;
         if (col.type.get_type() == meta::cpp2::PropertyType::STRING) {
-            if (!field.__isset.type_length) {
+            if (!field.type_length_ref().has_value()) {
                 LOG(ERROR) << "No type length set : " << field.get_name();
                 handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
                 onFinished();
@@ -125,7 +125,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
             }
             col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
             col.type.set_type_length(*field.get_type_length());
-        } else if (field.__isset.type_length) {
+        } else if (field.type_length_ref().has_value()) {
             LOG(ERROR) << "No need to set type length : " << field.get_name();
             handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();

@@ -147,7 +147,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
 
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yTag1 = new std::string("1");
     auto* yProp1 = new std::string("name");
     SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -175,24 +175,24 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(6, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(45, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("China", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(45, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("China", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -279,7 +279,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     LOG(INFO) << "Build yield...";
     {
         // Return player props: name, age, country
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -308,25 +308,25 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // Note: If filtered out, the result is old
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(6, resp.props.rows[0].values.size());
-    EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(44, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
+    EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(44, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("America", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
     // get player from kvstore directly
     // Because no update, the value is old
@@ -391,7 +391,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -420,23 +420,23 @@ TEST(UpdateVertexTest, Insertable_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(6, resp.props.rows[0].values.size());
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("America", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -498,7 +498,7 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -520,7 +520,7 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // get player from kvstore directly
     // Because no update, the value is old
@@ -609,7 +609,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -636,7 +636,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
     // get player from kvstore directly
     // Because no update, the value is old
@@ -726,7 +726,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -755,22 +755,22 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("America", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -836,7 +836,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
-    decltype(req.return_props) tmpProps;
+    std::vector<std::string> tmpProps;
     auto* yTag1 = new std::string("1");
     auto* yProp1 = new std::string("country");
     SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -852,7 +852,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // TTL test
@@ -904,7 +904,7 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -933,7 +933,7 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // TTL test
@@ -987,7 +987,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -1018,24 +1018,24 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(6, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(20, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("America", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Tim", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(20, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("America", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Tim", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
 
     // get player from kvstore directly
@@ -1113,7 +1113,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -1144,24 +1144,24 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(6, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ("1.country", resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(6, resp.props.rows[0].values.size());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
 
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(50L, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("China", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(50L, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("China", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
     // Get player from kvstore directly, ttl expired data can be readed
     // First record is inserted record data
@@ -1242,7 +1242,7 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -1264,7 +1264,7 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(1, resp.result.failed_parts.size());
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 }
 
 // upsert, insert success
@@ -1316,7 +1316,7 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age
     {
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -1340,21 +1340,21 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_parts.size());
-    EXPECT_EQ(5, resp.props.colNames.size());
-    EXPECT_EQ("_inserted", resp.props.colNames[0]);
-    EXPECT_EQ("1.name", resp.props.colNames[1]);
-    EXPECT_EQ("1.age", resp.props.colNames[2]);
-    EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[3]);
-    EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[4]);
+    EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    EXPECT_EQ(5, (*resp.props_ref()).colNames.size());
+    EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+    EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+    EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+    EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[3]);
+    EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[4]);
 
-    EXPECT_EQ(1, resp.props.rows.size());
-    EXPECT_EQ(5, resp.props.rows[0].values.size());
-    EXPECT_EQ(true, resp.props.rows[0].values[0].getBool());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[1].getStr());
-    EXPECT_EQ(10, resp.props.rows[0].values[2].getInt());
-    EXPECT_EQ("Brandon Ingram", resp.props.rows[0].values[3].getStr());
-    EXPECT_EQ(1, resp.props.rows[0].values[4].getInt());
+    EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+    EXPECT_EQ(5, (*resp.props_ref()).rows[0].values.size());
+    EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[1].getStr());
+    EXPECT_EQ(10, (*resp.props_ref()).rows[0].values[2].getInt());
+    EXPECT_EQ("Brandon Ingram", (*resp.props_ref()).rows[0].values[3].getStr());
+    EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[4].getInt());
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);

@@ -74,7 +74,7 @@ public:
             nebula::meta::cpp2::ColumnDef column;
             column.name = "col_1";
             column.type.set_type(meta::cpp2::PropertyType::STRING);
-            schema.columns.emplace_back(std::move(column));
+            (*schema.columns_ref()).emplace_back(std::move(column));
             auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create tag failed: " << ret.status();
@@ -102,7 +102,7 @@ public:
             nebula::meta::cpp2::ColumnDef column;
             column.name = "col_1";
             column.type.set_type(meta::cpp2::PropertyType::STRING);
-            schema.columns.emplace_back(std::move(column));
+            (*schema.columns_ref()).emplace_back(std::move(column));
             auto ret = mClient_->createEdgeSchema(spaceId_, FLAGS_edge_name, schema).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create tag failed: " << ret.status();
@@ -189,8 +189,8 @@ private:
     std::vector<cpp2::VertexProp> vertexProps() {
         std::vector<cpp2::VertexProp> vertexProps;
         cpp2::VertexProp vertexProp;
-        vertexProp.tag = tagId_;
-        vertexProp.props = tagProps_[tagId_];
+        vertexProp.set_tag(tagId_);
+        vertexProp.set_props(tagProps_[tagId_]);
         vertexProps.emplace_back(std::move(vertexProp));
         return vertexProps;
     }
@@ -198,8 +198,8 @@ private:
     std::vector<cpp2::EdgeProp> edgeProps() {
         std::vector<cpp2::EdgeProp> edgeProps;
         cpp2::EdgeProp edgeProp;
-        edgeProp.type = edgeType_;
-        edgeProp.props = edgeProps_;
+        edgeProp.set_type(edgeType_);
+        edgeProp.set_props(edgeProps_);
         edgeProps.emplace_back(std::move(edgeProp));
         return edgeProps;
     }
@@ -239,7 +239,7 @@ private:
             storage::cpp2::NewVertex v;
             v.set_id(std::to_string(vintId));
             vintId++;
-            decltype(v.tags) newTags;
+            std::vector<nebula::storage::cpp2::NewTag> newTags;
             storage::cpp2::NewTag newTag;
             newTag.set_tag_id(tagId_);
             auto props = genData(tagProps_[tagId_].size());

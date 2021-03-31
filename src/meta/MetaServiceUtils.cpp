@@ -648,16 +648,17 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::ColumnDef>& 
                                                   cpp2::SchemaProp& schemaProp,
                                                   cpp2::SchemaProp alterSchemaProp,
                                                   bool existIndex) {
-    if (existIndex && (alterSchemaProp.__isset.ttl_duration || alterSchemaProp.__isset.ttl_col)) {
+    if (existIndex && (alterSchemaProp.ttl_duration_ref().has_value() ||
+                alterSchemaProp.ttl_col_ref().has_value())) {
         LOG(ERROR) << "Has index, can't set ttl";
         return cpp2::ErrorCode::E_UNSUPPORTED;
     }
-    if (alterSchemaProp.__isset.ttl_duration) {
+    if (alterSchemaProp.ttl_duration_ref().has_value()) {
         // Graph check  <=0 to = 0
-        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+        schemaProp.set_ttl_duration(*alterSchemaProp.ttl_duration_ref());
     }
-    if (alterSchemaProp.__isset.ttl_col) {
-        auto ttlCol = *alterSchemaProp.get_ttl_col();
+    if (alterSchemaProp.ttl_col_ref().has_value()) {
+        auto ttlCol = *alterSchemaProp.ttl_col_ref();
         // Disable ttl, ttl_col is empty, ttl_duration is 0
         if (ttlCol.empty()) {
             schemaProp.set_ttl_duration(0);

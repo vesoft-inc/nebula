@@ -66,7 +66,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     for (auto& tagItem : tagItems) {
         auto &cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, *tagItem.op_ref());
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Alter tag column error " << static_cast<int32_t>(retCode);
                 handleErrorCode(retCode);

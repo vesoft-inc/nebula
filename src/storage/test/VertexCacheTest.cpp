@@ -31,13 +31,13 @@ buildVertexRequest(int32_t totalParts,
                    const std::vector<std::pair<TagID, std::vector<std::string>>>& tags) {
     std::hash<std::string> hash;
     cpp2::GetPropRequest req;
-    req.space_id = 1;
+    req.set_space_id(1);
 
     for (const auto& vertex : vertices) {
         PartitionID partId = (hash(vertex) % totalParts) + 1;
         nebula::Row row;
         row.values.emplace_back(vertex);
-        req.parts[partId].emplace_back(std::move(row));
+        (*req.parts_ref())[partId].emplace_back(std::move(row));
     }
 
     std::vector<cpp2::VertexProp> vertexProps;
@@ -47,9 +47,9 @@ buildVertexRequest(int32_t totalParts,
         for (const auto& tag : tags) {
             TagID tagId = tag.first;
             cpp2::VertexProp tagProp;
-            tagProp.tag = tagId;
+            tagProp.set_tag(tagId);
             for (const auto& prop : tag.second) {
-                tagProp.props.emplace_back(std::move(prop));
+                (*tagProp.props_ref()).emplace_back(std::move(prop));
             }
             vertexProps.emplace_back(std::move(tagProp));
         }
@@ -76,8 +76,8 @@ void getVertices(storage::StorageEnv* env,
     processor->process(req);
     auto resp = std::move(fut).get();
 
-    ASSERT_EQ(0, resp.result.failed_parts.size());
-    ASSERT_EQ(expectNum, resp.props.rows.size());
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    ASSERT_EQ(expectNum, (*resp.props_ref()).rows.size());
 }
 
 void checkCache(VertexCache* cache, uint64_t evicts, uint64_t hits, uint64_t total) {
@@ -114,7 +114,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
         // The number of data in players and teams is 81
         checkAddVerticesData(req, env, 81, 0);
@@ -164,7 +164,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
 
         LOG(INFO) << "Build yield...";
         // Return player props: name, age, country
-        decltype(req.return_props) tmpProps;
+        std::vector<std::string> tmpProps;
         auto* yTag1 = new std::string("1");
         auto* yProp1 = new std::string("name");
         SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
@@ -200,24 +200,24 @@ TEST(VertexCacheTest, OperationVertexTest) {
         auto resp = std::move(f).get();
 
         LOG(INFO) << "Check the results...";
-        EXPECT_EQ(0, resp.result.failed_parts.size());
-        EXPECT_EQ(6, resp.props.colNames.size());
-        EXPECT_EQ("_inserted", resp.props.colNames[0]);
-        EXPECT_EQ("1.name", resp.props.colNames[1]);
-        EXPECT_EQ("1.age", resp.props.colNames[2]);
-        EXPECT_EQ("1.country", resp.props.colNames[3]);
-        EXPECT_EQ(std::string("1.").append(kVid), resp.props.colNames[4]);
-        EXPECT_EQ(std::string("1.").append(kTag), resp.props.colNames[5]);
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
+        EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
+        EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
+        EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
+        EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
+        EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
+        EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
-        EXPECT_EQ(1, resp.props.rows.size());
-        EXPECT_EQ(6, resp.props.rows[0].values.size());
+        EXPECT_EQ(1, (*resp.props_ref()).rows.size());
+        EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
 
-        EXPECT_EQ(false, resp.props.rows[0].values[0].getBool());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[1].getStr());
-        EXPECT_EQ(45, resp.props.rows[0].values[2].getInt());
-        EXPECT_EQ("China", resp.props.rows[0].values[3].getStr());
-        EXPECT_EQ("Tim Duncan", resp.props.rows[0].values[4].getStr());
-        EXPECT_EQ(1, resp.props.rows[0].values[5].getInt());
+        EXPECT_EQ(false, (*resp.props_ref()).rows[0].values[0].getBool());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[1].getStr());
+        EXPECT_EQ(45, (*resp.props_ref()).rows[0].values[2].getInt());
+        EXPECT_EQ("China", (*resp.props_ref()).rows[0].values[3].getStr());
+        EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
+        EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
         // get player from kvstore directly
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -249,13 +249,13 @@ TEST(VertexCacheTest, OperationVertexTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 
     // check vertexCache
@@ -286,7 +286,7 @@ TEST(VertexCacheTest, GetNeighborsTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
         // The number of data in players and teams is 81
         checkAddVerticesData(req, env, 81, 0);
@@ -323,9 +323,9 @@ TEST(VertexCacheTest, GetNeighborsTest) {
             processor->process(req);
             auto resp = std::move(fut).get();
 
-            ASSERT_EQ(0, resp.result.failed_parts.size());
+            ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
             // vId, stat, player, serve, expr
-            QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+            QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
         }
         checkCache(&cache, 0, 0, 1);
 
@@ -337,9 +337,9 @@ TEST(VertexCacheTest, GetNeighborsTest) {
             processor->process(req);
             auto resp = std::move(fut).get();
 
-            ASSERT_EQ(0, resp.result.failed_parts.size());
+            ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
             // vId, stat, player, serve, expr
-            QueryTestUtils::checkResponse(resp.vertices, vertices, over, tags, edges, 1, 5);
+            QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
         }
         checkCache(&cache, 0, 1, 2);
     }
@@ -354,13 +354,13 @@ TEST(VertexCacheTest, GetNeighborsTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
     // check vertexCache
     checkCache(&cache, 1, 1, 2);
@@ -390,7 +390,7 @@ TEST(VertexCacheTest, GetVertexPropTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
         // The number of data in players and teams is 81
         checkAddVerticesData(req, env, 81, 0);
@@ -430,13 +430,13 @@ TEST(VertexCacheTest, GetVertexPropTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
      // check vertexCache
     checkCache(&cache, 51, 51, 102);
@@ -469,7 +469,7 @@ TEST(VertexCacheTest, GetVertexPropWithTTLTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
         // The number of data in players and teams is 81
         checkAddVerticesData(req, env, 81, 0);
@@ -516,13 +516,13 @@ TEST(VertexCacheTest, GetVertexPropWithTTLTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
         LOG(INFO) << "Check data in kv store...";
-        auto ret = env->schemaMan_->getSpaceVidLen(req.space_id);
+        auto ret = env->schemaMan_->getSpaceVidLen(req.get_space_id());
         EXPECT_TRUE(ret.ok());
         auto spaceVidLen = ret.value();
         // All the added datas are deleted, the number of vertices is 0
-        checkVerticesData(spaceVidLen, req.space_id, req.parts, env, 0);
+        checkVerticesData(spaceVidLen, req.get_space_id(), *req.parts_ref(), env, 0);
     }
 
     // check vertexCache

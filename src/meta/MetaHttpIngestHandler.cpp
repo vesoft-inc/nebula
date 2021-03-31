@@ -142,20 +142,18 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     }
 
     bool successfully{true};
-    folly::collectAll(std::move(futures)).thenValue(
-            [&](const std::vector<folly::Try<bool>>& tries) {
-        for (const auto& t : tries) {
-            if (t.hasException()) {
-                LOG(ERROR) << "Ingest Failed: " << t.exception();
-                successfully = false;
-                break;
-            }
-            if (!t.value()) {
-                successfully = false;
-                break;
-            }
+    auto tries = folly::collectAll(std::move(futures)).get();
+    for (const auto& t : tries) {
+        if (t.hasException()) {
+            LOG(ERROR) << "Ingest Failed: " << t.exception();
+            successfully = false;
+            break;
         }
-    }).wait();
+        if (!t.value()) {
+            successfully = false;
+            break;
+        }
+    }
     LOG(INFO) << "Ingest tasks have finished";
     return successfully;
 }

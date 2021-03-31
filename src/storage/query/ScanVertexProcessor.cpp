@@ -105,7 +105,7 @@ cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVerte
         return ret;
     }
 
-    std::vector<cpp2::VertexProp> returnProps = {req.return_columns};
+    std::vector<cpp2::VertexProp> returnProps = {*req.return_columns_ref()};
     ret = handleVertexProps(returnProps);
     buildTagColName(returnProps);
     return ret;
@@ -113,9 +113,9 @@ cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVerte
 
 void ScanVertexProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& tagProps) {
     for (const auto& tagProp : tagProps) {
-        auto tagId = tagProp.tag;
+        auto tagId = tagProp.get_tag();
         auto tagName = tagContext_.tagNames_[tagId];
-        for (const auto& prop : tagProp.props) {
+        for (const auto& prop : *tagProp.props_ref()) {
             resultDataSet_.colNames.emplace_back(tagName + "." + prop);
         }
     }

@@ -98,8 +98,8 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     }
 
     std::vector<HostAddr> lostHosts;
-    if (req.__isset.host_del) {
-        lostHosts = *req.get_host_del();
+    if (req.host_del_ref().has_value()) {
+        lostHosts = *req.host_del_ref();
     }
 
     auto ret = Balancer::instance(kvstore_)->balance(std::move(lostHosts));

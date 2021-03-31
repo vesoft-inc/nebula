@@ -108,10 +108,10 @@ private:
                 return Status::Error("Field not found");
             }
             auto type = IndexKeyUtils::toValueType(iter->type.type);
-            if (type == Value::Type::STRING && !iter->type.__isset.type_length) {
+            if (type == Value::Type::STRING && !iter->type.type_length_ref().has_value()) {
                 return Status::Error("String property index has not set prefix length.");
             }
-            prefix.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
+            prefix.append(encodeValue(*col.begin_value_ref(), type, iter->type.get_type_length()));
         }
         return std::make_pair(prefix, "");
     }
@@ -130,15 +130,19 @@ private:
                 return Status::Error("Field not found");
             }
             auto type = IndexKeyUtils::toValueType(iter->get_type().get_type());
-            if (type == Value::Type::STRING && !iter->get_type().__isset.type_length) {
+            if (type == Value::Type::STRING && !iter->get_type().type_length_ref().has_value()) {
                 return Status::Error("String property index has not set prefix length.");
             }
             if (col.get_scan_type() == cpp2::ScanType::PREFIX) {
-                start.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
-                end.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
+                start.append(encodeValue(*col.begin_value_ref(),
+                            type, iter->type.get_type_length()));
+                end.append(encodeValue(*col.begin_value_ref(),
+                            type, iter->type.get_type_length()));
             } else {
-                start.append(encodeValue(col.begin_value, type, iter->type.get_type_length()));
-                end.append(encodeValue(col.end_value, type, iter->type.get_type_length()));
+                start.append(encodeValue(*col.begin_value_ref(),
+                            type, iter->type.get_type_length()));
+                end.append(encodeValue(*col.end_value_ref(),
+                            type, iter->type.get_type_length()));
             }
         }
         return std::make_pair(start, end);

@@ -34,13 +34,13 @@ void InterTxnProcessor::process(const cpp2::InternalTxnRequest& req) {
                 pushResultCode(code, partId);
             }
             for (auto& p : codes_) {
-                if (p.__isset.leader) {
-                    LOG(INFO) << "txnId=" << txnId << ", part=" << p.part_id
-                              << ", code=" << static_cast<int32_t>(p.code)
-                              << ", leader=" << p.leader;
+                if (p.leader_ref().has_value()) {
+                    LOG(INFO) << "txnId=" << txnId << ", part=" << *p.part_id_ref()
+                              << ", code=" << static_cast<int32_t>(*p.code_ref())
+                              << ", leader=" << *p.leader_ref();
                 } else {
-                    LOG(INFO) << "txnId=" << txnId << ", part=" << p.part_id
-                              << ", code=" << static_cast<int32_t>(p.code);
+                    LOG(INFO) << "txnId=" << txnId << ", part=" << *p.part_id_ref()
+                              << ", code=" << static_cast<int32_t>(*p.code_ref());
                 }
             }
             onFinished();

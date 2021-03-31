@@ -77,7 +77,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
-                if (result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+                if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                     statisItem = std::move(result);
                 }
             }
@@ -96,26 +96,26 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Ensure that StatisTask::finish is called.
         for (int i = 0; i < 50; i++) {
             sleep(1);
-            if (statisItem.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+            if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                 break;
             }
         }
 
         // Check statis result
-        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.status);
+        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
         // Three tags
-        ASSERT_EQ(3, statisItem.tag_vertices.size());
-        for (auto& e : statisItem.tag_vertices) {
+        ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
+        for (auto& e : *statisItem.tag_vertices_ref()) {
             ASSERT_EQ(0, e.second);
         }
 
         // Two edgetypes
-        ASSERT_EQ(2, statisItem.edges.size());
-        for (auto& edge : statisItem.edges) {
+        ASSERT_EQ(2, (*statisItem.edges_ref()).size());
+        for (auto& edge : *statisItem.edges_ref()) {
             ASSERT_EQ(0, edge.second);
         }
-        ASSERT_EQ(0, statisItem.space_vertices);
-        ASSERT_EQ(0, statisItem.space_edges);
+        ASSERT_EQ(0, *statisItem.space_vertices_ref());
+        ASSERT_EQ(0, *statisItem.space_edges_ref());
     }
 
     // Add Vertices
@@ -142,7 +142,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
-                if (result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+                if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                     statisItem = std::move(result);
                 }
             }
@@ -161,16 +161,16 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Ensure that StatisTask::finish is called.
         for (int i = 0; i < 50; i++) {
             sleep(1);
-            if (statisItem.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+            if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                 break;
             }
         }
 
         // Check statis result
-        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.status);
+        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
         // Three tags
-        ASSERT_EQ(3, statisItem.tag_vertices.size());
-        for (auto& e : statisItem.tag_vertices) {
+        ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
+        for (auto& e : *statisItem.tag_vertices_ref()) {
             if (e.first == "1") {
                 ASSERT_EQ(51, e.second);
             } else if (e.first == "2") {
@@ -180,13 +180,13 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             }
         }
         // Two edgetypes
-        ASSERT_EQ(2, statisItem.edges.size());
-        for (auto& edge : statisItem.edges) {
+        ASSERT_EQ(2, (*statisItem.edges_ref()).size());
+        for (auto& edge : *statisItem.edges_ref()) {
             ASSERT_EQ(0, edge.second);
         }
 
-        ASSERT_EQ(81, statisItem.space_vertices);
-        ASSERT_EQ(0, statisItem.space_edges);
+        ASSERT_EQ(81, *statisItem.space_vertices_ref());
+        ASSERT_EQ(0, *statisItem.space_edges_ref());
     }
 
     // Add Edges
@@ -213,7 +213,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             if (ret != cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
-                if (result.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+                if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                     statisItem = std::move(result);
                 }
             }
@@ -232,16 +232,17 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         // Ensure that StatisTask::finish is called.
         for (int i = 0; i < 50; i++) {
             sleep(1);
-            if (statisItem.status == nebula::meta::cpp2::JobStatus::FINISHED) {
+            if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
                 break;
             }
         }
 
         // Check statis result
-        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.status);
+        ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
         // Three tags
-        ASSERT_EQ(3, statisItem.tag_vertices.size());
-        for (auto& e : statisItem.tag_vertices) {
+        ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
+
+        for (auto& e : *statisItem.tag_vertices_ref()) {
             if (e.first == "1") {
                 ASSERT_EQ(51, e.second);
             } else if (e.first == "2") {
@@ -252,8 +253,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         }
 
         // Two edgetypes
-        ASSERT_EQ(2, statisItem.edges.size());
-        for (auto& edge : statisItem.edges) {
+        ASSERT_EQ(2, (*statisItem.edges_ref()).size());
+        for (auto& edge : *statisItem.edges_ref()) {
             if (edge.first == "101") {
                 // Do not contain reverse edge datas.
                 ASSERT_EQ(167, edge.second);
@@ -261,8 +262,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
                 ASSERT_EQ(0, edge.second);
             }
         }
-        ASSERT_EQ(81, statisItem.space_vertices);
-        ASSERT_EQ(167, statisItem.space_edges);
+        ASSERT_EQ(81, *statisItem.space_vertices_ref());
+        ASSERT_EQ(167, *statisItem.space_edges_ref());
     }
 
     // Check the data count

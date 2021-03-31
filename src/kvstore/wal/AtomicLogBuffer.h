@@ -10,7 +10,7 @@
 #include "common/thrift/ThriftTypes.h"
 #include "utils/LogIterator.h"
 #include <gtest/gtest_prod.h>
-#include <folly/CachelinePadded.h>
+#include <folly/lang/Aligned.h>
 
 namespace nebula {
 namespace wal {
@@ -75,7 +75,7 @@ struct Node {
     /******* readers maybe access the fields below ******************/
 
     // We should ensure the records appended happens-before pos_ increment.
-    folly::CachelinePadded<std::array<Record, kMaxLength>>    records_;
+    folly::cacheline_aligned<std::array<Record, kMaxLength>>    records_;
     // current valid position for the next record.
     std::atomic<int32_t>              pos_{0};
     // The field only be accessed when the refs count down to zero

@@ -173,7 +173,7 @@ TEST(BalanceTest, SimpleTestWithZone) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     sleep(1);
@@ -231,7 +231,7 @@ TEST(BalanceTest, ExpansionZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -312,7 +312,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -396,7 +396,7 @@ TEST(BalanceTest, ShrinkZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -458,7 +458,7 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -536,7 +536,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(1, resp.get_id().get_space_id());
             LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
             showHostLoading(kv, resp.get_id().get_space_id());
@@ -553,7 +553,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(2, resp.get_id().get_space_id());
             LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
             showHostLoading(kv, resp.get_id().get_space_id());
@@ -570,7 +570,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(3, resp.get_id().get_space_id());
             LOG(INFO) << "Show host about space " << resp.get_id().get_space_id();
             showHostLoading(kv, resp.get_id().get_space_id());
@@ -1704,7 +1704,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -1785,7 +1785,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
@@ -1865,7 +1865,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(1, resp.get_id().get_space_id());
             showHostLoading(kv, resp.get_id().get_space_id());
         }
@@ -1881,7 +1881,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(2, resp.get_id().get_space_id());
             showHostLoading(kv, resp.get_id().get_space_id());
         }
@@ -1897,7 +1897,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
             ASSERT_EQ(3, resp.get_id().get_space_id());
             showHostLoading(kv, resp.get_id().get_space_id());
         }

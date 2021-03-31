@@ -102,7 +102,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     /**
      *  for cloud authority, need init a god user by this interface. the god user default grant to
      *  meta space (kDefaultSpaceId). so skip the space check.
-     *  Should be reject the grant operation and return a error 
+     *  Should be reject the grant operation and return a error
      *  when grant a user to GOD through graph layer.
     */
     if (!(spaceId == kDefaultSpaceId && roleItem.get_role_type() == cpp2::RoleType::GOD)) {
@@ -191,7 +191,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
         onFinished();
         return;
     }
-    decltype(resp_.users) users;
+    std::unordered_map<std::string, std::string> users;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseUser(iter->key());
         auto password = MetaServiceUtils::parseUserPwd(iter->val());
@@ -218,7 +218,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         return;
     }
 
-    decltype(resp_.roles) roles;
+    std::vector<nebula::meta::cpp2::RoleItem> roles;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseRoleUser(iter->key());
         auto val = iter->val();
@@ -246,7 +246,7 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
         return;
     }
 
-    decltype(resp_.roles) roles;
+    std::vector<nebula::meta::cpp2::RoleItem> roles;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseRoleUser(iter->key());
         auto spaceId = MetaServiceUtils::parseRoleSpace(iter->key());
