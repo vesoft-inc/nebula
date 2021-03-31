@@ -864,7 +864,7 @@ function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
         if (!$3) {
             if (FunctionManager::find(*$1, 0).ok()) {
-                $$ = new FunctionCallExpression($1, $3);
+                $$ = new FunctionCallExpression($1);
             } else {
                 throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
             }
