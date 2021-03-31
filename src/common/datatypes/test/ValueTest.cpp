@@ -969,6 +969,32 @@ TEST(Value, DecodeEncode) {
         EXPECT_EQ(val, valCopy);
     }
 }
+
+TEST(Value, Ctor) {
+    Value vZero(0);
+    EXPECT_TRUE(vZero.isInt());
+    Value vFloat(3.14);
+    EXPECT_TRUE(vFloat.isFloat());
+    Value vStr("Hello ");
+    EXPECT_TRUE(vStr.isStr());
+    Value vBool(false);
+    EXPECT_TRUE(vBool.isBool());
+    Value vDate(Date(2020, 1, 1));
+    EXPECT_TRUE(vDate.isDate());
+    Value vList(List({1, 3, 2}));
+    EXPECT_TRUE(vList.isList());
+    Value vSet(Set({8, 7}));
+    EXPECT_TRUE(vSet.isSet());
+    Value vMap(Map({{"a", 9}, {"b", 10}}));
+    EXPECT_TRUE(vMap.isMap());
+
+    // Disabled
+    // Lead to compile error
+    // Value v(nullptr);
+    // std::map<std::string, std::string> tmp;
+    // Value v2(&tmp);
+}
+
 }  // namespace nebula
 
 
