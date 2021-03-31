@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 
-#include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
+#include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/CommonCpp2Ops.h"
 
 namespace apache {
 namespace thrift {
@@ -51,19 +52,11 @@ struct TccStructTraits<nebula::Edge> {
 }  // namespace detail
 
 
-template<>
-inline void Cpp2Ops<nebula::Edge>::clear(nebula::Edge* obj) {
-    return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::Edge>::thriftType() {
     return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Edge>::write(Protocol* proto, nebula::Edge const* obj) {
     uint32_t xfer = 0;
@@ -109,7 +102,6 @@ uint32_t Cpp2Ops<nebula::Edge>::write(Protocol* proto, nebula::Edge const* obj) 
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::Edge>::read(Protocol* proto, nebula::Edge* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -258,7 +250,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Edge>::serializedSize(Protocol const* proto,
                                                nebula::Edge const* obj) {
@@ -293,7 +284,6 @@ uint32_t Cpp2Ops<nebula::Edge>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Edge>::serializedSizeZC(Protocol const* proto,
                                                  nebula::Edge const* obj) {

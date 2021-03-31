@@ -5,6 +5,7 @@
  */
 
 #include <folly/String.h>
+#include <sstream>
 
 #include "common/datatypes/Map.h"
 

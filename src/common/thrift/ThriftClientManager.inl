@@ -5,7 +5,6 @@
  */
 
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
 #include "common/network/NetworkUtils.h"
@@ -67,10 +66,10 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
     }
 
     VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
-    std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
+    std::shared_ptr<folly::AsyncSocket> socket;
     evb->runImmediatelyOrRunInEventBaseThreadAndWait(
         [&socket, evb, resolved]() {
-            socket = apache::thrift::async::TAsyncSocket::newSocket(
+            socket = folly::AsyncSocket::newSocket(
                 evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
         });
     auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);

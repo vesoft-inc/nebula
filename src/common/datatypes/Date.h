@@ -31,6 +31,10 @@ struct Date {
         day = 1;
     }
 
+    void __clear() {
+        clear();
+    }
+
     void reset(int16_t y, int8_t m, int8_t d) {
         year = y;
         month = m;
@@ -89,6 +93,10 @@ struct Time {
         microsec = 0;
     }
 
+    void __clear() {
+        clear();
+    }
+
     bool operator==(const Time& rhs) const {
         return hour == rhs.hour &&
                minute == rhs.minute &&
@@ -144,6 +152,10 @@ struct DateTime {
         minute = 0;
         sec = 0;
         microsec = 0;
+    }
+
+    void __clear() {
+        clear();
     }
 
     bool operator==(const DateTime& rhs) const {

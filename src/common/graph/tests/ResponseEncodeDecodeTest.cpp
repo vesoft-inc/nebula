@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "common/graph/Response.h"
+#include "common/graph/GraphCpp2Ops.h"
 
 namespace nebula {
 

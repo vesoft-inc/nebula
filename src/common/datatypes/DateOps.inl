@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 
-#include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
+#include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/Date.h"
+#include "common/datatypes/CommonCpp2Ops.h"
 
 namespace apache {
 namespace thrift {
@@ -47,19 +48,11 @@ struct TccStructTraits<nebula::Date> {
 }  // namespace detail
 
 
-template<>
-inline void Cpp2Ops<nebula::Date>::clear(nebula::Date* obj) {
-  return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::Date>::thriftType() {
   return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Date>::write(Protocol* proto, nebula::Date const* obj) {
     uint32_t xfer = 0;
@@ -87,7 +80,6 @@ uint32_t Cpp2Ops<nebula::Date>::write(Protocol* proto, nebula::Date const* obj) 
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::Date>::read(Protocol* proto, nebula::Date* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -178,7 +170,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Date>::serializedSize(Protocol const* proto,
                                                nebula::Date const* obj) {
@@ -202,7 +193,6 @@ uint32_t Cpp2Ops<nebula::Date>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Date>::serializedSizeZC(Protocol const* proto,
                                                  nebula::Date const* obj) {
@@ -257,19 +247,11 @@ struct TccStructTraits<nebula::Time> {
 }  // namespace detail
 
 
-template<>
-inline void Cpp2Ops<nebula::Time>::clear(nebula::Time* obj) {
-  return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::Time>::thriftType() {
   return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Time>::write(Protocol* proto, nebula::Time const* obj) {
     uint32_t xfer = 0;
@@ -301,7 +283,6 @@ uint32_t Cpp2Ops<nebula::Time>::write(Protocol* proto, nebula::Time const* obj) 
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::Time>::read(Protocol* proto, nebula::Time* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -411,7 +392,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Time>::serializedSize(Protocol const* proto,
                                                nebula::Time const* obj) {
@@ -439,7 +419,6 @@ uint32_t Cpp2Ops<nebula::Time>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::Time>::serializedSizeZC(Protocol const* proto,
                                                  nebula::Time const* obj) {
@@ -507,19 +486,11 @@ struct TccStructTraits<nebula::DateTime> {
 }  // namespace detail
 
 
-template<>
-inline void Cpp2Ops<nebula::DateTime>::clear(nebula::DateTime* obj) {
-  return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::DateTime>::thriftType() {
   return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::DateTime>::write(Protocol* proto, nebula::DateTime const* obj) {
     uint32_t xfer = 0;
@@ -566,7 +537,6 @@ uint32_t Cpp2Ops<nebula::DateTime>::write(Protocol* proto, nebula::DateTime cons
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::DateTime>::read(Protocol* proto, nebula::DateTime* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -727,7 +697,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::DateTime>::serializedSize(Protocol const* proto,
                                                    nebula::DateTime const* obj) {
@@ -767,7 +736,6 @@ uint32_t Cpp2Ops<nebula::DateTime>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::DateTime>::serializedSizeZC(Protocol const* proto,
                                                      nebula::DateTime const* obj) {

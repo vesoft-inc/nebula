@@ -49,7 +49,7 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
     // we have required number of futures, at which point we fulfil
     // the promise with the result list
     for (size_t index = 0; first != last; ++first, ++index) {
-        first->setCallback_([n, ctx, index] (
+        first->setCallback_([n, ctx, index] (auto,
                 folly::Try<FutureReturnType<FutureIter>>&& t) {
             if (!ctx->promise.isFulfilled()) {
                 if (!t.hasException()) {

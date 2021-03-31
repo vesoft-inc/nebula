@@ -196,6 +196,10 @@ struct Value {
 
     void clear();
 
+    void __clear() {
+        clear();
+    }
+
     Value& operator=(Value&& rhs) noexcept;
     Value& operator=(const Value& rhs);
 

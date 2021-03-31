@@ -14,7 +14,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        wangle
         gtest
 )
 
@@ -30,6 +29,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         wangle
+        fizz
+        sodium
         follybenchmark
-        boost_regex
 )

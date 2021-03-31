@@ -18,7 +18,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
-        proxygenlib
-        wangle
+        ${PROXYGEN_LIBRARIES}
         gtest
 )

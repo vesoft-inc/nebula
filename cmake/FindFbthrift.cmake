@@ -15,7 +15,7 @@
 #  Fbthrift_BIN              The fbthrift binary.
 
 find_path(Fbthrift_INCLUDE_DIR NAMES thrift)
-find_library(Fbthrift_LIBRARY NAMES libthrift.a)
+find_library(Fbthrift_LIBRARY NAMES libthriftcpp2.a)
 find_program(Fbthrift_BIN NAMES thrift1)
 
 if(Fbthrift_INCLUDE_DIR AND Fbthrift_LIBRARY AND Fbthrift_BIN)

@@ -52,6 +52,10 @@ struct Edge {
 
     void clear();
 
+    void __clear() {
+        clear();
+    }
+
     std::string toString() const;
 
     bool operator==(const Edge& rhs) const;

@@ -16,14 +16,12 @@
 
 find_path(Zstd_INCLUDE_DIR NAMES zstd.h)
 find_library(Zstd_LIBRARY NAMES libzstd.a)
-find_program(Zstd_BIN NAMES zstd)
 
-if(Zstd_INCLUDE_DIR AND Zstd_LIBRARY AND Zstd_BIN)
+if(Zstd_INCLUDE_DIR AND Zstd_LIBRARY)
     set(Zstd_FOUND TRUE)
     mark_as_advanced(
         Zstd_INCLUDE_DIR
         Zstd_LIBRARY
-        Zstd_BIN
     )
 endif()
 

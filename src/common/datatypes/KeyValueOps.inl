@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 
-#include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
+#include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/KeyValue.h"
+#include "common/datatypes/CommonCpp2Ops.h"
 
 namespace apache {
 namespace thrift {
@@ -39,19 +40,11 @@ struct TccStructTraits<nebula::KeyValue> {
 }  // namespace detail
 
 
-template<>
-inline void Cpp2Ops<nebula::KeyValue>::clear(nebula::KeyValue* obj) {
-    return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::KeyValue>::thriftType() {
     return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::KeyValue>::write(Protocol* proto, nebula::KeyValue const* obj) {
     uint32_t xfer = 0;
@@ -71,7 +64,6 @@ uint32_t Cpp2Ops<nebula::KeyValue>::write(Protocol* proto, nebula::KeyValue cons
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::KeyValue>::read(Protocol* proto, nebula::KeyValue* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -146,7 +138,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::KeyValue>::serializedSize(Protocol const* proto,
                                                    nebula::KeyValue const* obj) {
@@ -164,7 +155,6 @@ uint32_t Cpp2Ops<nebula::KeyValue>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::KeyValue>::serializedSizeZC(Protocol const* proto,
                                                      nebula::KeyValue const* obj) {

@@ -16,6 +16,7 @@
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Path.h"
 #include "common/datatypes/DataSet.h"
+#include "common/datatypes/CommonCpp2Ops.h"
 
 namespace nebula {
 

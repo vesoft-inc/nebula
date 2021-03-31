@@ -56,6 +56,7 @@ set("${file_name}-cpp2-HEADERS"
 set("${file_name}-cpp2-SOURCES"
   ${output_path}/gen-cpp2/${file_name}_constants.cpp
   ${output_path}/gen-cpp2/${file_name}_data.cpp
+  ${output_path}/gen-cpp2/${file_name}_metadata.cpp
   ${output_path}/gen-cpp2/${file_name}_types.cpp
 )
 
@@ -80,7 +81,6 @@ add_custom_command(
   OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
-    --templates ${THRIFT_TEMPLATES}
     --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
     --gen "py"
     --gen "js:node:"

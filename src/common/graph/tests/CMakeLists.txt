@@ -12,6 +12,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:datatypes_obj>
     LIBRARIES
         gtest

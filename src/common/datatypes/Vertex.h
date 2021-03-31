@@ -36,6 +36,10 @@ struct Tag {
         props.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     std::string toString() const;
 
     Tag& operator=(Tag&& rhs) noexcept {
@@ -76,6 +80,10 @@ struct Vertex {
     void clear() {
         vid.clear();
         tags.clear();
+    }
+
+    void __clear() {
+        clear();
     }
 
     std::string toString() const;

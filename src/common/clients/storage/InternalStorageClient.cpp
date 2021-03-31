@@ -69,12 +69,12 @@ void InternalStorageClient::forwardTransactionImpl(int64_t txnId,
     dest.port += kInternalPortOffset;
 
     cpp2::InternalTxnRequest interReq;
-    interReq.txn_id = txnId;
-    interReq.space_id = spaceId;
-    interReq.part_id = partId;
-    interReq.position = 1;
-    interReq.data.resize(2);
-    interReq.data.back().emplace_back(data);
+    interReq.set_txn_id(txnId);
+    interReq.set_space_id(spaceId);
+    interReq.set_part_id(partId);
+    interReq.set_position(1);
+    (*interReq.data_ref()).resize(2);
+    (*interReq.data_ref()).back().emplace_back(data);
     getResponse(
         evb,
         std::make_pair(dest, interReq),
@@ -136,7 +136,7 @@ void InternalStorageClient::getValueImpl(GraphSpaceID spaceId,
     auto cb = [=, p = std::move(p)](auto&& t) mutable {
         auto code = extractErrorCode(t);
         if (code == cpp2::ErrorCode::SUCCEEDED) {
-            p.setValue(t.value().value().value);
+            p.setValue(t.value().value().get_value());
         } else if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
             // retry directly may easily get same error
             std::this_thread::sleep_for(std::chrono::milliseconds(500));

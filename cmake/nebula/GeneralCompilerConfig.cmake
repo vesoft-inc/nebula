@@ -1,4 +1,4 @@
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -72,6 +72,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             nebula_add_shared_linker_flag(--target=${gcc_target_triplet})
         endif()
     endif()
+#add_compile_options(-Wno-mismatched-tags)
     add_compile_options(-Wno-self-assign-overloaded)
     add_compile_options(-Wno-self-move)
     add_compile_options(-Wno-format-pedantic)

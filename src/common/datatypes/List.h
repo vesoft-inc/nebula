@@ -43,6 +43,10 @@ struct List {
         values.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     List& operator=(const List& rhs) {
         if (this == &rhs) { return *this; }
         values = rhs.values;

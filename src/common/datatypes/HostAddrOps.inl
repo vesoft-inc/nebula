@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 
-#include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
+#include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/datatypes/HostAddr.h"
+#include "common/datatypes/CommonCpp2Ops.h"
 
 namespace apache {
 namespace thrift {
@@ -39,19 +40,11 @@ struct TccStructTraits<nebula::HostAddr> {
 }  // namespace detail
 
 
-template <>
-inline void Cpp2Ops<nebula::HostAddr>::clear(nebula::HostAddr* obj) {
-    return obj->clear();
-}
-
-
-template<>
 inline constexpr protocol::TType Cpp2Ops<nebula::HostAddr>::thriftType() {
     return apache::thrift::protocol::T_STRUCT;
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::HostAddr>::write(Protocol* proto, nebula::HostAddr const* obj) {
     uint32_t xfer = 0;
@@ -72,7 +65,6 @@ uint32_t Cpp2Ops<nebula::HostAddr>::write(Protocol* proto, nebula::HostAddr cons
 }
 
 
-template<>
 template<class Protocol>
 void Cpp2Ops<nebula::HostAddr>::read(Protocol* proto, nebula::HostAddr* obj) {
     detail::ProtocolReaderStructReadState<Protocol> readState;
@@ -150,7 +142,6 @@ _skip:
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::HostAddr>::serializedSize(Protocol const* proto,
                                                    nebula::HostAddr const* obj) {
@@ -169,7 +160,6 @@ uint32_t Cpp2Ops<nebula::HostAddr>::serializedSize(Protocol const* proto,
 }
 
 
-template<>
 template<class Protocol>
 uint32_t Cpp2Ops<nebula::HostAddr>::serializedSizeZC(Protocol const* proto,
                                                      nebula::HostAddr const* obj) {

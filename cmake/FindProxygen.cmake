@@ -14,7 +14,7 @@
 #  Proxygen_LIBRARY          The Proxygen library.
 
 find_path(Proxygen_INCLUDE_DIR NAMES proxygen)
-find_library(Proxygen_LIBRARY NAMES libproxygenlib.a)
+find_library(Proxygen_LIBRARY NAMES libproxygen.a)
 
 if(Proxygen_INCLUDE_DIR AND Proxygen_LIBRARY)
     set(Proxygen_FOUND TRUE)

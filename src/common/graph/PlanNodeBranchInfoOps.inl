@@ -9,11 +9,12 @@
 
 #include "common/base/Base.h"
 
-#include <thrift/lib/cpp2/GeneratedSerializationCodeHelper.h>
+#include <thrift/lib/cpp2/GeneratedCodeHelper.h>
 #include <thrift/lib/cpp2/gen/module_types_tcc.h>
 #include <thrift/lib/cpp2/protocol/ProtocolReaderStructReadState.h>
 
 #include "common/graph/Response.h"
+#include "common/graph/GraphCpp2Ops.h"
 
 namespace apache {
 namespace thrift {
@@ -43,18 +44,11 @@ struct TccStructTraits<nebula::PlanNodeBranchInfo> {
 
 }   // namespace detail
 
-template <>
-inline void Cpp2Ops<::nebula::PlanNodeBranchInfo>::clear(::nebula::PlanNodeBranchInfo* obj) {
-    return obj->clear();
-}
-
-template <>
 inline constexpr apache::thrift::protocol::TType
 Cpp2Ops<::nebula::PlanNodeBranchInfo>::thriftType() {
     return apache::thrift::protocol::T_STRUCT;
 }
 
-template <>
 template <class Protocol>
 uint32_t Cpp2Ops<::nebula::PlanNodeBranchInfo>::write(Protocol* proto,
                                                       ::nebula::PlanNodeBranchInfo const* obj) {
@@ -73,7 +67,6 @@ uint32_t Cpp2Ops<::nebula::PlanNodeBranchInfo>::write(Protocol* proto,
     return xfer;
 }
 
-template <>
 template <class Protocol>
 void Cpp2Ops<::nebula::PlanNodeBranchInfo>::read(Protocol* proto,
                                                  ::nebula::PlanNodeBranchInfo* obj) {
@@ -156,7 +149,6 @@ _skip:
     }
 }
 
-template <>
 template <class Protocol>
 uint32_t Cpp2Ops<::nebula::PlanNodeBranchInfo>::serializedSize(
     Protocol const* proto,
@@ -173,7 +165,6 @@ uint32_t Cpp2Ops<::nebula::PlanNodeBranchInfo>::serializedSize(
     return xfer;
 }
 
-template <>
 template <class Protocol>
 uint32_t Cpp2Ops<::nebula::PlanNodeBranchInfo>::serializedSizeZC(
     Protocol const* proto,

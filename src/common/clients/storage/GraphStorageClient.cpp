@@ -558,16 +558,16 @@ GraphStorageClient::getIdFromNewVertex(GraphSpaceID space) const {
     std::function<const VertexID&(const cpp2::NewVertex&)> cb;
     if (vidType == meta::cpp2::PropertyType::INT64) {
         cb = [](const cpp2::NewVertex& v) -> const VertexID& {
-                DCHECK_EQ(Value::Type::INT, v.id.type());
+                DCHECK_EQ(Value::Type::INT, v.get_id().type());
                 auto& mutableV = const_cast<cpp2::NewVertex&>(v);
-                mutableV.id = Value(
-                        std::string(reinterpret_cast<const char*>(&v.id.getInt()), 8));
-                return mutableV.id.getStr();
+                mutableV.set_id(Value(
+                        std::string(reinterpret_cast<const char*>(&v.get_id().getInt()), 8)));
+                return mutableV.get_id().getStr();
             };
     } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
         cb = [](const cpp2::NewVertex& v) -> const VertexID& {
-                DCHECK_EQ(Value::Type::STRING, v.id.type());
-                return v.id.getStr();
+                DCHECK_EQ(Value::Type::STRING, v.get_id().type());
+                return v.get_id().getStr();
             };
     } else {
         return Status::Error("Only support integer/string type vid.");
@@ -586,20 +586,24 @@ StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClien
     std::function<const VertexID&(const cpp2::NewEdge&)> cb;
     if (vidType == meta::cpp2::PropertyType::INT64) {
         cb = [](const cpp2::NewEdge& e) -> const VertexID& {
-                DCHECK_EQ(Value::Type::INT, e.key.src.type());
-                DCHECK_EQ(Value::Type::INT, e.key.dst.type());
+                DCHECK_EQ(Value::Type::INT, e.get_key().get_src().type());
+                DCHECK_EQ(Value::Type::INT, e.get_key().get_dst().type());
                 auto& mutableE = const_cast<cpp2::NewEdge&>(e);
-                mutableE.key.src = Value(
-                        std::string(reinterpret_cast<const char*>(&e.key.src.getInt()), 8));
-                mutableE.key.dst = Value(
-                        std::string(reinterpret_cast<const char*>(&e.key.dst.getInt()), 8));
-                return mutableE.key.src.getStr();
+                (*mutableE.key_ref()).src_ref().emplace(
+                        Value(std::string(
+                                reinterpret_cast<const char*>(&e.get_key().get_src().getInt()),
+                                8)));
+                (*mutableE.key_ref()).dst_ref().emplace(
+                        Value(std::string(
+                                reinterpret_cast<const char*>(&e.get_key().get_dst().getInt()),
+                                8)));
+                return mutableE.get_key().get_src().getStr();
             };
     } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
         cb = [](const cpp2::NewEdge& e) -> const VertexID& {
-                DCHECK_EQ(Value::Type::STRING, e.key.src.type());
-                DCHECK_EQ(Value::Type::STRING, e.key.dst.type());
-                return e.key.src.getStr();
+                DCHECK_EQ(Value::Type::STRING, e.get_key().get_src().type());
+                DCHECK_EQ(Value::Type::STRING, e.get_key().get_dst().type());
+                return e.get_key().get_src().getStr();
             };
     } else {
         return Status::Error("Only support integer/string type vid.");
@@ -618,20 +622,20 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClien
     std::function<const VertexID&(const cpp2::EdgeKey&)> cb;
     if (vidType == meta::cpp2::PropertyType::INT64) {
         cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
-                DCHECK_EQ(Value::Type::INT, eKey.src.type());
-                DCHECK_EQ(Value::Type::INT, eKey.dst.type());
+                DCHECK_EQ(Value::Type::INT, eKey.get_src().type());
+                DCHECK_EQ(Value::Type::INT, eKey.get_dst().type());
                 auto& mutableEK = const_cast<cpp2::EdgeKey&>(eKey);
-                mutableEK.src = Value(
-                        std::string(reinterpret_cast<const char*>(&eKey.src.getInt()), 8));
-                mutableEK.dst = Value(
-                        std::string(reinterpret_cast<const char*>(&eKey.dst.getInt()), 8));
-                return mutableEK.src.getStr();
+                mutableEK.set_src(Value(
+                        std::string(reinterpret_cast<const char*>(&eKey.get_src().getInt()), 8)));
+                mutableEK.set_dst(Value(
+                        std::string(reinterpret_cast<const char*>(&eKey.get_dst().getInt()), 8)));
+                return mutableEK.get_src().getStr();
             };
     } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
         cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
-                DCHECK_EQ(Value::Type::STRING, eKey.src.type());
-                DCHECK_EQ(Value::Type::STRING, eKey.dst.type());
-                return eKey.src.getStr();
+                DCHECK_EQ(Value::Type::STRING, eKey.get_src().type());
+                DCHECK_EQ(Value::Type::STRING, eKey.get_dst().type());
+                return eKey.get_src().getStr();
             };
     } else {
         return Status::Error("Only support integer/string type vid.");

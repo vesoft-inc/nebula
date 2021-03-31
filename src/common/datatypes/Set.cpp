@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <sstream>
 #include <folly/String.h>
 
 #include "common/datatypes/Set.h"

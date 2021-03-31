@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/clients/graph/GraphClient.h"
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
+#include <folly/io/async/AsyncSocket.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
 DEFINE_int32(server_conn_timeout_ms, 1000,
@@ -30,10 +30,10 @@ GraphClient::~GraphClient() {
 
 nebula::ErrorCode GraphClient::connect(const std::string& username,
                                        const std::string& password) {
-    using apache::thrift::async::TAsyncSocket;
+    using folly::AsyncSocket;
     using apache::thrift::HeaderClientChannel;
 
-    auto socket = TAsyncSocket::newSocket(
+    std::shared_ptr<folly::AsyncTransport> socket = AsyncSocket::newSocket(
         folly::EventBaseManager::get()->getEventBase(),
         addr_,
         port_,

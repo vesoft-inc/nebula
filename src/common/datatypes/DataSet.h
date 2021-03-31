@@ -139,6 +139,10 @@ struct DataSet {
         rows.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     std::size_t size() const {
         return rowSize();
     }

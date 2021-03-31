@@ -29,6 +29,10 @@ struct KeyValue {
         value.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     bool operator==(const KeyValue& rhs) const {
         if (key != rhs.key) {
             return false;

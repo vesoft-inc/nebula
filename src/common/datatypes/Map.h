@@ -36,6 +36,10 @@ struct Map {
         kvs.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     // the configs of rocksdb will use the interface, so the value need modify to string
     std::string toString() const;
 

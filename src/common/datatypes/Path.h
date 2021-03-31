@@ -47,6 +47,10 @@ struct Step {
         props.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     std::string toString() const {
         std::stringstream os;
         os << "-[" << name << "(" << type << ")]->"
@@ -123,6 +127,10 @@ struct Path {
     void clear() {
         src.clear();
         steps.clear();
+    }
+
+    void __clear() {
+        clear();
     }
 
     std::string toString() const {

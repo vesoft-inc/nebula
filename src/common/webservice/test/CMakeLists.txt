@@ -18,9 +18,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        wangle
+        ${PROXYGEN_LIBRARIES}
         gtest
 )
 
@@ -40,9 +38,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        wangle
+        ${PROXYGEN_LIBRARIES}
         gtest
 )
 
@@ -63,9 +59,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        wangle
+        ${PROXYGEN_LIBRARIES}
         gtest
 )
 
@@ -85,8 +79,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        wangle
+        ${PROXYGEN_LIBRARIES}
         gtest
 )

@@ -27,6 +27,10 @@ struct Set {
         values.clear();
     }
 
+    void __clear() {
+        clear();
+    }
+
     std::string toString() const;
 
     Set& operator=(const Set& rhs) {

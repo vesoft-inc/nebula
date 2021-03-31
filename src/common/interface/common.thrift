@@ -88,7 +88,7 @@ enum NullType {
     UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
     OUT_OF_RANGE = 7,
-} (cpp.enum_strict cpp.type = "nebula::NullType")
+} (cpp.enum_strict, cpp.type = "nebula::NullType")
 
 
 // The type to hold any supported values during the query

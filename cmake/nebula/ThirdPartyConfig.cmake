@@ -6,6 +6,8 @@ message(">>>> Configuring third party for '${PROJECT_NAME}' <<<<")
 #   4. /opt/vesoft/third-party, if exists
 #   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
 
+set(NEBULA_THIRDPARTY_VERSION "2.0")
+
 if(${DISABLE_CXX11_ABI})
     SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party-98/install)
     if(NOT EXISTS ${CMAKE_BINARY_DIR}/third-party-98/install)
@@ -18,8 +20,8 @@ else()
             SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
         elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
             SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
-        elseif(EXISTS /opt/vesoft/third-party)
-            SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
+        elseif(EXISTS /opt/vesoft/third-party/${NEBULA_THIRDPARTY_VERSION})
+            SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party/${NEBULA_THIRDPARTY_VERSION}")
         else()
             include(InstallThirdParty)
         endif()
@@ -28,6 +30,8 @@ endif()
 
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     print_config(NEBULA_THIRDPARTY_ROOT)
+    file(READ ${NEBULA_THIRDPARTY_ROOT}/version-info third_party_build_info)
+    message(STATUS "Build info of nebula third party:\n${third_party_build_info}")
     list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/include)
     list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib)
     list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib64)
@@ -86,7 +90,6 @@ if(ENABLE_JEMALLOC)
     find_package(Jemalloc REQUIRED)
 endif()
 find_package(Libevent REQUIRED)
-find_package(Mstch REQUIRED)
 find_package(Proxygen REQUIRED)
 find_package(Rocksdb REQUIRED)
 find_package(Snappy REQUIRED)
@@ -96,12 +99,13 @@ find_package(Zstd REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Krb5 REQUIRED gssapi)
 find_package(Boost REQUIRED)
-find_package(GPERF 2.8 REQUIRED)
 find_package(Libunwind REQUIRED)
 find_package(BISON 3.0.5 REQUIRED)
 include(MakeBisonRelocatable)
 find_package(FLEX REQUIRED)
 find_package(LibLZMA REQUIRED)
+find_package(Fizz REQUIRED)
+find_package(Sodium REQUIRED)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
@@ -109,21 +113,26 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROO
 # All thrift libraries
 set(THRIFT_LIBRARIES
     thriftcpp2
-    thrift
-    thriftprotocol
+    rocketupgrade
     async
-    protocol
+    thriftprotocol
     transport
     concurrency
-    security
     thriftfrozen2
     thrift-core
+    rpcmetadata
+    thriftmetadata
     wangle
+    fizz
+    sodium
 )
 
 set(PROXYGEN_LIBRARIES
-    proxygenlib
     proxygenhttpserver
+    proxygen
+    wangle
+    fizz
+    sodium
 )
 
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
