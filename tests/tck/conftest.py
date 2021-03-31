@@ -401,8 +401,8 @@ def execution_should_be_succ(graph_spaces):
     check_resp(rs, stmt)
 
 
-@then(rparse(r"a (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
-def raised_type_error(err_type, time, sym, msg, graph_spaces):
+@then(rparse(r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
+def raised_type_error(unit, err_type, time, sym, msg, graph_spaces):
     res = graph_spaces["result_set"]
     ngql = graph_spaces['ngql']
     assert not res.is_succeeded(), f"Response should be failed: ngql:{ngql}"

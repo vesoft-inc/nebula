@@ -69,6 +69,7 @@ def start_nebula(nb, configs):
             "work_dir": nb.work_dir
         }
         f.write(json.dumps(data))
+    print('Start nebula successfully')
 
 
 def stop_nebula(nb):
@@ -77,6 +78,7 @@ def stop_nebula(nb):
         nb.set_work_dir(data["work_dir"])
     nb.stop()
     shutil.rmtree(TMP_DIR, ignore_errors=True)
+    print('nebula services have been stopped.')
 
 
 def opt_is(val, expect):

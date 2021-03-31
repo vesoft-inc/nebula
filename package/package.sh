@@ -64,27 +64,27 @@ do
 done
 
 # version is null, get from tag name
-[[ -z $version ]] && version=`git describe --exact-match --abbrev=0 --tags | sed 's/^v//'`
+[[ -z $version ]] && version=$(git describe --exact-match --abbrev=0 --tags | sed 's/^v//')
 # version is null, use UTC date as version
 [[ -z $version ]] && version=$(date -u +%Y.%m.%d)-nightly
 
 if [[ -z $version ]]; then
     echo "version is null, exit"
     echo ${usage}
-    exit -1
+    exit 1
 fi
 
 
 if [[ $strip_enable != TRUE ]] && [[ $strip_enable != FALSE ]]; then
     echo "strip enable is wrong, exit"
     echo ${usage}
-    exit -1
+    exit 1
 fi
 
 echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer], static_sanitizer is [$static_sanitizer]"
 
 function _build_storage {
-    if [ ! -d ${storage_dir} && ! -L ${storage_dir} ]; then
+    if [[ ! -d ${storage_dir} && ! -L ${storage_dir} ]]; then
         git clone --single-branch --branch ${branch} https://github.com/vesoft-inc/nebula-storage.git ${storage_dir}
     fi
 
@@ -101,9 +101,9 @@ function _build_storage {
           -S ${storage_dir} \
           -B ${storage_build_dir}
 
-    if !( cmake --build ${storage_build_dir} -j ${jobs} ); then
+    if ! ( cmake --build ${storage_build_dir} -j ${jobs} ); then
         echo ">>> build nebula storage failed <<<"
-        exit -1
+        exit 1
     fi
     echo ">>> build nebula storage successfully <<<"
 }
@@ -123,9 +123,9 @@ function _build_graph {
           -S ${project_dir} \
           -B ${build_dir}
 
-    if !( cmake --build ${build_dir} -j ${jobs} ); then
+    if ! ( cmake --build ${build_dir} -j ${jobs} ); then
         echo ">>> build nebula graph failed <<<"
-        exit -1
+        exit 1
     fi
     echo ">>> build nebula graph successfully <<<"
 }
@@ -152,7 +152,7 @@ function package {
     # The package CMakeLists.txt in ${project_dir}/package/build
     package_dir=${build_dir}/package/
     if [[ -d $package_dir ]]; then
-        rm -rf ${package_dir}/*
+        rm -rf ${package_dir:?}/*
     else
         mkdir ${package_dir}
     fi
@@ -174,30 +174,30 @@ function package {
     sys_ver=""
     pType="RPM"
     if [[ -f "/etc/redhat-release" ]]; then
-        sys_name=`cat /etc/redhat-release | cut -d ' ' -f1`
+        sys_name=$(< /etc/redhat-release cut -d ' ' -f1)
         if [[ ${sys_name} == "CentOS" ]]; then
-            sys_ver=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
+            sys_ver=$(< /etc/redhat-release tr -dc '0-9.' | cut -d \. -f1)
             sys_ver=.el${sys_ver}.x86_64
         elif [[ ${sys_name} == "Fedora" ]]; then
-            sys_ver=`cat /etc/redhat-release | cut -d ' ' -f3`
+            sys_ver=$(< /etc/redhat-release cut -d ' ' -f3)
             sys_ver=.fc${sys_ver}.x86_64
         fi
         pType="RPM"
     elif [[ -f "/etc/lsb-release" ]]; then
-        sys_ver=`cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//'`
+        sys_ver=$(< /etc/lsb-release grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//')
         sys_ver=.ubuntu${sys_ver}.amd64
         pType="DEB"
     fi
 
-    if !( cpack -G ${pType} --verbose $args ); then
+    if ! ( cpack -G ${pType} --verbose $args ); then
         echo ">>> package nebula failed <<<"
-        exit -1
+        exit 1
     else
         # rename package file
-        pkg_names=`ls | grep nebula | grep ${version}`
+        pkg_names=$(ls ./*nebula*-${version}*)
         outputDir=$build_dir/cpack_output
         mkdir -p ${outputDir}
-        for pkg_name in ${pkg_names[@]};
+        for pkg_name in "${pkg_names[@]}";
         do
             new_pkg_name=${pkg_name/\-Linux/${sys_ver}}
             mv ${pkg_name} ${outputDir}/${new_pkg_name}
