@@ -24,7 +24,7 @@ folly::Future<Status> CreateTagIndexExecutor::execute() {
                          ctiNode->getFields(),
                          ctiNode->getIfNotExists())
         .via(runner())
-        .then([ctiNode, spaceId](StatusOr<IndexID> resp) {
+        .thenValue([ctiNode, spaceId](StatusOr<IndexID> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Create index `"
                            << ctiNode->getIndexName() << "' at tag: `" << ctiNode->getSchemaName()
@@ -44,7 +44,7 @@ folly::Future<Status> DropTagIndexExecutor::execute() {
         ->getMetaClient()
         ->dropTagIndex(spaceId, dtiNode->getIndexName(), dtiNode->getIfExists())
         .via(runner())
-        .then([dtiNode, spaceId](StatusOr<bool> resp) {
+        .thenValue([dtiNode, spaceId](StatusOr<bool> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Drop tag index `"
                            << dtiNode->getIndexName() << "' failed: " << resp.status();
@@ -63,7 +63,7 @@ folly::Future<Status> DescTagIndexExecutor::execute() {
         ->getMetaClient()
         ->getTagIndex(spaceId, dtiNode->getIndexName())
         .via(runner())
-        .then([this, dtiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        .thenValue([this, dtiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Desc tag index `"
                            << dtiNode->getIndexName() << "' failed: " << resp.status();
@@ -91,7 +91,7 @@ folly::Future<Status> ShowCreateTagIndexExecutor::execute() {
         ->getMetaClient()
         ->getTagIndex(spaceId, sctiNode->getIndexName())
         .via(runner())
-        .then([this, sctiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        .thenValue([this, sctiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Show create tag index `"
                            << sctiNode->getIndexName() << "' failed: " << resp.status();
@@ -113,7 +113,7 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space().id;
-    return qctx()->getMetaClient()->listTagIndexes(spaceId).via(runner()).then(
+    return qctx()->getMetaClient()->listTagIndexes(spaceId).via(runner()).thenValue(
         [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Show tag indexes failed"
@@ -145,7 +145,7 @@ folly::Future<Status> ShowTagIndexStatusExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space().id;
-    return qctx()->getMetaClient()->listTagIndexStatus(spaceId).via(runner()).then(
+    return qctx()->getMetaClient()->listTagIndexStatus(spaceId).via(runner()).thenValue(
         [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Show tag index status failed"

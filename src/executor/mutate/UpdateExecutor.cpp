@@ -56,7 +56,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
         .ensure([updateVertTime]() {
             VLOG(1) << "Update vertice time: " << updateVertTime.elapsedInUSec() << "us";
         })
-        .then([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+        .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
@@ -66,8 +66,8 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
             for (auto& code : value.get_result().get_failed_parts()) {
                 NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
             }
-            if (value.__isset.props) {
-                auto status = handleResult(std::move(*value.get_props()));
+            if (value.props_ref().has_value()) {
+                auto status = handleResult(std::move(*value.props_ref()));
                 if (!status.ok()) {
                     return status.status();
                 }
@@ -101,7 +101,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
             .ensure([updateEdgeTime]() {
                 VLOG(1) << "Update edge time: " << updateEdgeTime.elapsedInUSec() << "us";
             })
-            .then([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+            .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
                 SCOPED_TIMER(&execTime_);
                 if (!resp.ok()) {
                     LOG(ERROR) << "Update edge failed: " << resp.status();
@@ -111,8 +111,8 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
                 for (auto& code : value.get_result().get_failed_parts()) {
                     NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
                 }
-                if (value.__isset.props) {
-                    auto status = handleResult(std::move(*value.get_props()));
+                if (value.props_ref().has_value()) {
+                    auto status = handleResult(std::move(*value.props_ref()));
                     if (!status.ok()) {
                         return status.status();
                     }

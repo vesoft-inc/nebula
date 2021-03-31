@@ -19,7 +19,7 @@ folly::Future<Status> ShowPartsExecutor::execute() {
     auto *spNode = asNode<ShowParts>(node());
     return qctx()->getMetaClient()->listParts(spNode->getSpaceId(), spNode->getPartIds())
             .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::PartItem>> resp) {
+            .thenValue([this](StatusOr<std::vector<meta::cpp2::PartItem>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
@@ -37,8 +37,8 @@ folly::Future<Status> ShowPartsExecutor::execute() {
                     row.values.resize(4);
                     row.values[0].setInt(item.get_part_id());
 
-                    if (item.__isset.leader) {
-                        std::string leaderStr = NetworkUtils::toHostsStr({*item.get_leader()});
+                    if (item.leader_ref().has_value()) {
+                        std::string leaderStr = NetworkUtils::toHostsStr({*item.leader_ref()});
                         row.values[1].setStr(std::move(leaderStr));
                     } else {
                         row.values[1].setStr("");

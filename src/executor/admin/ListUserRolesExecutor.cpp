@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/ListUserRolesExecutor.h"
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
@@ -20,7 +22,7 @@ folly::Future<Status> ListUserRolesExecutor::listUserRoles() {
     auto *lurNode = asNode<ListUserRoles>(node());
     return qctx()->getMetaClient()->getUserRoles(*lurNode->username())
         .via(runner())
-        .then([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
+        .thenValue([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 return std::move(resp).status();
@@ -31,7 +33,7 @@ folly::Future<Status> ListUserRolesExecutor::listUserRoles() {
                 v.emplace_back(nebula::Row(
                     {
                         item.get_user_id(),
-                        meta::cpp2::_RoleType_VALUES_TO_NAMES.at(item.get_role_type())
+                        apache::thrift::util::enumNameSafe(item.get_role_type())
                     }));
             }
             return finish(std::move(v));

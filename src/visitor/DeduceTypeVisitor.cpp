@@ -105,7 +105,7 @@ DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
     if (!vctx->spaceChosen()) {
         vidType_ = Value::Type::__EMPTY__;
     } else {
-        auto vidType = vctx_->whichSpace().spaceDesc.vid_type.get_type();
+        auto vidType = vctx_->whichSpace().spaceDesc.vid_type_ref().value().get_type();
         vidType_ = SchemaUtil::propTypeToValueType(vidType);
     }
 }

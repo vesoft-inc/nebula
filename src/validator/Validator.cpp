@@ -307,10 +307,11 @@ Status Validator::validate() {
 
     if (!noSpaceRequired_) {
         space_ = vctx_->whichSpace();
-        VLOG(1) << "Space chosen, name: " << space_.spaceDesc.space_name << " id: " << space_.id;
+        VLOG(1) << "Space chosen, name: " << space_.spaceDesc.space_name_ref().value()
+                << " id: " << space_.id;
     }
 
-    auto vidType = space_.spaceDesc.vid_type.get_type();
+    auto vidType = space_.spaceDesc.vid_type_ref().value().type_ref().value();
     vidType_ = SchemaUtil::propTypeToValueType(vidType);
 
     NG_RETURN_IF_ERROR(validateImpl());

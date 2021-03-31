@@ -7,6 +7,7 @@
 #include "parser/AdminSentences.h"
 #include <sstream>
 #include "util/SchemaUtil.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {
 
@@ -123,7 +124,7 @@ std::string ConfigRowItem::toString() const {
     std::string buf;
     buf.reserve(128);
     if (module_ != meta::cpp2::ConfigModule::ALL) {
-        buf += meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_);
+        buf += apache::thrift::util::enumNameSafe(module_);
         buf += ":";
     }
     if (name_ != nullptr) {
@@ -276,7 +277,7 @@ std::string AdminJobSentence::toString() const {
                 case meta::cpp2::AdminCmd::DATA_BALANCE:
                 case meta::cpp2::AdminCmd::UNKNOWN:
                     return folly::stringPrintf("Unsupported AdminCmd: %s",
-                            meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(cmd_));
+                            apache::thrift::util::enumNameSafe(cmd_).c_str());
             }
         }
         case meta::cpp2::AdminJobOp::SHOW_All:
@@ -333,12 +334,12 @@ std::string SignInTextServiceSentence::toString() const {
         buf += client.get_host().host;
         buf += ":";
         buf += std::to_string(client.get_host().port);
-        if (client.__isset.user && !client.get_user()->empty()) {
+        if (client.user_ref().has_value() && !(*client.user_ref()).empty()) {
             buf += ", \"";
             buf += *client.get_user();
             buf += "\"";
         }
-        if (client.__isset.pwd && !client.get_pwd()->empty()) {
+        if (client.pwd_ref().has_value() && !(*client.pwd_ref()).empty()) {
             buf += ", \"";
             buf += *client.get_pwd();
             buf += "\"";

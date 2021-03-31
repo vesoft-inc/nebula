@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "validator/TraversalValidator.h"
 #include "common/expression/VariableExpression.h"
 #include "util/SchemaUtil.h"
@@ -28,11 +29,11 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
         if (!type.ok()) {
             return type.status();
         }
-        auto vidType = space_.spaceDesc.vid_type.get_type();
+        auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
         if (type.value() != SchemaUtil::propTypeToValueType(vidType)) {
             std::stringstream ss;
             ss << "`" << src->toString() << "', the srcs should be type of "
-                << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(vidType) << ", but was`"
+                << apache::thrift::util::enumNameSafe(vidType) << ", but was`"
                 << type.value() << "'";
             return Status::SemanticError(ss.str());
         }
@@ -52,10 +53,10 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
                         expr->toString().c_str());
             }
             auto vid = expr->eval(ctx(nullptr));
-            auto vidType = space_.spaceDesc.vid_type.get_type();
+            auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
             if (!SchemaUtil::isValidVid(vid, vidType)) {
                 std::stringstream ss;
-                ss << "Vid should be a " << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(vidType);
+                ss << "Vid should be a " << apache::thrift::util::enumNameSafe(vidType);
                 return Status::SemanticError(ss.str());
             }
             starts.vids.emplace_back(std::move(vid));

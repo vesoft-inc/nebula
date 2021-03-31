@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/ShowBalanceExecutor.h"
 #include "planner/Admin.h"
 
@@ -19,7 +21,7 @@ folly::Future<Status> ShowBalanceExecutor::showBalance() {
     auto *sbNode = asNode<ShowBalance>(node());
     return qctx()->getMetaClient()->showBalance(sbNode->jobId())
         .via(runner())
-        .then([this](StatusOr<std::vector<meta::cpp2::BalanceTask>> resp) {
+        .thenValue([this](StatusOr<std::vector<meta::cpp2::BalanceTask>> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
@@ -47,7 +49,7 @@ folly::Future<Status> ShowBalanceExecutor::showBalance() {
                 }
                 v.emplace_back(Row({
                     std::move(task).get_id(),
-                    meta::cpp2::_TaskResult_VALUES_TO_NAMES.at(task.get_result())
+                    apache::thrift::util::enumNameSafe(task.get_result())
                 }));
             }
             double percentage = total == 0 ? 0 : static_cast<double>(succeeded) / total * 100;

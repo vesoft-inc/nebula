@@ -9,6 +9,7 @@
 #include <folly/String.h>
 #include <folly/dynamic.h>
 #include <string>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/clients/meta/MetaClient.h"
 #include "common/datatypes/Value.h"
@@ -67,11 +68,11 @@ std::string toJson(const Expression *expr) {
 
 folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
     folly::dynamic obj = folly::dynamic::object();
-    obj.insert("name", desc.space_name);
-    obj.insert("partNum", desc.partition_num);
-    obj.insert("replicaFactor", desc.replica_factor);
-    obj.insert("charset", desc.charset_name);
-    obj.insert("collate", desc.collate_name);
+    obj.insert("name", *desc.space_name_ref());
+    obj.insert("partNum", *desc.partition_num_ref());
+    obj.insert("replicaFactor", *desc.replica_factor_ref());
+    obj.insert("charset", *desc.charset_name_ref());
+    obj.insert("collate", *desc.collate_name_ref());
     obj.insert("vidType", graph::SchemaUtil::typeToString(desc.get_vid_type()));
     return obj;
 }
@@ -79,16 +80,16 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column) {
     folly::dynamic obj = folly::dynamic::object();
     obj.insert("name", column.get_name());
-    obj.insert("type", meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(column.get_type().get_type()));
-    if (column.type.__isset.type_length) {
-        obj.insert("typeLength", folly::to<std::string>(*column.get_type().get_type_length()));
+    obj.insert("type", apache::thrift::util::enumNameSafe(column.get_type().get_type()));
+    if (column.type.type_length_ref().has_value()) {
+        obj.insert("typeLength", folly::to<std::string>(*column.get_type().type_length_ref()));
     }
-    if (column.__isset.nullable) {
-        obj.insert("nullable", folly::to<std::string>(*column.get_nullable()));
+    if (column.nullable_ref().has_value()) {
+        obj.insert("nullable", folly::to<std::string>(*column.nullable_ref()));
     }
-    if (column.__isset.default_value) {
+    if (column.default_value_ref().has_value()) {
         graph::QueryExpressionContext ctx;
-        auto value = Expression::decode(*column.get_default_value());
+        auto value = Expression::decode(*column.default_value_ref());
         obj.insert("defaultValue", value->toString());
     }
     return obj;
@@ -96,83 +97,83 @@ folly::dynamic toJson(const meta::cpp2::ColumnDef &column) {
 
 folly::dynamic toJson(const meta::cpp2::Schema &schema) {
     folly::dynamic json = folly::dynamic::object();
-    if (schema.__isset.columns) {
-        json.insert("columns", toJson(schema.get_columns()));
+    if (schema.columns_ref().is_set()) {
+        json.insert("columns", toJson(*schema.columns_ref()));
     }
-    if (schema.__isset.schema_prop) {
-        json.insert("prop", toJson(schema.get_schema_prop()));
+    if (schema.schema_prop_ref().is_set()) {
+        json.insert("prop", toJson(*schema.schema_prop_ref()));
     }
     return json;
 }
 
 folly::dynamic toJson(const meta::cpp2::SchemaProp &prop) {
     folly::dynamic object = folly::dynamic::object();
-    if (prop.__isset.ttl_col) {
-        object.insert("ttlCol", *prop.get_ttl_col());
+    if (prop.ttl_col_ref().has_value()) {
+        object.insert("ttlCol", *prop.ttl_col_ref());
     }
-    if (prop.__isset.ttl_duration) {
-        object.insert("ttlDuration", *prop.get_ttl_duration());
+    if (prop.ttl_duration_ref()) {
+        object.insert("ttlDuration", *prop.ttl_duration_ref());
     }
     return object;
 }
 
 folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item) {
     folly::dynamic json = folly::dynamic::object();
-    if (item.__isset.schema) {
-        json.insert("schema", toJson(item.get_schema()));
+    if (item.schema_ref().is_set()) {
+        json.insert("schema", toJson(*item.schema_ref()));
     }
-    if (item.__isset.op) {
-        json.insert("op", meta::cpp2::_AlterSchemaOp_VALUES_TO_NAMES.at(item.get_op()));
+    if (item.op_ref().is_set()) {
+        json.insert("op", apache::thrift::util::enumNameSafe(*item.op_ref()));
     }
     return json;
 }
 
 folly::dynamic toJson(const storage::cpp2::EdgeKey &edgeKey) {
     folly::dynamic edgeKeyObj = folly::dynamic::object();
-    if (edgeKey.__isset.src) {
-        edgeKeyObj.insert("src", toJson(edgeKey.get_src()));
+    if (edgeKey.src_ref().is_set()) {
+        edgeKeyObj.insert("src", toJson(*edgeKey.src_ref()));
     }
-    if (edgeKey.__isset.dst) {
-        edgeKeyObj.insert("dst", toJson(edgeKey.get_dst()));
+    if (edgeKey.dst_ref().is_set()) {
+        edgeKeyObj.insert("dst", toJson(*edgeKey.dst_ref()));
     }
-    if (edgeKey.__isset.edge_type) {
-        edgeKeyObj.insert("edgeType", edgeKey.get_edge_type());
+    if (edgeKey.edge_type_ref().is_set()) {
+        edgeKeyObj.insert("edgeType", *edgeKey.edge_type_ref());
     }
-    if (edgeKey.__isset.ranking) {
-        edgeKeyObj.insert("ranking", edgeKey.get_ranking());
+    if (edgeKey.ranking_ref().is_set()) {
+        edgeKeyObj.insert("ranking", *edgeKey.ranking_ref());
     }
     return edgeKeyObj;
 }
 
 folly::dynamic toJson(const storage::cpp2::NewTag &tag) {
     folly::dynamic tagObj = folly::dynamic::object();
-    if (tag.__isset.tag_id) {
-        tagObj.insert("tagId", tag.get_tag_id());
+    if (tag.tag_id_ref().is_set()) {
+        tagObj.insert("tagId", *tag.tag_id_ref());
     }
-    if (tag.__isset.props) {
-        tagObj.insert("props", toJson(tag.get_props()));
+    if (tag.props_ref().is_set()) {
+        tagObj.insert("props", toJson(*tag.props_ref()));
     }
     return tagObj;
 }
 
 folly::dynamic toJson(const storage::cpp2::NewVertex &vert) {
     folly::dynamic vertObj = folly::dynamic::object();
-    if (vert.__isset.id) {
-        vertObj.insert("id", toJson(vert.get_id()));
+    if (vert.id_ref().is_set()) {
+        vertObj.insert("id", toJson(*vert.id_ref()));
     }
-    if (vert.__isset.tags) {
-        vertObj.insert("tags", util::toJson(vert.get_tags()));
+    if (vert.tags_ref().is_set()) {
+        vertObj.insert("tags", util::toJson(*vert.tags_ref()));
     }
     return vertObj;
 }
 
 folly::dynamic toJson(const storage::cpp2::NewEdge &edge) {
     folly::dynamic edgeObj = folly::dynamic::object();
-    if (edge.__isset.key) {
-        edgeObj.insert("key", toJson(edge.get_key()));
+    if (edge.key_ref().is_set()) {
+        edgeObj.insert("key", toJson(*edge.key_ref()));
     }
-    if (edge.__isset.props) {
-        edgeObj.insert("props", toJson(edge.get_props()));
+    if (edge.props_ref().is_set()) {
+        edgeObj.insert("props", toJson(*edge.props_ref()));
     }
     return edgeObj;
 }
@@ -183,60 +184,60 @@ folly::dynamic toJson(const storage::cpp2::UpdatedProp &prop) {
 
 folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy) {
     folly::dynamic obj = folly::dynamic::object();
-    if (orderBy.__isset.direction) {
-        auto dir = orderBy.get_direction();
-        obj.insert("direction", storage::cpp2::_OrderDirection_VALUES_TO_NAMES.at(dir));
+    if (orderBy.direction_ref().is_set()) {
+        auto dir = *orderBy.direction_ref();
+        obj.insert("direction", apache::thrift::util::enumNameSafe(dir));
     }
-    if (orderBy.__isset.prop) {
-        obj.insert("prop", orderBy.get_prop());
+    if (orderBy.prop_ref().is_set()) {
+        obj.insert("prop", *orderBy.prop_ref());
     }
     return obj;
 }
 
 folly::dynamic toJson(const storage::cpp2::VertexProp &prop) {
     folly::dynamic obj = folly::dynamic::object();
-    if (prop.__isset.tag) {
-        auto tag = prop.get_tag();
+    if (prop.tag_ref().is_set()) {
+        auto tag = *prop.tag_ref();
         obj.insert("tagId", tag);
     }
-    if (prop.__isset.props) {
-        obj.insert("props", toJson(prop.get_props()));
+    if (prop.props_ref().is_set()) {
+        obj.insert("props", toJson(*prop.props_ref()));
     }
     return obj;
 }
 
 folly::dynamic toJson(const storage::cpp2::EdgeProp &prop) {
     folly::dynamic obj = folly::dynamic::object();
-    if (prop.__isset.type) {
-        obj.insert("type", toJson(prop.get_type()));
+    if (prop.type_ref().is_set()) {
+        obj.insert("type", toJson(*prop.type_ref()));
     }
-    if (prop.__isset.props) {
-        obj.insert("props", toJson(prop.get_props()));
+    if (prop.props_ref().is_set()) {
+        obj.insert("props", toJson(*prop.props_ref()));
     }
     return obj;
 }
 
 folly::dynamic toJson(const storage::cpp2::StatProp &prop) {
     folly::dynamic obj = folly::dynamic::object();
-    if (prop.__isset.alias) {
-        obj.insert("alias", prop.get_alias());
+    if (prop.alias_ref().is_set()) {
+        obj.insert("alias", *prop.alias_ref());
     }
-    if (prop.__isset.prop) {
-        obj.insert("prop", prop.get_prop());
+    if (prop.prop_ref().is_set()) {
+        obj.insert("prop", *prop.prop_ref());
     }
-    if (prop.__isset.stat) {
-        obj.insert("stat", storage::cpp2::_StatType_VALUES_TO_NAMES.at(prop.get_stat()));
+    if (prop.stat_ref().is_set()) {
+        obj.insert("stat", apache::thrift::util::enumNameSafe(*prop.stat_ref()));
     }
     return obj;
 }
 
 folly::dynamic toJson(const storage::cpp2::Expr &expr) {
     folly::dynamic obj = folly::dynamic::object();
-    if (expr.__isset.alias) {
-        obj.insert("alias", expr.get_alias());
+    if (expr.alias_ref().is_set()) {
+        obj.insert("alias", *expr.alias_ref());
     }
-    if (expr.__isset.expr) {
-        obj.insert("expr", expr.get_expr());
+    if (expr.expr_ref().is_set()) {
+        obj.insert("expr", *expr.expr_ref());
     }
     return obj;
 }
@@ -253,7 +254,7 @@ folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc) {
 folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints) {
     folly::dynamic obj = folly::dynamic::object();
     obj.insert("column", hints.get_column_name());
-    auto scanType = storage::cpp2::_ScanType_VALUES_TO_NAMES.at(hints.get_scan_type());
+    auto scanType = apache::thrift::util::enumNameSafe(hints.get_scan_type());
     obj.insert("scanType", scanType);
     auto rtrim = [](const std::string &str) { return std::string(str.c_str()); };
     auto begin = toJson(hints.get_begin_value());

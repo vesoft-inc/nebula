@@ -46,7 +46,7 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
     std::unordered_set<VidType> uniqueSet;
     uniqueSet.reserve(iter->size());
 
-    const auto &vidType = space.spaceDesc.vid_type;
+    const auto &vidType = *(space.spaceDesc.vid_type_ref());
 
     for (; iter->valid(); iter->next()) {
         auto vid = expr->eval(exprCtx(iter));
@@ -66,7 +66,7 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
 }   // namespace internal
 
 bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
-    return space.spaceDesc.vid_type.type == meta::cpp2::PropertyType::INT64;
+    return (*space.spaceDesc.vid_type_ref()).type == meta::cpp2::PropertyType::INT64;
 }
 
 DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,

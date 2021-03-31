@@ -24,7 +24,7 @@ folly::Future<Status> UpdateUserExecutor::updateUser() {
         ->getMetaClient()
         ->alterUser(*uuNode->username(), encryption::MD5Utils::md5Encode(*uuNode->password()))
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .thenValue([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);
             NG_RETURN_IF_ERROR(resp);
             if (!resp.value()) {

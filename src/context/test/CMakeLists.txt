@@ -53,8 +53,7 @@ nebula_add_test(
         ${THRIFT_LIBRARIES}
         gtest
         wangle
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_executable(
@@ -69,6 +68,5 @@ nebula_add_executable(
         boost_regex
         ${THRIFT_LIBRARIES}
         wangle
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
 )

@@ -24,7 +24,7 @@ return qctx()
         ->getMetaClient()
         ->listFTClients()
         .via(runner())
-        .then([this](auto &&resp) {
+        .thenValue([this](auto &&resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
                 return resp.status();

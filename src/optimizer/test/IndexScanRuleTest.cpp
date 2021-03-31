@@ -261,10 +261,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(std::numeric_limits<int64_t>::min(), hint.begin_value);
-            EXPECT_EQ(2, hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(std::numeric_limits<int64_t>::min(), *hint.begin_value_ref());
+            EXPECT_EQ(2, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -275,10 +275,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(std::numeric_limits<int64_t>::min(), hint.begin_value);
-            EXPECT_EQ(3, hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(std::numeric_limits<int64_t>::min(), *hint.begin_value_ref());
+            EXPECT_EQ(3, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -289,10 +289,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(3, hint.begin_value);
-            EXPECT_EQ(std::numeric_limits<int64_t>::max(), hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(3, *hint.begin_value_ref());
+            EXPECT_EQ(std::numeric_limits<int64_t>::max(), *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -303,10 +303,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(2, hint.begin_value);
-            EXPECT_EQ(std::numeric_limits<int64_t>::max(), hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(2, *hint.begin_value_ref());
+            EXPECT_EQ(std::numeric_limits<int64_t>::max(), *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -318,10 +318,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(3, hint.begin_value);
-            EXPECT_EQ(5, hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(3, *hint.begin_value_ref());
+            EXPECT_EQ(5, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -333,10 +333,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_int", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(2, hint.begin_value);
-            EXPECT_EQ(6, hint.end_value);
+            EXPECT_EQ("col_int", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(2, *hint.begin_value_ref());
+            EXPECT_EQ(6, *hint.end_value_ref());
         }
     }
     {
@@ -373,10 +373,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_double", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(-std::numeric_limits<double>::max(), hint.begin_value);
-            EXPECT_EQ(1, hint.end_value);
+            EXPECT_EQ("col_double", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(-std::numeric_limits<double>::max(), *hint.begin_value_ref());
+            EXPECT_EQ(1, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -387,10 +387,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_double", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(1, hint.begin_value);
-            EXPECT_EQ(std::numeric_limits<double>::max(), hint.end_value);
+            EXPECT_EQ("col_double", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(1, *hint.begin_value_ref());
+            EXPECT_EQ(std::numeric_limits<double>::max(), *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -402,10 +402,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_double", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(1 + OptimizerUtils::kEpsilon, hint.begin_value);
-            EXPECT_EQ(5 - OptimizerUtils::kEpsilon, hint.end_value);
+            EXPECT_EQ("col_double", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(1 + OptimizerUtils::kEpsilon, *hint.begin_value_ref());
+            EXPECT_EQ(5 - OptimizerUtils::kEpsilon, *hint.end_value_ref());
         }
     }
     {
@@ -423,10 +423,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_str", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ(std::string(len, '\0'), hint.begin_value);
-            EXPECT_EQ("ccc", hint.end_value);
+            EXPECT_EQ("col_str", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(std::string(len, '\0'), *hint.begin_value_ref());
+            EXPECT_EQ("ccc", *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -437,12 +437,12 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_str", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ("col_str", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
             std::string begin = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
             std::string end = std::string(len, static_cast<char>(0xFF));
-            EXPECT_EQ(begin, hint.begin_value);
-            EXPECT_EQ(end, hint.end_value);
+            EXPECT_EQ(begin, *hint.begin_value_ref());
+            EXPECT_EQ(end, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -454,12 +454,12 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_str", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ("col_str", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
             std::string begin = std::string(3, 'a').append(6, 0x00).append(1, 0x01);
             std::string end = "ccc";
-            EXPECT_EQ(begin, hint.begin_value);
-            EXPECT_EQ(end, hint.end_value);
+            EXPECT_EQ(begin, *hint.begin_value_ref());
+            EXPECT_EQ(end, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -471,12 +471,12 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_str", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
+            EXPECT_EQ("col_str", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
             std::string begin = "aaa";
             std::string end = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
-            EXPECT_EQ(begin, hint.begin_value);
-            EXPECT_EQ(end, hint.end_value);
+            EXPECT_EQ(begin, *hint.begin_value_ref());
+            EXPECT_EQ(end, *hint.end_value_ref());
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -488,10 +488,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             EXPECT_TRUE(status.ok());
             EXPECT_EQ(1, hints.size());
             const auto& hint = hints[0];
-            EXPECT_EQ("col_str", hint.column_name);
-            EXPECT_EQ(storage::cpp2::ScanType::RANGE, hint.scan_type);
-            EXPECT_EQ("aaa", hint.begin_value);
-            EXPECT_EQ("ccc", hint.end_value);
+            EXPECT_EQ("col_str", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ("aaa", *hint.begin_value_ref());
+            EXPECT_EQ("ccc", *hint.end_value_ref());
         }
     }
 }

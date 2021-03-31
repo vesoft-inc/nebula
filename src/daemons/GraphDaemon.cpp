@@ -151,7 +151,6 @@ int main(int argc, char *argv[]) {
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
-    gServer->setThreadStackSizeMB(5);
     setupThreadManager();
 
     // Setup the signal handlers

@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/SnapshotExecutor.h"
 #include "planner/Admin.h"
 #include "context/QueryContext.h"
@@ -17,7 +19,7 @@ folly::Future<Status> CreateSnapshotExecutor::execute() {
 
     return qctx()->getMetaClient()->createSnapshot()
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
@@ -32,7 +34,7 @@ folly::Future<Status> DropSnapshotExecutor::execute() {
     auto *dsNode = asNode<DropSnapshot>(node());
     return qctx()->getMetaClient()->dropSnapshot(dsNode->getShapshotName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
@@ -46,7 +48,7 @@ folly::Future<Status> ShowSnapshotsExecutor::execute() {
 
     return qctx()->getMetaClient()->listSnapshots()
             .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::Snapshot>> resp) {
+            .thenValue([this](StatusOr<std::vector<meta::cpp2::Snapshot>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
@@ -57,10 +59,10 @@ folly::Future<Status> ShowSnapshotsExecutor::execute() {
 
                 for (auto &snapshot : snapshots) {
                     Row row;
-                    row.values.emplace_back(snapshot.name);
+                    row.values.emplace_back(*snapshot.name_ref());
                     row.values.emplace_back(
-                            meta::cpp2::_SnapshotStatus_VALUES_TO_NAMES.at(snapshot.status));
-                    row.values.emplace_back(snapshot.hosts);
+                            apache::thrift::util::enumNameSafe(*snapshot.status_ref()));
+                    row.values.emplace_back(*snapshot.hosts_ref());
                     dataSet.rows.emplace_back(std::move(row));
                 }
                 return finish(ResultBuilder()

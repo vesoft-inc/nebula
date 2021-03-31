@@ -8,6 +8,7 @@
 #include "planner/Admin.h"
 
 #include "util/ToJson.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {
 namespace graph {
@@ -53,13 +54,13 @@ std::unique_ptr<PlanNodeDescription> ShowParts::explain() const {
 
 std::unique_ptr<PlanNodeDescription> ShowConfigs::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    addDescription("module", apache::thrift::util::enumNameSafe(module_), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> SetConfig::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    addDescription("module", apache::thrift::util::enumNameSafe(module_), desc.get());
     addDescription("name", name_, desc.get());
     addDescription("value", value_.toString(), desc.get());
     return desc;
@@ -67,7 +68,7 @@ std::unique_ptr<PlanNodeDescription> SetConfig::explain() const {
 
 std::unique_ptr<PlanNodeDescription> GetConfig::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("module", meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(module_), desc.get());
+    addDescription("module", apache::thrift::util::enumNameSafe(module_), desc.get());
     addDescription("name", name_, desc.get());
     return desc;
 }
@@ -108,7 +109,7 @@ std::unique_ptr<PlanNodeDescription> GrantRole::explain() const {
     auto desc = SingleDependencyNode::explain();
     addDescription("username", *username_, desc.get());
     addDescription("spaceName", *spaceName_, desc.get());
-    addDescription("role", meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role_), desc.get());
+    addDescription("role", apache::thrift::util::enumNameSafe(role_), desc.get());
     return desc;
 }
 
@@ -116,7 +117,7 @@ std::unique_ptr<PlanNodeDescription> RevokeRole::explain() const {
     auto desc = SingleDependencyNode::explain();
     addDescription("username", *username_, desc.get());
     addDescription("spaceName", *spaceName_, desc.get());
-    addDescription("role", meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role_), desc.get());
+    addDescription("role", apache::thrift::util::enumNameSafe(role_), desc.get());
     return desc;
 }
 
@@ -142,8 +143,8 @@ std::unique_ptr<PlanNodeDescription> ListRoles::explain() const {
 
 std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
     auto desc = SingleDependencyNode::explain();
-    addDescription("operation", meta::cpp2::_AdminJobOp_VALUES_TO_NAMES.at(op_), desc.get());
-    addDescription("command", meta::cpp2::_AdminCmd_VALUES_TO_NAMES.at(cmd_), desc.get());
+    addDescription("operation", apache::thrift::util::enumNameSafe(op_), desc.get());
+    addDescription("command", apache::thrift::util::enumNameSafe(cmd_), desc.get());
     addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
     return desc;
 }

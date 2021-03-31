@@ -21,7 +21,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
     return qctx()->getMetaClient()->createEdgeSchema(spaceId,
             ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
             .via(runner())
-            .then([ceNode, spaceId](StatusOr<EdgeType> resp) {
+            .thenValue([ceNode, spaceId](StatusOr<EdgeType> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << spaceId
                                << ", Create edge `" << ceNode->getName()
@@ -40,7 +40,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
     auto spaceId = qctx()->rctx()->session()->space().id;
     return qctx()->getMetaClient()->getEdgeSchema(spaceId, deNode->getName())
             .via(runner())
-            .then([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+            .thenValue([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << resp.status();
                     return resp.status();
@@ -69,7 +69,7 @@ folly::Future<Status> DropEdgeExecutor::execute() {
                                                    deNode->getName(),
                                                    deNode->getIfExists())
             .via(runner())
-            .then([deNode, spaceId](StatusOr<bool> resp) {
+            .thenValue([deNode, spaceId](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << spaceId
                                << ", Drop edge `" << deNode->getName()
@@ -84,7 +84,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space().id;
-    return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).then(
+    return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).thenValue(
         [this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId
@@ -120,7 +120,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
         ->getMetaClient()
         ->getEdgeSchema(spaceId, sceNode->getName())
         .via(runner())
-        .then([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+        .thenValue([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId
                            << ", ShowCreate edge `" << sceNode->getName()
@@ -148,7 +148,7 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
                                                     aeNode->getSchemaItems(),
                                                     aeNode->getSchemaProp())
             .via(runner())
-            .then([this, aeNode](StatusOr<bool> resp) {
+            .thenValue([this, aeNode](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "SpaceId: " << aeNode->space()
                                << ", Alter edge `" << aeNode->getName()

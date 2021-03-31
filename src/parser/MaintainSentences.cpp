@@ -5,13 +5,14 @@
  */
 
 #include <string>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "common/base/Base.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
 
 std::ostream& operator<<(std::ostream& os, meta::cpp2::PropertyType type) {
-    os << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(type);
+    os << apache::thrift::util::enumNameSafe(type);
     return os;
 }
 
@@ -55,7 +56,7 @@ std::string ColumnSpecification::toString() const {
         buf += std::to_string(typeLen_);
         buf += ")";
     } else {
-        buf += meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(type_);
+        buf += apache::thrift::util::enumNameSafe(type_);
     }
     if (isNull_) {
         buf += " NULL";
@@ -242,8 +243,8 @@ std::string CreateTagIndexSentence::toString() const {
     std::vector<std::string> fieldDefs;
     for (const auto& field : this->fields()) {
         std::string f = field.get_name();
-        if (field.__isset.type_length) {
-            f += "(" + std::to_string(*field.get_type_length()) + ")";
+        if (field.type_length_ref().has_value()) {
+            f += "(" + std::to_string(*field.type_length_ref()) + ")";
         }
         fieldDefs.emplace_back(std::move(f));
     }
@@ -269,8 +270,8 @@ std::string CreateEdgeIndexSentence::toString() const {
     std::vector<std::string> fieldDefs;
     for (const auto& field : this->fields()) {
         std::string f = field.get_name();
-        if (field.__isset.type_length) {
-            f += "(" + std::to_string(*field.get_type_length()) + ")";
+        if (field.type_length_ref().has_value()) {
+            f += "(" + std::to_string(*field.type_length_ref()) + ")";
         }
         fieldDefs.emplace_back(std::move(f));
     }

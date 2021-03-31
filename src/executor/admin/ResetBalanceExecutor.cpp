@@ -18,7 +18,7 @@ folly::Future<Status> ResetBalanceExecutor::execute() {
 folly::Future<Status> ResetBalanceExecutor::resetBalance() {
     return qctx()->getMetaClient()->balance({}, false, true)
         .via(runner())
-        .then([this](StatusOr<int64_t> resp) {
+        .thenValue([this](StatusOr<int64_t> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();

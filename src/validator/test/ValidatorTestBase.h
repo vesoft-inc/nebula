@@ -34,7 +34,7 @@ protected:
         SpaceInfo spaceInfo;
         spaceInfo.name = "test_space";
         spaceInfo.id = 1;
-        spaceInfo.spaceDesc.space_name = "test_space";
+        spaceInfo.spaceDesc.set_space_name("test_space");
         session_->setSpace(std::move(spaceInfo));
         schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
         indexMng_ = CHECK_NOTNULL(MockIndexManager::makeUnique());

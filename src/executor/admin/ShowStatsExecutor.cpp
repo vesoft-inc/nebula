@@ -18,7 +18,7 @@ folly::Future<Status> ShowStatsExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto spaceId = qctx()->rctx()->session()->space().id;
-    return qctx()->getMetaClient()->getStatis(spaceId).via(runner()).then(
+    return qctx()->getMetaClient()->getStatis(spaceId).via(runner()).thenValue(
         [this, spaceId](StatusOr<meta::cpp2::StatisItem> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId
@@ -64,13 +64,13 @@ folly::Future<Status> ShowStatsExecutor::execute() {
             Row verticeRow;
             verticeRow.values.emplace_back("Space");
             verticeRow.values.emplace_back("vertices");
-            verticeRow.values.emplace_back(statisItem.space_vertices);
+            verticeRow.values.emplace_back(*statisItem.space_vertices_ref());
             dataSet.rows.emplace_back(std::move(verticeRow));
 
             Row edgeRow;
             edgeRow.values.emplace_back("Space");
             edgeRow.values.emplace_back("edges");
-            edgeRow.values.emplace_back(statisItem.space_edges);
+            edgeRow.values.emplace_back(*statisItem.space_edges_ref());
             dataSet.rows.emplace_back(std::move(edgeRow));
 
             return finish(ResultBuilder()

@@ -35,9 +35,13 @@ public:
 
         watch_.reset();
         scheduler_->schedule()
-            .then([](Status s) { ASSERT_TRUE(s.ok()) << s.toString(); })
-            .onError([](const ExecutionError& e) { LOG(ERROR) << e.what(); })
-            .onError([](const std::exception& e) { LOG(ERROR) << "exception: " << e.what(); })
+            .thenValue([](Status s) { ASSERT_TRUE(s.ok()) << s.toString(); })
+            .onError(folly::tag_t<ExecutionError>{}, [](const ExecutionError& e) {
+                        LOG(ERROR) << e.what();
+                    })
+            .onError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+                        LOG(ERROR) << "exception: " << e.what();
+                    })
             .ensure([this]() {
                 auto us = duration_cast<microseconds>(watch_.elapsed());
                 LOG(INFO) << "elapsed time: " << us.count() << "us";

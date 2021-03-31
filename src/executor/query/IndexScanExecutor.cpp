@@ -34,7 +34,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
                                       lookup->schemaId(),
                                      *lookup->returnColumns())
         .via(runner())
-        .then([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
+        .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
             return handleResp(std::move(rpcResp));
         });
 }
@@ -49,13 +49,13 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
     auto state = std::move(completeness).value();
     nebula::DataSet v;
     for (auto &resp : rpcResp.responses()) {
-        if (resp.__isset.data) {
-            nebula::DataSet* data = resp.get_data();
+        if (resp.data_ref().has_value()) {
+            nebula::DataSet& data = *resp.data_ref();
             // TODO : convert the column name to alias.
             if (v.colNames.empty()) {
-                v.colNames = data->colNames;
+                v.colNames = data.colNames;
             }
-            v.rows.insert(v.rows.end(), data->rows.begin(), data->rows.end());
+            v.rows.insert(v.rows.end(), data.rows.begin(), data.rows.end());
         } else {
             state = Result::State::kPartialSuccess;
         }

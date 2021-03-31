@@ -41,8 +41,8 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
             auto type = ge->type()->eval(expCtx(valueIter.get()));
             auto ranking = ge->ranking()->eval(expCtx(valueIter.get()));
             auto dst = ge->dst()->eval(expCtx(valueIter.get()));
-            if (!SchemaUtil::isValidVid(src, spaceInfo.spaceDesc.vid_type)
-                    || !SchemaUtil::isValidVid(dst, spaceInfo.spaceDesc.vid_type)
+            if (!SchemaUtil::isValidVid(src, *spaceInfo.spaceDesc.vid_type_ref())
+                    || !SchemaUtil::isValidVid(dst, *spaceInfo.spaceDesc.vid_type_ref())
                     || !type.isInt() || !ranking.isInt()) {
                 LOG(WARNING) << "Mismatched edge key type";
                 continue;
@@ -78,7 +78,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
             otherStats_.emplace("total_rpc",
                                 folly::stringPrintf("%lu(us)", getPropsTime.elapsedInUSec()));
         })
-        .then([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
             addStats(rpcResp, otherStats_);
             return handleResp(std::move(rpcResp), ge->colNamesRef());

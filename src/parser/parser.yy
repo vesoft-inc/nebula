@@ -2092,35 +2092,35 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, true, $4, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, true, $4, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_NOT KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, false, nullptr, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, false, nullptr, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, true, nullptr, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_NOT KW_NULL KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, false, $6, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, false, $6, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_DEFAULT expression KW_NOT KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, false, $4, $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, false, $4, $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_NULL KW_DEFAULT expression {
-        $$ = new ColumnSpecification($1, $2->type, true, $5 , $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, true, $5 , $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec KW_DEFAULT expression KW_NULL {
-        $$ = new ColumnSpecification($1, $2->type, true, $4 , $2->type_length);
+        $$ = new ColumnSpecification($1, $2->type, true, $4 , $2->type_length_ref().value_or(0));
         delete $2;
     }
     ;

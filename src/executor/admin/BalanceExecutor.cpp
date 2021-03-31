@@ -19,7 +19,7 @@ folly::Future<Status> BalanceExecutor::balance() {
     auto *bNode = asNode<Balance>(node());
     return qctx()->getMetaClient()->balance(bNode->deleteHosts(), false, false)
         .via(runner())
-        .then([this](StatusOr<int64_t> resp) {
+        .thenValue([this](StatusOr<int64_t> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();

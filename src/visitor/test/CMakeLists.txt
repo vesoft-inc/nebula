@@ -54,7 +54,5 @@ nebula_add_test(
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
-        wangle
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
 )

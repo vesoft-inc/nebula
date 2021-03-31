@@ -52,8 +52,7 @@ SET(EXEC_QUERY_TEST_LIBS
     ${THRIFT_LIBRARIES}
     gtest
     wangle
-    proxygenhttpserver
-    proxygenlib
+    ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(

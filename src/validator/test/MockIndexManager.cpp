@@ -39,7 +39,7 @@ void MockIndexManager::init() {
     type.set_type_length(32);
     field.set_type(std::move(type));
     book_name_index.set_fields({});
-    book_name_index.fields.emplace_back(std::move(field));
+    book_name_index.fields_ref().value().emplace_back(std::move(field));
 
     tagIndexes_.emplace(1, std::vector<std::shared_ptr<meta::cpp2::IndexItem>>{});
     tagIndexes_[1].emplace_back(

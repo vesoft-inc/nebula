@@ -52,10 +52,8 @@ nebula_add_test(
     OBJECTS
         ${OPTIMIZER_TEST_LIB}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
-        wangle
         gtest
         gtest_main
 )
@@ -68,10 +66,8 @@ nebula_add_test(
     OBJECTS
         ${OPTIMIZER_TEST_LIB}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-    ${THRIFT_LIBRARIES}
-        wangle
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
         gtest
         gtest_main
 )

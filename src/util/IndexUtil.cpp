@@ -52,12 +52,12 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     for (auto &col : indexItem.get_fields()) {
         createStr += " `" + col.get_name();
         const auto &type = col.get_type();
-        if (type.__isset.type_length) {
-            createStr += "(" + std::to_string(*type.get_type_length()) + ")";
+        if (type.type_length_ref().has_value()) {
+            createStr += "(" + std::to_string(*type.type_length_ref()) + ")";
         }
         createStr += "`,\n";
     }
-    if (!indexItem.fields.empty()) {
+    if (!(*indexItem.fields_ref()).empty()) {
         createStr.resize(createStr.size() -2);
         createStr += "\n";
     }

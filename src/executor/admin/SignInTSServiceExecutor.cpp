@@ -19,7 +19,7 @@ folly::Future<Status> SignInTSServiceExecutor::signInTSService() {
     auto *siNode = asNode<SignInTSService>(node());
     return qctx()->getMetaClient()->signInFTService(siNode->type(), siNode->clients())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .thenValue([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);
             NG_RETURN_IF_ERROR(resp);
             if (!resp.value()) {

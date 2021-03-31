@@ -25,8 +25,8 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
 
     auto *gv = asNode<GetVertices>(node());
     GraphStorageClient *storageClient = qctx()->getStorageClient();
-    DataSet vertices = buildRequestDataSet(gv);
 
+    DataSet vertices = buildRequestDataSet(gv);
     VLOG(1) << "vertices: " << vertices;
     if (vertices.rows.empty()) {
         // TODO: add test for empty input.
@@ -53,7 +53,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
             otherStats_.emplace("total_rpc",
                                  folly::stringPrintf("%lu(us)", getPropsTime.elapsedInUSec()));
         })
-        .then([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        .thenValue([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
             addStats(rpcResp, otherStats_);
             return handleResp(std::move(rpcResp), gv->colNamesRef());

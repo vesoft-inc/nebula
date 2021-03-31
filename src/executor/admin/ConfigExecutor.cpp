@@ -4,6 +4,8 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/conf/Configuration.h"
 #include "executor/admin/ConfigExecutor.h"
 #include "planner/Admin.h"
@@ -18,10 +20,10 @@ std::vector<Value> ConfigBaseExecutor::generateColumns(const meta::cpp2::ConfigI
     std::vector<Value> columns;
     columns.resize(5);
     auto value = item.get_value();
-    columns[0].setStr(meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(item.get_module()));
+    columns[0].setStr(apache::thrift::util::enumNameSafe(item.get_module()));
     columns[1].setStr(item.get_name());
     columns[2].setStr(value.typeName());
-    columns[3].setStr(meta::cpp2::_ConfigMode_VALUES_TO_NAMES.at(item.get_mode()));
+    columns[3].setStr(apache::thrift::util::enumNameSafe(item.get_mode()));
     columns[4] = std::move(value);
     return columns;
 }
@@ -42,13 +44,13 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
     auto *scNode = asNode<ShowConfigs>(node());
     return qctx()->getMetaClient()->listConfigs(scNode->getModule())
             .via(runner())
-            .then([this, scNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
+            .thenValue([this, scNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
                 if (!resp.ok()) {
-                    auto module = meta::cpp2::_ConfigModule_VALUES_TO_NAMES.at(scNode->getModule());
+                    auto module = apache::thrift::util::enumNameSafe(scNode->getModule());
                     LOG(ERROR) << "Show configs `" << module
                                << "' failed: " << resp.status();
                     return Status::Error("Show config `%s' failed: %s",
-                                          module,
+                                          module.c_str(),
                                           resp.status().toString().c_str());
                 }
 
@@ -65,7 +67,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
                                               scNode->getName(),
                                               scNode->getValue())
             .via(runner())
-            .then([scNode](StatusOr<bool> resp) {
+            .thenValue([scNode](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Set config `" << scNode->getName()
                                << "' failed: " << resp.status();
@@ -84,7 +86,7 @@ folly::Future<Status> GetConfigExecutor::execute() {
     return qctx()->getMetaClient()->getConfig(gcNode->getModule(),
                                               gcNode->getName())
             .via(runner())
-            .then([this, gcNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
+            .thenValue([this, gcNode](StatusOr<std::vector<meta::cpp2::ConfigItem>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Get config `" << gcNode->getName()
                                << "' failed: " << resp.status();

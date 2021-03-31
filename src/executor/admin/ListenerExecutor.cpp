@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/ListenerExecutor.h"
 #include "planner/Admin.h"
 
@@ -16,7 +18,7 @@ folly::Future<Status> AddListenerExecutor::execute() {
     auto spaceId = qctx()->rctx()->session()->space().id;
     return qctx()->getMetaClient()->addListener(spaceId, alNode->type(), alNode->hosts())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .thenValue([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
@@ -32,7 +34,7 @@ folly::Future<Status> RemoveListenerExecutor::execute() {
     auto spaceId = qctx()->rctx()->session()->space().id;
     return qctx()->getMetaClient()->removeListener(spaceId, rlNode->type())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .thenValue([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
@@ -47,7 +49,7 @@ folly::Future<Status> ShowListenerExecutor::execute() {
     auto spaceId = qctx()->rctx()->session()->space().id;
     return qctx()->getMetaClient()->listListener(spaceId)
         .via(runner())
-        .then([this](StatusOr<std::vector<meta::cpp2::ListenerInfo>> resp) {
+        .thenValue([this](StatusOr<std::vector<meta::cpp2::ListenerInfo>> resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
@@ -56,13 +58,13 @@ folly::Future<Status> ShowListenerExecutor::execute() {
 
             auto listenerInfos = std::move(resp).value();
             std::sort(listenerInfos.begin(), listenerInfos.end(), [](const auto& a, const auto& b) {
-                if (a.part_id != b.part_id) {
-                    return a.part_id < b.part_id;
+                if (a.part_id_ref() != b.part_id_ref()) {
+                    return a.part_id_ref() < b.part_id_ref();
                 }
-                if (a.type != b.type) {
-                    return a.type < b.type;
+                if (a.type_ref() != b.type_ref()) {
+                    return a.type_ref() < b.type_ref();
                 }
-                return a.host < b.host;
+                return a.host_ref() < b.host_ref();
             });
 
             DataSet result({"PartId", "Type", "Host", "Status"});
@@ -70,10 +72,10 @@ folly::Future<Status> ShowListenerExecutor::execute() {
                 Row row;
                 row.values.emplace_back(info.get_part_id());
                 row.values.emplace_back(
-                    meta::cpp2::_ListenerType_VALUES_TO_NAMES.at(info.get_type()));
-                row.values.emplace_back(info.host.toString());
+                    apache::thrift::util::enumNameSafe(info.get_type()));
+                row.values.emplace_back((*info.host_ref()).toString());
                 row.values.emplace_back(
-                    meta::cpp2::_HostStatus_VALUES_TO_NAMES.at(info.get_status()));
+                    apache::thrift::util::enumNameSafe(info.get_status()));
                 result.emplace_back(std::move(row));
             }
 

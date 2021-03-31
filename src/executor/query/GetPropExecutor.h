@@ -27,8 +27,8 @@ protected:
         // Ok, merge DataSets to one
         nebula::DataSet v;
         for (auto &resp : rpcResp.responses()) {
-            if (resp.__isset.props) {
-                if (UNLIKELY(!v.append(std::move(*resp.get_props())))) {
+            if (resp.props_ref().has_value()) {
+                if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
                     // it's impossible according to the interface
                     LOG(WARNING) << "Heterogeneous props dataset";
                     state = Result::State::kPartialSuccess;

@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "service/PermissionManager.h"
 
 namespace nebula {
@@ -161,7 +162,7 @@ Status PermissionManager::canWriteRole(Session *session,
         return Status::OK();
     }
     return Status::PermissionError("No permission to grant/revoke `%s' to `%s'.",
-                                   meta::cpp2::_RoleType_VALUES_TO_NAMES.at(role),
+                                   apache::thrift::util::enumNameSafe(role).c_str(),
                                    targetUser.c_str());
 }
 

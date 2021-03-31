@@ -45,15 +45,19 @@ void QueryInstance::execute() {
     }
 
     scheduler_->schedule()
-        .then([this](Status s) {
+        .thenValue([this](Status s) {
             if (s.ok()) {
                 this->onFinish();
             } else {
                 this->onError(std::move(s));
             }
         })
-        .onError([this](const ExecutionError &e) { onError(e.status()); })
-        .onError([this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
+        .thenError(folly::tag_t<ExecutionError>{}, [this](const ExecutionError &e) {
+            onError(e.status());
+        })
+        .thenError(folly::tag_t<std::exception>{}, [this](const std::exception &e) {
+            onError(Status::Error("%s", e.what()));
+        });
 }
 
 Status QueryInstance::validateAndOptimize() {

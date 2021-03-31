@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/ListRolesExecutor.h"
 #include "context/QueryContext.h"
 #include "planner/Admin.h"
@@ -23,7 +25,7 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
         ->getMetaClient()
         ->listRoles(lrNode->space())
         .via(runner())
-        .then([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
+        .thenValue([this](StatusOr<std::vector<meta::cpp2::RoleItem>> &&resp) {
             SCOPED_TIMER(&execTime_);
             if (!resp.ok()) {
                 return std::move(resp).status();
@@ -39,12 +41,12 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
                 foundItem->get_role_type() != meta::cpp2::RoleType::ADMIN) {
                 v.emplace_back(
                     Row({foundItem->get_user_id(),
-                         meta::cpp2::_RoleType_VALUES_TO_NAMES.at(foundItem->get_role_type())}));
+                         apache::thrift::util::enumNameSafe(foundItem->get_role_type())}));
             } else {
                 for (const auto &item : items) {
                     v.emplace_back(nebula::Row(
                         {item.get_user_id(),
-                         meta::cpp2::_RoleType_VALUES_TO_NAMES.at(item.get_role_type())}));
+                         apache::thrift::util::enumNameSafe(item.get_role_type())}));
                 }
             }
             return finish(std::move(v));

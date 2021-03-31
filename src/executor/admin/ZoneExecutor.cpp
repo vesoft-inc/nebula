@@ -16,7 +16,7 @@ folly::Future<Status> AddZoneExecutor::execute() {
     auto *azNode = asNode<AddZone>(node());
     return qctx()->getMetaClient()->addZone(azNode->zoneName(), azNode->addresses())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Add Zone Failed :" << resp.status();
                     return resp.status();
@@ -30,7 +30,7 @@ folly::Future<Status> DropZoneExecutor::execute() {
     auto *dzNode = asNode<DropZone>(node());
     return qctx()->getMetaClient()->dropZone(dzNode->zoneName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Drop Zone Failed :" << resp.status();
                     return resp.status();
@@ -44,7 +44,7 @@ folly::Future<Status> DescribeZoneExecutor::execute() {
     auto *dzNode = asNode<DescribeZone>(node());
     return qctx()->getMetaClient()->getZone(dzNode->zoneName())
             .via(runner())
-            .then([this](StatusOr<std::vector<HostAddr>> resp) {
+            .thenValue([this](StatusOr<std::vector<HostAddr>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Describe Zone Failed: " << resp.status();
                     return resp.status();
@@ -69,7 +69,7 @@ folly::Future<Status> AddHostIntoZoneExecutor::execute() {
     auto *ahNode = asNode<AddHostIntoZone>(node());
     return qctx()->getMetaClient()->addHostIntoZone(ahNode->address(), ahNode->zoneName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Add Host Into Zone Failed: " << resp.status();
                     return resp.status();
@@ -83,7 +83,7 @@ folly::Future<Status> DropHostFromZoneExecutor::execute() {
     auto *dhNode = asNode<DropHostFromZone>(node());
     return qctx()->getMetaClient()->dropHostFromZone(dhNode->address(), dhNode->zoneName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Drop Host From Zone Failed: " << resp.status();
                     return resp.status();
@@ -96,7 +96,7 @@ folly::Future<Status> ListZonesExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     return qctx()->getMetaClient()->listZones()
             .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::Zone>> resp) {
+            .thenValue([this](StatusOr<std::vector<meta::cpp2::Zone>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "List Zones Failed: " << resp.status();
                     return resp.status();
@@ -106,7 +106,7 @@ folly::Future<Status> ListZonesExecutor::execute() {
                 DataSet dataSet({"Name", "Host", "Port"});
                 for (auto &zone : zones) {
                     for (auto &host : zone.get_nodes()) {
-                        Row row({zone.zone_name, host.host, host.port});
+                        Row row({*zone.zone_name_ref(), host.host, host.port});
                         dataSet.rows.emplace_back(std::move(row));
                     }
                 }

@@ -26,7 +26,7 @@ folly::Future<Status> CreateUserExecutor::createUser() {
                      encryption::MD5Utils::md5Encode(*cuNode->password()),
                      cuNode->ifNotExist())
         .via(runner())
-        .then([this](StatusOr<bool> resp) {
+        .thenValue([this](StatusOr<bool> resp) {
             SCOPED_TIMER(&execTime_);
             NG_RETURN_IF_ERROR(resp);
             if (!resp.value()) {

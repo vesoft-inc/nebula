@@ -45,5 +45,5 @@ nebula_add_test(
         gtest
         gtest_main
         ${THRIFT_LIBRARIES}
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
 )

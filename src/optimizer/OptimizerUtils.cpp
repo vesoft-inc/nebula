@@ -54,17 +54,16 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
             return v.getFloat() + kEpsilon;
         }
         case Value::Type::STRING : {
-            if (!col.type.__isset.type_length ||
-                col.get_type().get_type_length() == nullptr) {
+            if (!col.type.type_length_ref().has_value()) {
                 return Value::kNullBadType;
             }
             std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-            bytes.resize(*col.get_type().get_type_length());
+            bytes.resize(*col.get_type().type_length_ref());
             for (size_t i = bytes.size();; i--) {
                 if (i > 0) {
                     if (bytes[i-1]++ != 255) break;
                 } else {
-                    return Value(std::string(*col.get_type().get_type_length(), '\377'));
+                    return Value(std::string(*col.get_type().type_length_ref(), '\377'));
                 }
             }
             return Value(std::string(bytes.begin(), bytes.end()));
@@ -200,16 +199,16 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
             return v.getFloat() - kEpsilon;
         }
         case Value::Type::STRING : {
-            if (!col.type.__isset.type_length || col.get_type().get_type_length() == nullptr) {
+            if (!col.type.type_length_ref().has_value()) {
                 return Value::kNullBadType;
             }
             std::vector<unsigned char> bytes(v.getStr().begin(), v.getStr().end());
-            bytes.resize(*col.get_type().get_type_length());
+            bytes.resize(*col.get_type().type_length_ref());
             for (size_t i = bytes.size();; i--) {
                 if (i > 0) {
                     if (bytes[i-1]-- != 0) break;
                 } else {
-                    return Value(std::string(*col.get_type().get_type_length(), '\0'));
+                    return Value(std::string(*col.get_type().type_length_ref(), '\0'));
                 }
             }
             return Value(std::string(bytes.begin(), bytes.end()));
@@ -334,11 +333,10 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
             return Value(std::numeric_limits<double>::max());
         }
         case Value::Type::STRING : {
-            if (!col.type.__isset.type_length ||
-                col.get_type().get_type_length() == nullptr) {
+            if (!col.type.type_length_ref().has_value()) {
                 return Value::kNullBadType;
             }
-            return Value(std::string(*col.get_type().get_type_length(), '\377'));
+            return Value(std::string(*col.get_type().type_length_ref(), '\377'));
         }
         case Value::Type::DATE : {
             Date d;
@@ -395,11 +393,10 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
             return Value(-std::numeric_limits<double>::max());
         }
         case Value::Type::STRING : {
-            if (!col.type.__isset.type_length ||
-                col.get_type().get_type_length() == nullptr) {
+            if (!col.type.type_length_ref().has_value()) {
                 return Value::kNullBadType;
             }
-            return Value(std::string(*col.get_type().get_type_length(), '\0'));
+            return Value(std::string(*col.get_type().type_length_ref(), '\0'));
         }
         case Value::Type::DATE : {
             return Value(Date());
@@ -441,11 +438,10 @@ Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Val
             return v;
         }
         case Value::Type::STRING : {
-            if (!col.type.__isset.type_length ||
-                col.get_type().get_type_length() == nullptr) {
+            if (!col.type.type_length_ref().has_value()) {
                 return Value::kNullBadType;
             }
-            auto len = static_cast<size_t>(*col.get_type().get_type_length());
+            auto len = static_cast<size_t>(*col.get_type().type_length_ref());
             if (v.getStr().size() > len) {
                 return Value(v.getStr().substr(0, len));
             } else {

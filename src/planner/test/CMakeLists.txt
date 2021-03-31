@@ -50,8 +50,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:context_obj>
     LIBRARIES
         gtest
-        proxygenhttpserver
-        proxygenlib
+        ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
-        wangle
 )

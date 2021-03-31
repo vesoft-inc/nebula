@@ -16,7 +16,7 @@ folly::Future<Status> AddGroupExecutor::execute() {
     auto *agNode = asNode<AddGroup>(node());
     return qctx()->getMetaClient()->addGroup(agNode->groupName(), agNode->zoneNames())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Add Group Failed: " << resp.status();
                     return resp.status();
@@ -30,7 +30,7 @@ folly::Future<Status> DropGroupExecutor::execute() {
     auto *dgNode = asNode<DropGroup>(node());
     return qctx()->getMetaClient()->dropGroup(dgNode->groupName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Drop Group Failed: " << resp.status();
                     return resp.status();
@@ -44,7 +44,7 @@ folly::Future<Status> DescribeGroupExecutor::execute() {
     auto *dgNode = asNode<DescribeGroup>(node());
     return qctx()->getMetaClient()->getGroup(dgNode->groupName())
             .via(runner())
-            .then([this](StatusOr<std::vector<std::string>> resp) {
+            .thenValue([this](StatusOr<std::vector<std::string>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Describe Group Failed: " << resp.status();
                     return resp.status();
@@ -68,7 +68,7 @@ folly::Future<Status> AddZoneIntoGroupExecutor::execute() {
     auto *azNode = asNode<AddZoneIntoGroup>(node());
     return qctx()->getMetaClient()->addZoneIntoGroup(azNode->zoneName(), azNode->groupName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Add Zone Into Group Failed: " << resp.status();
                     return resp.status();
@@ -82,7 +82,7 @@ folly::Future<Status> DropZoneFromGroupExecutor::execute() {
     auto *dzNode = asNode<DropZoneFromGroup>(node());
     return qctx()->getMetaClient()->dropZoneFromGroup(dzNode->zoneName(), dzNode->groupName())
             .via(runner())
-            .then([](StatusOr<bool> resp) {
+            .thenValue([](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Drop Zone From Group Failed: " << resp.status();
                     return resp.status();
@@ -95,7 +95,7 @@ folly::Future<Status> ListGroupsExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     return qctx()->getMetaClient()->listGroups()
             .via(runner())
-            .then([this](StatusOr<std::vector<meta::cpp2::Group>> resp) {
+            .thenValue([this](StatusOr<std::vector<meta::cpp2::Group>> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "List Groups Failed: " << resp.status();
                     return resp.status();
@@ -105,7 +105,7 @@ folly::Future<Status> ListGroupsExecutor::execute() {
                 DataSet dataSet({"Name", "Zone"});
                 for (auto &group : groups) {
                     for (auto &zone : group.get_zone_names()) {
-                        Row row({group.group_name, zone});
+                        Row row({*group.group_name_ref(), zone});
                         dataSet.rows.emplace_back(std::move(row));
                     }
                 }

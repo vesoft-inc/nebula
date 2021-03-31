@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "executor/admin/ShowHostsExecutor.h"
 #include "context/QueryContext.h"
 #include "planner/Admin.h"
@@ -37,7 +39,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         for (const auto &host : hostVec) {
             nebula::Row r({host.get_hostAddr().host,
                            host.get_hostAddr().port,
-                           meta::cpp2::_HostStatus_VALUES_TO_NAMES.at(host.get_status())});
+                           apache::thrift::util::enumNameSafe(host.get_status())});
             int64_t leaderCount = 0;
             for (const auto &spaceEntry : host.get_leader_parts()) {
                 leaderCount += spaceEntry.second.size();
@@ -130,8 +132,8 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         for (const auto &host : hostVec) {
             nebula::Row r({host.get_hostAddr().host,
                            host.get_hostAddr().port,
-                           meta::cpp2::_HostStatus_VALUES_TO_NAMES.at(host.get_status()),
-                           meta::cpp2::_HostRole_VALUES_TO_NAMES.at(host.get_role()),
+                           apache::thrift::util::enumNameSafe(host.get_status()),
+                           apache::thrift::util::enumNameSafe(host.get_role()),
                            host.get_git_info_sha()});
             v.emplace_back(std::move(r));
         }   // row loop
@@ -142,7 +144,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         ->getMetaClient()
         ->listHosts(shNode->getType())
         .via(runner())
-        .then([=, type = shNode->getType()](auto &&resp) {
+        .thenValue([=, type = shNode->getType()](auto &&resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << resp.status();
                 return resp.status();

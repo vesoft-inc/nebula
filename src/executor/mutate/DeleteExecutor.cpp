@@ -46,7 +46,7 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
                 VLOG(3) << "NULL or EMPTY vid";
                 continue;
             }
-            if (!SchemaUtil::isValidVid(val, spaceInfo.spaceDesc.vid_type)) {
+            if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
                 std::stringstream ss;
                 ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
                 return Status::Error(ss.str());
@@ -65,7 +65,7 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         .ensure([deleteVertTime]() {
             VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
         })
-        .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
             SCOPED_TIMER(&execTime_);
             NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
             return Status::OK();
@@ -98,14 +98,14 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
                     VLOG(3) << "NULL or EMPTY vid";
                     continue;
                 }
-                if (!SchemaUtil::isValidVid(srcId, spaceInfo.spaceDesc.vid_type)) {
+                if (!SchemaUtil::isValidVid(srcId, *spaceInfo.spaceDesc.vid_type_ref())) {
                     std::stringstream ss;
                     ss << "Wrong srcId type `" << srcId.type()
                        << "`, value `" << srcId.toString() << "'";
                     return Status::Error(ss.str());
                 }
                 auto dstId = Expression::eval(edgeKeyRef->dstid(), ctx(iter.get()));
-                if (!SchemaUtil::isValidVid(dstId, spaceInfo.spaceDesc.vid_type)) {
+                if (!SchemaUtil::isValidVid(dstId, *spaceInfo.spaceDesc.vid_type_ref())) {
                     std::stringstream ss;
                     ss << "Wrong dstId type `" << dstId.type()
                        << "', value `" << dstId.toString() << "'";
@@ -155,7 +155,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
             .ensure([deleteEdgeTime]() {
                 VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";
             })
-            .then([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+            .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
                 SCOPED_TIMER(&execTime_);
                 NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
                 return Status::OK();

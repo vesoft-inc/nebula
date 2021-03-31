@@ -4,6 +4,8 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "validator/AdminValidator.h"
 
 #include "common/base/Base.h"
@@ -21,22 +23,22 @@ Status CreateSpaceValidator::validateImpl() {
     auto sentence = static_cast<CreateSpaceSentence*>(sentence_);
     ifNotExist_ = sentence->isIfNotExist();
     auto status = Status::OK();
-    spaceDesc_.space_name = std::move(*(sentence->spaceName()));
+    spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
     StatusOr<std::string> retStatusOr;
     std::string result;
     auto* charsetInfo = qctx_->getCharsetInfo();
     for (auto &item : sentence->getOpts()) {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM: {
-                spaceDesc_.partition_num = item->getPartitionNum();
-                if (spaceDesc_.partition_num <= 0) {
+                spaceDesc_.set_partition_num(item->getPartitionNum());
+                if (*spaceDesc_.partition_num_ref() <= 0) {
                     return Status::SemanticError("Partition_num value should be greater than zero");
                 }
                 break;
             }
             case SpaceOptItem::REPLICA_FACTOR: {
-                spaceDesc_.replica_factor = item->getReplicaFactor();
-                if (spaceDesc_.replica_factor <= 0) {
+                spaceDesc_.set_replica_factor(item->getReplicaFactor());
+                if (*spaceDesc_.replica_factor_ref() <= 0) {
                     return Status::SemanticError(
                         "Replica_factor value should be greater than zero");
                 }
@@ -48,23 +50,23 @@ Status CreateSpaceValidator::validateImpl() {
                     typeDef.type != meta::cpp2::PropertyType::FIXED_STRING) {
                     std::stringstream ss;
                     ss << "Only support FIXED_STRING or INT64 vid type, but was given "
-                       << meta::cpp2::_PropertyType_VALUES_TO_NAMES.at(typeDef.type);
+                       << apache::thrift::util::enumNameSafe(typeDef.type);
                     return Status::SemanticError(ss.str());
                 }
-                spaceDesc_.vid_type.set_type(typeDef.type);
+                spaceDesc_.vid_type_ref().value().set_type(typeDef.type);
 
                 if (typeDef.type == meta::cpp2::PropertyType::INT64) {
-                    spaceDesc_.vid_type.set_type_length(8);
+                    spaceDesc_.vid_type_ref().value().set_type_length(8);
                 } else {
-                    if (!typeDef.__isset.type_length) {
+                    if (!typeDef.type_length_ref().has_value()) {
                         return Status::SemanticError(
                             "type length is not set for fixed string type");
                     }
-                    if (*typeDef.get_type_length() <= 0) {
+                    if (*typeDef.type_length_ref() <= 0) {
                         return Status::SemanticError("Vid size should be a positive number: %d",
-                                                     *typeDef.get_type_length());
+                                                     *typeDef.type_length_ref());
                     }
-                    spaceDesc_.vid_type.set_type_length(*typeDef.get_type_length());
+                    spaceDesc_.vid_type_ref().value().set_type_length(*typeDef.type_length_ref());
                 }
                 break;
             }
@@ -72,14 +74,14 @@ Status CreateSpaceValidator::validateImpl() {
                 result = item->getCharset();
                 folly::toLowerAscii(result);
                 NG_RETURN_IF_ERROR(charsetInfo->isSupportCharset(result));
-                spaceDesc_.charset_name = std::move(result);
+                spaceDesc_.set_charset_name(std::move(result));
                 break;
             }
             case SpaceOptItem::COLLATE: {
                 result = item->getCollate();
                 folly::toLowerAscii(result);
                 NG_RETURN_IF_ERROR(charsetInfo->isSupportCollate(result));
-                spaceDesc_.collate_name = std::move(result);
+                spaceDesc_.set_collate_name(std::move(result));
                 break;
             }
             case SpaceOptItem::ATOMIC_EDGE: {
@@ -98,24 +100,24 @@ Status CreateSpaceValidator::validateImpl() {
     }
 
     // if charset and collate are not specified, set default value
-    if (!spaceDesc_.charset_name.empty() && !spaceDesc_.collate_name.empty()) {
-        NG_RETURN_IF_ERROR(charsetInfo->charsetAndCollateMatch(spaceDesc_.charset_name,
-                    spaceDesc_.collate_name));
-    } else if (!spaceDesc_.charset_name.empty()) {
-        retStatusOr = charsetInfo->getDefaultCollationbyCharset(spaceDesc_.charset_name);
+    if (!(*spaceDesc_.charset_name_ref()).empty() && !(*spaceDesc_.collate_name_ref()).empty()) {
+        NG_RETURN_IF_ERROR(charsetInfo->charsetAndCollateMatch(*spaceDesc_.charset_name_ref(),
+                    *spaceDesc_.collate_name_ref()));
+    } else if (!(*spaceDesc_.charset_name_ref()).empty()) {
+        retStatusOr = charsetInfo->getDefaultCollationbyCharset(*spaceDesc_.charset_name_ref());
         if (!retStatusOr.ok()) {
             return retStatusOr.status();
         }
-        spaceDesc_.collate_name = std::move(retStatusOr.value());
-    } else if (!spaceDesc_.collate_name.empty()) {
-        retStatusOr = charsetInfo->getCharsetbyCollation(spaceDesc_.collate_name);
+        spaceDesc_.set_collate_name(std::move(retStatusOr.value()));
+    } else if (!(*spaceDesc_.collate_name_ref()).empty()) {
+        retStatusOr = charsetInfo->getCharsetbyCollation(*spaceDesc_.collate_name_ref());
         if (!retStatusOr.ok()) {
             return retStatusOr.status();
         }
-        spaceDesc_.charset_name = std::move(retStatusOr.value());
+        spaceDesc_.set_charset_name(std::move(retStatusOr.value()));
     }
 
-    if (spaceDesc_.charset_name.empty() && spaceDesc_.collate_name.empty()) {
+    if ((*spaceDesc_.charset_name_ref()).empty() && (*spaceDesc_.collate_name_ref()).empty()) {
         std::string charsetName = FLAGS_default_charset;
         folly::toLowerAscii(charsetName);
         NG_RETURN_IF_ERROR(charsetInfo->isSupportCharset(charsetName));
@@ -124,15 +126,15 @@ Status CreateSpaceValidator::validateImpl() {
         folly::toLowerAscii(collateName);
         NG_RETURN_IF_ERROR(charsetInfo->isSupportCollate(collateName));
 
-        spaceDesc_.charset_name = std::move(charsetName);
-        spaceDesc_.collate_name = std::move(collateName);
+        spaceDesc_.set_charset_name(std::move(charsetName));
+        spaceDesc_.set_collate_name(std::move(collateName));
 
-        NG_RETURN_IF_ERROR(charsetInfo->charsetAndCollateMatch(spaceDesc_.charset_name,
-                    spaceDesc_.collate_name));
+        NG_RETURN_IF_ERROR(charsetInfo->charsetAndCollateMatch(*spaceDesc_.charset_name_ref(),
+                    *spaceDesc_.collate_name_ref()));
     }
 
     // add to validate context
-    vctx_->addSpace(spaceDesc_.space_name);
+    vctx_->addSpace(*spaceDesc_.space_name_ref());
     return status;
 }
 

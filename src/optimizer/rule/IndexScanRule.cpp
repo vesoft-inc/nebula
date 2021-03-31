@@ -129,7 +129,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
     auto hc = hintCount(items);
     auto fields = index->get_fields();
     IndexQueryContext ctx;
-    decltype(ctx.column_hints) hints;
+    std::vector<nebula::storage::cpp2::IndexColumnHint> hints;
     for (const auto& field : fields) {
         bool found = false;
         FilterItems filterItems;
