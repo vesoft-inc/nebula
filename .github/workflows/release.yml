@@ -84,6 +84,7 @@ jobs:
         service:
           - metad
           - storaged
+          - tools
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
