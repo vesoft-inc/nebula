@@ -4,12 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <algorithm>
-
-#include <folly/hash/Hash.h>
-#include <folly/String.h>
-#include <unordered_set>
 #include "common/datatypes/Path.h"
+
+#include <algorithm>
+#include <tuple>
+#include <unordered_set>
+
+#include <folly/String.h>
+#include <folly/hash/Hash.h>
 
 namespace nebula {
 void Path::reverse() {
@@ -41,8 +43,7 @@ bool Path::hasDuplicateVertices() const {
         return false;
     }
     std::unordered_set<Value> uniqueVid;
-    auto srcVid = src.vid;
-    uniqueVid.emplace(srcVid);
+    uniqueVid.emplace(src.vid);
     for (const auto& step : steps) {
         auto ret = uniqueVid.emplace(step.dst.vid);
         if (!ret.second) {
@@ -56,21 +57,18 @@ bool Path::hasDuplicateEdges() const {
     if (steps.size() < 2) {
         return false;
     }
-    std::unordered_set<std::string> uniqueSet;
+    using Key = std::tuple<Value, Value, EdgeType, EdgeRanking>;
+    std::unordered_set<Key> uniqueSet;
     auto srcVid = src.vid;
     for (const auto& step : steps) {
-        auto edgeSrc = step.type > 0 ? srcVid : step.dst.vid;
-        auto edgeDst = step.type > 0 ? step.dst.vid : srcVid;
-        auto edgeKey = folly::stringPrintf("%s%s%s%ld",
-                                           edgeSrc.toString().c_str(),
-                                           edgeDst.toString().c_str(),
-                                           step.name.c_str(),
-                                           step.ranking);
-        auto res = uniqueSet.emplace(std::move(edgeKey));
-        if (!res.second) {
+        const auto& dstVid = step.dst.vid;
+        const auto& edgeSrc = step.type > 0 ? srcVid : dstVid;
+        const auto& edgeDst = step.type > 0 ? dstVid : srcVid;
+        auto key = std::make_tuple(edgeSrc, edgeDst, std::abs(step.type), step.ranking);
+        if (!uniqueSet.emplace(std::move(key)).second) {
             return true;
         }
-        srcVid = step.dst.vid;
+        srcVid = dstVid;
     }
     return false;
 }
