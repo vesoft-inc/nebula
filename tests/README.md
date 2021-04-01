@@ -96,6 +96,8 @@ You can find all nebula test cases in [tck/features](tck/features) and some open
 
 The test cases are organized in feature files and described in gherkin language. The structure of feature file is like following example:
 
+#### Basic Case:
+
 ```gherkin
 Feature: Basic match
 
@@ -126,6 +128,26 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
 ```
 
+#### Case With an Execution Plan:
+```gherkin
+Scenario: push edge props filter down
+  When profiling query:
+    """
+    GO FROM "Tony Parker" OVER like
+    WHERE like.likeness IN [v IN [95,99] WHERE v > 0]
+    YIELD like._dst, like.likeness
+    """
+  Then the result should be, in any order:
+    | like._dst       | like.likeness |
+    | "Manu Ginobili" | 95            |
+    | "Tim Duncan"    | 95            |
+  And the execution plan should be:
+    | id | name         | dependencies | operator info                                               |
+    | 0  | Project      | 1            |                                                             |
+    | 1  | GetNeighbors | 2            | {"filter": "(like.likeness IN [v IN [95,99] WHERE (v>0)])"} |
+    | 2  | Start        |              |                                                             |
+```
+
 Each feature file is composed of different scenarios which split test units into different parts. There are many steps in each scenario to define the inputs and outputs of test. These steps are started with following words:
 
 - Given
@@ -134,7 +156,9 @@ Each feature file is composed of different scenarios which split test units into
 
 The table in `Then` step must have the first header line even if there's no data rows.
 
-`Background` is the common steps of different scenarios. Scenarios will be executed in parallel.
+`Background` is the common steps of different scenarios. Scenarios will be executed in parallel. 
+
+Note that for cases that contain execution plans, it is mandatory to fill the `id` column.
 
 ### Format
 

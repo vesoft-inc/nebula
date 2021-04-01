@@ -20,12 +20,12 @@ Feature: TopN rule
       | 50       |
       | 55       |
     And the execution plan should be:
-      | name         | dependencies | operator info |
-      | DataCollect  | 1            |               |
-      | TopN         | 2            |               |
-      | Project      | 3            |               |
-      | GetNeighbors | 4            |               |
-      | Start        |              |               |
+      | id | name         | dependencies | operator info |
+      | 0  | DataCollect  | 1            |               |
+      | 1  | TopN         | 2            |               |
+      | 2  | Project      | 3            |               |
+      | 3  | GetNeighbors | 4            |               |
+      | 4  | Start        |              |               |
 
   Scenario: apply topn opt rule with reverse traversal
     When profiling query:
@@ -39,12 +39,12 @@ Feature: TopN rule
       | likeness |
       | 83       |
     And the execution plan should be:
-      | name         | dependencies | operator info |
-      | DataCollect  | 1            |               |
-      | TopN         | 2            |               |
-      | Project      | 3            |               |
-      | GetNeighbors | 4            |               |
-      | Start        |              |               |
+      | id | name         | dependencies | operator info |
+      | 0  | DataCollect  | 1            |               |
+      | 1  | TopN         | 2            |               |
+      | 2  | Project      | 3            |               |
+      | 3  | GetNeighbors | 4            |               |
+      | 4  | Start        |              |               |
 
   Scenario: [1] fail to apply topn rule
     When profiling query:
@@ -58,13 +58,13 @@ Feature: TopN rule
       | likeness |
       | 60       |
     And the execution plan should be:
-      | name         | dependencies | operator info |
-      | DataCollect  | 1            |               |
-      | Limit        | 2            |               |
-      | Sort         | 3            |               |
-      | Project      | 4            |               |
-      | GetNeighbors | 5            |               |
-      | Start        |              |               |
+      | id | name         | dependencies | operator info |
+      | 0  | DataCollect  | 1            |               |
+      | 1  | Limit        | 2            |               |
+      | 2  | Sort         | 3            |               |
+      | 3  | Project      | 4            |               |
+      | 4  | GetNeighbors | 5            |               |
+      | 5  | Start        |              |               |
 
   Scenario: [2] fail to apply topn rule
     When profiling query:
@@ -79,9 +79,9 @@ Feature: TopN rule
       | 55       |
       | 60       |
     And the execution plan should be:
-      | name         | dependencies | operator info |
-      | DataCollect  | 1            |               |
-      | Sort         | 2            |               |
-      | Project      | 3            |               |
-      | GetNeighbors | 4            |               |
-      | Start        |              |               |
+      | id | name         | dependencies | operator info |
+      | 0  | DataCollect  | 1            |               |
+      | 1  | Sort         | 2            |               |
+      | 2  | Project      | 3            |               |
+      | 3  | GetNeighbors | 4            |               |
+      | 4  | Start        |              |               |

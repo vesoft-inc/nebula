@@ -22,10 +22,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | name         | dependencies | operator info              |
-      | Project      | 1            |                            |
-      | GetNeighbors | 2            | filter: ($^.player.age>18) |
-      | Start        |              |                            |
+      | id | name         | dependencies | operator info                    |
+      | 0  | Project      | 1            |                                  |
+      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
+      | 2  | Start        |              |                                  |
 
   Scenario: push start vertex filter down when reversely
     When profiling query:
@@ -40,10 +40,10 @@ Feature: Push Filter down GetNeighbors rule
       | 90       |
       | 99       |
     And the execution plan should be:
-      | name         | dependencies | operator info              |
-      | Project      | 1            |                            |
-      | GetNeighbors | 2            | filter: ($^.player.age>18) |
-      | Start        |              |                            |
+      | id | name         | dependencies | operator info                    |
+      | 0  | Project      | 1            |                                  |
+      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
+      | 2  | Start        |              |                                  |
 
   Scenario: push edge props filter down
     When profiling query:
@@ -58,10 +58,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | name         | dependencies | operator info                   |
-      | Project      | 1            |                                 |
-      | GetNeighbors | 2            | filter: (serve.start_year>2005) |
-      | Start        |              |                                 |
+      | id | name         | dependencies | operator info                         |
+      | 0  | Project      | 1            |                                       |
+      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year>2005)"} |
+      | 2  | Start        |              |                                       |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -73,10 +73,10 @@ Feature: Push Filter down GetNeighbors rule
       | "Manu Ginobili" | 95            |
       | "Tim Duncan"    | 95            |
     And the execution plan should be:
-      | name         | dependencies | operator info                                         |
-      | Project      | 1            |                                                       |
-      | GetNeighbors | 2            | filter: (like.likeness IN [v IN [95,99] WHERE (v>0)]) |
-      | Start        |              |                                                       |
+      | id | name         | dependencies | operator info                                               |
+      | 0  | Project      | 1            |                                                             |
+      | 1  | GetNeighbors | 2            | {"filter": "(like.likeness IN [v IN [95,99] WHERE (v>0)])"} |
+      | 2  | Start        |              |                                                             |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -87,10 +87,10 @@ Feature: Push Filter down GetNeighbors rule
       | like._dst           | like.likeness |
       | "LaMarcus Aldridge" | 90            |
     And the execution plan should be:
-      | name         | dependencies | operator info                                         |
-      | Project      | 1            |                                                       |
-      | GetNeighbors | 2            | filter: any(v IN [5,6] WHERE ((like.likeness+v)<100)) |
-      | Start        |              |                                                       |
+      | id | name         | dependencies | operator info                                               |
+      | 0  | Project      | 1            |                                                             |
+      | 1  | GetNeighbors | 2            | {"filter": "any(v IN [5,6] WHERE ((like.likeness+v)<100))"} |
+      | 2  | Start        |              |                                                             |
 
   Scenario: push edge props filter down when reversely
     When profiling query:
@@ -107,10 +107,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2008       |
       | 2012       |
     And the execution plan should be:
-      | name         | dependencies | operator info                   |
-      | Project      | 1            |                                 |
-      | GetNeighbors | 2            | filter: (serve.start_year<2017) |
-      | Start        |              |                                 |
+      | id | name         | dependencies | operator info                         |
+      | 0  | Project      | 1            |                                       |
+      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year<2017)"} |
+      | 2  | Start        |              |                                       |
 
   @skip
   Scenario: Only push start vertex filter down
@@ -124,11 +124,11 @@ Feature: Push Filter down GetNeighbors rule
       | name         |
       | "Boris Diaw" |
     And the execution plan should be:
-      | name         | dependencies | operator info                       |
-      | Project      | 1            |                                     |
-      | Filter       | 2            | condition: ($$.team.name=="Lakers") |
-      | GetNeighbors | 3            | filter: ($^.player.age>18)          |
-      | Start        |              |                                     |
+      | name         | dependencies | operator info                             |
+      | Project      | 1            |                                           |
+      | Filter       | 2            | {"condition": "($$.team.name=="Lakers")"} |
+      | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}          |
+      | Start        |              |                                           |
 
   @skip
   Scenario: fail to push start or end vertex filter condition down
@@ -142,11 +142,11 @@ Feature: Push Filter down GetNeighbors rule
       | name         |
       | "Boris Diaw" |
     And the execution plan should be:
-      | name         | dependencies | operator info                                             |
-      | Project      | 1            |                                                           |
-      | Filter       | 2            | condition: ($^.player.age>18) OR ($$.team.name=="Lakers") |
-      | GetNeighbors | 3            |                                                           |
-      | Start        |              |                                                           |
+      | name         | dependencies | operator info                                                   |
+      | Project      | 1            |                                                                 |
+      | Filter       | 2            | {"condition": "($^.player.age>18) OR ($$.team.name=="Lakers")"} |
+      | GetNeighbors | 3            |                                                                 |
+      | Start        |              |                                                                 |
 
   @skip
   Scenario: fail to push end vertex filter down
