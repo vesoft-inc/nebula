@@ -513,7 +513,7 @@ bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostPa
         auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
         for (const auto& host : hosts) {
             auto pair = std::pair<HostAddr, std::string>(std::move(host),
-                                                         std::move(zoneName));
+                                                         zoneName);
             auto& hs = zoneHosts[std::move(pair)];
             hs.insert(hs.end(), hosts.begin(), hosts.end());
         }
@@ -963,7 +963,7 @@ bool Balancer::collectZoneParts(const std::string& groupName,
         auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
         for (const auto& host : hosts) {
             auto pair = std::pair<HostAddr, std::string>(std::move(host),
-                                                         std::move(zoneName));
+                                                         zoneName);
             auto& hs = zoneHosts[std::move(pair)];
             hs.insert(hs.end(), hosts.begin(), hosts.end());
         }
