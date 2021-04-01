@@ -102,6 +102,7 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_BUILD_STORAGE=on \
+                  -DNEBULA_USE_LINKER=lld \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -116,6 +117,7 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -DENABLE_BUILD_STORAGE=on \
+                -DNEBULA_USE_LINKER=lld \
                 -B build
             echo "::set-output name=j::6"
             ;;

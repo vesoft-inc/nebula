@@ -13,12 +13,13 @@ jobs:
     name: build package
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu1604
           - ubuntu1804
           - ubuntu2004
-          - centos6
+          # - centos6
           - centos7
           - centos8
     container:

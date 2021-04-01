@@ -20,7 +20,7 @@ jobs:
           - ubuntu1604
           - ubuntu1804
           - ubuntu2004
-          - centos6
+          # - centos6
           - centos7
           - centos8
     container:
