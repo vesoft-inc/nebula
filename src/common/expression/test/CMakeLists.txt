@@ -70,6 +70,28 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
 )
 
+nebula_add_executable(
+    NAME
+        aggregate_expression_bm
+    SOURCES
+        AggregateExpressionBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:expr_ctx_mock_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        follybenchmark
+        boost_regex
+        ${THRIFT_LIBRARIES}
+)
+
+
 nebula_add_test(
     NAME expression_encode_decode_test
     SOURCES EncodeDecodeTest.cpp

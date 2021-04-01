@@ -30,6 +30,10 @@ void AggregateExpression::resetFrom(Decoder& decoder) {
     name_ = decoder.readStr();
     distinct_ = decoder.readValue().getBool();
     arg_ = decoder.readExpression();
+    auto aggFuncResult = AggFunctionManager::get(*DCHECK_NOTNULL(name_));
+    if (aggFuncResult.ok()) {
+        aggFunc_ = std::move(aggFuncResult).value();
+    }
 }
 
 const Value& AggregateExpression::eval(ExpressionContext& ctx) {
@@ -43,20 +47,17 @@ const Value& AggregateExpression::eval(ExpressionContext& ctx) {
         uniques->values.emplace(val);
     }
 
-    apply(aggData_, val);
+    DCHECK(aggFunc_);
+    aggFunc_(aggData_, val);
 
     return aggData_->result();
-}
-
-void AggregateExpression::apply(AggData* aggData, const Value& val) {
-    AggFunctionManager::get(*name_).value()(aggData, val);
 }
 
 std::string AggregateExpression::toString() const {
     // TODO fix it
     std::string arg;
     if (arg_->kind() == Expression::Kind::kConstant) {
-        const auto *argExpr = static_cast<const ConstantExpression*>(arg_.get());
+        const auto* argExpr = static_cast<const ConstantExpression*>(arg_.get());
         if (argExpr->value().isStr()) {
             arg = argExpr->value().getStr();
         } else {
@@ -77,4 +78,4 @@ std::string AggregateExpression::toString() const {
 void AggregateExpression::accept(ExprVisitor* visitor) {
     visitor->visit(this);
 }
-}  // namespace nebula
+}   // namespace nebula

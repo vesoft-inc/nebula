@@ -7,8 +7,8 @@
 #ifndef COMMON_EXPRESSION_AGGREGATEEXPRESSION_H_
 #define COMMON_EXPRESSION_AGGREGATEEXPRESSION_H_
 
-#include "common/expression/Expression.h"
 #include <common/datatypes/Set.h>
+#include "common/expression/Expression.h"
 #include "common/function/AggFunctionManager.h"
 
 namespace nebula {
@@ -17,12 +17,18 @@ class AggregateExpression final : public Expression {
 
 public:
     explicit AggregateExpression(std::string* name = nullptr,
-                        Expression* arg = nullptr,
-                        bool distinct = false)
+                                 Expression* arg = nullptr,
+                                 bool distinct = false)
         : Expression(Kind::kAggregate) {
         arg_.reset(arg);
         name_.reset(name);
         distinct_ = distinct;
+        if (name_) {
+            auto aggFuncResult = AggFunctionManager::get(*name_);
+            if (aggFuncResult.ok()) {
+                aggFunc_ = std::move(aggFuncResult).value();
+            }
+        }
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -35,9 +41,8 @@ public:
 
     std::unique_ptr<Expression> clone() const override {
         auto arg = arg_->clone();
-        return std::make_unique<AggregateExpression>(new std::string(*name_),
-                                                     std::move(arg).release(),
-                                                     distinct_);
+        return std::make_unique<AggregateExpression>(
+            new std::string(*name_), std::move(arg).release(), distinct_);
     }
 
     const std::string* name() const {
@@ -76,18 +81,20 @@ public:
         aggData_ = agg_data;
     }
 
-
 private:
     void apply(AggData* aggData, const Value& val);
 
     void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>    name_;
-    std::unique_ptr<Expression>     arg_;
-    bool                            distinct_{false};
-    AggData*                        aggData_{nullptr};
+    std::unique_ptr<std::string> name_;
+    std::unique_ptr<Expression> arg_;
+    bool distinct_{false};
+    AggData* aggData_{nullptr};
+
+    // runtime cache for aggregate function lambda
+    AggFunctionManager::AggFunction aggFunc_;
 };
 
-}  // namespace nebula
-#endif  // EXPRESSION_AGGREGATEEXPRESSION_H_
+}   // namespace nebula
+#endif   // EXPRESSION_AGGREGATEEXPRESSION_H_
