@@ -38,6 +38,10 @@ private:
     OptGroup *convertToGroup(OptContext *ctx,
                              graph::PlanNode *node,
                              std::unordered_map<int64_t, OptGroup *> *visited);
+    void addBodyToGroupNode(OptContext *ctx,
+                            const graph::PlanNode *node,
+                            OptGroupNode *gnode,
+                            std::unordered_map<int64_t, OptGroup *> *visited);
 
     std::vector<const RuleSet *> ruleSets_;
 };

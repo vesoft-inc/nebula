@@ -165,8 +165,8 @@ public:
         return qctx_;
     }
 
-    virtual bool isSingleInput() const {
-        return false;
+    bool isSingleInput() const {
+        return numDeps() == 1U;
     }
 
     void setOutputVar(const std::string &var);
@@ -219,8 +219,12 @@ public:
         dependencies_[index] = DCHECK_NOTNULL(dep);
     }
 
-    const std::vector<const PlanNode*>& dependencies() const {
-        return dependencies_;
+    void addDep(const PlanNode* dep) {
+        dependencies_.emplace_back(dep);
+    }
+
+    size_t numDeps() const {
+        return dependencies_.size();
     }
 
     std::string inputVar(size_t idx = 0UL) const {
@@ -245,9 +249,9 @@ public:
 
 protected:
     static void addDescription(std::string key, std::string value, PlanNodeDescription* desc);
+
     void readVariable(const std::string& varname);
     void readVariable(Variable* varPtr);
-
     void clone(const PlanNode &node) {
         // TODO maybe shall copy cost_ and dependencies_ too
         inputVars_ = node.inputVars_;
@@ -278,7 +282,7 @@ public:
 protected:
     SingleDependencyNode(QueryContext* qctx, Kind kind, const PlanNode* dep)
         : PlanNode(qctx, kind) {
-        dependencies_.emplace_back(dep);
+        addDep(dep);
     }
 
     void clone(const SingleDependencyNode &node) {
@@ -290,10 +294,6 @@ protected:
 
 class SingleInputNode : public SingleDependencyNode {
 public:
-    bool isSingleInput() const override {
-        return true;
-    }
-
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
@@ -348,17 +348,7 @@ public:
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
-    BiInputNode(QueryContext* qctx, Kind kind, PlanNode* left, PlanNode* right)
-        : PlanNode(qctx, kind) {
-        DCHECK(left != nullptr);
-        DCHECK(right != nullptr);
-
-        dependencies_.emplace_back(left);
-        readVariable(left->outputVarPtr());
-
-        dependencies_.emplace_back(right);
-        readVariable(right->outputVarPtr());
-    }
+    BiInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
 };
 
 }  // namespace graph

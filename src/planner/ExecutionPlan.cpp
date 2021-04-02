@@ -20,77 +20,58 @@ ExecutionPlan::ExecutionPlan(PlanNode* root) : id_(EPIdGenerator::instance().id(
 
 ExecutionPlan::~ExecutionPlan() {}
 
-static size_t makePlanNodeDesc(const PlanNode* node, PlanDescription* planDesc) {
-    auto found = planDesc->nodeIndexMap.find(node->id());
-    if (found != planDesc->nodeIndexMap.end()) {
+uint64_t ExecutionPlan::makePlanNodeDesc(const PlanNode* node) {
+    DCHECK(planDescription_ != nullptr);
+    auto found = planDescription_->nodeIndexMap.find(node->id());
+    if (found != planDescription_->nodeIndexMap.end()) {
         return found->second;
     }
 
-    size_t planNodeDescPos = planDesc->planNodeDescs.size();
-    planDesc->nodeIndexMap.emplace(node->id(), planNodeDescPos);
-    planDesc->planNodeDescs.emplace_back(std::move(*node->explain()));
-    auto& planNodeDesc = planDesc->planNodeDescs.back();
+    size_t planNodeDescPos = planDescription_->planNodeDescs.size();
+    planDescription_->nodeIndexMap.emplace(node->id(), planNodeDescPos);
+    planDescription_->planNodeDescs.emplace_back(std::move(*node->explain()));
+    auto& planNodeDesc = planDescription_->planNodeDescs.back();
     planNodeDesc.profiles = std::make_unique<std::vector<ProfilingStats>>();
 
-    switch (node->kind()) {
-        case PlanNode::Kind::kStart: {
-            break;
-        }
-        case PlanNode::Kind::kUnion:
-        case PlanNode::Kind::kIntersect:
-        case PlanNode::Kind::kMinus:
-        case PlanNode::Kind::kConjunctPath: {
-            auto bNode = static_cast<const BiInputNode*>(node);
-            makePlanNodeDesc(bNode->left(), planDesc);
-            makePlanNodeDesc(bNode->right(), planDesc);
-            break;
-        }
-        case PlanNode::Kind::kSelect: {
-            auto select = static_cast<const Select*>(node);
-            planNodeDesc.dependencies.reset(new std::vector<int64_t>{select->dep()->id()});
-            auto thenPos = makePlanNodeDesc(select->then(), planDesc);
-            PlanNodeBranchInfo thenInfo;
-            thenInfo.isDoBranch = true;
-            thenInfo.conditionNodeId = select->id();
-            planDesc->planNodeDescs[thenPos].branchInfo =
-                std::make_unique<PlanNodeBranchInfo>(std::move(thenInfo));
-            auto otherwisePos = makePlanNodeDesc(select->otherwise(), planDesc);
-            PlanNodeBranchInfo elseInfo;
-            elseInfo.isDoBranch = false;
-            elseInfo.conditionNodeId = select->id();
-            planDesc->planNodeDescs[otherwisePos].branchInfo =
-                std::make_unique<PlanNodeBranchInfo>(std::move(elseInfo));
-            makePlanNodeDesc(select->dep(), planDesc);
-            break;
-        }
-        case PlanNode::Kind::kLoop: {
-            auto loop = static_cast<const Loop*>(node);
-            planNodeDesc.dependencies.reset(new std::vector<int64_t>{loop->dep()->id()});
-            auto bodyPos = makePlanNodeDesc(loop->body(), planDesc);
-            PlanNodeBranchInfo info;
-            info.isDoBranch = true;
-            info.conditionNodeId = loop->id();
-            planDesc->planNodeDescs[bodyPos].branchInfo =
-                std::make_unique<PlanNodeBranchInfo>(std::move(info));
-            makePlanNodeDesc(loop->dep(), planDesc);
-            break;
-        }
-        default: {
-            // Other plan nodes have single dependency
-            DCHECK_EQ(node->dependencies().size(), 1U);
-            auto singleDepNode = static_cast<const SingleDependencyNode*>(node);
-            makePlanNodeDesc(singleDepNode->dep(), planDesc);
-            break;
-        }
+    if (node->kind() == PlanNode::Kind::kSelect) {
+        auto select = static_cast<const Select*>(node);
+        setPlanNodeDeps(select, &planNodeDesc);
+        descBranchInfo(select->then(), true, select->id());
+        descBranchInfo(select->otherwise(), false, select->id());
+    } else if (node->kind() == PlanNode::Kind::kLoop) {
+        auto loop = static_cast<const Loop*>(node);
+        setPlanNodeDeps(loop, &planNodeDesc);
+        descBranchInfo(loop->body(), true, loop->id());
     }
+
+    for (size_t i = 0; i < node->numDeps(); ++i) {
+        makePlanNodeDesc(node->dep(i));
+    }
+
     return planNodeDescPos;
+}
+
+void ExecutionPlan::descBranchInfo(const PlanNode* node, bool isDoBranch, int64_t id) {
+    auto pos = makePlanNodeDesc(node);
+    auto info = std::make_unique<PlanNodeBranchInfo>();
+    info->isDoBranch = isDoBranch;
+    info->conditionNodeId = id;
+    planDescription_->planNodeDescs[pos].branchInfo = std::move(info);
+}
+
+void ExecutionPlan::setPlanNodeDeps(const PlanNode* node, PlanNodeDescription* planNodeDesc) const {
+    auto deps = std::make_unique<std::vector<int64_t>>();
+    for (size_t i = 0; i < node->numDeps(); ++i) {
+        deps->emplace_back(node->dep(i)->id());
+    }
+    planNodeDesc->dependencies = std::move(deps);
 }
 
 void ExecutionPlan::describe(PlanDescription* planDesc) {
     planDescription_ = DCHECK_NOTNULL(planDesc);
     planDescription_->optimize_time_in_us = optimizeTimeInUs_;
     planDescription_->format = explainFormat_;
-    makePlanNodeDesc(root_, planDesc);
+    makePlanNodeDesc(root_);
 }
 
 void ExecutionPlan::addProfileStats(int64_t planNodeId, ProfilingStats&& profilingStats) {

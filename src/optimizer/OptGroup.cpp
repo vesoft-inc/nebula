@@ -170,34 +170,19 @@ double OptGroupNode::getCost() const {
 }
 
 const PlanNode *OptGroupNode::getPlan() const {
-    switch (node_->dependencies().size()) {
-        case 0: {
-            DCHECK(dependencies_.empty());
-            break;
-        }
-        case 1: {
-            DCHECK_EQ(dependencies_.size(), 1U);
-            if (node_->kind() == PlanNode::Kind::kSelect) {
-                DCHECK_EQ(bodies_.size(), 2U);
-                auto select = static_cast<Select *>(node_);
-                select->setIf(const_cast<PlanNode *>(bodies_[0]->getPlan()));
-                select->setElse(const_cast<PlanNode *>(bodies_[1]->getPlan()));
-            } else if (node_->kind() == PlanNode::Kind::kLoop) {
-                DCHECK_EQ(bodies_.size(), 1U);
-                auto loop = static_cast<Loop *>(node_);
-                loop->setBody(const_cast<PlanNode *>(bodies_[0]->getPlan()));
-            }
-            auto singleDepNode = static_cast<SingleDependencyNode *>(node_);
-            singleDepNode->dependsOn(dependencies_[0]->getPlan());
-            break;
-        }
-        case 2: {
-            DCHECK_EQ(dependencies_.size(), 2U);
-            auto bNode = static_cast<BiInputNode *>(node_);
-            bNode->setLeftDep(dependencies_[0]->getPlan());
-            bNode->setRightDep(dependencies_[1]->getPlan());
-            break;
-        }
+    if (node_->kind() == PlanNode::Kind::kSelect) {
+        DCHECK_EQ(bodies_.size(), 2U);
+        auto select = static_cast<Select *>(node_);
+        select->setIf(const_cast<PlanNode *>(bodies_[0]->getPlan()));
+        select->setElse(const_cast<PlanNode *>(bodies_[1]->getPlan()));
+    } else if (node_->kind() == PlanNode::Kind::kLoop) {
+        DCHECK_EQ(bodies_.size(), 1U);
+        auto loop = static_cast<Loop *>(node_);
+        loop->setBody(const_cast<PlanNode *>(bodies_[0]->getPlan()));
+    }
+    DCHECK_EQ(node_->numDeps(), dependencies_.size());
+    for (size_t i = 0; i < node_->numDeps(); ++i) {
+        node_->setDep(i, dependencies_[i]->getPlan());
     }
     return node_;
 }

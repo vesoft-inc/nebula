@@ -351,6 +351,15 @@ std::unique_ptr<PlanNodeDescription> SingleInputNode::explain() const {
     return desc;
 }
 
+BiInputNode::BiInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right)
+    : PlanNode(qctx, kind) {
+    addDep(left);
+    readVariable(left->outputVarPtr());
+
+    addDep(right);
+    readVariable(right->outputVarPtr());
+}
+
 std::unique_ptr<PlanNodeDescription> BiInputNode::explain() const {
     auto desc = PlanNode::explain();
     DCHECK(desc->dependencies == nullptr);

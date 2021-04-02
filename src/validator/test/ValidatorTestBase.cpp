@@ -41,28 +41,19 @@ void ValidatorTestBase::bfsTraverse(const PlanNode *root, std::vector<PlanNode::
             ASSERT_TRUE(false) << "Unknown Plan Node.";
         }
 
-        switch (node->dependencies().size()) {
-            case 1: {
-                auto *sNode = static_cast<const SingleDependencyNode *>(node);
-                queue.emplace(sNode->dep());
-                if (node->kind() == PlanNode::Kind::kSelect) {
-                    auto *current = static_cast<const Select *>(node);
-                    queue.emplace(current->then());
-                    if (current->otherwise() != nullptr) {
-                        queue.emplace(current->otherwise());
-                    }
-                } else if (node->kind() == PlanNode::Kind::kLoop) {
-                    auto *current = static_cast<const Loop *>(node);
-                    queue.emplace(current->body());
-                }
-                break;
+        for (size_t i = 0; i < node->numDeps(); ++i) {
+            queue.emplace(node->dep(i));
+        }
+
+        if (node->kind() == PlanNode::Kind::kSelect) {
+            auto *current = static_cast<const Select *>(node);
+            queue.emplace(current->then());
+            if (current->otherwise() != nullptr) {
+                queue.emplace(current->otherwise());
             }
-            case 2: {
-                auto *current = static_cast<const BiInputNode *>(node);
-                queue.emplace(current->left());
-                queue.emplace(current->right());
-                break;
-            }
+        } else if (node->kind() == PlanNode::Kind::kLoop) {
+            auto *current = static_cast<const Loop *>(node);
+            queue.emplace(current->body());
         }
     }
 }

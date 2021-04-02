@@ -9,6 +9,7 @@
 #include <folly/String.h>
 #include <folly/executors/InlineExecutor.h>
 
+#include "common/base/ObjectPool.h"
 #include "common/interface/gen-cpp2/graph_types.h"
 #include "context/ExecutionContext.h"
 #include "context/QueryContext.h"
@@ -19,75 +20,74 @@
 #include "executor/admin/CharsetExecutor.h"
 #include "executor/admin/ConfigExecutor.h"
 #include "executor/admin/CreateUserExecutor.h"
+#include "executor/admin/DownloadExecutor.h"
 #include "executor/admin/DropUserExecutor.h"
 #include "executor/admin/GrantRoleExecutor.h"
+#include "executor/admin/GroupExecutor.h"
+#include "executor/admin/IngestExecutor.h"
 #include "executor/admin/ListRolesExecutor.h"
 #include "executor/admin/ListUserRolesExecutor.h"
 #include "executor/admin/ListUsersExecutor.h"
+#include "executor/admin/ListenerExecutor.h"
 #include "executor/admin/PartExecutor.h"
+#include "executor/admin/ResetBalanceExecutor.h"
 #include "executor/admin/RevokeRoleExecutor.h"
 #include "executor/admin/ShowBalanceExecutor.h"
 #include "executor/admin/ShowHostsExecutor.h"
-#include "executor/admin/SnapshotExecutor.h"
-#include "executor/admin/ListenerExecutor.h"
-#include "executor/admin/SpaceExecutor.h"
-#include "executor/admin/StopBalanceExecutor.h"
-#include "executor/admin/ResetBalanceExecutor.h"
-#include "executor/admin/SubmitJobExecutor.h"
-#include "executor/admin/SwitchSpaceExecutor.h"
-#include "executor/admin/UpdateUserExecutor.h"
-#include "executor/admin/GroupExecutor.h"
-#include "executor/admin/ZoneExecutor.h"
 #include "executor/admin/ShowStatsExecutor.h"
 #include "executor/admin/ShowTSClientsExecutor.h"
 #include "executor/admin/SignInTSServiceExecutor.h"
 #include "executor/admin/SignOutTSServiceExecutor.h"
-#include "executor/admin/DownloadExecutor.h"
-#include "executor/admin/IngestExecutor.h"
+#include "executor/admin/SnapshotExecutor.h"
+#include "executor/admin/SpaceExecutor.h"
+#include "executor/admin/StopBalanceExecutor.h"
+#include "executor/admin/SubmitJobExecutor.h"
+#include "executor/admin/SwitchSpaceExecutor.h"
+#include "executor/admin/UpdateUserExecutor.h"
+#include "executor/admin/ZoneExecutor.h"
 #include "executor/algo/BFSShortestPathExecutor.h"
-#include "executor/algo/ProduceSemiShortestPathExecutor.h"
+#include "executor/algo/CartesianProductExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
 #include "executor/algo/ProduceAllPathsExecutor.h"
-#include "executor/algo/CartesianProductExecutor.h"
+#include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/SubgraphExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
 #include "executor/logic/StartExecutor.h"
 #include "executor/maintain/EdgeExecutor.h"
-#include "executor/maintain/TagExecutor.h"
 #include "executor/maintain/EdgeIndexExecutor.h"
+#include "executor/maintain/TagExecutor.h"
 #include "executor/maintain/TagIndexExecutor.h"
 #include "executor/mutate/DeleteExecutor.h"
 #include "executor/mutate/InsertExecutor.h"
 #include "executor/mutate/UpdateExecutor.h"
 #include "executor/query/AggregateExecutor.h"
+#include "executor/query/AssignExecutor.h"
 #include "executor/query/DataCollectExecutor.h"
-#include "executor/query/LeftJoinExecutor.h"
-#include "executor/query/InnerJoinExecutor.h"
 #include "executor/query/DedupExecutor.h"
 #include "executor/query/FilterExecutor.h"
 #include "executor/query/GetEdgesExecutor.h"
 #include "executor/query/GetNeighborsExecutor.h"
 #include "executor/query/GetVerticesExecutor.h"
 #include "executor/query/IndexScanExecutor.h"
+#include "executor/query/InnerJoinExecutor.h"
 #include "executor/query/IntersectExecutor.h"
+#include "executor/query/LeftJoinExecutor.h"
 #include "executor/query/LimitExecutor.h"
 #include "executor/query/MinusExecutor.h"
 #include "executor/query/ProjectExecutor.h"
-#include "executor/query/UnwindExecutor.h"
 #include "executor/query/SortExecutor.h"
 #include "executor/query/TopNExecutor.h"
-#include "executor/query/UnionExecutor.h"
 #include "executor/query/UnionAllVersionVarExecutor.h"
-#include "executor/query/AssignExecutor.h"
+#include "executor/query/UnionExecutor.h"
+#include "executor/query/UnwindExecutor.h"
 #include "planner/Admin.h"
 #include "planner/Logic.h"
 #include "planner/Maintain.h"
 #include "planner/Mutate.h"
 #include "planner/PlanNode.h"
 #include "planner/Query.h"
-#include "common/base/ObjectPool.h"
 #include "util/ScopedTimer.h"
 
 using folly::stringPrintf;
@@ -113,40 +113,23 @@ Executor *Executor::makeExecutor(const PlanNode *node,
     }
 
     Executor *exec = makeExecutor(qctx, node);
-    switch (node->dependencies().size()) {
-        case 0: {
-            // Do nothing
-            break;
-        }
-        case 1: {
-            if (node->kind() == PlanNode::Kind::kSelect) {
-                auto select = asNode<Select>(node);
-                auto thenBody = makeExecutor(select->then(), qctx, visited);
-                auto elseBody = makeExecutor(select->otherwise(), qctx, visited);
-                auto selectExecutor = static_cast<SelectExecutor *>(exec);
-                selectExecutor->setThenBody(thenBody);
-                selectExecutor->setElseBody(elseBody);
-            } else if (node->kind() == PlanNode::Kind::kLoop) {
-                auto loop = asNode<Loop>(node);
-                auto body = makeExecutor(loop->body(), qctx, visited);
-                auto loopExecutor = static_cast<LoopExecutor *>(exec);
-                loopExecutor->setLoopBody(body);
-            }
-            auto dep = makeExecutor(node->dep(0), qctx, visited);
-            exec->dependsOn(dep);
-            break;
-        }
-        case 2: {
-            auto left = makeExecutor(node->dep(0), qctx, visited);
-            auto right = makeExecutor(node->dep(1), qctx, visited);
-            exec->dependsOn(left)->dependsOn(right);
-            break;
-        }
-        default: {
-            LOG(FATAL) << "Unsupported plan node type which has dependencies: "
-                       << node->dependencies().size();
-            break;
-        }
+
+    if (node->kind() == PlanNode::Kind::kSelect) {
+        auto select = asNode<Select>(node);
+        auto thenBody = makeExecutor(select->then(), qctx, visited);
+        auto elseBody = makeExecutor(select->otherwise(), qctx, visited);
+        auto selectExecutor = static_cast<SelectExecutor *>(exec);
+        selectExecutor->setThenBody(thenBody);
+        selectExecutor->setElseBody(elseBody);
+    } else if (node->kind() == PlanNode::Kind::kLoop) {
+        auto loop = asNode<Loop>(node);
+        auto body = makeExecutor(loop->body(), qctx, visited);
+        auto loopExecutor = static_cast<LoopExecutor *>(exec);
+        loopExecutor->setLoopBody(body);
+    }
+
+    for (size_t i = 0; i < node->numDeps(); ++i) {
+        exec->dependsOn(makeExecutor(node->dep(i), qctx, visited));
     }
 
     visited->insert({node->id(), exec});

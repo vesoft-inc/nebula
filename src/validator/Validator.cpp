@@ -277,7 +277,7 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     DCHECK(node != nullptr);
     DCHECK(appended != nullptr);
-    if (node->dependencies().size() != 1) {
+    if (!node->isSingleInput()) {
         return Status::SemanticError("%s not support to append an input.",
                                      PlanNode::toString(node->kind()));
     }
