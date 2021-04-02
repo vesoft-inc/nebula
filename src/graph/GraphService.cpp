@@ -30,7 +30,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
                                                      std::move(addrs.value()),
                                                      options);
     // load data try 3 time
-    bool loadDataOk = metaClient_->waitForMetadReady(3);
+    bool loadDataOk = metaClient_->waitForMetadReady(FLAGS_meta_client_retry_times);
     if (!loadDataOk) {
         // Resort to retrying in the background
         LOG(WARNING) << "Failed to synchronously wait for meta service ready";
