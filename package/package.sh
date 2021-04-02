@@ -194,11 +194,9 @@ function package {
         exit 1
     else
         # rename package file
-        pkg_names=$(ls ./*nebula*-${version}*)
         outputDir=$build_dir/cpack_output
         mkdir -p ${outputDir}
-        for pkg_name in "${pkg_names[@]}";
-        do
+        for pkg_name in $(ls ./*nebula*-${version}*); do
             new_pkg_name=${pkg_name/\-Linux/${sys_ver}}
             mv ${pkg_name} ${outputDir}/${new_pkg_name}
             echo "####### taget package file is ${outputDir}/${new_pkg_name}"
