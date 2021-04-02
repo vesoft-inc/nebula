@@ -263,10 +263,10 @@ Status DeleteVerticesValidator::validateImpl() {
         vidRef_ = sentence->vertices()->ref();
         auto type = deduceExprType(vidRef_);
         NG_RETURN_IF_ERROR(type);
-        if (type.value() != Value::Type::STRING) {
+        if (type.value() != vidType_) {
             std::stringstream ss;
-            ss << "The vid should be string type, "
-               << "but input is `" << type.value() << "'";
+            ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
+               << "', but was`" << type.value() << "'";
             return Status::SemanticError(ss.str());
         }
     } else {

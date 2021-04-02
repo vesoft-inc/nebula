@@ -196,4 +196,118 @@ Feature: Delete int vid of vertex
       """
     Then the result should be, in any order:
       | VertexID | player.name | player.age |
+
+  Scenario: delete int vertex by pipe successed
+    Given load "nba_int_vid" csv data to a new space
+    # test delete with pipe wrong vid type
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like YIELD (string)like._src as id | DELETE VERTEX $-.id
+      """
+    Then a SemanticError should be raised at runtime:
+    # delete with pipe, get result by go
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst     |
+      | "Tony Parker" |
+      | "Tim Duncan"  |
+    When executing query:
+      """
+      GO FROM hash("Tony Parker") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst           |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst       |
+      | "Tony Parker"   |
+      | "Manu Ginobili" |
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id | DELETE VERTEX $-.id
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    When executing query:
+      """
+      GO FROM hash("Tony Parker") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+
+  Scenario: delete with pipe failed, because of the wrong vid type
+    When executing query:
+      """
+      USE nba_int_vid;YIELD "Tom" as id | DELETE VERTEX $-.id;
+      """
+    Then a SemanticError should be raised at runtime: The vid `$-.id' should be type of `INT', but was`STRING'
+    Then drop the used space
+
+  Scenario: delete with var, get result by go
+    Given load "nba_int_vid" csv data to a new space
+    When executing query:
+      """
+      GO FROM hash("Russell Westbrook") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst      |
+      | "Paul George"  |
+      | "James Harden" |
+    When executing query:
+      """
+      GO FROM hash("Paul George") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Russell Westbrook" |
+    When executing query:
+      """
+      GO FROM hash("James Harden") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst           |
+      | "Russell Westbrook" |
+    When executing query:
+      """
+      $var = GO FROM hash("Russell Westbrook") OVER like YIELD like._dst as id; DELETE VERTEX $var.id
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GO FROM hash("Russell Westbrook") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    When executing query:
+      """
+      GO FROM hash("Paul George") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    When executing query:
+      """
+      GO FROM hash("Russell Westbrook") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
     Then drop the used space

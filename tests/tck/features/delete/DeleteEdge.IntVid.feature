@@ -135,3 +135,57 @@ Feature: Delete int vid of edge
       | $^.person.name | friend.intimacy | friend._dst |
       | "Zhangsan"     | 50              | "Jack"      |
     Then drop the used space
+
+  Scenario: delete edges use pipe
+    Given load "nba_int_vid" csv data to a new space
+    # test delete with pipe wrong vid type
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like YIELD (string)like._src as id | DELETE EDGE like $-.id->$-.id
+      """
+    Then a ExecutionError should be raised at runtime: Wrong srcId type `STRING`, value
+    # delete with pipe, get result by go
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst     |
+      | "Tony Parker" |
+      | "Tim Duncan"  |
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like
+      YIELD like._src as src, like._dst as dst, like._rank as rank
+      | DELETE EDGE like $-.src->$-.dst @ $-.rank
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GO FROM hash("Boris Diaw") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    # delete with var, get result by go
+    When executing query:
+      """
+      GO FROM hash("Russell Westbrook") OVER like
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | like._dst      |
+      | "Paul George"  |
+      | "James Harden" |
+    When executing query:
+      """
+      $var = GO FROM hash("Russell Westbrook") OVER like YIELD
+      like._src as src, like._dst as dst, like._rank as rank;
+      DELETE EDGE like $var.src -> $var.dst @ $var.rank
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GO FROM hash("Russell Westbrook") OVER like
+      """
+    Then the result should be, in any order:
+      | like._dst |
+    And drop the used space

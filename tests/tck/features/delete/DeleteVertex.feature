@@ -198,14 +198,14 @@ Feature: Delete string vid of vertex
       | VertexID | player.name | player.age |
     Then drop the used space
 
-  Scenario: delete vertex by pipe
+  Scenario: delete string vertex by pipe
     Given load "nba" csv data to a new space
     # test delete with pipe wrong vid type
     When executing query:
       """
       GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE VERTEX $-.id
       """
-    Then a SemanticError should be raised at runtime: The vid should be string type, but input is `INT'
+    Then a SemanticError should be raised at runtime:
     # delete with pipe, get result by go
     When executing query:
       """
@@ -255,7 +255,9 @@ Feature: Delete string vid of vertex
       """
     Then the result should be, in any order:
       | like._dst |
-    # delete with var, get result by go
+
+  Scenario: delete with var, get result by go
+    Given load "nba" csv data to a new space
     When executing query:
       """
       GO FROM "Russell Westbrook" OVER like

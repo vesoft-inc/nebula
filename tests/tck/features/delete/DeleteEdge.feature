@@ -136,7 +136,7 @@ Feature: Delete string vid of edge
       | "Zhangsan"     | 50              | "Jack"      |
     Then drop the used space
 
-  Scenario: delete edges for 2.0 syntax
+  Scenario: delete edges use pipe
     Given load "nba" csv data to a new space
     # test delete with pipe wrong vid type
     When executing query:
