@@ -66,6 +66,10 @@ public:
         operands_ = std::move(operands);
     }
 
+    bool isLogicalExpr() const override {
+        return true;
+    }
+
 private:
     void writeTo(Encoder &encoder) const override;
     void resetFrom(Decoder &decoder) override;

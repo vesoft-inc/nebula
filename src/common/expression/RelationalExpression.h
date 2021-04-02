@@ -28,6 +28,10 @@ public:
             kind(), left()->clone().release(), right()->clone().release());
     }
 
+    bool isRelExpr() const override {
+        return true;
+    }
+
 private:
     Value                                       result_;
 };

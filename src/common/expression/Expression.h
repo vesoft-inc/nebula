@@ -19,19 +19,19 @@ class Expression {
 public:
     enum class Kind : uint8_t {
         kConstant,
-
+        // Arithmetic
         kAdd,
         kMinus,
         kMultiply,
         kDivision,
         kMod,
-
+        // Unary
         kUnaryPlus,
         kUnaryNegate,
         kUnaryNot,
         kUnaryIncr,
         kUnaryDecr,
-
+        // Relational
         kRelEQ,
         kRelNE,
         kRelLT,
@@ -47,11 +47,12 @@ public:
         kNotStartsWith,
         kEndsWith,
         kNotEndsWith,
+
         kSubscript,
         kAttribute,
         kLabelAttribute,
         kColumn,
-
+        // Logical
         kLogicalAnd,
         kLogicalOr,
         kLogicalXor,
@@ -59,7 +60,7 @@ public:
         kTypeCasting,
 
         kFunctionCall,
-
+        // Vertex/Edge/Path
         kTagProperty,
         kEdgeProperty,
         kInputProperty,
@@ -77,7 +78,7 @@ public:
 
         kVar,
         kVersionedVar,
-
+        // Container
         kList,
         kSet,
         kMap,
@@ -136,6 +137,14 @@ public:
     static std::string encode(const Expression& exp);
 
     static std::unique_ptr<Expression> decode(folly::StringPiece encoded);
+
+    virtual bool isLogicalExpr() const {
+        return false;
+    }
+
+    virtual bool isRelExpr() const {
+        return false;
+    }
 
 protected:
     class Encoder final {
