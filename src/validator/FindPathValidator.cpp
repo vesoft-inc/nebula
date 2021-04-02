@@ -56,18 +56,14 @@ Status FindPathValidator::singlePairPlan() {
     auto* bodyStart = StartNode::make(qctx_);
     auto* passThrough = PassThroughNode::make(qctx_, bodyStart);
 
-    std::string fromPathVar;
-    auto* forward = bfs(passThrough, from_, fromPathVar, false);
-    VLOG(1) << "forward: " << fromPathVar;
+    auto* forward = bfs(passThrough, from_, false);
+    VLOG(1) << "forward: " << forward->outputVar();
 
-    std::string toPathVar;
-    auto* backward = bfs(passThrough, to_, toPathVar, true);
-    VLOG(1) << "backward: " << toPathVar;
+    auto* backward = bfs(passThrough, to_, true);
+    VLOG(1) << "backward: " << backward->outputVar();
 
     auto* conjunct =
         ConjunctPath::make(qctx_, forward, backward, ConjunctPath::PathKind::kBiBFS, steps_.steps);
-    conjunct->setLeftVar(fromPathVar);
-    conjunct->setRightVar(toPathVar);
     conjunct->setColNames({"_path"});
 
     auto* loop = Loop::make(
@@ -82,45 +78,28 @@ Status FindPathValidator::singlePairPlan() {
     return Status::OK();
 }
 
-PlanNode* FindPathValidator::bfs(PlanNode* dep,
-                                 Starts& starts,
-                                 std::string& pathVar,
-                                 bool reverse) {
+PlanNode* FindPathValidator::bfs(PlanNode* dep, Starts& starts, bool reverse) {
     std::string startVidsVar;
     buildConstantInput(starts, startVidsVar);
-
     auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
     gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
+    gn->setDedup();
     gn->setInputVar(startVidsVar);
 
     auto* bfs = BFSShortestPath::make(qctx_, gn);
-    bfs->setColNames({"_vid", "edge"});
-    pathVar = bfs->outputVar();
-
-    auto* columns = qctx_->objPool()->add(new YieldColumns());
-    auto* column =
-        new YieldColumn(new VariablePropertyExpression(new std::string("*"), new std::string(kVid)),
-                        new std::string(kVid));
-    columns->addColumn(column);
-    auto* project = Project::make(qctx_, bfs, columns);
-    project->setColNames(deduceColNames(columns));
-
-    auto* dedup = Dedup::make(qctx_, project);
-    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
-    startVidsVarPtr->colNames = project->colNames();
-    dedup->setOutputVar(startVidsVar);
-
+    bfs->setOutputVar(startVidsVar);
+    bfs->setColNames({nebula::kVid, "edge"});
 
     DataSet ds;
-    ds.colNames = {"_vid", "edge"};
+    ds.colNames = {nebula::kVid, "edge"};
     Row row;
     row.values.emplace_back(starts.vids.front());
     row.values.emplace_back(Value::kEmpty);
     ds.rows.emplace_back(std::move(row));
-    qctx_->ectx()->setResult(pathVar, ResultBuilder().value(Value(std::move(ds))).finish());
+    qctx_->ectx()->setResult(startVidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
 
-    return dedup;
+    return bfs;
 }
 
 Expression* FindPathValidator::buildBfsLoopCondition(uint32_t steps, const std::string& pathVar) {
@@ -186,9 +165,7 @@ GetNeighbors::EdgeProps FindPathValidator::buildEdgeKey(bool reverse) {
     return edgeProps;
 }
 
-PlanNode* FindPathValidator::buildAllPairFirstDataSet(PlanNode* dep,
-                                                      const std::string& inputVar,
-                                                      const std::string& outputVar) {
+PlanNode* FindPathValidator::buildAllPairFirstDataSet(PlanNode* dep, const std::string& inputVar) {
     auto* vid =
         new YieldColumn(new VariablePropertyExpression(new std::string("*"), new std::string(kVid)),
                         new std::string(kVid));
@@ -206,9 +183,9 @@ PlanNode* FindPathValidator::buildAllPairFirstDataSet(PlanNode* dep,
 
     auto* project = Project::make(qctx_, dep, columns);
     project->setInputVar(inputVar);
-    auto* outputVarPtr = qctx_->symTable()->getVar(outputVar);
-    outputVarPtr->colNames = {kVid, "path"};
-    project->setOutputVar(outputVar);
+    auto* outputVarPtr = qctx_->symTable()->getVar(inputVar);
+    outputVarPtr->colNames = {nebula::kVid, "path"};
+    project->setOutputVar(inputVar);
     return project;
 }
 
@@ -218,28 +195,25 @@ Status FindPathValidator::allPairPaths() {
 
     std::string fromStartVidsVar;
     buildStart(from_, fromStartVidsVar, false);
-    std::string fromPathVar;
-    auto* forward = allPaths(passThrough, from_, fromStartVidsVar, fromPathVar, false);
-    VLOG(1) << "forward: " << fromPathVar;
+
+    auto* forward = allPaths(passThrough, from_, fromStartVidsVar, false);
+    VLOG(1) << "forward: " << forward->outputVar();
 
     std::string toStartVidsVar;
     buildStart(to_, toStartVidsVar, true);
-    std::string toPathVar;
-    auto* backward = allPaths(passThrough, to_, toStartVidsVar, toPathVar, true);
-    VLOG(1) << "backward: " << toPathVar;
+    auto* backward = allPaths(passThrough, to_, toStartVidsVar, true);
+    VLOG(1) << "backward: " << backward->outputVar();
 
     auto* conjunct = ConjunctPath::make(
         qctx_, forward, backward, ConjunctPath::PathKind::kAllPaths, steps_.steps);
-    conjunct->setLeftVar(fromPathVar);
-    conjunct->setRightVar(toPathVar);
     conjunct->setColNames({"_path"});
     conjunct->setNoLoop(noLoop_);
 
     PlanNode* projectFromDep = nullptr;
     linkLoopDepFromTo(projectFromDep);
 
-    auto* projectFrom = buildAllPairFirstDataSet(projectFromDep, fromStartVidsVar, fromPathVar);
-    auto* projectTo = buildAllPairFirstDataSet(projectFrom, toStartVidsVar, toPathVar);
+    auto* projectFrom = buildAllPairFirstDataSet(projectFromDep, fromStartVidsVar);
+    auto* projectTo = buildAllPairFirstDataSet(projectFrom, toStartVidsVar);
 
     auto* loop =
         Loop::make(qctx_, projectTo, conjunct, buildAllPathsLoopCondition(steps_.steps));
@@ -256,31 +230,17 @@ Status FindPathValidator::allPairPaths() {
 PlanNode* FindPathValidator::allPaths(PlanNode* dep,
                                       Starts& starts,
                                       std::string& startVidsVar,
-                                      std::string& pathVar,
                                       bool reverse) {
     auto* gn = GetNeighbors::make(qctx_, dep, space_.id);
     gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
     gn->setInputVar(startVidsVar);
+    gn->setDedup();
 
     auto* allPaths = ProduceAllPaths::make(qctx_, gn);
-    allPaths->setColNames({kVid, "path"});
-    pathVar = allPaths->outputVar();
-
-    auto* columns = qctx_->objPool()->add(new YieldColumns());
-    auto* column =
-        new YieldColumn(new VariablePropertyExpression(new std::string("*"), new std::string(kVid)),
-                        new std::string(kVid));
-    columns->addColumn(column);
-    auto* project = Project::make(qctx_, allPaths, columns);
-    project->setColNames(deduceColNames(columns));
-
-    auto* dedup = Dedup::make(qctx_, project);
-    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
-    startVidsVarPtr->colNames = project->colNames();
-    dedup->setOutputVar(startVidsVar);
-
-    return dedup;
+    allPaths->setOutputVar(startVidsVar);
+    allPaths->setColNames({nebula::kVid, "path"});
+    return allPaths;
 }
 
 Expression* FindPathValidator::buildAllPathsLoopCondition(uint32_t steps) {
@@ -419,9 +379,10 @@ PlanNode* FindPathValidator::multiPairShortestPath(PlanNode* dep,
     gn->setSrc(starts.src);
     gn->setEdgeProps(buildEdgeKey(reverse));
     gn->setInputVar(startVidsVar);
+    gn->setDedup();
 
     auto* pssp = ProduceSemiShortestPath::make(qctx_, gn);
-    pssp->setColNames({kDst, kSrc, "cost", "paths"});
+    pssp->setColNames({nebula::kDst, nebula::kSrc, "cost", "paths"});
     pathVar = pssp->outputVar();
 
     auto* columns = qctx_->objPool()->add(new YieldColumns());
@@ -430,14 +391,10 @@ PlanNode* FindPathValidator::multiPairShortestPath(PlanNode* dep,
                         new std::string(kVid));
     columns->addColumn(column);
     auto* project = Project::make(qctx_, pssp, columns);
+    project->setOutputVar(startVidsVar);
     project->setColNames(deduceColNames(columns));
 
-    auto* dedup = Dedup::make(qctx_, project);
-    auto* startVidsVarPtr = qctx_->symTable()->getVar(startVidsVar);
-    startVidsVarPtr->colNames = project->colNames();
-    dedup->setOutputVar(startVidsVar);
-
-    return dedup;
+    return project;
 }
 
 Expression* FindPathValidator::buildMultiPairLoopCondition(uint32_t steps,

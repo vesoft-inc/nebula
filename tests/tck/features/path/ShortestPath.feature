@@ -1,4 +1,4 @@
-# Copyright (c) 2020 vesoft inc. All rights reserved.
+# Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -52,6 +52,21 @@ Feature: Shortest Path
       | path                                                                            |
       | <("Tiago Splitter")-[:like]->("Tim Duncan")-[:teammate]->("LaMarcus Aldridge")> |
 
+  Scenario: [6] SinglePair Shortest Path limit steps
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tiago Splitter" TO "Tony Parker" OVER * UPTO 1 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tiago Splitter" TO "Tim Duncan" OVER * UPTO 1 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                         |
+      | <("Tiago Splitter")-[:like]->("Tim Duncan")> |
+
   Scenario: [1] MultiPair Shortest Path
     When executing query:
       """
@@ -104,6 +119,15 @@ Feature: Shortest Path
       | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                       |
       | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                   |
       | <("Tony Parker")-[:serve]->("Spurs")>                                                              |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Yao Ming" TO "Tim Duncan", "Spurs", "Lakers" OVER * UPTO 2 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                |
+      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")> |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>       |
+      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>    |
 
   Scenario: [5] MultiPair Shortest Path
     When executing query:
@@ -390,11 +414,13 @@ Feature: Shortest Path
       FIND SHORTEST PATH FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT UPTO 2 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                             |
-      | <("Tony Parker")-[:serve]->("Spurs")>            |
-      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")> |
-      | <("Tony Parker")-[:like]->("Manu Ginobili")>     |
-      | <("Tony Parker")-[:teammate]->("Manu Ginobili")> |
+      | path                                                             |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>    |
+      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")> |
+      | <("Tony Parker")-[:serve]->("Spurs")>                            |
+      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                 |
+      | <("Tony Parker")-[:like]->("Manu Ginobili")>                     |
+      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                 |
 
   Scenario: [3] Shortest Path BIDIRECT
     When executing query:

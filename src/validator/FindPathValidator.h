@@ -28,20 +28,14 @@ private:
     void linkLoopDepFromTo(PlanNode*& projectDep);
     // bfs
     Status singlePairPlan();
-    PlanNode* bfs(PlanNode* dep, Starts& starts, std::string& pathVar, bool reverse);
+    PlanNode* bfs(PlanNode* dep, Starts& starts, bool reverse);
     Expression* buildBfsLoopCondition(uint32_t steps, const std::string& pathVar);
 
     // allPath
     Status allPairPaths();
-    PlanNode* allPaths(PlanNode* dep,
-                       Starts& starts,
-                       std::string& startVidsVar,
-                       std::string& pathVar,
-                       bool reverse);
+    PlanNode* allPaths(PlanNode* dep, Starts& starts, std::string& startVidsVar, bool reverse);
     Expression* buildAllPathsLoopCondition(uint32_t steps);
-    PlanNode* buildAllPairFirstDataSet(PlanNode* dep,
-                                       const std::string& inputVar,
-                                       const std::string& outputVar);
+    PlanNode* buildAllPairFirstDataSet(PlanNode* dep, const std::string& inputVar);
 
     // multi-pair
     Status multiPairPlan();

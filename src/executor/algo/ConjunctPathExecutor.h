@@ -33,11 +33,11 @@ private:
 
     std::vector<Row> findBfsShortestPath(Iterator* iter,
                                          bool isLatest,
-                                         std::multimap<Value, const Edge*>& table);
+                                         std::unordered_multimap<Value, const Edge*>& table);
 
-    std::multimap<Value, Path> buildBfsInterimPath(
+    std::unordered_multimap<Value, Path> buildBfsInterimPath(
         std::unordered_set<Value>& meets,
-        std::vector<std::multimap<Value, const Edge*>>& hist);
+        std::vector<std::unordered_multimap<Value, const Edge*>>& hist);
 
     folly::Future<Status> floydShortestPath();
 
@@ -54,8 +54,8 @@ private:
     void delPathFromConditionalVar(const Value& start, const Value& end);
 
 private:
-    std::vector<std::multimap<Value, const Edge*>> forward_;
-    std::vector<std::multimap<Value, const Edge*>> backward_;
+    std::vector<std::unordered_multimap<Value, const Edge*>> forward_;
+    std::vector<std::unordered_multimap<Value, const Edge*>> backward_;
     size_t count_{0};
     // startVid : {endVid, cost}
     std::unordered_map<Value, std::unordered_map<Value, Value>> historyCostMap_;

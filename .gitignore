@@ -58,3 +58,6 @@ workspace.*
 *.py[co]
 __pycache__
 venv/
+
+#lock
+*.lock
