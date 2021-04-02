@@ -16,17 +16,35 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                                   PartitionID partId,
                                                   raftex::SnapshotCallback cb) {
     CHECK_NOTNULL(store_);
-    std::unique_ptr<KVIterator> iter;
-    auto prefix = NebulaKeyUtils::snapshotPrefix(partId);
+    auto tables = NebulaKeyUtils::snapshotPrefix(partId);
     std::vector<std::string> data;
     int64_t totalSize = 0;
     int64_t totalCount = 0;
+
+    for (const auto& prefix : tables) {
+        if (!accessTable(spaceId, partId, prefix, cb, data, totalCount, totalSize)) {
+            return;
+        }
+    }
+    cb(data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
+}
+
+// Promise is set in callback. Access part of the data, and try to send to peers. If send failed,
+// will return false.
+bool SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
+                                      PartitionID partId,
+                                      const std::string& prefix,
+                                      raftex::SnapshotCallback& cb,
+                                      std::vector<std::string>& data,
+                                      int64_t& totalCount,
+                                      int64_t& totalSize) {
+    std::unique_ptr<KVIterator> iter;
     auto ret = store_->prefix(spaceId, partId, prefix, &iter);
     if (ret != ResultCode::SUCCEEDED) {
         LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
                   << ", error code:" << static_cast<int32_t>(ret);
         cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
-        return;
+        return false;
     }
     data.reserve(kReserveNum);
     int32_t batchSize = 0;
@@ -37,8 +55,8 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                 batchSize = 0;
             } else {
                 LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId
-                          << "] callback invoked failed";
-                return;
+                          << "] send snapshot failed";
+                return false;
             }
         }
         auto key = iter->key();
@@ -49,7 +67,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
         totalCount++;
         iter->next();
     }
-    cb(data, totalCount, totalSize, raftex::SnapshotStatus::DONE);
+    return true;
 }
 }  // namespace kvstore
 }  // namespace nebula
