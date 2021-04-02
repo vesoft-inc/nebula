@@ -7,12 +7,12 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7
 
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-console.rpm /usr/local/nebula/nebula-console.rpm
+COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
 
 WORKDIR /usr/local/nebula
 
 RUN rpm -ivh *.rpm \
-  && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
 
-ENTRYPOINT ["./bin/nebula", "-u", "user", "-p", "password"]
+# default entrypoint
+ENTRYPOINT ["./bin/db_dump"]

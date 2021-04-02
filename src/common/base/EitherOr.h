@@ -109,10 +109,10 @@ private:
     };
 
     template<class... Args>
-    static constexpr auto convert_to_t = TypeConverter<Args...>::type;
+    static constexpr decltype(TypeConverter<Args...>::type) convert_to_t{};
 
     template<class... Args>
-    static constexpr auto convert_to_s = TypeConverter<Args...>::state;
+    static constexpr State convert_to_s = TypeConverter<Args...>::state;
 
 public:
     virtual ~EitherOr() {

@@ -57,7 +57,7 @@ bu_object_dir=$root_dir/binutils-build
 prefix=$1
 install_dir=${prefix:-$root_dir/install}/vesoft/toolset/gcc/$gcc_version
 logfile=$root_dir/gcc-build.log
-triplet=x86_64-vesoft-linux
+triplet=$(uname -m)-vesoft-linux
 distro=$(lsb_release -si)
 
 # Guess number of building jobs
@@ -286,7 +286,7 @@ function make_package {
     set +e
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
     set -e
-    exec_file=$root_dir/vesoft-gcc-$gcc_version-$distro-x86_64-glibc-$glibc_version.sh
+    exec_file=$root_dir/vesoft-gcc-$gcc_version-$distro-$(uname -m)-glibc-$glibc_version.sh
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash

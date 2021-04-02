@@ -671,7 +671,7 @@ void ShowExecutor::showCreateTag() {
         }
         buf += ", ttl_col = ";
         if (prop.get_ttl_col() && !(prop.get_ttl_col()->empty())) {
-            buf += *prop.get_ttl_col();
+            buf += "\"" + *prop.get_ttl_col() + "\"";
         } else {
             buf += "\"\"";
         }
@@ -774,7 +774,7 @@ void ShowExecutor::showCreateEdge() {
         }
         buf += ", ttl_col = ";
         if (prop.get_ttl_col() && !(prop.get_ttl_col()->empty())) {
-            buf += *prop.get_ttl_col();
+            buf += "\"" + *prop.get_ttl_col() + "\"";
         } else {
             buf += "\"\"";
         }

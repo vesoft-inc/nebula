@@ -10,6 +10,7 @@
 #include "meta/test/TestUtils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace graph {
@@ -17,6 +18,7 @@ namespace graph {
 class DataTest : public TestBase {
 protected:
     void SetUp() override {
+        FLAGS_max_edge_returned_per_vertex = 4;
         TestBase::SetUp();
         // ...
     }
@@ -989,6 +991,34 @@ TEST_F(DataTest, MatchTest) {
     }
 }
 
+// fix get dst with pushdown filter and max_edge_returned_per_vertex
+TEST_F(DataTest, DstWithFilterAndMax) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness, nickname) VALUES "
+                          "111->111:(81, \"222\"),"
+                          "111->222:(81, \"222\"),"
+                          "111->333:(81, \"333\"),"
+                          "111->444:(81, \"444\"),"
+                          "111->555:(81, \"555\"),"
+                          "111->666:(81, \"666\"),"
+                          "111->777:(81, \"777\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "GO FROM 111 OVER schoolmate "
+                                 "WHERE schoolmate._dst == 222 "
+                                 "YIELD schoolmate._dst";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            222
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 
 static inline void execute(GraphClient* client, const std::string& nGQL) {
     cpp2::ExecutionResponse resp;
@@ -1021,6 +1051,7 @@ private:
             "USE empty",
             "CREATE TAG empty_tag_0()",
             "CREATE TAG empty_tag_1()",
+            "CREATE TAG has_prop_tag(name string, age int)",
             "CREATE EDGE empty_edge()"
         };
 
@@ -1034,7 +1065,8 @@ private:
     void prepareData() {
         const std::vector<std::string> queries = {
             "INSERT VERTEX empty_tag_0() values 1:(), 2:()",
-            "INSERT VERTEX empty_tag_1() values 1:(), 2:()",
+            "INSERT VERTEX empty_tag_1() values 1:(), 3:()",
+            "INSERT VERTEX has_prop_tag(name, age) values 2:(\"aa\", 10), 5:(\"bb\", 12)",
             "INSERT EDGE empty_edge() values 1->2:()",
         };
 
@@ -1069,6 +1101,49 @@ TEST_F(FetchEmptyPropsTest, EmptyProps) {
     }
     {
         cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON * 2";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {2, "aa", 10}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON * 3";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {3}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON * 5";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {5, "bb", 12}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string stmt = "FETCH PROP ON * 1,2,3,5";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {1, "", 0},
+                {2, "aa", 10},
+                {3, "", 0},
+                {5, "bb", 12}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         const std::string stmt = "FETCH PROP ON empty_edge 1->2";
         auto code = client_->execute(stmt, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -1086,8 +1161,8 @@ TEST_F(FetchEmptyPropsTest, WithInput) {
                                  " | FETCH PROP ON empty_tag_0 $-.id";
         auto code = client_->execute(stmt, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t>> expected = {
-            {2}
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {2, "aa", 10}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

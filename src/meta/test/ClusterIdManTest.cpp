@@ -29,7 +29,8 @@ TEST(ClusterIDManTest, KVTest) {
     auto clusterId = ClusterIdMan::create("127.0.0.1:44500");
     CHECK_NE(0, clusterId);
     CHECK(ClusterIdMan::persistInKV(kv.get(), "clusterId", clusterId));
-    auto ret = ClusterIdMan::getClusterIdFromKV(kv.get(), "clusterId");
+    auto ret = ClusterIdMan::getClusterIdFromKV(dynamic_cast<kvstore::NebulaStore*>(kv.get()),
+                                                "clusterId");
     CHECK_EQ(clusterId, ret);
 }
 

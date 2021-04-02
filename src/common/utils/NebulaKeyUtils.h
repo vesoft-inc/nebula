@@ -84,6 +84,8 @@ public:
 
     static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
+    static std::string indexPrefix(PartitionID partId);
+
     /**
      * Prefix for
      * */
@@ -111,7 +113,7 @@ public:
 
     static std::string prefix(PartitionID partId);
 
-    static std::string snapshotPrefix(PartitionID partId);
+    static std::vector<std::string> snapshotPrefix(PartitionID partId);
 
     static PartitionID getPart(const folly::StringPiece& rawKey) {
         return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
@@ -520,15 +522,15 @@ private:
     // See KeyType enum
     static constexpr uint32_t kTypeMask     = 0x000000FF;
 
-    // The Tag/Edge type bit Mask
+    // The most significant bit is sign bit, tag is always 0
+    // The second most significant bit is tag/edge type bit Mask
     // 0 for Tag, 1 for Edge
-    // 0x40 - 0b0100,0000
     static constexpr uint32_t kTagEdgeMask      = 0x40000000;
     // For extract Tag/Edge value
     static constexpr uint32_t kTagEdgeValueMask = ~kTagEdgeMask;
-    // Write edge by &=
+    // Write edge by |= 0x40000000
     static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
-    // Write Tag by |=
+    // Write Tag by &= 0xbfffffff
     static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
 };
 

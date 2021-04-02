@@ -964,7 +964,7 @@ TEST_F(LookupTest, OptimizerWithStringFieldTest) {
         executor->filters_.emplace_back("c1", RelationalExpression::Operator::EQ);
         ASSERT_TRUE(executor->findOptimalIndex().ok());
         LOG(INFO) << "index is : " << executor->index_;
-        ASSERT_TRUE(expected["i1_str"] == executor->index_ );
+        ASSERT_TRUE(expected["i1_str"] == executor->index_);
         executor->filters_.clear();
     }
     {
@@ -1121,6 +1121,256 @@ TEST_F(LookupTest, StringFieldTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<VertexID>> expected = {{6}};
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(LookupTest, ConditionTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "create tag identity (BIRTHDAY int, NATION string, BIRTHPLACE_CITY string)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE TAG INDEX idx_identity_cname_birth_gender_nation_city "
+                    "ON identity(BIRTHDAY, NATION, BIRTHPLACE_CITY)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "INSERT VERTEX identity "
+                    "(BIRTHDAY, NATION, BIRTHPLACE_CITY)"
+                    "VALUES 1 : (19860413, \"汉族\", \"aaa\")";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "lookup on identity where "
+                     "identity.NATION == \"汉族\" && "
+                     "identity.BIRTHDAY > 19620101 && "
+                     "identity.BIRTHDAY < 20021231 && "
+                     "identity.BIRTHPLACE_CITY == \"bbb\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(!resp.__isset.rows || resp.get_rows()->size() == 0);
+    }
+}
+
+TEST_F(LookupTest, EdgeYieldVertexId) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE lookup_edge_1(col1, col2, col3) VALUES "
+                     "200 -> 201@0:(201, 201, 201), "
+                     "200 -> 202@0:(202, 202, 202)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 "
+                     "YIELD lookup_edge_1._src";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID>> expected = {
+            {200, 201, 0, 200}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 "
+                     "YIELD lookup_edge_1._dst";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID>> expected = {
+            {200, 201, 0, 201}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._dst"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 >= 201 "
+                     "YIELD lookup_edge_1._src, lookup_edge_1._dst";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID, VertexID>> expected = {
+            {200, 201, 0, 200, 201},
+            {200, 202, 0, 200, 202}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src", "lookup_edge_1._dst"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+}
+
+TEST_F(LookupTest, EdgeDistinctTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE lookup_edge_1(col1, col2, col3) VALUES "
+                     "200 -> 201@0:(111, 201, 201), "
+                     "200 -> 202@0:(111, 202, 202)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 111 "
+                     "YIELD lookup_edge_1._src";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID>> expected = {
+            {200, 201, 0, 200},
+            {200, 202, 0, 200}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 111 "
+                     "YIELD DISTINCT lookup_edge_1._src";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID>> expected = {
+            {200, 201, 0, 200}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 111 "
+                     "YIELD lookup_edge_1._src, lookup_edge_1.col1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID, int64_t>> expected = {
+            {200, 201, 0, 200, 111},
+            {200, 202, 0, 200, 111}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src", "lookup_edge_1.col1"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 111 "
+                     "YIELD DISTINCT lookup_edge_1._src, lookup_edge_1.col1";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, VertexID, EdgeRanking, VertexID, int64_t>> expected = {
+            {200, 201, 0, 200, 111}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"SrcVID", "DstVID", "Ranking", "lookup_edge_1._src", "lookup_edge_1.col1"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+}
+
+TEST_F(LookupTest, VertexDistinctTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX lookup_tag_1(col1, col2, col3) VALUES "
+                     "200:(200, 222, 333), "
+                     "201:(201, 222, 333), "
+                     "202:(202, 202, 202)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 >= 200 "
+                     "YIELD lookup_tag_1.col2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t>> expected = {
+            {200, 222},
+            {201, 222},
+            {202, 202}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"VertexID"},
+            {"lookup_tag_1.col2"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 >= 200 "
+                     "YIELD DISTINCT lookup_tag_1.col2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t>> expected = {
+            {201, 222},
+            {202, 202}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"VertexID"},
+            {"lookup_tag_1.col2"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 >= 200 "
+                     "YIELD lookup_tag_1.col2, lookup_tag_1.col3";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t, int64_t>> expected = {
+            {200, 222, 333},
+            {201, 222, 333},
+            {202, 202, 202}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"VertexID"},
+            {"lookup_tag_1.col2"},
+            {"lookup_tag_1.col3"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 >= 200 "
+                     "YIELD DISTINCT lookup_tag_1.col2, lookup_tag_1.col3";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<VertexID, int64_t, int64_t>> expected = {
+            {201, 222, 333},
+            {202, 202, 202}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+        std::vector<std::string> cols = {
+            {"VertexID"},
+            {"lookup_tag_1.col2"},
+            {"lookup_tag_1.col3"}
+        };
+        ASSERT_EQ(cols, *resp.get_column_names());
     }
 }
 }   // namespace graph

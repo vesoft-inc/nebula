@@ -45,6 +45,8 @@ private:
 
     Status prepareYield();
 
+    Status prepareDistinct();
+
     Status checkAliasProperty(const AliasPropertyExpression* aExpr);
 
     Status optimize();
@@ -97,6 +99,7 @@ private:
     const std::string                              *from_{nullptr};
     std::vector<YieldColumn*>                      yields_;
     std::unique_ptr<YieldClauseWrapper>            yieldClauseWrapper_;
+    bool                                           distinct_{false};
     std::unique_ptr<ExpressionContext>             expCtx_;
     int32_t                                        tagOrEdge_;
     bool                                           isEdge_{false};

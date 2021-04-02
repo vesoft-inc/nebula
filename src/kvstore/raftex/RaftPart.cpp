@@ -631,7 +631,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     }
 
     if (!checkAppendLogResult(res)) {
-        // Mosy likely failed because the parttion is not leader
+        // Most likely failed because the partition is not leader
         LOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
@@ -1290,7 +1290,7 @@ void RaftPart::processAskForVoteRequest(
         const cpp2::AskForVoteRequest& req,
         cpp2::AskForVoteResponse& resp) {
     LOG(INFO) << idStr_
-              << "Recieved a VOTING request"
+              << "Received a VOTING request"
               << ": space = " << req.get_space()
               << ", partition = " << req.get_part()
               << ", candidateAddr = "
@@ -1365,20 +1365,24 @@ void RaftPart::processAskForVoteRequest(
             LOG(INFO) << idStr_
                       << "The partition's last log id is " << lastLogId_
                       << ". The candidate's last log id " << req.get_last_log_id()
-                      << " is smaller, so it will be rejected";
+                      << " is smaller, so it will be rejected, candidate is "
+                      << candidate;
             resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
             return;
         }
     }
 
     // If we have voted for somebody, we will reject other candidates under the proposedTerm.
-    if (votedAddr_ != std::make_pair(0, 0) && proposedTerm_ >= req.get_term()) {
-        LOG(INFO) << idStr_
-                  << "We have voted " << votedAddr_ << " on term " << proposedTerm_
-                  << ", so we should reject the candidate " << candidate
-                  << " request on term " << req.get_term();
-        resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
-        return;
+    if (votedAddr_ != std::make_pair(0, 0)) {
+        if (proposedTerm_ > req.get_term()
+                || (proposedTerm_ == req.get_term() && votedAddr_ != candidate)) {
+            LOG(INFO) << idStr_
+                << "We have voted " << votedAddr_ << " on term " << proposedTerm_
+                << ", so we should reject the candidate " << candidate
+                << " request on term " << req.get_term();
+            resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+            return;
+        }
     }
 
     auto hosts = followers();
@@ -1391,9 +1395,15 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
     // Ok, no reason to refuse, we will vote for the candidate
-    LOG(INFO) << idStr_ << "The partition will vote for the candidate";
+    LOG(INFO) << idStr_ << "The partition will vote for the candidate " << candidate;
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
+    // Before change role from leader to follower, check the logs locally.
+    if (role_ == Role::LEADER && wal_->lastLogId() > lastLogId_) {
+        LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+                  << " i did not commit when i was leader, rollback to " << lastLogId_;
+        wal_->rollbackToLog(lastLogId_);
+    }
     role_ = Role::FOLLOWER;
     votedAddr_ = candidate;
     proposedTerm_ = req.get_term();
@@ -1563,6 +1573,15 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
+        // TODO(doodle): This is a potential bug which would cause data not in consensus. In most
+        // case, we would hit this path when leader append logs to follower and timeout (leader
+        // would set lastLogIdSent_ = logIdToSend_ - 1 in Host). **But follower actually received
+        // it successfully**. Which will explain when leader retry to append these logs, the LOG
+        // belows is printed, and lastLogId_ == req.get_last_log_id_sent() + 1 in the LOG.
+        //
+        // In fact we should always rollback to req.get_last_log_id_sent(), and append the logs from
+        // leader (we can't make promise that the logs in range [req.get_last_log_id_sent() + 1,
+        // lastLogId_] is same with follower). However, this makes no difference in the above case.
         LOG(INFO) << idStr_ << "Stale log! Local lastLogId " << lastLogId_
                   << ", lastLogTerm " << lastLogTerm_
                   << ", lastLogIdSent " << req.get_last_log_id_sent()
