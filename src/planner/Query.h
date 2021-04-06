@@ -549,9 +549,15 @@ public:
         return condition_;
     }
 
+    void setCondition(Expression* condition) {
+        condition_ = condition;
+    }
+
     bool needStableFilter() const {
         return needStableFilter_;
     }
+
+    Filter* clone(QueryContext* qctx) const;
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -561,6 +567,8 @@ private:
         condition_ = condition;
         needStableFilter_ = needStableFilter;
     }
+
+    void clone(const Filter& f);
 
 private:
     // Remain result when true
@@ -837,6 +845,8 @@ public:
         return groupItems_;
     }
 
+    Aggregate* clone(QueryContext* qctx) const;
+
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
@@ -848,6 +858,8 @@ private:
         groupKeys_ = std::move(groupKeys);
         groupItems_ = std::move(groupItems);
     }
+
+    void clone(const Aggregate&);
 
 private:
     std::vector<Expression*>    groupKeys_;

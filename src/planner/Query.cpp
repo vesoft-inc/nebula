@@ -150,6 +150,17 @@ std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
     return desc;
 }
 
+Filter* Filter::clone(QueryContext* qctx) const {
+    auto newFilter = Filter::make(qctx, nullptr, nullptr, needStableFilter_);
+    newFilter->clone(*this);
+    return newFilter;
+}
+
+void Filter::clone(const Filter& f) {
+    SingleInputNode::clone(f);
+    condition_ = qctx_->objPool()->add(f.condition()->clone().release());
+}
+
 std::unique_ptr<PlanNodeDescription> Filter::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
@@ -220,6 +231,25 @@ std::unique_ptr<PlanNodeDescription> TopN::explain() const {
     addDescription("offset", folly::to<std::string>(offset_), desc.get());
     addDescription("count", folly::to<std::string>(count_), desc.get());
     return desc;
+}
+
+Aggregate* Aggregate::clone(QueryContext* qctx) const {
+    std::vector<Expression*> newGroupKeys;
+    std::vector<Expression*> newGroupItems;
+    auto newAggregate =
+        Aggregate::make(qctx, nullptr, std::move(newGroupKeys), std::move(newGroupItems));
+    newAggregate->clone(*this);
+    return newAggregate;
+}
+
+void Aggregate::clone(const Aggregate& agg) {
+    SingleInputNode::clone(agg);
+    for (auto* expr : agg.groupKeys()) {
+        groupKeys_.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+    }
+    for (auto* expr : agg.groupItems()) {
+        groupItems_.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+    }
 }
 
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
