@@ -367,7 +367,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %left KW_OR KW_XOR
 %left KW_AND
 %right KW_NOT
-%left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL
+%left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT
@@ -585,6 +585,12 @@ expression
     }
     | expression KW_IS_NOT_NULL {
         $$ = new UnaryExpression(Expression::Kind::kIsNotNull, $1);
+    }
+    | expression KW_IS_EMPTY {
+        $$ = new UnaryExpression(Expression::Kind::kIsEmpty, $1);
+    }
+    | expression KW_IS_NOT_EMPTY {
+        $$ = new UnaryExpression(Expression::Kind::kIsNotEmpty, $1);
     }
     | expression EQ expression {
         $$ = new RelationalExpression(Expression::Kind::kRelEQ, $1, $3);

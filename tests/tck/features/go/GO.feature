@@ -308,6 +308,29 @@ Feature: Go Sentence
       | "Marc Gasol"  | EMPTY       | EMPTY         |
     When executing query:
       """
+      GO FROM "Paul Gasol" OVER *
+      WHERE $$.player.name IS NOT EMPTY
+      YIELD like._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst     |
+      | "Kobe Bryant" |
+      | "Marc Gasol"  |
+    When executing query:
+      """
+      GO FROM "Paul Gasol" OVER *
+      WHERE $$.player.name IS EMPTY
+      YIELD like._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | EMPTY     |
+      | EMPTY     |
+      | EMPTY     |
+      | EMPTY     |
+      | EMPTY     |
+    When executing query:
+      """
       GO FROM "Manu Ginobili" OVER * REVERSELY YIELD like.likeness, teammate.start_year, serve.start_year, $$.player.name
       """
     Then the result should be, in any order, with relax comparison:

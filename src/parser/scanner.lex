@@ -32,6 +32,8 @@ ENDS_WITH                   (ENDS{blanks}WITH)
 NOT_ENDS_WITH               (NOT{blanks}ENDS{blanks}WITH)
 IS_NULL                     (IS{blanks}NULL)
 IS_NOT_NULL                 (IS{blanks}NOT{blanks}NULL)
+IS_EMPTY                    (IS{blanks}EMPTY)
+IS_NOT_EMPTY                (IS{blanks}NOT{blanks}EMPTY)
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -213,6 +215,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {NOT_ENDS_WITH}             { return TokenType::KW_NOT_ENDS_WITH;}
 {IS_NULL}                   { return TokenType::KW_IS_NULL;}
 {IS_NOT_NULL}               { return TokenType::KW_IS_NOT_NULL;}
+{IS_EMPTY}                  { return TokenType::KW_IS_EMPTY;}
+{IS_NOT_EMPTY}              { return TokenType::KW_IS_NOT_EMPTY;}
 "UNWIND"                    { return TokenType::KW_UNWIND;}
 "SKIP"                      { return TokenType::KW_SKIP;}
 "OPTIONAL"                  { return TokenType::KW_OPTIONAL;}
