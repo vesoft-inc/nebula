@@ -81,7 +81,7 @@ struct HttpClient {
     std::string toString() const {
         std::stringstream os;
         if (!user.empty()) {
-            os << "-u " << user;
+            os << " -u " << user;
             if (!password.empty()) {
                 os << ":" << password;
             }
