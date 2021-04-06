@@ -9,6 +9,7 @@
 #include "planner/match/MatchSolver.h"
 #include "util/ExpressionUtils.h"
 #include "visitor/RewriteVisitor.h"
+#include "visitor/RewriteUnaryNotExprVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -291,9 +292,13 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
-    whereClauseCtx.filter = ExpressionUtils::foldConstantExpr(filter);
+    // Fold constant expr
+    auto newFilter = ExpressionUtils::foldConstantExpr(filter);
+    // Reduce Unary expr
+    auto pool = whereClauseCtx.qctx->objPool();
+    whereClauseCtx.filter = ExpressionUtils::reduceUnaryNotExpr(newFilter.get(), pool);
 
-    auto typeStatus = deduceExprType(whereClauseCtx.filter.get());
+    auto typeStatus = deduceExprType(whereClauseCtx.filter);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
@@ -304,7 +309,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
         return Status::SemanticError(ss.str());
     }
 
-    NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter.get()}, whereClauseCtx.aliasesUsed));
+    NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter}, whereClauseCtx.aliasesUsed));
 
     return Status::OK();
 }

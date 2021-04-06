@@ -34,7 +34,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
         filter = MatchSolver::makeIndexFilter(*node.labels.back(),
                                               *node.alias,
-                                               matchClauseCtx->where->filter.get(),
+                                               matchClauseCtx->where->filter,
                                                matchClauseCtx->qctx);
     }
     if (filter == nullptr) {

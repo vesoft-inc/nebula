@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -7,6 +7,7 @@
 #ifndef _UTIL_EXPRESSION_UTILS_H_
 #define _UTIL_EXPRESSION_UTILS_H_
 
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/expression/BinaryExpression.h"
@@ -17,6 +18,7 @@
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "visitor/CollectAllExprsVisitor.h"
+#include "visitor/EvaluableExprVisitor.h"
 #include "visitor/FindAnyExprVisitor.h"
 #include "visitor/RewriteVisitor.h"
 
@@ -73,6 +75,7 @@ public:
         return collectAll(expr, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
     }
 
+    // **Expression type check**
     static bool isConstExpr(const Expression* expr) {
         return !hasAny(expr,
                        {Expression::Kind::kInputProperty,
@@ -106,6 +109,12 @@ public:
         };
 
         return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+    }
+
+    static bool isEvaluableExpr(const Expression* expr) {
+        EvaluableExprVisitor visitor;
+        const_cast<Expression*>(expr)->accept(&visitor);
+        return visitor.ok();
     }
 
     // rewrite LabelAttr to EdgeProp  (just for nGql)
@@ -146,8 +155,24 @@ public:
                                           Expression::Kind::kMod});
     }
 
+    // **Expression Transformation**
     // Clone and fold constant expression
     static std::unique_ptr<Expression> foldConstantExpr(const Expression* expr);
+
+    // Clone and reduce constant expression
+    static Expression* reduceUnaryNotExpr(const Expression* expr, ObjectPool* objPool);
+
+    // Negate the given logical expr: (A && B) -> (!A || !B)
+    static std::unique_ptr<LogicalExpression> reverseLogicalExpr(LogicalExpression* expr);
+
+    // Negate the given relational expr: (A > B) -> (A <= B)
+    static std::unique_ptr<RelationalExpression> reverseRelExpr(RelationalExpression* expr);
+
+    // Return the negation of the given relational kind
+    static Expression::Kind getNegatedRelExprKind(const Expression::Kind kind);
+
+    // Return the negation of the given logical kind
+    static Expression::Kind getNegatedLogicalExprKind(const Expression::Kind kind);
 
     static Expression* pullAnds(Expression* expr);
     static void pullAndsImpl(LogicalExpression* expr,
@@ -179,8 +204,6 @@ public:
     static std::vector<std::unique_ptr<Expression>> expandImplOr(const Expression* expr);
 
     static Status checkAggExpr(const AggregateExpression* aggExpr);
-
-    static bool isEvaluableExpr(const Expression* expr);
 };
 
 }   // namespace graph

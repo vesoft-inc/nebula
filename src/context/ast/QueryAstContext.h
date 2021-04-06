@@ -76,7 +76,7 @@ struct CypherClauseContextBase : AstContext {
 struct WhereClauseContext final : CypherClauseContextBase {
     WhereClauseContext() : CypherClauseContextBase(CypherClauseKind::kWhere) {}
 
-    std::unique_ptr<Expression>                  filter;
+    Expression* filter;
     std::unordered_map<std::string, AliasType>*  aliasesUsed{nullptr};
 };
 
