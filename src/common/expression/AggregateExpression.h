@@ -33,6 +33,8 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
+    void apply(AggData* aggData, const Value& val);
+
     bool operator==(const Expression& rhs) const override;
 
     std::string toString() const override;
@@ -82,8 +84,6 @@ public:
     }
 
 private:
-    void apply(AggData* aggData, const Value& val);
-
     void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 

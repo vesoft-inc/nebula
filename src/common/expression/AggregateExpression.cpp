@@ -53,6 +53,10 @@ const Value& AggregateExpression::eval(ExpressionContext& ctx) {
     return aggData_->result();
 }
 
+void AggregateExpression::apply(AggData* aggData, const Value& val) {
+    AggFunctionManager::get(*name_).value()(aggData, val);
+}
+
 std::string AggregateExpression::toString() const {
     // TODO fix it
     std::string arg;
