@@ -72,11 +72,13 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/nebula-common
           path: modules/common
+          ref: ${{ github.base_ref }}
       - name: Checkout storage
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository_owner }}/nebula-storage
           path: modules/storage
+          ref: ${{ github.base_ref }}
       - name: CMake
         id: cmake
         run: |
