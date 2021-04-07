@@ -331,6 +331,11 @@ public:
 
     std::string toString() const override;
 
+    bool isAllTags() const {
+        const auto& tagNames = tags_->labels();
+        return tagNames.size() == 1 && *tagNames[0] == "*";
+    }
+
 private:
     std::unique_ptr<FetchLabels>    tags_;
     std::unique_ptr<VertexIDList>   vidList_;
