@@ -793,14 +793,14 @@ TEST_F(AggregateTest, Sum) {
         // --------
         DataSet expected;
         expected.colNames = {"sum"};
+        Row rowNull;
+        rowNull.values.emplace_back(0);
+        expected.rows.emplace_back(std::move(rowNull));
         for (auto i = 0; i < 5; ++i) {
             Row row;
             row.values.emplace_back(2 * i);
             expected.rows.emplace_back(std::move(row));
         }
-        Row row;
-        row.values.emplace_back(Value::kNullValue);
-        expected.rows.emplace_back(std::move(row));
 
         // key = col2
         // items = sum(col2)
@@ -832,7 +832,7 @@ TEST_F(AggregateTest, Sum) {
         }
         Row row;
         row.values.emplace_back(Value::kNullValue);
-        row.values.emplace_back(Value::kNullValue);
+        row.values.emplace_back(0);
         expected.rows.emplace_back(std::move(row));
 
         // key = col2, col3
@@ -889,14 +889,14 @@ TEST_F(AggregateTest, Sum) {
         // --------
         DataSet expected;
         expected.colNames = {"sum"};
+        Row rowNull;
+        rowNull.values.emplace_back(0);
+        expected.rows.emplace_back(std::move(rowNull));
         for (auto i = 0; i < 5; ++i) {
             Row row;
             row.values.emplace_back(i);
             expected.rows.emplace_back(std::move(row));
         }
-        Row row;
-        row.values.emplace_back(Value::kNullValue);
-        expected.rows.emplace_back(std::move(row));
 
         // key = col2
         // items = sum(distinct col2)
@@ -928,7 +928,7 @@ TEST_F(AggregateTest, Sum) {
         }
         Row row;
         row.values.emplace_back(Value::kNullValue);
-        row.values.emplace_back(Value::kNullValue);
+        row.values.emplace_back(0);
         expected.rows.emplace_back(std::move(row));
 
         // key = col2, col3

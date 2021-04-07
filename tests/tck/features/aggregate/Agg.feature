@@ -18,6 +18,21 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | (COUNT(*)+1) | (1+2) | (INT)abs(count(2)) |
       | 2            | 3     | 1                  |
+    When executing query:
+      """
+      YIELD count(null) AS v1,
+            avg(null) AS v2,
+            sum(null) AS v3,
+            std(null) AS v4,
+            min(null) AS v5,
+            max(null) AS v6,
+            bit_and(null) AS v9,
+            bit_or(null) AS v10,
+            bit_xor(null) AS v11
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v1 | v2   | v3 | v4   | v5   | v6   | v9   | v10  | v11  |
+      | 0  | NULL | 0  | NULL | NULL | NULL | NULL | NULL | NULL |
 
   Scenario: [1] Basic GroupBy
     When executing query:
@@ -370,6 +385,65 @@ Feature: Basic Aggregate and GroupBy
       | "Tony Parker"   | 1     |
       | "Manu Ginobili" | 1     |
 
+  Scenario: Match Implicit GroupBy
+    When executing query:
+      """
+      MATCH (v:player)-[:like]-(m:player)
+      WITH m.age AS age, count(m.age) AS count
+      RETURN age, count
+      ORDER BY age, count
+      """
+    Then the result should be, in order, with relax comparison:
+      | age | count |
+      | 20  | 4     |
+      | 22  | 2     |
+      | 23  | 2     |
+      | 25  | 3     |
+      | 26  | 1     |
+      | 28  | 3     |
+      | 29  | 16    |
+      | 30  | 7     |
+      | 31  | 8     |
+      | 32  | 8     |
+      | 33  | 14    |
+      | 34  | 16    |
+      | 36  | 12    |
+      | 37  | 6     |
+      | 38  | 5     |
+      | 39  | 6     |
+      | 40  | 8     |
+      | 41  | 5     |
+      | 42  | 15    |
+      | 43  | 3     |
+      | 45  | 13    |
+      | 46  | 2     |
+      | 47  | 3     |
+    When executing query:
+      """
+      MATCH (v:player {name:"noexist"})-[:like]-(m:player)
+      WITH m.age AS age, count(m.age) AS count
+      RETURN age, count
+      ORDER BY age, count
+      """
+    Then the result should be, in order, with relax comparison:
+      | age | count |
+    When executing query:
+      """
+      MATCH (v:player {name:"noexist"})-[:like]-(m:player)
+      RETURN count(m.age) AS count,
+             sum(m.age) AS sum,
+             avg(m.age) AS avg,
+             min(m.age) AS min,
+             max(m.age) AS max,
+             std(m.age) AS std,
+             bit_and(m.age) AS b1,
+             bit_or(m.age) AS b2,
+             bit_xor(m.age) AS b3
+      """
+    Then the result should be, in order, with relax comparison:
+      | count | sum | avg  | min  | max  | std  | b1   | b2   | b3   |
+      | 0     | 0   | NULL | NULL | NULL | NULL | NULL | NULL | NULL |
+
   Scenario: Empty input
     When executing query:
       """
@@ -387,25 +461,25 @@ Feature: Basic Aggregate and GroupBy
     When executing query:
       """
       GO FROM 'noexist' OVER serve
-                YIELD $^.player.name as name,
+          YIELD $^.player.name as name,
                 serve.start_year as start,
                 $$.team.name as team
-                | YIELD $-.name as name
-                WHERE $-.start > 20000
-                | GROUP BY $-.name
-                YIELD $-.name AS name
+          | YIELD $-.name as name
+            WHERE $-.start > 20000
+            | GROUP BY $-.name
+              YIELD $-.name AS name
       """
     Then the result should be, in order, with relax comparison:
       | name |
     When executing query:
       """
       GO FROM 'noexist' OVER serve
-                YIELD $^.player.name as name,
+          YIELD $^.player.name as name,
                 serve.start_year as start,
                 $$.team.name as team
-                | YIELD $-.name as name
-                WHERE $-.start > 20000
-                | Limit 1
+          | YIELD $-.name as name
+            WHERE $-.start > 20000
+            | Limit 1
       """
     Then the result should be, in any order, with relax comparison:
       | name |
