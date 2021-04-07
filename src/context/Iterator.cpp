@@ -189,7 +189,15 @@ void GetNeighborsIter::next() {
     }
 
     if (noEdge_) {
-        currentRow_++;
+        if (++currentRow_ < rowsUpperBound_) {
+            return;
+        }
+
+        // go to next dataset
+        if (++currentDs_ < dsIndices_.end()) {
+            currentRow_ = currentDs_->ds->begin();
+            rowsUpperBound_ = currentDs_->ds->end();
+        }
         return;
     }
 

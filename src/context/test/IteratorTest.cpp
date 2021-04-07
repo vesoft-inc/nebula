@@ -79,6 +79,73 @@ TEST(IteratorTest, Sequential) {
     }
 }
 
+TEST(IteratorTest, GetNeighborNoEdge) {
+    DataSet ds1;
+    ds1.colNames = {kVid, "_stats", "_tag:tag1:prop1:prop2", "_expr"};
+    for (auto i = 0; i < 10; ++i) {
+        Row row;
+        // _vid
+        row.values.emplace_back(folly::to<std::string>(i));
+        // _stats = empty
+        row.values.emplace_back(Value());
+        // tag
+        List tag;
+        tag.values.emplace_back(0);
+        tag.values.emplace_back(1);
+        row.values.emplace_back(Value(tag));
+        // _expr = empty
+        row.values.emplace_back(Value());
+        ds1.rows.emplace_back(std::move(row));
+    }
+
+    DataSet ds2;
+    ds2.colNames = {kVid, "_stats", "_tag:tag2:prop1:prop2", "_expr"};
+    for (auto i = 10; i < 20; ++i) {
+        Row row;
+        // _vid
+        row.values.emplace_back(folly::to<std::string>(i));
+        // _stats = empty
+        row.values.emplace_back(Value());
+        // tag
+        List tag;
+        tag.values.emplace_back(0);
+        tag.values.emplace_back(1);
+        row.values.emplace_back(Value(tag));
+        // _expr = empty
+        row.values.emplace_back(Value());
+        ds2.rows.emplace_back(std::move(row));
+    }
+
+    List datasets;
+    datasets.values.emplace_back(std::move(ds1));
+    datasets.values.emplace_back(std::move(ds2));
+    auto val = std::make_shared<Value>(std::move(datasets));
+
+    {
+        GetNeighborsIter iter(val);
+        std::vector<Value> expected = {"0",  "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",
+                                       "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"};
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            result.emplace_back(iter.getColumn(kVid));
+        }
+        EXPECT_EQ(expected, result);
+    }
+
+    {
+        GetNeighborsIter iter(val);
+        std::vector<Value> expected;
+        expected.insert(expected.end(), 10, 0);
+        expected.insert(expected.end(), 10, Value());
+        std::vector<Value> result;
+        for (; iter.valid(); iter.next()) {
+            result.emplace_back(iter.getTagProp("tag1", "prop1"));
+        }
+        EXPECT_EQ(result.size(), 20);
+        EXPECT_EQ(expected, result);
+    }
+}
+
 TEST(IteratorTest, GetNeighbor) {
     DataSet ds1;
     ds1.colNames = {kVid,
