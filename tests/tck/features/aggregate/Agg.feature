@@ -611,6 +611,13 @@ Feature: Basic Aggregate and GroupBy
                COUNT(serve._dst) AS id
       """
     Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id', not support aggregate function in go sentence.
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE avg(v.age) > 1
+      RETURN v.age
+      """
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
 
 # When executing query:
 # """

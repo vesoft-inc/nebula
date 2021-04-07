@@ -2444,6 +2444,17 @@ TEST(Parser, Match) {
     }
 }
 
+TEST(Parser, MatchErrorCheck) {
+    {
+        std::string query = "MATCH (v:player) WHERE count(v)>1 RETURN v";
+        auto result = parse(query);
+        ASSERT_FALSE(result.ok());
+        auto error = "SyntaxError: Invalid use of aggregating "
+            "function in this context. near `WHERE count(v)>1'";
+        ASSERT_EQ(error, result.status().toString());
+    }
+}
+
 TEST(Parser, MatchMultipleTags) {
     {
         std::string query = "MATCH (a:person:player) --> (b) RETURN *";

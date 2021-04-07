@@ -30,6 +30,7 @@
 
 #include "common/expression/ReduceExpression.h"
 #include "util/ParserUtil.h"
+#include "util/ExpressionUtils.h"
 #include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 
@@ -1292,10 +1293,22 @@ with_clause
 
 match_clause
     : KW_MATCH match_path where_clause {
-        $$ = new MatchClause($2, $3, false/*optinal*/);
+        if ($3 && graph::ExpressionUtils::findAny($3->filter(),{Expression::Kind::kAggregate})) {
+            delete($2);
+            delete($3);
+            throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in this context.");
+        } else {
+            $$ = new MatchClause($2, $3, false/*optinal*/);
+        }
     }
     | KW_OPTIONAL KW_MATCH match_path where_clause {
-        $$ = new MatchClause($3, $4, true);
+        if ($4 && graph::ExpressionUtils::findAny($4->filter(),{Expression::Kind::kAggregate})) {
+            delete($3);
+            delete($4);
+            throw nebula::GraphParser::syntax_error(@4, "Invalid use of aggregating function in this context.");
+        } else {
+            $$ = new MatchClause($3, $4, true);
+        }
     }
     ;
 
