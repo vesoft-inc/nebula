@@ -264,3 +264,46 @@ Feature: Match seek by id
       | 'Aron Baynes'   |
       | 'Blake Griffin' |
       | 'Grant Hill'    |
+
+  Scenario: [v2ga bug] Negative start vid
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9        |
+      | replica_factor | 1        |
+      | vid_type       | int64    |
+      | charset        | utf8     |
+      | collate        | utf8_bin |
+    And having executed:
+      """
+      CREATE TAG player(name string, age int);
+      """
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age) VALUES -100:("Tim", 32);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX player_name_index ON player(name(10));
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When submit a job:
+      """
+      REBUILD TAG INDEX player_name_index;
+      """
+    Then wait the job to finish
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == -100 RETURN v;
+      """
+    Then the result should be, in any order:
+      | v                                    |
+      | (-100 :player{age: 32, name: "Tim"}) |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN [-100] RETURN v;
+      """
+    Then the result should be, in any order:
+      | v                                    |
+      | (-100 :player{age: 32, name: "Tim"}) |

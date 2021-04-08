@@ -24,6 +24,9 @@ void FoldConstantExprVisitor::visit(UnaryExpression *expr) {
         if (canBeFolded_) {
             expr->setOperand(fold(expr->operand()));
         }
+    } else {
+        canBeFolded_ = expr->kind() == Expression::Kind::kUnaryNegate ||
+                       expr->kind() == Expression::Kind::kUnaryPlus;
     }
 }
 
