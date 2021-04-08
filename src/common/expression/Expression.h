@@ -146,6 +146,10 @@ public:
         return false;
     }
 
+    virtual bool isArithmeticExpr() const {
+        return false;
+    }
+
 protected:
     class Encoder final {
     public:

@@ -29,8 +29,12 @@ public:
             kind(), left()->clone().release(), right()->clone().release());
     }
 
+    bool isArithmeticExpr() const override {
+        return true;
+    }
+
 private:
-    Value                       result_;
+    Value result_;
 };
 
 }   // namespace nebula
