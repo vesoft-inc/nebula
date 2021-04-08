@@ -158,7 +158,8 @@ public:
 protected:
     std::unique_ptr<TraverseExecutor> makeTraverseExecutor(Sentence *sentence);
 
-    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
+    nebula::cpp2::SupportedType calculateExprType(Expression* exp,
+                                                  bool tagAliasProp = false) const;
 
     Status checkIfDuplicateColumn() const;
 

@@ -85,7 +85,8 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     return executor;
 }
 
-nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp) const {
+nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp,
+                                                                bool tagAliasProp) const {
     auto spaceId = ectx()->rctx()->session()->space();
     switch (exp->kind()) {
         case Expression::kPrimary:
@@ -126,14 +127,25 @@ nebula::cpp2::SupportedType TraverseExecutor::calculateExprType(Expression* exp)
             return nebula::cpp2::SupportedType::INT;
         }
         case Expression::kAliasProp: {
-            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = edgeExp->prop();
-            auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeExp->alias());
-            if (edgeStatus.ok()) {
-                auto edgeType = edgeStatus.value();
-                auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
-                if (schema != nullptr) {
-                    return schema->getFieldType(*propName).type;
+            auto* aliasExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto *propName = aliasExp->prop();
+            if (tagAliasProp) {
+                auto tagStatus = ectx()->schemaManager()->toTagID(spaceId, *aliasExp->alias());
+                if (tagStatus.ok()) {
+                    auto tagId = tagStatus.value();
+                    auto schema = ectx()->schemaManager()->getTagSchema(spaceId, tagId);
+                    if (schema != nullptr) {
+                        return schema->getFieldType(*propName).type;
+                    }
+                }
+            } else {
+                auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *aliasExp->alias());
+                if (edgeStatus.ok()) {
+                    auto edgeType = edgeStatus.value();
+                    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
+                    if (schema != nullptr) {
+                        return schema->getFieldType(*propName).type;
+                    }
                 }
             }
             return nebula::cpp2::SupportedType::UNKNOWN;

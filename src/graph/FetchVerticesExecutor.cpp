@@ -213,7 +213,7 @@ Status FetchVerticesExecutor::prepareYield() {
             } else {
                 colNames_.emplace_back(*col->alias());
             }
-            auto type = calculateExprType(col->expr());
+            auto type = calculateExprType(col->expr(), true);
             colTypes_.emplace_back(type);
             VLOG(1) << "type: " << static_cast<int64_t>(colTypes_.back());
         }
