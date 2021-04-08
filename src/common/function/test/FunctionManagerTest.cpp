@@ -1841,6 +1841,37 @@ TEST_F(FunctionManagerTest, ReversePath) {
     }
 }
 
+TEST_F(FunctionManagerTest, DataSetRowCol) {
+    auto dataset = DataSet({"col0", "col1", "col2"});
+    dataset.emplace_back(Row({1, true, "233"}));
+    dataset.emplace_back(Row({4, false, "456"}));
+    Value datasetValue = Value(std::move(dataset));
+    // out of range
+    {
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(-1), Value(2)}),
+                      Value::kNullBadData);
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(4), Value(2)}),
+                      Value::kNullBadData);
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(0), Value(-1)}),
+                      Value::kNullBadData);
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(0), Value(3)}),
+                      Value::kNullBadData);
+    }
+    // ok
+    {
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(0), Value(0)}),
+                      Value(1));
+        TEST_FUNCTION(dataSetRowCol,
+                      std::vector<Value>({datasetValue, Value(1), Value(2)}),
+                      Value("456"));
+    }
+}
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {
