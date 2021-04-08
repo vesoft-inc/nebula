@@ -1314,32 +1314,29 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             auto argSize = args.size();
-            if (argSize < 2 || argSize >3) {
-                LOG(ERROR) <<  "Unexpected arguments count " << args.size();
-                return Value::kNullBadData;
+            if (args[0].isNull()) {
+                return Value::kNullValue;
+            }
+            if (!args[0].isStr() || !args[1].isInt() || (argSize == 3 && !args[2].isInt())) {
+                return Value::kNullBadType;
             }
             auto value = args[0].getStr();
             auto start = args[1].getInt();
-            auto length =  (args.size() == 2) ? value.size() - start : args[2].getInt();
-            if (args[0].isStr() && args[1].isInt()) {
-                if (argSize == 3) {
-                    if (!args[2].isInt()) {
-                        return Value::kNullBadType;
-                    }
-                }
-                if (static_cast<size_t>(std::abs(start)) > value.size() || length == 0) {
-                    return std::string("");
-                }
-                if (start < 0) {
-                    LOG(ERROR) << "Invalid Start index " << start;
-                    return Value::kNullBadData;
-                }
-                if (start == 0) {
-                    return value;
-                }
-                return value.substr(start, length);
+            auto length = 0;
+            if (argSize == 3) {
+                length = args[2].getInt();
+            } else {
+                length = static_cast<size_t>(start) >= value.size()
+                             ? 0
+                             : value.size() - static_cast<size_t>(start);
             }
-            return Value::kNullBadType;
+            if (start < 0 || length < 0) {
+                return Value::kNullBadData;
+            }
+            if (static_cast<size_t>(start) >= value.size() || length == 0) {
+                return std::string("");
+            }
+            return value.substr(start, length);
         };
         functions_["substring"] = attr;
     }

@@ -150,6 +150,11 @@ TEST_F(FunctionManagerTest, testNull) {
     TEST_FUNCTION(toUpper, args_["nullvalue"], Value::kNullValue);
     TEST_FUNCTION(split, std::vector<Value>({Value::kNullValue, ","}), Value::kNullValue);
     TEST_FUNCTION(split, std::vector<Value>({"123,22", Value::kNullValue}), Value::kNullValue);
+    TEST_FUNCTION(substr, std::vector<Value>({Value::kNullValue, 1, 2}), Value::kNullValue);
+    TEST_FUNCTION(substr, std::vector<Value>({"hello", Value::kNullValue, 2}), Value::kNullBadType);
+    TEST_FUNCTION(substr, std::vector<Value>({"hello", 2, Value::kNullValue}), Value::kNullBadType);
+    TEST_FUNCTION(substr, std::vector<Value>({"hello", -1, 10}), Value::kNullBadData);
+    TEST_FUNCTION(substr, std::vector<Value>({"hello", 1, -2}), Value::kNullBadData);
 }
 
 TEST_F(FunctionManagerTest, functionCall) {
