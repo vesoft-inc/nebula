@@ -535,7 +535,11 @@ bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostPa
         auto name = zoneIter->first.second;
         for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
             auto partIter = hostParts.find(*hostIter);
-            zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+            if (partIter == hostParts.end()) {
+                zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
+            } else {
+                zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+            }
         }
     }
     return true;
@@ -985,7 +989,11 @@ bool Balancer::collectZoneParts(const std::string& groupName,
         auto name = zoneIter->first.second;
         for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
             auto partIter = hostParts.find(*hostIter);
-            zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+            if (partIter == hostParts.end()) {
+                zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
+            } else {
+                zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+            }
         }
     }
     return true;
