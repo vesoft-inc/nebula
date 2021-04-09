@@ -176,8 +176,8 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.startTime_ = std::get<2>(tup);
+                task.endTime_ = std::get<3>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
                     // Resume the failed task, skip the in-progress and invalid tasks
                     if (task.ret_ == BalanceTask::Result::FAILED) {

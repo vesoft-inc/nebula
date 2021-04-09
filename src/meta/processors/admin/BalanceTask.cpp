@@ -23,14 +23,14 @@ const std::string kBalanceTaskTable = "__b_task__"; // NOLINT
 void BalanceTask::invoke() {
     CHECK_NOTNULL(client_);
     if (ret_ == Result::INVALID) {
-        endTimeMs_ = time::WallClock::fastNowInMilliSec();
+        endTime_ = time::WallClock::fastNowInSec();
         saveInStore();
         LOG(ERROR) << taskIdStr_ << "Task invalid, status " << static_cast<int32_t>(status_);
         onFinished_();
         return;
     }
     if (ret_ == Result::FAILED) {
-        endTimeMs_ = time::WallClock::fastNowInMilliSec();
+        endTime_ = time::WallClock::fastNowInSec();
         saveInStore();
         LOG(ERROR) << taskIdStr_ << "Task failed, status " << static_cast<int32_t>(status_);
         onError_();
@@ -45,7 +45,7 @@ void BalanceTask::invoke() {
         case Status::START: {
             LOG(INFO) << taskIdStr_ << "Start to move part, check the peers firstly!";
             ret_ = Result::IN_PROGRESS;
-            startTimeMs_ = time::WallClock::fastNowInMilliSec();
+            startTime_ = time::WallClock::fastNowInSec();
             SAVE_STATE();
             client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
                 if (!resp.ok()) {
@@ -212,7 +212,7 @@ void BalanceTask::invoke() {
         }
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";
-            endTimeMs_ = time::WallClock::fastNowInSec();
+            endTime_ = time::WallClock::fastNowInSec();
             ret_ = Result::SUCCEEDED;
             SAVE_STATE();
             onFinished_();
@@ -270,8 +270,8 @@ std::string BalanceTask::taskVal() {
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(&status_), sizeof(status_));
     str.append(reinterpret_cast<const char*>(&ret_), sizeof(ret_));
-    str.append(reinterpret_cast<const char*>(&startTimeMs_), sizeof(startTimeMs_));
-    str.append(reinterpret_cast<const char*>(&endTimeMs_), sizeof(endTimeMs_));
+    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_));
+    str.append(reinterpret_cast<const char*>(&endTime_), sizeof(endTime_));
     return str;
 }
 
