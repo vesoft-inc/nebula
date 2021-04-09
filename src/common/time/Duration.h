@@ -34,10 +34,17 @@ public:
 private:
     bool isPaused_;
     uint64_t accumulated_;
+#if defined(__x86_64__)
     uint64_t startTick_;
+#else
+    struct timespec startTick_;
+    uint64_t nanoDiff(struct timespec start, struct timespec end) const;
+    struct timespec now() const;
+#endif
 };
 
 }  // namespace time
 }  // namespace nebula
 
 #endif  // COMMON_TIME_DURATION_H_
+

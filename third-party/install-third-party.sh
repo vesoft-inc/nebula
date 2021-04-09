@@ -91,7 +91,7 @@ selected_gcc_version=$(select_by_version $this_gcc_version "${gcc_preset_version
     exit 1
 }
 
-selected_archive=vesoft-third-party-$version-x86_64-libc-$selected_libc_version-gcc-$selected_gcc_version-abi-$this_abi_version.sh
+selected_archive=vesoft-third-party-$version-$(uname -m)-libc-$selected_libc_version-gcc-$selected_gcc_version-abi-$this_abi_version.sh
 
 url=$url_base/$selected_archive
 echo "Downloading $selected_archive..."
