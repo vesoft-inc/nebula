@@ -66,6 +66,18 @@ Feature: Basic match
       | 'Ray Allen'     | 43  |
       | 'David West'    | 38  |
       | 'Tracy McGrady' | 39  |
+    When executing query:
+      """
+      MATCH (v:player) where v.name == null RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player) where v.name == 3 RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
 
   Scenario: One step
     When executing query:
