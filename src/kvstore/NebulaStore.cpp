@@ -40,6 +40,8 @@ NebulaStore::~NebulaStore() {
     spaceListeners_.clear();
     bgWorkers_->stop();
     bgWorkers_->wait();
+    cleanWalWorker_->stop();
+    cleanWalWorker_->wait();
     LOG(INFO) << "~NebulaStore()";
 }
 
@@ -47,6 +49,8 @@ bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
     bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
+    cleanWalWorker_ = std::make_shared<thread::GenericWorker>();
+    CHECK(cleanWalWorker_->start());
     snapshot_.reset(new SnapshotManagerImpl(this));
     raftService_ = raftex::RaftexService::createService(ioPool_,
                                                         workers_,
@@ -64,7 +68,8 @@ bool NebulaStore::init() {
         loadLocalListenerFromPartManager();
     }
 
-    bgWorkers_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000, &NebulaStore::cleanWAL, this);
+    cleanWalWorker_->addDelayTask(
+        FLAGS_clean_wal_interval_secs * 1000, &NebulaStore::cleanWAL, this);
     LOG(INFO) << "Register handler...";
     options_.partMan_->registerHandler(this);
     return true;
@@ -1031,10 +1036,11 @@ bool NebulaStore::checkLeader(std::shared_ptr<Part> part, bool canReadFromFollow
 }
 
 void NebulaStore::cleanWAL() {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     SCOPE_EXIT {
-        bgWorkers_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000,
-                                 &NebulaStore::cleanWAL,
-                                 this);
+        cleanWalWorker_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000,
+                                      &NebulaStore::cleanWAL,
+                                      this);
     };
     for (const auto& spaceEntry : spaces_) {
         if (FLAGS_rocksdb_disable_wal) {

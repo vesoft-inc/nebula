@@ -12,7 +12,7 @@ namespace nebula {
 // static
 std::string OperationKeyUtils::modifyOperationKey(PartitionID part, const std::string& key) {
     uint32_t item = (part << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
-    int64_t ts = time::WallClock::fastNowInMicroSec();
+    int64_t ts = folly::Endian::big(time::WallClock::fastNowInMicroSec());
     uint32_t type = static_cast<uint32_t>(NebulaOperationType::kModify);
     int32_t keySize = key.size();
     std::string result;
@@ -27,7 +27,7 @@ std::string OperationKeyUtils::modifyOperationKey(PartitionID part, const std::s
 // static
 std::string OperationKeyUtils::deleteOperationKey(PartitionID part) {
     uint32_t item = (part << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kOperation);
-    int64_t ts = time::WallClock::fastNowInMicroSec();
+    int64_t ts = folly::Endian::big(time::WallClock::fastNowInMicroSec());
     uint32_t type = static_cast<uint32_t>(NebulaOperationType::kDelete);
     std::string result;
     result.reserve(sizeof(int32_t) + sizeof(int64_t) + sizeof(NebulaOperationType));

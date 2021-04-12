@@ -32,7 +32,6 @@ DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 DECLARE_int32(wal_ttl);
 DECLARE_int64(wal_file_size);
 DECLARE_int32(wal_buffer_size);
-DECLARE_int32(wal_buffer_num);
 DECLARE_bool(wal_sync);
 
 namespace nebula {
@@ -227,7 +226,6 @@ RaftPart::RaftPart(
     FileBasedWalPolicy policy;
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
-    policy.numBuffers = FLAGS_wal_buffer_num;
     policy.sync = FLAGS_wal_sync;
     wal_ = FileBasedWal::getWal(walRoot,
                                 idStr_,

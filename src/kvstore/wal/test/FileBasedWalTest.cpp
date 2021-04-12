@@ -85,7 +85,6 @@ TEST(FileBasedWal, CacheOverflow) {
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -138,7 +137,6 @@ TEST(FileBasedWal, Rollback) {
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -216,7 +214,6 @@ TEST(FileBasedWal, RollbackThenReopen) {
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -271,7 +268,6 @@ TEST(FileBasedWal, RollbackToZero) {
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -313,7 +309,6 @@ TEST(FileBasedWal, BackAndForth) {
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -358,7 +353,6 @@ TEST(FileBasedWal, TTLTest) {
     FileBasedWalPolicy policy;
     policy.bufferSize = 128;
     policy.fileSize = 1024;
-    policy.numBuffers = 30;
     auto wal = FileBasedWal::getWal(walDir.path(),
                                     "",
                                     policy,

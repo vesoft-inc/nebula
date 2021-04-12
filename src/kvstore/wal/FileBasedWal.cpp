@@ -14,7 +14,6 @@
 DEFINE_int32(wal_ttl, 14400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
-DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 
 namespace nebula {
@@ -45,8 +44,6 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         : dir_(dir.toString())
         , idStr_(idStr)
         , policy_(std::move(policy))
-        , maxFileSize_(policy_.fileSize)
-        , maxBufferSize_(policy_.bufferSize)
         , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
@@ -55,7 +52,7 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         }
     }
 
-    logBuffer_ = AtomicLogBuffer::instance();
+    logBuffer_ = AtomicLogBuffer::instance(policy_.bufferSize);
     scanAllWalFiles();
     if (!walFiles_.empty()) {
         firstLogId_ = walFiles_.begin()->second->firstId();
@@ -529,7 +526,7 @@ bool FileBasedWal::appendLogInternal(LogID id,
     // Prepare the WAL file if it's not opened
     if (currFd_ < 0) {
         prepareNewFile(id);
-    } else if (currInfo_->size() + strBuf.size() > maxFileSize_) {
+    } else if (currInfo_->size() + strBuf.size() > policy_.fileSize) {
         // Need to roll over
         closeCurrFile();
 

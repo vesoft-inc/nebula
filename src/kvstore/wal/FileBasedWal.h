@@ -26,9 +26,6 @@ struct FileBasedWalPolicy {
     // Size of each buffer (in byte)
     size_t bufferSize = 8 * 1024L * 1024L;
 
-    // Number of buffers allowed. When the number of buffers reach this
-    // number, appendLogs() will be blocked until some buffers are flushed
-    size_t numBuffers = 2;
     // Whether fsync needs to be called every write
     bool sync = false;
 };
@@ -169,8 +166,6 @@ private:
     std::atomic<bool> stopped_{false};
 
     const FileBasedWalPolicy policy_;
-    const size_t maxFileSize_;
-    const size_t maxBufferSize_;
     LogID firstLogId_{0};
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};

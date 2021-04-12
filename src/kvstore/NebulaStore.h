@@ -318,6 +318,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceListenerInfo>> spaceListeners_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
+    std::shared_ptr<thread::GenericWorker> cleanWalWorker_;
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     HostAddr storeSvcAddr_;
     std::shared_ptr<folly::Executor> workers_;
