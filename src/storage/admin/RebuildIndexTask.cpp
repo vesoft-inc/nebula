@@ -130,7 +130,7 @@ kvstore::ResultCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space,
                 VLOG(3) << "Processing Modify Operation " << opKey;
                 auto key = OperationKeyUtils::getOperationKey(opKey);
                 std::vector<kvstore::KV> pairs;
-                pairs.emplace_back(std::move(key), "");
+                pairs.emplace_back(std::move(key), std::move(opVal));
                 auto ret = writeData(space, part, std::move(pairs));
                 if (kvstore::ResultCode::SUCCEEDED != ret) {
                     LOG(ERROR) << "Modify Playback Failed";

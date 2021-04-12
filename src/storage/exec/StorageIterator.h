@@ -233,6 +233,10 @@ public:
         return IndexKeyUtils::getIndexVertexID(vIdLen_, iter_->key()).str();
     }
 
+    folly::StringPiece val() const override {
+        return iter_->val();
+    }
+
 protected:
     size_t vIdLen_;
 };
@@ -263,6 +267,9 @@ public:
         return IndexKeyUtils::getIndexRank(vIdLen_, iter_->key());
     }
 
+    folly::StringPiece val() const override {
+        return iter_->val();
+    }
 
 protected:
     size_t vIdLen_;

@@ -358,6 +358,147 @@ TEST(CompactionFilterTest, DropIndexTest) {
     checkIndexData(spaceId, 102, 6, env, 18);
 }
 
+TEST(CompactionFilterTest, TTLFilterDataIndexExpiredTest) {
+    FLAGS_mock_ttl_col = true;
+    FLAGS_mock_ttl_duration = 1;
+
+    fs::TempDir rootPath("/tmp/TTLFilterDataIndexExpiredTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    // Add tag/edge data and index data
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts, true));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 51);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 167);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
+
+    // wait ttl data Expire
+    sleep(FLAGS_mock_ttl_duration + 1);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check index data...";
+    // check players data, data count is 0
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 0);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 0
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 0);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 0);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 0);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
+
+    FLAGS_mock_ttl_col = false;
+}
+
+TEST(CompactionFilterTest, TTLFilterDataIndexNotExpiredTest) {
+    FLAGS_mock_ttl_col = true;
+    FLAGS_mock_ttl_duration = 1800;
+
+    fs::TempDir rootPath("/tmp/TTLFilterDataIndexNotExpiredTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path(), HostAddr("", 0),
+                          1, true, false, {}, true);
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    // Add tag/edge data and index data
+    ASSERT_TRUE(QueryTestUtils::mockVertexData(env, parts, true));
+    ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, parts, true));
+
+    LOG(INFO) << "Before compaction, check data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 51);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 167);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
+
+    LOG(INFO) << "Do compaction";
+    auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
+    ns->compact(spaceId);
+
+    LOG(INFO) << "Finish compaction, check index data...";
+    // check players data, data count is 51
+    checkTagVertexData(spaceVidLen, spaceId, 1, parts, env, 51);
+    // check teams data, data count is 30
+    checkTagVertexData(spaceVidLen, spaceId, 2, parts, env, 30);
+
+    // check serve positive data, data count is 167
+    checkEdgeData(spaceVidLen, spaceId, 101, parts, env, 167);
+    // check teammates positive data, data count is 18
+    checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
+
+    // check player indexId 1 data
+    checkIndexData(spaceId, 1, 6, env, 51);
+    // check teams indexId 2 data
+    checkIndexData(spaceId, 2, 6, env, 30);
+
+    // check serve indexId 101 data
+    checkIndexData(spaceId, 101, 6, env, 167);
+    // check teammates indexId 102 data
+    checkIndexData(spaceId, 102, 6, env, 18);
+
+    FLAGS_mock_ttl_col = false;
+}
+
 }  // namespace storage
 }  // namespace nebula
 

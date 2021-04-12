@@ -218,21 +218,24 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                         * step 2 , Insert new edge index
                         */
                         if (nReader != nullptr) {
-                            auto ni = indexKey(partId, nReader.get(), key, index);
-                            if (!ni.empty()) {
+                            auto nik = indexKey(partId, nReader.get(), key, index);
+                            if (!nik.empty()) {
+                                auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
+                                auto niv = v.ok()
+                                    ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
                                 // Check the index is building for the specified partition or not.
                                 auto indexState = env_->getIndexState(spaceId_, partId);
                                 if (env_->checkRebuilding(indexState)) {
                                     auto opKey = OperationKeyUtils::modifyOperationKey(
-                                        partId, std::move(ni));
-                                    batchHolder->put(std::move(opKey), "");
+                                        partId, std::move(nik));
+                                    batchHolder->put(std::move(opKey), std::move(niv));
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
                                     code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                                     break;
                                 } else {
-                                    batchHolder->put(std::move(ni), "");
+                                    batchHolder->put(std::move(nik), std::move(niv));
                                 }
                             }
                         }
@@ -307,6 +310,11 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
         RowReaderWrapper oReader;
         RowReaderWrapper nReader;
         auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, e.first);
+        auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
+        if (!schema) {
+            LOG(ERROR) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
+            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+        }
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
                 /*
@@ -361,19 +369,21 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
                     }
                 }
 
-                auto ni = indexKey(partId, nReader.get(), e.first, index);
-                if (!ni.empty()) {
+                auto nik = indexKey(partId, nReader.get(), e.first, index);
+                if (!nik.empty()) {
+                    auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
+                    auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
                     // Check the index is building for the specified partition or not.
                     auto indexState = env_->getIndexState(spaceId_, partId);
                     if (env_->checkRebuilding(indexState)) {
                         auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId,
-                                                                                 std::move(ni));
-                        batchHolder->put(std::move(modifyOpKey), "");
+                                                                                 std::move(nik));
+                        batchHolder->put(std::move(modifyOpKey), std::move(niv));
                     } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                         return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
                     } else {
-                        batchHolder->put(std::move(ni), "");
+                        batchHolder->put(std::move(nik), std::move(niv));
                     }
                 }
             }

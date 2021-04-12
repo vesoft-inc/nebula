@@ -628,6 +628,21 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        index_ttl_test
+    SOURCES
+        IndexWithTTLTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
 nebula_add_executable(
     NAME
         es_bulk_example

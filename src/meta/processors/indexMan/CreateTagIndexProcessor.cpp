@@ -94,13 +94,6 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto latestTagSchema = schemaRet.value();
-    if (tagOrEdgeHasTTL(latestTagSchema)) {
-       LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
-       handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
-       onFinished();
-       return;
-    }
-
     const auto& schemaCols = latestTagSchema.get_columns();
     std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fields) {

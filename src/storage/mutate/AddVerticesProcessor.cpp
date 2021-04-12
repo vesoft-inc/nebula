@@ -223,20 +223,23 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                         * step 2 , Insert new vertex index
                         */
                         if (nReader != nullptr) {
-                            auto ni = indexKey(partId, vid, nReader.get(), index);
-                            if (!ni.empty()) {
+                            auto nik = indexKey(partId, vid, nReader.get(), index);
+                            if (!nik.empty()) {
+                                auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
+                                auto niv = v.ok() ?
+                                    IndexKeyUtils::indexVal(std::move(v).value()) : "";
                                 // Check the index is building for the specified partition or not.
                                 auto indexState = env_->getIndexState(spaceId_, partId);
                                 if (env_->checkRebuilding(indexState)) {
-                                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, ni);
-                                    batchHolder->put(std::move(opKey), "");
+                                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, nik);
+                                    batchHolder->put(std::move(opKey), std::move(niv));
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
                                     code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                                     break;
                                 } else {
-                                    batchHolder->put(std::move(ni), "");
+                                    batchHolder->put(std::move(nik), std::move(niv));
                                 }
                             }
                         }

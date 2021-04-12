@@ -193,11 +193,6 @@ protected:
     getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId);
 
     /**
-     * Check if tag or edge has ttl
-     */
-    bool tagOrEdgeHasTTL(const cpp2::Schema& latestSchema);
-
-    /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);

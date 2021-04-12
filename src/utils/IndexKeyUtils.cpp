@@ -5,6 +5,7 @@
  */
 
 #include "utils/IndexKeyUtils.h"
+#include <thrift/lib/cpp2/protocol/Serializer.h>
 
 namespace nebula {
 
@@ -94,6 +95,25 @@ std::string IndexKeyUtils::indexPrefix(PartitionID partId) {
     key.reserve(sizeof(PartitionID));
     key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
     return key;
+}
+
+// static
+std::string IndexKeyUtils::indexVal(const Value& v) {
+    std::string val, cVal;
+    apache::thrift::CompactSerializer::serialize(v, &cVal);
+    // A length is needed at here for compatibility in the future
+    auto len = cVal.size();
+    val.reserve(sizeof(size_t) + len);
+    val.append(reinterpret_cast<const char*>(&len), sizeof(size_t)).append(cVal);
+    return val;
+}
+
+// static
+Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
+    Value value;
+    auto len = *reinterpret_cast<const size_t*>(raw.data());
+    apache::thrift::CompactSerializer::deserialize(raw.subpiece(sizeof(size_t), len), value);
+    return value;
 }
 
 // static

@@ -482,6 +482,10 @@ public:
 
     static std::string indexPrefix(PartitionID partId);
 
+    static std::string indexVal(const Value& v);
+
+    static Value parseIndexTTL(const folly::StringPiece& raw);
+
     static StatusOr<std::string>
     collectIndexValues(RowReader* reader,
                        const std::vector<nebula::meta::cpp2::ColumnDef>& cols);

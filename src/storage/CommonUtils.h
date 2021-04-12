@@ -184,6 +184,16 @@ public:
                                        const std::string& ttlCol,
                                        int64_t ttlDuration);
 
+    static bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                                       const Value& v,
+                                       const std::string& ttlCol,
+                                       int64_t ttlDuration);
+
+    static std::pair<bool, std::pair<int64_t, std::string>>
+        ttlProps(const meta::SchemaProviderIf* schema);
+
+    static StatusOr<Value> ttlValue(const meta::SchemaProviderIf* schema, RowReader* reader);
+
     static cpp2::ErrorCode to(const Status& status);
 
     static cpp2::ErrorCode to(kvstore::ResultCode rc);

@@ -45,7 +45,7 @@ public:
         } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
             return !edgeValid(spaceId, key, val);
         } else if (IndexKeyUtils::isIndexKey(key)) {
-            return !indexValid(spaceId, key);
+            return !indexValid(spaceId, key, val);
         } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
             return !lockValid(spaceId, key);
         } else {
@@ -115,37 +115,67 @@ private:
 
     // TODO(panda) Optimize the method in the future
     bool ttlExpired(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
-        const auto* nschema = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
-        if (nschema == NULL) {
+        if (schema == nullptr) {
             return true;
         }
-        const auto schemaProp = nschema->getProp();
-        int ttlDuration = 0;
-        if (schemaProp.get_ttl_duration()) {
-            ttlDuration = *schemaProp.get_ttl_duration();
-        }
-        std::string ttlCol;
-        if (schemaProp.get_ttl_col()) {
-            ttlCol = *schemaProp.get_ttl_col();
-        }
-
+        auto ttl = CommonUtils::ttlProps(schema);
         // Only support the specified ttl_col mode
         // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-        if (ttlCol.empty() || ttlDuration <= 0) {
+        if (!ttl.first) {
             return false;
         }
-
-        return CommonUtils::checkDataExpiredForTTL(schema, reader, ttlCol, ttlDuration);
+        return CommonUtils::checkDataExpiredForTTL(schema,
+                                                   reader,
+                                                   ttl.second.second,
+                                                   ttl.second.first);
     }
 
-    bool indexValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
+    bool ttlExpired(const meta::SchemaProviderIf* schema, const Value& v) const {
+        if (schema == nullptr) {
+            return true;
+        }
+        auto ttl = CommonUtils::ttlProps(schema);
+        if (!ttl.first) {
+            return false;
+        }
+        return CommonUtils::checkDataExpiredForTTL(schema,
+                                                   v,
+                                                   ttl.second.second,
+                                                   ttl.second.first);
+    }
+
+    bool indexValid(GraphSpaceID spaceId,
+                    const folly::StringPiece& key,
+                    const folly::StringPiece& val) const {
         auto indexId = IndexKeyUtils::getIndexId(key);
         auto eRet = indexMan_->getEdgeIndex(spaceId, indexId);
         if (eRet.ok()) {
+            if (!val.empty()) {
+                auto id = eRet.value()->get_schema_id().get_edge_type();
+                auto schema = schemaMan_->getEdgeSchema(spaceId, id);
+                if (!schema) {
+                    VLOG(3) << "Space " << spaceId << ", EdgeType " << id << " invalid";
+                    return false;
+                }
+                if (ttlExpired(schema.get(), IndexKeyUtils::parseIndexTTL(val))) {
+                    return false;
+                }
+            }
             return true;
         }
         auto tRet = indexMan_->getTagIndex(spaceId, indexId);
         if (tRet.ok()) {
+            if (!val.empty()) {
+                auto id = tRet.value()->get_schema_id().get_tag_id();
+                auto schema = schemaMan_->getTagSchema(spaceId, id);
+                if (!schema) {
+                    VLOG(3) << "Space " << spaceId << ", tagId " << id << " invalid";
+                    return false;
+                }
+                if (ttlExpired(schema.get(), IndexKeyUtils::parseIndexTTL(val))) {
+                    return false;
+                }
+            }
             return true;
         }
         return !(eRet.status() == Status::IndexNotFound() &&

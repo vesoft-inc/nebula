@@ -63,6 +63,24 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         }
     }
 
+    auto& alterSchemaProp = req.get_schema_prop();
+    if (existIndex) {
+        int64_t duration = 0;
+        if (alterSchemaProp.get_ttl_duration()) {
+            duration = *alterSchemaProp.get_ttl_duration();
+        }
+        std::string col;
+        if (alterSchemaProp.get_ttl_col()) {
+            col = *alterSchemaProp.get_ttl_col();
+        }
+        if (!col.empty() && duration > 0) {
+            LOG(ERROR) << "Alter edge error, index and ttl conflict";
+            handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
+            onFinished();
+            return;
+        }
+    }
+
     for (auto& edgeItem : edgeItems) {
         auto &cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {
@@ -82,8 +100,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         onFinished();
         return;
     }
+
     // Update schema property if edge not index
-    auto& alterSchemaProp = req.get_schema_prop();
     auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
@@ -91,9 +109,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         onFinished();
         return;
     }
-    if (!existIndex) {
-        schema.set_schema_prop(std::move(prop));
-    }
+
+    schema.set_schema_prop(std::move(prop));
     schema.set_columns(std::move(columns));
 
     std::vector<kvstore::KV> data;

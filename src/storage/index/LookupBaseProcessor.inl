@@ -35,6 +35,7 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
             return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         schemas_ = std::move(allEdges).value()[planContext_->edgeType_];
+        planContext_->edgeSchema_ = schemas_.back().get();
     } else {
         planContext_->tagId_ = indices.get_tag_or_edge_id();
         auto tagName = this->env_->schemaMan_->toTagName(spaceId_, planContext_->tagId_);
@@ -50,6 +51,7 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
             return cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         schemas_ = std::move(allTags).value()[planContext_->tagId_];
+        planContext_->tagSchema_ = schemas_.back().get();
     }
 
     if (indices.get_contexts().empty() || !req.return_columns_ref().has_value() ||

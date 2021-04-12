@@ -281,16 +281,6 @@ BaseProcessor<RESP>::getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType ed
 }
 
 
-template <typename RESP>
-bool BaseProcessor<RESP>::tagOrEdgeHasTTL(const cpp2::Schema& latestSchema) {
-    auto schemaProp = latestSchema.get_schema_prop();
-    if (schemaProp.get_ttl_col() && !schemaProp.get_ttl_col()->empty()) {
-         return true;
-    }
-    return false;
-}
-
-
 template<typename RESP>
 StatusOr<IndexID>
 BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexName) {

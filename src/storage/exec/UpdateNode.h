@@ -393,17 +393,19 @@ public:
                     }
                     auto ni = indexKey(partId, vId, nReader.get(), index);
                     if (!ni.empty()) {
+                        auto v = CommonUtils::ttlValue(schema_, nReader.get());
+                        auto niv = v.ok()  ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
                         auto indexState = planContext_->env_->getIndexState(planContext_->spaceId_,
                                                                             partId);
                         if (planContext_->env_->checkRebuilding(indexState)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
                                                                                    std::move(ni));
-                            batchHolder->put(std::move(modifyKey), "");
+                            batchHolder->put(std::move(modifyKey), std::move(niv));
                         } else if (planContext_->env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                             return folly::none;
                         } else {
-                            batchHolder->put(std::move(ni), "");
+                            batchHolder->put(std::move(ni), std::move(niv));
                         }
                     }
                 }
@@ -732,19 +734,21 @@ public:
                         LOG(ERROR) << "Bad format row";
                         return folly::none;
                     }
-                    auto ni = indexKey(partId, nReader.get(), edgeKey, index);
-                    if (!ni.empty()) {
+                    auto nik = indexKey(partId, nReader.get(), edgeKey, index);
+                    if (!nik.empty()) {
+                        auto v = CommonUtils::ttlValue(schema_, nReader.get());
+                        auto niv = v.ok()  ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
                         auto indexState = planContext_->env_->getIndexState(planContext_->spaceId_,
                                                                             partId);
                         if (planContext_->env_->checkRebuilding(indexState)) {
                             auto modifyKey = OperationKeyUtils::modifyOperationKey(partId,
-                                                                                   std::move(ni));
-                            batchHolder->put(std::move(modifyKey), "");
+                                                                                   std::move(nik));
+                            batchHolder->put(std::move(modifyKey), std::move(niv));
                         } else if (planContext_->env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                             return folly::none;
                         } else {
-                            batchHolder->put(std::move(ni), "");
+                            batchHolder->put(std::move(nik), std::move(niv));
                         }
                     }
                 }

@@ -97,6 +97,31 @@ kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
             continue;
         }
 
+        auto schema = env_->schemaMan_->getTagSchema(space, tagID);
+        if (!schema) {
+            LOG(WARNING) << "Space " << space << ", tag " << tagID << " invalid";
+            iter->next();
+            continue;
+        }
+
+        auto ttlProp = CommonUtils::ttlProps(schema.get());
+        if (ttlProp.first && CommonUtils::checkDataExpiredForTTL(schema.get(),
+                                                                 reader.get(),
+                                                                 ttlProp.second.second,
+                                                                 ttlProp.second.first)) {
+            VLOG(3) << "ttl expired : " << "Tag ID " << tagID << " Vertex ID " << vertex;
+            iter->next();
+            continue;
+        }
+
+        std::string indexVal = "";
+        if (ttlProp.first) {
+            auto ttlValRet = CommonUtils::ttlValue(schema.get(), reader.get());
+            if (ttlValRet.ok()) {
+                indexVal = IndexKeyUtils::indexVal(std::move(ttlValRet).value());
+            }
+        }
+
         for (const auto& item : items) {
             if (item->get_schema_id().get_tag_id() == tagID) {
                 auto valuesRet =
@@ -110,7 +135,7 @@ kvstore::ResultCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                               item->get_index_id(),
                                                               vertex.toString(),
                                                               std::move(valuesRet).value());
-                data.emplace_back(std::move(indexKey), "");
+                data.emplace_back(std::move(indexKey), indexVal);
             }
         }
         iter->next();

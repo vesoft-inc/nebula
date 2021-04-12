@@ -31,10 +31,23 @@ public:
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
+
+        auto ttlProp = CommonUtils::ttlProps(planContext_->edgeSchema_);
+
         data_.clear();
         std::vector<storage::cpp2::EdgeKey> edges;
         auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
         while (iter && iter->valid()) {
+            if (!iter->val().empty() && ttlProp.first) {
+                auto v = IndexKeyUtils::parseIndexTTL(iter->val());
+                if (CommonUtils::checkDataExpiredForTTL(planContext_->edgeSchema_,
+                                                        std::move(v),
+                                                        ttlProp.second.second,
+                                                        ttlProp.second.first)) {
+                    iter->next();
+                    continue;
+                }
+            }
             storage::cpp2::EdgeKey edge;
             edge.set_src(iter->srcId());
             edge.set_edge_type(planContext_->edgeType_);
