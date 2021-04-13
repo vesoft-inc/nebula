@@ -1595,23 +1595,23 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       $a = GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
-      | ORDER BY $-.src | OFFSET 1 LIMIT 2
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src AS like_src, like._dst AS like_dst
+      | ORDER BY $-.src,$-.like_src,$-.like_dst | OFFSET 1 LIMIT 2
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
-      | src           | $a.dst          | like._src       | like._dst    |
-      | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
-      | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
+      | src           | $a.dst          | like_src            | like_dst      |
+      | "Tony Parker" | "Manu Ginobili" | "LaMarcus Aldridge" | "Tony Parker" |
+      | "Tony Parker" | "Tim Duncan"    | "LaMarcus Aldridge" | "Tony Parker" |
     When executing query:
       """
       $a = GO FROM hash('Tony Parker') OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src, like._dst
-      | ORDER BY $-.src | LIMIT 2 OFFSET 1
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src AS like_src, like._dst AS like_dst
+      | ORDER BY $-.src,$-.like_src,$-.like_dst | LIMIT 2 OFFSET 1
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1,2,3 should be hashed:
-      | src           | $a.dst          | like._src       | like._dst    |
-      | "Tony Parker" | "Manu Ginobili" | "Manu Ginobili" | "Tim Duncan" |
-      | "Tony Parker" | "Tim Duncan"    | "Manu Ginobili" | "Tim Duncan" |
+      | src           | $a.dst          | like_src            | like_dst      |
+      | "Tony Parker" | "Manu Ginobili" | "LaMarcus Aldridge" | "Tony Parker" |
+      | "Tony Parker" | "Tim Duncan"    | "LaMarcus Aldridge" | "Tony Parker" |
 
   Scenario: Integer Vid GroupBy and Count
     When executing query:
