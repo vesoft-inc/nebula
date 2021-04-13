@@ -329,14 +329,39 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX single_person_ttl_index_second ON person_ttl(gender)
+      CREATE TAG INDEX single_person_ttl_index_second_gender ON person_ttl(gender)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX single_person_ttl_index_second_age ON person_ttl(age)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG person_ttl  ttl_col = ""
       """
     Then a ExecutionError should be raised at runtime:
     When executing query:
       """
-      CREATE TAG INDEX single_person_ttl_index_second ON person_ttl(age)
+      ALTER TAG person_ttl ttl_duration = 100, ttl_col = "age"
       """
     Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      ALTER TAG person_ttl ttl_duration = 100, ttl_col = "gender"
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      DROP TAG INDEX single_person_ttl_index_second_gender
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DROP TAG INDEX single_person_ttl_index_second_age
+      """
+    Then the execution should be successful
     When executing query:
       """
       ALTER TAG person_ttl  ttl_col = ""
@@ -344,12 +369,12 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX single_person_ttl_index_second ON person_ttl(age)
+      ALTER TAG person_ttl ttl_duration = 100, ttl_col = "age"
       """
     Then the execution should be successful
     When executing query:
       """
-      DROP TAG INDEX single_person_ttl_index_second
+      ALTER TAG person_ttl ttl_duration = 100, ttl_col = "gender"
       """
     Then the execution should be successful
     When executing query:
@@ -360,27 +385,27 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX person_ttl_2_index ON person_ttl_2(number)
+      CREATE TAG INDEX person_ttl_2_index_number ON person_ttl_2(number)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX person_ttl_2_index ON person_ttl_2(age)
+      CREATE TAG INDEX person_ttl_2_index_age ON person_ttl_2(age)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
       ALTER TAG person_ttl_2 DROP (age)
       """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      DROP TAG INDEX person_ttl_2_index_number
+      """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX person_ttl_2_index ON person_ttl_2(number)
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      DROP TAG INDEX person_ttl_2_index
+      DROP TAG INDEX person_ttl_2_index_age
       """
     Then the execution should be successful
     Then drop the used space
@@ -429,27 +454,42 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_second ON edge_1_ttl(degree)
+      CREATE EDGE INDEX edge_1_ttl_index_second_degree ON edge_1_ttl(degree)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_second ON edge_1_ttl(start_time)
+      CREATE EDGE INDEX edge_1_ttl_index_second_start_time ON edge_1_ttl(start_time)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
       ALTER EDGE edge_1_ttl ttl_col = ""
       """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      DROP EDGE INDEX edge_1_ttl_index_second_degree
+      """
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_second ON edge_1_ttl(start_time)
+      DROP EDGE INDEX edge_1_ttl_index_second_start_time
       """
     Then the execution should be successful
     When executing query:
       """
-      DROP EDGE INDEX edge_1_ttl_index_second
+      ALTER EDGE edge_1_ttl  ttl_col = ""
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER edge edge_1_ttl ttl_duration = 100, ttl_col = "start_time"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER edge edge_1_ttl ttl_duration = 100, ttl_col = "degree"
       """
     Then the execution should be successful
     When executing query:
@@ -459,32 +499,27 @@ Feature: IndexTest_Vid_Int
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_2 ON edge_1_ttl_2(degree)
+      CREATE EDGE INDEX edge_1_ttl_index_2_degree ON edge_1_ttl_2(degree)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_2 ON edge_1_ttl_2(start_time)
+      CREATE EDGE INDEX edge_1_ttl_index_2_start_time ON edge_1_ttl_2(start_time)
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the execution should be successful
     When executing query:
       """
       ALTER EDGE edge_1_ttl_2 DROP (start_time)
       """
-    Then the execution should be successful
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
-      CREATE EDGE INDEX edge_1_ttl_index_2 ON edge_1_ttl_2(degree)
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      DROP EDGE INDEX edge_1_ttl_index_2
+      DROP EDGE INDEX edge_1_ttl_index_2_degree
       """
     Then the execution should be successful
     When executing query:
       """
-      DROP EDGE edge_1_ttl_2
+      DROP EDGE INDEX edge_1_ttl_index_2_start_time
       """
     Then the execution should be successful
     Then drop the used space
