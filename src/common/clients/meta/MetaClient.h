@@ -266,7 +266,8 @@ public:
                    std::string indexName,
                    std::string tagName,
                    std::vector<cpp2::IndexFieldDef> fields,
-                   bool ifNotExists = false);
+                   bool ifNotExists = false,
+                   const std::string *comment = nullptr);
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
@@ -289,7 +290,8 @@ public:
                     std::string indexName,
                     std::string edgeName,
                     std::vector<cpp2::IndexFieldDef> fields,
-                    bool ifNotExists = false);
+                    bool ifNotExists = false,
+                    const std::string *comment = nullptr);
 
     // Remove the definition of edge index
     folly::Future<StatusOr<bool>>
