@@ -32,7 +32,7 @@ const Pattern &MergeGetNbrsAndDedupRule::pattern() const {
 }
 
 StatusOr<OptRule::TransformResult> MergeGetNbrsAndDedupRule::transform(
-    OptContext *ctx,
+    OptContext *octx,
     const MatchedResult &matched) const {
     const OptGroupNode *optGN = matched.node;
     const OptGroupNode *optDedup = matched.dependencies.back().node;
@@ -40,13 +40,13 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndDedupRule::transform(
     DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
     auto gn = static_cast<const GetNeighbors *>(optGN->node());
     auto dedup = static_cast<const Dedup *>(optDedup->node());
-    auto qctx = ctx->qctx();
-    auto newGN = gn->clone(qctx);
+
+    auto newGN = static_cast<GetNeighbors *>(gn->clone());
     if (!newGN->dedup()) {
         newGN->setDedup();
     }
     newGN->setInputVar(dedup->inputVar());
-    auto newOptGV = OptGroupNode::create(ctx, newGN, optGN->group());
+    auto newOptGV = OptGroupNode::create(octx, newGN, optGN->group());
     for (auto dep : optDedup->dependencies()) {
         newOptGV->dependsOn(dep);
     }

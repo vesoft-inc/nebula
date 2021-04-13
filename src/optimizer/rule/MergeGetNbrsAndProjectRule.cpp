@@ -64,7 +64,7 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
     auto gn = static_cast<const GetNeighbors *>(optGN->node());
     auto project = static_cast<const Project *>(optProj->node());
     auto qctx = ctx->qctx();
-    auto newGN = gn->clone(qctx);
+    auto newGN = static_cast<GetNeighbors *>(gn->clone());
     auto column = project->columns()->back();
     auto srcExpr = qctx->objPool()->add(column->expr()->clone().release());
     newGN->setSrc(srcExpr);

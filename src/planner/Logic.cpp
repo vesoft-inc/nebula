@@ -11,6 +11,50 @@
 namespace nebula {
 namespace graph {
 
+PlanNode* StartNode::clone() const {
+    auto* newStart = StartNode::make(qctx_);
+    newStart->cloneMembers(*this);
+    return newStart;
+}
+
+void StartNode::cloneMembers(const StartNode& s) {
+    PlanNode::cloneMembers(s);
+}
+
+
+PlanNode* Select::clone() const {
+    auto* newSelect = Select::make(qctx_, nullptr);
+    newSelect->cloneMembers(*this);
+    return newSelect;
+}
+
+void Select::cloneMembers(const Select& s) {
+    BinarySelect::cloneMembers(s);
+}
+
+
+PlanNode* Loop::clone() const {
+    auto* newLoop = Loop::make(qctx_, nullptr);
+    newLoop->cloneMembers(*this);
+    return newLoop;
+}
+
+void Loop::cloneMembers(const Loop& s) {
+    BinarySelect::cloneMembers(s);
+}
+
+
+PlanNode* PassThroughNode::clone() const {
+    auto* newPt = PassThroughNode::make(qctx_, nullptr);
+    newPt->cloneMembers(*this);
+    return newPt;
+}
+
+void PassThroughNode::cloneMembers(const PassThroughNode& s) {
+    SingleInputNode::cloneMembers(s);
+}
+
+
 std::unique_ptr<PlanNodeDescription> BinarySelect::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("condition", condition_ ? condition_->toString() : "", desc.get());

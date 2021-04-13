@@ -19,9 +19,13 @@ public:
         return qctx->objPool()->add(new StartNode(qctx));
     }
 
+    PlanNode* clone() const override;
+
 private:
     explicit StartNode(QueryContext* qctx)
         : PlanNode(qctx, Kind::kStart) {}
+
+    void cloneMembers(const StartNode&);
 };
 
 class BinarySelect : public SingleInputNode {
@@ -39,6 +43,13 @@ protected:
                  Expression* condition)
         : SingleInputNode(qctx, kind, input), condition_(condition) {}
 
+    void cloneMembers(const BinarySelect& s) {
+        SingleInputNode::cloneMembers(s);
+
+        condition_ = s.condition();
+    }
+
+protected:
     Expression* condition_{nullptr};
 };
 
@@ -46,9 +57,9 @@ class Select final : public BinarySelect {
 public:
     static Select* make(QueryContext* qctx,
                         PlanNode* input,
-                        PlanNode* ifBranch,
-                        PlanNode* elseBranch,
-                        Expression* condition) {
+                        PlanNode* ifBranch = nullptr,
+                        PlanNode* elseBranch = nullptr,
+                        Expression* condition = nullptr) {
         return qctx->objPool()->add(new Select(qctx, input, ifBranch, elseBranch, condition));
     }
 
@@ -70,6 +81,8 @@ public:
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
+    PlanNode* clone() const override;
+
 private:
     Select(QueryContext* qctx,
            PlanNode* input,
@@ -80,6 +93,8 @@ private:
           if_(ifBranch),
           else_(elseBranch) {}
 
+    void cloneMembers(const Select&);
+
 private:
     PlanNode* if_{nullptr};
     PlanNode* else_{nullptr};
@@ -87,7 +102,10 @@ private:
 
 class Loop final : public BinarySelect {
 public:
-    static Loop* make(QueryContext* qctx, PlanNode* input, PlanNode* body, Expression* condition) {
+    static Loop* make(QueryContext* qctx,
+                      PlanNode* input,
+                      PlanNode* body = nullptr,
+                      Expression* condition = nullptr) {
         return qctx->objPool()->add(new Loop(qctx, input, body, condition));
     }
 
@@ -101,10 +119,15 @@ public:
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
+    PlanNode* clone() const override;
+
 private:
     Loop(QueryContext* qctx, PlanNode* input, PlanNode* body, Expression* condition)
         : BinarySelect(qctx, Kind::kLoop, input, condition), body_(body) {}
 
+    void cloneMembers(const Loop&);
+
+private:
     PlanNode* body_{nullptr};
 };
 
@@ -117,11 +140,14 @@ public:
         return qctx->objPool()->add(new PassThroughNode(qctx, input));
     }
 
+    PlanNode* clone() const override;
+
 private:
     PassThroughNode(QueryContext* qctx, PlanNode* input)
         : SingleInputNode(qctx, Kind::kPassThrough, input) {}
-};
 
+    void cloneMembers(const PassThroughNode&);
+};
 }   // namespace graph
 }   // namespace nebula
 

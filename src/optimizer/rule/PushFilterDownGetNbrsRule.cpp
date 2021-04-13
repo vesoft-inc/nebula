@@ -73,7 +73,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
         newGNFilter = logicExpr.encode();
     }
 
-    auto newGN = gn->clone(qctx);
+    auto newGN = static_cast<GetNeighbors *>(gn->clone());
     newGN->setFilter(newGNFilter);
 
     OptGroupNode *newGnGroupNode = nullptr;

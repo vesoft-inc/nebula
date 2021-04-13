@@ -43,7 +43,7 @@ const Pattern &LimitPushDownRule::pattern() const {
 }
 
 StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
-    OptContext *ctx,
+    OptContext *octx,
     const MatchedResult &matched) const {
     auto limitGroupNode = matched.node;
     auto projGroupNode = matched.dependencies.front().node;
@@ -58,17 +58,16 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
         return TransformResult::noTransform();
     }
 
-    auto qctx = ctx->qctx();
-    auto newLimit = limit->clone(qctx);
-    auto newLimitGroupNode = OptGroupNode::create(ctx, newLimit, limitGroupNode->group());
+    auto newLimit = static_cast<Limit *>(limit->clone());
+    auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-    auto newProj = proj->clone(qctx);
-    auto newProjGroup = OptGroup::create(ctx);
+    auto newProj = static_cast<Project *>(proj->clone());
+    auto newProjGroup = OptGroup::create(octx);
     auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
-    auto newGn = gn->clone(qctx);
+    auto newGn = static_cast<GetNeighbors *>(gn->clone());
     newGn->setLimit(limitRows);
-    auto newGnGroup = OptGroup::create(ctx);
+    auto newGnGroup = OptGroup::create(octx);
     auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 
     newLimitGroupNode->dependsOn(newProjGroup);

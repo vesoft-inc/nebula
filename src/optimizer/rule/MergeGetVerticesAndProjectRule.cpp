@@ -62,7 +62,7 @@ StatusOr<OptRule::TransformResult> MergeGetVerticesAndProjectRule::transform(
     DCHECK_EQ(optProj->node()->kind(), PlanNode::Kind::kProject);
     auto gv = static_cast<const GetVertices *>(optGV->node());
     auto project = static_cast<const Project *>(optProj->node());
-    auto newGV = gv->clone();
+    auto newGV = static_cast<GetVertices *>(gv->clone());
     auto column = project->columns()->back();
     auto qctx = ctx->qctx();
     auto srcExpr = qctx->objPool()->add(column->expr()->clone().release());

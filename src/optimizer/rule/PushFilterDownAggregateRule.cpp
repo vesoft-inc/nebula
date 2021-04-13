@@ -45,8 +45,8 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
     auto* oldAggNode = aggGroupNode->node();
     DCHECK(oldFilterNode->kind() == PlanNode::Kind::kFilter);
     DCHECK(oldAggNode->kind() == PlanNode::Kind::kAggregate);
-    auto* newFilterNode = static_cast<const graph::Filter*>(oldFilterNode)->clone(qctx);
-    auto* newAggNode = static_cast<const graph::Aggregate*>(oldAggNode)->clone(qctx);
+    auto* newFilterNode = static_cast<graph::Filter*>(oldFilterNode->clone());
+    auto* newAggNode = static_cast<graph::Aggregate*>(oldAggNode->clone());
     const auto* condition = newFilterNode->condition();
     auto& groupItems = newAggNode->groupItems();
 

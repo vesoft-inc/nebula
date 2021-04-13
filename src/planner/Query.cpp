@@ -29,10 +29,14 @@ std::unique_ptr<PlanNodeDescription> Explore::explain() const {
     return desc;
 }
 
-GetNeighbors* GetNeighbors::clone(QueryContext* qctx) const {
-    auto newGN = GetNeighbors::make(qctx, nullptr, space_);
-    newGN->clone(*this);
-    return newGN;
+void Explore::cloneMembers(const Explore& e) {
+    SingleInputNode::cloneMembers(e);
+
+    space_ = e.space_;
+    dedup_ = e.dedup_;
+    limit_ = e.limit_;
+    filter_ = e.filter_;
+    orderBy_ = e.orderBy_;
 }
 
 std::unique_ptr<PlanNodeDescription> GetNeighbors::explain() const {
@@ -53,8 +57,15 @@ std::unique_ptr<PlanNodeDescription> GetNeighbors::explain() const {
     return desc;
 }
 
-void GetNeighbors::clone(const GetNeighbors& g) {
-    Explore::clone(g);
+PlanNode* GetNeighbors::clone() const {
+    auto* newGN = GetNeighbors::make(qctx_, nullptr, space_);
+    newGN->cloneMembers(*this);
+    return newGN;
+}
+
+void GetNeighbors::cloneMembers(const GetNeighbors& g) {
+    Explore::cloneMembers(g);
+
     setSrc(qctx_->objPool()->add(g.src_->clone().release()));
     setEdgeTypes(g.edgeTypes_);
     setEdgeDirection(g.edgeDirection_);
@@ -93,22 +104,34 @@ std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
     return desc;
 }
 
-GetVertices* GetVertices::clone() const {
-    auto src = qctx_->objPool()->add(src_->clone().release());
+PlanNode* GetVertices::clone() const {
+    auto* newGV = GetVertices::make(qctx_, nullptr, space_);
+    newGV->cloneMembers(*this);
+    return newGV;
+}
+
+void GetVertices::cloneMembers(const GetVertices& gv) {
+    Explore::cloneMembers(gv);
+
+    src_ = qctx_->objPool()->add(gv.src()->clone().release());
+
     std::vector<storage::cpp2::VertexProp> props;
-    props.reserve(props_.size());
-    for (const auto& prop : props_) {
+    const auto& gvProps = gv.props();
+    props.reserve(gvProps.size());
+    for (const auto& prop : gvProps) {
         props.emplace_back(prop);
     }
+    props_ = std::move(props);
+
     std::vector<storage::cpp2::Expr> exprs;
-    exprs.reserve(exprs_.size());
-    for (const auto& expr : exprs) {
+    const auto& gvExprs = gv.exprs();
+    exprs.reserve(gvExprs.size());
+    for (const auto& expr : gvExprs) {
         exprs.emplace_back(expr);
     }
-    auto gv = make(qctx_, nullptr, space_, src, std::move(props), std::move(exprs));
-    gv->clone(*this);
-    return gv;
+    exprs_ = std::move(exprs);
 }
+
 
 std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
     auto desc = Explore::explain();
@@ -121,25 +144,37 @@ std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
     return desc;
 }
 
-IndexScan* IndexScan::clone(QueryContext* qctx) const {
-    auto* scan = IndexScan::make(
-        qctx, nullptr, space(), nullptr, nullptr, isEdge(), schemaId());
-    scan->clone(*this);
-    return scan;
+PlanNode* GetEdges::clone() const {
+    auto* newGE = GetEdges::make(qctx_, nullptr, space_);
+    newGE->cloneMembers(*this);
+    return newGE;
 }
 
-void IndexScan::clone(const IndexScan &g) {
-    Explore::clone(g);
-    if (g.contexts_ != nullptr) {
-        contexts_ = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>(*g.contexts_);
+void GetEdges::cloneMembers(const GetEdges& ge) {
+    Explore::cloneMembers(ge);
+
+    src_ = qctx_->objPool()->add(ge.src()->clone().release());
+    type_ = qctx_->objPool()->add(ge.type()->clone().release());
+    ranking_ = qctx_->objPool()->add(ge.ranking()->clone().release());
+    dst_ = qctx_->objPool()->add(ge.dst()->clone().release());
+
+    std::vector<storage::cpp2::EdgeProp> props;
+    const auto& geProps = ge.props();
+    props.reserve(geProps.size());
+    for (const auto& prop : geProps) {
+        props.emplace_back(prop);
     }
-    if (g.returnCols_ != nullptr) {
-        returnCols_ = std::make_unique<std::vector<std::string>>(*g.returnCols_);
+    props_ = std::move(props);
+
+    std::vector<storage::cpp2::Expr> exprs;
+    const auto& geExprs = ge.exprs();
+    exprs.reserve(geExprs.size());
+    for (const auto& expr : geExprs) {
+        exprs.emplace_back(expr);
     }
-    isEdge_ = g.isEdge_;
-    schemaId_ = g.schemaId_;
-    isEmptyResultSet_ = g.isEmptyResultSet_;
+    exprs_ = std::move(exprs);
 }
+
 
 std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
     auto desc = Explore::explain();
@@ -150,16 +185,26 @@ std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
     return desc;
 }
 
-Filter* Filter::clone(QueryContext* qctx) const {
-    auto newFilter = Filter::make(qctx, nullptr, nullptr, needStableFilter_);
-    newFilter->clone(*this);
-    return newFilter;
+PlanNode* IndexScan::clone() const {
+    auto* newIndexScan = IndexScan::make(qctx_, nullptr);
+    newIndexScan->cloneMembers(*this);
+    return newIndexScan;
 }
 
-void Filter::clone(const Filter& f) {
-    SingleInputNode::clone(f);
-    condition_ = qctx_->objPool()->add(f.condition()->clone().release());
+void IndexScan::cloneMembers(const IndexScan &g) {
+    Explore::cloneMembers(g);
+
+    if (g.contexts_ != nullptr) {
+        contexts_ = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>(*g.contexts_);
+    }
+    if (g.returnCols_ != nullptr) {
+        returnCols_ = std::make_unique<std::vector<std::string>>(*g.returnCols_);
+    }
+    isEdge_ = g.isEdge();
+    schemaId_ = g.schemaId();
+    isEmptyResultSet_ = g.isEmptyResultSet();
 }
+
 
 std::unique_ptr<PlanNodeDescription> Filter::explain() const {
     auto desc = SingleInputNode::explain();
@@ -167,19 +212,57 @@ std::unique_ptr<PlanNodeDescription> Filter::explain() const {
     return desc;
 }
 
-Project* Project::clone(QueryContext* qctx) const {
-    auto newProj = Project::make(qctx, nullptr, nullptr);
-    newProj->clone(*this);
-    return newProj;
+PlanNode* Filter::clone() const {
+    auto* newFilter = Filter::make(qctx_, nullptr);
+    newFilter->cloneMembers(*this);
+    return newFilter;
 }
 
-void Project::clone(const Project &p) {
-    SingleInputNode::clone(p);
-    cols_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
-    for (const auto &col : p.columns()->columns()) {
-        cols_->addColumn(col->clone().release());
-    }
+void Filter::cloneMembers(const Filter& f) {
+    SingleInputNode::cloneMembers(f);
+
+    condition_ = qctx_->objPool()->add(f.condition()->clone().release());
+    needStableFilter_ = f.needStableFilter();
 }
+
+
+void SetOp::cloneMembers(const SetOp& s) {
+    BiInputNode::cloneMembers(s);
+}
+
+
+PlanNode* Union::clone() const {
+    auto* newUnion = Union::make(qctx_, nullptr, nullptr);
+    newUnion->cloneMembers(*this);
+    return newUnion;
+}
+
+void Union::cloneMembers(const Union& f) {
+    SetOp::cloneMembers(f);
+}
+
+
+PlanNode* Intersect::clone() const {
+    auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
+    newIntersect->cloneMembers(*this);
+    return newIntersect;
+}
+
+void Intersect::cloneMembers(const Intersect& f) {
+    SetOp::cloneMembers(f);
+}
+
+
+PlanNode* Minus::clone() const {
+    auto* newMinus = Minus::make(qctx_, nullptr, nullptr);
+    newMinus->cloneMembers(*this);
+    return newMinus;
+}
+
+void Minus::cloneMembers(const Minus& f) {
+    SetOp::cloneMembers(f);
+}
+
 
 std::unique_ptr<PlanNodeDescription> Project::explain() const {
     auto desc = SingleInputNode::explain();
@@ -194,11 +277,43 @@ std::unique_ptr<PlanNodeDescription> Project::explain() const {
     return desc;
 }
 
+PlanNode* Project::clone() const {
+    auto* newProj = Project::make(qctx_, nullptr);
+    newProj->cloneMembers(*this);
+    return newProj;
+}
+
+void Project::cloneMembers(const Project &p) {
+    SingleInputNode::cloneMembers(p);
+
+    cols_ = qctx_->objPool()->add(new YieldColumns());
+    for (const auto &col : p.columns()->columns()) {
+        cols_->addColumn(col->clone().release());
+    }
+}
+
+
 std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("unwind", cols_? cols_->toString() : "", desc.get());
     return desc;
 }
+
+PlanNode* Unwind::clone() const {
+    auto* newUnwind = Unwind::make(qctx_, nullptr);
+    newUnwind->cloneMembers(*this);
+    return newUnwind;
+}
+
+void Unwind::cloneMembers(const Unwind &p) {
+    SingleInputNode::cloneMembers(p);
+
+    cols_ = qctx_->objPool()->add(new YieldColumns());
+    for (const auto &col : p.columns()->columns()) {
+        cols_->addColumn(col->clone().release());
+    }
+}
+
 
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {
     auto desc = SingleInputNode::explain();
@@ -206,17 +321,22 @@ std::unique_ptr<PlanNodeDescription> Sort::explain() const {
     return desc;
 }
 
-Limit* Limit::clone(QueryContext* qctx) const {
-    auto newLimit = Limit::make(qctx, nullptr, offset_, count_);
-    newLimit->clone(*this);
-    return newLimit;
+PlanNode* Sort::clone() const {
+    auto* newSort = Sort::make(qctx_, nullptr);
+    newSort->cloneMembers(*this);
+    return newSort;
 }
 
-void Limit::clone(const Limit &l) {
-    SingleInputNode::clone(l);
-    offset_ = l.offset_;
-    count_ = l.count_;
+void Sort::cloneMembers(const Sort &p) {
+    SingleInputNode::cloneMembers(p);
+
+    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
+    for (const auto factor : p.factors()) {
+        factors.emplace_back(factor);
+    }
+    factors_ = std::move(factors);
 }
+
 
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
     auto desc = SingleInputNode::explain();
@@ -224,6 +344,20 @@ std::unique_ptr<PlanNodeDescription> Limit::explain() const {
     addDescription("count", folly::to<std::string>(count_), desc.get());
     return desc;
 }
+
+PlanNode* Limit::clone() const {
+    auto* newLimit = Limit::make(qctx_, nullptr);
+    newLimit->cloneMembers(*this);
+    return newLimit;
+}
+
+void Limit::cloneMembers(const Limit &l) {
+    SingleInputNode::cloneMembers(l);
+
+    offset_ = l.offset_;
+    count_ = l.count_;
+}
+
 
 std::unique_ptr<PlanNodeDescription> TopN::explain() const {
     auto desc = SingleInputNode::explain();
@@ -233,24 +367,24 @@ std::unique_ptr<PlanNodeDescription> TopN::explain() const {
     return desc;
 }
 
-Aggregate* Aggregate::clone(QueryContext* qctx) const {
-    std::vector<Expression*> newGroupKeys;
-    std::vector<Expression*> newGroupItems;
-    auto newAggregate =
-        Aggregate::make(qctx, nullptr, std::move(newGroupKeys), std::move(newGroupItems));
-    newAggregate->clone(*this);
-    return newAggregate;
+PlanNode* TopN::clone() const {
+    auto* newTopN = TopN::make(qctx_, nullptr);
+    newTopN->cloneMembers(*this);
+    return newTopN;
 }
 
-void Aggregate::clone(const Aggregate& agg) {
-    SingleInputNode::clone(agg);
-    for (auto* expr : agg.groupKeys()) {
-        groupKeys_.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+void TopN::cloneMembers(const TopN &l) {
+    SingleInputNode::cloneMembers(l);
+
+    std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
+    for (const auto factor : l.factors()) {
+        factors.emplace_back(factor);
     }
-    for (auto* expr : agg.groupItems()) {
-        groupItems_.emplace_back(qctx_->objPool()->add(expr->clone().release()));
-    }
+    factors_ = std::move(factors);
+    offset_ = l.offset_;
+    count_ = l.count_;
 }
+
 
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
     auto desc = SingleInputNode::explain();
@@ -264,11 +398,56 @@ std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
     addDescription("groupItems", folly::toJson(itemArr), desc.get());
     return desc;
 }
+
+PlanNode* Aggregate::clone() const {
+    auto* newAggregate = Aggregate::make(qctx_, nullptr);
+    newAggregate->cloneMembers(*this);
+    return newAggregate;
+}
+
+void Aggregate::cloneMembers(const Aggregate& agg) {
+    SingleInputNode::cloneMembers(agg);
+
+    std::vector<Expression*> gKeys;
+    std::vector<Expression*> gItems;
+    for (auto* expr : agg.groupKeys()) {
+        gKeys.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+    }
+    for (auto* expr : agg.groupItems()) {
+        gItems.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+    }
+    groupKeys_ = std::move(gKeys);
+    groupItems_ = std::move(gItems);
+}
+
+
 std::unique_ptr<PlanNodeDescription> SwitchSpace::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("space", spaceName_, desc.get());
     return desc;
 }
+
+PlanNode* SwitchSpace::clone() const {
+    auto* newSs = SwitchSpace::make(qctx_, nullptr, spaceName_);
+    newSs->cloneMembers(*this);
+    return newSs;
+}
+
+void SwitchSpace::cloneMembers(const SwitchSpace &l) {
+    SingleInputNode::cloneMembers(l);
+}
+
+
+PlanNode* Dedup::clone() const {
+    auto* newDedup = Dedup::make(qctx_, nullptr);
+    newDedup->cloneMembers(*this);
+    return newDedup;
+}
+
+void Dedup::cloneMembers(const Dedup &l) {
+    SingleInputNode::cloneMembers(l);
+}
+
 
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
     auto desc = SingleDependencyNode::explain();
@@ -302,6 +481,51 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
     return desc;
 }
 
+PlanNode* DataCollect::clone() const {
+    auto* newDataCollect = DataCollect::make(qctx_, nullptr, collectKind_);
+    newDataCollect->cloneMembers(*this);
+    return newDataCollect;
+}
+
+void DataCollect::cloneMembers(const DataCollect &l) {
+    SingleDependencyNode::cloneMembers(l);
+
+    mToN_ = l.mToN();
+    distinct_ = l.distinct();
+}
+
+
+std::unique_ptr<PlanNodeDescription> Join::explain() const {
+    auto desc = SingleDependencyNode::explain();
+    folly::dynamic inputVar = folly::dynamic::object();
+    inputVar.insert("leftVar", util::toJson(leftVar_));
+    inputVar.insert("rightVar", util::toJson(rightVar_));
+    addDescription("inputVar", folly::toJson(inputVar), desc.get());
+    addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
+    addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+    return desc;
+}
+
+void Join::cloneMembers(const Join& j) {
+    SingleDependencyNode::cloneMembers(j);
+
+    leftVar_ = j.leftVar();
+    rightVar_ = j.rightVar();
+
+    std::vector<Expression*> hKeys;
+    for (auto* item : j.hashKeys()) {
+        hKeys.emplace_back(qctx_->objPool()->add(item->clone().release()));
+    }
+    hashKeys_ = std::move(hKeys);
+
+    std::vector<Expression*> pKeys;
+    for (auto* item : j.probeKeys()) {
+        pKeys.emplace_back(qctx_->objPool()->add(item->clone().release()));
+    }
+    probeKeys_ = std::move(pKeys);
+}
+
+
 Join::Join(QueryContext* qctx,
            Kind kind,
            PlanNode* input,
@@ -319,16 +543,6 @@ Join::Join(QueryContext* qctx,
     readVariable(rightVar_.first);
 }
 
-std::unique_ptr<PlanNodeDescription> Join::explain() const {
-    auto desc = SingleDependencyNode::explain();
-    folly::dynamic inputVar = folly::dynamic::object();
-    inputVar.insert("leftVar", util::toJson(leftVar_));
-    inputVar.insert("rightVar", util::toJson(rightVar_));
-    addDescription("inputVar", folly::toJson(inputVar), desc.get());
-    addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
-    addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
-    return desc;
-}
 
 std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
     auto desc = Join::explain();
@@ -336,11 +550,33 @@ std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
     return desc;
 }
 
+PlanNode* LeftJoin::clone() const {
+    auto* newLeftJoin = LeftJoin::make(qctx_, nullptr, leftVar_, rightVar_);
+    newLeftJoin->cloneMembers(*this);
+    return newLeftJoin;
+}
+
+void LeftJoin::cloneMembers(const LeftJoin &l) {
+    Join::cloneMembers(l);
+}
+
+
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
     auto desc = Join::explain();
     addDescription("kind", "InnerJoin", desc.get());
     return desc;
 }
+
+PlanNode* InnerJoin::clone() const {
+    auto* newInnerJoin = InnerJoin::make(qctx_, nullptr, leftVar_, rightVar_);
+    newInnerJoin->cloneMembers(*this);
+    return newInnerJoin;
+}
+
+void InnerJoin::cloneMembers(const InnerJoin &l) {
+    Join::cloneMembers(l);
+}
+
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
     auto desc = SingleDependencyNode::explain();
@@ -349,6 +585,33 @@ std::unique_ptr<PlanNodeDescription> Assign::explain() const {
         addDescription("value", items_[i].second->toString(), desc.get());
     }
     return desc;
+}
+
+PlanNode* Assign::clone() const {
+    auto* newAssign = Assign::make(qctx_, nullptr);
+    newAssign->cloneMembers(*this);
+    return newAssign;
+}
+
+void Assign::cloneMembers(const Assign& f) {
+    SingleInputNode::cloneMembers(f);
+
+    for (const std::pair<std::string, std::unique_ptr<Expression>>& item : f.items()) {
+        std::pair<std::string, std::unique_ptr<Expression>> newItem;
+        newItem.first = item.first;
+        newItem.second = item.second->clone();
+        items_.emplace_back(std::move(newItem));
+    }
+}
+
+PlanNode* UnionAllVersionVar::clone() const {
+    auto* newUv = UnionAllVersionVar::make(qctx_, nullptr);
+    newUv->cloneMembers(*this);
+    return newUv;
+}
+
+void UnionAllVersionVar::cloneMembers(const UnionAllVersionVar& f) {
+    SingleInputNode::cloneMembers(f);
 }
 
 }   // namespace graph

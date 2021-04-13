@@ -40,7 +40,7 @@ StatusOr<OptRule::TransformResult> MergeGetVerticesAndDedupRule::transform(
     DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
     auto gv = static_cast<const GetVertices *>(optGV->node());
     auto dedup = static_cast<const Dedup *>(optDedup->node());
-    auto newGV = gv->clone();
+    auto newGV = static_cast<GetVertices *>(gv->clone());
     if (!newGV->dedup()) {
         newGV->setDedup();
     }
