@@ -17,6 +17,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "kvstore/LogEncoder.h"
+#include "meta/ActiveHostsMan.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 const int32_t kDefaultVidLen = 8;
@@ -296,7 +297,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     while (true) {
         int32_t leaderCount = 0;
         for (int i = 0; i < replicas; i++) {
-            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
             leaderCount += stores[i]->allLeader(leaderIds);
         }
         if (leaderCount == 3) {
@@ -432,7 +433,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     while (true) {
         int32_t leaderCount = 0;
         for (int i = 0; i < replicas; i++) {
-            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
             leaderCount += stores[i]->allLeader(leaderIds);
         }
         if (leaderCount == 3) {
@@ -474,7 +475,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
     {
-        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
         ASSERT_EQ(3, stores[0]->allLeader(leaderIds));
     }
 
@@ -496,7 +497,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
     for (int i = 0; i < replicas; i++) {
-        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
         ASSERT_EQ(1UL, stores[i]->allLeader(leaderIds));
     }
 }
@@ -611,7 +612,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         while (true) {
             int32_t leaderCount = 0;
             for (int i = 0; i < replicas; i++) {
-                std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+                nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
                 leaderCount += stores[i]->allLeader(leaderIds);
             }
             if (leaderCount == 3) {

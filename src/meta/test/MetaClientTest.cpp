@@ -1541,7 +1541,7 @@ public:
     }
 
     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
-                                            std::vector<PartitionID>>&) override {
+                                            std::vector<cpp2::LeaderInfo>>&) override {
         LOG(INFO) << "Get leader distribution!";
     }
 

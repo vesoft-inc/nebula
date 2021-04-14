@@ -5,6 +5,7 @@
  */
 
 #include "meta/MetaServiceUtils.h"
+#include <boost/stacktrace.hpp>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include "common/network/NetworkUtils.h"
@@ -40,6 +41,7 @@ static const std::unordered_map<
         {"roles", {"__roles__", MetaServiceUtils::parseRoleSpace}},
         {"last_update_time", {"__last_update_time__", nullptr}},
         {"leaders", {"__leaders__", nullptr}},
+        {"leader_terms", {"__leader_terms__", nullptr}},
         {"listener", {"__listener__", nullptr}},
         {"statis", {"__statis__", MetaServiceUtils::parseStatisSpace}},
         {"balance_task", {"__balance_task__", nullptr}},
@@ -60,6 +62,7 @@ static const std::string kConfigsTable        = systemTableMaps.at("configs").fi
 static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;      // NOLINT
 static const std::string kLastUpdateTimeTable = tableMaps.at("last_update_time").first; // NOLINT
 static const std::string kLeadersTable        = tableMaps.at("leaders").first;          // NOLINT
+static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;     // NOLINT
 static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
 static const std::string kZonesTable          = systemTableMaps.at("zones").first;            // NOLINT
 static const std::string kListenerTable       = tableMaps.at("listener").first;         // NOLINT
@@ -267,10 +270,12 @@ HostAddr MetaServiceUtils::parseHostKeyV2(folly::StringPiece key) {
 }
 
 std::string MetaServiceUtils::leaderKey(std::string addr, Port port) {
+    LOG(ERROR) << "deprecated function\n" << boost::stacktrace::stacktrace();
     return leaderKeyV2(addr, port);
 }
 
 std::string MetaServiceUtils::leaderKeyV2(std::string addr, Port port) {
+    LOG(ERROR) << "deprecated function\n" << boost::stacktrace::stacktrace();
     std::string key;
     HostAddr h(addr, port);
 
@@ -280,7 +285,17 @@ std::string MetaServiceUtils::leaderKeyV2(std::string addr, Port port) {
     return key;
 }
 
+std::string MetaServiceUtils::leaderKey(GraphSpaceID spaceId, PartitionID partId) {
+    std::string key;
+    key.reserve(kLeaderTermsTable.size() + sizeof(GraphSpaceID) + sizeof(PartitionID));
+    key.append(kLeaderTermsTable.data(), kLeaderTermsTable.size())
+        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
+        .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+    return key;
+}
+
 std::string MetaServiceUtils::leaderVal(const LeaderParts& leaderParts) {
+    LOG(ERROR) << "deprecated function\n" << boost::stacktrace::stacktrace();
     std::string value;
     value.reserve(512);
     for (const auto& spaceEntry : leaderParts) {
@@ -295,11 +310,53 @@ std::string MetaServiceUtils::leaderVal(const LeaderParts& leaderParts) {
     return value;
 }
 
+// v3: dataVer(int) + lenOfHost(8) + HostAddr(varchar) + term(int64_t)
+std::string MetaServiceUtils::leaderValV3(const HostAddr& h, int64_t term) {
+    std::string leaderVal;
+    leaderVal.reserve(256);
+
+    int dataVersion = 3;
+
+    auto sHost = serializeHostAddr(h);
+    auto lenOfHost = sHost.size();
+
+    leaderVal.append(reinterpret_cast<const char*>(&dataVersion), sizeof(dataVersion))
+             .append(reinterpret_cast<const char*>(&lenOfHost), sizeof(lenOfHost))
+             .append(sHost)
+             .append(reinterpret_cast<const char*>(&term), sizeof(term));
+    return leaderVal;
+}
+
+// v3: dataVer(int) + lenOfHost(8) + HostAddr(varchar) + term(int64_t)
+std::tuple<HostAddr, TermID, cpp2::ErrorCode>
+MetaServiceUtils::parseLeaderValV3(folly::StringPiece val) {
+    std::tuple<HostAddr, TermID, cpp2::ErrorCode> ret;
+    std::get<2>(ret) = cpp2::ErrorCode::SUCCEEDED;
+    int dataVer = *reinterpret_cast<const int*>(val.data());
+    if (dataVer != 3) {
+        std::get<2>(ret) = cpp2::ErrorCode::E_INVALID_PARM;
+        return ret;
+    }
+
+    CHECK_GE(val.size(), sizeof(int));
+    val.advance(sizeof(int));
+    auto lenOfHost = *reinterpret_cast<const size_t*>(val.data());
+
+    val.advance(sizeof(size_t));
+    CHECK_GE(val.size(), lenOfHost);
+    std::get<0>(ret) = MetaServiceUtils::deserializeHostAddr(val.subpiece(0, lenOfHost));
+
+    val.advance(lenOfHost);
+    std::get<1>(ret) = *reinterpret_cast<const TermID*>(val.data());
+    return ret;
+}
+
 const std::string& MetaServiceUtils::leaderPrefix() {
-    return kLeadersTable;
+    return kLeaderTermsTable;
 }
 
 HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
+    LOG(FATAL) << "called deprecated function";
     if (key.size() == kLeadersTable.size() + sizeof(int64_t)) {
         return parseLeaderKeyV1(key);
     }
@@ -308,6 +365,7 @@ HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
 
 // input should be a pair of int32_t
 HostAddr MetaServiceUtils::parseLeaderKeyV1(folly::StringPiece key) {
+    LOG(FATAL) << "deprecated function called";
     HostAddr host;
     CHECK_EQ(key.size(), kLeadersTable.size() + sizeof(int64_t));
     key.advance(kLeadersTable.size());
@@ -318,11 +376,21 @@ HostAddr MetaServiceUtils::parseLeaderKeyV1(folly::StringPiece key) {
 }
 
 HostAddr MetaServiceUtils::parseLeaderKeyV2(folly::StringPiece key) {
+    LOG(FATAL) << "deprecated function";
     key.advance(kLeadersTable.size());
     return MetaServiceUtils::deserializeHostAddr(key);
 }
 
-LeaderParts MetaServiceUtils::parseLeaderVal(folly::StringPiece val) {
+std::pair<GraphSpaceID, PartitionID> MetaServiceUtils::parseLeaderKeyV3(folly::StringPiece key) {
+    std::pair<GraphSpaceID, PartitionID> ret;
+    ret.first = *reinterpret_cast<const GraphSpaceID*>(key.data() + kLeaderTermsTable.size());
+    ret.second = *reinterpret_cast<const PartitionID*>(key.data() + kLeaderTermsTable.size() +
+                                                                    sizeof(GraphSpaceID));
+    return ret;
+}
+
+LeaderParts MetaServiceUtils::parseLeaderValV1(folly::StringPiece val) {
+    LOG(FATAL) << "deprecated function";
     LeaderParts leaderParts;
     size_t size = val.size();
     // decode leader info

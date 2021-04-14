@@ -92,7 +92,11 @@ public:
 
     static std::string leaderKeyV2(std::string addr, Port port);
 
+    static std::string leaderKey(GraphSpaceID spaceId, PartitionID partId);
+
     static std::string leaderVal(const LeaderParts& leaderParts);
+
+    static std::string leaderValV3(const HostAddr& h, int64_t term);
 
     static const std::string& leaderPrefix();
 
@@ -100,9 +104,13 @@ public:
 
     static HostAddr parseLeaderKeyV1(folly::StringPiece key);
 
+    static std::pair<GraphSpaceID, PartitionID> parseLeaderKeyV3(folly::StringPiece key);
+
     static HostAddr parseLeaderKeyV2(folly::StringPiece key);
 
-    static LeaderParts parseLeaderVal(folly::StringPiece val);
+    static LeaderParts parseLeaderValV1(folly::StringPiece val);
+
+    static std::tuple<HostAddr, int64_t, cpp2::ErrorCode> parseLeaderValV3(folly::StringPiece val);
 
     static std::string schemaVal(const std::string& name, const cpp2::Schema& schema);
 

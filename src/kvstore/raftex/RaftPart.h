@@ -127,6 +127,11 @@ public:
         return leader_;
     }
 
+    TermID termId() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return term_;
+    }
+
     std::shared_ptr<wal::FileBasedWal> wal() const {
         return wal_;
     }

@@ -29,8 +29,9 @@ private:
      * */
     Status allHostsWithStatus(cpp2::HostRole type);
 
-    // the show leader, partition info (nebula 1.0 edition)
-    Status fillLeaderAndPartInfoPerHost();
+    Status fillLeaders();
+
+    Status fillAllParts();
 
     /**
      * Get gitInfoSHA from all meta hosts gitInfoSHA
