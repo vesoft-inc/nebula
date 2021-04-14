@@ -869,13 +869,7 @@ edge_prop_expression
 
 function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
-        if (!$3) {
-            if (FunctionManager::find(*$1, 0).ok()) {
-                $$ = new FunctionCallExpression($1);
-            } else {
-                throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
-            }
-        } else if ($3->numArgs() == 1 && AggFunctionManager::find(*$1).ok()) {
+        if ($3->numArgs() == 1 && AggFunctionManager::find(*$1).ok()) {
             $$ = new AggregateExpression($1, $3->args()[0].release(), false);
             delete($3);
         } else if (FunctionManager::find(*$1, $3->numArgs()).ok()) {
@@ -945,7 +939,7 @@ uuid_expression
 
 opt_argument_list
     : %empty {
-        $$ = nullptr;
+        $$ = new ArgumentList();
     }
     | argument_list {
         $$ = $1;
