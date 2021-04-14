@@ -38,14 +38,14 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"bit_xor",
      {TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::INT)}},
     {"floor",
-     {TypeSignature({Value::Type::INT}, Value::Type::INT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::INT)}},
+     {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"ceil",
-     {TypeSignature({Value::Type::INT}, Value::Type::INT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::INT)}},
+     {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"round",
-     {TypeSignature({Value::Type::INT}, Value::Type::INT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::INT)}},
+     {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -338,7 +338,7 @@ FunctionManager::FunctionManager() {
         };
     }
     {
-        // to nearest integer value not less than x
+        // returns the smallest floating point number that is not less than x
         auto &attr = functions_["ceil"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
@@ -361,7 +361,7 @@ FunctionManager::FunctionManager() {
         };
     }
     {
-        // to nearest integer value
+        // to nearest integral (as a floating-point value)
         auto &attr = functions_["round"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
