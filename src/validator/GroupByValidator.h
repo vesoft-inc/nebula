@@ -8,17 +8,15 @@
 #define VALIDATOR_GROUPBY_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/Validator.h"
 #include "planner/Query.h"
-
+#include "validator/Validator.h"
 
 namespace nebula {
 namespace graph {
 
 class GroupByValidator final : public Validator {
 public:
-    GroupByValidator(Sentence *sentence, QueryContext *context)
-        : Validator(sentence, context) {}
+    GroupByValidator(Sentence *sentence, QueryContext *context) : Validator(sentence, context) {}
 
     Status validateImpl() override;
 
@@ -30,27 +28,25 @@ private:
     Status validateYield(const YieldClause *yieldClause);
 
     Status groupClauseSemanticCheck();
-    Status rewriteInnerAggExpr(YieldColumn* col, bool& rewrited);
-    Status checkAggExpr(AggregateExpression* aggExpr);
+    Status rewriteInnerAggExpr(YieldColumn *col, bool &rewrited);
 
 private:
-    std::vector<Expression*>                         yieldCols_;
+    std::vector<Expression *> yieldCols_;
 
     // key: alias, value: input name
-    std::unordered_map<std::string, YieldColumn*>     aliases_;
+    std::unordered_map<std::string, YieldColumn *> aliases_;
 
-    bool                                              needGenProject_{false};
-    std::vector<std::string>                          outputColumnNames_;
-    std::vector<std::string>                          projOutputColumnNames_;
+    bool needGenProject_{false};
+    std::vector<std::string> outputColumnNames_;
+    std::vector<std::string> projOutputColumnNames_;
 
     // used to generate Project node when there is an internally nested aggregateExpression
-    YieldColumns*                                     projCols_;
+    YieldColumns *projCols_;
 
-    std::vector<Expression*>                          groupKeys_;
-    std::vector<Expression*>                          groupItems_;
+    std::vector<Expression *> groupKeys_;
+    std::vector<Expression *> groupItems_;
 };
 
-
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula
 #endif

@@ -608,7 +608,7 @@ Feature: Basic Aggregate and GroupBy
       """
       GO FROM "Tim Duncan" OVER like YIELD count(*)
       """
-    Then a SemanticError should be raised at runtime: `COUNT(*)', not support aggregate function in go sentence.
+    Then a SemanticError should be raised at runtime: `count(*)', not support aggregate function in go sentence.
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like where COUNT(*) > 2

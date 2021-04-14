@@ -524,3 +524,19 @@ Feature: Yield Sentence
     Then the result should be, in any order, with relax comparison:
       | c             |
       | [123,456,789] |
+
+  Scenario: function name case test
+    When executing query:
+      """
+      yield [aBs(-3), tofloat(3), bit_Or(1, 2)] AS function_case_test
+      """
+    Then the result should be, in any order, with relax comparison:
+      | function_case_test |
+      | [3, 3.0, 3]        |
+    When executing query:
+      """
+      yield counT(*), aVg(3), bit_Or(1)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | counT(*) | aVg(3) | bit_Or(1) |
+      | 1        | 3.0    | 1         |

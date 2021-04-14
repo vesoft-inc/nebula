@@ -896,8 +896,9 @@ function_call_expression
         }
     }
     | LABEL L_PAREN STAR R_PAREN {
-        std::transform($1->begin(), $1->end(), $1->begin(), ::toupper);
-        if (!$1->compare("COUNT")) {
+        auto func = *$1;
+        std::transform(func.begin(), func.end(), func.begin(), ::toupper);
+        if (!func.compare("COUNT")) {
             auto star = new ConstantExpression(std::string("*"));
             $$ = new AggregateExpression($1, star, false);
         } else {
@@ -906,8 +907,9 @@ function_call_expression
         }
     }
     | LABEL L_PAREN KW_DISTINCT STAR R_PAREN {
-        std::transform($1->begin(), $1->end(), $1->begin(), ::toupper);
-        if (!$1->compare("COUNT")) {
+        auto func = *$1;
+        std::transform(func.begin(), func.end(), func.begin(), ::toupper);
+        if (!func.compare("COUNT")) {
             auto star = new ConstantExpression(std::string("*"));
             $$ = new AggregateExpression($1, star, true);
         } else {

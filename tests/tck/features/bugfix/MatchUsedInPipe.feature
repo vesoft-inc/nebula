@@ -40,7 +40,7 @@ Feature: Test match used in pipe
       MATCH (n:player{name:"Tim Duncan"})-[]-(m) RETURN n,m | GROUP BY $-.n, $-.m YIELD $-.n, $-.m, count(*);
       """
     Then the result should be, in any order, with relax comparison:
-      | $-.n           | $-.m                  | COUNT(*) |
+      | $-.n           | $-.m                  | count(*) |
       | ("Tim Duncan") | ("Spurs")             | 1        |
       | ("Tim Duncan") | ("Shaquile O'Neal")   | 1        |
       | ("Tim Duncan") | ("Tiago Splitter")    | 1        |
