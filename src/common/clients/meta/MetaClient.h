@@ -42,6 +42,9 @@ using TagSchema = std::unordered_map<TagID, std::shared_ptr<const NebulaSchemaPr
 using EdgeSchemas = std::unordered_map<EdgeType,
                                        std::vector<std::shared_ptr<const NebulaSchemaProvider>>>;
 
+// Mapping of edgeType and  a *single* edge schema
+using EdgeSchema = std::unordered_map<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>;
+
 // Space and index Name => IndexID
 // Get IndexID via space ID and index name
 using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, IndexID>;
@@ -490,6 +493,8 @@ public:
     StatusOr<TagSchema> getAllLatestVerTagSchema(const GraphSpaceID& spaceId);
 
     StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID spaceId);
+
+    StatusOr<EdgeSchema> getAllLatestVerEdgeSchemaFromCache(const GraphSpaceID& spaceId);
 
     StatusOr<std::shared_ptr<cpp2::IndexItem>>
     getTagIndexByNameFromCache(const GraphSpaceID space, const std::string& name);

@@ -2024,6 +2024,23 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
     return iter->second->edgeSchemas_;
 }
 
+StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphSpaceID& spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto iter = localCache_.find(spaceId);
+    if (iter == localCache_.end()) {
+        return Status::Error("Space %d not found", spaceId);
+    }
+    EdgeSchema edgesSchema;
+    edgesSchema.reserve(iter->second->edgeSchemas_.size());
+    // fetch all edgeTypes
+    for (const auto& edgeSchema : iter->second->edgeSchemas_) {
+        edgesSchema.emplace(edgeSchema.first, edgeSchema.second.back());
+    }
+    return edgesSchema;
+}
 
 folly::Future<StatusOr<bool>>
 MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
