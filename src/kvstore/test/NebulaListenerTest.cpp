@@ -14,7 +14,6 @@
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/LogEncoder.h"
-#include "meta/ActiveHostsMan.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 using nebula::meta::PartHosts;
@@ -213,7 +212,7 @@ protected:
         while (true) {
             int32_t leaderCount = 0;
             for (int i = 0; i < replicas_; i++) {
-                nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
+                std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
                 leaderCount += stores_[i]->allLeader(leaderIds);
             }
             if (leaderCount == partCount_) {
@@ -327,7 +326,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
     {
-        nebula::meta::ActiveHostsMan::AllLeaders leaderIds;
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         ASSERT_EQ(partCount_, stores_[0]->allLeader(leaderIds));
     }
 

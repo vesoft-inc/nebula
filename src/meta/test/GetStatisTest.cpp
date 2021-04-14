@@ -99,19 +99,6 @@ protected:
         rootPath_.reset();
     }
 
-    // using AllLeaders = std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>;
-    using FakeHost = std::pair<HostAddr, ActiveHostsMan::AllLeaders>;
-    FakeHost fakeHost(std::string ip, int port, int space, std::vector<int> parts) {
-        HostAddr host(ip, port);
-        ActiveHostsMan::AllLeaders leaders;
-        for (auto i = 0U; i != parts.size(); ++i) {
-            leaders[space].emplace_back();
-            leaders[space].back().set_part_id(parts[i]);
-            leaders[space].back().set_term(9999);
-        }
-        return std::make_pair(host, leaders);
-    }
-
     std::unique_ptr<fs::TempDir> rootPath_{nullptr};
     std::unique_ptr<kvstore::KVStore> kv_{nullptr};
     JobManager* jobMgr{nullptr};
@@ -341,14 +328,11 @@ TEST_F(GetStatisTest, StatisJob) {
 
 TEST_F(GetStatisTest, MockSingleMachineTest) {
     GraphSpaceID spaceId = 1;
-    // // Because only send to leader, need to mock leader distribution
-    std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
-    auto storage = fakeHost("0", 0, 1, {1});
-    allStorage[storage.first] = storage.second;
-
+    // Because only send to leader, need to mock leader distribution
+    std::unordered_map<HostAddr, LeaderParts> leaders = {{HostAddr("0", 0), {{1, {1}}}}};
     ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
     TestUtils::assembleSpace(kv_.get(), 1, 1, 1, 1);
-    for (const auto& entry : allStorage) {
+    for (const auto& entry : leaders) {
         auto now = time::WallClock::fastNowInMilliSec();
         auto ret = ActiveHostsMan::updateHostInfo(
             kv_.get(),
@@ -452,18 +436,14 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
 TEST_F(GetStatisTest, MockMultiMachineTest) {
     GraphSpaceID spaceId = 1;
     // Because only send to leader, need to mock leader distribution
-    std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
-    auto s1 = fakeHost("0", 0, 1, {1, 2});
-    auto s2 = fakeHost("1", 1, 1, {3, 4});
-    auto s3 = fakeHost("2", 2, 1, {5, 6});
-    allStorage[s1.first] = s1.second;
-    allStorage[s2.first] = s2.second;
-    allStorage[s3.first] = s3.second;
-
-
+    std::unordered_map<HostAddr, LeaderParts> leaders = {
+        {HostAddr("0", 0), {{1, {1, 2}}}},
+        {HostAddr("1", 1), {{1, {3, 4}}}},
+        {HostAddr("2", 2), {{1, {5, 6}}}},
+    };
     ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
     TestUtils::assembleSpace(kv_.get(), 1, 6, 3, 3);
-    for (const auto& entry : allStorage) {
+    for (const auto& entry : leaders) {
         auto now = time::WallClock::fastNowInMilliSec();
         auto ret = ActiveHostsMan::updateHostInfo(
             kv_.get(),

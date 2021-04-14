@@ -21,7 +21,6 @@ public:
             return std::make_shared<ESListener>(std::forward<Args>(args)...);
         }
         LOG(FATAL) << "Should not reach here";
-        return nullptr;
     }
 };
 

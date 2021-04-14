@@ -93,6 +93,7 @@ ListPartsProcessor::getAllParts() {
     return partHostsMap;
 }
 
+
 void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -101,37 +102,21 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
         return;
     }
 
+    // get hosts which have send heartbeat recently
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
-
-    std::vector<std::string> leaderKeys;
-    for (auto& partItem : partItems) {
-        auto key = MetaServiceUtils::leaderKey(spaceId_, partItem.get_part_id());
-        leaderKeys.emplace_back(std::move(key));
-    }
-
-    kvstore::ResultCode rc;
-    std::vector<Status> statuses;
-    std::vector<std::string> values;
-    std::tie(rc, statuses) =
-        kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(leaderKeys), &values);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
-        return;
-    }
-    HostAddr host;
-    cpp2::ErrorCode code;
-    for (auto i = 0U; i != statuses.size(); ++i) {
-        if (!statuses[i].ok()) {
-            continue;
+    while (iter->valid()) {
+        auto host = MetaServiceUtils::parseLeaderKey(iter->key());
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
+            LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
+            const auto& partIds = leaderParts[spaceId_];
+            for (const auto& partId : partIds) {
+                auto partIt = partIdIndex_.find(partId);
+                if (partIt != partIdIndex_.end()) {
+                    partItems[partIt->second].set_leader(host);
+                }
+            }
         }
-        std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(values[i]);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            continue;
-        }
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
-            LOG(INFO) << "ignore inactive host: " << host;
-            continue;
-        }
-        partItems[i].set_leader(host);
+        iter->next();
     }
 }
 

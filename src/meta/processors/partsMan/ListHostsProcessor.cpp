@@ -42,8 +42,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
 
         meta::cpp2::ListHostType type = req.get_type();
         if (type == cpp2::ListHostType::ALLOC) {
-            status = fillLeaders();
-            status = fillAllParts();
+            status = fillLeaderAndPartInfoPerHost();
         } else {
             auto hostRole = toHostRole(type);
             status = allHostsWithStatus(hostRole);
@@ -131,74 +130,51 @@ Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
     return Status::OK();
 }
 
-Status ListHostsProcessor::fillLeaders() {
+Status ListHostsProcessor::fillLeaderAndPartInfoPerHost() {
     auto status = allHostsWithStatus(cpp2::HostRole::STORAGE);
     if (!status.ok()) {
         LOG(ERROR) << "Get all host's status failed";
         return status;
     }
 
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
     std::unique_ptr<kvstore::KVIterator> iter;
     const auto& leaderPrefix = MetaServiceUtils::leaderPrefix();
-    auto rc = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
+    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No leaders";
         handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(rc));
+        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
     // get hosts which have send heartbeat recently
-    HostAddr host;
-    TermID term;
-    cpp2::ErrorCode code;
-    for (; iter->valid(); iter->next()) {
-        auto spaceIdAndPartId = MetaServiceUtils::parseLeaderKeyV3(iter->key());
-        LOG(INFO) << "show hosts: space = " << spaceIdAndPartId.first
-                  << ", part = " << spaceIdAndPartId.second;
-        std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            continue;
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    while (iter->valid()) {
+        auto host = MetaServiceUtils::parseLeaderKey(iter->key());
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
+            auto hostIt = std::find_if(hostItems_.begin(), hostItems_.end(), [&](const auto& item) {
+                return item.get_hostAddr() == host;
+            });
+            if (hostIt != hostItems_.end()) {
+                LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
+                hostIt->set_leader_parts(getLeaderPartsWithSpaceName(leaderParts));
+            }
         }
-        auto it = std::find(activeHosts.begin(), activeHosts.end(), host);
-        if (it == activeHosts.end()) {
-            LOG(INFO) << "skip inactive host: " << host;
-            continue;  // skip inactive host
-        }
-
-        auto hostIt = std::find_if(hostItems_.begin(), hostItems_.end(), [&](const auto& hit) {
-            return hit.get_hostAddr() == host;
-        });
-
-        if (hostIt == hostItems_.end()) {
-            LOG(INFO) << "skip inactive host";
-            continue;
-        }
-
-        auto& spaceName = spaceIdNameMap_[spaceIdAndPartId.first];
-        hostIt->leader_parts_ref()[spaceName].emplace_back(spaceIdAndPartId.second);
+        iter->next();
     }
-
-    return Status::OK();
-}
-
-Status ListHostsProcessor::fillAllParts() {
-    std::unique_ptr<kvstore::KVIterator> iter;
-    using SpaceNameAndPartitions = std::unordered_map<std::string, std::vector<PartitionID>>;
-    std::unordered_map<HostAddr, SpaceNameAndPartitions> allParts;
+    std::unordered_map<HostAddr,
+                       std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaceIds_) {
         // get space name by space id
         const auto& spaceName = spaceIdNameMap_[spaceId];
 
+        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
-        auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+        kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
         if (kvRet != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "List Hosts Failed: No partitions";
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             return Status::Error("Can't find any partitions");
         }
-
-        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         while (iter->valid()) {
             PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
             auto partHosts = MetaServiceUtils::parsePartVal(iter->val());

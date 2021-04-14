@@ -115,22 +115,17 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
     }
 
     std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
-    HostAddr host;
-    cpp2::ErrorCode code;
     while (leaderIter->valid()) {
-        auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(leaderIter->key());
-        auto partId = spaceAndPart.second;
-        std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(leaderIter->val());
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            continue;
+        auto hostAddr = MetaServiceUtils::parseLeaderKey(leaderIter->key());
+        if (hostAddr.host == "") {
+            LOG(ERROR) << "leader key parse to empty string";
+            return cpp2::ErrorCode::E_INVALID_PARM;
         }
-        auto it = std::find_if(hosts.begin(), hosts.end(), [&](auto& item){
-            return item.first == host;
-        });
-        if (it == hosts.end()) {
-            hosts.emplace_back(std::make_pair(host, std::vector<PartitionID>{partId}));
-        } else {
-            it->second.emplace_back(partId);
+
+        if (ActiveHostsMan::isLived(kvstore_, hostAddr)) {
+            auto leaderParts = MetaServiceUtils::parseLeaderVal(leaderIter->val());
+            auto parts = leaderParts[space];
+            hosts.emplace_back(std::make_pair(std::move(hostAddr), std::move(parts)));
         }
         leaderIter->next();
     }

@@ -100,41 +100,10 @@ TEST(ActiveHostsManTest, LeaderTest) {
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), hInfo1);
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
-    auto makePartInfo = [](int partId) {
-        cpp2::LeaderInfo part;
-        part.set_part_id(partId);
-        part.set_term(partId * 1024);
-        return part;
-    };
-
-    auto cmpPartInfo = [](auto& a, auto& b) {
-        if (a.get_part_id() == b.get_part_id()) {
-            return a.get_term() < b.get_term();
-        }
-        return a.get_part_id() < b.get_part_id();
-    };
-
-    auto part1 = makePartInfo(1);
-    auto part2 = makePartInfo(2);
-    auto part3 = makePartInfo(3);
-
-    std::vector<cpp2::LeaderInfo> parts{part1, part2, part3};
-    std::sort(parts.begin(), parts.end(), cmpPartInfo);
-
-    HostAddr host("0", 0);
-
-    std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds;
-    leaderIds.emplace(1, std::vector<cpp2::LeaderInfo>{part1, part2});
-    leaderIds.emplace(2, std::vector<cpp2::LeaderInfo>{part3});
-    ActiveHostsMan::updateHostInfo(kv.get(), host, hInfo2, &leaderIds);
-
-    EXPECT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
-    using SpaceAndPart = std::pair<GraphSpaceID, PartitionID>;
-    using HostAndTerm = std::pair<HostAddr, int64_t>;
-
-    TermID term;
-    cpp2::ErrorCode code;
-    std::map<SpaceAndPart, HostAndTerm> results;
+    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+    leaderIds.emplace(1, std::vector<PartitionID>{1, 2, 3});
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo2, &leaderIds);
+    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::leaderPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
@@ -142,18 +111,24 @@ TEST(ActiveHostsManTest, LeaderTest) {
         CHECK_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         int i = 0;
         while (iter->valid()) {
-            auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(iter->key());
-            std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(INFO) << "error: " << apache::thrift::util::enumNameSafe(code);
-                continue;
+            auto host = MetaServiceUtils::parseLeaderKey(iter->key());
+            LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
+            ASSERT_EQ(HostAddr("0", i), HostAddr(host.host, host.port));
+            if (i == 0) {
+                ASSERT_EQ(1, leaderParts.size());
+                ASSERT_TRUE(leaderParts.find(1) != leaderParts.end());
+                ASSERT_EQ(3, leaderParts[1].size());
+                ASSERT_EQ(1, leaderParts[1][0]);
+                ASSERT_EQ(2, leaderParts[1][1]);
+                ASSERT_EQ(3, leaderParts[1][2]);
+            } else {
+                ASSERT_EQ(0, leaderParts.size());
             }
-            results[spaceAndPart] = std::make_pair(host, term);
+
             iter->next();
             i++;
         }
-        EXPECT_EQ(results.size(), 3);
-        EXPECT_EQ(i, 3);
+        ASSERT_EQ(1, i);
     }
 
     sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);

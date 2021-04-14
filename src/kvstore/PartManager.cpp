@@ -192,7 +192,7 @@ void MetaServerBasedPartManager::onPartUpdated(const meta::PartHosts& partMeta) 
 }
 
 void MetaServerBasedPartManager::fetchLeaderInfo(
-        std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) {
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) {
     if (handler_ != nullptr) {
         handler_->allLeader(leaderIds);
     } else {
