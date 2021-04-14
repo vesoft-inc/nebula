@@ -79,7 +79,7 @@ private:
     static FunctionManager &instance();
 
     StatusOr<const FunctionAttributes>
-    getInternal(const std::string &func, size_t arity) const;
+    getInternal(std::string func, size_t arity) const;
 
     Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);
 
