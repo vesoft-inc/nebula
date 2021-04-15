@@ -743,6 +743,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("The space is not found when backup!");
         case cpp2::ErrorCode::E_RESTORE_FAILURE:
             return Status::Error("Restore failure!");
+        case cpp2::ErrorCode::E_INVALID_JOB:
+            return Status::Error("No valid job!");
         case cpp2::ErrorCode::E_UNKNOWN:
             return Status::Error("Unknown error!");
     }
