@@ -24,13 +24,13 @@ public:
                                 GraphSpaceID spaceId,
                                 std::vector<storage::cpp2::NewVertex> vertices,
                                 std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
-                                bool overwritable) {
+                                bool ifNotExists) {
         return qctx->objPool()->add(new InsertVertices(qctx,
                                                        input,
                                                        spaceId,
                                                        std::move(vertices),
                                                        std::move(tagPropNames),
-                                                       overwritable));
+                                                       ifNotExists));
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -43,12 +43,12 @@ public:
         return tagPropNames_;
     }
 
-    bool getOverwritable() const {
-        return overwritable_;
-    }
-
     GraphSpaceID getSpace() const {
         return spaceId_;
+    }
+
+    bool getIfNotExists() const {
+        return ifNotExists_;
     }
 
 private:
@@ -57,18 +57,18 @@ private:
                    GraphSpaceID spaceId,
                    std::vector<storage::cpp2::NewVertex> vertices,
                    std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
-                   bool overwritable)
+                   bool ifNotExists)
         : SingleDependencyNode(qctx, Kind::kInsertVertices, input),
           spaceId_(spaceId),
           vertices_(std::move(vertices)),
           tagPropNames_(std::move(tagPropNames)),
-          overwritable_(overwritable) {}
+          ifNotExists_(ifNotExists) {}
 
 private:
     GraphSpaceID spaceId_{-1};
     std::vector<storage::cpp2::NewVertex> vertices_;
     std::unordered_map<TagID, std::vector<std::string>> tagPropNames_;
-    bool overwritable_;
+    bool ifNotExists_{false};
 };
 
 class InsertEdges final : public SingleDependencyNode {
@@ -78,14 +78,14 @@ public:
                              GraphSpaceID spaceId,
                              std::vector<storage::cpp2::NewEdge> edges,
                              std::vector<std::string> propNames,
-                             bool overwritable,
+                             bool ifNotExists,
                              bool useChainInsert = false) {
         return qctx->objPool()->add(new InsertEdges(qctx,
                                                     input,
                                                     spaceId,
                                                     std::move(edges),
                                                     std::move(propNames),
-                                                    overwritable,
+                                                    ifNotExists,
                                                     useChainInsert));
     }
 
@@ -99,8 +99,8 @@ public:
         return edges_;
     }
 
-    bool getOverwritable() const {
-        return overwritable_;
+    bool getIfNotExists() const {
+        return ifNotExists_;
     }
 
     GraphSpaceID getSpace() const {
@@ -117,20 +117,20 @@ private:
                 GraphSpaceID spaceId,
                 std::vector<storage::cpp2::NewEdge> edges,
                 std::vector<std::string> propNames,
-                bool overwritable,
+                bool ifNotExists,
                 bool useChainInsert)
         : SingleDependencyNode(qctx, Kind::kInsertEdges, input),
           spaceId_(spaceId),
           edges_(std::move(edges)),
           propNames_(std::move(propNames)),
-          overwritable_(overwritable),
+          ifNotExists_(ifNotExists),
           useChainInsert_(useChainInsert) {}
 
 private:
     GraphSpaceID spaceId_{-1};
     std::vector<storage::cpp2::NewEdge> edges_;
     std::vector<std::string> propNames_;
-    bool overwritable_;
+    bool ifNotExists_{false};
     // if this enabled, add edge request will only sent to
     // outbound edges. (toss)
     bool useChainInsert_{false};

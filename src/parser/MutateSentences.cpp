@@ -96,6 +96,9 @@ std::string InsertVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "INSERT VERTEX ";
+    if (ifNotExists_) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += tagList_->toString();
     buf += " VALUES ";
     buf += rows_->toString();
@@ -141,8 +144,8 @@ std::string InsertEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "INSERT EDGE ";
-    if (!overwritable_) {
-        buf += "NO OVERWRITE ";
+    if (ifNotExists_) {
+        buf += "IF NOT EXISTS ";
     }
     buf += *edge_;
     buf += "(";

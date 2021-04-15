@@ -160,15 +160,11 @@ class InsertVerticesSentence final : public Sentence {
 public:
     InsertVerticesSentence(VertexTagList *tagList,
                            VertexRowList *rows,
-                           bool overwritable = true) {
+                           bool ifNotExists) {
         tagList_.reset(tagList);
         rows_.reset(rows);
-        overwritable_ = overwritable;
+        ifNotExists_ = ifNotExists;
         kind_ = Kind::kInsertVertices;
-    }
-
-    bool overwritable() const {
-        return overwritable_;
     }
 
     auto tagItems() const {
@@ -181,8 +177,12 @@ public:
 
     std::string toString() const override;
 
+    bool isIfNotExists() const {
+        return ifNotExists_;
+    }
+
 private:
-    bool                                        overwritable_{true};
+    bool                                        ifNotExists_{false};
     std::unique_ptr<VertexTagList>              tagList_;
     std::unique_ptr<VertexRowList>              rows_;
 };
@@ -252,17 +252,8 @@ private:
 
 class InsertEdgesSentence final : public Sentence {
 public:
-    InsertEdgesSentence() {
-        kind_ = Kind::kInsertEdges;
-    }
-
-    void setOverwrite(bool overwritable) {
-        overwritable_ = overwritable;
-    }
-
-    bool overwritable() const {
-        return overwritable_;
-    }
+    explicit InsertEdgesSentence(bool ifNotExists)
+        : Sentence(Kind::kInsertEdges), ifNotExists_(ifNotExists) {}
 
     void setEdge(std::string *edge) {
         edge_.reset(edge);
@@ -291,10 +282,14 @@ public:
         return rows_->rows();
     }
 
+    bool isIfNotExists() const {
+        return ifNotExists_;
+    }
+
     std::string toString() const override;
 
 private:
-    bool                                        overwritable_{true};
+    bool                                        ifNotExists_{false};
     std::unique_ptr<std::string>                edge_;
     std::unique_ptr<PropertyList>               properties_;
     std::unique_ptr<EdgeRowList>                rows_;

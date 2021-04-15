@@ -37,7 +37,7 @@ private:
     std::unordered_map<TagID, std::vector<std::string>>         tagPropNames_;
     std::vector<std::pair<TagID, TagSchema>>                    schemas_;
     uint16_t                                                    propSize_{0};
-    bool                                                        overwritable_{false};
+    bool                                                        ifNotExists_{false};
     std::vector<storage::cpp2::NewVertex>                       vertices_;
 };
 
@@ -58,7 +58,7 @@ private:
 
 private:
     GraphSpaceID                                      spaceId_{-1};
-    bool                                              overwritable_{true};
+    bool                                              ifNotExists_{false};
     EdgeType                                          edgeType_{-1};
     std::shared_ptr<const meta::SchemaProviderIf>     schema_;
     std::vector<std::string>                          propNames_;

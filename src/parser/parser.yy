@@ -2392,11 +2392,8 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVerticesSentence($3, $5);
-    }
-    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVerticesSentence($5, $7, false /* not overwritable */);
+    : KW_INSERT KW_VERTEX opt_if_not_exists vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVerticesSentence($4, $6, $3);
     }
     ;
 
@@ -2469,34 +2466,18 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence();
-        sentence->setEdge($3);
+    : KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($3);
+        sentence->setEdge($4);
         sentence->setProps(new PropertyList());
-        sentence->setRows($7);
-        $$ = sentence;
-    }
-    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence();
-        sentence->setEdge($3);
-        sentence->setProps($5);
         sentence->setRows($8);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps(new PropertyList());
+    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($3);
+        sentence->setEdge($4);
+        sentence->setProps($6);
         sentence->setRows($9);
-        $$ = sentence;
-    }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps($7);
-        sentence->setRows($10);
         $$ = sentence;
     }
     ;

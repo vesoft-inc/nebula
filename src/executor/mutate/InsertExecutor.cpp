@@ -25,7 +25,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
     return qctx()->getStorageClient()->addVertices(ivNode->getSpace(),
                                                    ivNode->getVertices(),
                                                    ivNode->getPropNames(),
-                                                   ivNode->getOverwritable())
+                                                   ivNode->getIfNotExists())
         .via(runner())
         .ensure([addVertTime]() {
             VLOG(1) << "Add vertices time: " << addVertTime.elapsedInUSec() << "us";
@@ -49,7 +49,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
     return qctx()->getStorageClient()->addEdges(ieNode->getSpace(),
                                                 ieNode->getEdges(),
                                                 ieNode->getPropNames(),
-                                                ieNode->getOverwritable(),
+                                                ieNode->getIfNotExists(),
                                                 nullptr,
                                                 ieNode->useChainInsert())
             .via(runner())

@@ -88,6 +88,9 @@ std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE TAG ";
+    if (isIfNotExist()) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += "`";
     buf += *name_;
     buf += "` (";
@@ -104,6 +107,9 @@ std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE EDGE ";
+    if (isIfNotExist()) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += "`";
     buf += *name_;
     buf += "` (";
