@@ -5,6 +5,7 @@
  */
 
 #include "meta/ActiveHostsMan.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "meta/processors/Common.h"
 #include "utils/Utils.h"
 
@@ -17,14 +18,47 @@ namespace meta {
 kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                                                    const HostAddr& hostAddr,
                                                    const HostInfo& info,
-                                                   const LeaderParts* leaderParts) {
+                                                   const AllLeaders* allLeaders) {
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
                       HostInfo::encodeV2(info));
-    if (leaderParts != nullptr) {
-        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.host, hostAddr.port),
-                          MetaServiceUtils::leaderVal(*leaderParts));
+    std::vector<std::string> leaderKeys;
+    std::vector<int64_t> terms;
+    if (allLeaders != nullptr) {
+        for (auto& spaceLeaders : *allLeaders) {
+            auto spaceId = spaceLeaders.first;
+            for (auto& partLeader : spaceLeaders.second) {
+                auto key = MetaServiceUtils::leaderKey(spaceId, partLeader.get_part_id());
+                leaderKeys.emplace_back(std::move(key));
+                terms.emplace_back(partLeader.get_term());
+            }
+        }
+        auto keys = leaderKeys;
+        std::vector<std::string> vals;
+        // let see if this c++17 syntax can pass
+        auto [rc, statuses] = kv->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &vals);
+        if (rc != kvstore::ResultCode::SUCCEEDED && rc != kvstore::ResultCode::ERR_PARTIAL_RESULT) {
+            LOG(INFO) << "error rc = " << static_cast<int>(rc);
+            return rc;
+        }
+        TermID term;
+        cpp2::ErrorCode code;
+        for (auto i = 0U; i != statuses.size(); ++i) {
+            if (statuses[i].ok()) {
+                std::tie(std::ignore, term, code) = MetaServiceUtils::parseLeaderValV3(vals[i]);
+                if (code != cpp2::ErrorCode::SUCCEEDED) {
+                    LOG(WARNING) << apache::thrift::util::enumNameSafe(code);
+                    continue;
+                }
+                if (terms[i] <= term) {
+                    continue;
+                }
+            }
+            // write directly if not exist, or update if has greater term
+            auto val = MetaServiceUtils::leaderValV3(hostAddr, terms[i]);
+            data.emplace_back(std::make_pair(leaderKeys[i], std::move(val)));
+        }
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     folly::Baton<true, std::atomic> baton;

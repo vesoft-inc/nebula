@@ -15,8 +15,8 @@
 namespace nebula {
 namespace meta {
 
-using ErrOrHosts  = ErrorOr<cpp2::ErrorCode,
-                            std::vector<std::pair<HostAddr, std::vector<PartitionID>>>>;
+using PartsOfHost = std::pair<HostAddr, std::vector<PartitionID>>;
+using ErrOrHosts  = ErrorOr<cpp2::ErrorCode, std::vector<PartsOfHost>>;
 
 class MetaJobExecutor {
 public:

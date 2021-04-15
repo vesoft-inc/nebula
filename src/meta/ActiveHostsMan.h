@@ -108,10 +108,11 @@ class ActiveHostsMan final {
 public:
     ~ActiveHostsMan() = default;
 
+    using AllLeaders = std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>;
     static kvstore::ResultCode updateHostInfo(kvstore::KVStore* kv,
                                               const HostAddr& hostAddr,
                                               const HostInfo& info,
-                                              const LeaderParts* leaderParts = nullptr);
+                                              const AllLeaders* leaderParts = nullptr);
 
     static std::vector<HostAddr> getActiveHosts(kvstore::KVStore* kv,
                                                 int32_t expiredTTL = 0,

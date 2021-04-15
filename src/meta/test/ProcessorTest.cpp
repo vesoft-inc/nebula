@@ -190,17 +190,32 @@ TEST(ProcessorTest, ListPartsTest) {
         auto now = time::WallClock::fastNowInMilliSec();
         HostInfo info(now, cpp2::HostRole::STORAGE, gitInfoSha());
 
-        LeaderParts leaderParts;
-        leaderParts[1] = {1, 2, 3, 4, 5};
-        auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {"0", 0}, info, &leaderParts);
+        int64_t term = 999;
+        auto makeLeaderInfo = [&](PartitionID partId) {
+            cpp2::LeaderInfo leaderInfo;
+            leaderInfo.set_part_id(partId);
+            leaderInfo.set_term(term);
+            return leaderInfo;
+        };
+
+        GraphSpaceID spaceId = 1;
+        ActiveHostsMan::AllLeaders allLeaders;
+        for (int i = 1; i < 6; ++i) {
+            allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
+        }
+        auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {"0", 0}, info, &allLeaders);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
-        leaderParts[1] = {6, 7, 8};
-        ret = ActiveHostsMan::updateHostInfo(kv.get(), {"1", 1}, info, &leaderParts);
+        allLeaders.clear();
+        for (int i = 6; i < 9; ++i) {
+            allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
+        }
+        ret = ActiveHostsMan::updateHostInfo(kv.get(), {"1", 1}, info, &allLeaders);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
 
-        leaderParts[1] = {9};
-        ret = ActiveHostsMan::updateHostInfo(kv.get(), {"2", 2}, info, &leaderParts);
+        allLeaders.clear();
+        allLeaders[spaceId].emplace_back(makeLeaderInfo(9));
+        ret = ActiveHostsMan::updateHostInfo(kv.get(), {"2", 2}, info, &allLeaders);
         CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
     }
 

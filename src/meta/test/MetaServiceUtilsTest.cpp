@@ -84,11 +84,24 @@ TEST(MetaServiceUtilsTest, storeStrIpCodecTest) {
     }
 
     {
-        // kLeadersTable : key
-        auto key = MetaServiceUtils::leaderKey(hostnames[0], ports[0]);
-        auto host = MetaServiceUtils::parseLeaderKeyV2(key);
-        ASSERT_EQ(host.host, hostnames[0]);
-        ASSERT_EQ(host.port, ports[0]);
+        // leadersTableV3 : key
+        GraphSpaceID spaceId = 1;
+        PartitionID partId = 10;
+        int64_t termId = 999999;
+        auto key = MetaServiceUtils::leaderKey(spaceId, partId);
+        auto parsedLeaderKey = MetaServiceUtils::parseLeaderKeyV3(key);
+        EXPECT_EQ(parsedLeaderKey.first, spaceId);
+        EXPECT_EQ(parsedLeaderKey.second, partId);
+
+
+        HostAddr host;
+        host.host = "Hello-Kitty";
+        host.port = 9527;
+        auto leaderVal = MetaServiceUtils::leaderValV3(host, termId);
+        auto parsedVal = MetaServiceUtils::parseLeaderValV3(leaderVal);
+
+        EXPECT_EQ(std::get<0>(parsedVal), host);
+        EXPECT_EQ(std::get<1>(parsedVal), termId);
     }
 }
 
@@ -129,14 +142,6 @@ TEST(MetaServiceUtilsTest, storeStrIpBackwardCompatibilityTest) {
         // kHostsTable : key
         auto encodedVal = hostKeyV1(ips[0], ports[0]);
         auto decodedVal = MetaServiceUtils::parseHostKey(encodedVal);
-        ASSERT_EQ(decodedVal.host, hostnames[0]);
-        ASSERT_EQ(decodedVal.port, ports[0]);
-    }
-
-    {
-        // kLeadersTable : key
-        auto encodedVal = leaderKeyV1(ips[0], ports[0]);
-        auto decodedVal = MetaServiceUtils::parseLeaderKey(encodedVal);
         ASSERT_EQ(decodedVal.host, hostnames[0]);
         ASSERT_EQ(decodedVal.port, ports[0]);
     }

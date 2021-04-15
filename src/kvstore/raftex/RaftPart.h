@@ -127,6 +127,10 @@ public:
         return leader_;
     }
 
+    TermID termId() const {
+        return term_;
+    }
+
     std::shared_ptr<wal::FileBasedWal> wal() const {
         return wal_;
     }
