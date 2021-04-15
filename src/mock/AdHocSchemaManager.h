@@ -17,13 +17,13 @@ namespace nebula {
 namespace mock {
 
 // the different version of tag schema, from oldest to newest
-using TagSchemas =
-    std::unordered_map<TagID, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
+using TagSchemas = nebula::meta::TagSchemas;
 
 using TagSchema = nebula::meta::TagSchema;
 // the different version of edge schema, from oldest to newest
-using EdgeSchemas =
-    std::unordered_map<EdgeType, std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>>;
+using EdgeSchemas = nebula::meta::EdgeSchemas;
+
+using EdgeSchema = nebula::meta::EdgeSchema;
 
 class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 public:
@@ -88,6 +88,9 @@ public:
 
     // Get all version of all edges
     StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) override;
+
+    // Get latest version of all edges
+    StatusOr<EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) override;
 
     // Mock previous version of get schema from cache in MetaClient, only used of benchmark
     std::shared_ptr<const nebula::meta::NebulaSchemaProvider>

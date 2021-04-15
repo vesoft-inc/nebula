@@ -275,8 +275,7 @@ StatusOr<TagSchema> AdHocSchemaManager::getAllLatestVerTagSchema(GraphSpaceID sp
     if (iter == tagSchemasInVector_.end()) {
         return Status::Error("Space not found");
     }
-    std::unordered_map<TagID,
-        std::shared_ptr<const meta::NebulaSchemaProvider>> tagsSchema;
+    TagSchema tagsSchema;
     tagsSchema.reserve(iter->second.size());
     // fetch all tagIds
     for (const auto& tagSchema : iter->second) {
@@ -293,6 +292,22 @@ StatusOr<EdgeSchemas> AdHocSchemaManager::getAllVerEdgeSchema(GraphSpaceID space
     }
     return iter->second;
 }
+
+StatusOr<EdgeSchema> AdHocSchemaManager::getAllLatestVerEdgeSchema(GraphSpaceID space) {
+    folly::RWSpinLock::ReadHolder rh(edgeLock_);
+    auto iter = edgeSchemasInVector_.find(space);
+    if (iter == edgeSchemasInVector_.end()) {
+        return Status::Error("Space not found");
+    }
+    EdgeSchema edgesSchema;
+    edgesSchema.reserve(iter->second.size());
+    // fetch all edgetypes
+    for (const auto& edgeSchema : iter->second) {
+        edgesSchema.emplace(edgeSchema.first, edgeSchema.second.back());
+    }
+    return edgesSchema;
+}
+
 
 StatusOr<std::vector<nebula::meta::cpp2::FTClient>> AdHocSchemaManager::getFTClients() {
     return ftClients_;
