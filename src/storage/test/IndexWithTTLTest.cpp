@@ -104,7 +104,7 @@ void createIndex(meta::IndexManager* indexMan,
 void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
     cpp2::AddVerticesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
     for (auto partId = 1; partId <= 6; partId++) {
         nebula::storage::cpp2::NewVertex newVertex;
         nebula::storage::cpp2::NewTag newTag;
@@ -129,7 +129,7 @@ void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
 void insertEdge(storage::StorageEnv* env, size_t vIdLen, EdgeType edgeType) {
     cpp2::AddEdgesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
     for (auto partId = 1; partId <= 6; partId++) {
         nebula::storage::cpp2::NewEdge newEdge;
         nebula::storage::cpp2::EdgeKey edgeKey;

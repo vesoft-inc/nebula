@@ -1021,7 +1021,7 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
 nebula::storage::cpp2::AddVerticesRequest MockData::mockAddVerticesReq(bool upper, int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
 
     auto retRecs = mockVertices(upper);
 
@@ -1058,7 +1058,7 @@ nebula::storage::cpp2::DeleteVerticesRequest MockData::mockDeleteVerticesReq(int
 nebula::storage::cpp2::AddEdgesRequest MockData::mockAddEdgesReq(bool upper, int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
     auto retRecs = mockEdges(upper);
     for (auto& rec : retRecs) {
         nebula::storage::cpp2::NewEdge newEdge;
@@ -1169,7 +1169,7 @@ nebula::storage::cpp2::AddVerticesRequest
 MockData::mockAddVerticesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddVerticesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(false);
     auto retRecs = mockVerticesSpecifiedOrder();
 
     for (auto& rec : retRecs) {
@@ -1205,7 +1205,7 @@ MockData::mockAddEdgesSpecifiedOrderReq(int32_t parts) {
     nebula::storage::cpp2::AddEdgesRequest req;
     // Use space id is 1 when mock
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(false);
 
     auto retRecs = mockEdgesSpecifiedOrder();
 

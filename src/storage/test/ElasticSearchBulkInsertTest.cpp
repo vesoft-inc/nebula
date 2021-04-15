@@ -135,7 +135,7 @@ protected:
     cpp2::AddVerticesRequest mockVerticesReq(int32_t parts, int64_t begin, int64_t end) {
         nebula::storage::cpp2::AddVerticesRequest req;
         req.set_space_id(1);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
 
         auto vertices = mockVertices(begin, end);
 

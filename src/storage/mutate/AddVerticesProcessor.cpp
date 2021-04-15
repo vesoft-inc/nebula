@@ -24,7 +24,7 @@ ProcessorCounters kAddVerticesCounters;
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     spaceId_ = req.get_space_id();
     const auto& partVertices = req.get_parts();
-
+    ifNotExists_ = req.get_if_not_exists();
     CHECK_NOTNULL(env_->schemaMan_);
     auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
     if (!ret.ok()) {
@@ -68,6 +68,8 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         std::vector<kvstore::KV> data;
         data.reserve(32);
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+        std::unordered_set<std::string> visited;
+        visited.reserve(vertices.size());
         for (auto& vertex : vertices) {
             auto vid = vertex.get_id().getStr();
             const auto& newTags = vertex.get_tags();
@@ -92,6 +94,20 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
                 }
 
                 auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
+                if (ifNotExists_) {
+                    if (!visited.emplace(key).second) {
+                        continue;
+                    }
+                    auto obsIdx = findOldValue(partId, vid, tagId);
+                    if (nebula::ok(obsIdx)) {
+                        if (!nebula::value(obsIdx).empty()) {
+                            continue;
+                        }
+                    } else {
+                        code = to(nebula::error(obsIdx));
+                        break;
+                    }
+                }
                 auto props = newTag.get_props();
                 auto iter = propNamesMap.find(tagId);
                 std::vector<std::string> propNames;
@@ -136,6 +152,9 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         dummyLock.reserve(vertices.size());
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
 
+        // cache vertexKey
+        std::unordered_set<std::string> visited;
+        visited.reserve(vertices.size());
         for (auto& vertex : vertices) {
             auto vid = vertex.get_id().getStr();
             const auto& newTags = vertex.get_tags();
@@ -160,6 +179,9 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                 }
 
                 auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
+                if (ifNotExists_ && !visited.emplace(key).second) {
+                    continue;
+                }
                 auto props = newTag.get_props();
                 auto iter = propNamesMap.find(tagId);
                 std::vector<std::string> propNames;
@@ -167,18 +189,13 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                     propNames = iter->second;
                 }
 
-                WriteResult wRet;
-                auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
-                if (!retEnc.ok()) {
-                    LOG(ERROR) << retEnc.status();
-                    code = writeResultTo(wRet, false);
-                    break;
-                }
-
                 RowReaderWrapper nReader;
                 RowReaderWrapper oReader;
                 auto obsIdx = findOldValue(partId, vid, tagId);
                 if (nebula::ok(obsIdx)) {
+                    if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
+                        continue;
+                    }
                     if (!nebula::value(obsIdx).empty()) {
                         oReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
                                                                      spaceId_,
@@ -189,6 +206,15 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
                     code = to(nebula::error(obsIdx));
                     break;
                 }
+
+                WriteResult wRet;
+                auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
+                if (!retEnc.ok()) {
+                    LOG(ERROR) << retEnc.status();
+                    code = writeResultTo(wRet, false);
+                    break;
+                }
+
                 if (!retEnc.value().empty()) {
                     nReader = RowReaderWrapper::getTagPropReader(env_->schemaMan_,
                                                                  spaceId_,

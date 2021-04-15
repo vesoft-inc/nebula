@@ -57,7 +57,7 @@ TEST(IndexTest, SimpleVerticesTest) {
     {
         cpp2::AddVerticesRequest req;
         req.set_space_id(1);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         // mock v2 vertices
         for (auto partId = 1; partId <= 6; partId++) {
             nebula::storage::cpp2::NewVertex newVertex;
@@ -148,7 +148,7 @@ TEST(IndexTest, SimpleEdgesTest) {
     {
         cpp2::AddEdgesRequest req;
         req.set_space_id(1);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         // mock v2 edges
         for (auto partId = 1; partId <= 6; partId++) {
             nebula::storage::cpp2::NewEdge newEdge;
@@ -255,7 +255,7 @@ TEST(IndexTest, VerticesValueTest) {
     {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         std::unordered_map<int, std::vector<std::string>> propNames;
         propNames[tagId] = {"col_bool", "col_int", "col_float",
                             "col_float_null", "col_str", "col_date"};
@@ -376,7 +376,7 @@ TEST(IndexTest, AlterTagIndexTest) {
     {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         // mock v2 vertices
         for (auto partId = 1; partId <= 6; partId++) {
             nebula::storage::cpp2::NewVertex newVertex;
@@ -432,7 +432,7 @@ TEST(IndexTest, AlterTagIndexTest) {
     {
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
-        req.set_overwritable(true);
+        req.set_if_not_exists(false);
         // mock v2 vertices
         for (auto partId = 1; partId <= 6; partId++) {
             nebula::storage::cpp2::NewVertex newVertex;

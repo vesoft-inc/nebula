@@ -51,6 +51,7 @@ private:
     GraphSpaceID                                                spaceId_;
     VertexCache*                                                vertexCache_{nullptr};
     std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+    bool                                                        ifNotExists_{false};
 };
 
 }  // namespace storage

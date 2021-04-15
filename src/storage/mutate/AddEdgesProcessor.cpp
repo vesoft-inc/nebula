@@ -19,6 +19,7 @@ ProcessorCounters kAddEdgesCounters;
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     spaceId_ = req.get_space_id();
+    ifNotExists_ = req.get_if_not_exists();
     const auto& partEdges = req.get_parts();
 
     CHECK_NOTNULL(env_->schemaMan_);
@@ -66,6 +67,9 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
         std::vector<kvstore::KV> data;
         data.reserve(32);
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+        std::unordered_set<std::string> visited;
+        visited.reserve(newEdges.size());
+
         for (auto& newEdge : newEdges) {
             auto edgeKey = *newEdge.key_ref();
             VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
@@ -89,6 +93,21 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                                                *edgeKey.edge_type_ref(),
                                                *edgeKey.ranking_ref(),
                                                (*edgeKey.dst_ref()).getStr());
+           if (ifNotExists_) {
+                if (!visited.emplace(key).second) {
+                    continue;
+                }
+                auto obsIdx = findOldValue(partId, key);
+                if (nebula::ok(obsIdx)) {
+                    // already exists in kvstore
+                    if (!nebula::value(obsIdx).empty()) {
+                        continue;
+                    }
+                } else {
+                    code = to(nebula::error(obsIdx));
+                    break;
+                }
+            }
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
                                                           std::abs(*edgeKey.edge_type_ref()));
             if (!schema) {
@@ -130,6 +149,8 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         dummyLock.reserve(newEdges.size());
         cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
 
+        std::unordered_set<std::string> visited;
+        visited.reserve(newEdges.size());
         for (auto& newEdge : newEdges) {
             auto edgeKey = *newEdge.key_ref();
             VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
@@ -153,6 +174,9 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                                *edgeKey.edge_type_ref(),
                                                *edgeKey.ranking_ref(),
                                                (*edgeKey.dst_ref()).getStr());
+            if (ifNotExists_ && !visited.emplace(key).second) {
+                continue;
+            }
             auto schema = env_->schemaMan_->getEdgeSchema(spaceId_,
                                                           std::abs(*edgeKey.edge_type_ref()));
             if (!schema) {
@@ -175,6 +199,10 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                 RowReaderWrapper oReader;
                 auto obsIdx = findOldValue(partId, key);
                 if (nebula::ok(obsIdx)) {
+                    // already exists in kvstore
+                    if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
+                        continue;
+                    }
                     if (!nebula::value(obsIdx).empty()) {
                         oReader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_,
                                                                       spaceId_,

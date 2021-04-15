@@ -263,7 +263,7 @@ void setUp(storage::StorageEnv* ev) {
 cpp2::AddVerticesRequest buildAddVertexReq() {
     cpp2::AddVerticesRequest req;
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
 
     vertexId = "Tony Parker";
 
@@ -300,7 +300,7 @@ cpp2::AddEdgesRequest buildAddEdgeReq() {
     srcId = "Tony Parker";
     dstId = "Spurs";
     req.set_space_id(1);
-    req.set_overwritable(true);
+    req.set_if_not_exists(true);
 
     nebula::storage::cpp2::NewEdge newEdge;
     partId = std::hash<std::string>()(srcId) % parts + 1;

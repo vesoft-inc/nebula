@@ -1496,7 +1496,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         PartitionID partId = 1;
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         std::unordered_map<TagID, std::vector<std::string>> propNames;
         propNames[tagId] = {"col1", "col2", "col3", "col4"};
         req.set_prop_names(std::move(propNames));
@@ -1992,7 +1992,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         PartitionID partId = 1;
         cpp2::AddVerticesRequest req;
         req.set_space_id(spaceId);
-        req.set_overwritable(true);
+        req.set_if_not_exists(true);
         std::unordered_map<TagID, std::vector<std::string>> propNames;
         propNames[tagId] = {"col_bool", "col_int", "col_double", "col_str"};
         req.set_prop_names(std::move(propNames));
