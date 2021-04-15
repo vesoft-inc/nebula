@@ -100,6 +100,16 @@ public:
         return allVerEdgeSchemas;
     }
 
+    // Returns all latest version of  edges schema
+    StatusOr<meta::EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) override {
+        meta::EdgeSchema allLatestVerEdgeSchemas;
+        const auto& edgeSchemas = edgeSchemas_[space];
+        for (const auto &edgeSchema : edgeSchemas) {
+            allLatestVerEdgeSchemas.emplace(edgeSchema.first, edgeSchema.second);
+        }
+        return allLatestVerEdgeSchemas;
+    }
+
     StatusOr<std::vector<nebula::meta::cpp2::FTClient> > getFTClients() override;
 
     StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
