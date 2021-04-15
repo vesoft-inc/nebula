@@ -96,8 +96,8 @@ Status GoValidator::validateYield(YieldClause* yield) {
         yields_ = newCols;
     } else {
         for (auto col : cols) {
-            NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
             col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
+            NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
 
             auto* colExpr = col->expr();
             if (graph::ExpressionUtils::findAny(colExpr, {Expression::Kind::kAggregate})) {
