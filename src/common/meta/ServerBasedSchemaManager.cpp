@@ -143,6 +143,11 @@ StatusOr<EdgeSchemas> ServerBasedSchemaManager::getAllVerEdgeSchema(GraphSpaceID
     return metaClient_->getAllVerEdgeSchema(space);
 }
 
+StatusOr<EdgeSchema> ServerBasedSchemaManager::getAllLatestVerEdgeSchema(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->getAllLatestVerEdgeSchemaFromCache(space);
+}
+
 StatusOr<std::vector<nebula::meta::cpp2::FTClient>> ServerBasedSchemaManager::getFTClients() {
     auto ret = metaClient_->getFTClientsFromCache();
     if (!ret.ok()) {

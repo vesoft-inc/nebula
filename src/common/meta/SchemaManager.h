@@ -27,6 +27,9 @@ using TagSchema =
 using EdgeSchemas =
     std::unordered_map<EdgeType, std::vector<std::shared_ptr<const NebulaSchemaProvider>>>;
 
+using EdgeSchema =
+    std::unordered_map<EdgeType, std::shared_ptr<const NebulaSchemaProvider>>;
+
 class SchemaManager {
 public:
     virtual ~SchemaManager() = default;
@@ -73,6 +76,9 @@ public:
 
     // get all version of all edge schema
     virtual StatusOr<EdgeSchemas> getAllVerEdgeSchema(GraphSpaceID space) = 0;
+
+    // get all latest version of all edge schema
+    virtual StatusOr<EdgeSchema> getAllLatestVerEdgeSchema(GraphSpaceID space) = 0;
 
     virtual StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() = 0;
 
