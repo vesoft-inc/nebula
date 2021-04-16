@@ -96,3 +96,34 @@ Feature: Predicate
     Then the result should be, in any order:
       | r    |
       | NULL |
+
+  Scenario: aggregate function in collection
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return any(n in collect($-.x) where n > 5) as myboo
+      """
+    Then the result should be, in any order:
+      | myboo |
+      | true  |
+    When executing query:
+      """
+      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return All(n in collect($-.x) where n > 5) as myboo
+      """
+    Then the result should be, in any order:
+      | myboo |
+      | false |
+    When executing query:
+      """
+      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return single(n in collect($-.x) where n > 5) as myboo
+      """
+    Then the result should be, in any order:
+      | myboo |
+      | false |
+    When executing query:
+      """
+      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return None(n in collect($-.x) where n > 5) as myboo
+      """
+    Then the result should be, in any order:
+      | myboo |
+      | false |

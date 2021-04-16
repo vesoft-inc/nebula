@@ -152,7 +152,10 @@ public:
                                           Expression::Kind::kMinus,
                                           Expression::Kind::kMultiply,
                                           Expression::Kind::kDivision,
-                                          Expression::Kind::kMod});
+                                          Expression::Kind::kMod,
+                                          Expression::Kind::kPredicate,
+                                          Expression::Kind::kListComprehension,
+                                          Expression::Kind::kReduce});
     }
 
     // **Expression Transformation**
