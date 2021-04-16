@@ -95,3 +95,14 @@ Feature: ListComprehension
     Then the result should be, in any order:
       | a    |
       | NULL |
+
+  Scenario: aggregate function in collection
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x
+      | RETURN [n in collect($-.x) WHERE n > 5 | n + 1] AS list
+      """
+    Then the result should be, in any order:
+      | list       |
+      | [7, 9, 11] |

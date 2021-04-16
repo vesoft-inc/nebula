@@ -94,3 +94,14 @@ Feature: Reduce
     Then the result should be, in any order:
       | r    |
       | NULL |
+
+  Scenario: aggregate function in collection
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x
+      | RETURN reduce(totalNum = 10, n in collect($-.x) | totalNum + n * 2) AS total
+      """
+    Then the result should be, in any order:
+      | total |
+      | 70    |

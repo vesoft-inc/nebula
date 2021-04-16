@@ -101,28 +101,28 @@ Feature: Predicate
     Given a graph with space named "nba"
     When executing query:
       """
-      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return any(n in collect($-.x) where n > 5) as myboo
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x | RETURN any(n in collect($-.x) WHERE n > 5) AS myboo
       """
     Then the result should be, in any order:
       | myboo |
       | true  |
     When executing query:
       """
-      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return All(n in collect($-.x) where n > 5) as myboo
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x | RETURN All(n in collect($-.x) WHERE n > 5) AS myboo
       """
     Then the result should be, in any order:
       | myboo |
       | false |
     When executing query:
       """
-      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return single(n in collect($-.x) where n > 5) as myboo
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x | RETURN single(n in collect($-.x) WHERE n > 5) AS myboo
       """
     Then the result should be, in any order:
       | myboo |
       | false |
     When executing query:
       """
-      unwind [1, 2, 3, 4, 5] as a return a * 2 as x | return None(n in collect($-.x) where n > 5) as myboo
+      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x | RETURN None(n in collect($-.x) WHERE n > 5) AS myboo
       """
     Then the result should be, in any order:
       | myboo |
