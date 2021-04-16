@@ -36,7 +36,6 @@ private:
     GraphSpaceID                                        spaceId_;
     std::vector<PartitionID>                            partIds_;
     bool                                                showAllParts_{true};
-    std::unordered_map<PartitionID, size_t>             partIdIndex_;
 };
 
 }  // namespace meta

@@ -54,7 +54,6 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
             }
         }
         partItem.set_losts(std::move(losts));
-        partIdIndex_.emplace(partEntry.first, partItems.size());
         partItems.emplace_back(std::move(partItem));
     }
     if (partItems.size() != partHostsMap.size()) {
@@ -94,13 +93,6 @@ ListPartsProcessor::getAllParts() {
 }
 
 void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
-    auto prefix = MetaServiceUtils::leaderPrefix(spaceId_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        return;
-    }
-
     auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
 
     std::vector<std::string> leaderKeys;
@@ -114,7 +106,7 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     std::vector<std::string> values;
     std::tie(rc, statuses) =
         kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(leaderKeys), &values);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
+    if (rc != kvstore::ResultCode::SUCCEEDED && rc != kvstore::ResultCode::ERR_PARTIAL_RESULT) {
         return;
     }
     HostAddr host;
