@@ -34,5 +34,5 @@ thrift_generate("meta" "MetaService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT
 
 add_custom_target(
     clean-interface
-    COMMAND "rm" "-fr" "gen-cpp2" "gen-java" "gen-go" "gen-py"
+    COMMAND "rm" "-fr" "gen-cpp2" "gen-java" "gen-go" "gen-py" "gen-rust"
 )
