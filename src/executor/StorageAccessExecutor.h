@@ -110,6 +110,9 @@ protected:
                 return Status::Error("Storage Error: Out of range value.");
             case storage::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
                 return Status::Error("Storage Error: Atomic operation failed.");
+            case storage::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
+                return Status::Error("Storage Error: More than one request trying to "
+                                     "add/update/delete one edge/vertex at the same time.");
             case storage::cpp2::ErrorCode::E_FILTER_OUT:
                 return Status::OK();
             default:
