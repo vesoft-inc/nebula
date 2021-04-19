@@ -416,7 +416,7 @@ StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr,
         if ((leftIsAE && (kind == Expression::Kind::kRelGE || kind == Expression::Kind::kRelLT)) ||
             (!leftIsAE && (kind == Expression::Kind::kRelGT || kind == Expression::Kind::kRelLE))) {
             // edge case col1 >= 40.0, no need to round up
-            if (abs(f - iCeil) < kEpsilon) {
+            if (std::abs(f - iCeil) < kEpsilon) {
                 return iFloor;
             }
             return iCeil;

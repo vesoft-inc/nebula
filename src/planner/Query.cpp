@@ -331,7 +331,7 @@ void Sort::cloneMembers(const Sort &p) {
     SingleInputNode::cloneMembers(p);
 
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
-    for (const auto factor : p.factors()) {
+    for (const auto &factor : p.factors()) {
         factors.emplace_back(factor);
     }
     factors_ = std::move(factors);
@@ -377,7 +377,7 @@ void TopN::cloneMembers(const TopN &l) {
     SingleInputNode::cloneMembers(l);
 
     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
-    for (const auto factor : l.factors()) {
+    for (const auto &factor : l.factors()) {
         factors.emplace_back(factor);
     }
     factors_ = std::move(factors);
