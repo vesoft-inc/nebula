@@ -60,7 +60,7 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     }
     retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Failure build contexts: " << static_cast<int>(retCode);
+        LOG(ERROR) << "Failure build contexts: " << apache::thrift::util::enumNameSafe(retCode);
         pushResultCode(retCode, partId);
         onFinished();
         return;

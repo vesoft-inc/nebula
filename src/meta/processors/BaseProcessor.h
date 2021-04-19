@@ -10,7 +10,6 @@
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "common/interface/gen-cpp2/storage_types.h"
-#include "common/base/StatusOr.h"
 #include "common/time/Duration.h"
 #include "common/network/NetworkUtils.h"
 #include <folly/futures/Promise.h>
@@ -31,8 +30,9 @@ using FieldType = std::pair<std::string, cpp2::PropertyType>;
 using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
-    if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
+    auto retSpace = spaceExist(spaceID); \
+    if (retSpace != cpp2::ErrorCode::SUCCEEDED) { \
+        handleErrorCode(retSpace); \
         onFinished(); \
         return; \
     }
@@ -119,17 +119,19 @@ protected:
      * */
     void doPut(std::vector<kvstore::KV> data);
 
-    StatusOr<std::unique_ptr<kvstore::KVIterator>> doPrefix(const std::string& key);
+    ErrorOr<cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
+    doPrefix(const std::string& key);
 
     /**
      * General get function.
      * */
-    StatusOr<std::string> doGet(const std::string& key);
+    ErrorOr<cpp2::ErrorCode, std::string> doGet(const std::string& key);
 
     /**
      * General multi get function.
      * */
-    StatusOr<std::vector<std::string>> doMultiGet(const std::vector<std::string>& keys);
+    ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+    doMultiGet(const std::vector<std::string>& keys);
 
     /**
      * General remove function.
@@ -144,8 +146,8 @@ protected:
     /**
      * Scan keys from start to end, doesn't contain end.
      * */
-     StatusOr<std::vector<std::string>> doScan(const std::string& start,
-                                               const std::string& end);
+    ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+    doScan(const std::string& start, const std::string& end);
      /**
      * General multi remove function.
      **/
@@ -154,7 +156,7 @@ protected:
     /**
      * Get all hosts
      * */
-    StatusOr<std::vector<HostAddr>> allHosts();
+    ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
 
     /**
      * Get one auto-increment Id.
@@ -164,50 +166,52 @@ protected:
     /**
      * Check spaceId exist or not.
      * */
-    Status spaceExist(GraphSpaceID spaceId);
+    cpp2::ErrorCode spaceExist(GraphSpaceID spaceId);
 
     /**
      * Check user exist or not.
      **/
-    Status userExist(const std::string& account);
+    cpp2::ErrorCode userExist(const std::string& account);
 
     /**
      * Check host has been registered or not.
      * */
-    Status hostExist(const std::string& hostKey);
+    cpp2::ErrorCode hostExist(const std::string& hostKey);
 
     /**
      * Return the spaceId for name.
      * */
-    StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+    ErrorOr<cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
     /**
      * Return the tagId for name.
      */
-    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+    ErrorOr<cpp2::ErrorCode, TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Fetch the latest version tag's schema.
      */
-    StatusOr<cpp2::Schema>
+    ErrorOr<cpp2::ErrorCode, cpp2::Schema>
     getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId);
 
     /**
      * Return the edgeType for name.
      */
-    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+    ErrorOr<cpp2::ErrorCode, EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Fetch the latest version edge's schema.
      */
-    StatusOr<cpp2::Schema>
+    ErrorOr<cpp2::ErrorCode, cpp2::Schema>
     getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType);
 
-    StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
+    ErrorOr<cpp2::ErrorCode, IndexID>
+    getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
-    bool checkPassword(const std::string& account, const std::string& password);
+    ErrorOr<cpp2::ErrorCode, bool>
+    checkPassword(const std::string& account, const std::string& password);
 
-    kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
+    cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
 
     void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
 
@@ -219,23 +223,35 @@ protected:
     cpp2::ErrorCode indexCheck(const std::vector<cpp2::IndexItem>& items,
                                const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
-    StatusOr<std::vector<cpp2::IndexItem>>
+    ErrorOr<cpp2::ErrorCode, std::vector<cpp2::IndexItem>>
     getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
     bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                          const cpp2::IndexItem& item);
 
-    StatusOr<GroupID> getGroupId(const std::string& groupName);
+    ErrorOr<cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
 
-    StatusOr<ZoneID> getZoneId(const std::string& zoneName);
+    ErrorOr<cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 
-    Status listenerExist(GraphSpaceID space, cpp2::ListenerType type);
+    cpp2::ErrorCode listenerExist(GraphSpaceID space, cpp2::ListenerType type);
+
+    // A direct value of true means that data will not be written to follow via the raft protocol,
+    // but will be written directly to local disk
+    ErrorOr<cpp2::ErrorCode, bool>
+    replaceHostInPartition(const HostAddr& ipv4From,
+                           const HostAddr& ipv4To,
+                           bool direct = false);
+
+    ErrorOr<cpp2::ErrorCode, bool>
+    replaceHostInZone(const HostAddr& ipv4From,
+                      const HostAddr& ipv4To,
+                      bool direct = false);
 
 protected:
-    kvstore::KVStore* kvstore_ = nullptr;
-    RESP resp_;
-    folly::Promise<RESP> promise_;
-    time::Duration duration_;
+    kvstore::KVStore*         kvstore_ = nullptr;
+    RESP                      resp_;
+    folly::Promise<RESP>      promise_;
+    time::Duration            duration_;
 };
 
 }  // namespace meta

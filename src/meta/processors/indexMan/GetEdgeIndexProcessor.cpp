@@ -14,27 +14,30 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     auto indexName = req.get_index_name();
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-    auto edgeIndexIDResult = getIndexID(spaceID, indexName);
-    if (!edgeIndexIDResult.ok()) {
-        LOG(ERROR) << "Get Edge Index SpaceID: " << spaceID
-                   << " Index Name: " << indexName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    auto edgeIndexIDRet = getIndexID(spaceID, indexName);
+    if (!nebula::ok(edgeIndexIDRet)) {
+        auto retCode = nebula::error(edgeIndexIDRet);
+        LOG(ERROR) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName
+                   << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto indexId = nebula::value(edgeIndexIDRet);
     LOG(INFO) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName;
-    auto edgeKey = MetaServiceUtils::indexKey(spaceID, edgeIndexIDResult.value());
-    auto edgeResult = doGet(edgeKey);
-    if (!edgeResult.ok()) {
-        LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID
-                   << " Index Name: " << indexName << " status: " << edgeResult.status();
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+    const auto& indexKey = MetaServiceUtils::indexKey(spaceID, indexId);
+    auto indexItemRet = doGet(indexKey);
+    if (!nebula::ok(indexItemRet)) {
+        auto retCode = nebula::error(indexItemRet);
+        LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto item = MetaServiceUtils::parseIndex(edgeResult.value());
+    auto item = MetaServiceUtils::parseIndex(nebula::value(indexItemRet));
     if (item.get_schema_id().getType() != cpp2::SchemaID::Type::edge_type) {
         LOG(ERROR) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

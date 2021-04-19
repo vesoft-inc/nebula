@@ -135,7 +135,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
             if (!resp.succeeded()) {
                 for (auto& err : resp.failedParts()) {
                     LOG(ERROR) << "Partition " << err.first
-                               << " failed: " << static_cast<int32_t>(err.second);
+                               << " failed: " << apache::thrift::util::enumNameSafe(err.second);
                 }
             }
             LOG(INFO) << "Failed, the remaining retry times " << retry;
@@ -155,7 +155,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
             std::stringstream ss;
             for (auto& p : resp.failedParts()) {
                 ss << "Part " << p.first
-                   << ": " << static_cast<int32_t>(p.second)
+                   << ": " << apache::thrift::util::enumNameSafe(p.second)
                    << "; ";
             }
             VLOG(2) << "Failed partitions:: " << ss.str();

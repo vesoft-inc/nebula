@@ -4,22 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
+#include <algorithm>
+#include <folly/Likely.h>
+#include <folly/ScopeGuard.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
+#include "kvstore/NebulaStore.h"
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
-#include "kvstore/NebulaStore.h"
-#include <folly/Likely.h>
-#include <algorithm>
-#include <cstdint>
 #include "kvstore/RocksEngine.h"
 #include "kvstore/SnapshotManagerImpl.h"
-#include <folly/ScopeGuard.h>
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600,
              "interval to trigger custom compaction, < 0 means always do default minor compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
-DEFINE_bool(check_leader, true, "Check leader or not");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
 DEFINE_bool(auto_remove_invalid_space, false, "whether remove data of invalid space when restart");
 
@@ -472,12 +471,12 @@ void NebulaStore::addListener(GraphSpaceID spaceId,
     }
     auto listener = partIt->second.find(type);
     if (listener != partIt->second.end()) {
-        LOG(INFO) << "Listener of type " << static_cast<int32_t>(type)
+        LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
                   << " of [Space: " << spaceId << ", Part: " << partId << "] has existed!";
         return;
     }
     partIt->second.emplace(type, newListener(spaceId, partId, std::move(type), peers));
-    LOG(INFO) << "Listener of type " << static_cast<int32_t>(type)
+    LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
               << " of [Space: " << spaceId << ", Part: " << partId << "] is added";
     return;
 }
@@ -524,7 +523,7 @@ void NebulaStore::removeListener(GraphSpaceID spaceId,
                 raftService_->removePartition(listener->second);
                 listener->second->reset();
                 partIt->second.erase(type);
-                LOG(INFO) << "Listener of type " << static_cast<int32_t>(type)
+                LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
                           << " of [Space: " << spaceId << ", Part: " << partId << "] is removed";
                 return;
             }
@@ -1035,7 +1034,7 @@ int32_t NebulaStore::allLeader(
 }
 
 bool NebulaStore::checkLeader(std::shared_ptr<Part> part, bool canReadFromFollower) const {
-    return !FLAGS_check_leader || canReadFromFollower || (part->isLeader() && part->leaseValid());
+    return canReadFromFollower || (part->isLeader() && part->leaseValid());
 }
 
 void NebulaStore::cleanWAL() {

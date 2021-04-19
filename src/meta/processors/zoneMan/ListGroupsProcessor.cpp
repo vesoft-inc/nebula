@@ -11,14 +11,16 @@ namespace meta {
 
 void ListGroupsProcessor::process(const cpp2::ListGroupsReq&) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::groupLock());
-    auto prefix = MetaServiceUtils::groupPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(ret));
+    const auto& prefix = MetaServiceUtils::groupPrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List groups failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto iter = nebula::value(iterRet).get();
 
     std::vector<cpp2::Group> groups;
     while (iter->valid()) {

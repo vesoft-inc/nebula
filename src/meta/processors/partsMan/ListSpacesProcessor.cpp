@@ -11,15 +11,18 @@ namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaServiceUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List spaces failed";
-        handleErrorCode(MetaCommon::to(ret));
+    const auto& prefix = MetaServiceUtils::spacePrefix();
+    auto ret = doPrefix(prefix);
+     if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "List spaces failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto iter = nebula::value(ret).get();
+
     std::vector<cpp2::IdName> spaces;
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());

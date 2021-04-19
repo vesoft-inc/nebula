@@ -5,6 +5,8 @@
  */
 
 #include <folly/container/Enumerate.h>
+#include <folly/executors/QueuedImmediateExecutor.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
@@ -14,7 +16,6 @@
 #include "utils/IndexKeyUtils.h"
 #include "utils/NebulaKeyUtils.h"
 
-#include <folly/executors/QueuedImmediateExecutor.h>
 
 namespace nebula {
 namespace storage {
@@ -116,7 +117,7 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
                         spaceId_,
                         localPart,
                         remotePart,
-                        static_cast<int32_t>(code));
+                        apache::thrift::util::enumNameSafe(code));
                     if (code != cpp2::ErrorCode::SUCCEEDED) {
                         pushResultCode(code, localPart);
                     }

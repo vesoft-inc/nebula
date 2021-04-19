@@ -36,7 +36,7 @@ private:
                       const std::unordered_map<std::string, Hosts>& zoneHosts);
 
     // Get all host's part loading
-    StatusOr<std::unordered_map<HostAddr, int32_t>> getHostLoading();
+    ErrorOr<cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>> getHostLoading();
 
     // Get the zones with the least load
     StatusOr<std::vector<std::string>>

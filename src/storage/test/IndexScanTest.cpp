@@ -48,7 +48,7 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
         }
         default:
             LOG(ERROR) << "Unknown type: "
-                       << static_cast<int32_t>(col.get_type().get_type());
+                       << apache::thrift::util::enumNameSafe(col.get_type().get_type());
     }
     return "";
 }

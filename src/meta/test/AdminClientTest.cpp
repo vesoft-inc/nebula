@@ -291,8 +291,8 @@ TEST(AdminClientTest, RetryTest) {
         });
         baton.wait();
         auto peersRet = client->getPeers(0, 1);
-        CHECK(peersRet.ok());
-        auto hosts = std::move(peersRet).value();
+        CHECK(nebula::ok(peersRet));
+        auto hosts = std::move(nebula::value(peersRet));
         ASSERT_EQ(3, hosts.size());
         ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0]);
         ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1]);
@@ -316,7 +316,9 @@ TEST(AdminClientTest, SnapshotTest) {
     HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
     ActiveHostsMan::updateHostInfo(kv.get(), storageHost,
                                    HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
-    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(1, nebula::value(hostsRet).size());
 
     auto client = std::make_unique<AdminClient>(kv.get());
     {

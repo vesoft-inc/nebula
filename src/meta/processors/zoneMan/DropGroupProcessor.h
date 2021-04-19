@@ -24,7 +24,7 @@ private:
     explicit DropGroupProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    bool checkSpaceDependency(const std::string& groupName);
+    cpp2::ErrorCode checkSpaceDependency(const std::string& groupName);
 };
 
 }  // namespace meta

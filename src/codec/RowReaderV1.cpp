@@ -6,6 +6,7 @@
 
 #include "codec/RowReaderV1.h"
 #include "common/interface/gen-cpp2/meta_types.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 
 #define RR_GET_OFFSET()                                             \
@@ -221,7 +222,7 @@ Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
         case meta::cpp2::PropertyType::STRING:
             return getString(index);
         default:
-            LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(vType);
+            LOG(ERROR) << "Unknown type: " << apache::thrift::util::enumNameSafe(vType);
             return NullType::BAD_TYPE;
     }
 }

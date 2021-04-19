@@ -21,8 +21,9 @@ public:
     void process(const cpp2::GetConfigReq& req);
 
 private:
-    void getOneConfig(const cpp2::ConfigModule& module, const std::string& name,
-                      std::vector<cpp2::ConfigItem>& items);
+    cpp2::ErrorCode getOneConfig(const cpp2::ConfigModule& module,
+                                 const std::string& name,
+                                 std::vector<cpp2::ConfigItem>& items);
 
     explicit GetConfigProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::GetConfigResp>(kvstore) {}

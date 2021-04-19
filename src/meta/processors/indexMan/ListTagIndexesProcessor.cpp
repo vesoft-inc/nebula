@@ -12,19 +12,21 @@ namespace meta {
 void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
     auto space = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(space);
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
-    auto prefix = MetaServiceUtils::indexPrefix(space);
 
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    handleErrorCode(MetaCommon::to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Tag Index Failed: SpaceID " << space;
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
+    const auto& prefix = MetaServiceUtils::indexPrefix(space);
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List Tag Index Failed: SpaceID " << space
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    std::vector<nebula::meta::cpp2::IndexItem> items;
+    auto iter = nebula::value(iterRet).get();
+    std::vector<cpp2::IndexItem> items;
     while (iter->valid()) {
         auto val = iter->val();
         auto item = MetaServiceUtils::parseIndex(val);
@@ -33,7 +35,7 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
         }
         iter->next();
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

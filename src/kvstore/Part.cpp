@@ -451,7 +451,6 @@ ResultCode Part::toResultCode(raftex::AppendLogResult res) {
 }
 
 
-
 }  // namespace kvstore
 }  // namespace nebula
 

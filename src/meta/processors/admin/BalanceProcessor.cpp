@@ -26,13 +26,13 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
             return;
         }
         auto ret = Balancer::instance(kvstore_)->stop();
-        if (!ret.ok()) {
-            handleErrorCode(cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN);
+        if (!nebula::ok(ret)) {
+            handleErrorCode(nebula::error(ret));
             onFinished();
             return;
         }
         handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-        resp_.set_id(ret.value());
+        resp_.set_id(nebula::value(ret));
         onFinished();
         return;
     }
@@ -57,13 +57,15 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
 
     if (req.get_id() != nullptr) {
         auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
-        if (!ret.ok()) {
-            LOG(ERROR) << "Balance ID not found: " << *req.get_id();
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        if (!nebula::ok(ret)) {
+            auto retCode = nebula::error(ret);
+            LOG(ERROR) << "Show balance ID failed, error "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
             onFinished();
             return;
         }
-        const auto& plan = ret.value();
+        const auto& plan = nebula::value(ret);
         std::vector<cpp2::BalanceTask> thriftTasks;
         for (auto& task : plan.tasks()) {
             cpp2::BalanceTask t;
@@ -89,7 +91,17 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         return;
     }
 
-    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        auto retCode = nebula::error(activeHostsRet);
+        LOG(ERROR) << "Get active hosts failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
+        onFinished();
+        return;
+    }
+    auto hosts = std::move(nebula::value(activeHostsRet));
+
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
         handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
@@ -104,8 +116,9 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
 
     auto ret = Balancer::instance(kvstore_)->balance(std::move(lostHosts));
     if (!ok(ret)) {
-        LOG(ERROR) << "Balance Failed: " << static_cast<int32_t>(ret.left());
-        handleErrorCode(error(ret));
+        auto retCode = error(ret);
+        LOG(ERROR) << "Balance Failed: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }

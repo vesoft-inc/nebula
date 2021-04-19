@@ -31,29 +31,35 @@ static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
 }
 
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
-    Status status;
+    cpp2::ErrorCode retCode;
     {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-        auto spaceRet = getSpaceIdNameMap();
-        if (!spaceRet.ok()) {
+        retCode = getSpaceIdNameMap();
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(retCode);
             onFinished();
             return;
         }
 
         meta::cpp2::ListHostType type = req.get_type();
         if (type == cpp2::ListHostType::ALLOC) {
-            status = fillLeaders();
-            status = fillAllParts();
+            retCode = fillLeaders();
+            if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+                handleErrorCode(retCode);
+                onFinished();
+                return;
+            }
+
+            retCode = fillAllParts();
         } else {
             auto hostRole = toHostRole(type);
-            status = allHostsWithStatus(hostRole);
+            retCode = allHostsWithStatus(hostRole);
         }
     }
-    if (status.ok()) {
-        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    if (retCode == cpp2::ErrorCode::SUCCEEDED) {
         resp_.set_hosts(std::move(hostItems_));
     }
-
+    handleErrorCode(retCode);
     onFinished();
 }
 
@@ -64,10 +70,12 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
  * which return a bunch of host infomation
  * it's not necessary add this interface only for gitInfoSHA
  * */
-Status ListHostsProcessor::allMetaHostsStatus() {
+cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     auto errOrPart = kvstore_->part(kDefaultSpaceId, kDefaultPartId);
     if (!nebula::ok(errOrPart)) {
-        return Status::SpaceNotFound();
+        auto retCode = MetaCommon::to(nebula::error(errOrPart));
+        LOG(ERROR) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
     auto metaPeers = nebula::value(errOrPart)->peers();
     // transform raft port to servre port
@@ -82,33 +90,39 @@ Status ListHostsProcessor::allMetaHostsStatus() {
         item.set_status(cpp2::HostStatus::ONLINE);
         hostItems_.emplace_back(item);
     }
-    return Status::OK();
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
+cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
     if (role == cpp2::HostRole::META) {
         return allMetaHostsStatus();
     }
     const auto& hostPrefix = MetaServiceUtils::hostPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Hosts Failed: No hosts";
-        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+    auto ret = doPrefix(hostPrefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = cpp2::ErrorCode::E_NO_HOSTS;
+        }
+        LOG(ERROR) << "List Hosts Failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
+    auto iter = nebula::value(ret).get();
     auto now = time::WallClock::fastNowInMilliSec();
     std::vector<std::string> removeHostsKey;
     while (iter->valid()) {
-        cpp2::HostItem item;
-        auto host = MetaServiceUtils::parseHostKey(iter->key());
-        item.set_hostAddr(std::move(host));
         HostInfo info = HostInfo::decode(iter->val());
         if (info.role_ != role) {
             iter->next();
             continue;
         }
+
+        cpp2::HostItem item;
+        auto host = MetaServiceUtils::parseHostKey(iter->key());
+        item.set_hostAddr(std::move(host));
+
         item.set_role(info.role_);
         item.set_git_info_sha(info.gitInfoSha_);
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
@@ -128,25 +142,36 @@ Status ListHostsProcessor::allHostsWithStatus(cpp2::HostRole role) {
     }
 
     removeExpiredHosts(std::move(removeHostsKey));
-    return Status::OK();
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-Status ListHostsProcessor::fillLeaders() {
-    auto status = allHostsWithStatus(cpp2::HostRole::STORAGE);
-    if (!status.ok()) {
+cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
+    auto retCode = allHostsWithStatus(cpp2::HostRole::STORAGE);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Get all host's status failed";
-        return status;
+        return retCode;
     }
 
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    const auto& prefix = MetaServiceUtils::leaderPrefix();
-    auto rc = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Hosts Failed: No leaders";
-        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(rc));
+    // get hosts which have send heartbeat recently
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        return nebula::error(activeHostsRet);
     }
+    auto activeHosts = nebula::value(activeHostsRet);
+
+    const auto& prefix = MetaServiceUtils::leaderPrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        retCode = nebula::error(iterRet);
+        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = cpp2::ErrorCode::E_NO_HOSTS;
+        }
+        LOG(ERROR) << "List leader Hosts Failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
+    }
+
+    auto iter = nebula::value(iterRet).get();
 
     // get hosts which have send heartbeat recently
     HostAddr host;
@@ -179,10 +204,10 @@ Status ListHostsProcessor::fillLeaders() {
         hostIt->leader_parts_ref()[spaceName].emplace_back(spaceIdAndPartId.second);
     }
 
-    return Status::OK();
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-Status ListHostsProcessor::fillAllParts() {
+cpp2::ErrorCode ListHostsProcessor::fillAllParts() {
     std::unique_ptr<kvstore::KVIterator> iter;
     using SpaceNameAndPartitions = std::unordered_map<std::string, std::vector<PartitionID>>;
     std::unordered_map<HostAddr, SpaceNameAndPartitions> allParts;
@@ -191,21 +216,23 @@ Status ListHostsProcessor::fillAllParts() {
         const auto& spaceName = spaceIdNameMap_[spaceId];
 
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
-        auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-        if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "List Hosts Failed: No partitions";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-            return Status::Error("Can't find any partitions");
+        auto iterPartRet = doPrefix(partPrefix);
+        if (!nebula::ok(iterPartRet)) {
+            auto retCode = nebula::error(iterPartRet);
+            LOG(ERROR) << "List part failed in list hosts,  error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
+        auto partIter = nebula::value(iterPartRet).get();
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
-        while (iter->valid()) {
-            PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
-            auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+        while (partIter->valid()) {
+            PartitionID partId = MetaServiceUtils::parsePartKeyPartId(partIter->key());
+            auto partHosts = MetaServiceUtils::parsePartVal(partIter->val());
             for (auto& host : partHosts) {
                 hostParts[host].emplace_back(partId);
             }
-            iter->next();
+            partIter->next();
         }
 
         for (const auto& hostEntry : hostParts) {
@@ -223,7 +250,7 @@ Status ListHostsProcessor::fillAllParts() {
         }
     }
 
-    return Status::OK();
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 // Remove hosts that long time at OFFLINE status
@@ -241,23 +268,28 @@ void ListHostsProcessor::removeExpiredHosts(std::vector<std::string>&& removeHos
         });
 }
 
-Status ListHostsProcessor::getSpaceIdNameMap() {
+cpp2::ErrorCode ListHostsProcessor::getSpaceIdNameMap() {
     // Get all spaces
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Hosts Failed: No space found";
-        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+    auto iterRet = doPrefix(spacePrefix);
+     if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = cpp2::ErrorCode::E_NO_HOSTS;
+        }
+        LOG(ERROR) << "List Hosts Failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
+
+    auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         spaceIds_.emplace_back(spaceId);
         spaceIdNameMap_.emplace(spaceId, MetaServiceUtils::spaceName(iter->val()));
         iter->next();
     }
-    return Status::OK();
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::unordered_map<std::string, std::vector<PartitionID>>

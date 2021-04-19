@@ -107,7 +107,7 @@ public:
                 });
             } else {
                 LOG(ERROR) << "Space " << spaceId << " part " << partId
-                           << " failed transfer leader, error:" << static_cast<int32_t>(code);
+                           << " failed transfer leader, error: " << static_cast<int32_t>(code);
                 this->pushResultCode(to(code), partId);
                 onFinished();
                 return;

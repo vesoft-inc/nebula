@@ -10,50 +10,62 @@ namespace nebula {
 namespace meta {
 
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
+    auto edgeName = req.get_edge_name();
+    auto ver = req.get_version();
+
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-    auto edgeTypeRet = getEdgeType(req.get_space_id(), req.get_edge_name());
-    if (!edgeTypeRet.ok()) {
-        handleErrorCode(MetaCommon::to(edgeTypeRet.status()));
+    auto edgeTypeRet = getEdgeType(spaceId, edgeName);
+    if (!nebula::ok(edgeTypeRet)) {
+        LOG(ERROR) << "Get edge " << edgeName << " failed.";
+        handleErrorCode(nebula::error(edgeTypeRet));
         onFinished();
         return;
     }
-    auto edgeType = edgeTypeRet.value();
+    auto edgeType = nebula::value(edgeTypeRet);
 
     std::string schemaValue;
     // Get the lastest version
-    if (req.get_version() < 0) {
-        auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
+    if (ver < 0) {
+        auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
         auto ret = doPrefix(edgePrefix);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
-                       << req.get_edge_name() << ", version " << req.get_version() << " not found";
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: "
+                       << edgeName << ", latest version failed.";
+            handleErrorCode(nebula::error(ret));
+            onFinished();
+            return;
+        }
+        auto iter = nebula::value(ret).get();
+        if (!iter->valid()) {
+            LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: "
+                       << edgeName << ", latest version " << " not found.";
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
-        schemaValue = ret.value()->val().str();
+        schemaValue = iter->val().str();
     } else {
-        auto edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),
-                                                       edgeType,
-                                                       req.get_version());
+        auto edgeKey = MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, ver);
         auto ret = doGet(edgeKey);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
-                       << req.get_edge_name() << ", version " << req.get_version() << " not found";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: "
+                       << edgeName << ", version " << ver << " failed.";
+            handleErrorCode(nebula::error(ret));
             onFinished();
             return;
         }
-        schemaValue = ret.value();
+        schemaValue = nebula::value(ret);
     }
 
-    VLOG(3) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
-            << req.get_edge_name() << ", version " << req.get_version();
+    VLOG(3) << "Get Edge SpaceID: " << spaceId << ", edgeName: "
+            << edgeName << ", version " << ver;
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }
+
 }  // namespace meta
 }  // namespace nebula
 

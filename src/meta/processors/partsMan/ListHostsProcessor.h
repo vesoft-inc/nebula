@@ -27,29 +27,30 @@ private:
     /**
      *  return online/offline, gitInfoSHA for the specific HostRole
      * */
-    Status allHostsWithStatus(cpp2::HostRole type);
+    cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
 
-    Status fillLeaders();
+    cpp2::ErrorCode fillLeaders();
 
-    Status fillAllParts();
+    cpp2::ErrorCode fillAllParts();
 
     /**
      * Get gitInfoSHA from all meta hosts gitInfoSHA
      * now, assume of of them are equal
      * */
-    Status allMetaHostsStatus();
+    cpp2::ErrorCode allMetaHostsStatus();
 
     // Get map of spaceId -> spaceName
-    Status getSpaceIdNameMap();
+    cpp2::ErrorCode getSpaceIdNameMap();
 
     std::unordered_map<std::string, std::vector<PartitionID>>
     getLeaderPartsWithSpaceName(const LeaderParts& leaderParts);
 
     void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
 
-    std::vector<GraphSpaceID> spaceIds_;
+private:
+    std::vector<GraphSpaceID>                     spaceIds_;
     std::unordered_map<GraphSpaceID, std::string> spaceIdNameMap_;
-    std::vector<cpp2::HostItem> hostItems_;
+    std::vector<cpp2::HostItem>                   hostItems_;
 };
 
 }  // namespace meta

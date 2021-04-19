@@ -15,19 +15,19 @@ namespace meta {
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     auto& snapshot = req.get_name();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
-    std::string val;
 
     // Check snapshot is exists
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId,
-                             MetaServiceUtils::snapshotKey(snapshot),
-                             &val);
-
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "No snapshots found";
-        handleErrorCode(MetaCommon::to(ret));
+    auto key = MetaServiceUtils::snapshotKey(snapshot);
+    auto ret = doGet(std::move(key));
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Get snapshot " << snapshot << " failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto val = nebula::value(ret);
 
     auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
     auto peersRet = NetworkUtils::toHosts(hosts);
@@ -38,6 +38,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         return;
     }
 
+
     std::vector<kvstore::KV> data;
     auto peers = peersRet.value();
     auto dsRet = Snapshot::instance(kvstore_, client_)->dropSnapshot(snapshot, std::move(peers));
@@ -47,11 +48,11 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
         auto putRet = doSyncPut(std::move(data));
-        if (putRet != kvstore::ResultCode::SUCCEEDED) {
+        if (putRet != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            handleErrorCode(MetaCommon::to(putRet));
         }
+        handleErrorCode(putRet);
         onFinished();
         return;
     }
@@ -64,11 +65,11 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
         auto putRet = doSyncPut(std::move(data));
-        if (putRet != kvstore::ResultCode::SUCCEEDED) {
+        if (putRet !=  cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            handleErrorCode(MetaCommon::to(putRet));
         }
+        handleErrorCode(putRet);
         onFinished();
         return;
     }
@@ -76,6 +77,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     doRemove(MetaServiceUtils::snapshotKey(snapshot));
     LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -36,8 +36,10 @@ cpp2::ErrorCode RebuildJobExecutor::prepare() {
         auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[i]);
         auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
         if (result != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Get indexKey error indexName: " << paras_[i];
-            return cpp2::ErrorCode::E_NOT_FOUND;
+            auto retCode = MetaCommon::to(result);
+            LOG(ERROR) << "Get indexKey error indexName: " << paras_[i] << " error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
         indexId = *reinterpret_cast<const IndexID*>(indexValue.c_str());
@@ -51,7 +53,11 @@ meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
     auto errOrTargetHost = getTargetHost(space_);
     if (!nebula::ok(errOrTargetHost)) {
         LOG(ERROR) << "Get target host failed";
-        return cpp2::ErrorCode::E_NO_HOSTS;
+        auto retCode = nebula::error(errOrTargetHost);
+        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = cpp2::ErrorCode::E_NO_HOSTS;
+        }
+        return retCode;
     }
 
     auto& hosts = nebula::value(errOrTargetHost);

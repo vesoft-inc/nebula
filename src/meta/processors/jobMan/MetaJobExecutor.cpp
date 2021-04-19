@@ -4,11 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <memory>
-#include <map>
 #include "common/network/NetworkUtils.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/common/MetaCommon.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
@@ -74,8 +73,10 @@ MetaJobExecutor::getSpaceIdFromName(const std::string& spaceName) {
     std::string val;
     auto rc = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
     if (rc != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get space ID failed space name: " << spaceName;
-        return cpp2::ErrorCode::E_NOT_FOUND;
+        auto retCode = MetaCommon::to(rc);
+        LOG(ERROR) << "Get space failed, space name: " << spaceName << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
     return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
 }
@@ -85,8 +86,10 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
     auto partPrefix = MetaServiceUtils::partPrefix(spaceId);
     auto rc = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     if (rc != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
-        return cpp2::ErrorCode::E_NOT_FOUND;
+        auto retCode = MetaCommon::to(rc);
+        LOG(ERROR) << "Fetch Parts Failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     // use vector instead of set because this can convient for next step
@@ -110,8 +113,10 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
     std::unique_ptr<kvstore::KVIterator> leaderIter;
     auto result = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
     if (result != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get space " << space << "'s part failed";
-        return cpp2::ErrorCode::E_NOT_FOUND;
+        auto retCode = MetaCommon::to(result);
+        LOG(ERROR) << "Get space " << space << "'s part failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
@@ -146,7 +151,7 @@ cpp2::ErrorCode MetaJobExecutor::execute() {
 
     if (!nebula::ok(addressesRet)) {
         LOG(ERROR) << "Can't get hosts";
-        return cpp2::ErrorCode::E_NO_HOSTS;
+        return nebula::error(addressesRet);
     }
 
     std::vector<PartitionID> parts;
@@ -168,7 +173,7 @@ cpp2::ErrorCode MetaJobExecutor::execute() {
         baton.wait();
         if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
             LOG(INFO) << "write to kv store failed. E_STORE_FAILURE";
-            return cpp2::ErrorCode::E_STORE_FAILURE;
+            return MetaCommon::to(rc);
         }
     }
 

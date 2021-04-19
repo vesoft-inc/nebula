@@ -28,18 +28,28 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
         return;
     }
 
-    if (!checkGroupRedundancy(zoneNames)) {
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+    auto retCode = checkGroupRedundancy(zoneNames);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto groupRet = getGroupId(groupName);
-    if (groupRet.ok()) {
+    if (nebula::ok(groupRet)) {
         LOG(ERROR) << "Group " << groupName << " already existed";
         handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
+    } else {
+        retCode = nebula::error(groupRet);
+        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Create Group failed, group name " << groupName << " error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
     }
 
     auto groupIdRet = autoIncrementId();
@@ -61,14 +71,15 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
     doSyncPutAndUpdate(std::move(data));
 }
 
-bool AddGroupProcessor::checkGroupRedundancy(std::vector<std::string> zones) {
-    auto prefix = MetaServiceUtils::groupPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get groups failed";
-        return false;
+cpp2::ErrorCode AddGroupProcessor::checkGroupRedundancy(std::vector<std::string> zones) {
+    const auto& prefix = MetaServiceUtils::groupPrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Get groups failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
+    auto iter = nebula::value(iterRet).get();
 
     std::sort(zones.begin(), zones.end());
     while (iter->valid()) {
@@ -78,11 +89,11 @@ bool AddGroupProcessor::checkGroupRedundancy(std::vector<std::string> zones) {
         if (zones == zoneNames) {
             LOG(ERROR) << "Group " << groupName
                        << " have created, although the zones order maybe not the same";
-            return false;
+            return cpp2::ErrorCode::E_EXISTED;
         }
         iter->next();
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

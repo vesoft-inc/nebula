@@ -7,6 +7,9 @@
 #ifndef STORAGE_ADMIN_ADMINTASK_H_
 #define STORAGE_ADMIN_ADMINTASK_H_
 
+#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/thrift/ThriftTypes.h"
@@ -14,7 +17,6 @@
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/TaskUtils.h"
 #include "storage/CommonUtils.h"
-#include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 
 namespace nebula {
 namespace storage {
@@ -93,8 +95,8 @@ public:
     }
 
     virtual void finish(cpp2::ErrorCode rc) {
-        FLOG_INFO("task(%d, %d) finished, rc=[%d]", ctx_.jobId_, ctx_.taskId_,
-                  static_cast<int>(rc));
+        FLOG_INFO("task(%d, %d) finished, rc=[%s]", ctx_.jobId_, ctx_.taskId_,
+                  apache::thrift::util::enumNameSafe(rc).c_str());
         nebula::meta::cpp2::StatisItem statisItem;
         ctx_.onFinish_(rc, statisItem);
     }

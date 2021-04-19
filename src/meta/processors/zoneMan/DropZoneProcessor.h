@@ -24,7 +24,7 @@ private:
     explicit DropZoneProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    bool checkGroupDependency(const std::string& zoneName);
+    cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
 };
 
 }  // namespace meta

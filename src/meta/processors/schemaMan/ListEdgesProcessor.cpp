@@ -10,18 +10,20 @@ namespace nebula {
 namespace meta {
 
 void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
+
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-    auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    handleErrorCode(MetaCommon::to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        LOG(ERROR) << "List Edges failed, SpaceID: " << spaceId;
+        handleErrorCode(nebula::error(ret));
         onFinished();
         return;
     }
 
+    auto iter = nebula::value(ret).get();
     std::vector<nebula::meta::cpp2::EdgeItem> edges;
     while (iter->valid()) {
         auto key = iter->key();
@@ -43,6 +45,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
+
 }  // namespace meta
 }  // namespace nebula
 

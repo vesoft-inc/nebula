@@ -11,28 +11,37 @@ namespace meta {
 
 void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     auto spaceID = req.get_space_id();
-    auto indexName = req.get_index_name();
+    const auto& indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
 
-    auto edgeIndexID = getIndexID(spaceID, indexName);
-    if (!edgeIndexID.ok()) {
-        LOG(ERROR) << "Edge Index not exists in Space: " << spaceID << " Index name: " << indexName;
-        if (req.get_if_exists()) {
-            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    auto edgeIndexIDRet = getIndexID(spaceID, indexName);
+    if (!nebula::ok(edgeIndexIDRet)) {
+        auto retCode = nebula::error(edgeIndexIDRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            if (req.get_if_exists()) {
+                retCode = cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG(ERROR) << "Drop Edge Index Failed, index name " << indexName
+                           << " not exists in Space: "<< spaceID;
+            }
         } else {
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            LOG(ERROR) << "Drop Edge Index Failed, index name " << indexName
+                       << " error: " << apache::thrift::util::enumNameSafe(retCode);
         }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto edgeIndexID = nebula::value(edgeIndexIDRet);
+
     std::vector<std::string> keys;
     keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
-    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID.value()));
+    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID));
 
     LOG(INFO) << "Drop Edge Index " << indexName;
-    resp_.set_id(to(edgeIndexID.value(), EntryType::INDEX));
+    resp_.set_id(to(edgeIndexID, EntryType::INDEX));
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

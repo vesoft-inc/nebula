@@ -53,11 +53,14 @@ cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& module,
                                               std::vector<kvstore::KV>& data) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(std::move(configKey));
-    if (!ret.ok()) {
-        return cpp2::ErrorCode::E_NOT_FOUND;
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error((ret));
+        LOG(ERROR) << "Set config " << name << " failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
-    cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
+    cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(nebula::value(ret));
     cpp2::ConfigMode curMode = item.get_mode();
     if (curMode == cpp2::ConfigMode::IMMUTABLE) {
         return cpp2::ErrorCode::E_CONFIG_IMMUTABLE;

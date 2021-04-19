@@ -190,9 +190,18 @@ cpp2::ErrorCode BalancePlan::recovery(bool resume) {
                     task.ret_ = BalanceTaskResult::IN_PROGRESS;
                 }
                 task.status_ = BalanceTaskStatus::START;
-                if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
-                    LOG(ERROR) << "The destination is not lived";
-                    task.ret_ = BalanceTaskResult::INVALID;
+                auto activeHostRet = ActiveHostsMan::isLived(kv_, task.dst_);
+                if (!nebula::ok(activeHostRet)) {
+                    auto retCode = nebula::error(activeHostRet);
+                    LOG(ERROR) << "Get active hosts failed, error: "
+                               << static_cast<int32_t>(retCode);
+                    return retCode;
+                } else {
+                    auto isLive = nebula::value(activeHostRet);
+                    if (!isLive) {
+                        LOG(ERROR) << "The destination is not lived";
+                        task.ret_ = BalanceTaskResult::INVALID;
+                    }
                 }
             }
         }

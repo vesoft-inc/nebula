@@ -5,6 +5,7 @@
  */
 
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {
 namespace meta {
@@ -13,17 +14,20 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& account = req.get_account();
     const auto& password = req.get_encoded_pwd();
-    auto ret = userExist(account);
-    if (ret.ok()) {
-        cpp2::ErrorCode code;
-        if (req.get_if_not_exists()) {
-            code = cpp2::ErrorCode::SUCCEEDED;
+
+    auto retCode = userExist(account);
+    if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == cpp2::ErrorCode::SUCCEEDED) {
+            if (!req.get_if_not_exists()) {
+                LOG(ERROR) << "Create User Failed : User " << account
+                           << " already existed!";
+                retCode = cpp2::ErrorCode::E_EXISTED;
+            }
         } else {
             LOG(ERROR) << "Create User Failed : User " << account
-                       << " already existed!";
-            code = cpp2::ErrorCode::E_EXISTED;
+                       << " error: " << apache::thrift::util::enumNameSafe(retCode);
         }
-        handleErrorCode(code);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
@@ -31,7 +35,6 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::userKey(account),
                       MetaServiceUtils::userVal(password));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 
@@ -42,16 +45,19 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     const auto& password = req.get_encoded_pwd();
     auto userKey = MetaServiceUtils::userKey(account);
     auto userVal = MetaServiceUtils::userVal(password);
-    std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+
+    auto iRet = doGet(userKey);
+    if (!nebula::ok(iRet)) {
+        auto errCode = nebula::error(iRet);
+        LOG(ERROR) << "Get User Failed : User " << account
+                   << " error: " << apache::thrift::util::enumNameSafe(errCode);
+        handleErrorCode(errCode);
         onFinished();
         return;
     }
+
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey), std::move(userVal));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 
@@ -59,37 +65,51 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
 void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& account = req.get_account();
-    auto ret = userExist(account);
-    if (!ret.ok()) {
-        if (req.get_if_exists()) {
-            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+
+    auto retCode = userExist(account);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            if (req.get_if_exists()) {
+                retCode = cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG(ERROR) << "Drop User Failed :" << account << " not found.";
+            }
         } else {
-            LOG(ERROR) << "Drop User Failed :" << account << " not found.";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            LOG(ERROR) << "Drop User Failed : User " << account
+                       << " error: " << apache::thrift::util::enumNameSafe(retCode);
         }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
     std::vector<std::string> keys;
     keys.emplace_back(MetaServiceUtils::userKey(account));
 
     // Collect related roles by user.
-    std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::rolesPrefix();
-    auto userRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (userRet == kvstore::ResultCode::SUCCEEDED) {
-        while (iter->valid()) {
-            auto key = iter->key();
-            auto user = MetaServiceUtils::parseRoleUser(key);
-            if (user == account) {
-                keys.emplace_back(key);
-            }
-            iter->next();
-        }
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        retCode = nebula::error(iterRet);
+        // The error of prefix is leader change
+        LOG(ERROR) << "Drop User Failed : User " << account
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
+        onFinished();
+        return;
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    LOG(INFO) << "Drop User " << req.get_account();
+    auto iter = nebula::value(iterRet).get();
+    while (iter->valid()) {
+        auto key = iter->key();
+        auto user = MetaServiceUtils::parseRoleUser(key);
+        if (user == account) {
+            keys.emplace_back(key);
+        }
+        iter->next();
+    }
+
+    LOG(INFO) << "Drop User " << account;
     doSyncMultiRemoveAndUpdate({std::move(keys)});
 }
 
@@ -99,6 +119,8 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     folly::SharedMutex::ReadHolder spaceHolder(LockUtils::spaceLock());
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
+    const auto& account = roleItem.get_user_id();
+
     /**
      *  for cloud authority, need init a god user by this interface. the god user default grant to
      *  meta space (kDefaultSpaceId). so skip the space check.
@@ -108,17 +130,18 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     if (!(spaceId == kDefaultSpaceId && roleItem.get_role_type() == cpp2::RoleType::GOD)) {
         CHECK_SPACE_ID_AND_RETURN(spaceId);
     }
-    auto userRet = userExist(roleItem.get_user_id());
-    if (!userRet.ok()) {
-        handleErrorCode(MetaCommon::to(userRet));
+    auto retCode = userExist(account);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Grant User Failed : User " << account
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::roleKey(spaceId, roleItem.get_user_id()),
+    data.emplace_back(MetaServiceUtils::roleKey(spaceId, account),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 
@@ -129,52 +152,76 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     const auto& roleItem = req.get_role_item();
     auto spaceId = roleItem.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);
-    auto userRet = userExist(roleItem.get_user_id());
-    if (!userRet.ok()) {
-        handleErrorCode(MetaCommon::to(userRet));
+    const auto& account = roleItem.get_user_id();
+
+    auto userRet = userExist(account);
+    if (userRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Revoke User Failed : User " << account
+                   << " error: " << apache::thrift::util::enumNameSafe(userRet);
+        handleErrorCode(userRet);
         onFinished();
         return;
     }
 
-    auto roleKey = MetaServiceUtils::roleKey(spaceId, roleItem.get_user_id());
+    auto roleKey = MetaServiceUtils::roleKey(spaceId, account);
     auto result = doGet(roleKey);
-    if (!result.ok()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(result)) {
+        userRet = nebula::error(result);
+        LOG(ERROR) << "Get Role User Failed : User " << account
+                   << " error: " << apache::thrift::util::enumNameSafe(userRet);
+        handleErrorCode(userRet);
         onFinished();
         return;
     }
-    auto val = result.value();
+    auto val = nebula::value(result);
     const auto role = *reinterpret_cast<const cpp2::RoleType *>(val.c_str());
     if (role != roleItem.get_role_type()) {
+        LOG(ERROR) << "Revoke User Failed : User " << account << " error: "
+                   << apache::thrift::util::enumNameSafe(cpp2::ErrorCode::E_IMPROPER_ROLE);
         handleErrorCode(cpp2::ErrorCode::E_IMPROPER_ROLE);
         onFinished();
         return;
     }
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncMultiRemoveAndUpdate({std::move(roleKey)});
 }
 
 
 void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
-    auto userRet = userExist(req.get_account());
-    if (!userRet.ok()) {
-        handleErrorCode(MetaCommon::to(userRet));
+    const auto& account = req.get_account();
+    auto userRet = userExist(account);
+    if (userRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Change password Failed, get user " << account << " failed, "
+                   << " error: " << apache::thrift::util::enumNameSafe(userRet);
+        handleErrorCode(userRet);
         onFinished();
         return;
     }
 
-    if (!checkPassword(req.get_account(), req.get_old_encoded_pwd())) {
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
+    auto checkRet = checkPassword(account, req.get_old_encoded_pwd());
+    if (!nebula::ok(checkRet)) {
+        auto retCode = nebula::error(checkRet);
+        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = cpp2::ErrorCode::E_INVALID_PASSWORD;
+        }
+        LOG(ERROR) << "Get user " << account << " failed, " << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
+    } else {
+        if (!nebula::value(checkRet)) {
+            LOG(ERROR) << "Check password failed, user " << account;
+            handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
+            onFinished();
+            return;
+        }
     }
 
-    auto userKey = MetaServiceUtils::userKey(req.get_account());
+    auto userKey = MetaServiceUtils::userKey(account);
     auto userVal = MetaServiceUtils::userVal(req.get_new_encoded_pwd());
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey), std::move(userVal));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 
@@ -182,23 +229,26 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
 void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     UNUSED(req);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    std::unique_ptr<kvstore::KVIterator> iter;
     std::string prefix = "__users__";
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any users.";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "List User failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
+    auto iter = nebula::value(ret).get();
     std::unordered_map<std::string, std::string> users;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseUser(iter->key());
         auto password = MetaServiceUtils::parseUserPwd(iter->val());
-        users.emplace(std::pair<std::string, std::string>(std::move(account), std::move(password)));
+        users.emplace(std::move(account), std::move(password));
         iter->next();
     }
-    resp_.set_users(users);
+    resp_.set_users(std::move(users));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
@@ -207,17 +257,19 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     auto spaceId = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);
+
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "List roles failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto iter = nebula::value(ret).get();
     std::vector<nebula::meta::cpp2::RoleItem> roles;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseRoleUser(iter->key());
@@ -226,41 +278,45 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         role.set_user_id(std::move(account));
         role.set_space_id(spaceId);
         role.set_role_type(*reinterpret_cast<const cpp2::RoleType *>(val.begin()));
-        roles.emplace_back(role);
+        roles.emplace_back(std::move(role));
         iter->next();
     }
-    resp_.set_roles(roles);
+    resp_.set_roles(std::move(roles));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
 void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    const auto& act = req.get_account();
+
     auto prefix = MetaServiceUtils::rolesPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any roles by user  " << req.get_account();
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Prefix roles failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto iter = nebula::value(ret).get();
     std::vector<nebula::meta::cpp2::RoleItem> roles;
     while (iter->valid()) {
         auto account = MetaServiceUtils::parseRoleUser(iter->key());
         auto spaceId = MetaServiceUtils::parseRoleSpace(iter->key());
-        if (account == req.get_account()) {
+        if (account == act) {
             auto val = iter->val();
             cpp2::RoleItem role;
             role.set_user_id(std::move(account));
             role.set_space_id(spaceId);
             role.set_role_type(*reinterpret_cast<const cpp2::RoleType *>(val.begin()));
-            roles.emplace_back(role);
+            roles.emplace_back(std::move(role));
         }
         iter->next();
     }
-    resp_.set_roles(roles);
+    resp_.set_roles(std::move(roles));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }

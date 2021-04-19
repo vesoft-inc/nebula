@@ -111,9 +111,9 @@ void AdminTaskManager::schedule() {
         auto task = it->second;
         auto errOrSubTasks = task->genSubTasks();
         if (!nebula::ok(errOrSubTasks)) {
-            auto code = static_cast<int>(nebula::error(errOrSubTasks));
             LOG(ERROR) << folly::sformat(
-                "job {}, genSubTask failed, err={}", task->getJobId(), code);
+                "job {}, genSubTask failed, err={}", task->getJobId(),
+                apache::thrift::util::enumNameSafe(nebula::error(errOrSubTasks)));
             task->finish(nebula::error(errOrSubTasks));
             tasks_.erase(handle);
             continue;

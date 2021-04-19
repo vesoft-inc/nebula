@@ -307,7 +307,7 @@ struct TossEnvironment {
             if (!fparts.empty()) {
                 for (cpp2::PartitionResult& res : fparts) {
                     LOG(INFO) << "part_id: " << res.part_id << ", part leader " << res.get_leader()
-                              << ", code " << static_cast<int>(res.code);
+                              << ", code " << apache::thrift::util::enumNameSafe(res.code);
                 }
                 LOG(FATAL) << "getProps() !failed_parts.empty())";
             }
@@ -624,7 +624,7 @@ struct TossEnvironment {
         sf.wait();
 
         if (sf.value() != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(FATAL) << "forward txn return=" << static_cast<int>(sf.value());
+            LOG(FATAL) << "forward txn return=" << apache::thrift::util::enumNameSafe(sf.value());
         }
     }
 

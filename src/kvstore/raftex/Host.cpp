@@ -10,6 +10,7 @@
 #include "common/network/NetworkUtils.h"
 #include <folly/io/async/EventBase.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 DEFINE_uint32(max_appendlog_batch_size, 128,
               "The max number of logs in each appendLog request batch");
@@ -205,7 +206,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
         if (FLAGS_trace_raft) {
             LOG(INFO)
                 << self->idStr_ << "AppendLogResponse "
-                << "code " << static_cast<int32_t>(resp.get_error_code())
+                << "code " << apache::thrift::util::enumNameSafe(resp.get_error_code())
                 << ", currTerm " << resp.get_current_term()
                 << ", lastLogId " << resp.get_last_log_id()
                 << ", lastLogTerm " << resp.get_last_log_term()
@@ -390,7 +391,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 LOG_EVERY_N(ERROR, 100)
                            << self->idStr_
                            << "Failed to append logs to the host (Err: "
-                           << static_cast<int32_t>(resp.get_error_code())
+                           << apache::thrift::util::enumNameSafe(resp.get_error_code())
                            << ")";
                 {
                     std::lock_guard<std::mutex> g(self->lock_);

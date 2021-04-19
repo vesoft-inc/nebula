@@ -43,7 +43,7 @@ template <typename RESP>
 void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
                                       PartitionID partId,
                                       kvstore::ResultCode code) {
-    VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
+    VLOG(3) << "partId:" << partId << ", code: " << static_cast<int32_t>(code);
 
     bool finished = false;
     {
@@ -64,7 +64,7 @@ template <typename RESP>
 void BaseProcessor<RESP>::handleAsync(GraphSpaceID,
                                       PartitionID partId,
                                       cpp2::ErrorCode code) {
-    VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
+    VLOG(3) << "partId:" << partId << ", code: " << static_cast<int32_t>(code);
 
     bool finished = false;
     {
@@ -135,7 +135,8 @@ void BaseProcessor<RESP>::handleLeaderChanged(GraphSpaceID spaceId,
         this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
     } else {
         LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
-                   << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+                   << ", partId: " << partId << ", ResultCode: "
+                   << static_cast<int32_t>(error(addrRet));
         this->pushResultCode(to(error(addrRet)), partId);
     }
 }

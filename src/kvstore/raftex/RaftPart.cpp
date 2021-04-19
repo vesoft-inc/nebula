@@ -19,6 +19,7 @@
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
@@ -1139,8 +1140,8 @@ typename RaftPart::Role RaftPart::processElectionResponses(
             weight_.store(curWeight * 2);
         } else {
             LOG(ERROR) << idStr_ << "Receive response about askForVote from "
-                       << hosts[r.first]->address()
-                       << ", error code is " << static_cast<int32_t>(r.second.get_error_code());
+                       << hosts[r.first]->address() << ", error code is "
+                       << apache::thrift::util::enumNameSafe(r.second.get_error_code());
         }
     }
 

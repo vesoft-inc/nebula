@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "common/base/MurmurHash2.h"
 #include "kvstore/Common.h"
 #include "storage/admin/StatisTask.h"
@@ -270,8 +271,8 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 }
 
 void StatisTask::finish(cpp2::ErrorCode rc) {
-    FLOG_INFO("task(%d, %d) finished, rc=[%d]", ctx_.jobId_, ctx_.taskId_,
-              static_cast<int>(rc));
+    FLOG_INFO("task(%d, %d) finished, rc=[%s]", ctx_.jobId_, ctx_.taskId_,
+              apache::thrift::util::enumNameSafe(rc).c_str());
     nebula::meta::cpp2::StatisItem  result;
     result.set_status(nebula::meta::cpp2::JobStatus::FAILED);
 

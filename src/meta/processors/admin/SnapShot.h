@@ -42,7 +42,7 @@ private:
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
-    StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
+    ErrorOr<cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
 
 private:
     kvstore::KVStore* kv_{nullptr};

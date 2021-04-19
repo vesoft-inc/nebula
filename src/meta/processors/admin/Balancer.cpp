@@ -7,6 +7,7 @@
 #include "meta/processors/admin/Balancer.h"
 #include <algorithm>
 #include <cstdlib>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "kvstore/NebulaStore.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
@@ -48,7 +49,7 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::vector<HostAddr>&& lo
     return plan_->id();
 }
 
-StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
+ErrorOr<cpp2::ErrorCode, BalancePlan> Balancer::show(BalanceID id) const {
     std::lock_guard<std::mutex> lg(lock_);
     if (plan_ != nullptr && plan_->id() == id) {
         return *plan_;
@@ -58,17 +59,18 @@ StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
         BalancePlan plan(id, kv_, client_);
         auto retCode = plan.recovery(false);
         if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-            return Status::Error("Get balance plan failed, id %ld", id);
+            LOG(ERROR) << "Get balance plan failed, id " << id;
+            return retCode;
         }
         return plan;
     }
-    return Status::Error("KV is nullptr");
+    return cpp2::ErrorCode::E_NOT_FOUND;
 }
 
-StatusOr<BalanceID> Balancer::stop() {
+ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::stop() {
     std::lock_guard<std::mutex> lg(lock_);
     if (!running_) {
-        return Status::Error("No running balance plan");
+        return cpp2::ErrorCode::E_NOT_FOUND;
     }
     CHECK(!!plan_);
     plan_->stop();
@@ -89,8 +91,9 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
-        return MetaCommon::to(ret);
+        auto retCode = MetaCommon::to(ret);
+        LOG(ERROR) << "Can't access kvstore, ret = " << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
     // There should be at most one invalid plan, and it must be the latest one
     if (iter->valid()) {
@@ -130,8 +133,10 @@ cpp2::ErrorCode Balancer::recovery() {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
-            return MetaCommon::to(ret);
+            auto retCode = MetaCommon::to(ret);
+            LOG(ERROR) << "Can't access kvstore, ret = "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
         std::vector<int64_t> corruptedPlans;
         // The balance plan is stored with balance id desc order, there should be at most one
@@ -156,7 +161,7 @@ cpp2::ErrorCode Balancer::recovery() {
             {
                 std::lock_guard<std::mutex> lg(lock_);
                 if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
-                        kvstore::ResultCode::SUCCEEDED) {
+                    cpp2::ErrorCode::SUCCEEDED) {
                     LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
                 }
                 finish();
@@ -171,15 +176,18 @@ cpp2::ErrorCode Balancer::recovery() {
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool Balancer::getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces) {
+cpp2::ErrorCode
+Balancer::getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces) {
     // Get all spaces
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get all spaces failed";
-        return false;
+        auto retCode = MetaCommon::to(ret);
+        LOG(ERROR) << "Get all spaces failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     while (iter->valid()) {
@@ -189,7 +197,7 @@ bool Balancer::getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>
         spaces.emplace_back(spaceId, *properties.replica_factor_ref(), zoned);
         iter->next();
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr>&& lostHosts) {
@@ -199,9 +207,10 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr>&& lostHosts) {
     }
 
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
-    if (!getAllSpaces(spaces)) {
+    auto spacesRet = getAllSpaces(spaces);
+    if (spacesRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Can't get all spaces";
-        return cpp2::ErrorCode::E_STORE_FAILURE;
+        return spacesRet;
     }
 
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_);
@@ -227,7 +236,7 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr>&& lostHosts) {
         {
             std::lock_guard<std::mutex> lg(lock_);
             if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
-                    kvstore::ResultCode::SUCCEEDED) {
+                cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Balance plan " << plan_->id() << " update meta failed";
             }
             finish();
@@ -248,12 +257,21 @@ Balancer::genTasks(GraphSpaceID spaceId,
     int32_t totalParts = 0;
     // hostParts is current part allocation map
     auto result = getHostParts(spaceId, dependentOnGroup, hostParts, totalParts);
-    if (!result || totalParts == 0 || hostParts.empty()) {
+    if (!nebula::ok(result)) {
+        return nebula::error(result);
+    }
+    auto retVal = nebula::value(result);
+    if (!retVal || totalParts == 0 || hostParts.empty()) {
         LOG(ERROR) << "Invalid space " << spaceId;
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
 
-    auto hostPartsRet = fetchHostParts(spaceId, dependentOnGroup, hostParts, lostHosts);
+    auto fetchHostPartsRet = fetchHostParts(spaceId, dependentOnGroup, hostParts, lostHosts);
+    if (!nebula::ok(fetchHostPartsRet)) {
+        return nebula::error(fetchHostPartsRet);
+    }
+
+    auto hostPartsRet = nebula::value(fetchHostPartsRet);
     auto confirmedHostParts = hostPartsRet.first;
     auto activeHosts = hostPartsRet.second;
     LOG(INFO) << "Now, try to balance the confirmedHostParts";
@@ -275,10 +293,11 @@ Balancer::genTasks(GraphSpaceID spaceId,
                 return cpp2::ErrorCode::E_NO_VALID_HOST;
             }
 
-            if (!transferLostHost(tasks, confirmedHostParts, lostHost,
-                                  spaceId, partId, dependentOnGroup)) {
+            auto retCode = transferLostHost(tasks, confirmedHostParts, lostHost,
+                                            spaceId, partId, dependentOnGroup);
+            if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Transfer lost host " << lostHost << " failed";
-                return cpp2::ErrorCode::E_NO_VALID_HOST;
+                return retCode;
             }
         }
     }
@@ -295,25 +314,26 @@ Balancer::genTasks(GraphSpaceID spaceId,
     }
 }
 
-bool Balancer::transferLostHost(std::vector<BalanceTask>& tasks,
-                                HostParts& confirmedHostParts,
-                                const HostAddr& source,
-                                GraphSpaceID spaceId,
-                                PartitionID partId,
-                                bool dependentOnGroup) {
+cpp2::ErrorCode
+Balancer::transferLostHost(std::vector<BalanceTask>& tasks,
+                           HostParts& confirmedHostParts,
+                           const HostAddr& source,
+                           GraphSpaceID spaceId,
+                           PartitionID partId,
+                           bool dependentOnGroup) {
     // find a host with minimum parts which doesn't have this part
-    StatusOr<HostAddr> result;
+    ErrorOr<cpp2::ErrorCode, HostAddr>  result;
     if (dependentOnGroup) {
         result = hostWithMinimalPartsForZone(source, confirmedHostParts, partId);
     } else {
         result = hostWithMinimalParts(confirmedHostParts, partId);
     }
 
-    if (!result.ok()) {
+    if (!nebula::ok(result)) {
         LOG(ERROR) << "Can't find a host which doesn't have part: " << partId;
-        return false;
+        return nebula::error(result);
     }
-    const auto& targetHost = result.value();
+    const auto& targetHost = nebula::value(result);
     confirmedHostParts[targetHost].emplace_back(partId);
     tasks.emplace_back(plan_->id_,
                        spaceId,
@@ -322,20 +342,25 @@ bool Balancer::transferLostHost(std::vector<BalanceTask>& tasks,
                        targetHost,
                        kv_,
                        client_);
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
-std::pair<HostParts, std::vector<HostAddr>>
+ErrorOr<cpp2::ErrorCode, std::pair<HostParts, std::vector<HostAddr>>>
 Balancer::fetchHostParts(GraphSpaceID spaceId,
                          bool dependentOnGroup,
                          const HostParts& hostParts,
                          std::vector<HostAddr>& lostHosts) {
-    std::vector<HostAddr> activeHosts;
+    ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>> activeHostsRet;
     if (dependentOnGroup) {
-        activeHosts = ActiveHostsMan::getActiveHostsWithGroup(kv_, spaceId);
+        activeHostsRet = ActiveHostsMan::getActiveHostsWithGroup(kv_, spaceId);
     } else {
-        activeHosts = ActiveHostsMan::getActiveHosts(kv_);
+        activeHostsRet = ActiveHostsMan::getActiveHosts(kv_);
     }
+
+    if (!nebula::ok(activeHostsRet)) {
+        return nebula::error(activeHostsRet);
+    }
+    auto activeHosts = nebula::value(activeHostsRet);
 
     std::vector<HostAddr> expand;
     calDiff(hostParts, activeHosts, expand, lostHosts);
@@ -437,17 +462,20 @@ bool Balancer::balanceParts(BalanceID balanceId,
     return true;
 }
 
-bool Balancer::getHostParts(GraphSpaceID spaceId,
-                            bool dependentOnGroup,
-                            HostParts& hostParts,
-                            int32_t& totalParts) {
+ErrorOr<cpp2::ErrorCode, bool>
+Balancer::getHostParts(GraphSpaceID spaceId,
+                       bool dependentOnGroup,
+                       HostParts& hostParts,
+                       int32_t& totalParts) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
-        return false;
+        auto retCode = MetaCommon::to(code);
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     while (iter->valid()) {
@@ -467,8 +495,10 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
     std::string value;
     code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
     if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
-        return false;
+        auto retCode = MetaCommon::to(code);
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     auto properties = MetaServiceUtils::parseSpace(value);
@@ -479,9 +509,12 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
 
     if (properties.group_name_ref().has_value()) {
         auto groupName = *properties.group_name_ref();
-        if (dependentOnGroup && !assembleZoneParts(groupName, hostParts)) {
-            LOG(ERROR) << "Assemble Zone Parts failed group: " << groupName;
-            return false;
+        if (dependentOnGroup) {
+            auto zonePartsRet = assembleZoneParts(groupName, hostParts);
+            if (zonePartsRet != cpp2::ErrorCode::SUCCEEDED) {
+                LOG(ERROR) << "Assemble Zone Parts failed group: " << groupName;
+                return zonePartsRet;
+            }
         }
     }
 
@@ -489,13 +522,15 @@ bool Balancer::getHostParts(GraphSpaceID spaceId,
     return true;
 }
 
-bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostParts) {
+cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostParts) {
     auto groupKey = MetaServiceUtils::groupKey(groupName);
     std::string groupValue;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
     if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get group " << groupName << " failed";
-        return false;
+        auto retCode = MetaCommon::to(code);
+        LOG(ERROR) << "Get group " << groupName << " failed"
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     // zoneHosts use to record this host belong to zone's hosts
@@ -506,8 +541,10 @@ bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostPa
         std::string zoneValue;
         code = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
         if (code != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Get zone " << zoneName << " failed";
-            return false;
+            auto retCode = MetaCommon::to(code);
+            LOG(ERROR) << "Get zone " << zoneName << " failed"
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
         auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
@@ -542,7 +579,7 @@ bool Balancer::assembleZoneParts(const std::string& groupName, HostParts& hostPa
             }
         }
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 void Balancer::calDiff(const HostParts& hostParts,
@@ -594,32 +631,34 @@ Status Balancer::checkReplica(const HostParts& hostParts,
     return Status::Error("Not enough alive host hold the part %d", partId);
 }
 
-StatusOr<HostAddr> Balancer::hostWithMinimalParts(const HostParts& hostParts,
-                                                  PartitionID partId) {
+ErrorOr<cpp2::ErrorCode, HostAddr>
+Balancer::hostWithMinimalParts(const HostParts& hostParts,
+                               PartitionID partId) {
     auto hosts = sortedHostsByParts(hostParts);
     for (auto& h : hosts) {
         auto it = hostParts.find(h.first);
         if (it == hostParts.end()) {
             LOG(ERROR) << "Host " << h.first << " not found";
-            return Status::Error("Host not found");
+            return cpp2::ErrorCode::E_NO_HOSTS;
         }
 
         if (std::find(it->second.begin(), it->second.end(), partId) == it->second.end()) {
             return h.first;
         }
     }
-    return Status::Error("No host is suitable for %d", partId);
+    return cpp2::ErrorCode::E_NO_HOSTS;
 }
 
-StatusOr<HostAddr> Balancer::hostWithMinimalPartsForZone(const HostAddr& source,
-                                                         const HostParts& hostParts,
-                                                         PartitionID partId) {
+ErrorOr<cpp2::ErrorCode, HostAddr>
+Balancer::hostWithMinimalPartsForZone(const HostAddr& source,
+                                      const HostParts& hostParts,
+                                      PartitionID partId) {
     auto hosts = sortedHostsByParts(hostParts);
     for (auto& h : hosts) {
         auto it = hostParts.find(h.first);
         if (it == hostParts.end()) {
             LOG(ERROR) << "Host " << h.first << " not found";
-            return Status::Error("Host not found");
+            return cpp2::ErrorCode::E_NO_HOSTS;
         }
 
         if (std::find(it->second.begin(), it->second.end(), partId) == it->second.end() &&
@@ -627,7 +666,7 @@ StatusOr<HostAddr> Balancer::hostWithMinimalPartsForZone(const HostAddr& source,
             return h.first;
         }
     }
-    return Status::Error("No host is suitable for %d", partId);
+    return cpp2::ErrorCode::E_NO_HOSTS;
 }
 
 cpp2::ErrorCode Balancer::leaderBalance() {
@@ -640,9 +679,14 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     auto future = promise.getFuture();
     // Space ID, Replica Factor and Dependent On Group
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
-    if (!getAllSpaces(spaces)) {
+    auto ret = getAllSpaces(spaces);
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Can't get spaces";
-        return cpp2::ErrorCode::E_STORE_FAILURE;
+        // TODO unify error code
+        if (ret != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            ret = cpp2::ErrorCode::E_STORE_FAILURE;
+        }
+        return ret;
     }
 
     bool expected = false;
@@ -666,7 +710,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
                                                         replicaFactor,
                                                         dependentOnGroup,
                                                         plan);
-            if (!balanceResult) {
+            if (!nebula::ok(balanceResult) || !nebula::value(balanceResult)) {
                 LOG(ERROR) << "Building leader balance plan failed "
                            << "Space: " << spaceId;;
                 continue;
@@ -698,12 +742,13 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     return cpp2::ErrorCode::E_BALANCER_RUNNING;
 }
 
-bool Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
-                                      GraphSpaceID spaceId,
-                                      int32_t replicaFactor,
-                                      bool dependentOnGroup,
-                                      LeaderBalancePlan& plan,
-                                      bool useDeviation) {
+ErrorOr<cpp2::ErrorCode, bool>
+Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
+                                 GraphSpaceID spaceId,
+                                 int32_t replicaFactor,
+                                 bool dependentOnGroup,
+                                 LeaderBalancePlan& plan,
+                                 bool useDeviation) {
     PartAllocation peersMap;
     HostParts leaderHostParts;
     size_t leaderParts = 0;
@@ -713,8 +758,10 @@ bool Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
-        return false;
+        auto retCode = MetaCommon::to(ret);
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId
+                   << static_cast<int32_t>(retCode);
+        return retCode;
     }
 
     while (iter->valid()) {
@@ -730,9 +777,14 @@ bool Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
     int32_t totalParts = 0;
     HostParts allHostParts;
     auto result = getHostParts(spaceId, dependentOnGroup, allHostParts, totalParts);
-    if (!result || totalParts == 0 || allHostParts.empty()) {
-        LOG(ERROR) << "Invalid space " << spaceId;
-        return false;
+    if (!nebula::ok(result)) {
+        return nebula::error(result);
+    } else {
+        auto retVal = nebula::value(result);
+        if (!retVal || totalParts == 0 || allHostParts.empty()) {
+            LOG(ERROR) << "Invalid space " << spaceId;
+            return false;
+        }
     }
 
     std::unordered_set<HostAddr> activeHosts;
@@ -942,14 +994,17 @@ void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan
     }
 }
 
-bool Balancer::collectZoneParts(const std::string& groupName,
-                                HostParts& hostParts) {
+cpp2::ErrorCode
+Balancer::collectZoneParts(const std::string& groupName,
+                           HostParts& hostParts) {
     auto groupKey = MetaServiceUtils::groupKey(groupName);
     std::string groupValue;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
     if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get group " << groupName << " failed";
-        return false;
+        auto retCode = MetaCommon::to(code);
+        LOG(ERROR) << "Get group " << groupName << " failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
     // zoneHosts use to record this host belong to zone's hosts
@@ -960,8 +1015,10 @@ bool Balancer::collectZoneParts(const std::string& groupName,
         std::string zoneValue;
         code = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
         if (code != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Get zone " << zoneName << " failed";
-            return false;
+            auto retCode = MetaCommon::to(code);
+            LOG(ERROR) << "Get zone " << zoneName << " failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
         auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
@@ -996,7 +1053,7 @@ bool Balancer::collectZoneParts(const std::string& groupName,
             }
         }
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 bool Balancer::checkZoneLegal(const HostAddr& source,

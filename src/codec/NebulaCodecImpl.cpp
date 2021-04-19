@@ -16,7 +16,7 @@
     if (ResultType::SUCCEEDED == code) { \
         result[field] = value; \
     } else { \
-        LOG(ERROR) << "ResultType : " << static_cast<int>(code) \
+        LOG(ERROR) << "ResultType : " << apache::thrift::util::enumNameSafe(code) \
                    << " Value " << value << std::endl; \
     }
 

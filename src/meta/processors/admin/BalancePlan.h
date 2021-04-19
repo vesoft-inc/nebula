@@ -11,8 +11,10 @@
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/BalanceTask.h"
 #include "meta/processors/Common.h"
+
 namespace nebula {
 namespace meta {
+
 class BalancePlan {
     friend class Balancer;
     FRIEND_TEST(BalanceTest, BalancePlanTest);

@@ -197,7 +197,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_2) {
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
     LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
-        << "fatal code=" << static_cast<int32_t>(code);
+        << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     props = env_->getNeiProps(first);
     EXPECT_EQ(env_->countSquareBrackets(props), 2);
@@ -271,7 +271,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_4) {
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
     LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
-        << "fatal code=" << static_cast<int32_t>(code);
+        << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     props = env_->getNeiProps(startWith);
     for (auto& prop : props) {
@@ -298,7 +298,7 @@ TEST_F(TossTest, TEN_EDGES_CASE_1) {
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
     LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
-        << "fatal code=" << static_cast<int32_t>(code);
+        << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     auto props = env_->getNeiProps(first);
     // LOG(INFO) << "props: " << props;
@@ -321,7 +321,7 @@ TEST_F(TossTest, TEN_EDGES_CASE_2) {
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
     LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
-        << "fatal code=" << static_cast<int32_t>(code);
+        << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     auto props = env_->getNeiProps(first);
     // auto actual = env_->countSquareBrackets(props);

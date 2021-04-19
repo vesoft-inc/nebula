@@ -11,14 +11,16 @@ namespace meta {
 
 void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
-    auto prefix = MetaServiceUtils::zonePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(ret));
+    const auto& prefix = MetaServiceUtils::zonePrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto iter = nebula::value(iterRet).get();
 
     std::vector<cpp2::Zone> zones;
     while (iter->valid()) {

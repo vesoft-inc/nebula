@@ -13,15 +13,17 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get parts failed";
-        handleErrorCode(MetaCommon::to(ret));
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Get parts failed, error " << apache::thrift::util::enumNameSafe(retCode);;
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
-    std::unordered_map<int, std::vector<nebula::HostAddr>> parts;
+
+    auto iter = nebula::value(iterRet).get();
+    std::unordered_map<PartitionID, std::vector<nebula::HostAddr>> parts;
     while (iter->valid()) {
         auto key = iter->key();
         PartitionID partId;

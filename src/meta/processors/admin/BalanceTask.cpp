@@ -24,7 +24,8 @@ void BalanceTask::invoke() {
     if (ret_ == BalanceTaskResult::INVALID) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
-        LOG(ERROR) << taskIdStr_ << " Task invalid, status " << static_cast<int32_t>(status_);
+        LOG(ERROR) << taskIdStr_ << " Task invalid, status "
+                   << static_cast<int32_t>(status_);
         // When a plan is stopped or dst is not alive any more, a task will be marked as INVALID,
         // the task will not be executed again. Balancer will start a new plan instead.
         onFinished_();
@@ -32,7 +33,8 @@ void BalanceTask::invoke() {
     } else if (ret_ == BalanceTaskResult::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
-        LOG(ERROR) << taskIdStr_ << " Task failed, status " << static_cast<int32_t>(status_);
+        LOG(ERROR) << taskIdStr_ << " Task failed, status "
+                   << static_cast<int32_t>(status_);
         onError_();
         return;
     } else {
@@ -60,8 +62,8 @@ void BalanceTask::invoke() {
         case BalanceTaskStatus::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << " Ask the src to give up the leadership.";
             SAVE_STATE();
-            bool srcLived = ActiveHostsMan::isLived(kv_, src_);
-            if (srcLived) {
+            auto srcLivedRet = ActiveHostsMan::isLived(kv_, src_);
+            if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
                         if (resp == nebula::Status::PartNotFound()) {
@@ -176,10 +178,10 @@ void BalanceTask::invoke() {
             break;
         }
         case BalanceTaskStatus::REMOVE_PART_ON_SRC: {
-            bool srcLived = ActiveHostsMan::isLived(kv_, src_);
-            LOG(INFO) << taskIdStr_ << " Close part on src host, srcLived " << srcLived;
+            auto srcLivedRet = ActiveHostsMan::isLived(kv_, src_);
+            LOG(INFO) << taskIdStr_ << " Close part on src host, srcLived.";
             SAVE_STATE();
-            if (srcLived) {
+            if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
                 client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
                         LOG(ERROR) << taskIdStr_ << " Remove part failed, status " << resp;

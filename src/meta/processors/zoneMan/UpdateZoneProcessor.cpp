@@ -15,23 +15,27 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
     auto zoneName = req.get_zone_name();
     auto zoneIdRet = getZoneId(zoneName);
-    if (!zoneIdRet.ok()) {
-        LOG(ERROR) << "Zone " << zoneName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(zoneIdRet)) {
+        auto retCode = nebula::error(zoneIdRet);
+        LOG(ERROR) << "Get Zone failed, zone " << zoneName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
     auto zoneValueRet = doGet(std::move(zoneKey));
-    if (!zoneValueRet.ok()) {
-        LOG(ERROR) << "Get zone " << zoneName << " failed";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+     if (!nebula::ok(zoneValueRet)) {
+        auto retCode = nebula::error(zoneValueRet);
+        LOG(ERROR) << "Get zone " << zoneName << " failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValueRet).value());
+    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
     auto host = req.get_node();
     auto iter = std::find(hosts.begin(), hosts.end(), host);
     if (iter != hosts.end()) {
@@ -41,7 +45,16 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
         return;
     }
 
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        auto retCode = nebula::error(activeHostsRet);
+        LOG(ERROR) << "Get hosts failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
+        onFinished();
+        return;
+    }
+    auto activeHosts = nebula::value(activeHostsRet);
+
     auto found = std::find(activeHosts.begin(), activeHosts.end(), host);
     if (found == activeHosts.end()) {
         LOG(ERROR) << "Host " << host << " not exist";
@@ -61,23 +74,27 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
     auto zoneName = req.get_zone_name();
     auto zoneIdRet = getZoneId(zoneName);
-    if (!zoneIdRet.ok()) {
-        LOG(ERROR) << "Zone " << zoneName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(zoneIdRet)) {
+        auto retCode = nebula::error(zoneIdRet);
+        LOG(ERROR) << "Get Zone failed, group " << zoneName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
     auto zoneValueRet = doGet(std::move(zoneKey));
-    if (!zoneValueRet.ok()) {
-        LOG(ERROR) << "Get zone " << zoneName << " failed";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(zoneValueRet)) {
+        auto retCode = nebula::error(zoneValueRet);
+        LOG(ERROR) << "Get zone " << zoneName << " failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValueRet).value());
+    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
     auto host = req.get_node();
     auto iter = std::find(hosts.begin(), hosts.end(), host);
     if (iter == hosts.end()) {

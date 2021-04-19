@@ -24,24 +24,39 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
         for (const auto& partId : partIds_) {
             auto partKey = MetaServiceUtils::partKey(spaceId_, partId);
-            std::string value;
-            auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
-            if (retCode == kvstore::ResultCode::SUCCEEDED) {
-                partHostsMap[partId] = MetaServiceUtils::parsePartVal(value);
+            auto ret = doGet(std::move(partKey));
+            if (!nebula::ok(ret)) {
+                auto retCode = nebula::error(ret);
+                LOG(ERROR) << "Get part failed, error "
+                           << apache::thrift::util::enumNameSafe(retCode);
+                handleErrorCode(retCode);
+                onFinished();
+                return;
             }
+            auto hosts = std::move(nebula::value(ret));
+            partHostsMap[partId] = MetaServiceUtils::parsePartVal(hosts);
         }
     } else {
         // Show all parts
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-        auto status = getAllParts();
-        if (!status.ok()) {
+        auto ret = getAllParts();
+        if (!nebula::ok(ret)) {
+            handleErrorCode(nebula::error(ret));
             onFinished();
             return;
         }
-        partHostsMap = std::move(status).value();
+        partHostsMap = std::move(nebula::value(ret));
     }
+
     std::vector<cpp2::PartItem> partItems;
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        handleErrorCode(nebula::error(activeHostsRet));
+        onFinished();
+        return;
+    }
+    auto activeHosts = std::move(nebula::value(activeHostsRet));
+
     for (auto& partEntry : partHostsMap) {
         cpp2::PartItem partItem;
         partItem.set_part_id(partEntry.first);
@@ -59,27 +74,30 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     if (partItems.size() != partHostsMap.size()) {
         LOG(ERROR) << "Maybe lost some partitions!";
     }
-    getLeaderDist(partItems);
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_parts(std::move(partItems));
+    auto retCode = getLeaderDist(partItems);
+    if (retCode == cpp2::ErrorCode::SUCCEEDED) {
+        resp_.set_parts(std::move(partItems));
+    }
+    handleErrorCode(retCode);
     onFinished();
 }
 
 
-StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>
+ErrorOr<cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
 ListPartsProcessor::getAllParts() {
     std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaServiceUtils::partPrefix(spaceId_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Parts Failed: No parts";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+    const auto& prefix = MetaServiceUtils::partPrefix(spaceId_);
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "List Parts Failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
+    auto iter = nebula::value(ret).get();
     while (iter->valid()) {
         auto key = iter->key();
         PartitionID partId;
@@ -92,8 +110,13 @@ ListPartsProcessor::getAllParts() {
     return partHostsMap;
 }
 
-void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
+cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        return nebula::error(activeHostsRet);
+    }
+
+    auto activeHosts = std::move(nebula::value(activeHostsRet));
 
     std::vector<std::string> leaderKeys;
     for (auto& partItem : partItems) {
@@ -107,8 +130,9 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     std::tie(rc, statuses) =
         kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(leaderKeys), &values);
     if (rc != kvstore::ResultCode::SUCCEEDED && rc != kvstore::ResultCode::ERR_PARTIAL_RESULT) {
-        return;
+        return MetaCommon::to(rc);
     }
+
     HostAddr host;
     cpp2::ErrorCode code;
     for (auto i = 0U; i != statuses.size(); ++i) {
@@ -125,6 +149,8 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
         }
         partItems[i].set_leader(host);
     }
+
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

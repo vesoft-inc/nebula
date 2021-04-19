@@ -196,19 +196,19 @@ TEST(ProcessorTest, ListPartsTest) {
             allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
         }
         auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {"0", 0}, info, &allLeaders);
-        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
 
         allLeaders.clear();
         for (int i = 6; i < 9; ++i) {
             allLeaders[spaceId].emplace_back(makeLeaderInfo(i));
         }
         ret = ActiveHostsMan::updateHostInfo(kv.get(), {"1", 1}, info, &allLeaders);
-        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
 
         allLeaders.clear();
         allLeaders[spaceId].emplace_back(makeLeaderInfo(9));
         ret = ActiveHostsMan::updateHostInfo(kv.get(), {"2", 2}, info, &allLeaders);
-        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
     }
 
     {

@@ -25,9 +25,20 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
 
             std::string configKey = MetaServiceUtils::configKey(module, name);
             // ignore config which has been registered before
-            if (doGet(configKey).ok()) {
+            auto configRet = doGet(configKey);
+            if (nebula::ok(configRet)) {
                 continue;
+            } else {
+                auto retCode = nebula::error(configRet);
+                if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+                    LOG(ERROR) << "Get config Failed, error: "
+                               << apache::thrift::util::enumNameSafe(retCode);
+                    handleErrorCode(retCode);
+                    onFinished();
+                    return;
+                }
             }
+
             std::string configValue = MetaServiceUtils::configValue(mode, value);
             data.emplace_back(std::move(configKey), std::move(configValue));
         }

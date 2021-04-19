@@ -10,54 +10,63 @@ namespace nebula {
 namespace meta {
 
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
+    auto tagName = req.get_tag_name();
+    auto ver = req.get_version();
+
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
-    auto tagIdRet = getTagId(req.get_space_id(), req.get_tag_name());
-    if (!tagIdRet.ok()) {
-        handleErrorCode(MetaCommon::to(tagIdRet.status()));
+    auto tagIdRet = getTagId(spaceId, tagName);
+    if (!nebula::ok(tagIdRet)) {
+        LOG(ERROR) << "Get tag " << tagName << " failed.";
+        handleErrorCode(nebula::error(tagIdRet));
         onFinished();
         return;
     }
-    auto tagId = tagIdRet.value();
+    auto tagId = nebula::value(tagIdRet);
 
     std::string schemaValue;
     // Get the lastest version
-    if (req.get_version() < 0) {
-        auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
+    if (ver < 0) {
+        auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
         auto ret = doPrefix(tagPrefix);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
-                       << ", tagName: " << req.get_tag_name()
-                       << ", version " << req.get_version() << " not found";
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
+                       << ", latest version failed.";
+            handleErrorCode(nebula::error(ret));
+            onFinished();
+            return;
+        }
+        auto iter = nebula::value(ret).get();
+        if (!iter->valid()) {
+            LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: "
+                       << tagName << ", latest version " << " not found.";
             handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
-        schemaValue = ret.value()->val().str();
+        schemaValue = iter->val().str();
     } else {
-        auto tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
-                                                     tagId,
-                                                     req.get_version());
+        auto tagKey = MetaServiceUtils::schemaTagKey(spaceId, tagId, ver);
         auto ret = doGet(tagKey);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
-                       << ", tagName: " << req.get_tag_name()
-                       << ", version " << req.get_version() << " not found";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
+                       << ", version " << ver << " failed.";
+            handleErrorCode(nebula::error(ret));
             onFinished();
             return;
         }
-        schemaValue = ret.value();
+        schemaValue = nebula::value(ret);
     }
 
-    VLOG(3) << "Get Tag SpaceID: " << req.get_space_id()
-            << ", tagName: " << req.get_tag_name()
-            << ", version " << req.get_version();
+    VLOG(3) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
+            << ", version " << ver;
 
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }
+
 }  // namespace meta
 }  // namespace nebula
 

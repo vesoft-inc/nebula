@@ -1300,8 +1300,8 @@ TEST(BalanceTest, StopPlanTest) {
 
     TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
     auto stopRet = balancer.stop();
-    CHECK(stopRet.ok());
-    ASSERT_EQ(stopRet.value(), balanceId);
+    CHECK(nebula::ok(stopRet));
+    ASSERT_EQ(nebula::value(stopRet), balanceId);
 
     // wait until the only IN_PROGRESS task finished;
     sleep(3);
@@ -1448,14 +1448,14 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
 
         // check two plan build are same
         LeaderBalancePlan tempPlan;
         auto tempLeaderBalanceResult = balancer.buildLeaderBalancePlan(&tempMap, 1, 3, false,
                                                                        tempPlan, false);
-        ASSERT_TRUE(tempLeaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(tempLeaderBalanceResult) &&  nebula::value(tempLeaderBalanceResult));
         verifyLeaderBalancePlan(tempMap, tempPlan, 3, 3);
 
         EXPECT_EQ(plan.size(), tempPlan.size());
@@ -1472,7 +1472,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
     }
     {
@@ -1484,7 +1484,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
     }
     {
@@ -1496,7 +1496,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 3, 3);
     }
 }
@@ -1529,7 +1529,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
     {
@@ -1544,7 +1544,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
     {
@@ -1559,7 +1559,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
     {
@@ -1574,7 +1574,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
     {
@@ -1589,7 +1589,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan, false);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
 }
@@ -1638,7 +1638,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    false, plan);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, minLoad, maxLoad);
     }
 }
@@ -1727,7 +1727,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    true, plan, true);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
     {
@@ -1742,7 +1742,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    true, plan, true);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 2);
     }
 }
@@ -1810,7 +1810,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 1, 3,
                                                                    true, plan, true);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 0, 1);
     }
 }
@@ -1937,7 +1937,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
         LeaderBalancePlan plan;
         auto leaderBalanceResult = balancer.buildLeaderBalancePlan(&hostLeaderMap, 3, 3,
                                                                    true, plan, true);
-        ASSERT_TRUE(leaderBalanceResult);
+        ASSERT_TRUE(nebula::ok(leaderBalanceResult) && nebula::value(leaderBalanceResult));
         verifyLeaderBalancePlan(hostLeaderMap, plan, 1, 9);
     }
 }

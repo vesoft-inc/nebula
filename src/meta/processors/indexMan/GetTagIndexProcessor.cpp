@@ -11,31 +11,34 @@ namespace meta {
 
 void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     auto spaceID = req.get_space_id();
-    auto indexName = req.get_index_name();
+    const auto& indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexIDResult = getIndexID(spaceID, indexName);
-    if (!tagIndexIDResult.ok()) {
-        LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID
-                   << " Index Name: " << indexName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    auto tagIndexIDRet = getIndexID(spaceID, indexName);
+    if (!nebula::ok(tagIndexIDRet)) {
+        auto retCode = nebula::error(tagIndexIDRet);
+        LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName
+                   << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto indexId = nebula::value(tagIndexIDRet);
     LOG(INFO) << "Get Tag Index SpaceID: " << spaceID << " Index Name: " << indexName;
-    auto tagKey = MetaServiceUtils::indexKey(spaceID, tagIndexIDResult.value());
-    auto tagResult = doGet(tagKey);
-    if (!tagResult.ok()) {
-        LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID
-                   << " Index Name: " << indexName << " status: " << tagResult.status();
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+    const auto& indexKey = MetaServiceUtils::indexKey(spaceID, indexId);
+    auto indexItemRet = doGet(indexKey);
+    if (!nebula::ok(indexItemRet)) {
+        auto retCode = nebula::error(indexItemRet);
+        LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto item = MetaServiceUtils::parseIndex(tagResult.value());
+    auto item = MetaServiceUtils::parseIndex(nebula::value(indexItemRet));
     if (item.get_schema_id().getType() != cpp2::SchemaID::Type::tag_id) {
         LOG(ERROR) << "Get Tag Index Failed: Index Name " << indexName << " is not TagIndex";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

@@ -77,7 +77,7 @@ public:
         if (!resp.failedParts().empty()) {
             for (const auto& partEntry : resp.failedParts()) {
                 LOG(ERROR) << "Put Failed in " << partEntry.first << ", Code: "
-                           << static_cast<int32_t>(partEntry.second);
+                           << apache::thrift::util::enumNameSafe(partEntry.second);
             }
             return;
         }
@@ -101,7 +101,7 @@ public:
         if (!resp.failedParts().empty()) {
             for (const auto& partEntry : resp.failedParts()) {
                 LOG(ERROR) << "Put Failed in " << partEntry.first << ", Code: "
-                           << static_cast<int32_t>(partEntry.second);
+                           << apache::thrift::util::enumNameSafe(partEntry.second);
             }
             return;
         }

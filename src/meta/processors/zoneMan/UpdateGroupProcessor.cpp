@@ -13,24 +13,28 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::groupLock());
     auto groupName = req.get_group_name();
     auto groupIdRet = getGroupId(groupName);
-    if (!groupIdRet.ok()) {
-        LOG(ERROR) << "Group: " << groupName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(groupIdRet)) {
+        auto retCode = nebula::error(groupIdRet);
+        LOG(ERROR) << "Get Group failed, group " << groupName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto groupKey = MetaServiceUtils::groupKey(groupName);
     auto groupValueRet = doGet(std::move(groupKey));
-    if (!groupValueRet.ok()) {
-        LOG(ERROR) << "Get group " << groupName << " failed";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(groupValueRet)) {
+        auto retCode = nebula::error(groupValueRet);
+        LOG(ERROR) << "Get group " << groupName << " failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto zoneName = req.get_zone_name();
-    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValueRet).value());
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
     auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
     if (iter != zoneNames.end()) {
         LOG(ERROR) << "Zone " << zoneName << " already exist in the group " << groupName;
@@ -39,20 +43,23 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
         return;
     }
 
-    auto zonePrefix = MetaServiceUtils::zonePrefix();
-    std::unique_ptr<kvstore::KVIterator> zoneIter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, zonePrefix, &zoneIter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(ret));
+    const auto& zonePrefix = MetaServiceUtils::zonePrefix();
+    auto iterRet = doPrefix(zonePrefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto zoneIter = nebula::value(iterRet).get();
 
     bool found = false;
     while (zoneIter->valid()) {
         auto name = MetaServiceUtils::parseZoneName(zoneIter->key());
         if (name == zoneName) {
             found = true;
+            break;
         }
         zoneIter->next();
     }
@@ -75,24 +82,28 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::groupLock());
     auto groupName = req.get_group_name();
     auto groupIdRet = getGroupId(groupName);
-    if (!groupIdRet.ok()) {
-        LOG(ERROR) << "Group: " << groupName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(groupIdRet)) {
+        auto retCode = nebula::error(groupIdRet);
+        LOG(ERROR) << " Get Group " << groupName << " failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto groupKey = MetaServiceUtils::groupKey(groupName);
     auto groupValueRet = doGet(groupKey);
-    if (!groupValueRet.ok()) {
-        LOG(ERROR) << "Get group " << groupName << " failed";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(groupValueRet)) {
+        auto retCode = nebula::error(groupValueRet);
+        LOG(ERROR) << "Get group " << groupName << " failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto zoneName = req.get_zone_name();
-    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValueRet).value());
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
     auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
     if (iter == zoneNames.end()) {
         LOG(ERROR) << "Zone " << zoneName << " not exist in the group " << groupName;

@@ -18,25 +18,31 @@ const std::string defaultGroup = "default";         // NOLINT
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     auto properties = req.get_properties();
-    auto spaceRet = getSpaceId(properties.get_space_name());
-    if (spaceRet.ok()) {
-        cpp2::ErrorCode ret;
-        if (req.get_if_not_exists()) {
-            ret = cpp2::ErrorCode::SUCCEEDED;
-        } else {
-            LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
+    auto spaceName = properties.get_space_name();
+    auto spaceRet = getSpaceId(spaceName);
+
+    if (nebula::ok(spaceRet)) {
+        cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
+        if (!req.get_if_not_exists()) {
+            LOG(ERROR) << "Create Space Failed : Space " << spaceName
                        << " have existed!";
             ret = cpp2::ErrorCode::E_EXISTED;
         }
-
-        resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
+        resp_.set_id(to(nebula::value(spaceRet), EntryType::SPACE));
         handleErrorCode(ret);
         onFinished();
         return;
+    } else {
+        auto retCode = nebula::error(spaceRet);
+        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Create Space Failed : Space  " << spaceName
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
     }
 
-    CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
-    auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
     auto charsetName = properties.get_charset_name();
@@ -61,7 +67,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
             LOG(ERROR) << "Create Space Failed : replicaFactor is illegal: " << replicaFactor;
-            resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();
             return;
         }
@@ -110,43 +116,47 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         LOG(INFO) << "Create Space on group: " << groupName;
         auto groupKey = MetaServiceUtils::groupKey(groupName);
         auto ret = doGet(groupKey);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Group Name: " << groupName << " not found";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << " Get Group Name: " << groupName << " failed.";
+            handleErrorCode(nebula::error(ret));
             onFinished();
             return;
         }
 
-        auto zones = MetaServiceUtils::parseZoneNames(ret.value());
+        auto zones = MetaServiceUtils::parseZoneNames(nebula::value(ret));
         int32_t zoneNum = zones.size();
         if (replicaFactor > zoneNum) {
-            LOG(ERROR) << "Replication number should less than or equal to zone number";
+            LOG(ERROR) << "Replication number should less than or equal to zone number.";
             handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();
             return;
         }
 
         auto hostLoadingRet = getHostLoading();
-        if (!hostLoadingRet.ok()) {
-            LOG(ERROR) << "Get host loading failed";
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        if (!nebula::ok(hostLoadingRet)) {
+            LOG(ERROR) << "Get host loading failed.";
+            auto retCode = nebula::error(hostLoadingRet);
+            if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+                retCode = cpp2::ErrorCode::E_INVALID_PARM;
+            }
+            handleErrorCode(retCode);
             onFinished();
             return;
         }
 
-        hostLoading_ = std::move(hostLoadingRet).value();
+        hostLoading_ = std::move(nebula::value(hostLoadingRet));
         std::unordered_map<std::string, Hosts> zoneHosts;
         for (auto& zone : zones) {
             auto zoneKey = MetaServiceUtils::zoneKey(zone);
             auto zoneValueRet = doGet(std::move(zoneKey));
-            if (!zoneValueRet.ok()) {
-                LOG(ERROR) << "Get zone " << zone << " failed";
-                handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            if (!nebula::ok(zoneValueRet)) {
+                LOG(ERROR) << "Get zone " << zone << " failed.";
+                handleErrorCode(nebula::error(zoneValueRet));
                 onFinished();
                 return;
             }
 
-            auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValueRet).value());
+            auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
             for (auto& host : hosts) {
                 auto hostIter = hostLoading_.find(host);
                 if (hostIter == hostLoading_.end()) {
@@ -162,7 +172,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         for (auto partId = 1; partId <= partitionNum; partId++) {
             auto pickedZonesRet = pickLightLoadZones(replicaFactor);
             if (!pickedZonesRet.ok()) {
-                LOG(ERROR) << "Pick zone failed";
+                LOG(ERROR) << "Pick zone failed.";
                 handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
                 onFinished();
                 return;
@@ -171,7 +181,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             auto pickedZones = std::move(pickedZonesRet).value();
             auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
             if (!partHostsRet.ok()) {
-                LOG(ERROR) << "Pick hosts with zone failed";
+                LOG(ERROR) << "Pick hosts with zone failed.";
                 handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
                 onFinished();
                 return;
@@ -189,7 +199,16 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
                               MetaServiceUtils::partVal(partHosts));
         }
     } else {
-        auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
+        auto hostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+        if (!nebula::ok(hostsRet)) {
+            auto retCode = nebula::error(hostsRet);
+            LOG(ERROR) << "Create Space Failed when get active host, error "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
+        auto hosts = std::move(nebula::value(hostsRet));
         if (hosts.empty()) {
             LOG(ERROR) << "Create Space Failed : No Hosts!";
             handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
@@ -212,7 +231,6 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         }
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(spaceId, EntryType::SPACE));
     doSyncPutAndUpdate(std::move(data));
     LOG(INFO) << "Create space " << spaceName;
@@ -231,17 +249,18 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
-StatusOr<std::unordered_map<HostAddr, int32_t>>
+ErrorOr<cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>>
 CreateSpaceProcessor::getHostLoading() {
-    std::unique_ptr<kvstore::KVIterator> iter;
     const auto& prefix = MetaServiceUtils::partPrefix();
-    auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Parts Failed";
-        return Status::Error("List Parts Failed");
+    auto iterRet = doPrefix(prefix);
+
+    if (!nebula::ok(iterRet)) {
+        LOG(ERROR) << "Prefix Parts Failed";
+        return nebula::error(iterRet);
     }
 
     std::unordered_map<HostAddr, int32_t> result;
+    auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
         auto hosts = MetaServiceUtils::parsePartVal(iter->val());
         for (auto& host : hosts) {

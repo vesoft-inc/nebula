@@ -13,14 +13,16 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
     auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
     auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
     auto result = doScan(start, end);
-    if (!result.ok()) {
-        LOG(ERROR) << "Scan Failed: " << result.status();
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(result)) {
+        auto retCode = nebula::error(result);
+        LOG(ERROR) << "Scan Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_values(std::move(result.value()));
+    resp_.set_values(std::move(nebula::value(result)));
     onFinished();
 }
 

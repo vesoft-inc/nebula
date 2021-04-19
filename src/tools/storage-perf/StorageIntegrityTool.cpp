@@ -8,6 +8,8 @@
 #include "common/time/Duration.h"
 #include "common/clients/storage/GraphStorageClient.h"
 #include "codec/RowReader.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(io_threads, 10, "client io threads");
@@ -175,7 +177,7 @@ private:
         if (!resp.succeeded()) {
             for (auto& err : resp.failedParts()) {
                 VLOG(2) << "Partition " << err.first
-                        << " failed: " << static_cast<int32_t>(err.second);
+                        << " failed: " << apache::thrift::util::enumNameSafe(err.second);
             }
         }
     }

@@ -319,8 +319,6 @@ public:
 
     static std::string genTimestampStr();
 
-    static folly::Optional<bool> isIndexRebuilding(kvstore::KVStore*);
-
     static GraphSpaceID parseEdgesKeySpaceID(folly::StringPiece key);
     static GraphSpaceID parseTagsKeySpaceID(folly::StringPiece key);
     static GraphSpaceID parseIndexesKeySpaceID(folly::StringPiece key);
@@ -328,16 +326,6 @@ public:
     static GraphSpaceID parseIndexKeySpaceID(folly::StringPiece key);
     static GraphSpaceID parseDefaultKeySpaceID(folly::StringPiece key);
 
-    // A direct value of true means that data will not be written to follow via the raft protocol,
-    // but will be written directly to local disk
-    static bool replaceHostInPartition(kvstore::KVStore* kvstore,
-                                       const HostAddr& ipv4From,
-                                       const HostAddr& ipv4To,
-                                       bool direct = false);
-    static bool replaceHostInZone(kvstore::KVStore* kvstore,
-                                  const HostAddr& ipv4From,
-                                  const HostAddr& ipv4To,
-                                  bool direct = false);
     // backup
     static ErrorOr<kvstore::ResultCode, std::vector<std::string>> backupIndexTable(
         kvstore::KVStore* kvstore,

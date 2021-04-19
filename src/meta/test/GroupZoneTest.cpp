@@ -302,7 +302,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     // Group already existed although the order is different
     {
@@ -314,7 +314,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     // Add Group with empty zone name list
     {

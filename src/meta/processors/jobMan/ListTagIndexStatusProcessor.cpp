@@ -15,30 +15,39 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto rc = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
     if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+        auto retCode = MetaCommon::to(rc);
+        LOG(ERROR) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     std::vector<cpp2::JobDesc> jobs;
-    std::vector<nebula::meta::cpp2::IndexStatus> statuses;
+    std::vector<cpp2::IndexStatus> statuses;
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
-            auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
-            if (optJob == folly::none) {
+            auto optJobRet = JobDescription::makeJobDescription(iter->key(), iter->val());
+            if (!nebula::ok(optJobRet)) {
                 continue;
             }
 
-            auto jobDesc = optJob->toJobDesc();
-            if (jobDesc.get_cmd() == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX) {
+            auto optJob = nebula::value(optJobRet);
+            auto jobDesc = optJob.toJobDesc();
+            if (jobDesc.get_cmd() == cpp2::AdminCmd::REBUILD_TAG_INDEX) {
                 auto paras = jobDesc.get_paras();
                 DCHECK_GE(paras.size(), 1);
                 auto spaceName = paras.back();
                 auto ret = getSpaceId(spaceName);
-                if (!ret.ok()) {
+                if (!nebula::ok(ret)) {
+                    auto retCode = nebula::error(ret);
+                    if (retCode == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                        handleErrorCode(retCode);
+                        onFinished();
+                        return;
+                    }
                     continue;
                 }
-                auto spaceId = ret.value();
+                auto spaceId = nebula::value(ret);
                 if (spaceId != curSpaceId) {
                     continue;
                 }

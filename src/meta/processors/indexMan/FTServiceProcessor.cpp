@@ -13,16 +13,25 @@ void SignInFTServiceProcessor::process(const cpp2::SignInFTServiceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextServicesLock());
     auto serviceKey = MetaServiceUtils::fulltextServiceKey();
     auto ret = doGet(serviceKey);
-    if (ret.ok()) {
+    if (nebula::ok(ret)) {
+        LOG(ERROR) << "Fulltext already exists.";
         handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
+    } else {
+        auto retCode = nebula::error(ret);
+        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Sign in fulltext failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
     }
 
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(serviceKey),
                       MetaServiceUtils::fulltextServiceVal(req.get_type(), req.get_clients()));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
 
@@ -30,26 +39,36 @@ void SignOutFTServiceProcessor::process(const cpp2::SignOutFTServiceReq&) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextServicesLock());
     auto serviceKey = MetaServiceUtils::fulltextServiceKey();
     auto ret = doGet(serviceKey);
-    if (!ret.ok()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Sign out fulltext failed, Fulltext not exists.";
+        } else {
+            LOG(ERROR) << "Sign out fulltext failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+
     doSyncMultiRemoveAndUpdate({std::move(serviceKey)});
 }
 
 void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
     folly::SharedMutex::WriteHolder rHolder(LockUtils::fulltextServicesLock());
-    auto prefix = MetaServiceUtils::fulltextServiceKey();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any full text service.";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    const auto& prefix = MetaServiceUtils::fulltextServiceKey();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List fulltext failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
+    auto iter = nebula::value(iterRet).get();
     std::vector<nebula::meta::cpp2::FTClient> clients;
     if (iter->valid()) {
         clients = MetaServiceUtils::parseFTClients(iter->val());

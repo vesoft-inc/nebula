@@ -110,15 +110,15 @@ private:
     bool runJobInternal(const JobDescription& jobDesc);
     bool runJobInternalOld(const JobDescription& jobDesc);
 
-    GraphSpaceID getSpaceId(const std::string& name);
+    ErrorOr<cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
-    kvstore::ResultCode save(const std::string& k, const std::string& v);
+    cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
 
-    bool removeExpiredJobs(std::vector<std::string>&& jobKeys);
+    cpp2::ErrorCode removeExpiredJobs(std::vector<std::string>&& jobKeys);
 
-    std::list<TaskDescription> getAllTasks(JobID jobId);
+    ErrorOr<cpp2::ErrorCode, std::list<TaskDescription>> getAllTasks(JobID jobId);
 
     void cleanJob(JobID jobId);
 

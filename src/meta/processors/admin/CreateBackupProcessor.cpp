@@ -11,17 +11,15 @@
 namespace nebula {
 namespace meta {
 
-folly::Optional<std::unordered_set<GraphSpaceID>> CreateBackupProcessor::spaceNameToId(
+ErrorOr<cpp2::ErrorCode, std::unordered_set<GraphSpaceID>>
+CreateBackupProcessor::spaceNameToId(
     const std::vector<std::string>* backupSpaces) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     std::unordered_set<GraphSpaceID> spaces;
 
     if (backupSpaces != nullptr) {
         DCHECK(!backupSpaces->empty());
-        std::vector<std::string> values;
         std::vector<std::string> keys;
-
-        values.reserve(backupSpaces->size());
         keys.reserve(backupSpaces->size());
 
         std::transform(
@@ -29,17 +27,15 @@ folly::Optional<std::unordered_set<GraphSpaceID>> CreateBackupProcessor::spaceNa
                 return MetaServiceUtils::indexSpaceKey(name);
             });
 
-        auto ret = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &values);
-        if (ret.first != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Failed to get space id, error: " << ret.first;
-            if (ret.first == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-                handleErrorCode(cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND);
-            } else {
-                handleErrorCode(MetaCommon::to(ret.first));
-            }
-            return folly::none;
+        auto result = doMultiGet(std::move(keys));
+        if (!nebula::ok(result)) {
+            auto retCode = nebula::error(result);
+            LOG(ERROR) << "MultiGet space failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
+        auto values = std::move(nebula::value(result));
         std::transform(std::make_move_iterator(values.begin()),
                        std::make_move_iterator(values.end()),
                        std::inserter(spaces, spaces.end()),
@@ -48,14 +44,16 @@ folly::Optional<std::unordered_set<GraphSpaceID>> CreateBackupProcessor::spaceNa
                        });
 
     } else {
-        auto prefix = MetaServiceUtils::spacePrefix();
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            handleErrorCode(MetaCommon::to(ret));
-            return folly::none;
+        const auto& prefix = MetaServiceUtils::spacePrefix();
+        auto iterRet = doPrefix(prefix);
+        if (!nebula::ok(iterRet)) {
+            auto retCode = nebula::error(iterRet);
+            LOG(ERROR) << "Space prefix failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            return retCode;
         }
 
+        auto iter = nebula::value(iterRet).get();
         while (iter->valid()) {
             auto spaceId = MetaServiceUtils::spaceId(iter->key());
             auto spaceName = MetaServiceUtils::spaceName(iter->val());
@@ -67,11 +65,32 @@ folly::Optional<std::unordered_set<GraphSpaceID>> CreateBackupProcessor::spaceNa
 
     if (spaces.empty()) {
         LOG(ERROR) << "Failed to create a full backup because there is currently no space.";
-        handleErrorCode(cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND);
-        return folly::none;
+        return cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND;
     }
 
     return spaces;
+}
+
+ErrorOr<cpp2::ErrorCode, bool> CreateBackupProcessor::isIndexRebuilding() {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    const auto& prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Prefix index rebuilding state failed, result code: "
+                   << static_cast<int32_t>(retCode);;
+        return retCode;
+    }
+
+    auto iter = nebula::value(ret).get();
+    while (iter->valid()) {
+        if (iter->val() == "RUNNING") {
+            return true;
+        }
+        iter->next();
+    }
+
+    return false;
 }
 
 void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
@@ -83,15 +102,15 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
         return;
     }
 
-    auto result = MetaServiceUtils::isIndexRebuilding(kvstore_);
-    if (result == folly::none) {
-        LOG(ERROR) << "Index is rebuilding, not allowed to create backup.";
-        handleErrorCode(cpp2::ErrorCode::E_BACKUP_FAILURE);
+    auto result = isIndexRebuilding();
+    if (!nebula::ok(result)) {
+        handleErrorCode(nebula::error(result));
         onFinished();
         return;
     }
 
-    if (result.value()) {
+    if (nebula::value(result)) {
+        LOG(ERROR) << "Index is rebuilding, not allowed to create backup.";
         handleErrorCode(cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX);
         onFinished();
         return;
@@ -99,7 +118,14 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
-    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        handleErrorCode(nebula::error(activeHostsRet));
+        onFinished();
+        return;
+    }
+    auto hosts = std::move(nebula::value(activeHostsRet));
+
     if (hosts.empty()) {
         LOG(ERROR) << "There has some offline hosts";
         handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
@@ -108,12 +134,13 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     }
 
     auto spaceIdRet = spaceNameToId(backupSpaces);
-    if (spaceIdRet == folly::none) {
+    if (!nebula::ok(spaceIdRet)) {
+        handleErrorCode(nebula::error(spaceIdRet));
         onFinished();
         return;
     }
 
-    auto spaces = spaceIdRet.value();
+    auto spaces = nebula::value(spaceIdRet);
 
     // The entire process follows mostly snapshot logic.
     std::vector<kvstore::KV> data;
@@ -139,9 +166,9 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
     // step 3 : Create checkpoint for all storage engines.
     auto sret = Snapshot::instance(kvstore_, client_)->createSnapshot(backupName);
-    if (sret.isLeftType()) {
+    if (!nebula::ok(sret)) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
-        handleErrorCode(sret.left());
+        handleErrorCode(nebula::error(sret));
         ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
         if (ret != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Cancel write blocking error";
@@ -174,12 +201,12 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
                                                     NetworkUtils::toHostsStr(hosts)));
 
     auto putRet = doSyncPut(std::move(data));
-    if (putRet != kvstore::ResultCode::SUCCEEDED) {
+    if (putRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "All checkpoint creations are done, "
                       "but update checkpoint status error. "
                       "backup : "
                    << backupName;
-        handleErrorCode(MetaCommon::to(putRet));
+        handleErrorCode(putRet);
         onFinished();
         return;
     }
@@ -187,18 +214,18 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     std::unordered_map<GraphSpaceID, cpp2::SpaceBackupInfo> backupInfo;
 
     // set backup info
-    auto snapshotInfo = std::move(sret.right());
+    auto snapshotInfo = std::move(nebula::value(sret));
     for (auto id : spaces) {
         LOG(INFO) << "backup space " << id;
         cpp2::SpaceBackupInfo spaceInfo;
         auto spaceKey = MetaServiceUtils::spaceKey(id);
         auto spaceRet = doGet(spaceKey);
-        if (!spaceRet.ok()) {
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        if (!nebula::ok(spaceRet)) {
+            handleErrorCode(nebula::error(spaceRet));
             onFinished();
             return;
         }
-        auto properties = MetaServiceUtils::parseSpace(spaceRet.value());
+        auto properties = MetaServiceUtils::parseSpace(nebula::value(spaceRet));
         // todo we should save partition info.
         auto it = snapshotInfo.find(id);
         DCHECK(it != snapshotInfo.end());
@@ -212,11 +239,12 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     backup.set_backup_info(std::move(backupInfo));
     backup.set_backup_name(std::move(backupName));
 
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_meta(std::move(backup));
     LOG(INFO) << "backup done";
 
     onFinished();
 }
+
 }   // namespace meta
 }   // namespace nebula

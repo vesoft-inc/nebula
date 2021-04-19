@@ -134,6 +134,8 @@ private:
     explicit GetUserRolesProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ListRolesResp>(kvstore) {}
 };
+
 }  // namespace meta
 }  // namespace nebula
+
 #endif  // META_AUTHENTICATIONPROCESSOR_H

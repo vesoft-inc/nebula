@@ -29,19 +29,22 @@ void HBProcessor::onFinished() {
 
 void HBProcessor::process(const cpp2::HBReq& req) {
     HostAddr host((*req.host_ref()).host, (*req.host_ref()).port);
-    if (FLAGS_hosts_whitelist_enabled
-            && hostExist(MetaServiceUtils::hostKey(host.host, host.port))
-                == Status::HostNotFound()) {
-        LOG(INFO) << "Reject unregistered host " << host << "!";
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_HOST);
-        onFinished();
-        return;
+    cpp2::ErrorCode ret;
+    if (FLAGS_hosts_whitelist_enabled) {
+        ret = hostExist(MetaServiceUtils::hostKey(host.host, host.port));
+        if (ret != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(INFO) << "Reject unregistered host " << host << "!";
+            if (ret != cpp2::ErrorCode::E_LEADER_CHANGED) {
+                ret = cpp2::ErrorCode::E_INVALID_HOST;
+            }
+            handleErrorCode(ret);
+            onFinished();
+            return;
+       }
     }
 
     VLOG(3) << "Receive heartbeat from " << host
             << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
-
-    auto ret = kvstore::ResultCode::SUCCEEDED;
     if (req.get_role() == cpp2::HostRole::STORAGE) {
         ClusterID peerCluserId = req.get_cluster_id();
         if (peerCluserId == 0) {
@@ -63,16 +66,20 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     } else {
         ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
     }
-    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+    if (ret == cpp2::ErrorCode::E_LEADER_CHANGED) {
         auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
         if (nebula::ok(leaderRet)) {
             resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
         }
     }
 
-    handleErrorCode(MetaCommon::to(ret));
-    int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
-    resp_.set_last_update_time_in_ms(lastUpdateTime);
+    auto lastUpdateTimeRet = LastUpdateTimeMan::get(kvstore_);
+    if (nebula::ok(lastUpdateTimeRet)) {
+        resp_.set_last_update_time_in_ms(nebula::value(lastUpdateTimeRet));
+    } else if (nebula::error(lastUpdateTimeRet) == cpp2::ErrorCode::E_NOT_FOUND) {
+        resp_.set_last_update_time_in_ms(0);
+    }
+    handleErrorCode(ret);
     onFinished();
 }
 

@@ -57,11 +57,16 @@ TEST(ActiveHostsManTest, NormalTest) {
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info1);
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), info1);
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), info1);
-    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(3, nebula::value(hostsRet).size());
 
     HostInfo info2(now + 2000, cpp2::HostRole::STORAGE, gitInfoSha());
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info2);
-    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(3, nebula::value(hostsRet).size());
+
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
@@ -84,7 +89,9 @@ TEST(ActiveHostsManTest, NormalTest) {
     }
 
     sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(1, nebula::value(hostsRet).size());
 }
 
 TEST(ActiveHostsManTest, LeaderTest) {
@@ -98,7 +105,9 @@ TEST(ActiveHostsManTest, LeaderTest) {
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo1);
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 1), hInfo1);
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 2), hInfo1);
-    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(3, nebula::value(hostsRet).size());
 
     auto makePartInfo = [](int partId) {
         cpp2::LeaderInfo part;
@@ -127,8 +136,10 @@ TEST(ActiveHostsManTest, LeaderTest) {
     leaderIds.emplace(1, std::vector<cpp2::LeaderInfo>{part1, part2});
     leaderIds.emplace(2, std::vector<cpp2::LeaderInfo>{part3});
     ActiveHostsMan::updateHostInfo(kv.get(), host, hInfo2, &leaderIds);
+    hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(3, nebula::value(hostsRet).size());
 
-    EXPECT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     using SpaceAndPart = std::pair<GraphSpaceID, PartitionID>;
     using HostAndTerm = std::pair<HostAddr, int64_t>;
 
@@ -157,20 +168,28 @@ TEST(ActiveHostsManTest, LeaderTest) {
     }
 
     sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    hostsRet = ActiveHostsMan::getActiveHosts(kv.get());
+    ASSERT_TRUE(nebula::ok(hostsRet));
+    ASSERT_EQ(1, nebula::value(hostsRet).size());
 }
 
 TEST(LastUpdateTimeManTest, NormalTest) {
     fs::TempDir rootPath("/tmp/LastUpdateTimeManTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
 
-    ASSERT_EQ(0, LastUpdateTimeMan::get(kv.get()));
+    auto lastUpRet = LastUpdateTimeMan::get(kv.get());
+    ASSERT_FALSE(nebula::ok(lastUpRet));
     int64_t now = time::WallClock::fastNowInMilliSec();
 
     LastUpdateTimeMan::update(kv.get(), now);
-    ASSERT_EQ(now, LastUpdateTimeMan::get(kv.get()));
+    lastUpRet = LastUpdateTimeMan::get(kv.get());
+    ASSERT_TRUE(nebula::ok(lastUpRet));
+    ASSERT_EQ(now, nebula::value(lastUpRet));
+
     LastUpdateTimeMan::update(kv.get(), now + 100);
-    ASSERT_EQ(now + 100, LastUpdateTimeMan::get(kv.get()));
+    lastUpRet = LastUpdateTimeMan::get(kv.get());
+    ASSERT_TRUE(nebula::ok(lastUpRet));
+    ASSERT_EQ(now + 100, nebula::value(lastUpRet));
 
     LastUpdateTimeMan::update(kv.get(), now - 100);
     {

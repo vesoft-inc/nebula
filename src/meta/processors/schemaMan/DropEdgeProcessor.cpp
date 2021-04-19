@@ -10,60 +10,73 @@ namespace nebula {
 namespace meta {
 
 void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     GraphSpaceID spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
+
     folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+    auto edgeName = req.get_edge_name();
 
     EdgeType edgeType;
-    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, req.get_edge_name());
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, edgeName);
     auto iRet = doGet(indexKey);
-    if (iRet.ok()) {
-        edgeType = *reinterpret_cast<const EdgeType *>(iRet.value().data());
+    if (nebula::ok(iRet)) {
+        edgeType = *reinterpret_cast<const EdgeType *>(nebula::value(iRet).c_str());
         resp_.set_id(to(edgeType, EntryType::EDGE));
     } else {
-        handleErrorCode(req.get_if_exists() == true ? cpp2::ErrorCode::SUCCEEDED
-                                                   : cpp2::ErrorCode::E_NOT_FOUND);
+        auto retCode = nebula::error(iRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            if (req.get_if_exists()) {
+                retCode = cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG(ERROR) << "Drop edge failed :" << edgeName << " not found.";
+            }
+        } else {
+             LOG(ERROR) << "Get edgetype failed, edge name " << edgeName
+                        << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto indexes = getIndexes(spaceId, edgeType);
-    if (!indexes.ok()) {
-        handleErrorCode(MetaCommon::to(indexes.status()));
+    if (!nebula::ok(indexes)) {
+        handleErrorCode(nebula::error(indexes));
         onFinished();
         return;
     }
-    if (!indexes.value().empty()) {
-        LOG(ERROR) << "Drop edge error, index conflict";
+    if (!nebula::value(indexes).empty()) {
+        LOG(ERROR) << "Drop edge error, index conflict, please delete index first.";
         handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
 
-    auto ret = getEdgeKeys(req.get_space_id(), edgeType);
-    if (!ret.ok()) {
-        handleErrorCode(MetaCommon::to(ret.status()));
+    auto ret = getEdgeKeys(spaceId, edgeType);
+    if (!nebula::ok(ret)) {
+        handleErrorCode(nebula::error(ret));
         onFinished();
         return;
     }
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    auto keys = std::move(ret).value();
+
+    auto keys = nebula::value(ret);
     keys.emplace_back(std::move(indexKey));
-    LOG(INFO) << "Drop Edge " << req.get_edge_name();
+    LOG(INFO) << "Drop Edge " << edgeName;
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID id,
-                                                                  EdgeType edgeType) {
+ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+DropEdgeProcessor::getEdgeKeys(GraphSpaceID id, EdgeType edgeType) {
     std::vector<std::string> keys;
     auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
     auto iterRet = doPrefix(key);
-    if (!iterRet.ok()) {
-        return Status::Error("Edge get error by id : %d !", edgeType);
+    if (!nebula::ok(iterRet)) {
+        LOG(ERROR) << "Edge schema prefix failed, edgetype " << edgeType;
+        return nebula::error(iterRet);
     }
 
-    auto iter = iterRet.value().get();
+    auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
         keys.emplace_back(iter->key());
         iter->next();

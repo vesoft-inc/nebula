@@ -12,47 +12,64 @@ namespace meta {
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto spaceRet = getSpaceId(req.get_space_name());
+    const auto& spaceName = req.get_space_name();
+    auto spaceRet = getSpaceId(spaceName);
 
-    if (!spaceRet.ok()) {
-        handleErrorCode(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED :
-                                             MetaCommon::to(spaceRet.status()));
+    if (!nebula::ok(spaceRet)) {
+        auto retCode = nebula::error(spaceRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            if (req.get_if_exists()) {
+                retCode = cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG(ERROR) << "Drop space Failed, space " << spaceName << " not existed.";
+            }
+        } else {
+            LOG(ERROR) << "Drop space Failed, space " << spaceName
+                       << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto spaceId = spaceRet.value();
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    auto spaceId = nebula::value(spaceRet);
     std::vector<std::string> deleteKeys;
 
+    // delete related part meta data.
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(ret));
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Drop space Failed, space " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
         deleteKeys.emplace_back(iter->key());
         iter->next();
     }
 
-    deleteKeys.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()));
+    deleteKeys.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName));
     deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
     // delete related role data.
     auto rolePrefix = MetaServiceUtils::roleSpacePrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> roleIter;
-    auto roleRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &roleIter);
-    if (roleRet != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(roleRet));
+    auto roleRet = doPrefix(rolePrefix);
+    if (!nebula::ok(roleRet)) {
+        auto retCode = nebula::error(roleRet);
+        LOG(ERROR) << "Drop space Failed, space " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
+    auto roleIter = nebula::value(roleRet).get();
     while (roleIter->valid()) {
-        auto user = MetaServiceUtils::parseRoleUser(roleIter->key());
         VLOG(3) << "Revoke role "
                 << MetaServiceUtils::parseRoleStr(roleIter->val())
                 << " for user "
@@ -63,13 +80,17 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
 
     // delete listener meta data
     auto lstPrefix = MetaServiceUtils::listenerPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> lstIter;
-    auto listenerRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, lstPrefix, &lstIter);
-    if (listenerRet != kvstore::ResultCode::SUCCEEDED) {
-        handleErrorCode(MetaCommon::to(listenerRet));
+    auto lstRet = doPrefix(rolePrefix);
+    if (!nebula::ok(lstRet)) {
+        auto retCode = nebula::error(lstRet);
+        LOG(ERROR) << "Drop space Failed, space " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
+    auto lstIter = nebula::value(lstRet).get();
     while (lstIter->valid()) {
         deleteKeys.emplace_back(lstIter->key());
         lstIter->next();
@@ -80,7 +101,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     deleteKeys.emplace_back(statiskey);
 
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
-    LOG(INFO) << "Drop space " << req.get_space_name() << ", id " << spaceId;
+    LOG(INFO) << "Drop space " << spaceName << ", id " << spaceId;
 }
 
 }  // namespace meta

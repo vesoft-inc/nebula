@@ -69,7 +69,7 @@ public:
         auto now = time::WallClock::fastNowInMilliSec();
         for (auto& h : hosts) {
             auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now, role, gitInfoSha));
-            CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, ret);
         }
     }
 

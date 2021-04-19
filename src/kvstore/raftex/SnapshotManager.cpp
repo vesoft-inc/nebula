@@ -5,6 +5,7 @@
  */
 #include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/raftex/RaftPart.h"
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");
 DEFINE_int32(snapshot_io_threads, 4, "Threads number for snapshot");
@@ -75,7 +76,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                         LOG(INFO) << part->idStr_
                                   << "Sending snapshot failed, we don't retry anymore! "
                                   << "The error code is "
-                                  << static_cast<int32_t>(resp.get_error_code());
+                                  << apache::thrift::util::enumNameSafe(resp.get_error_code());
                         p.setValue(Status::Error("Send snapshot failed!"));
                         return false;
                     }

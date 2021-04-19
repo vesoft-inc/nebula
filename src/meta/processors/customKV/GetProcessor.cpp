@@ -13,14 +13,17 @@ namespace meta {
 void GetProcessor::process(const cpp2::GetReq& req) {
     auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
     auto result = doGet(key);
-    if (!result.ok()) {
-        LOG(ERROR) << "Get Failed: " << key << " not found!";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(result)) {
+        auto retCode = nebula::error(result);
+        LOG(ERROR) << "Get Failed: " << key << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);;
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_value(std::move(result.value()));
+    resp_.set_value(std::move(nebula::value(result)));
     onFinished();
 }
 

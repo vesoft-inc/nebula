@@ -38,35 +38,49 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto ret = getIndexID(space, indexName);
-    if (ret.ok()) {
-        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " has existed";
+    if (nebula::ok(ret)) {
         if (req.get_if_not_exists()) {
-            resp_.set_id(to(ret.value(), EntryType::INDEX));
             handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
+            LOG(ERROR) << "Create Edge Index Failed: " << indexName << " has existed";
             handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
+        resp_.set_id(to(nebula::value(ret), EntryType::INDEX));
         onFinished();
         return;
+    } else {
+        auto retCode = nebula::error(ret);
+        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Create Edge Index Failed, index name " << indexName << " error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
     }
 
     auto edgeTypeRet = getEdgeType(space, edgeName);
-    if (!edgeTypeRet.ok()) {
-        LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(edgeTypeRet)) {
+        auto retCode = nebula::error(edgeTypeRet);
+        LOG(ERROR) << "Create Edge Index Failed, Edge " << edgeName << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto edgeType = nebula::value(edgeTypeRet);
 
-    auto edgeType = edgeTypeRet.value();
-    auto prefix = MetaServiceUtils::indexPrefix(space);
-    std::unique_ptr<kvstore::KVIterator> checkIter;
-    auto checkRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &checkIter);
-    if (checkRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(MetaCommon::to(checkRet));
+    const auto& prefix = MetaServiceUtils::indexPrefix(space);
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Edge indexes prefix failed, space id " << space
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto checkIter = nebula::value(iterRet).get();
 
     while (checkIter->valid()) {
         auto val = checkIter->val();
@@ -87,13 +101,16 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto schemaRet = getLatestEdgeSchema(space, edgeType);
-    if (!schemaRet.ok()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(schemaRet)) {
+        auto retCode = nebula::error(schemaRet);
+         LOG(ERROR) << "Get edge schema failed, space id " << space << " edgeName " << edgeName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto latestEdgeSchema = schemaRet.value();
+    auto latestEdgeSchema = std::move(nebula::value(schemaRet));
     const auto& schemaCols = latestEdgeSchema.get_columns();
     std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fields) {

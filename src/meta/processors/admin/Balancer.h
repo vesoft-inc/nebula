@@ -88,12 +88,12 @@ public:
     /**
      * Show balance plan id status.
      * */
-    StatusOr<BalancePlan> show(BalanceID id) const;
+    ErrorOr<cpp2::ErrorCode, BalancePlan> show(BalanceID id) const;
 
     /**
      * Stop balance plan by canceling all waiting balance task.
      * */
-    StatusOr<BalanceID> stop();
+    ErrorOr<cpp2::ErrorCode, BalanceID> stop();
 
     /**
      * Clean invalid plan, return the invalid plan key if any
@@ -158,18 +158,18 @@ private:
              bool dependentOnGroup,
              std::vector<HostAddr>&& lostHosts);
 
-    std::pair<HostParts, std::vector<HostAddr>>
+    ErrorOr<cpp2::ErrorCode, std::pair<HostParts, std::vector<HostAddr>>>
     fetchHostParts(GraphSpaceID spaceId,
                    bool dependentOnGroup,
                    const HostParts& hostParts,
                    std::vector<HostAddr>& lostHosts);
 
-    bool getHostParts(GraphSpaceID spaceId,
-                      bool dependentOnGroup,
-                      HostParts& hostParts,
-                      int32_t& totalParts);
+    ErrorOr<cpp2::ErrorCode, bool> getHostParts(GraphSpaceID spaceId,
+                                                bool dependentOnGroup,
+                                                HostParts& hostParts,
+                                                int32_t& totalParts);
 
-    bool assembleZoneParts(const std::string& groupName, HostParts& hostParts);
+    cpp2::ErrorCode assembleZoneParts(const std::string& groupName, HostParts& hostParts);
 
     void calDiff(const HostParts& hostParts,
                  const std::vector<HostAddr>& activeHosts,
@@ -181,36 +181,38 @@ private:
                         int32_t replica,
                         PartitionID partId);
 
-    StatusOr<HostAddr> hostWithMinimalParts(const HostParts& hostParts,
-                                            PartitionID partId);
+    ErrorOr<cpp2::ErrorCode, HostAddr>
+    hostWithMinimalParts(const HostParts& hostParts, PartitionID partId);
 
-    StatusOr<HostAddr> hostWithMinimalPartsForZone(const HostAddr& source,
-                                                   const HostParts& hostParts,
-                                                   PartitionID partId);
+    ErrorOr<cpp2::ErrorCode, HostAddr>
+    hostWithMinimalPartsForZone(const HostAddr& source,
+                                const HostParts& hostParts,
+                                PartitionID partId);
     bool balanceParts(BalanceID balanceId,
                       GraphSpaceID spaceId,
                       HostParts& newHostParts,
                       int32_t totalParts,
                       std::vector<BalanceTask>& tasks);
 
-    bool transferLostHost(std::vector<BalanceTask>& tasks,
-                          HostParts& newHostParts,
-                          const HostAddr& source,
-                          GraphSpaceID spaceId,
-                          PartitionID partId,
-                          bool dependentOnGroup);
+    cpp2::ErrorCode transferLostHost(std::vector<BalanceTask>& tasks,
+                                     HostParts& newHostParts,
+                                     const HostAddr& source,
+                                     GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     bool dependentOnGroup);
 
     std::vector<std::pair<HostAddr, int32_t>>
     sortedHostsByParts(const HostParts& hostParts);
 
-    bool getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
+    cpp2::ErrorCode getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
 
-    bool buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
-                                GraphSpaceID spaceId,
-                                int32_t replicaFactor,
-                                bool dependentOnGroup,
-                                LeaderBalancePlan& plan,
-                                bool useDeviation = true);
+    ErrorOr<cpp2::ErrorCode, bool>
+    buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
+                           GraphSpaceID spaceId,
+                           int32_t replicaFactor,
+                           bool dependentOnGroup,
+                           LeaderBalancePlan& plan,
+                           bool useDeviation = true);
 
     void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
@@ -229,7 +231,7 @@ private:
                           LeaderBalancePlan& plan,
                           GraphSpaceID spaceId);
 
-    bool collectZoneParts(const std::string& groupName, HostParts& hostParts);
+    cpp2::ErrorCode collectZoneParts(const std::string& groupName, HostParts& hostParts);
 
     bool checkZoneLegal(const HostAddr& source, const HostAddr& target, PartitionID part);
 

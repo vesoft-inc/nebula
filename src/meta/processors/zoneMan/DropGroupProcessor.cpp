@@ -13,15 +13,24 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::groupLock());
     auto groupName = req.get_group_name();
     auto groupIdRet = getGroupId(groupName);
-    if (!groupIdRet.ok()) {
-        LOG(ERROR) << "Group: " << groupName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(groupIdRet)) {
+        auto retCode = nebula::error(groupIdRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Drop Group Failed, Group " << groupName << " not found.";
+        } else {
+            LOG(ERROR) << "Drop Group Failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     // If any space rely on this group, it should not be droped.
-    if (!checkSpaceDependency(groupName)) {
+    auto retCode = checkSpaceDependency(groupName);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        handleErrorCode(retCode);
+        onFinished();
         return;
     }
 
@@ -32,16 +41,16 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-bool DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
-    auto prefix = MetaServiceUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List spaces failed";
-        handleErrorCode(MetaCommon::to(ret));
-        onFinished();
-        return false;
+cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
+    const auto& prefix = MetaServiceUtils::spacePrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List spaces failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
+    auto iter = nebula::value(iterRet).get();
 
     while (iter->valid()) {
         auto properties = MetaServiceUtils::parseSpace(iter->val());
@@ -49,13 +58,12 @@ bool DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
             *properties.group_name_ref() == groupName) {
             LOG(ERROR) << "Space " << properties.get_space_name()
                        << " is bind to the group " << groupName;
-            handleErrorCode(cpp2::ErrorCode::E_NOT_DROP);
-            onFinished();
-            return false;
+            return cpp2::ErrorCode::E_NOT_DROP;
         }
         iter->next();
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
+
 }  // namespace meta
 }  // namespace nebula

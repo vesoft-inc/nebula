@@ -11,6 +11,8 @@
 #include <folly/TokenBucket.h>
 #include <folly/stats/TimeseriesHistogram.h>
 #include <folly/stats/BucketedTimeSeries.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 
 DEFINE_int32(threads, 1, "Total threads for perf");
 DEFINE_double(qps, 1000, "Total qps for the perf tool");
@@ -323,8 +325,8 @@ private:
                 .via(evb).thenValue([this, start](auto&& resps) {
                     if (!resps.succeeded()) {
                         for (auto& entry : resps.failedParts()) {
-                            LOG(ERROR) << "Request failed, part " << entry.first
-                                       << ", error " << static_cast<int32_t>(entry.second);
+                            LOG(ERROR) << "Request failed, part " << entry.first << ", error "
+                                       << apache::thrift::util::enumNameSafe(entry.second);
                         }
                     } else {
                         VLOG(1) << "request successed!";

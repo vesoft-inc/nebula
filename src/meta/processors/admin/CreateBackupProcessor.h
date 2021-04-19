@@ -19,18 +19,24 @@ public:
     static CreateBackupProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
         return new CreateBackupProcessor(kvstore, client);
     }
+
     void process(const cpp2::CreateBackupReq& req);
 
 private:
     explicit CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
         : BaseProcessor<cpp2::CreateBackupResp>(kvstore), client_(client) {}
+
     cpp2::ErrorCode cancelWriteBlocking();
-    folly::Optional<std::unordered_set<GraphSpaceID>> spaceNameToId(
-        const std::vector<std::string>* backupSpaces);
+
+    ErrorOr<cpp2::ErrorCode, std::unordered_set<GraphSpaceID>>
+    spaceNameToId(const std::vector<std::string>* backupSpaces);
+
+    ErrorOr<cpp2::ErrorCode, bool> isIndexRebuilding();
 
 private:
     AdminClient* client_;
 };
+
 }   // namespace meta
 }   // namespace nebula
 

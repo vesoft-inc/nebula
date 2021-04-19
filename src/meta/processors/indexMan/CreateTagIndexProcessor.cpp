@@ -38,35 +38,49 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::snapshotLock());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto ret = getIndexID(space, indexName);
-    if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " has existed";
+    if (nebula::ok(ret)) {
         if (req.get_if_not_exists()) {
-            resp_.set_id(to(ret.value(), EntryType::INDEX));
             handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
         } else {
+            LOG(ERROR) << "Create Tag Index Failed: " << indexName << " has existed";
             handleErrorCode(cpp2::ErrorCode::E_EXISTED);
         }
+        resp_.set_id(to(nebula::value(ret), EntryType::INDEX));
         onFinished();
         return;
+    } else {
+        auto retCode = nebula::error(ret);
+        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Create Tag Index Failed, index name " << indexName << " error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+            handleErrorCode(retCode);
+            onFinished();
+            return;
+        }
     }
 
     auto tagIDRet = getTagId(space, tagName);
-    if (!tagIDRet.ok()) {
-        LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(tagIDRet)) {
+        auto retCode = nebula::error(tagIDRet);
+        LOG(ERROR) << "Create Tag Index Failed, Tag " << tagName << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto tagID = nebula::value(tagIDRet);
 
-    auto tagID = tagIDRet.value();
-    auto prefix = MetaServiceUtils::indexPrefix(space);
-    std::unique_ptr<kvstore::KVIterator> checkIter;
-    auto checkRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &checkIter);
-    if (checkRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(MetaCommon::to(checkRet));
+    const auto& prefix = MetaServiceUtils::indexPrefix(space);
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Tag indexes prefix failed, space id " << space
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+    auto checkIter = nebula::value(iterRet).get();
 
     while (checkIter->valid()) {
         auto val = checkIter->val();
@@ -87,13 +101,16 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto schemaRet = getLatestTagSchema(space, tagID);
-    if (!schemaRet.ok()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(schemaRet)) {
+        auto retCode = nebula::error(schemaRet);
+         LOG(ERROR) << "Get tag schema failed, space id " << space << " tagName " << tagName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto latestTagSchema = schemaRet.value();
+    auto latestTagSchema = std::move(nebula::value(schemaRet));
     const auto& schemaCols = latestTagSchema.get_columns();
     std::vector<cpp2::ColumnDef> columns;
     for (auto &field : fields) {

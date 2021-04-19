@@ -11,28 +11,36 @@ namespace meta {
 
 void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     auto spaceID = req.get_space_id();
-    auto indexName = req.get_index_name();
+    const auto& indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexID = getIndexID(spaceID, indexName);
-    if (!tagIndexID.ok()) {
-        LOG(ERROR) << "Tag Index not exists in Space: " << spaceID << " Index name: " << indexName;
-        if (req.get_if_exists()) {
-            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    auto tagIndexIDRet = getIndexID(spaceID, indexName);
+    if (!nebula::ok(tagIndexIDRet)) {
+        auto retCode = nebula::error(tagIndexIDRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            if (req.get_if_exists()) {
+                retCode = cpp2::ErrorCode::SUCCEEDED;
+            } else {
+                LOG(ERROR) << "Drop Tag Index Failed, index name " << indexName
+                           << " not exists in Space: "<< spaceID;
+            }
         } else {
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            LOG(ERROR) << "Drop Tag Index Failed, index name " << indexName
+                       << " error: " << apache::thrift::util::enumNameSafe(retCode);
         }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
+    auto tagIndexID = nebula::value(tagIndexIDRet);
     std::vector<std::string> keys;
     keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
-    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID.value()));
+    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID));
 
     LOG(INFO) << "Drop Tag Index " << indexName;
-    resp_.set_id(to(tagIndexID.value(), EntryType::INDEX));
+    resp_.set_id(to(tagIndexID, EntryType::INDEX));
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

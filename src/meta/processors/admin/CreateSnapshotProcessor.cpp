@@ -12,17 +12,39 @@
 namespace nebula {
 namespace meta {
 
+ErrorOr<cpp2::ErrorCode, bool> CreateSnapshotProcessor::isIndexRebuilding() {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    const auto& prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
+    auto ret = doPrefix(prefix);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Prefix index rebuilding state failed, result code: "
+                   << static_cast<int32_t>(retCode);;
+        return retCode;
+    }
+
+    auto iter = nebula::value(ret).get();
+    while (iter->valid()) {
+        if (iter->val() == "RUNNING") {
+            return true;
+        }
+        iter->next();
+    }
+
+    return false;
+}
+
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     // check the index rebuild. not allowed to create snapshot when index rebuilding.
 
-    auto result = MetaServiceUtils::isIndexRebuilding(kvstore_);
-    if (result == folly::none) {
-        handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+    auto result = isIndexRebuilding();
+    if (!nebula::ok(result)) {
+        handleErrorCode(nebula::error(result));
         onFinished();
         return;
     }
 
-    if (result.value()) {
+    if (nebula::value(result)) {
         LOG(ERROR) << "Index is rebuilding, not allowed to create snapshot.";
         handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
@@ -32,7 +54,14 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     auto snapshot = folly::format("SNAPSHOT_{}", MetaServiceUtils::genTimestampStr()).str();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
-    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (!nebula::ok(activeHostsRet)) {
+        handleErrorCode(nebula::error(activeHostsRet));
+        onFinished();
+        return;
+    }
+    auto hosts = std::move(nebula::value(activeHostsRet));
+
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
         handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
@@ -48,9 +77,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
                                                     NetworkUtils::toHostsStr(hosts)));
 
     auto putRet = doSyncPut(std::move(data));
-    if (putRet != kvstore::ResultCode::SUCCEEDED) {
+    if (putRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write snapshot meta error";
-        handleErrorCode(MetaCommon::to(putRet));
+        handleErrorCode(putRet);
         onFinished();
         return;
     }
@@ -67,9 +96,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
     // step 3 : Create checkpoint for all storage engines and meta engine.
     auto csRet = Snapshot::instance(kvstore_,  client_)->createSnapshot(snapshot);
-    if (csRet.isLeftType()) {
+    if (!nebula::ok(csRet)) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
-        handleErrorCode(csRet.left());
+        handleErrorCode(nebula::error(csRet));
         cancelWriteBlocking();
         onFinished();
         return;
@@ -99,11 +128,11 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
                                                     NetworkUtils::toHostsStr(hosts)));
 
     putRet = doSyncPut(std::move(data));
-    if (putRet != kvstore::ResultCode::SUCCEEDED) {
+    if (putRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "All checkpoint creations are done, "
                       "but update checkpoint status error. "
                       "snapshot : " << snapshot;
-        handleErrorCode(MetaCommon::to(putRet));
+        handleErrorCode(putRet);
     }
 
     LOG(INFO) << "Create snapshot " << snapshot << " successfully";

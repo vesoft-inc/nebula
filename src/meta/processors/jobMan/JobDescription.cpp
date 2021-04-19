@@ -5,10 +5,10 @@
  */
 
 #include <stdexcept>
-#include <string>
-#include <vector>
-#include <folly/String.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include <boost/stacktrace.hpp>
+#include "meta/common/MetaCommon.h"
+#include "meta/processors/Common.h"
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/JobDescription.h"
 #include "kvstore/KVIterator.h"
@@ -35,18 +35,18 @@ JobDescription::JobDescription(JobID id,
                                  startTime_(startTime),
                                  stopTime_(stopTime) {}
 
-folly::Optional<JobDescription>
+ErrorOr<cpp2::ErrorCode, JobDescription>
 JobDescription::makeJobDescription(folly::StringPiece rawkey,
                                    folly::StringPiece rawval) {
     try {
         if (!isJobKey(rawkey)) {
-            return folly::none;
+            return cpp2::ErrorCode::E_INVALID_JOB;
         }
         auto key = parseKey(rawkey);
 
         if (!isSupportedValue(rawval)) {
             LOG(ERROR) << "not supported data ver of job " << key;
-            return folly::none;
+            return cpp2::ErrorCode::E_INVALID_JOB;
         }
         auto tup = parseVal(rawval);
 
@@ -62,7 +62,7 @@ JobDescription::makeJobDescription(folly::StringPiece rawkey,
     } catch(std::exception& ex) {
         LOG(ERROR) << ex.what();
     }
-    return folly::none;
+    return cpp2::ErrorCode::E_INVALID_JOB;
 }
 
 std::string JobDescription::jobKey() const {
@@ -179,14 +179,16 @@ bool JobDescription::isJobKey(const folly::StringPiece& rawKey) {
     return rawKey.size() == JobUtil::jobPrefix().length() + sizeof(int32_t);
 }
 
-folly::Optional<JobDescription>
+ErrorOr<cpp2::ErrorCode, JobDescription>
 JobDescription::loadJobDescription(JobID iJob, nebula::kvstore::KVStore* kv) {
     auto key = makeJobKey(iJob);
     std::string val;
-    auto rc = kv->get(0, 0, key, &val);
+    auto rc = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Loading Job Description Failed";
-        return folly::none;
+        auto retCode = MetaCommon::to(rc);
+        LOG(ERROR) << "Loading Job Description Failed"
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
     return makeJobDescription(key, val);
 }

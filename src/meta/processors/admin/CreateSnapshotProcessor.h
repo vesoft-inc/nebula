@@ -29,6 +29,8 @@ private:
                                      AdminClient* client)
             : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
+    ErrorOr<cpp2::ErrorCode, bool> isIndexRebuilding();
+
 private:
     AdminClient* client_;
 };

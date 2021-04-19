@@ -10,21 +10,23 @@ namespace nebula {
 namespace meta {
 
 void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     auto space = req.get_space_id();
-    auto prefix = MetaServiceUtils::indexPrefix(space);
+    CHECK_SPACE_ID_AND_RETURN(space);
 
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    handleErrorCode(MetaCommon::to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Edge Index Failed: SpaceID " << space;
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
+    const auto& prefix = MetaServiceUtils::indexPrefix(space);
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List Edge Index Failed: SpaceID " << space
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    std::vector<nebula::meta::cpp2::IndexItem> items;
+    auto iter = nebula::value(iterRet).get();
+    std::vector<cpp2::IndexItem> items;
     while (iter->valid()) {
         auto val = iter->val();
         auto item = MetaServiceUtils::parseIndex(val);
@@ -33,7 +35,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
         }
         iter->next();
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

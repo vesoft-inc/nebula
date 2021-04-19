@@ -22,8 +22,19 @@ public:
 
 private:
     explicit RestoreProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore){}
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    // A direct value of true means that data will not be written to follow via the raft protocol,
+    // but will be written directly to local disk
+    cpp2::ErrorCode replaceHostInPartition(const HostAddr& ipv4From,
+                                           const HostAddr& ipv4To,
+                                           bool direct = false);
+
+    cpp2::ErrorCode replaceHostInZone(const HostAddr& ipv4From,
+                                      const HostAddr& ipv4To,
+                                      bool direct = false);
 };
+
 }   // namespace meta
 }   // namespace nebula
 

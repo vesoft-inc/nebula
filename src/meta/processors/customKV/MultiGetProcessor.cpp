@@ -16,14 +16,17 @@ void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
     }
 
     auto result = doMultiGet(std::move(keys));
-    if (!result.ok()) {
-        LOG(ERROR) << "MultiGet Failed: " << result.status();
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(result)) {
+        auto retCode = nebula::error(result);
+        LOG(ERROR) << "MultiGet Failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
+
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_values(std::move(result.value()));
+    resp_.set_values(std::move(nebula::value(result)));
     onFinished();
 }
 

@@ -11,25 +11,33 @@ namespace meta {
 
 void GetGroupProcessor::process(const cpp2::GetGroupReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::groupLock());
-    auto groupName = req.get_group_name();
+    auto& groupName = req.get_group_name();
     auto groupIdRet = getGroupId(groupName);
-    if (!groupIdRet.ok()) {
-        LOG(ERROR) << "Group: " << groupName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(groupIdRet)) {
+        auto retCode = nebula::error(groupIdRet);
+        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Get Group Failed, Group " << groupName << " not found.";
+        } else {
+            LOG(ERROR) << "Get Group Failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     auto groupKey = MetaServiceUtils::groupKey(groupName);
     auto groupValueRet = doGet(std::move(groupKey));
-    if (!groupValueRet.ok()) {
-        LOG(ERROR) << "Get group " << groupName << " failed";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+    if (!nebula::ok(groupValueRet)) {
+        auto retCode = nebula::error(groupValueRet);
+        LOG(ERROR) << "Get group " << groupName << " failed, error "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValueRet).value());
+    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
     LOG(INFO) << "Get Group: " << groupName << " zone size: " << zoneNames.size();
     resp_.set_zone_names(std::move(zoneNames));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);

@@ -24,10 +24,10 @@ private:
     explicit AddGroupProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    bool checkGroupRedundancy(std::vector<std::string> zones);
+    cpp2::ErrorCode  checkGroupRedundancy(std::vector<std::string> zones);
 };
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // META_ADDGROUPPROCESSOR_H
 
+#endif  // META_ADDGROUPPROCESSOR_H

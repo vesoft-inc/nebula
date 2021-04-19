@@ -13,15 +13,24 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::zoneLock());
     auto zoneName = req.get_zone_name();
     auto zoneIdRet = getZoneId(zoneName);
-    if (!zoneIdRet.ok()) {
-        LOG(ERROR) << "Zone " << zoneName << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(zoneIdRet)) {
+        auto retCode = nebula::error(zoneIdRet);
+         if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+            LOG(ERROR) << "Drop Zone Failed, Zone " << zoneName << " not found.";
+        } else {
+            LOG(ERROR) << "Drop Zone Failed, error: "
+                       << apache::thrift::util::enumNameSafe(retCode);
+        }
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
     // If zone belong to any group, it should not be droped.
-    if (!checkGroupDependency(zoneName)) {
+    auto retCode = checkGroupDependency(zoneName);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        handleErrorCode(retCode);
+        onFinished();
         return;
     }
 
@@ -32,16 +41,16 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-bool DropZoneProcessor::checkGroupDependency(const std::string& zoneName) {
-    auto prefix = MetaServiceUtils::groupPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List zones failed";
-        handleErrorCode(MetaCommon::to(ret));
-        onFinished();
-        return false;
+cpp2::ErrorCode DropZoneProcessor::checkGroupDependency(const std::string& zoneName) {
+    const auto& prefix = MetaServiceUtils::groupPrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "List zones failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
+    auto iter = nebula::value(iterRet).get();
 
     while (iter->valid()) {
         auto zoneNames = MetaServiceUtils::parseZoneNames(iter->val());
@@ -49,13 +58,11 @@ bool DropZoneProcessor::checkGroupDependency(const std::string& zoneName) {
         if (zoneIter != zoneNames.end()) {
             auto groupName = MetaServiceUtils::parseGroupName(iter->key());
             LOG(ERROR) << "Zone " << zoneName << " is belong to Group " << groupName;
-            handleErrorCode(cpp2::ErrorCode::E_NOT_DROP);
-            onFinished();
-            return false;
+            return cpp2::ErrorCode::E_NOT_DROP;
         }
         iter->next();
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

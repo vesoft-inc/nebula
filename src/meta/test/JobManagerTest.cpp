@@ -122,10 +122,11 @@ TEST_F(JobManagerTest, StatisJob) {
     job.setStatus(cpp2::JobStatus::FINISHED);
     jobMgr->save(job.jobKey(), job.jobVal());
 
-    auto job1 = JobDescription::loadJobDescription(job.id_, kv_.get());
-    ASSERT_TRUE(job1);
-    ASSERT_EQ(job.id_, job1.value().id_);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, job1.value().status_);
+    auto job1Ret = JobDescription::loadJobDescription(job.id_, kv_.get());
+    ASSERT_TRUE(nebula::ok(job1Ret));
+    auto job1 = nebula::value(job1Ret);
+    ASSERT_EQ(job.id_, job1.id_);
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, job1.status_);
 }
 
 TEST_F(JobManagerTest, JobPriority) {
@@ -225,15 +226,16 @@ TEST_F(JobManagerTest, loadJobDescription) {
     ASSERT_EQ(job1.cmd_, cpp2::AdminCmd::COMPACT);
     ASSERT_EQ(job1.paras_[0], "test_space");
 
-    auto optJd2 = JobDescription::loadJobDescription(job1.id_, kv_.get());
-    ASSERT_TRUE(optJd2);
-    ASSERT_EQ(job1.id_, optJd2.value().id_);
+    auto optJd2Ret = JobDescription::loadJobDescription(job1.id_, kv_.get());
+    ASSERT_TRUE(nebula::ok(optJd2Ret));
+    auto optJd2 = nebula::value(optJd2Ret);
+    ASSERT_EQ(job1.id_, optJd2.id_);
     LOG(INFO) << "job1.id_ = " << job1.id_;
-    ASSERT_EQ(job1.cmd_, optJd2.value().cmd_);
-    ASSERT_EQ(job1.paras_, optJd2.value().paras_);
-    ASSERT_EQ(job1.status_, optJd2.value().status_);
-    ASSERT_EQ(job1.startTime_, optJd2.value().startTime_);
-    ASSERT_EQ(job1.stopTime_, optJd2.value().stopTime_);
+    ASSERT_EQ(job1.cmd_, optJd2.cmd_);
+    ASSERT_EQ(job1.paras_, optJd2.paras_);
+    ASSERT_EQ(job1.status_, optJd2.status_);
+    ASSERT_EQ(job1.startTime_, optJd2.startTime_);
+    ASSERT_EQ(job1.stopTime_, optJd2.stopTime_);
 }
 
 TEST(JobUtilTest, dummy) {
@@ -361,8 +363,8 @@ TEST(JobDescriptionTest, ctor2) {
 
     std::string strKey = jd1.jobKey();
     std::string strVal = jd1.jobVal();
-    auto optJob = JobDescription::makeJobDescription(strKey, strVal);
-    ASSERT_NE(optJob, folly::none);
+    auto optJobRet = JobDescription::makeJobDescription(strKey, strVal);
+    ASSERT_TRUE(nebula::ok(optJobRet));
 }
 
 TEST(JobDescriptionTest, ctor3) {
@@ -376,8 +378,8 @@ TEST(JobDescriptionTest, ctor3) {
     std::string strVal = jd1.jobVal();
     folly::StringPiece spKey(&strKey[0], strKey.length());
     folly::StringPiece spVal(&strVal[0], strVal.length());
-    auto optJob = JobDescription::makeJobDescription(spKey, spVal);
-    ASSERT_NE(optJob, folly::none);
+    auto optJobRet = JobDescription::makeJobDescription(spKey, spVal);
+    ASSERT_TRUE(nebula::ok(optJobRet));
 }
 
 TEST(JobDescriptionTest, parseKey) {

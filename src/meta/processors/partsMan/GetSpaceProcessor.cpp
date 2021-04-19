@@ -11,28 +11,36 @@ namespace meta {
 
 void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto spaceRet = getSpaceId(req.get_space_name());
-    if (!spaceRet.ok()) {
-        handleErrorCode(MetaCommon::to(spaceRet.status()));
+    const auto& spaceName = req.get_space_name();
+
+    auto spaceRet = getSpaceId(spaceName);
+    if (!nebula::ok(spaceRet)) {
+        auto retCode = nebula::error(spaceRet);
+        LOG(ERROR) << "Get space Failed, SpaceName " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
 
-    auto spaceId = spaceRet.value();
+    auto spaceId = nebula::value(spaceRet);
     std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
     auto ret = doGet(spaceKey);
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get Space SpaceName: " << req.get_space_name() << " not found";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Get Space SpaceName: " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);;
+        handleErrorCode(retCode);
         onFinished();
         return;
     }
-    auto properties = MetaServiceUtils::parseSpace(ret.value());
-    VLOG(3) << "Get Space SpaceName: " << req.get_space_name()
+
+    auto properties = MetaServiceUtils::parseSpace(nebula::value(ret));
+    VLOG(3) << "Get Space SpaceName: " << spaceName
             << ", Partition Num " << properties.get_partition_num()
             << ", Replica Factor " << properties.get_replica_factor();
     if (properties.group_name_ref().has_value()) {
-        LOG(INFO) << "Space " << req.get_space_name()
+        LOG(INFO) << "Space " << spaceName
                   << " is bind to the group " << *properties.group_name_ref();
     }
 
@@ -46,5 +54,4 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
 
 }  // namespace meta
 }  // namespace nebula
-
 

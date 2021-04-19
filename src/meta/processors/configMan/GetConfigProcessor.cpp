@@ -13,39 +13,52 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
     auto module = req.get_item().get_module();
     auto name = req.get_item().get_name();
     std::vector<cpp2::ConfigItem> items;
+    cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
 
-    {
+    do {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
         if (module != cpp2::ConfigModule::ALL) {
-            getOneConfig(module, name, items);
+            code = getOneConfig(module, name, items);
+            if (code != cpp2::ErrorCode::SUCCEEDED) {
+                break;
+            }
         } else {
-            getOneConfig(cpp2::ConfigModule::GRAPH, name, items);
-            getOneConfig(cpp2::ConfigModule::STORAGE, name, items);
+            code = getOneConfig(cpp2::ConfigModule::GRAPH, name, items);
+            if (code != cpp2::ErrorCode::SUCCEEDED) {
+                 break;
+            }
+            code = getOneConfig(cpp2::ConfigModule::STORAGE, name, items);
+            if (code != cpp2::ErrorCode::SUCCEEDED) {
+                break;
+            }
         }
-    }
+    } while (false);
 
-    if (items.empty()) {
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
-    } else {
-        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    if (code == cpp2::ErrorCode::SUCCEEDED) {
         resp_.set_items(std::move(items));
     }
+    handleErrorCode(code);
     onFinished();
 }
 
-void GetConfigProcessor::getOneConfig(const cpp2::ConfigModule& module,
-                                      const std::string& name,
-                                      std::vector<cpp2::ConfigItem>& items) {
+cpp2::ErrorCode
+GetConfigProcessor::getOneConfig(const cpp2::ConfigModule& module,
+                                 const std::string& name,
+                                 std::vector<cpp2::ConfigItem>& items) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(configKey);
-    if (!ret.ok()) {
-        return;
+    if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        LOG(ERROR) << "Get config " << name << " failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
 
-    cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
+    cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(nebula::value(ret));
     item.set_module(module);
     item.set_name(name);
     items.emplace_back(std::move(item));
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

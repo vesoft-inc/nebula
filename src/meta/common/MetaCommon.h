@@ -28,11 +28,14 @@ public:
         return false;
     }
 
+    // todo unify cpp2::ErrorCode and ResultCode
     static cpp2::ErrorCode to(kvstore::ResultCode code) {
         switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
             return cpp2::ErrorCode::SUCCEEDED;
+        case kvstore::ResultCode::ERR_SPACE_NOT_FOUND:
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
+        case kvstore::ResultCode::ERR_PART_NOT_FOUND:
             return cpp2::ErrorCode::E_NOT_FOUND;
         case kvstore::ResultCode::ERR_LEADER_CHANGED:
             return cpp2::ErrorCode::E_LEADER_CHANGED;

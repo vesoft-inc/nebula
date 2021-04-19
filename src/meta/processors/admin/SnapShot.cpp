@@ -4,8 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "meta/processors/admin/SnapShot.h"
-#include <cstdlib>
+#include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
@@ -13,14 +14,20 @@
 
 namespace nebula {
 namespace meta {
+
 ErrorOr<cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>>>
 Snapshot::createSnapshot(const std::string& name) {
-    auto retSpacesHosts = getSpacesHosts();
-    if (!retSpacesHosts.ok()) {
-        return cpp2::ErrorCode::E_STORE_FAILURE;
+    auto retSpacesHostsRet = getSpacesHosts();
+    if (!nebula::ok(retSpacesHostsRet)) {
+        auto retcode = nebula::error(retSpacesHostsRet);
+        if (retcode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retcode = cpp2::ErrorCode::E_STORE_FAILURE;
+        }
+        return retcode;
     }
+
+    auto spacesHosts = nebula::value(retSpacesHostsRet);
     std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>> info;
-    auto spacesHosts = retSpacesHosts.value();
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
             auto status = client_->createSnapshot(spaceHosts.first, name, host).get();
@@ -36,11 +43,16 @@ Snapshot::createSnapshot(const std::string& name) {
 
 cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                        const std::vector<HostAddr>& hosts) {
-    auto retSpacesHosts = getSpacesHosts();
-    if (!retSpacesHosts.ok()) {
-        return cpp2::ErrorCode::E_STORE_FAILURE;
+    auto retSpacesHostsRet = getSpacesHosts();
+    if (!nebula::ok(retSpacesHostsRet)) {
+        auto retcode = nebula::error(retSpacesHostsRet);
+        if (retcode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retcode = cpp2::ErrorCode::E_STORE_FAILURE;
+        }
+        return retcode;
     }
-    auto spacesHosts = retSpacesHosts.value();
+
+    auto spacesHosts = nebula::value(retSpacesHostsRet);
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
             if (std::find(hosts.begin(), hosts.end(), host) != hosts.end()) {
@@ -60,18 +72,23 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
 }
 
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    auto retSpacesHosts = getSpacesHosts();
-    if (!retSpacesHosts.ok()) {
-        return cpp2::ErrorCode::E_STORE_FAILURE;
+    auto retSpacesHostsRet = getSpacesHosts();
+    if (!nebula::ok(retSpacesHostsRet)) {
+        auto retcode = nebula::error(retSpacesHostsRet);
+        if (retcode != cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retcode = cpp2::ErrorCode::E_STORE_FAILURE;
+        }
+        return retcode;
     }
-    auto spacesHosts = retSpacesHosts.value();
+
+    auto spacesHosts = nebula::value(retSpacesHostsRet);
     auto ret = cpp2::ErrorCode::SUCCEEDED;
     for (const auto& spaceHosts : spacesHosts) {
         for (const auto& host : spaceHosts.second) {
             LOG(INFO) << "will block write host: " << host;
             auto status = client_->blockingWrites(spaceHosts.first, sign, host).get();
             if (!status.ok()) {
-                LOG(ERROR) << " Send blocking sign error on host : " << host;
+                LOG(ERROR) << "Send blocking sign error on host : " << host;
                 ret = cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
                 if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
                     break;
@@ -82,16 +99,21 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     return ret;
 }
 
-StatusOr<std::map<GraphSpaceID, std::set<HostAddr>>> Snapshot::getSpacesHosts() {
+ErrorOr<cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>>
+Snapshot::getSpacesHosts() {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    std::map<GraphSpaceID, std::set<HostAddr>> hostsByspaces;
-    auto prefix = MetaServiceUtils::partPrefix();
+    const auto& prefix = MetaServiceUtils::partPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Get hosts meta data error";
-        return Status::Error("Get hosts meta data error");
+        auto retCode = MetaCommon::to(kvRet);
+        LOG(ERROR) << "Get hosts meta data failed, error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
     }
+
+    std::map<GraphSpaceID, std::set<HostAddr>> hostsByspaces;
+
     for (; iter->valid(); iter->next()) {
         auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
         auto space = MetaServiceUtils::parsePartKeySpaceId(iter->key());

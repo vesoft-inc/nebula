@@ -32,10 +32,14 @@ TEST(HBProcessorTest, HBTest) {
             auto resp = std::move(f).get();
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         }
-        auto hosts = ActiveHostsMan::getActiveHosts(kv.get(), 1);
-        ASSERT_EQ(5, hosts.size());
+
+        auto hostsRet =  ActiveHostsMan::getActiveHosts(kv.get(), 1);;
+        ASSERT_TRUE(nebula::ok(hostsRet));
+        ASSERT_EQ(5, nebula::value(hostsRet).size());
         sleep(3);
-        ASSERT_EQ(0, ActiveHostsMan::getActiveHosts(kv.get(), 1).size());
+        hostsRet =  ActiveHostsMan::getActiveHosts(kv.get(), 1);;
+        ASSERT_TRUE(nebula::ok(hostsRet));
+        ASSERT_EQ(0, nebula::value(hostsRet).size());
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;

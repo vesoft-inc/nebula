@@ -13,6 +13,7 @@
 #include <folly/SpinLock.h>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "storage/CommonUtils.h"
 #include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
