@@ -9,7 +9,7 @@
 #include "util/AnonColGenerator.h"
 #include "util/AnonVarGenerator.h"
 #include "util/ExpressionUtils.h"
-#include "visitor/FindAnySubExprVisitor.h"
+#include "visitor/FindVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -147,13 +147,22 @@ Status GroupByValidator::groupClauseSemanticCheck() {
         groupKeys_ = yieldCols_;
     } else {
         std::unordered_set<Expression*> groupSet(groupKeys_.begin(), groupKeys_.end());
+        auto finder = [](const Expression* expr,
+                         const std::unordered_set<Expression*>& targets) -> bool {
+            for (auto* target : targets) {
+                if (*target == *expr) {
+                    return true;
+                }
+            }
+            return false;
+        };
         for (auto* expr : yieldCols_) {
             if (evaluableExpr(expr)) {
                 continue;
             }
-            FindAnySubExprVisitor groupVisitor(groupSet, true);
-            expr->accept(&groupVisitor);
-            if (!groupVisitor.found()) {
+            FindVisitor<Expression*> visitor(finder, groupSet);
+            expr->accept(&visitor);
+            if (!visitor.found()) {
                 return Status::SemanticError("Yield non-agg expression `%s' must be"
                                              " functionally dependent on items in GROUP BY clause",
                                              expr->toString().c_str());

@@ -17,9 +17,8 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
-#include "visitor/CollectAllExprsVisitor.h"
 #include "visitor/EvaluableExprVisitor.h"
-#include "visitor/FindAnyExprVisitor.h"
+#include "visitor/FindVisitor.h"
 #include "visitor/RewriteVisitor.h"
 
 namespace nebula {
@@ -37,9 +36,23 @@ public:
     // null for not found
     static const Expression* findAny(const Expression* self,
                                      const std::unordered_set<Expression::Kind>& expected) {
-        FindAnyExprVisitor visitor(expected);
+        auto finder = [](const Expression* expr,
+                         const std::unordered_set<Expression::Kind>& targets) -> bool {
+            if (targets.find(expr->kind()) != targets.end()) {
+                return true;
+            }
+            return false;
+        };
+        FindVisitor<Expression::Kind> visitor(finder, expected);
         const_cast<Expression*>(self)->accept(&visitor);
-        return visitor.expr();
+        auto res = visitor.results();
+
+        if (res.size() == 1) {
+            // findAny only produce one result
+            return res.front();
+        }
+
+        return nullptr;
     }
 
     // Find all expression fit any kind
@@ -47,9 +60,16 @@ public:
     static std::vector<const Expression*> collectAll(
         const Expression* self,
         const std::unordered_set<Expression::Kind>& expected) {
-        CollectAllExprsVisitor visitor(expected);
+        auto finder = [](const Expression* expr,
+                         const std::unordered_set<Expression::Kind>& targets) -> bool {
+            if (targets.find(expr->kind()) != targets.end()) {
+                return true;
+            }
+            return false;
+        };
+        FindVisitor<Expression::Kind> visitor(finder, expected, true);
         const_cast<Expression*>(self)->accept(&visitor);
-        return std::move(visitor).exprs();
+        return std::move(visitor).results();
     }
 
     static bool hasAny(const Expression* expr,

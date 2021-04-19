@@ -1,11 +1,11 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_FINDANYEXPRVISITOR_H_
-#define VISITOR_FINDANYEXPRVISITOR_H_
+#ifndef VISITOR_FINDVISITOR_H_
+#define VISITOR_FINDVISITOR_H_
 
 #include <unordered_set>
 
@@ -14,18 +14,37 @@
 
 namespace nebula {
 namespace graph {
-
-class FindAnyExprVisitor final : public ExprVisitorImpl {
+template <typename T>
+class FindVisitor final : public ExprVisitorImpl {
 public:
-    explicit FindAnyExprVisitor(const std::unordered_set<Expression::Kind>& kinds);
+    using Finder = std::function<bool(Expression*, const std::unordered_set<T>&)>;
 
-    bool ok() const override {
-        // continue if not found
-        return !found_;
+    explicit FindVisitor(Finder finder,
+                         const std::unordered_set<T>& targets,
+                         bool needFindAll = false)
+        : finder_(finder), targets_(targets), needFindAll_(needFindAll) {
+        DCHECK(!targets_.empty());
     }
 
-    const Expression* expr() const {
-        return expr_;
+    bool ok() const override {
+        // TODO: delete this interface
+        return true;
+    }
+
+    bool needFindAll() const {
+        return needFindAll_;
+    }
+
+    void setNeedFindAll(bool needFindAll) {
+        needFindAll_ = needFindAll;
+    }
+
+    bool found() const {
+        return found_;
+    }
+
+    std::vector<const Expression*> results() const {
+        return foundExprs_;
     }
 
 private:
@@ -57,6 +76,7 @@ private:
     void visit(VariableExpression* expr) override;
     void visit(VersionedVariableExpression* expr) override;
     void visit(LabelExpression* expr) override;
+    void visit(LabelAttributeExpression* expr) override;
     void visit(VertexExpression* expr) override;
     void visit(EdgeExpression* expr) override;
     void visit(ColumnExpression* expr) override;
@@ -64,14 +84,23 @@ private:
 
     void visitBinaryExpr(BinaryExpression* expr) override;
 
-    void findExpr(const Expression* expr);
+    void findInCurrentExpr(Expression* expr);
+
+    bool find(Expression* expr) {
+        return finder_(expr, targets_);
+    }
+
+private:
+    Finder finder_;
+    const std::unordered_set<T> targets_;
+    bool needFindAll_;
 
     bool found_{false};
-    const Expression* expr_{nullptr};
-    const std::unordered_set<Expression::Kind>& kinds_;
+    std::vector<const Expression*> foundExprs_;
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_FINDANYEXPRVISITOR_H_
+#include "visitor/FindVisitor.inl"
+#endif   // VISITOR_FINDVISITOR_H_
