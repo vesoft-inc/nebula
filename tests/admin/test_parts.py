@@ -60,8 +60,4 @@ class TestParts(NebulaTestSuite):
 
         # Not exist part id
         resp = self.client.execute('SHOW PART 10')
-        self.check_resp_succeeded(resp)
-        expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
-        self.check_column_names(resp, expected_col_names)
-        expected_result = []
-        self.check_result(resp, expected_result)
+        self.check_resp_failed(resp)

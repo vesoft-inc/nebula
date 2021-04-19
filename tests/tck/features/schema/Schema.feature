@@ -301,7 +301,7 @@ Feature: Insert string vid of vertex and edge
       """
       DESCRIBE EDGE not_exist
       """
-    Then a ExecutionError should be raised at runtime: Unknown error!
+    Then a ExecutionError should be raised at runtime: Not existed!
     # create edge with timestamp
     When executing query:
       """
