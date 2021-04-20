@@ -38,8 +38,6 @@ public:
     static Value boundValueWithMin(const meta::cpp2::ColumnDef& col);
 
     static Value normalizeValue(const meta::cpp2::ColumnDef& col, const Value& v);
-
-    static constexpr double kEpsilon = 0.0000000000000001;
 };
 
 }  // namespace graph

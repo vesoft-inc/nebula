@@ -380,6 +380,20 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
         }
         {
             std::vector<storage::cpp2::IndexColumnHint> hints;
+            // col_double <= 3.0
+            IndexScanRule::FilterItems items;
+            items.addItem("col_double", RelationalExpression::Kind::kRelLE, Value(3.0));
+            auto status = instance->appendColHint(hints, items, col);
+            EXPECT_TRUE(status.ok());
+            EXPECT_EQ(1, hints.size());
+            const auto& hint = hints[0];
+            EXPECT_EQ("col_double", *hint.column_name_ref());
+            EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+            EXPECT_EQ(-std::numeric_limits<double>::max(), *hint.begin_value_ref());
+            EXPECT_EQ(3 + kEpsilon, *hint.end_value_ref());
+        }
+        {
+            std::vector<storage::cpp2::IndexColumnHint> hints;
             // col_double >= 1.0
             IndexScanRule::FilterItems items;
             items.addItem("col_double", RelationalExpression::Kind::kRelGE, Value(1.0));
@@ -404,8 +418,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
             const auto& hint = hints[0];
             EXPECT_EQ("col_double", *hint.column_name_ref());
             EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-            EXPECT_EQ(1 + OptimizerUtils::kEpsilon, *hint.begin_value_ref());
-            EXPECT_EQ(5 - OptimizerUtils::kEpsilon, *hint.end_value_ref());
+            EXPECT_EQ(1 + kEpsilon, *hint.begin_value_ref());
+            EXPECT_EQ(5 + kEpsilon, *hint.end_value_ref());
         }
     }
     {

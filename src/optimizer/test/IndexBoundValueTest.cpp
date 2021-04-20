@@ -115,14 +115,14 @@ TEST(IndexBoundValueTest, DoubleTest) {
 
     EXPECT_EQ(0.0,
               OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(-minDouble)).getFloat());
-    EXPECT_EQ(maxDouble - 0.0000000000000001,
+    EXPECT_EQ(maxDouble - kEpsilon,
               OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(maxDouble)).getFloat());
     EXPECT_EQ(-minDouble, OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(0.0)).getFloat());
 
-    EXPECT_EQ(5.1 - 0.0000000000000001,
+    EXPECT_EQ(5.1 - kEpsilon,
               OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(5.1)));
 
-    EXPECT_EQ(-(5.1 + 0.0000000000000001),
+    EXPECT_EQ(-(5.1 + kEpsilon),
               OptimizerUtils::boundValue(col, OP::LESS_THAN, Value(-5.1)));
 
     EXPECT_EQ(maxDouble,
@@ -132,10 +132,10 @@ TEST(IndexBoundValueTest, DoubleTest) {
 
     EXPECT_EQ(minDouble, OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(0.0)).getFloat());
 
-    EXPECT_EQ(5.1 + 0.0000000000000001,
+    EXPECT_EQ(5.1 + kEpsilon,
               OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(5.1)).getFloat());
 
-    EXPECT_EQ(-(5.1 - 0.0000000000000001),
+    EXPECT_EQ(-(5.1 - kEpsilon),
               OptimizerUtils::boundValue(col, OP::GREATER_THAN, Value(-5.1)).getFloat());
 }
 
