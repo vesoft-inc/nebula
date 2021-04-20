@@ -406,8 +406,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
         auto* processor = DeleteEdgesProcessor::instance(RebuildIndexTest::env_, nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        std::move(fut).get();
     };
 
     // Add Edges
@@ -468,8 +467,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
         cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(true);
         auto fut = processor->getFuture();
         processor->process(req);
-        auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_parts.size());
+        std::move(fut).get();
     };
     writer->addTask(appendEdges);
 

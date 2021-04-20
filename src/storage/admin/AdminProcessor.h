@@ -58,7 +58,6 @@ public:
         if (partMeta.hosts_.size() == 1) {
             LOG(INFO) << "Skip transfer leader of space " << spaceId
                       << ", part " << partId << " because of single replica.";
-            this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
             onFinished();
             return;
         }
