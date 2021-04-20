@@ -161,6 +161,7 @@ TEST(ProcessorTest, ListPartsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(9, (*resp.parts_ref()).size());
 
         auto parts = std::move((*resp.parts_ref()));
@@ -175,6 +176,38 @@ TEST(ProcessorTest, ListPartsTest) {
             EXPECT_EQ(3, (*part.peers_ref()).size());
             EXPECT_EQ(0, (*part.losts_ref()).size());
         }
+    }
+
+    // List specified part, and part exists
+    {
+        cpp2::ListPartsReq req;
+        req.set_space_id(1);
+        req.set_part_ids({9});
+        auto* processor = ListPartsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto parts = std::move((*resp.parts_ref()));
+        ASSERT_EQ(1, parts.size());
+
+        PartitionID partId = 9;
+        EXPECT_EQ(partId, parts[0].get_part_id());
+        EXPECT_FALSE(parts[0].leader_ref().has_value());
+        EXPECT_EQ(3, (*parts[0].peers_ref()).size());
+        EXPECT_EQ(0, (*parts[0].losts_ref()).size());
+    }
+
+    // List specified part, and part not exist
+    {
+        cpp2::ListPartsReq req;
+        req.set_space_id(1);
+        req.set_part_ids({11});
+        auto* processor = ListPartsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 
     // register HB with leader distribution
@@ -1254,6 +1287,19 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
                       cols[i].get_type().get_type());
         }
     }
+
+    // Test GetTagProcessor with not exist tagName
+    {
+        cpp2::GetTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_1");
+
+        auto* processor = GetTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
 }
 
 
@@ -1329,6 +1375,19 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             ASSERT_EQ((i < 1 ? PropertyType::INT64 : PropertyType::FIXED_STRING),
                       cols[i].get_type().get_type());
         }
+    }
+
+    // Test GetEdgeProcessor with not exist edgeName
+    {
+        cpp2::GetEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_10");
+
+        auto* processor = GetEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
 
