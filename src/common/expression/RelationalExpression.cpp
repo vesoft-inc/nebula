@@ -49,7 +49,9 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Kind::kRelIn: {
-            if (rhs.isList()) {
+            if (rhs.isNull() && !rhs.isBadNull()) {
+                result_ = Value::kNullValue;
+            } else if (rhs.isList()) {
                 auto& list = rhs.getList();
                 result_ = list.contains(lhs);
                 if (UNLIKELY(result_.isBool() &&
@@ -83,7 +85,9 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Kind::kRelNotIn: {
-            if (rhs.isList()) {
+            if (rhs.isNull() && !rhs.isBadNull()) {
+                result_ = Value::kNullValue;
+            } else if (rhs.isList()) {
                 auto& list = rhs.getList();
                 result_ = !list.contains(lhs);
                 if (UNLIKELY(result_.isBool() &&
