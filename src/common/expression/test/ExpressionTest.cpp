@@ -2696,6 +2696,42 @@ TEST_F(ExpressionTest, RelationRegexMatch) {
         EXPECT_EQ(eval.type(), Value::Type::BOOL);
         EXPECT_EQ(eval, false);
     }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kRelREG,
+                new ConstantExpression(Value::kNullBadData),
+                new ConstantExpression(Value::kNullBadType));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kRelREG,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression(3));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kRelREG,
+                new ConstantExpression(3),
+                new ConstantExpression(true));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kRelREG,
+                new ConstantExpression("abc"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
 }
 
 TEST_F(ExpressionTest, RelationContains) {

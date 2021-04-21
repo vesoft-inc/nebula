@@ -35,7 +35,13 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             result_ = !lhs.lessThan(rhs) || lhs.equal(rhs);
             break;
         case Kind::kRelREG: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isNull() || rhs.isNull()) {
+                result_ = Value::kNullValue;
+            } else {
                 try {
                     const auto& r = ctx.getRegex(rhs.getStr());
                     result_ = std::regex_match(lhs.getStr(), r);
@@ -43,8 +49,6 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
                     LOG(ERROR) << "Regex match error: " << ex.what();
                     result_ = Value::kNullBadType;
                 }
-            } else {
-                result_ = Value::kNullBadType;
             }
             break;
         }
