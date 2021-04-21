@@ -2878,6 +2878,42 @@ TEST_F(ExpressionTest, RelationStartsWith) {
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
         EXPECT_EQ(eval, Value::kNullBadType);
     }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kStartsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kStartsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kStartsWith,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kStartsWith,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
 }
 
 TEST_F(ExpressionTest, RelationNotStartsWith) {
@@ -2970,6 +3006,42 @@ TEST_F(ExpressionTest, RelationNotStartsWith) {
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
         EXPECT_EQ(eval, Value::kNullBadType);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotStartsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotStartsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotStartsWith,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotStartsWith,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
     }
 }
 
@@ -3084,6 +3156,42 @@ TEST_F(ExpressionTest, RelationEndsWith) {
         EXPECT_EQ(eval.type(), Value::Type::BOOL);
         EXPECT_EQ(eval, true);
     }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kEndsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kEndsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kEndsWith,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kEndsWith,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
 }
 
 TEST_F(ExpressionTest, RelationNotEndsWith) {
@@ -3187,6 +3295,42 @@ TEST_F(ExpressionTest, RelationNotEndsWith) {
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
         EXPECT_EQ(eval, Value::kNullBadType);
     }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotEndsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotEndsWith,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotEndsWith,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotEndsWith,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
 }
 
 TEST_F(ExpressionTest, ContainsToString) {
@@ -3198,6 +3342,42 @@ TEST_F(ExpressionTest, ContainsToString) {
                 new ConstantExpression("a"));
         ASSERT_EQ("(\"abc\" CONTAINS \"a\")", expr.toString());
     }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kContains,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
 }
 
 TEST_F(ExpressionTest, NotContainsToString) {
@@ -3208,6 +3388,42 @@ TEST_F(ExpressionTest, NotContainsToString) {
                 new ConstantExpression("abc"),
                 new ConstantExpression("a"));
         ASSERT_EQ("(\"abc\" NOT CONTAINS \"a\")", expr.toString());
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotContains,
+                new ConstantExpression(1234),
+                new ConstantExpression(Value::kNullBadData));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotContains,
+                new ConstantExpression(1234),
+                new ConstantExpression("1234"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), true);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotContains,
+                new ConstantExpression(Value::kNullValue),
+                new ConstantExpression("NULL"));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
+    }
+    {
+        RelationalExpression expr(
+                Expression::Kind::kNotContains,
+                new ConstantExpression("Null"),
+                new ConstantExpression(Value::kNullValue));
+        auto eval = Expression::eval(&expr, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
+        EXPECT_EQ(eval.isBadNull(), false);
     }
 }
 

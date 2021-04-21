@@ -39,9 +39,7 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
                 result_ = Value::kNullBadType;
             } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
                 result_ = Value::kNullBadType;
-            } else if (lhs.isNull() || rhs.isNull()) {
-                result_ = Value::kNullValue;
-            } else {
+            } else if (lhs.isStr() && rhs.isStr()) {
                 try {
                     const auto& r = ctx.getRegex(rhs.getStr());
                     result_ = std::regex_match(lhs.getStr(), r);
@@ -49,6 +47,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
                     LOG(ERROR) << "Regex match error: " << ex.what();
                     result_ = Value::kNullBadType;
                 }
+            } else {
+                result_ = Value::kNullValue;
             }
             break;
         }
@@ -125,58 +125,84 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Kind::kContains: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().find(rhs.getStr()) != std::string::npos;
+                          lhs.getStr().find(rhs.getStr()) != std::string::npos;
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kNotContains: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().find(rhs.getStr()) != std::string::npos);
+                            lhs.getStr().find(rhs.getStr()) != std::string::npos);
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kStartsWith: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().find(rhs.getStr()) == 0;
+                          lhs.getStr().find(rhs.getStr()) == 0;
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kNotStartsWith: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().find(rhs.getStr()) == 0);
+                            lhs.getStr().find(rhs.getStr()) == 0);
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kEndsWith: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
-                    rhs.getStr().size(), rhs.getStr()) == 0;
+                          lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
+                                               rhs.getStr().size(),
+                                               rhs.getStr()) == 0;
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
         case Kind::kNotEndsWith: {
-            if (lhs.isStr() && rhs.isStr()) {
+            if (lhs.isBadNull() || rhs.isBadNull()) {
+                result_ = Value::kNullBadType;
+            } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+                result_ = Value::kNullBadType;
+            } else if (lhs.isStr() && rhs.isStr()) {
                 result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
-                    lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
-                    rhs.getStr().size(), rhs.getStr()) == 0);
+                            lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
+                                                 rhs.getStr().size(),
+                                                 rhs.getStr()) == 0);
             } else {
-                return Value::kNullBadType;
+                result_ = Value::kNullValue;
             }
             break;
         }
