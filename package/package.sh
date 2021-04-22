@@ -88,6 +88,7 @@ function _build_storage {
         git clone --single-branch --branch ${branch} https://github.com/vesoft-inc/nebula-storage.git ${storage_dir}
     fi
 
+    pushd ${storage_build_dir}
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
           -DENABLE_ASAN=${san} \
@@ -98,17 +99,18 @@ function _build_storage {
           -DNEBULA_COMMON_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
           -DENABLE_PACK_ONE=${package_one} \
-          -S ${storage_dir} \
-          -B ${storage_build_dir}
+          ${storage_dir}
 
-    if ! ( cmake --build ${storage_build_dir} -j ${jobs} ); then
+    if ! ( make -j ${jobs} ); then
         echo ">>> build nebula storage failed <<<"
         exit 1
     fi
+    popd
     echo ">>> build nebula storage successfully <<<"
 }
 
 function _build_graph {
+    pushd ${build_dir}
     cmake -DCMAKE_BUILD_TYPE=${build_type} \
           -DNEBULA_BUILD_VERSION=${version} \
           -DENABLE_ASAN=${san} \
@@ -120,13 +122,13 @@ function _build_graph {
           -DENABLE_TESTING=OFF \
           -DENABLE_BUILD_STORAGE=OFF \
           -DENABLE_PACK_ONE=${package_one} \
-          -S ${project_dir} \
-          -B ${build_dir}
+          ${project_dir}
 
-    if ! ( cmake --build ${build_dir} -j ${jobs} ); then
+    if ! ( make -j ${jobs} ); then
         echo ">>> build nebula graph failed <<<"
         exit 1
     fi
+    popd
     echo ">>> build nebula graph successfully <<<"
 }
 
