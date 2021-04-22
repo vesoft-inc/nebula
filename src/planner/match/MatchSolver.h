@@ -35,12 +35,14 @@ public:
 
     static Expression* makeIndexFilter(const std::string& label,
                                        const MapExpression* map,
-                                       QueryContext* qctx);
+                                       QueryContext* qctx,
+                                       bool isEdgeProperties = false);
 
     static Expression* makeIndexFilter(const std::string& label,
                                        const std::string& alias,
                                        Expression* filter,
-                                       QueryContext* qctx);
+                                       QueryContext* qctx,
+                                       bool isEdgeProperties = false);
 
     static void extractAndDedupVidColumn(QueryContext* qctx,
                                          Expression* initialExpr,

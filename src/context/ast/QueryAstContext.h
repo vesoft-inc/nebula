@@ -48,7 +48,7 @@ struct EdgeInfo {
     MatchStepRange                         *range{nullptr};
     std::vector<EdgeType>                   edgeTypes;
     MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
-    std::vector<std::string>                types;
+    std::vector<const std::string*>         types;
     const std::string                      *alias{nullptr};
     const MapExpression                    *props{nullptr};
     Expression                             *filter{nullptr};
@@ -64,6 +64,8 @@ struct ScanInfo {
     std::vector<const std::string*>         schemaNames;
     // use for seek by index itself
     std::vector<IndexID>                    indexIds;
+    // use for seek by edge only
+    MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
 };
 
 struct CypherClauseContextBase : AstContext {
@@ -175,6 +177,11 @@ struct EdgeContext final : PatternContext {
         : PatternContext(PatternKind::kEdge, m), info(i) {}
 
     EdgeInfo* info{nullptr};
+
+    // Output fields
+    ScanInfo                    scanInfo;
+    // initialize start expression in project node
+    std::unique_ptr<Expression> initialExpr;
 };
 }  // namespace graph
 }  // namespace nebula

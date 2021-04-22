@@ -75,6 +75,29 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
     }
 }
 
+TEST_F(MatchValidatorTest, SeekByEdgeIndex) {
+    // empty properties index
+    {
+        std::string query = "MATCH (v1)-[:like]->(v2) RETURN id(v1), id(v2);";
+        std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kFilter,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kInnerJoin,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kGetVertices,
+                                                PlanNode::Kind::kDedup,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kFilter,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kGetNeighbors,
+                                                PlanNode::Kind::kDedup,
+                                                PlanNode::Kind::kProject,
+                                                PlanNode::Kind::kIndexScan,
+                                                PlanNode::Kind::kStart};
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 TEST_F(MatchValidatorTest, groupby) {
     {
         std::string query = "MATCH(n:person)"

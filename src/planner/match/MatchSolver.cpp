@@ -85,17 +85,26 @@ Expression* MatchSolver::doRewrite(const std::unordered_map<std::string, AliasTy
 
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const MapExpression* map,
-                                         QueryContext* qctx) {
+                                         QueryContext* qctx,
+                                         bool isEdgeProperties) {
     auto& items = map->items();
     Expression* root = new RelationalExpression(
         Expression::Kind::kRelEQ,
-        new TagPropertyExpression(new std::string(label), new std::string(*items[0].first)),
+        isEdgeProperties ?
+            static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
+                                                                new std::string(*items[0].first))) :
+            static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
+                                                               new std::string(*items[0].first))),
         items[0].second->clone().release());
     for (auto i = 1u; i < items.size(); i++) {
         auto* left = root;
         auto* right = new RelationalExpression(
             Expression::Kind::kRelEQ,
-            new TagPropertyExpression(new std::string(label), new std::string(*items[i].first)),
+            isEdgeProperties ?
+                static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
+                                                                new std::string(*items[i].first))) :
+                static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
+                                                                 new std::string(*items[i].first))),
             items[i].second->clone().release());
         root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
     }
@@ -105,7 +114,8 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const std::string& alias,
                                          Expression* filter,
-                                         QueryContext* qctx) {
+                                         QueryContext* qctx,
+                                         bool isEdgeProperties) {
     static const std::unordered_set<Expression::Kind> kinds = {
         Expression::Kind::kRelEQ,
         Expression::Kind::kRelLT,
@@ -155,10 +165,13 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
             continue;
         }
 
-        const auto& value = la->right()->value();
-        auto* tpExpr =
-            new TagPropertyExpression(new std::string(label), new std::string(value.getStr()));
-        auto* newConstant = constant->clone().release();
+        const auto &value = la->right()->value();
+        auto *tpExpr = isEdgeProperties ?
+                       static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
+                                                                 new std::string(value.getStr()))) :
+                       static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
+                                                                  new std::string(value.getStr())));
+        auto *newConstant = constant->clone().release();
         if (left->kind() == Expression::Kind::kLabelAttribute) {
             auto* rel = new RelationalExpression(item->kind(), tpExpr, newConstant);
             relationals.emplace_back(rel);

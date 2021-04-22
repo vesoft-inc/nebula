@@ -13,19 +13,110 @@
 namespace nebula {
 namespace graph {
 bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
-    UNUSED(edgeCtx);
-    return false;
+    auto& edge = *edgeCtx->info;
+    if (edge.types.size() != 1 || edge.range != nullptr) {
+        // TODO multiple edge index seek need the IndexScan support
+        VLOG(2) << "Multiple edge index seek and variable length edge seek are not supported now.";
+        return false;
+    }
+
+    auto* matchClauseCtx = edgeCtx->matchClauseCtx;
+    Expression* filter = nullptr;
+    if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
+        filter = MatchSolver::makeIndexFilter(*edge.types.back(),
+                                              *edge.alias,
+                                               matchClauseCtx->where->filter,
+                                               matchClauseCtx->qctx,
+                                               true);
+    }
+    if (filter == nullptr) {
+        if (edge.props != nullptr && !edge.props->items().empty()) {
+            filter = MatchSolver::makeIndexFilter(*edge.types.back(),
+                                                   edge.props,
+                                                   matchClauseCtx->qctx,
+                                                   true);
+        }
+    }
+
+    if (filter == nullptr) {
+        return false;
+    }
+
+    edgeCtx->scanInfo.filter = filter;
+    edgeCtx->scanInfo.schemaIds = edge.edgeTypes;
+    edgeCtx->scanInfo.schemaNames = edge.types;
+    edgeCtx->scanInfo.direction = edge.direction;
+
+    return true;
 }
 
 StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
-    UNUSED(edgeCtx);
-    return Status::Error("Unimplement for edge pattern.");
+    SubPlan plan;
+    auto* matchClauseCtx = edgeCtx->matchClauseCtx;
+    DCHECK_EQ(edgeCtx->scanInfo.schemaIds.size(), 1) <<
+        "Not supported multiple edge properties seek.";
+    using IQC = nebula::storage::cpp2::IndexQueryContext;
+    IQC iqctx;
+    iqctx.set_filter(Expression::encode(*edgeCtx->scanInfo.filter));
+    auto contexts = std::make_unique<std::vector<IQC>>();
+    contexts->emplace_back(std::move(iqctx));
+    auto columns = std::make_unique<std::vector<std::string>>();
+    std::vector<std::string> columnsName;
+    switch (edgeCtx->scanInfo.direction) {
+        case MatchEdge::Direction::OUT_EDGE:
+            columns->emplace_back(kSrc);
+            columnsName.emplace_back(kVid);
+            break;
+        case MatchEdge::Direction::IN_EDGE:
+            columns->emplace_back(kDst);
+            columnsName.emplace_back(kVid);
+            break;
+        case MatchEdge::Direction::BOTH:
+            columns->emplace_back(kSrc);
+            columns->emplace_back(kDst);
+            columnsName.emplace_back(kSrc);
+            columnsName.emplace_back(kDst);
+            break;
+    }
+    auto scan = IndexScan::make(matchClauseCtx->qctx,
+                                nullptr,
+                                matchClauseCtx->space.id,
+                                std::move(contexts),
+                                std::move(columns),
+                                true,
+                                edgeCtx->scanInfo.schemaIds.back());
+    scan->setColNames(columnsName);
+    plan.tail = scan;
+    plan.root = scan;
+
+    if (edgeCtx->scanInfo.direction == MatchEdge::Direction::BOTH) {
+        // merge the src,dst to one column
+        auto *yieldColumns = matchClauseCtx->qctx->objPool()->makeAndAdd<YieldColumns>();
+        auto *exprList = new ExpressionList();
+        exprList->add(new ColumnExpression(0));  // src
+        exprList->add(new ColumnExpression(1));  // dst
+        yieldColumns->addColumn(new YieldColumn(new ListExpression(exprList)));
+        auto *project = Project::make(matchClauseCtx->qctx,
+                                      scan,
+                                      yieldColumns);
+        project->setColNames({kVid});
+        auto *unwindColumns = matchClauseCtx->qctx->objPool()->makeAndAdd<YieldColumns>();
+        unwindColumns->addColumn(new YieldColumn(new ColumnExpression(0)));
+        auto *unwind = Unwind::make(matchClauseCtx->qctx, project, unwindColumns);
+        unwind->setColNames({kVid});
+        plan.root = unwind;
+    }
+
+    // initialize start expression in project edge
+    edgeCtx->initialExpr = std::unique_ptr<Expression>(ExpressionUtils::newVarPropExpr(kVid));
+    return plan;
 }
 
 bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     auto& node = *nodeCtx->info;
     if (node.labels.size() != 1) {
         // TODO multiple tag index seek need the IndexScan support
+        VLOG(2) << "Multple tag index seek is not supported now.";
         return false;
     }
 

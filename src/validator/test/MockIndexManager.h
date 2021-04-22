@@ -49,8 +49,11 @@ public:
     }
 
     StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) override {
-        UNUSED(space);
-        LOG(FATAL) << "Unimplemented";
+        auto fd = edgeIndexes_.find(space);
+        if (fd == edgeIndexes_.end()) {
+            return Status::Error("No space for index");
+        }
+        return fd->second;
     }
 
     StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override {
@@ -80,6 +83,7 @@ public:
 private:
     // index related
     std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
+    std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
 };
 
 }   // namespace graph

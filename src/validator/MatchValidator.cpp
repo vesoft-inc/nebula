@@ -249,7 +249,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
                     return Status::SemanticError("`%s': Unknown edge type", type->c_str());
                 }
                 edgeInfos[i].edgeTypes.emplace_back(etype.value());
-                edgeInfos[i].types.emplace_back(*type);
+                edgeInfos[i].types.emplace_back(type.get());
             }
         } else {
             const auto allEdgesResult =

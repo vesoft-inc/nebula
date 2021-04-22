@@ -34,6 +34,8 @@ private:
 
     static StatusOr<std::vector<IndexID>> pickTagIndex(const NodeContext* nodeCtx);
 
+    static StatusOr<std::vector<IndexID>> pickEdgeIndex(const EdgeContext* edgeCtx);
+
     static std::shared_ptr<meta::cpp2::IndexItem> selectIndex(
         const std::shared_ptr<meta::cpp2::IndexItem> candidate,
         const std::shared_ptr<meta::cpp2::IndexItem> income) {

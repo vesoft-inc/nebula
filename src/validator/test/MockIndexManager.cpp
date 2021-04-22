@@ -11,6 +11,8 @@
 // tag index:
 //     person()
 //     book(name(32))
+// edge index:
+//    like()
 
 namespace nebula {
 namespace graph {
@@ -41,11 +43,22 @@ void MockIndexManager::init() {
     book_name_index.set_fields({});
     book_name_index.fields_ref().value().emplace_back(std::move(field));
 
+    meta::cpp2::IndexItem like_index;
+    like_index.set_index_id(235);
+    like_index.set_index_name("like_index");
+    meta::cpp2::SchemaID likeSchemaId;
+    likeSchemaId.set_edge_type(3);
+    like_index.set_schema_id(std::move(likeSchemaId));
+    like_index.set_schema_name("like");
+
     tagIndexes_.emplace(1, std::vector<std::shared_ptr<meta::cpp2::IndexItem>>{});
     tagIndexes_[1].emplace_back(
         std::make_shared<meta::cpp2::IndexItem>(std::move(person_no_props_index)));
     tagIndexes_[1].emplace_back(
         std::make_shared<meta::cpp2::IndexItem>(std::move(book_name_index)));
+    edgeIndexes_.emplace(1, std::vector<std::shared_ptr<meta::cpp2::IndexItem>>{});
+    edgeIndexes_[1].emplace_back(
+        std::make_shared<meta::cpp2::IndexItem>(std::move(like_index)));
 }
 
 }   // namespace graph

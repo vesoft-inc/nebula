@@ -480,11 +480,6 @@ Feature: Basic match
     Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v:player{age:23}:bachelor) RETURN v
     When executing query:
       """
-      MATCH () -[r:serve]-> () return *
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-[r:serve]->() RETURN *
-    When executing query:
-      """
       MATCH () -[]-> (v) return *
       """
     Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v) RETURN *
@@ -493,3 +488,13 @@ Feature: Basic match
       MATCH () --> (v) --> () return *
       """
     Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v)-->() RETURN *
+    When executing query:
+      """
+      MATCH (p)-[:serve*2..3]->(t) RETURN p
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p)-[:serve*2..3]->(t) RETURN p
+    When executing query:
+      """
+      MATCH (p)-[:serve*2..3{likeness: 90}]->(t) RETURN p
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p)-[:serve*2..3{likeness:90}]->(t) RETURN p
