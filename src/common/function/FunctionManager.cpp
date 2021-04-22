@@ -197,8 +197,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"datetime", {TypeSignature({}, Value::Type::DATETIME),
               TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
               TypeSignature({Value::Type::MAP}, Value::Type::DATETIME)}},
-    {"timestamp", {TypeSignature({Value::Type::STRING}, Value::Type::INT),
-                   TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+    {"timestamp", {TypeSignature({}, Value::Type::INT),
+                TypeSignature({Value::Type::STRING}, Value::Type::INT),
+                TypeSignature({Value::Type::INT}, Value::Type::INT)}},
     {"tags", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
              }},
     {"labels", {TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
@@ -1581,9 +1582,13 @@ FunctionManager::FunctionManager() {
     }
     {
         auto &attr = functions_["timestamp"];
-        attr.minArity_ = 1;
+        attr.minArity_ = 0;
         attr.maxArity_ = 1;
+        attr.isPure_ = false;
         attr.body_ = [](const auto &args) -> Value {
+            if (args.size() == 0) {
+                return time::WallClock::fastNowInSec();
+            }
             auto status = time::TimeUtils::toTimestamp(args[0]);
             if (!status.ok()) {
                 return Value::kNullBadData;
