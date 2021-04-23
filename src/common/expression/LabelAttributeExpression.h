@@ -49,7 +49,15 @@ public:
         return lhs_.get();
     }
 
+    LabelExpression* left() {
+        return lhs_.get();
+    }
+
     const ConstantExpression* right() const {
+        return rhs_.get();
+    }
+
+    ConstantExpression* right() {
         return rhs_.get();
     }
 
