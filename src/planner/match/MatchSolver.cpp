@@ -6,6 +6,7 @@
 
 #include "planner/match/MatchSolver.h"
 
+#include "common/expression/UnaryExpression.h"
 #include "context/ast/AstContext.h"
 #include "context/ast/QueryAstContext.h"
 #include "planner/Planner.h"
@@ -87,28 +88,22 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const MapExpression* map,
                                          QueryContext* qctx,
                                          bool isEdgeProperties) {
-    auto& items = map->items();
-    Expression* root = new RelationalExpression(
-        Expression::Kind::kRelEQ,
-        isEdgeProperties ?
-            static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
-                                                                new std::string(*items[0].first))) :
-            static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
-                                                               new std::string(*items[0].first))),
-        items[0].second->clone().release());
-    for (auto i = 1u; i < items.size(); i++) {
-        auto* left = root;
-        auto* right = new RelationalExpression(
-            Expression::Kind::kRelEQ,
-            isEdgeProperties ?
-                static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
-                                                                new std::string(*items[i].first))) :
-                static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
-                                                                 new std::string(*items[i].first))),
-            items[i].second->clone().release());
-        root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
+    auto makePropExpr = [=, &label](const std::string& prop) -> Expression* {
+        if (isEdgeProperties) {
+            return new EdgePropertyExpression(new std::string(label), new std::string(prop));
+        }
+        return new TagPropertyExpression(new std::string(label), new std::string(prop));
+    };
+
+    auto root = qctx->objPool()->makeAndAdd<LogicalExpression>(Expression::Kind::kLogicalAnd);
+    std::vector<std::unique_ptr<Expression>> operands;
+    operands.reserve(map->size());
+    for (const auto& item : map->items()) {
+        operands.emplace_back(new RelationalExpression(
+            Expression::Kind::kRelEQ, makePropExpr(*item.first), item.second->clone().release()));
     }
-    return qctx->objPool()->add(root);
+    root->setOperands(std::move(operands));
+    return root;
 }
 
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
@@ -253,10 +248,9 @@ PlanNode* MatchSolver::filtPathHasSameEdge(PlanNode* input,
     args->addArgument(ExpressionUtils::inputPropExpr(column));
     auto fn = std::make_unique<std::string>("hasSameEdgeInPath");
     auto fnCall = std::make_unique<FunctionCallExpression>(fn.release(), args.release());
-    auto falseConst = std::make_unique<ConstantExpression>(false);
-    auto cond = std::make_unique<RelationalExpression>(
-        Expression::Kind::kRelEQ, fnCall.release(), falseConst.release());
-    auto filter = Filter::make(qctx, input, qctx->objPool()->add(cond.release()));
+    auto pool = qctx->objPool();
+    auto cond = pool->makeAndAdd<UnaryExpression>(Expression::Kind::kUnaryNot, fnCall.release());
+    auto filter = Filter::make(qctx, input, cond);
     filter->setColNames(input->colNames());
     return filter;
 }
