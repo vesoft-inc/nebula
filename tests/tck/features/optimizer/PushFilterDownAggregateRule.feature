@@ -11,10 +11,12 @@ Feature: Push Filter down Aggregate rule
     When profiling query:
       """
       MATCH (v:player)
-      WITH v.age+1 AS age, COUNT(v.age) as count
-        WHERE age<30
-      RETURN age,count
-        ORDER BY age
+      WITH
+        v.age+1 AS age,
+        COUNT(v.age) as count
+      WHERE age<30
+      RETURN age, count
+      ORDER BY age
       """
     Then the result should be, in any order:
       | age | count |
@@ -34,14 +36,13 @@ Feature: Push Filter down Aggregate rule
     And the execution plan should be:
       | id | name        | dependencies | operator info |
       | 13 | DataCollect | 12           |               |
-      | 12 | Sort        | 11           |               |
-      | 11 | Project     | 18           |               |
-      | 18 | Aggregate   | 17           |               |
-      | 17 | Filter      | 8            |               |
+      | 12 | Sort        | 19           |               |
+      | 19 | Aggregate   | 18           |               |
+      | 18 | Filter      | 8            |               |
       | 8  | Filter      | 7            |               |
       | 7  | Project     | 6            |               |
       | 6  | Project     | 5            |               |
-      | 5  | Filter      | 16           |               |
-      | 16 | GetVertices | 14           |               |
+      | 5  | Filter      | 17           |               |
+      | 17 | GetVertices | 14           |               |
       | 14 | IndexScan   | 0            |               |
       | 0  | Start       |              |               |

@@ -79,6 +79,10 @@ public:
         return dependencies_;
     }
 
+    void setDeps(std::vector<OptGroup *> deps) {
+        dependencies_ = deps;
+    }
+
     void addBody(OptGroup *body) {
         bodies_.emplace_back(body);
     }
