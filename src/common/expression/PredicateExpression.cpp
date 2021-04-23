@@ -17,10 +17,13 @@ std::unordered_map<std::string, PredicateExpression::Type> PredicateExpression::
 };
 
 const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
-    DCHECK(collection_->kind() == Expression::Kind::kAttribute);
-    auto* attributeExpr = static_cast<AttributeExpression* >(collection_.get());
+    DCHECK(collection_->kind() == Expression::Kind::kAttribute ||
+           collection_->kind() == Expression::Kind::kSubscript);
+
+    auto* attributeExpr = static_cast<BinaryExpression*>(collection_.get());
     auto& container = attributeExpr->left()->eval(ctx);
     auto& key = attributeExpr->right()->eval(ctx);
+
     switch (container.type()) {
         case Value::Type::VERTEX: {
             result_ = container.getVertex().contains(key);
