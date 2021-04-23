@@ -210,6 +210,10 @@ void FindVisitor<T>::visit(LabelExpression* expr) {
 template <typename T>
 void FindVisitor<T>::visit(LabelAttributeExpression *expr) {
     findInCurrentExpr(expr);
+    if (!needFindAll_ && found_) return;
+    expr->left()->accept(this);
+    if (!needFindAll_ && found_) return;
+    expr->right()->accept(this);
 }
 
 template <typename T>

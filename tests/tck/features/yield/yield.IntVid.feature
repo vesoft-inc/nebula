@@ -308,7 +308,7 @@ Feature: Yield Sentence
       """
       $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team;YIELD a.team
       """
-    Then a SemanticError should be raised at runtime: Not supported expression `a.team' for props deduction.
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: a
     When executing query:
       """
       $var = GO FROM hash("Boris Diaw") OVER like YIELD $-.abc

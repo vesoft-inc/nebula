@@ -348,7 +348,7 @@ Feature: IntegerVid Go  Sentence
       """
       YIELD serve.start_year, like.likeness, serve._type, like._type
       """
-    Then a SemanticError should be raised at runtime: Not supported expression `serve.start_year' for props deduction.
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: serve
     When executing query:
       """
       GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY
