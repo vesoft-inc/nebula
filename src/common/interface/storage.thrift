@@ -84,8 +84,9 @@ enum ErrorCode {
     E_FILTER_OUT             = -81,
     E_INVALID_DATA           = -82,
 
+    E_MUTATE_EDGE_CONFLICT   = -83,
+    E_MUTATE_TAG_CONFLICT    = -84,
     // transaction
-    E_MUTATE_EDGE_CONFLICT   = -85,
     E_OUTDATED_LOCK          = -86,
 
     // task manager failed
