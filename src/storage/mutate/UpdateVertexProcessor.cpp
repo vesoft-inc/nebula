@@ -256,7 +256,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     if (tagContext_.tagNames_.size() != 1 ||
         iter == tagContext_.tagNames_.end()) {
         VLOG(1) << "should only contain one tag in update vertex!";
-        return cpp2::ErrorCode::E_INVALID_UPDATER;
+        return cpp2::ErrorCode::E_MUTATE_TAG_CONFLICT;
     }
 
     planContext_->tagId_ = tagId_;

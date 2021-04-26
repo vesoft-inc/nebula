@@ -261,7 +261,7 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     if (edgeContext_.edgeNames_.size() != 1 ||
         iter == edgeContext_.edgeNames_.end()) {
         VLOG(1) << "should only contain one edge in update edge!";
-        return cpp2::ErrorCode::E_INVALID_UPDATER;
+        return cpp2::ErrorCode::E_MUTATE_EDGE_CONFLICT;
     }
 
     planContext_->edgeType_ = edgeKey_.get_edge_type();

@@ -1370,6 +1370,160 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     EXPECT_EQ(10, val.getInt());
 }
 
+
+// update uses another tag test, failed
+TEST(UpdateVertexTest, Update_Multi_tag_Test) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    EXPECT_TRUE(mockVertexData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    cpp2::UpdateVertexRequest req;
+
+    req.set_space_id(spaceId);
+    auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
+    VertexID vertexId("Tim Duncan");
+    req.set_part_id(partId);
+    req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> updatedProps;
+
+    // int: player.age = $^.team.career
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
+    // value is another tag expression
+    auto* uTag = new std::string("2");
+    auto* uProp = new std::string("name");
+    SourcePropertyExpression val2(uTag, uProp);
+    uProp1.set_value(Expression::encode(val2));
+    updatedProps.emplace_back(uProp1);
+    req.set_updated_props(std::move(updatedProps));
+
+
+    LOG(INFO) << "Build yield...";
+    // Return player props: name, age, country
+    std::vector<std::string> tmpProps;
+    auto* yTag1 = new std::string("1");
+    auto* yProp1 = new std::string("name");
+    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    tmpProps.emplace_back(Expression::encode(sourcePropExp1));
+
+    addTagPropInKey(tmpProps);
+
+    req.set_return_props(std::move(tmpProps));
+    req.set_insertable(false);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
+
+
+    // get player from kvstore directly
+    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    EXPECT_TRUE(iter && iter->valid());
+
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto val = reader->getValueByName("name");
+    EXPECT_EQ("Tim Duncan", val.getStr());
+}
+
+// upsert uses another tag test, failed
+TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    EXPECT_TRUE(mockVertexData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    cpp2::UpdateVertexRequest req;
+
+    req.set_space_id(spaceId);
+    auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
+    VertexID vertexId("Tim Duncan");
+    req.set_part_id(partId);
+    req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> updatedProps;
+
+    // int: player.age = $^.team.career
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("name");
+    // value is another tag expression
+    auto* uTag = new std::string("2");
+    auto* uProp = new std::string("name");
+    SourcePropertyExpression val2(uTag, uProp);
+    uProp1.set_value(Expression::encode(val2));
+    updatedProps.emplace_back(uProp1);
+    req.set_updated_props(std::move(updatedProps));
+
+
+    LOG(INFO) << "Build yield...";
+    // Return player props: name, age, country
+    std::vector<std::string> tmpProps;
+    auto* yTag1 = new std::string("1");
+    auto* yProp1 = new std::string("name");
+    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    tmpProps.emplace_back(Expression::encode(sourcePropExp1));
+
+    addTagPropInKey(tmpProps);
+
+    req.set_return_props(std::move(tmpProps));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
+
+
+    // get player from kvstore directly
+    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    EXPECT_TRUE(iter && iter->valid());
+
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto val = reader->getValueByName("name");
+    EXPECT_EQ("Tim Duncan", val.getStr());
+}
+
+
 }  // namespace storage
 }  // namespace nebula
 

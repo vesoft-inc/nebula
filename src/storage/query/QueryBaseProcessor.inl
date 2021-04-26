@@ -519,7 +519,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             So when checkExp is called, user need to make sure that related contexts have been
             set correctly, which are propContexts_, indexMap_, edgeNames_ in EdgeContext.
             */
+            bool inEdgeContext = false;
             if (edgeContext_.indexMap_.count(edgeType)) {
+                inEdgeContext = true;
                 addPropContextIfNotExists(edgeContext_.propContexts_,
                                           edgeContext_.indexMap_,
                                           edgeContext_.edgeNames_,
@@ -531,6 +533,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                           filtered);
             }
             if (edgeContext_.indexMap_.count(-edgeType)) {
+                inEdgeContext = true;
                 addPropContextIfNotExists(edgeContext_.propContexts_,
                                           edgeContext_.indexMap_,
                                           edgeContext_.edgeNames_,
@@ -540,6 +543,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
                                           field,
                                           returned,
                                           filtered);
+            }
+            if (!inEdgeContext) {
+                VLOG(1) << "Edge context not find related edge " << *edgeName;
+                return cpp2::ErrorCode::E_MUTATE_EDGE_CONFLICT;
             }
             if (updated) {
                 valueProps_.emplace(*propName);
