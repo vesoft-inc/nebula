@@ -93,8 +93,6 @@ Status CreateSpaceValidator::validateImpl() {
       case SpaceOptItem::ATOMIC_EDGE: {
         if (item->getAtomicEdge()) {
           spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::TOSS);
-          // for 2.0 GA, no matter how this option set, don't use toss.
-          return ::nebula::Status::NotSupported("not support enable toss in 2.0 GA");
         } else {
           spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::DEFAULT);
         }

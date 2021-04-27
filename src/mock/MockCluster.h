@@ -24,6 +24,7 @@
 #include "storage/BaseProcessor.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace mock {
@@ -135,6 +136,7 @@ class MockCluster {
   std::unique_ptr<kvstore::NebulaStore> esListener_{nullptr};
   std::unique_ptr<meta::SchemaManager> lSchemaMan_;
   std::unique_ptr<meta::MetaClient> lMetaClient_{nullptr};
+  std::unique_ptr<storage::TransactionManager> txnMan_{nullptr};
 
   ObjectPool pool_;
 };

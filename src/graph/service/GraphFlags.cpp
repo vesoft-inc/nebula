@@ -63,3 +63,5 @@ DEFINE_bool(disable_octal_escape_char,
             false,
             "Octal escape character will be disabled"
             " in next version to ensure compatibility with cypher.");
+
+DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");

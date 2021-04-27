@@ -62,6 +62,7 @@ using VerticesMemLock = MemoryLockCore<VMLI>;
 using EdgesMemLock = MemoryLockCore<EMLI>;
 
 class TransactionManager;
+class InternalStorageClient;
 
 // unify TagID, EdgeType
 using SchemaID = TagID;
@@ -75,6 +76,7 @@ class StorageEnv {
   std::atomic<int32_t> onFlyingRequest_{0};
   std::unique_ptr<IndexGuard> rebuildIndexGuard_{nullptr};
   meta::MetaClient* metaClient_{nullptr};
+  InternalStorageClient* interClient_{nullptr};
   TransactionManager* txnMan_{nullptr};
   std::unique_ptr<VerticesMemLock> verticesML_{nullptr};
   std::unique_ptr<EdgesMemLock> edgesML_{nullptr};

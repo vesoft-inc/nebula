@@ -165,7 +165,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
       evb,
       std::move(requests),
       [=](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::AddEdgesRequest& r) {
-        return useToss ? client->future_addEdgesAtomic(r) : client->future_addEdges(r);
+        return useToss ? client->future_chainAddEdges(r) : client->future_addEdges(r);
       });
 }
 
@@ -405,7 +405,8 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updat
     bool insertable,
     std::vector<std::string> returnProps,
     std::string condition,
-    folly::EventBase* evb) {
+    folly::EventBase* evb,
+    bool useExperimentalFeature) {
   auto cbStatus = getIdFromEdgeKey(space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(cbStatus.status());
@@ -443,10 +444,13 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updat
   }
   request.second = std::move(req);
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client,
-                        const cpp2::UpdateEdgeRequest& r) { return client->future_updateEdge(r); });
+  return getResponse(
+      evb,
+      std::move(request),
+      [=](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::UpdateEdgeRequest& r) {
+        return useExperimentalFeature ? client->future_chainUpdateEdge(r)
+                                      : client->future_updateEdge(r);
+      });
 }
 
 folly::Future<StatusOr<cpp2::GetUUIDResp>> GraphStorageClient::getUUID(GraphSpaceID space,
