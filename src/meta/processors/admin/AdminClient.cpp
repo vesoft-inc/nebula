@@ -590,10 +590,9 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     return future;
 }
 
-folly::Future<StatusOr<std::string>> AdminClient::createSnapshot(GraphSpaceID spaceId,
-                                                                 const std::string& name,
-                                                                 const HostAddr& host) {
-    folly::Promise<StatusOr<std::string>> pro;
+folly::Future<StatusOr<std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>>
+AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name, const HostAddr& host) {
+    folly::Promise<StatusOr<std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>> pro;
     auto f = pro.getFuture();
 
     auto* evb = ioThreadPool_->getEventBase();
@@ -616,7 +615,8 @@ folly::Future<StatusOr<std::string>> AdminClient::createSnapshot(GraphSpaceID sp
                 auto&& resp = std::move(t).value();
                 auto&& result = resp.get_result();
                 if (result.get_failed_parts().empty()) {
-                    p.setValue(std::move(resp.get_path()));
+                    p.setValue(std::make_pair(std::move(resp.get_path()),
+                                              std::move(resp.get_partition_info())));
                     return;
                 }
                 p.setValue(Status::Error("create checkpoint failed"));

@@ -30,7 +30,10 @@ public:
         spaces_ = std::move(spaces);
     }
 
-    ErrorOr<cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::CheckpointInfo>>>
+    ErrorOr<cpp2::ErrorCode,
+            std::unordered_map<
+                GraphSpaceID,
+                std::pair<nebula::cpp2::PartitionBackupInfo, std::vector<cpp2::CheckpointInfo>>>>
     createSnapshot(const std::string& name);
 
     cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);

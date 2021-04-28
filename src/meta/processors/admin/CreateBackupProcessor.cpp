@@ -229,8 +229,9 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
         // todo we should save partition info.
         auto it = snapshotInfo.find(id);
         DCHECK(it != snapshotInfo.end());
-        spaceInfo.set_cp_dirs(it->second);
+        spaceInfo.set_cp_dirs(std::move(it->second.second));
         spaceInfo.set_space(std::move(properties));
+        spaceInfo.set_partition_info(std::move(it->second.first));
         backupInfo.emplace(id, std::move(spaceInfo));
     }
     cpp2::BackupMeta backup;

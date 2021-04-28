@@ -192,8 +192,8 @@ public:
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
-    virtual ErrorOr<ResultCode, std::string> createCheckpoint(GraphSpaceID spaceId,
-                                                              const std::string& name) = 0;
+    virtual ErrorOr<ResultCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>
+    createCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 
     virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 

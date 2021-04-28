@@ -893,8 +893,8 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
-ErrorOr<ResultCode, std::string> NebulaStore::createCheckpoint(GraphSpaceID spaceId,
-                                                               const std::string& name) {
+ErrorOr<ResultCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>
+NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& name) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
@@ -902,6 +902,7 @@ ErrorOr<ResultCode, std::string> NebulaStore::createCheckpoint(GraphSpaceID spac
 
     auto space = nebula::value(spaceRet);
     std::string cpPath;
+    std::unordered_map<PartitionID, cpp2::LogInfo> partitionInfo;
 
     for (auto& engine : space->engines_) {
         auto code = engine->createCheckpoint(name);
@@ -924,9 +925,19 @@ ErrorOr<ResultCode, std::string> NebulaStore::createCheckpoint(GraphSpaceID spac
             if (!p->linkCurrentWAL(walPath.data())) {
                 return ResultCode::ERR_CHECKPOINT_ERROR;
             }
+
+            if (p->isLeader()) {
+                auto logInfo = p->lastLogInfo();
+                cpp2::LogInfo info;
+                info.set_log_id(logInfo.first);
+                info.set_term_id(logInfo.second);
+                partitionInfo.emplace(part, std::move(info));
+            }
         }
     }
-    return cpPath;
+    nebula::cpp2::PartitionBackupInfo backupInfo;
+    backupInfo.set_info(std::move(partitionInfo));
+    return std::make_pair(cpPath, std::move(backupInfo));
 }
 
 ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {

@@ -224,8 +224,9 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
-    ErrorOr<ResultCode, std::string> createCheckpoint(GraphSpaceID spaceId,
-                                                      const std::string& name) override;
+    ErrorOr<ResultCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>> createCheckpoint(
+        GraphSpaceID spaceId,
+        const std::string& name) override;
 
     ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 

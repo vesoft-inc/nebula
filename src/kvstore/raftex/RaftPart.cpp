@@ -1891,6 +1891,10 @@ std::set<HostAddr> RaftPart::listeners() const {
     return listeners_;
 }
 
+std::pair<LogID, TermID> RaftPart::lastLogInfo() const {
+    return std::make_pair(wal_->lastLogId(), wal_->lastLogTerm());
+}
+
 bool RaftPart::checkAppendLogResult(AppendLogResult res) {
     if (res != AppendLogResult::SUCCEEDED) {
         {

@@ -21,7 +21,10 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
         onFinished();
         return;
     }
-    resp_.set_path(nebula::value(ret));
+
+    auto& info = nebula::value(ret);
+    resp_.set_path(std::move(info.first));
+    resp_.set_partition_info(std::move(info.second));
     onFinished();
 }
 

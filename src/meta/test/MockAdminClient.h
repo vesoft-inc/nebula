@@ -28,9 +28,11 @@ public:
     MOCK_METHOD3(removePart, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
     MOCK_METHOD2(checkPeers, folly::Future<Status>(GraphSpaceID, PartitionID));
     MOCK_METHOD1(getLeaderDist, folly::Future<Status>(HostLeaderMap*));
-    MOCK_METHOD3(createSnapshot, folly::Future<StatusOr<std::string>>(GraphSpaceID,
-                                                                      const std::string&,
-                                                                      const HostAddr&));
+    MOCK_METHOD3(createSnapshot,
+                 folly::Future<StatusOr<std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>>(
+                     GraphSpaceID,
+                     const std::string&,
+                     const HostAddr&));
     MOCK_METHOD3(dropSnapshot, folly::Future<Status>(GraphSpaceID, const std::string&,
                                                      const HostAddr&));
     MOCK_METHOD3(blockingWrites, folly::Future<Status>(GraphSpaceID, storage::cpp2::EngineSignType,

@@ -28,6 +28,10 @@ namespace meta {
         return f;                                                                                  \
     } while (false)
 
+static constexpr nebula::cpp2::LogID logId = 10;
+static constexpr nebula::cpp2::TermID termId = 2;
+
+
 class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
 public:
     folly::Future<storage::cpp2::AdminExecResp> future_addPart(
@@ -43,9 +47,17 @@ public:
         storage::cpp2::CreateCPResp resp;
         storage::cpp2::ResponseCommon result;
         std::vector<storage::cpp2::PartitionResult> partRetCode;
+        nebula::cpp2::PartitionBackupInfo partitionInfo;
+        std::unordered_map<nebula::cpp2::PartitionID, nebula::cpp2::LogInfo> info;
+        nebula::cpp2::LogInfo logInfo;
+        logInfo.set_log_id(logId);
+        logInfo.set_term_id(termId);
+        info.emplace(1, std::move(logInfo));
+        partitionInfo.set_info(std::move(info));
         result.set_failed_parts(partRetCode);
         resp.set_result(result);
         resp.set_path("snapshot_path");
+        resp.set_partition_info(std::move(partitionInfo));
         pro.setValue(std::move(resp));
         return f;
     }
@@ -178,6 +190,15 @@ TEST(ProcessorTest, CreateBackupTest) {
             ASSERT_EQ(1, s.second.get_cp_dirs().size());
             auto checkInfo = s.second.get_cp_dirs()[0];
             ASSERT_EQ("snapshot_path", checkInfo.get_checkpoint_dir());
+
+            auto partitionInfo = s.second.get_partition_info().get_info();
+            ASSERT_EQ(partitionInfo.size(), 1);
+            for (auto p : partitionInfo) {
+                ASSERT_EQ(p.first, 1);
+                auto logInfo = p.second;
+                ASSERT_EQ(logInfo.get_log_id(), logId);
+                ASSERT_EQ(logInfo.get_term_id(), termId);
+            }
         }
     }
 }
