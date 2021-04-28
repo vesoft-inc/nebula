@@ -812,19 +812,9 @@ struct RebuildIndexRequest {
 }
 
 struct CreateCPResp {
-    1: required ResponseCommon result,
-    2: binary                  path,
-}
-
-struct PartitionInfoResp {
-    1: required ResponseCommon          result,
-    2: binary                           backup_name,
-    3: common.PartitionBackupInfo       partition_info,
-}
-
-struct PartitionInfoRequest {
-    1: common.GraphSpaceID                  space_id,
-    2: binary                               backup_name,
+    1: required ResponseCommon    result,
+    2: binary                     path,
+    3: common.PartitionBackupInfo partition_info,
 }
 
 service StorageAdminService {
