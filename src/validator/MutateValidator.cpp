@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -16,18 +16,9 @@ namespace graph {
 
 Status InsertVerticesValidator::validateImpl() {
     spaceId_ = vctx_->whichSpace().id;
-    auto status = Status::OK();
-    do {
-        status = check();
-        if (!status.ok()) {
-            break;
-        }
-        status = prepareVertices();
-        if (!status.ok()) {
-            break;
-        }
-    } while (false);
-    return status;
+    NG_RETURN_IF_ERROR(check());
+    NG_RETURN_IF_ERROR(prepareVertices());
+    return Status::OK();
 }
 
 Status InsertVerticesValidator::toPlan() {
@@ -70,15 +61,23 @@ Status InsertVerticesValidator::check() {
         }
 
         std::vector<std::string> names;
-        auto props = item->properties();
-        // Check prop name is in schema
-        for (auto *it : props) {
-            if (schema->getFieldIndex(*it) < 0) {
-                LOG(ERROR) << "Unknown column `" << *it << "' in schema";
-                return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+        if (item->isDefaultPropNames()) {
+            propSize_ = schema->getNumFields();
+            for (size_t i = 0; i < propSize_; ++i) {
+                const char* propName = schema->getFieldName(i);
+                names.emplace_back(propName);
             }
-            propSize_++;
-            names.emplace_back(*it);
+        } else {
+            auto props = item->properties();
+            // Check prop name is in schema
+            for (auto *it : props) {
+                if (schema->getFieldIndex(*it) < 0) {
+                    LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+                    return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+                }
+                propSize_++;
+                names.emplace_back(*it);
+            }
         }
         tagPropNames_[tagId] = names;
         schemas_.emplace_back(tagId, schema);
@@ -177,15 +176,22 @@ Status InsertEdgesValidator::check() {
         return Status::SemanticError("No schema found for `%s'", sentence->edge()->c_str());
     }
 
-    // Check prop name is in schema
-    for (auto *it : props) {
-        if (schema_->getFieldIndex(*it) < 0) {
-            LOG(ERROR) << "Unknown column `" << *it << "' in schema";
-            return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+    if (sentence->isDefaultPropNames()) {
+        size_t propNums = schema_->getNumFields();
+        for (size_t i = 0; i < propNums; ++i) {
+            const char* propName = schema_->getFieldName(i);
+            propNames_.emplace_back(propName);
         }
-        propNames_.emplace_back(*it);
+    } else {
+        // Check prop name is in schema
+        for (auto *it : props) {
+            if (schema_->getFieldIndex(*it) < 0) {
+                LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+                return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
+            }
+            propNames_.emplace_back(*it);
+        }
     }
-
     return Status::OK();
 }
 

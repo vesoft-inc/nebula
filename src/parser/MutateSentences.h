@@ -34,52 +34,60 @@ private:
     std::vector<std::unique_ptr<std::string>>   properties_;
 };
 
-
 class VertexTagItem final {
- public:
-     explicit VertexTagItem(std::string *tagName, PropertyList *properties = nullptr) {
-         tagName_.reset(tagName);
-         properties_.reset(properties);
-     }
+public:
+    explicit VertexTagItem(std::string *tagName, PropertyList *properties = nullptr) {
+        tagName_.reset(tagName);
+        properties_.reset(properties);
+    }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     const std::string* tagName() const {
-         return tagName_.get();
-     }
+    const std::string* tagName() const {
+        return tagName_.get();
+    }
 
-     std::vector<std::string*> properties() const {
-         if (nullptr == properties_) {
-             return {};
-         }
-         return properties_->properties();
-     }
+    bool isDefaultPropNames() const {
+        return defaultPropNames_;
+    }
 
- private:
-     std::unique_ptr<std::string>               tagName_;
-     std::unique_ptr<PropertyList>              properties_;
+    void setDefaultPropNames() {
+        defaultPropNames_ = true;
+    }
+
+    std::vector<std::string*> properties() const {
+        if (nullptr == properties_) {
+            return {};
+        }
+        return properties_->properties();
+    }
+
+private:
+    bool                                       defaultPropNames_{false};
+    std::unique_ptr<std::string>               tagName_;
+    std::unique_ptr<PropertyList>              properties_;
 };
 
 
 class VertexTagList final {
- public:
-     void addTagItem(VertexTagItem *tagItem) {
-         tagItems_.emplace_back(tagItem);
-     }
+public:
+    void addTagItem(VertexTagItem *tagItem) {
+        tagItems_.emplace_back(tagItem);
+    }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     std::vector<VertexTagItem*> tagItems() const {
-         std::vector<VertexTagItem*> result;
-         result.reserve(tagItems_.size());
-         for (auto &item : tagItems_) {
-             result.emplace_back(item.get());
-         }
-         return result;
-     }
+    std::vector<VertexTagItem*> tagItems() const {
+        std::vector<VertexTagItem*> result;
+        result.reserve(tagItems_.size());
+        for (auto &item : tagItems_) {
+            result.emplace_back(item.get());
+        }
+        return result;
+    }
 
- private:
-     std::vector<std::unique_ptr<VertexTagItem>>    tagItems_;
+private:
+    std::vector<std::unique_ptr<VertexTagItem>>    tagItems_;
 };
 
 
@@ -252,11 +260,11 @@ private:
 
 class InsertEdgesSentence final : public Sentence {
 public:
-    explicit InsertEdgesSentence(bool ifNotExists)
-        : Sentence(Kind::kInsertEdges), ifNotExists_(ifNotExists) {}
-
-    void setEdge(std::string *edge) {
+    explicit InsertEdgesSentence(std::string* edge, EdgeRowList* rows, bool ifNotExists)
+        : Sentence(Kind::kInsertEdges) {
         edge_.reset(edge);
+        rows_.reset(rows);
+        ifNotExists_ = ifNotExists;
     }
 
     const std::string* edge() const {
@@ -274,10 +282,6 @@ public:
         return properties_->properties();
     }
 
-    void setRows(EdgeRowList *rows) {
-        rows_.reset(rows);
-    }
-
     std::vector<EdgeRowItem*> rows() const {
         return rows_->rows();
     }
@@ -286,9 +290,18 @@ public:
         return ifNotExists_;
     }
 
+    void setDefaultPropNames() {
+        isDefaultPropNames_ = true;
+    }
+
+    bool isDefaultPropNames() const {
+        return isDefaultPropNames_;
+    }
+
     std::string toString() const override;
 
 private:
+    bool                                        isDefaultPropNames_{false};
     bool                                        ifNotExists_{false};
     std::unique_ptr<std::string>                edge_;
     std::unique_ptr<PropertyList>               properties_;

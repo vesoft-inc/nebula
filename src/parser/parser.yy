@@ -2410,7 +2410,11 @@ vertex_tag_list
     ;
 
 vertex_tag_item
-    : name_label L_PAREN R_PAREN{
+    : name_label {
+        $$ = new VertexTagItem($1);
+        $$->setDefaultPropNames();
+    }
+    | name_label L_PAREN R_PAREN {
         $$ = new VertexTagItem($1);
     }
     | name_label L_PAREN prop_list R_PAREN {
@@ -2467,18 +2471,19 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($3);
-        sentence->setEdge($4);
+    : KW_INSERT KW_EDGE opt_if_not_exists name_label KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($4, $6, $3);
+        sentence->setDefaultPropNames();
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($4, $8, $3);
         sentence->setProps(new PropertyList());
-        sentence->setRows($8);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($3);
-        sentence->setEdge($4);
+        auto sentence = new InsertEdgesSentence($4, $9, $3);
         sentence->setProps($6);
-        sentence->setRows($9);
         $$ = sentence;
     }
     ;
