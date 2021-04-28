@@ -9,7 +9,6 @@
 #include "planner/match/MatchSolver.h"
 #include "util/ExpressionUtils.h"
 #include "visitor/RewriteVisitor.h"
-#include "visitor/RewriteUnaryNotExprVisitor.h"
 
 namespace nebula {
 namespace graph {

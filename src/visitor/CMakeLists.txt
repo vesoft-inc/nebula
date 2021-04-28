@@ -14,7 +14,6 @@ nebula_add_library(
     RewriteSymExprVisitor.cpp
     RewriteVisitor.cpp
     VidExtractVisitor.cpp
-    RewriteUnaryNotExprVisitor.cpp
 )
 
 nebula_add_subdirectory(test)

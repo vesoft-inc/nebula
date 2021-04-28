@@ -11,7 +11,6 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
 #include "visitor/FoldConstantExprVisitor.h"
-#include "visitor/RewriteUnaryNotExprVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -26,11 +25,45 @@ std::unique_ptr<Expression> ExpressionUtils::foldConstantExpr(const Expression *
     return newExpr;
 }
 
-Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPool *objPool) {
-    auto newExpr = expr->clone();
-    RewriteUnaryNotExprVisitor visitor(objPool);
-    objPool->add(newExpr.release())->accept(&visitor);
-    return visitor.getExpr();
+Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPool *pool) {
+    // Match the operand
+    auto operandMatcher = [](const Expression *operandExpr) -> bool {
+        return (operandExpr->kind() == Expression::Kind::kUnaryNot ||
+                (operandExpr->isRelExpr() && operandExpr->kind() != Expression::Kind::kRelREG) ||
+                operandExpr->isLogicalExpr());
+    };
+
+    // Match the root expression
+    auto rootMatcher = [&](const Expression *e) -> bool {
+        if (e->kind() == Expression::Kind::kUnaryNot) {
+            auto operand = static_cast<const UnaryExpression *>(e)->operand();
+            return (operandMatcher(operand));
+        }
+        return false;
+    };
+
+    std::function<Expression *(const Expression *)> rewriter =
+        [&](const Expression *e) -> Expression * {
+        auto operand = static_cast<const UnaryExpression *>(e)->operand();
+        auto reducedExpr = pool->add(operand->clone().release());
+
+        if (reducedExpr->kind() == Expression::Kind::kUnaryNot) {
+            auto castedExpr = static_cast<UnaryExpression *>(reducedExpr);
+            reducedExpr = castedExpr->operand();
+        } else if (reducedExpr->isRelExpr() && reducedExpr->kind() != Expression::Kind::kRelREG) {
+            auto castedExpr = static_cast<RelationalExpression *>(reducedExpr);
+            reducedExpr = pool->add(reverseRelExpr(castedExpr).release());
+        } else if (reducedExpr->isLogicalExpr()) {
+            auto castedExpr = static_cast<LogicalExpression *>(reducedExpr);
+            reducedExpr = pool->add(reverseLogicalExpr(castedExpr).release());
+        }
+        // Rewrite the output of rewrite if possible
+        return operandMatcher(reducedExpr)
+                   ? RewriteVisitor::transform(reducedExpr, rootMatcher, rewriter)
+                   : reducedExpr;
+    };
+
+    return pool->add(RewriteVisitor::transform(expr, rootMatcher, rewriter));
 }
 
 Expression *ExpressionUtils::pullAnds(Expression *expr) {
@@ -283,8 +316,6 @@ Expression::Kind ExpressionUtils::getNegatedRelExprKind(const Expression::Kind k
 }
 
 std::unique_ptr<LogicalExpression> ExpressionUtils::reverseLogicalExpr(LogicalExpression *expr) {
-    DCHECK(expr->isLogicalExpr());
-
     std::vector<std::unique_ptr<Expression>> operands;
     Expression *newExpr;
     if (expr->kind() == Expression::Kind::kLogicalAnd) {
