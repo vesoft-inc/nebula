@@ -3,26 +3,23 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
+#include "visitor/FindVisitor.h"
 namespace nebula {
 namespace graph {
 
-template <typename T>
-void FindVisitor<T>::visit(TypeCastingExpression* expr) {
+void FindVisitor::visit(TypeCastingExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     expr->operand()->accept(this);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(UnaryExpression* expr) {
+void FindVisitor::visit(UnaryExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     expr->operand()->accept(this);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(FunctionCallExpression* expr) {
+void FindVisitor::visit(FunctionCallExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     for (const auto& arg : expr->args()->args()) {
@@ -31,15 +28,13 @@ void FindVisitor<T>::visit(FunctionCallExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(AggregateExpression* expr) {
+void FindVisitor::visit(AggregateExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     expr->arg()->accept(this);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(ListExpression* expr) {
+void FindVisitor::visit(ListExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     for (const auto& item : expr->items()) {
@@ -48,8 +43,7 @@ void FindVisitor<T>::visit(ListExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(SetExpression* expr) {
+void FindVisitor::visit(SetExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     for (const auto& item : expr->items()) {
@@ -58,8 +52,7 @@ void FindVisitor<T>::visit(SetExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(MapExpression* expr) {
+void FindVisitor::visit(MapExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     for (const auto& pair : expr->items()) {
@@ -68,8 +61,7 @@ void FindVisitor<T>::visit(MapExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(CaseExpression* expr) {
+void FindVisitor::visit(CaseExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
 
@@ -89,8 +81,7 @@ void FindVisitor<T>::visit(CaseExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(PredicateExpression* expr) {
+void FindVisitor::visit(PredicateExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
 
@@ -101,8 +92,7 @@ void FindVisitor<T>::visit(PredicateExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(ReduceExpression* expr) {
+void FindVisitor::visit(ReduceExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
 
@@ -114,8 +104,7 @@ void FindVisitor<T>::visit(ReduceExpression* expr) {
     if (!needFindAll_ && found_) return;
 }
 
-template <typename T>
-void FindVisitor<T>::visit(ListComprehensionExpression* expr) {
+void FindVisitor::visit(ListComprehensionExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
 
@@ -132,83 +121,67 @@ void FindVisitor<T>::visit(ListComprehensionExpression* expr) {
     }
 }
 
-template <typename T>
-void FindVisitor<T>::visit(ConstantExpression* expr) {
+void FindVisitor::visit(ConstantExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgePropertyExpression* expr) {
+void FindVisitor::visit(EdgePropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(TagPropertyExpression* expr) {
+void FindVisitor::visit(TagPropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(InputPropertyExpression* expr) {
+void FindVisitor::visit(InputPropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(VariablePropertyExpression* expr) {
+void FindVisitor::visit(VariablePropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(SourcePropertyExpression* expr) {
+void FindVisitor::visit(SourcePropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(DestPropertyExpression* expr) {
+void FindVisitor::visit(DestPropertyExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgeSrcIdExpression* expr) {
+void FindVisitor::visit(EdgeSrcIdExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgeTypeExpression* expr) {
+void FindVisitor::visit(EdgeTypeExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgeRankExpression* expr) {
+void FindVisitor::visit(EdgeRankExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgeDstIdExpression* expr) {
+void FindVisitor::visit(EdgeDstIdExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(UUIDExpression* expr) {
+void FindVisitor::visit(UUIDExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(VariableExpression* expr) {
+void FindVisitor::visit(VariableExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(VersionedVariableExpression* expr) {
+void FindVisitor::visit(VersionedVariableExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(LabelExpression* expr) {
+void FindVisitor::visit(LabelExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(LabelAttributeExpression *expr) {
+void FindVisitor::visit(LabelAttributeExpression *expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     expr->left()->accept(this);
@@ -216,23 +189,19 @@ void FindVisitor<T>::visit(LabelAttributeExpression *expr) {
     expr->right()->accept(this);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(VertexExpression* expr) {
+void FindVisitor::visit(VertexExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(EdgeExpression* expr) {
+void FindVisitor::visit(EdgeExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visit(ColumnExpression* expr) {
+void FindVisitor::visit(ColumnExpression* expr) {
     findInCurrentExpr(expr);
 }
 
-template <typename T>
-void FindVisitor<T>::visitBinaryExpr(BinaryExpression* expr) {
+void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;
     expr->left()->accept(this);
@@ -240,9 +209,8 @@ void FindVisitor<T>::visitBinaryExpr(BinaryExpression* expr) {
     expr->right()->accept(this);
 }
 
-template <typename T>
-void FindVisitor<T>::findInCurrentExpr(Expression* expr) {
-    if (find(expr)) {
+void FindVisitor::findInCurrentExpr(Expression* expr) {
+    if (finder_(expr)) {
         found_ = true;
         foundExprs_.emplace_back(expr);
     }

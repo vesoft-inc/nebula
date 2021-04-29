@@ -147,9 +147,8 @@ Status GroupByValidator::groupClauseSemanticCheck() {
         groupKeys_ = yieldCols_;
     } else {
         std::unordered_set<Expression*> groupSet(groupKeys_.begin(), groupKeys_.end());
-        auto finder = [](const Expression* expr,
-                         const std::unordered_set<Expression*>& targets) -> bool {
-            for (auto* target : targets) {
+        auto finder = [&groupSet](const Expression* expr) -> bool {
+            for (auto* target : groupSet) {
                 if (*target == *expr) {
                     return true;
                 }
@@ -160,7 +159,7 @@ Status GroupByValidator::groupClauseSemanticCheck() {
             if (evaluableExpr(expr)) {
                 continue;
             }
-            FindVisitor<Expression*> visitor(finder, groupSet);
+            FindVisitor visitor(finder);
             expr->accept(&visitor);
             if (!visitor.found()) {
                 return Status::SemanticError("Yield non-agg expression `%s' must be"
