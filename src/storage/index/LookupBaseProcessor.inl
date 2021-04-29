@@ -65,10 +65,10 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         yieldCols_ = *req.return_columns_ref();
     }
 
-    for (size_t i = 0; i < yieldCols_.size(); i++) {
-        resultDataSet_.colNames.emplace_back(yieldCols_[i]);
-        if (QueryUtils::toReturnColType(yieldCols_[i]) != QueryUtils::ReturnColType::kOther) {
-            deDupColPos_.emplace_back(i);
+    for (auto&& it : folly::enumerate(yieldCols_)) {
+        resultDataSet_.colNames.emplace_back(*it);
+        if (QueryUtils::toReturnColType(*it) != QueryUtils::ReturnColType::kOther) {
+            deDupColPos_.emplace_back(it.index);
         }
     }
 
