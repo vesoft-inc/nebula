@@ -47,6 +47,8 @@ private:
 
     void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
 
+    void removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey);
+
 private:
     std::vector<GraphSpaceID>                     spaceIds_;
     std::unordered_map<GraphSpaceID, std::string> spaceIdNameMap_;

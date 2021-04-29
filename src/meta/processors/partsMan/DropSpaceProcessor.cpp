@@ -35,7 +35,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto spaceId = nebula::value(spaceRet);
     std::vector<std::string> deleteKeys;
 
-    // delete related part meta data.
+    // 1. Delete related part meta data.
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
@@ -53,10 +53,11 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         iter->next();
     }
 
+    // 2. Delete this space data
     deleteKeys.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName));
     deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
-    // delete related role data.
+    // 3. Delete related role data.
     auto rolePrefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     auto roleRet = doPrefix(rolePrefix);
     if (!nebula::ok(roleRet)) {
@@ -78,7 +79,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         roleIter->next();
     }
 
-    // delete listener meta data
+    // 4. Delete listener meta data
     auto lstPrefix = MetaServiceUtils::listenerPrefix(spaceId);
     auto lstRet = doPrefix(rolePrefix);
     if (!nebula::ok(lstRet)) {
@@ -96,7 +97,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         lstIter->next();
     }
 
-    // Delete statis data if it exists
+    // 5. Delete related statis data
     auto statiskey = MetaServiceUtils::statisKey(spaceId);
     deleteKeys.emplace_back(statiskey);
 

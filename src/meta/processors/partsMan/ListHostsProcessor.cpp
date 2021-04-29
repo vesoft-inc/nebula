@@ -177,10 +177,19 @@ cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     HostAddr host;
     TermID term;
     cpp2::ErrorCode code;
+    std::vector<std::string> removeLeadersKey;
     for (; iter->valid(); iter->next()) {
         auto spaceIdAndPartId = MetaServiceUtils::parseLeaderKeyV3(iter->key());
         LOG(INFO) << "show hosts: space = " << spaceIdAndPartId.first
                   << ", part = " << spaceIdAndPartId.second;
+        // If the space in the leader key don't exist, remove leader key
+        auto spaceId = spaceIdAndPartId.first;
+        auto spaceIter = spaceIdNameMap_.find(spaceId);
+        if (spaceIter == spaceIdNameMap_.end()) {
+            removeLeadersKey.emplace_back(iter->key());
+            continue;
+        }
+
         std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             continue;
@@ -200,10 +209,10 @@ cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
             continue;
         }
 
-        auto& spaceName = spaceIdNameMap_[spaceIdAndPartId.first];
-        hostIt->leader_parts_ref()[spaceName].emplace_back(spaceIdAndPartId.second);
+        hostIt->leader_parts_ref()[spaceIter->second].emplace_back(spaceIdAndPartId.second);
     }
 
+    removeInvalidLeaders(std::move(removeLeadersKey));
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -261,6 +270,21 @@ void ListHostsProcessor::removeExpiredHosts(std::vector<std::string>&& removeHos
     kvstore_->asyncMultiRemove(kDefaultSpaceId,
                                kDefaultPartId,
                                std::move(removeHostsKey),
+                               [] (kvstore::ResultCode code) {
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
+            }
+        });
+}
+
+// Remove invalid leaders
+void ListHostsProcessor::removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey) {
+    if (removeLeadersKey.empty()) {
+        return;
+    }
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(removeLeadersKey),
                                [] (kvstore::ResultCode code) {
             if (code != kvstore::ResultCode::SUCCEEDED) {
                 LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
