@@ -67,7 +67,7 @@ Feature: Insert vertex and edge with if not exists
       | VertexID | age |
       | "Conan"  | 40  |
     # insert edge
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE like(likeness) VALUES "Tom"->"Conan":(87)
       """
@@ -117,7 +117,7 @@ Feature: Insert vertex and edge with if not exists
       | like | src   | dst     |
       | 100  | "Tom" | "Conan" |
     # insert multi vertex multi tags
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX IF NOT EXISTS
         person(name, age),
@@ -238,7 +238,7 @@ Feature: Insert vertex and edge with if not exists
       | VertexID | age |
       | "Tom"    | 2   |
     # check insert edge with default props
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE like(likeness) VALUES "Tom"->"Conan":(100)
       """
