@@ -19,11 +19,10 @@ Feature: merge get vertices, dedup and project rule
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 0  | Project     | 1            |                   |
-      | 1  | Filter      | 2            |                   |
-      | 2  | Filter      | 3            |                   |
-      | 3  | Project     | 4            |                   |
-      | 4  | Project     | 5            |                   |
-      | 5  | GetVertices | 6            | {"dedup": "true"} |
-      | 6  | PassThrough | 7            |                   |
-      | 7  | Start       |              |                   |
+      | 9  | Project     | 10           |                   |
+      | 10 | Filter      | 6            |                   |
+      | 6  | Project     | 5            |                   |
+      | 5  | Project     | 12           |                   |
+      | 12 | GetVertices | 1            | {"dedup": "true"} |
+      | 1  | PassThrough | 0            |                   |
+      | 0  | Start       |              |                   |

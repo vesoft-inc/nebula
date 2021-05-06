@@ -97,12 +97,11 @@ Feature: UnaryExpression
       | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
     And the execution plan should be:
       | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 9            |                                                    |
-      | 9  | Filter      | 8            |                                                    |
-      | 8  | Filter      | 7            |                                                    |
+      | 10 | Project     | 12           |                                                    |
+      | 12 | Filter      | 7            |                                                    |
       | 7  | Project     | 6            |                                                    |
       | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 13           |                                                    |
-      | 13 | GetVertices | 11           |                                                    |
+      | 5  | Filter      | 14           |                                                    |
+      | 14 | GetVertices | 11           |                                                    |
       | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
       | 0  | Start       |              |                                                    |
