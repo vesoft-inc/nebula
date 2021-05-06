@@ -78,7 +78,7 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
     DCHECK_EQ(depGroups.size(), 1);
     auto* node = depGroups.front()->groupNodes().front()->node();
     auto kind = node->kind();
-    // disable BiInputNode/SetOp (multi input)
+    // disable BinaryInputNode/SetOp (multi input)
     // disable IndexScan/PassThrough (multi output)
     if (!node->isSingleInput() ||
         kind == PlanNode::Kind::kUnion ||

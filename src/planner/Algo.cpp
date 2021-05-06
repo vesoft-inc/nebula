@@ -11,7 +11,7 @@ namespace graph {
 
 
 std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
-    auto desc = BiInputNode::explain();
+    auto desc = BinaryInputNode::explain();
     switch (pathKind_) {
         case PathKind::kBiBFS: {
             addDescription("kind", "BFS", desc.get());

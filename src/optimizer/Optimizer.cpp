@@ -14,7 +14,7 @@
 #include "planner/Logic.h"
 #include "planner/PlanNode.h"
 
-using nebula::graph::BiInputNode;
+using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

@@ -227,7 +227,7 @@ void Filter::cloneMembers(const Filter& f) {
 
 
 void SetOp::cloneMembers(const SetOp& s) {
-    BiInputNode::cloneMembers(s);
+    BinaryInputNode::cloneMembers(s);
 }
 
 

@@ -39,7 +39,7 @@ Status SetValidator::toPlan() {
     auto lRoot = DCHECK_NOTNULL(lValidator_->root());
     auto rRoot = DCHECK_NOTNULL(rValidator_->root());
     auto colNames = lRoot->colNames();
-    BiInputNode *bNode = nullptr;
+    BinaryInputNode *bNode = nullptr;
     switch (setSentence->op()) {
         case SetSentence::Operator::UNION: {
             bNode = Union::make(qctx_, lRoot, rRoot);

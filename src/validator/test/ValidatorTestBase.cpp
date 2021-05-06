@@ -220,8 +220,8 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
         return Eq(lDep, rDep);
     }
 
-    const auto *lBi = dynamic_cast<const BiInputNode *>(l);
-    const auto *rBi = dynamic_cast<const BiInputNode *>(r);
+    const auto *lBi = dynamic_cast<const BinaryInputNode *>(l);
+    const auto *rBi = dynamic_cast<const BinaryInputNode *>(r);
     if (lBi != nullptr) {
         const auto *llInput = lBi->left();
         const auto *rlInput = CHECK_NOTNULL(rBi)->left();

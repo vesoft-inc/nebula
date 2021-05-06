@@ -576,10 +576,10 @@ private:
  *   INTERSECT,
  *   MINUS
  */
-class SetOp : public BiInputNode {
+class SetOp : public BinaryInputNode {
 protected:
     SetOp(QueryContext* qctx, Kind kind, PlanNode* left, PlanNode* right)
-        : BiInputNode(qctx, kind, left, right) {
+        : BinaryInputNode(qctx, kind, left, right) {
         DCHECK(kind == Kind::kUnion || kind == Kind::kIntersect || kind == Kind::kMinus);
     }
 

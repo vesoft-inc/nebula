@@ -322,7 +322,7 @@ protected:
     }
 };
 
-class BiInputNode : public PlanNode {
+class BinaryInputNode : public PlanNode {
 public:
     void setLeftDep(const PlanNode* left) {
         setDep(0, left);
@@ -363,9 +363,9 @@ public:
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 protected:
-    BiInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
+    BinaryInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
 
-    void cloneMembers(const BiInputNode &node) {
+    void cloneMembers(const BinaryInputNode &node) {
         PlanNode::cloneMembers(node);
     }
 };
