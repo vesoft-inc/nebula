@@ -37,9 +37,14 @@ bool LabelIndexSeek::matchNode(NodeContext* nodeCtx) {
 bool LabelIndexSeek::matchEdge(EdgeContext* edgeCtx) {
     const auto &edge = *edgeCtx->info;
     // require one edge at least
-    if (edge.edgeTypes.size() != 1 || edge.range != nullptr) {
+    if (edge.edgeTypes.size() != 1) {
         // TODO multiple edge index seek need the IndexScan support
-        VLOG(2) << "Multiple edge index seek and variable length edge seek are not supported now.";
+        VLOG(2) << "Multiple edge index seek is not supported now.";
+        return false;
+    }
+
+    if (edge.range != nullptr && edge.range->min() == 0) {
+        // The 0 step is NodeScan in fact.
         return false;
     }
 

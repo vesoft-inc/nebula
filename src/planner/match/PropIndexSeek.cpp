@@ -14,9 +14,14 @@ namespace nebula {
 namespace graph {
 bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
     auto& edge = *edgeCtx->info;
-    if (edge.types.size() != 1 || edge.range != nullptr) {
+    if (edge.types.size() != 1) {
         // TODO multiple edge index seek need the IndexScan support
-        VLOG(2) << "Multiple edge index seek and variable length edge seek are not supported now.";
+        VLOG(2) << "Multiple edge index seek is not supported now.";
+        return false;
+    }
+
+    if (edge.range != nullptr && edge.range->min() == 0) {
+        // The 0 step is NodeScan in fact.
         return false;
     }
 
