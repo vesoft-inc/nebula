@@ -199,6 +199,12 @@ Feature: Fetch Int Vid Vertices
       """
     Then the result should be, in any order:
       | VertexID | player.name |
+    When executing query:
+      """
+      FETCH PROP ON * hash('NON EXIST VERTEX ID')
+      """
+    Then the result should be, in any order:
+      | vertices_ |
     # on existing vertex
     When executing query:
       """
