@@ -949,7 +949,7 @@ Feature: IndexTest_Vid_String
       """
     Then the result should be, in any order:
       | Tag Index Name      | Create Tag Index                                                     |
-      | "player_name_index" | "CREATE TAG INDEX `player_name_index` ON `player` (\n `name(64)`\n)" |
+      | "player_name_index" | "CREATE TAG INDEX `player_name_index` ON `player` (\n `name`(64)\n)" |
     When executing query:
       """
       SHOW CREATE TAG INDEX `player_age_index`

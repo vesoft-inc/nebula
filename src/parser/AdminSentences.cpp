@@ -57,22 +57,22 @@ std::string ShowZonesSentence::toString() const {
 
 std::string SpaceOptItem::toString() const {
     switch (optType_) {
-        case PARTITION_NUM:
+        case OptionType::PARTITION_NUM:
             return folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
-        case REPLICA_FACTOR:
+        case OptionType::REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
-        case VID_TYPE: {
+        case OptionType::VID_TYPE: {
             auto &typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
             return folly::stringPrintf("vid_type = %s",
                                        graph::SchemaUtil::typeToString(typeDef).c_str());
         }
-        case CHARSET:
+        case OptionType::CHARSET:
             return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
-        case COLLATE:
+        case OptionType::COLLATE:
             return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
-        case ATOMIC_EDGE:
+        case OptionType::ATOMIC_EDGE:
             return folly::stringPrintf("atomic_edge = %s", getAtomicEdge() ? "true" : "false");
-        case GROUP_NAME:
+        case OptionType::GROUP_NAME:
             return "";
     }
     DLOG(FATAL) << "Space parameter illegal";
@@ -106,6 +106,11 @@ std::string CreateSpaceSentence::toString() const {
     if (groupName_ != nullptr) {
         buf += " ON ";
         buf += *groupName_;
+    }
+    if (comment_ != nullptr) {
+        buf += " comment = \"";
+        buf += *comment_;
+        buf += "\"";
     }
     return buf;
 }

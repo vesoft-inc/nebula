@@ -17,12 +17,12 @@ Feature: TTLTest
       DESCRIBE TAG person;
       """
     Then the result should be, in any order:
-      | Field           | Type        | Null  | Default |
-      | "name"          | "string"    | "YES" | EMPTY   |
-      | "email"         | "string"    | "YES" | EMPTY   |
-      | "age"           | "int64"     | "YES" | EMPTY   |
-      | "gender"        | "string"    | "YES" | EMPTY   |
-      | "row_timestamp" | "timestamp" | "YES" | EMPTY   |
+      | Field           | Type        | Null  | Default | Comment |
+      | "name"          | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "email"         | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "age"           | "int64"     | "YES" | EMPTY   | EMPTY   |
+      | "gender"        | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "row_timestamp" | "timestamp" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
       SHOW CREATE TAG person;
@@ -178,9 +178,9 @@ Feature: TTLTest
       DESCRIBE EDGE work;
       """
     Then the result should be, in any order:
-      | Field        | Type        | Null  | Default |
-      | "number"     | "string"    | "YES" | EMPTY   |
-      | "start_time" | "timestamp" | "YES" | EMPTY   |
+      | Field        | Type        | Null  | Default | Comment |
+      | "number"     | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "start_time" | "timestamp" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
       SHOW CREATE EDGE work;

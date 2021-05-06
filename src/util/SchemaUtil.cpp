@@ -32,6 +32,10 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem*> &schemaProps
                         return status;
                     }
                     break;
+                case SchemaPropItem::COMMENT:
+                    status = setComment(schemaProp, schema);
+                    NG_RETURN_IF_ERROR(status);
+                    break;
             }
         }
 
@@ -110,6 +114,15 @@ Status SchemaUtil::setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& sch
 }
 
 // static
+Status SchemaUtil::setComment(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema) {
+    auto ret = schemaProp->getComment();
+    if (ret.ok()) {
+        schema.schema_prop_ref()->set_comment(std::move(ret).value());
+    }
+    return Status::OK();
+}
+
+// static
 StatusOr<Value> SchemaUtil::toVertexID(Expression *expr, Value::Type vidType) {
     QueryExpressionContext ctx;
     auto vidVal = expr->eval(ctx(nullptr));
@@ -138,7 +151,7 @@ SchemaUtil::toValueVec(std::vector<Expression*> exprs) {
 }
 
 StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
-    DataSet dataSet({"Field", "Type", "Null", "Default"});
+    DataSet dataSet({"Field", "Type", "Null", "Default", "Comment"});
     for (auto &col : schema.get_columns()) {
         Row row;
         row.values.emplace_back(Value(col.get_name()));
@@ -161,6 +174,11 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
             }
         }
         row.values.emplace_back(std::move(defaultValue));
+        if (col.comment_ref().has_value()) {
+            row.values.emplace_back(*col.comment_ref());
+        } else {
+            row.values.emplace_back();
+        }
         dataSet.emplace_back(std::move(row));
     }
     return dataSet;
@@ -200,6 +218,11 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
             }
             createStr += " DEFAULT " + expr->toString();
         }
+        if (col.comment_ref().has_value()) {
+            createStr += " COMMENT \"";
+            createStr += *col.comment_ref();
+            createStr += "\"";
+        }
         createStr += ",\n";
     }
     if (!(*schema.columns_ref()).empty()) {
@@ -219,6 +242,11 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
         createStr += "\"" + *prop.ttl_col_ref() + "\"";
     } else {
         createStr += "\"\"";
+    }
+    if (prop.comment_ref().has_value()) {
+        createStr += ", comment = \"";
+        createStr += *prop.comment_ref();
+        createStr += "\"";
     }
     row.emplace_back(std::move(createStr));
     dataSet.rows.emplace_back(std::move(row));

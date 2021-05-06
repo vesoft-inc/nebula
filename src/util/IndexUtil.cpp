@@ -51,17 +51,23 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     row.emplace_back(indexName);
     for (auto &col : indexItem.get_fields()) {
         createStr += " `" + col.get_name();
+        createStr += "`";
         const auto &type = col.get_type();
         if (type.type_length_ref().has_value()) {
             createStr += "(" + std::to_string(*type.type_length_ref()) + ")";
         }
-        createStr += "`,\n";
+        createStr += ",\n";
     }
     if (!(*indexItem.fields_ref()).empty()) {
         createStr.resize(createStr.size() -2);
         createStr += "\n";
     }
     createStr += ")";
+    if (indexItem.comment_ref().has_value()) {
+        createStr += " comment = \"";
+        createStr += *indexItem.get_comment();
+        createStr += "\"";
+    }
     row.emplace_back(std::move(createStr));
     dataSet.rows.emplace_back(std::move(row));
     return dataSet;

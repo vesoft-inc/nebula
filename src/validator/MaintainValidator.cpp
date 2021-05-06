@@ -34,23 +34,27 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
         auto type = spec->type();
         column.set_name(*spec->name());
         column.type.set_type(type);
-        column.set_nullable(spec->isNull());
         if (meta::cpp2::PropertyType::FIXED_STRING == type) {
             column.type.set_type_length(spec->typeLen());
         }
-
-        if (spec->isNull()) {
-            column.set_nullable(true);
-        }
-
-        if (spec->hasDefaultValue()) {
-            if (!evaluableExpr(spec->getDefaultValue())) {
-                return Status::SemanticError("Wrong default value experssion `%s'",
-                                             spec->getDefaultValue()->toString().c_str());
+        for (const auto &property : spec->properties()->properties()) {
+            if (property->isNullable()) {
+                column.set_nullable(property->nullable());
+            } else if (property->isDefaultValue()) {
+                if (!evaluableExpr(property->defaultValue())) {
+                    return Status::SemanticError("Wrong default value experssion `%s'",
+                                                 property->defaultValue()->toString().c_str());
+                }
+                auto *defaultValueExpr = property->defaultValue();
+                // some expression is evaluable but not pure so only fold instead of eval here
+                column.set_default_value(
+                    ExpressionUtils::foldConstantExpr(defaultValueExpr)->encode());
+            } else if (property->isComment()) {
+                column.set_comment(*DCHECK_NOTNULL(property->comment()));
             }
-            auto defaultValueExpr = spec->getDefaultValue();
-            // some expression is evaluable but not pure so only fold instead of eval here
-            column.set_default_value(ExpressionUtils::foldConstantExpr(defaultValueExpr)->encode());
+        }
+        if (!column.nullable_ref().has_value()) {
+            column.set_nullable(true);
         }
         schema.columns_ref().value().emplace_back(std::move(column));
     }
@@ -180,6 +184,12 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem *> &sche
                 retStr = schemaProp->getTtlCol();
                 NG_RETURN_IF_ERROR(retStr);
                 schemaProp_.set_ttl_col(retStr.value());
+                break;
+            case SchemaPropItem::COMMENT:
+                // Check the legality of the column in meta
+                retStr = schemaProp->getComment();
+                NG_RETURN_IF_ERROR(retStr);
+                schemaProp_.set_comment(retStr.value());
                 break;
             default:
                 return Status::SemanticError("Property type not support");
@@ -311,7 +321,8 @@ Status CreateTagIndexValidator::toPlan() {
                                        *sentence->tagName(),
                                        *sentence->indexName(),
                                         sentence->fields(),
-                                        sentence->isIfNotExist());
+                                        sentence->isIfNotExist(),
+                                        sentence->comment());
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
@@ -334,7 +345,8 @@ Status CreateEdgeIndexValidator::toPlan() {
                                         *sentence->edgeName(),
                                         *sentence->indexName(),
                                          sentence->fields(),
-                                         sentence->isIfNotExist());
+                                         sentence->isIfNotExist(),
+                                         sentence->comment());
     root_ = doNode;
     tail_ = root_;
     return Status::OK();

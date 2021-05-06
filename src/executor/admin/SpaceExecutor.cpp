@@ -57,7 +57,8 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                                     "Collate",
                                     "Vid Type",
                                     "Atomic Edge",
-                                    "Group"};
+                                    "Group",
+                                    "Comment"};
                 Row row;
                 row.values.emplace_back(spaceId);
                 row.values.emplace_back(properties.get_space_name());
@@ -66,16 +67,21 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                 row.values.emplace_back(properties.get_charset_name());
                 row.values.emplace_back(properties.get_collate_name());
                 row.values.emplace_back(SchemaUtil::typeToString(properties.get_vid_type()));
-                std::string sAtomicEdge{"false"};
+                bool sAtomicEdge{false};
                 if (properties.isolation_level_ref().has_value()  &&
                     (*properties.isolation_level_ref() == meta::cpp2::IsolationLevel::TOSS)) {
-                    sAtomicEdge = "true";
+                    sAtomicEdge = true;
                 }
                 row.values.emplace_back(sAtomicEdge);
                 if (properties.group_name_ref().has_value()) {
                     row.values.emplace_back(*properties.group_name_ref());
                 } else {
                     row.values.emplace_back("default");
+                }
+                if (properties.comment_ref().has_value()) {
+                    row.values.emplace_back(*properties.comment_ref());
+                } else {
+                    row.values.emplace_back();
                 }
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
@@ -161,19 +167,42 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                     (*properties.isolation_level_ref() == meta::cpp2::IsolationLevel::TOSS)) {
                     sAtomicEdge = "true";
                 }
-                auto fmt = "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                           "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s) ON %s";
-                row.values.emplace_back(folly::stringPrintf(
-                    fmt,
-                    properties.get_space_name().c_str(),
-                    properties.get_partition_num(),
-                    properties.get_replica_factor(),
-                    properties.get_charset_name().c_str(),
-                    properties.get_collate_name().c_str(),
-                    SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                    sAtomicEdge.c_str(),
-                    properties.group_name_ref().has_value() ?
-                        (*properties.group_name_ref()).c_str() : "default"));
+                auto fmt = properties.comment_ref().has_value() ?
+                           "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
+                           "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
+                           ") ON %s"
+                           " comment = '%s'" :
+                           "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
+                           "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
+                           ") ON %s";
+                if (properties.comment_ref().has_value()) {
+                    row.values.emplace_back(folly::stringPrintf(
+                        fmt,
+                        properties.get_space_name().c_str(),
+                        properties.get_partition_num(),
+                        properties.get_replica_factor(),
+                        properties.get_charset_name().c_str(),
+                        properties.get_collate_name().c_str(),
+                        SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
+                        sAtomicEdge.c_str(),
+                        properties.group_name_ref().has_value() ?
+                            properties.get_group_name()->c_str() :
+                            "default",
+                        properties.comment_ref()->c_str()));
+                } else {
+                    row.values.emplace_back(folly::stringPrintf(
+                        fmt,
+                        properties.get_space_name().c_str(),
+                        properties.get_partition_num(),
+                        properties.get_replica_factor(),
+                        properties.get_charset_name().c_str(),
+                        properties.get_collate_name().c_str(),
+                        SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
+                        sAtomicEdge.c_str(),
+                        properties.group_name_ref().has_value() ?
+                            properties.group_name_ref()->c_str() :
+                            "default"));
+                }
                 dataSet.rows.emplace_back(std::move(row));
                 return finish(ResultBuilder()
                                   .value(Value(std::move(dataSet)))

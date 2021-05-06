@@ -98,6 +98,10 @@ Status CreateSpaceValidator::validateImpl() {
             }
         }
     }
+    // check comment
+    if (sentence->comment() != nullptr) {
+        spaceDesc_.set_comment(*sentence->comment());
+    }
 
     // if charset and collate are not specified, set default value
     if (!(*spaceDesc_.charset_name_ref()).empty() && !(*spaceDesc_.collate_name_ref()).empty()) {

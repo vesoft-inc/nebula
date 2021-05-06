@@ -7,7 +7,7 @@
 
 import time
 
-from tests.common.nebula_test_suite import NebulaTestSuite
+from tests.common.nebula_test_suite import NebulaTestSuite, T_EMPTY
 
 
 class TestSpace(NebulaTestSuite):
@@ -24,7 +24,7 @@ class TestSpace(NebulaTestSuite):
         # check result
         resp = self.client.execute('DESC SPACE space_with_default_options')
         expect_result = [['space_with_default_options', 100, 1, 'utf8', 'utf8_bin',
-        'FIXED_STRING(8)', 'false', 'default']]
+        'FIXED_STRING(8)', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -44,7 +44,7 @@ class TestSpace(NebulaTestSuite):
         resp = self.client.execute('DESC SPACE default_space')
         self.check_resp_succeeded(resp)
         expect_result = [['default_space', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)',
-        'false', 'default']]
+        False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # show create space
@@ -86,7 +86,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_charset_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
+        expect_result = [['space_charset_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -99,7 +99,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_charset')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_charset', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
+        expect_result = [['space_charset', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -112,7 +112,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_collate')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', 'false', 'default']]
+        expect_result = [['space_collate', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -150,7 +150,7 @@ class TestSpace(NebulaTestSuite):
         resp = self.client.execute('DESC SPACE space_capital')
         self.check_resp_succeeded(resp)
         expect_result = [['space_capital', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(8)',
-        'false', 'default']]
+        False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
         # drop space
@@ -202,7 +202,7 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_string_vid')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_string_vid', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(30)', 'false', 'default']]
+        expect_result = [['space_string_vid', 9, 1, 'utf8', 'utf8_bin', 'FIXED_STRING(30)', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})
 
     def test_create_space_with_int_vid(self):
@@ -213,5 +213,5 @@ class TestSpace(NebulaTestSuite):
 
         resp = self.client.execute('DESC SPACE space_int_vid')
         self.check_resp_succeeded(resp)
-        expect_result = [['space_int_vid', 9, 1, 'utf8', 'utf8_bin', 'INT64', 'false', 'default']]
+        expect_result = [['space_int_vid', 9, 1, 'utf8', 'utf8_bin', 'INT64', False, 'default', T_EMPTY]]
         self.check_result(resp, expect_result, {0})

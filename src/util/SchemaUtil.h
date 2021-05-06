@@ -34,6 +34,8 @@ public:
 
     static Status setTTLCol(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema);
 
+    static Status setComment(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema);
+
     static StatusOr<Value> toVertexID(Expression *expr, Value::Type vidType);
 
     static StatusOr<std::vector<Value>> toValueVec(std::vector<Expression*> exprs);
