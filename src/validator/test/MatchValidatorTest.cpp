@@ -516,5 +516,131 @@ TEST_F(MatchValidatorTest, with) {
     }
 }
 
+TEST_F(MatchValidatorTest, validateAlias) {
+    // validate undefined alias in filter
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE abc._src>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Alias used but not defined: `abc'");
+    }
+    // validate undefined alias in return clause
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "RETURN abc";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Alias used but not defined: `abc'");
+    }
+    // invalid prop attribute in filter
+    // vertex
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE v._src>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Vertex `v' does not have the src attribute");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE v._dst>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Vertex `v' does not have the dst attribute");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE v._rank>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Vertex `v' does not have the ranking attribute");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE v._type>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Vertex `v' does not have the type attribute");
+    }
+    // edge
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE e._src>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the src vid of the edge, use src(e)");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE e._dst>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the dst vid of the edge, use dst(e)");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE e._rank>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the ranking of the edge, use rank(e)");
+    }
+    {
+        std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE e._type>0"
+                            "RETURN e";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the type of the edge, use type(e)");
+    }
+    // path
+    {
+        std::string query = "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE id(p._src) == \"Tim Duncan\""
+                            "RETURN p._src";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the start node of the path, use startNode(p)");
+    }
+    {
+        std::string query = "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "WHERE id(p._dst) == \"Tim Duncan\""
+                            "RETURN p._dst";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: To get the end node of the path, use endNode(p)");
+    }
+    {
+        std::string query = "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "RETURN p._rank";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Path `p' does not have the ranking attribute");
+    }
+    {
+        std::string query = "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "RETURN p._type";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Path `p' does not have the type attribute");
+    }
+    // invalid prop attribute in return clause
+    {
+        std::string query = "MATCH p = (v :person{name:\"Tim Duncan\"})-[e]-(v2) "
+                            "RETURN p._type";
+        auto result = checkResult(query);
+        EXPECT_EQ(std::string(result.message()),
+                  "SemanticError: Path `p' does not have the type attribute");
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
