@@ -195,11 +195,11 @@ public:
     // Return the negation of the given logical kind
     static Expression::Kind getNegatedLogicalExprKind(const Expression::Kind kind);
 
-    static Expression* pullAnds(Expression* expr);
+    static void pullAnds(Expression* expr);
     static void pullAndsImpl(LogicalExpression* expr,
                              std::vector<std::unique_ptr<Expression>>& operands);
 
-    static Expression* pullOrs(Expression* expr);
+    static void pullOrs(Expression* expr);
     static void pullOrsImpl(LogicalExpression* expr,
                             std::vector<std::unique_ptr<Expression>>& operands);
 

@@ -66,22 +66,20 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPo
     return pool->add(RewriteVisitor::transform(expr, rootMatcher, rewriter));
 }
 
-Expression *ExpressionUtils::pullAnds(Expression *expr) {
+void ExpressionUtils::pullAnds(Expression *expr) {
     DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
     auto *logic = static_cast<LogicalExpression *>(expr);
     std::vector<std::unique_ptr<Expression>> operands;
     pullAndsImpl(logic, operands);
     logic->setOperands(std::move(operands));
-    return logic;
 }
 
-Expression* ExpressionUtils::pullOrs(Expression *expr) {
+void ExpressionUtils::pullOrs(Expression *expr) {
     DCHECK(expr->kind() == Expression::Kind::kLogicalOr);
     auto *logic = static_cast<LogicalExpression*>(expr);
     std::vector<std::unique_ptr<Expression>> operands;
     pullOrsImpl(logic, operands);
     logic->setOperands(std::move(operands));
-    return logic;
 }
 
 void
@@ -317,14 +315,13 @@ Expression::Kind ExpressionUtils::getNegatedRelExprKind(const Expression::Kind k
 
 std::unique_ptr<LogicalExpression> ExpressionUtils::reverseLogicalExpr(LogicalExpression *expr) {
     std::vector<std::unique_ptr<Expression>> operands;
-    Expression *newExpr;
     if (expr->kind() == Expression::Kind::kLogicalAnd) {
-        newExpr = ExpressionUtils::pullAnds(expr);
+        pullAnds(expr);
     } else {
-        newExpr = ExpressionUtils::pullOrs(expr);
+        pullOrs(expr);
     }
 
-    auto &flattenOperands = static_cast<LogicalExpression *>(newExpr)->operands();
+    auto &flattenOperands = static_cast<LogicalExpression *>(expr)->operands();
     auto negatedKind = getNegatedLogicalExprKind(expr->kind());
     auto logic = std::make_unique<LogicalExpression>(negatedKind);
 
