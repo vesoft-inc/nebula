@@ -11,7 +11,7 @@
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
 #include "context/QueryContext.h"
-#include "context/ast/QueryAstContext.h"
+#include "context/ast/CypherAstContext.h"
 #include "planner/Planner.h"
 
 namespace nebula {

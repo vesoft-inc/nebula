@@ -8,7 +8,7 @@
 
 #include "common/expression/UnaryExpression.h"
 #include "context/ast/AstContext.h"
-#include "context/ast/QueryAstContext.h"
+#include "context/ast/CypherAstContext.h"
 #include "planner/Planner.h"
 #include "planner/Query.h"
 #include "util/ExpressionUtils.h"

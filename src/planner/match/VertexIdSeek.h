@@ -7,7 +7,7 @@
 #ifndef PLANNER_MATCH_VERTEXIDSEEK_H_
 #define PLANNER_MATCH_VERTEXIDSEEK_H_
 
-#include "context/ast/QueryAstContext.h"
+#include "context/ast/CypherAstContext.h"
 #include "planner/match/StartVidFinder.h"
 
 namespace nebula {

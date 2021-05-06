@@ -11,7 +11,7 @@
 #include "validator/TraversalValidator.h"
 #include "util/AnonVarGenerator.h"
 #include "planner/Query.h"
-#include "context/ast/QueryAstContext.h"
+#include "context/ast/CypherAstContext.h"
 
 namespace nebula {
 

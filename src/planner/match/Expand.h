@@ -8,7 +8,7 @@
 #define PLANNER_MATCH_EXPAND_H_
 
 #include "common/base/Base.h"
-#include "context/ast/QueryAstContext.h"
+#include "context/ast/CypherAstContext.h"
 #include "planner/PlanNode.h"
 #include "planner/Planner.h"
 
