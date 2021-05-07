@@ -173,25 +173,7 @@ function package {
     args=""
     [[ $strip_enable == TRUE ]] && args="-D CPACK_STRIP_FILES=TRUE -D CPACK_RPM_SPEC_MORE_DEFINE="
 
-    sys_ver=""
-    pType="RPM"
-    if [[ -f "/etc/redhat-release" ]]; then
-        sys_name=$(< /etc/redhat-release cut -d ' ' -f1)
-        if [[ ${sys_name} == "CentOS" ]]; then
-            sys_ver=$(< /etc/redhat-release tr -dc '0-9.' | cut -d \. -f1)
-            sys_ver=.el${sys_ver}.x86_64
-        elif [[ ${sys_name} == "Fedora" ]]; then
-            sys_ver=$(< /etc/redhat-release cut -d ' ' -f3)
-            sys_ver=.fc${sys_ver}.x86_64
-        fi
-        pType="RPM"
-    elif [[ -f "/etc/lsb-release" ]]; then
-        sys_ver=$(< /etc/lsb-release grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//')
-        sys_ver=.ubuntu${sys_ver}.amd64
-        pType="DEB"
-    fi
-
-    if ! ( cpack -G ${pType} --verbose $args ); then
+    if ! ( cpack --verbose $args ); then
         echo ">>> package nebula failed <<<"
         exit 1
     else
@@ -199,9 +181,8 @@ function package {
         outputDir=$build_dir/cpack_output
         mkdir -p ${outputDir}
         for pkg_name in $(ls ./*nebula*-${version}*); do
-            new_pkg_name=${pkg_name/\-Linux/${sys_ver}}
-            mv ${pkg_name} ${outputDir}/${new_pkg_name}
-            echo "####### taget package file is ${outputDir}/${new_pkg_name}"
+            mv ${pkg_name} ${outputDir}/
+            echo "####### taget package file is ${outputDir}/${pkg_name}"
         done
     fi
 
