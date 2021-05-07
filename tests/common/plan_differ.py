@@ -91,12 +91,12 @@ class PlanDiffer:
         if resp is None:
             if exp:
                 return f"expect: {exp} but resp plan node is None"
-        else:
+        if exp:
             resp_dict = {
                 f"{bytes.decode(pair.key)}": f"{bytes.decode(pair.value)}"
                 for pair in resp
             }
-            if exp and not self._is_subdict_nested(exp, resp_dict):
+            if not self._is_subdict_nested(exp, resp_dict):
                 return "Invalid descriptions, expect: {} vs. resp: {}".format(
                     json.dumps(exp), json.dumps(resp_dict))
         return None
