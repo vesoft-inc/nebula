@@ -7,7 +7,6 @@
 #ifndef SERVICE_PASSWORDAUTHENTICATOR_H_
 #define SERVICE_PASSWORDAUTHENTICATOR_H_
 
-#include "common/base/Base.h"
 #include "common/clients/meta/MetaClient.h"
 #include "service/Authenticator.h"
 

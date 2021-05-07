@@ -7,8 +7,6 @@
 #ifndef CONTEXT_ITERATOR_H_
 #define CONTEXT_ITERATOR_H_
 
-#include <memory>
-
 #include <gtest/gtest_prod.h>
 
 #include <boost/dynamic_bitset.hpp>

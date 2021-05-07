@@ -6,7 +6,6 @@
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
 
-#include "common/base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/EdgeKey.h"
 #include "parser/MutateSentences.h"

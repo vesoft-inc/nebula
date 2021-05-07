@@ -7,7 +7,6 @@
 #ifndef PLANNER_LOGIC_H_
 #define PLANNER_LOGIC_H_
 
-#include "context/QueryContext.h"
 #include "planner/PlanNode.h"
 
 namespace nebula {

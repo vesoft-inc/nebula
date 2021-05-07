@@ -7,7 +7,6 @@
 #ifndef SERVICE_QUERYINSTANCE_H_
 #define SERVICE_QUERYINSTANCE_H_
 
-#include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
 #include "context/QueryContext.h"

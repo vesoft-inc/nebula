@@ -7,7 +7,6 @@
 #ifndef CONTEXT_SYMBOLS_H_
 #define CONTEXT_SYMBOLS_H_
 
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 

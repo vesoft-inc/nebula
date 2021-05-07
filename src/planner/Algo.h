@@ -7,7 +7,6 @@
 #ifndef PLANNER_ALGO_H_
 #define PLANNER_ALGO_H_
 
-#include "common/base/Base.h"
 #include "context/QueryContext.h"
 #include "planner/PlanNode.h"
 

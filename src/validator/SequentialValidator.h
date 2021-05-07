@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_SEQUENTIALVALIDATOR_H_
 #define VALIDATOR_SEQUENTIALVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "parser/SequentialSentences.h"
 #include "validator/Validator.h"
 

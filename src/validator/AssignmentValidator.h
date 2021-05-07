@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_ASSIGNMENTVALIDATOR_H_
 #define VALIDATOR_ASSIGNMENTVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/Validator.h"
 
 namespace nebula {

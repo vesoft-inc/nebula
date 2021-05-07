@@ -7,7 +7,6 @@
 #ifndef CONTEXT_RESULT_H_
 #define CONTEXT_RESULT_H_
 
-#include <memory>
 #include <vector>
 
 #include "context/Iterator.h"

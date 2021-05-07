@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_MAINTAINVALIDATOR_H_
 #define VALIDATOR_MAINTAINVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/MaintainSentences.h"
 #include "parser/AdminSentences.h"

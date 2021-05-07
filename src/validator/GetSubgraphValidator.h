@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 #define VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/TraversalValidator.h"
 #include "parser/Clauses.h"
 

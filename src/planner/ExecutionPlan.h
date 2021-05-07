@@ -7,8 +7,6 @@
 #ifndef PLANNER_EXECUTIONPLAN_H_
 #define PLANNER_EXECUTIONPLAN_H_
 
-#include <cstdint>
-#include <memory>
 #include <string>
 
 namespace nebula {

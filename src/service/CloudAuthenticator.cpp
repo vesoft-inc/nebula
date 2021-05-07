@@ -4,8 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <folly/json.h>
-
 #include "common/encryption/Base64.h"
 #include "common/http/HttpClient.h"
 #include "service/CloudAuthenticator.h"

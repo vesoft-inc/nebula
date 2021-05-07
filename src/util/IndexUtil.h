@@ -7,7 +7,6 @@
 #ifndef UTIL_INDEXUTIL_H_
 #define UTIL_INDEXUTIL_H_
 
-#include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "parser/MaintainSentences.h"
 #include "util/SchemaUtil.h"

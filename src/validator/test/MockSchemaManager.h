@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_MOCKSCHEMAMANAGER_H_
 #define VALIDATOR_MOCKSCHEMAMANAGER_H_
 
-#include "common/meta/SchemaProviderIf.h"
 #include "common/meta/SchemaManager.h"
 #include "common/meta/NebulaSchemaProvider.h"
 

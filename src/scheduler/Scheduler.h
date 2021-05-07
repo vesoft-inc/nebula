@@ -7,7 +7,6 @@
 #ifndef SCHEDULER_SCHEDULER_H_
 #define SCHEDULER_SCHEDULER_H_
 
-#include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>

@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_LIMITVALIDATOR_H_
 #define VALIDATOR_LIMITVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/Validator.h"
 
 namespace nebula {

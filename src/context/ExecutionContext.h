@@ -7,7 +7,6 @@
 #ifndef CONTEXT_EXECUTIONCONTEXT_H_
 #define CONTEXT_EXECUTIONCONTEXT_H_
 
-#include "common/base/Base.h"
 #include "common/datatypes/Value.h"
 #include "context/Result.h"
 

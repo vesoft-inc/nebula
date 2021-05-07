@@ -7,7 +7,6 @@
 #ifndef PARSER_USERSENTENCES_H_
 #define PARSER_USERSENTENCES_H_
 
-#include "common/base/Base.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"

@@ -7,7 +7,6 @@
 #ifndef PLANNER_QUERY_H_
 #define PLANNER_QUERY_H_
 
-#include "common/base/Base.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "context/QueryContext.h"

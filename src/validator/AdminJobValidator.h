@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 #define VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/AdminSentences.h"
 

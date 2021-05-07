@@ -18,9 +18,6 @@
 #include "visitor/DeducePropsVisitor.h"
 
 namespace nebula {
-
-class YieldColumns;
-
 namespace graph {
 
 class Validator {

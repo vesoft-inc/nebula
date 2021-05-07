@@ -7,7 +7,6 @@
 #ifndef VALIDATOR_BALANCEVALIDATOR_H_
 #define VALIDATOR_BALANCEVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "parser/AdminSentences.h"
 

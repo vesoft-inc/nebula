@@ -7,7 +7,6 @@
 #ifndef EXECUTOR_EXECUTOR_H_
 #define EXECUTOR_EXECUTOR_H_
 
-#include <memory>
 #include <set>
 #include <string>
 #include <vector>

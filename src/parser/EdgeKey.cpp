@@ -5,7 +5,6 @@
  */
 
 #include "parser/EdgeKey.h"
-
 #include "common/expression/Expression.h"
 
 namespace nebula {

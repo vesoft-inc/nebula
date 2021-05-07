@@ -7,7 +7,6 @@
 #ifndef EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 #define EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 
-#include "common/base/StatusOr.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 
 #include "executor/StorageAccessExecutor.h"

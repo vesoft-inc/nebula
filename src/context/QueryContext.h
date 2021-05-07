@@ -7,7 +7,6 @@
 #ifndef CONTEXT_QUERYCONTEXT_H_
 #define CONTEXT_QUERYCONTEXT_H_
 
-#include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/charset/Charset.h"
 #include "common/clients/meta/MetaClient.h"

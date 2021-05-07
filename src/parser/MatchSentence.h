@@ -7,7 +7,6 @@
 #ifndef PARSER_MATCHSENTENCE_H_
 #define PARSER_MATCHSENTENCE_H_
 
-#include "common/base/Base.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/SubscriptExpression.h"
 #include "parser/Sentence.h"

@@ -7,7 +7,6 @@
 #ifndef PLANNER_MAINTAIN_H_
 #define PLANNER_MAINTAIN_H_
 
-#include "common/clients/meta/MetaClient.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "planner/Query.h"
 

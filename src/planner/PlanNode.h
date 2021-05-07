@@ -7,7 +7,6 @@
 #ifndef PLANNER_PLANNODE_H_
 #define PLANNER_PLANNODE_H_
 
-#include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
 #include "context/QueryContext.h"

@@ -7,7 +7,6 @@
 #ifndef PLANNER_MUTATE_H_
 #define PLANNER_MUTATE_H_
 
-#include "common/interface/gen-cpp2/storage_types.h"
 #include "context/QueryContext.h"
 #include "planner/Query.h"
 #include "parser/TraverseSentences.h"

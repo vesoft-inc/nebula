@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "parser/Sentence.h"
+
 #include "parser/TraverseSentences.h"
 #include "parser/AdminSentences.h"
 #include "service/PermissionManager.h"

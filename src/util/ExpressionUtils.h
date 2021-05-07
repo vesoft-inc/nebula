@@ -7,7 +7,6 @@
 #ifndef _UTIL_EXPRESSION_UTILS_H_
 #define _UTIL_EXPRESSION_UTILS_H_
 
-#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/expression/BinaryExpression.h"
@@ -22,6 +21,7 @@
 #include "visitor/RewriteVisitor.h"
 
 namespace nebula {
+class ObjectPool;
 namespace graph {
 
 class ExpressionUtils {

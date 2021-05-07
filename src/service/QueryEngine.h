@@ -7,13 +7,11 @@
 #ifndef SERVICE_QUERYENGINE_H_
 #define SERVICE_QUERYENGINE_H_
 
-#include "common/base/Base.h"
 #include "common/cpp/helpers.h"
 #include "service/RequestContext.h"
 #include "common/interface/gen-cpp2/GraphService.h"
 #include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
-// #include "common/meta/ClientBasedGflagsManager.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/clients/storage/GraphStorageClient.h"
 #include "common/network/NetworkUtils.h"

@@ -6,7 +6,6 @@
 #ifndef COMMON_SESSION_H_
 #define COMMON_SESSION_H_
 
-#include "common/base/Base.h"
 #include "common/clients/meta/MetaClient.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/time/Duration.h"

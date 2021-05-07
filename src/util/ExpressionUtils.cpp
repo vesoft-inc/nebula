@@ -11,6 +11,7 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
 #include "visitor/FoldConstantExprVisitor.h"
+#include "common/base/ObjectPool.h"
 
 namespace nebula {
 namespace graph {

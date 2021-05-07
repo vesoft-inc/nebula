@@ -6,7 +6,6 @@
 #ifndef NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 #define NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 
-#include "common/base/Base.h"
 #include "util/SchemaUtil.h"
 #include <common/interface/gen-cpp2/meta_types.h>
 
