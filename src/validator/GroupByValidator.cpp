@@ -34,38 +34,55 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
 
     projCols_ = qctx_->objPool()->add(new YieldColumns);
     for (auto* col : columns) {
-        auto rewrited = false;
         auto colOldName = deduceColName(col);
+        auto* colExpr = col->expr();
         if (col->expr()->kind() != Expression::Kind::kAggregate) {
-            NG_RETURN_IF_ERROR(rewriteInnerAggExpr(col, rewrited));
+            auto collectAggCol = colExpr->clone();
+            auto aggs =
+                ExpressionUtils::collectAll(collectAggCol.get(), {Expression::Kind::kAggregate});
+            for (auto* agg : aggs) {
+                DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
+                if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression*>(agg))
+                         .ok()) {
+                    return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
+                                                 colExpr->toString().c_str());
+                }
+
+                groupItems_.emplace_back(qctx_->objPool()->add(agg->clone().release()));
+                needGenProject_ = true;
+                outputColumnNames_.emplace_back(agg->toString());
+            }
+            if (!aggs.empty()) {
+                auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+                projCols_->addColumn(new YieldColumn(colRewrited, new std::string(colOldName)));
+                projOutputColumnNames_.emplace_back(colOldName);
+                continue;
+            }
         }
-        auto colExpr = col->expr();
+
         // collect exprs for check later
         if (colExpr->kind() == Expression::Kind::kAggregate) {
             auto* aggExpr = static_cast<AggregateExpression*>(colExpr);
             NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
-        } else {
+        } else if (!ExpressionUtils::isEvaluableExpr(colExpr)) {
             yieldCols_.emplace_back(colExpr);
         }
 
         groupItems_.emplace_back(colExpr);
+
         auto status = deduceExprType(colExpr);
         NG_RETURN_IF_ERROR(status);
         auto type = std::move(status).value();
-        std::string name;
-        if (!rewrited) {
-            name = deduceColName(col);
-            projCols_->addColumn(new YieldColumn(
-                new VariablePropertyExpression(new std::string(), new std::string(name)),
-                new std::string(colOldName)));
-        } else {
-            name = colExpr->toString();
-        }
-        projOutputColumnNames_.emplace_back(colOldName);
-        outputs_.emplace_back(name, type);
-        outputColumnNames_.emplace_back(name);
 
-        if (col->alias() != nullptr && !rewrited) {
+        projCols_->addColumn(new YieldColumn(
+            new VariablePropertyExpression(new std::string(), new std::string(colOldName)),
+            new std::string(colOldName)));
+
+        projOutputColumnNames_.emplace_back(colOldName);
+        outputs_.emplace_back(colOldName, type);
+        outputColumnNames_.emplace_back(colOldName);
+
+        if (col->alias() != nullptr) {
             aliases_.emplace(*col->alias(), col);
         }
 
@@ -168,30 +185,6 @@ Status GroupByValidator::groupClauseSemanticCheck() {
             }
         }
     }
-    return Status::OK();
-}
-
-Status GroupByValidator::rewriteInnerAggExpr(YieldColumn* col, bool& rewrited) {
-    auto colOldName = deduceColName(col);
-    auto* colExpr = col->expr();
-    // agg col need not rewrite
-    DCHECK(colExpr->kind() != Expression::Kind::kAggregate);
-    auto collectAggCol = colExpr->clone();
-    auto aggs = ExpressionUtils::collectAll(collectAggCol.get(), {Expression::Kind::kAggregate});
-    if (aggs.size() > 1) {
-        return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
-                                     collectAggCol->toString().c_str());
-    }
-    if (aggs.size() == 1) {
-        auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
-        rewrited = true;
-        needGenProject_ = true;
-        projCols_->addColumn(new YieldColumn(colRewrited, new std::string(colOldName)));
-
-        // set aggExpr
-        col->setExpr(aggs[0]->clone().release());
-    }
-
     return Status::OK();
 }
 

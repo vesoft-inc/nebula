@@ -384,6 +384,18 @@ Feature: Basic Aggregate and GroupBy
       | dst             | count |
       | "Tony Parker"   | 1     |
       | "Manu Ginobili" | 1     |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age
+      | GROUP BY $-.dst
+      YIELD
+        $-.dst AS dst,
+        (INT)(sum($-.age)/count($-.age))+avg(distinct $-.age+1)+1 AS statistics
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst             | statistics |
+      | "Tony Parker"   | 74.0       |
+      | "Manu Ginobili" | 84.0       |
 
   Scenario: Match Implicit GroupBy
     When executing query:
@@ -418,6 +430,17 @@ Feature: Basic Aggregate and GroupBy
       | 45  | 13    |
       | 46  | 2     |
       | 47  | 3     |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"})-[:like]->(m)
+      RETURN
+        m.name as dst,
+        (INT)(sum(m.age)/count(m.age))+avg(distinct m.age+1)+1 AS statistics
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst             | statistics |
+      | "Tony Parker"   | 74.0       |
+      | "Manu Ginobili" | 84.0       |
     When executing query:
       """
       MATCH (v:player {name:"noexist"})-[:like]-(m:player)

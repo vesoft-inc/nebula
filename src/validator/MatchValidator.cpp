@@ -678,30 +678,35 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
     auto cols = yieldCtx.yieldColumns->columns();
     DCHECK(!cols.empty());
     for (auto *col : cols) {
-        auto rewrited = false;
+        auto *colExpr = col->expr();
         auto colOldName = deduceColName(col);
-        if (col->expr()->kind() != Expression::Kind::kAggregate) {
-            auto collectAggCol = col->expr()->clone();
+        if (colExpr->kind() != Expression::Kind::kAggregate) {
+            auto collectAggCol = colExpr->clone();
             auto aggs =
                 ExpressionUtils::collectAll(collectAggCol.get(), {Expression::Kind::kAggregate});
-            auto size = aggs.size();
-            if (size > 1) {
-                return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
-                                             collectAggCol->toString().c_str());
-            }
-            if (size == 1) {
-                // rewrite inner aggExpr to variablePropertyExpr
-                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(col->expr());
-                rewrited = true;
+            for (auto *agg : aggs) {
+                DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
+                if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(agg))
+                         .ok()) {
+                    return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
+                                                 colExpr->toString().c_str());
+                }
+
+                yieldCtx.groupItems_.emplace_back(
+                    yieldCtx.qctx->objPool()->add(agg->clone().release()));
+
                 yieldCtx.needGenProject_ = true;
+                yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
+            }
+            if (!aggs.empty()) {
+                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
                 yieldCtx.projCols_->addColumn(
                     new YieldColumn(rewritedExpr, new std::string(colOldName)));
-
-                col->setExpr(aggs[0]->clone().release());
+                yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
+                continue;
             }
         }
 
-        auto colExpr = col->expr();
         if (colExpr->kind() == Expression::Kind::kAggregate) {
             auto *aggExpr = static_cast<AggregateExpression *>(colExpr);
             NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
@@ -710,17 +715,12 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         }
 
         yieldCtx.groupItems_.emplace_back(colExpr);
-        std::string colNewName;
-        if (!rewrited) {
-            colNewName = deduceColName(col);
-            yieldCtx.projCols_->addColumn(new YieldColumn(
-                new VariablePropertyExpression(new std::string(), new std::string(colNewName)),
-                new std::string(colOldName)));
-        } else {
-            colNewName = colExpr->toString();
-        }
+
+        yieldCtx.projCols_->addColumn(new YieldColumn(
+            new VariablePropertyExpression(new std::string(), new std::string(colOldName)),
+            new std::string(colOldName)));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
-        yieldCtx.aggOutputColumnNames_.emplace_back(colNewName);
+        yieldCtx.aggOutputColumnNames_.emplace_back(colOldName);
     }
 
     return Status::OK();

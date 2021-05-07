@@ -28,7 +28,6 @@ private:
     Status validateYield(const YieldClause *yieldClause);
 
     Status groupClauseSemanticCheck();
-    Status rewriteInnerAggExpr(YieldColumn *col, bool &rewrited);
 
 private:
     std::vector<Expression *> yieldCols_;
