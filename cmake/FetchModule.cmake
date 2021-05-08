@@ -28,15 +28,48 @@ macro(nebula_fetch_module)
         if(NOT ${fetch_status} EQUAL 0)
             message(FATAL_ERROR "Cloning failed")
         endif()
-    elseif(${module_UPDATE})
+    else()
         message(STATUS "Updating from ${module_URL}")
         execute_process(
-            COMMAND ${GIT_EXECUTABLE} pull
+            COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
             WORKING_DIRECTORY ${module_dir}
-            RESULT_VARIABLE fetch_status
+            OUTPUT_VARIABLE branch_name
         )
-        if(NOT ${fetch_status} EQUAL 0)
-            message(FATAL_ERROR "Updating failed")
+        string(REPLACE "\n" "" branch_name "${branch_name}")
+        if(NOT ${branch_name} STREQUAL ${module_TAG})
+            message(STATUS "The branch of ${module_NAME} is ${branch_name}, need to change to ${module_TAG}")
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} remote set-branches origin --add ${module_TAG}
+                WORKING_DIRECTORY ${module_dir}
+            )
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} config remote.origin.fetch
+                WORKING_DIRECTORY ${module_dir}
+            )
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} fetch
+                WORKING_DIRECTORY ${module_dir}
+            )
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} checkout ${module_TAG}
+                WORKING_DIRECTORY ${module_dir}
+                RESULT_VARIABLE checkout_status
+                ERROR_VARIABLE error_msg
+            )
+            if(NOT ${checkout_status} EQUAL 0)
+                message(FATAL_ERROR "Checkout to branch ${module_TAG} failed: ${error_msg}, error_code: ${checkout_status}")
+            endif()
+        endif()
+        if(${module_UPDATE})
+            message(STATUS "Updating from ${module_URL}")
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} pull
+                WORKING_DIRECTORY ${module_dir}
+                RESULT_VARIABLE fetch_status
+            )
+            if(NOT ${fetch_status} EQUAL 0)
+                message(FATAL_ERROR "Updating failed")
+            endif()
         endif()
     endif()
 endmacro()
