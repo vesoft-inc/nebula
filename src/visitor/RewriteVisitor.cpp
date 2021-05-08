@@ -270,6 +270,31 @@ void RewriteVisitor::visit(SubscriptExpression *expr) {
     visitBinaryExpr(expr);
 }
 
+void RewriteVisitor::visit(SubscriptRangeExpression *expr) {
+    if (!care(expr->kind())) {
+        return;
+    }
+    if (matcher_(expr->list())) {
+        expr->setList(rewriter_(expr->list()));
+    } else {
+        expr->list()->accept(this);
+    }
+    if (expr->lo() != nullptr) {
+        if (matcher_(expr->lo())) {
+            expr->setLo(rewriter_(expr->lo()));
+        } else {
+            expr->lo()->accept(this);
+        }
+    }
+    if (expr->hi() != nullptr) {
+        if (matcher_(expr->hi())) {
+            expr->setHi(rewriter_(expr->hi()));
+        } else {
+            expr->hi()->accept(this);
+        }
+    }
+}
+
 void RewriteVisitor::visitBinaryExpr(BinaryExpression *expr) {
     if (matcher_(expr->left())) {
         expr->setLeft(rewriter_(expr->left()));

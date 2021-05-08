@@ -90,6 +90,8 @@ private:
     void visit(ListComprehensionExpression *) override;
     // reduce expression
     void visit(ReduceExpression *expr) override;
+    // subscript range
+    void visit(SubscriptRangeExpression *expr) override;
 
     void visitVertexPropertyExpr(PropertyExpression *expr);
 

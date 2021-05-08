@@ -315,5 +315,24 @@ void RewriteSymExprVisitor::visit(ReduceExpression *expr) {
     }
 }
 
+void RewriteSymExprVisitor::visit(SubscriptRangeExpression *expr) {
+    expr->list()->accept(this);
+    if (expr_) {
+        expr->setList(expr_.release());
+    }
+    if (expr->lo() != nullptr) {
+        expr->lo()->accept(this);
+        if (expr_) {
+            expr->setLo(expr_.release());
+        }
+    }
+    if (expr->hi() != nullptr) {
+        expr->hi()->accept(this);
+        if (expr_) {
+            expr->setHi(expr_.release());
+        }
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

@@ -110,5 +110,9 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
     }
 }
 
+void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) {
+    canBePushed_ = false;
+}
+
 }   // namespace graph
 }   // namespace nebula

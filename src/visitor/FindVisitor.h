@@ -74,6 +74,7 @@ private:
     void visit(EdgeExpression* expr) override;
     void visit(ColumnExpression* expr) override;
     void visit(ListComprehensionExpression* expr) override;
+    void visit(SubscriptRangeExpression* expr) override;
 
     void visitBinaryExpr(BinaryExpression* expr) override;
 

@@ -93,6 +93,10 @@ private:
         isEvaluable_ = false;
     }
 
+    void visit(SubscriptRangeExpression *) override {
+        isEvaluable_ = false;
+    }
+
     bool isEvaluable_{true};
 };
 

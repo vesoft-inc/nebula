@@ -72,6 +72,7 @@ private:
     void visit(RelationalExpression*) override;
     void visit(SubscriptExpression*) override;
     void visit(PathBuildExpression*) override;
+    void visit(SubscriptRangeExpression*) override;
     void visit(ConstantExpression *) override {}
     void visit(LabelExpression*) override {}
     void visit(UUIDExpression*) override {}

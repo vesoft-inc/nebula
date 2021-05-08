@@ -2485,6 +2485,24 @@ TEST(Parser, MatchMultipleTags) {
     }
 }
 
+TEST(Parser, MatchListSubscriptRange) {
+    {
+        std::string query = "WITH [0, 1, 2] AS list RETURN list[0..] AS l";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        std::string query = "RETURN [0, 1, 2][0..] AS l";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        std::string query = "RETURN [0, 1, 2][0..1] AS l";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Zone) {
     {
         std::string query = "SHOW GROUPS";

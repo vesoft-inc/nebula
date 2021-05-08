@@ -656,6 +656,42 @@ void DeduceTypeVisitor::visit(ReduceExpression *expr) {
     type_ = Value::Type::__EMPTY__;
 }
 
+void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
+    expr->list()->accept(this);
+    if (!ok()) {
+        return;
+    }
+    if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
+        // deduce failed
+        return;
+    }
+    if (type_ != Value::Type::LIST) {
+        status_ = Status::SemanticError("Expect list type for subscript range operator.");
+        return;
+    }
+
+    if (expr->lo() != nullptr) {
+        expr->lo()->accept(this);
+        if (!ok()) {
+            return;
+        }
+        if (type_ != Value::Type::INT) {
+            status_ = Status::SemanticError("Expect integer type for subscript range bound.");
+        }
+    }
+
+    if (expr->hi() != nullptr) {
+        expr->hi()->accept(this);
+        if (!ok()) {
+            return;
+        }
+        if (type_ != Value::Type::INT) {
+            status_ = Status::SemanticError("Expect integer type for subscript range bound.");
+        }
+    }
+    type_ = Value::Type::LIST;
+}
+
 void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
     auto *tag = expr->sym();
     auto tagId = qctx_->schemaMng()->toTagID(space_, *tag);

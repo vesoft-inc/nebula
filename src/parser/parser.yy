@@ -222,6 +222,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> map_expression
 %type <expr> container_expression
 %type <expr> subscript_expression
+%type <expr> subscript_range_expression
 %type <expr> attribute_expression
 %type <expr> case_expression
 %type <expr> predicate_expression
@@ -665,6 +666,9 @@ compound_expression
     | subscript_expression {
         $$ = $1;
     }
+    | subscript_range_expression {
+        $$ = $1;
+    }
     | attribute_expression {
         $$ = $1;
     }
@@ -694,6 +698,36 @@ subscript_expression
     }
     | compound_expression L_BRACKET expression R_BRACKET {
         $$ = new SubscriptExpression($1, $3);
+    }
+    ;
+
+subscript_range_expression
+    : name_label L_BRACKET expression DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression(new LabelExpression($1), $3, $5);
+    }
+    | name_label L_BRACKET DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression(new LabelExpression($1), nullptr, $4);
+    }
+    | name_label L_BRACKET expression DOT_DOT R_BRACKET {
+        $$ = new SubscriptRangeExpression(new LabelExpression($1), $3, nullptr);
+    }
+    | VARIABLE L_BRACKET expression DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression(new VariableExpression($1), $3, $5);
+    }
+    | VARIABLE L_BRACKET DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression(new VariableExpression($1), nullptr, $4);
+    }
+    | VARIABLE L_BRACKET expression DOT_DOT R_BRACKET {
+        $$ = new SubscriptRangeExpression(new VariableExpression($1), $3, nullptr);
+    }
+    | compound_expression L_BRACKET expression DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression($1, $3, $5);
+    }
+    | compound_expression L_BRACKET DOT_DOT expression R_BRACKET {
+        $$ = new SubscriptRangeExpression($1, nullptr, $4);
+    }
+    | compound_expression L_BRACKET expression DOT_DOT R_BRACKET {
+        $$ = new SubscriptRangeExpression($1, $3, nullptr);
     }
     ;
 

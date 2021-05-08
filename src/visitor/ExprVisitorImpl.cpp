@@ -181,5 +181,25 @@ void ExprVisitorImpl::visit(ReduceExpression *expr) {
     if (!ok()) return;
 }
 
+void ExprVisitorImpl::visit(SubscriptRangeExpression *expr) {
+    DCHECK(ok());
+    expr->list()->accept(this);
+    if (!ok()) {
+        return;
+    }
+    if (expr->lo() != nullptr) {
+        expr->lo()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
+    if (expr->hi() != nullptr) {
+        expr->hi()->accept(this);
+        if (!ok()) {
+            return;
+        }
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

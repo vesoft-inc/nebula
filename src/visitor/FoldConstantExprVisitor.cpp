@@ -436,5 +436,38 @@ void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
     canBeFolded_ = canBeFolded;
 }
 
+void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
+    bool canBeFolded = true;
+    if (!isConstant(expr->list())) {
+        expr->list()->accept(this);
+        if (canBeFolded_) {
+            expr->setList(fold(expr->list()));
+        } else {
+            canBeFolded = false;
+        }
+    }
+    if (expr->lo() != nullptr) {
+        if (!isConstant(expr->lo())) {
+            expr->lo()->accept(this);
+            if (canBeFolded_) {
+                expr->setLo(fold(expr->lo()));
+            } else {
+                canBeFolded = false;
+            }
+        }
+    }
+    if (expr->hi() != nullptr) {
+        if (!isConstant(expr->hi())) {
+            expr->hi()->accept(this);
+            if (canBeFolded_) {
+                expr->setHi(fold(expr->hi()));
+            } else {
+                canBeFolded = false;
+            }
+        }
+    }
+    canBeFolded_ = canBeFolded;
+}
+
 }   // namespace graph
 }   // namespace nebula

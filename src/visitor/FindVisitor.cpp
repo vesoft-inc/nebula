@@ -201,6 +201,25 @@ void FindVisitor::visit(ColumnExpression* expr) {
     findInCurrentExpr(expr);
 }
 
+
+void FindVisitor::visit(SubscriptRangeExpression* expr) {
+    findInCurrentExpr(expr);
+    if (!needFindAll_ && found_) return;
+
+    expr->list()->accept(this);
+    if (!needFindAll_ && found_) return;
+
+    if (expr->lo() != nullptr) {
+        expr->lo()->accept(this);
+        if (!needFindAll_ && found_) return;
+    }
+
+    if (expr->hi() != nullptr) {
+        expr->hi()->accept(this);
+        if (!needFindAll_ && found_) return;
+    }
+}
+
 void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
     findInCurrentExpr(expr);
     if (!needFindAll_ && found_) return;

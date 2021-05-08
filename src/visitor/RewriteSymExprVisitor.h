@@ -77,6 +77,8 @@ public:
     void visit(ListComprehensionExpression *expr) override;
     // reduce expression
     void visit(ReduceExpression *expr) override;
+    // subscript range expression
+    void visit(SubscriptRangeExpression *expr) override;
 
 private:
     void visitBinaryExpr(BinaryExpression *expr);
