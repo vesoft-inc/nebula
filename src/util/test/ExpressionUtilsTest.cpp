@@ -401,6 +401,110 @@ TEST_F(ExpressionUtilsTest, pushAnds) {
     ASSERT_EQ(expected, t->toString());
 }
 
+TEST_F(ExpressionUtilsTest, flattenInnerLogicalExpr) {
+    using Kind = Expression::Kind;
+    // true AND false AND true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalAnd,
+                    first,
+                    second),
+                third);
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        auto newExpr = ExpressionUtils::flattenInnerLogicalExpr(&expr);
+        ASSERT_EQ(expected, *newExpr);
+    }
+    // true OR false OR true
+    {
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalOr,
+                    first,
+                    second),
+                third);
+        LogicalExpression expected(Kind::kLogicalOr);
+        expected.addOperand(first->clone().release());
+        expected.addOperand(second->clone().release());
+        expected.addOperand(third->clone().release());
+        auto newExpr = ExpressionUtils::flattenInnerLogicalExpr(&expr);
+        ASSERT_EQ(expected, *newExpr);
+    }
+    // (true OR false OR true)==(true AND false AND true)
+    {
+        auto *or1 = new ConstantExpression(true);
+        auto *or2 = new ConstantExpression(false);
+        auto *or3 = new ConstantExpression(true);
+        auto* logicOrExpr = new LogicalExpression(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalOr,
+                    or1,
+                    or2),
+                or3);
+        auto *and1 = new ConstantExpression(false);
+        auto *and2 = new ConstantExpression(false);
+        auto *and3 = new ConstantExpression(true);
+        auto* logicAndExpr = new LogicalExpression(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalAnd,
+                    and1,
+                    and2),
+                and3);
+        RelationalExpression expr(Kind::kRelEQ, logicOrExpr, logicAndExpr);
+
+        auto* logicOrFlatten = new LogicalExpression(Kind::kLogicalOr);
+        logicOrFlatten->addOperand(or1->clone().release());
+        logicOrFlatten->addOperand(or2->clone().release());
+        logicOrFlatten->addOperand(or3->clone().release());
+        auto* logicAndFlatten = new LogicalExpression(Kind::kLogicalAnd);
+        logicAndFlatten->addOperand(and1->clone().release());
+        logicAndFlatten->addOperand(and2->clone().release());
+        logicAndFlatten->addOperand(and3->clone().release());
+        RelationalExpression expected(Kind::kRelEQ, logicOrFlatten, logicAndFlatten);
+
+        auto newExpr = ExpressionUtils::flattenInnerLogicalExpr(&expr);
+        ASSERT_EQ(expected, *newExpr);
+    }
+    // (true OR false OR true) AND (true AND false AND true)
+    {
+        auto *or1 = new ConstantExpression(true);
+        auto *or2 = new ConstantExpression(false);
+        auto *or3 = new ConstantExpression(true);
+        auto* logicOrExpr = new LogicalExpression(Kind::kLogicalOr,
+                new LogicalExpression(Kind::kLogicalOr,
+                    or1,
+                    or2),
+                or3);
+        auto *and1 = new ConstantExpression(false);
+        auto *and2 = new ConstantExpression(false);
+        auto *and3 = new ConstantExpression(true);
+        auto* logicAndExpr = new LogicalExpression(Kind::kLogicalAnd,
+                new LogicalExpression(Kind::kLogicalAnd,
+                    and1,
+                    and2),
+                and3);
+        LogicalExpression expr(Kind::kLogicalAnd, logicOrExpr, logicAndExpr);
+
+        auto* logicOrFlatten = new LogicalExpression(Kind::kLogicalOr);
+        logicOrFlatten->addOperand(or1->clone().release());
+        logicOrFlatten->addOperand(or2->clone().release());
+        logicOrFlatten->addOperand(or3->clone().release());
+        LogicalExpression expected(Kind::kLogicalAnd);
+        expected.addOperand(logicOrFlatten);
+        expected.addOperand(and1->clone().release());
+        expected.addOperand(and2->clone().release());
+        expected.addOperand(and3->clone().release());
+
+        auto newExpr = ExpressionUtils::flattenInnerLogicalExpr(&expr);
+        ASSERT_EQ(expected, *newExpr);
+    }
+}
+
 std::unique_ptr<Expression> parse(const std::string& expr) {
     std::string query = "LOOKUP on t1 WHERE " + expr;
     GQLParser parser;

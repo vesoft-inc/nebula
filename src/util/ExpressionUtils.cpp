@@ -241,6 +241,39 @@ void ExpressionUtils::pullOrsImpl(LogicalExpression *expr,
     }
 }
 
+std::unique_ptr<Expression> ExpressionUtils::flattenInnerLogicalAndExpr(const Expression *expr) {
+    auto matcher = [](const Expression *e) -> bool {
+        return e->kind() == Expression::Kind::kLogicalAnd;
+    };
+    auto rewriter = [](const Expression *e) -> Expression * {
+        pullAnds(const_cast<Expression *>(e));
+        return e->clone().release();
+    };
+
+    return std::unique_ptr<Expression>(
+        RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter)));
+}
+
+std::unique_ptr<Expression> ExpressionUtils::flattenInnerLogicalOrExpr(const Expression *expr) {
+    auto matcher = [](const Expression *e) -> bool {
+        return e->kind() == Expression::Kind::kLogicalOr;
+    };
+    auto rewriter = [](const Expression *e) -> Expression * {
+        pullOrs(const_cast<Expression *>(e));
+        return e->clone().release();
+    };
+
+    return std::unique_ptr<Expression>(
+        RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter)));
+}
+
+std::unique_ptr<Expression> ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
+    auto andFlattenExpr = flattenInnerLogicalAndExpr(expr);
+    auto allFlattenExpr = flattenInnerLogicalOrExpr(andFlattenExpr.get());
+
+    return allFlattenExpr;
+}
+
 VariablePropertyExpression *ExpressionUtils::newVarPropExpr(const std::string &prop,
                                                             const std::string &var) {
     return new VariablePropertyExpression(new std::string(var), new std::string(prop));
