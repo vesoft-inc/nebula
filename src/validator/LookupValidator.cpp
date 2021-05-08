@@ -186,7 +186,7 @@ Status LookupValidator::prepareFilter() {
     } else {
         auto ret = checkFilter(filter);
         NG_RETURN_IF_ERROR(ret);
-        ctx.set_filter(Expression::encode(*filter));
+        ctx.set_filter(Expression::encode(*ret.value()));
     }
     contexts_ = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
     contexts_->emplace_back(std::move(ctx));
@@ -297,18 +297,18 @@ bool LookupValidator::needTextSearch(Expression* expr) {
     }
 }
 
-Status LookupValidator::checkFilter(Expression* expr) {
-    // TODO (sky) : Rewrite simple expressions,
-    //              for example rewrite expr from col1 > 1 + 2 to col > 3
+StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
     switch (expr->kind()) {
         case Expression::Kind::kLogicalOr:
         case Expression::Kind::kLogicalAnd: {
             // TODO(dutor) Deal with n-ary operands
             auto lExpr = static_cast<LogicalExpression*>(expr);
-            auto ret = checkFilter(lExpr->operand(0));
-            NG_RETURN_IF_ERROR(ret);
-            ret = checkFilter(lExpr->operand(1));
-            NG_RETURN_IF_ERROR(ret);
+            auto& operands = lExpr->operands();
+            for (auto i = 0u; i < operands.size(); i++) {
+                auto ret = checkFilter(lExpr->operand(i));
+                NG_RETURN_IF_ERROR(ret);
+                lExpr->setOperand(i, ret.value()->clone().release());
+            }
             break;
         }
         case Expression::Kind::kRelLE:
@@ -325,10 +325,10 @@ Status LookupValidator::checkFilter(Expression* expr) {
                                          expr->toString().c_str());
         }
     }
-    return Status::OK();
+    return expr;
 }
 
-Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
+StatusOr<Expression*> LookupValidator::checkRelExpr(RelationalExpression* expr) {
     auto* left = expr->left();
     auto* right = expr->right();
     // Does not support filter : schema.col1 > schema.col2
@@ -339,60 +339,51 @@ Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
                right->kind() == Expression::Kind::kLabelAttribute) {
         auto ret = rewriteRelExpr(expr);
         NG_RETURN_IF_ERROR(ret);
-    } else {
-        return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
+        return ret.value();
     }
-    return Status::OK();
+    return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
 }
 
-Status LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
-    auto* left = expr->left();
-    auto* right = expr->right();
-    auto leftIsAE = left->kind() == Expression::Kind::kLabelAttribute;
+StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
+    // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
+    // so that LabelAttributeExpr is always on the left
+    auto right = expr->right();
+    if (right->kind() == Expression::Kind::kLabelAttribute) {
+        expr = qctx_->objPool()->add(
+            static_cast<RelationalExpression*>(reverseRelKind(expr).release()));
+    }
 
-    auto* la = leftIsAE ? static_cast<LabelAttributeExpression*>(left)
-                        : static_cast<LabelAttributeExpression*>(right);
+    auto left = expr->left();
+    auto* la = static_cast<LabelAttributeExpression*>(left);
     if (*la->left()->name() != from_) {
         return Status::SemanticError("Schema name error : %s", la->left()->name()->c_str());
     }
 
+    // fold constant expression
+    expr = qctx_->objPool()->add(
+        static_cast<RelationalExpression*>(ExpressionUtils::foldConstantExpr(expr).release()));
+    DCHECK_EQ(expr->left()->kind(), Expression::Kind::kLabelAttribute);
+
     std::string prop = la->right()->value().getStr();
-    // rewrite ConstantExpression
     auto relExprType = expr->kind();
-    auto c = leftIsAE ? checkConstExpr(right, prop, relExprType, leftIsAE)
-                      : checkConstExpr(left, prop, relExprType, leftIsAE);
-
+    auto c = checkConstExpr(expr->right(), prop, relExprType);
     if (!c.ok()) {
-        return Status::SemanticError("expression error : %s", left->toString().c_str());
+        return Status::SemanticError("expression error : %s", expr->right()->toString().c_str());
     }
-
-    if (leftIsAE) {
-        expr->setRight(new ConstantExpression(std::move(c).value()));
-    } else {
-        expr->setLeft(new ConstantExpression(std::move(c).value()));
-    }
+    expr->setRight(new ConstantExpression(std::move(c).value()));
 
     // rewrite PropertyExpression
-    if (leftIsAE) {
-        if (isEdge_) {
-            expr->setLeft(ExpressionUtils::rewriteLabelAttr2EdgeProp(la));
-        } else {
-            expr->setLeft(ExpressionUtils::rewriteLabelAttr2TagProp(la));
-        }
+    if (isEdge_) {
+        expr->setLeft(ExpressionUtils::rewriteLabelAttr2EdgeProp(la));
     } else {
-        if (isEdge_) {
-            expr->setRight(ExpressionUtils::rewriteLabelAttr2EdgeProp(la));
-        } else {
-            expr->setRight(ExpressionUtils::rewriteLabelAttr2TagProp(la));
-        }
+        expr->setLeft(ExpressionUtils::rewriteLabelAttr2TagProp(la));
     }
-    return Status::OK();
+    return expr;
 }
 
 StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr,
                                                 const std::string& prop,
-                                                const Expression::Kind kind,
-                                                bool leftIsAE) {
+                                                const Expression::Kind kind) {
     if (!evaluableExpr(expr)) {
         return Status::SemanticError("'%s' is not an evaluable expression.",
                                      expr->toString().c_str());
@@ -413,8 +404,7 @@ StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr,
         double f = v.getFloat();
         int iCeil = ceil(f);
         int iFloor = floor(f);
-        if ((leftIsAE && (kind == Expression::Kind::kRelGE || kind == Expression::Kind::kRelLT)) ||
-            (!leftIsAE && (kind == Expression::Kind::kRelGT || kind == Expression::Kind::kRelLE))) {
+        if (kind == Expression::Kind::kRelGE || kind == Expression::Kind::kRelLT) {
             // edge case col1 >= 40.0, no need to round up
             if (std::abs(f - iCeil) < kEpsilon) {
                 return iFloor;
@@ -466,6 +456,40 @@ Status LookupValidator::checkTSIndex() {
         return Status::SemanticError("fulltext index not found : %s", ftIndex.c_str());
     }
     return ret.status();
+}
+
+// Transform (A > B) to (B < A)
+std::unique_ptr<Expression> LookupValidator::reverseRelKind(RelationalExpression* expr) {
+    auto kind = expr->kind();
+    auto reversedKind = kind;
+
+    switch (kind) {
+        case Expression::Kind::kRelEQ:
+            break;
+        case Expression::Kind::kRelNE:
+            break;
+        case Expression::Kind::kRelLT:
+            reversedKind = Expression::Kind::kRelGT;
+            break;
+        case Expression::Kind::kRelLE:
+            reversedKind = Expression::Kind::kRelGE;
+            break;
+        case Expression::Kind::kRelGT:
+            reversedKind = Expression::Kind::kRelLT;
+            break;
+        case Expression::Kind::kRelGE:
+            reversedKind = Expression::Kind::kRelLE;
+            break;
+        default:
+            LOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
+            break;
+    }
+
+    auto left = expr->left();
+    auto right = expr->right();
+
+    return std::make_unique<RelationalExpression>(
+        reversedKind, right->clone().release(), left->clone().release());
 }
 
 const nebula::plugin::HttpClient& LookupValidator::randomFTClient() const {

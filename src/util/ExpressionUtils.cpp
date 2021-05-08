@@ -433,6 +433,7 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
     return Status::OK();
 }
 
+// Negate the given relational expr
 std::unique_ptr<RelationalExpression> ExpressionUtils::reverseRelExpr(RelationalExpression *expr) {
     auto left = static_cast<RelationalExpression *>(expr)->left();
     auto right = static_cast<RelationalExpression *>(expr)->right();
@@ -442,6 +443,7 @@ std::unique_ptr<RelationalExpression> ExpressionUtils::reverseRelExpr(Relational
         negatedKind, left->clone().release(), right->clone().release());
 }
 
+// Return the negation of the given relational kind
 Expression::Kind ExpressionUtils::getNegatedRelExprKind(const Expression::Kind kind) {
     switch (kind) {
         case Expression::Kind::kRelEQ:
@@ -514,5 +516,6 @@ Expression::Kind ExpressionUtils::getNegatedLogicalExprKind(const Expression::Ki
             break;
     }
 }
+
 }   // namespace graph
 }   // namespace nebula

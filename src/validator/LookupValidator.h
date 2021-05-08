@@ -38,16 +38,17 @@ private:
 
     bool needTextSearch(Expression* expr);
 
-    Status checkFilter(Expression* expr);
+    StatusOr<Expression*> checkFilter(Expression* expr);
 
-    Status checkRelExpr(RelationalExpression* expr);
+    StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
 
-    Status rewriteRelExpr(RelationalExpression* expr);
+    StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
 
     StatusOr<Value> checkConstExpr(Expression* expr,
                                    const std::string& prop,
-                                   const Expression::Kind kind,
-                                   bool leftIsAE);
+                                   const Expression::Kind kind);
+
+    std::unique_ptr<Expression> reverseRelKind(RelationalExpression* expr);
 
     Status checkTSService();
 

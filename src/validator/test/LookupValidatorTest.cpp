@@ -112,6 +112,11 @@ TEST_F(LookupValidatorTest, InvalidFilterExpression) {
     }
     {
         const std::string query =
+            "LOOKUP ON person where  1 + 5 < person.age;";
+        EXPECT_TRUE(checkResult(query, {}));
+    }
+    {
+        const std::string query =
             "LOOKUP ON person where person.age > 1 + 5;";
         EXPECT_TRUE(checkResult(query, {}));
     }
