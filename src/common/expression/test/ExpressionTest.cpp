@@ -2207,6 +2207,105 @@ TEST_F(ExpressionTest, ListSubscript) {
     }
 }
 
+TEST_F(ExpressionTest, ListSubscriptRange) {
+    auto *items = new ExpressionList();
+    (*items).add(new ConstantExpression(0))
+            .add(new ConstantExpression(1))
+            .add(new ConstantExpression(2))
+            .add(new ConstantExpression(3))
+            .add(new ConstantExpression(4))
+            .add(new ConstantExpression(5));
+    auto list = std::make_unique<ListExpression>(items);
+    // [0,1,2,3,4,5][0..] => [0,1,2,3,4,5]
+    {
+        auto *lo = new ConstantExpression(0);
+        SubscriptRangeExpression expr(list->clone().release(), lo, nullptr);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List({0, 1, 2, 3, 4, 5}), value.getList());
+    }
+    // [0,1,2,3,4,5][0..0] => []
+    {
+        auto *lo = new ConstantExpression(0);
+        auto *hi = new ConstantExpression(0);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List(), value.getList());
+    }
+    // [0,1,2,3,4,5][0..10] => [0,1,2,3,4,5]
+    {
+        auto *lo = new ConstantExpression(0);
+        auto *hi = new ConstantExpression(10);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List({0, 1, 2, 3, 4, 5}), value.getList());
+    }
+    // [0,1,2,3,4,5][3..2] => []
+    {
+        auto *lo = new ConstantExpression(3);
+        auto *hi = new ConstantExpression(2);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List(), value.getList());
+    }
+    // [0,1,2,3,4,5][..-1] => [0,1,2,3,4]
+    {
+        auto *hi = new ConstantExpression(-1);
+        SubscriptRangeExpression expr(list->clone().release(), nullptr, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List({0, 1, 2, 3, 4}), value.getList());
+    }
+    // [0,1,2,3,4,5][-1..-1] => []
+    {
+        auto *lo = new ConstantExpression(-1);
+        auto *hi = new ConstantExpression(-1);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List(), value.getList());
+    }
+    // [0,1,2,3,4,5][-10..-1] => [0,1,2,3,4]
+    {
+        auto *lo = new ConstantExpression(-10);
+        auto *hi = new ConstantExpression(-1);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List({0, 1, 2, 3, 4}), value.getList());
+    }
+    // [0,1,2,3,4,5][-2..-3] => []
+    {
+        auto *lo = new ConstantExpression(-2);
+        auto *hi = new ConstantExpression(-3);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List(), value.getList());
+    }
+    // [0,1,2,3,4,5][2..-3] => [2]
+    {
+        auto *lo = new ConstantExpression(2);
+        auto *hi = new ConstantExpression(-3);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List({2}), value.getList());
+    }
+    // [0,1,2,3,4,5][-2..3] => []
+    {
+        auto *lo = new ConstantExpression(-2);
+        auto *hi = new ConstantExpression(3);
+        SubscriptRangeExpression expr(list->clone().release(), lo, hi);
+        auto value = Expression::eval(&expr, gExpCtxt);
+        EXPECT_TRUE(value.isList());
+        EXPECT_EQ(List(), value.getList());
+    }
+}
+
 TEST_F(ExpressionTest, MapSubscript) {
     // {"key1":1,"key2":2, "key3":3}["key1"]
     {

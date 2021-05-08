@@ -17,6 +17,8 @@ class ExprVisitor;
 
 class Expression {
 public:
+    // Warning: this expression will be encoded and store in meta as default value
+    // So don't add enum in middle, just append it!
     enum class Kind : uint8_t {
         kConstant,
         // Arithmetic
@@ -103,6 +105,8 @@ public:
         kIsNotNull,
         kIsEmpty,
         kIsNotEmpty,
+
+        kSubscriptRange,
     };
 
 

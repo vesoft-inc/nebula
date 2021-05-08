@@ -88,6 +88,8 @@ public:
     virtual void visit(ListComprehensionExpression *expr) = 0;
     // reduce expression
     virtual void visit(ReduceExpression *expr) = 0;
+    // subscript range expression
+    virtual void visit(SubscriptRangeExpression *expr) = 0;
 };
 
 }   // namespace nebula
