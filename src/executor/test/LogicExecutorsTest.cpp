@@ -11,8 +11,8 @@
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/SelectExecutor.h"
 #include "executor/logic/StartExecutor.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

@@ -6,7 +6,7 @@
 
 #include "executor/algo/BFSShortestPathExecutor.h"
 
-#include "planner/Algo.h"
+#include "planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {

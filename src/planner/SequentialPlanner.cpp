@@ -7,8 +7,8 @@
 #include "planner/SequentialPlanner.h"
 
 #include "parser/Sentence.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "validator/SequentialValidator.h"
 
 namespace nebula {

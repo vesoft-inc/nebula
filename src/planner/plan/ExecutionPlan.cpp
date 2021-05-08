@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/ExecutionPlan.h"
+#include "planner/plan/ExecutionPlan.h"
 
 #include "common/graph/Response.h"
 #include "common/interface/gen-cpp2/graph_types.h"
-#include "planner/Logic.h"
-#include "planner/PlanNode.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/PlanNode.h"
+#include "planner/plan/Query.h"
 #include "util/IdGenerator.h"
 
 namespace nebula {

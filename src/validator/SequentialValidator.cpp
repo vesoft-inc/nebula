@@ -7,8 +7,8 @@
 #include "validator/SequentialValidator.h"
 
 #include "common/base/Base.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "service/GraphFlags.h"
 #include "service/PermissionCheck.h"
 

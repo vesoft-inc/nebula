@@ -11,7 +11,7 @@
 #include "common/datatypes/Value.h"
 #include "common/meta/SchemaManager.h"
 #include "context/Symbols.h"
-#include "planner/ExecutionPlan.h"
+#include "planner/plan/ExecutionPlan.h"
 #include "service/Session.h"
 #include "util/AnonColGenerator.h"
 #include "util/AnonVarGenerator.h"

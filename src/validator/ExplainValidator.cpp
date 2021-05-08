@@ -13,7 +13,7 @@
 #include "common/base/StatusOr.h"
 #include "common/interface/gen-cpp2/graph_types.h"
 #include "parser/ExplainSentence.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "validator/SequentialValidator.h"
 
 namespace nebula {

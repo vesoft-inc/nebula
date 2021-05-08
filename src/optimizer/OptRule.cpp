@@ -10,7 +10,7 @@
 #include "context/Symbols.h"
 #include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace opt {

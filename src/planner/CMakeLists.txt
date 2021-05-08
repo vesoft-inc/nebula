@@ -5,14 +5,6 @@
 
 nebula_add_library(
     planner_obj OBJECT
-    PlanNode.cpp
-    ExecutionPlan.cpp
-    Algo.cpp
-    Admin.cpp
-    Logic.cpp
-    Query.cpp
-    Mutate.cpp
-    Maintain.cpp
     Planner.cpp
     PlannersRegister.cpp
     SequentialPlanner.cpp
@@ -36,4 +28,12 @@ nebula_add_library(
     match/VertexIdSeek.cpp
     match/Expand.cpp
     match/LabelIndexSeek.cpp
+    plan/PlanNode.cpp
+    plan/ExecutionPlan.cpp
+    plan/Algo.cpp
+    plan/Admin.cpp
+    plan/Logic.cpp
+    plan/Query.cpp
+    plan/Mutate.cpp
+    plan/Maintain.cpp
 )

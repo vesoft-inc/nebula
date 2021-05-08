@@ -5,7 +5,7 @@
  */
 
 #include "executor/query/DedupExecutor.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "context/QueryExpressionContext.h"
 #include "util/ScopedTimer.h"
 

@@ -5,7 +5,7 @@
 */
 
 #include "executor/admin/PartExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "context/QueryContext.h"
 #include "util/ScopedTimer.h"
 

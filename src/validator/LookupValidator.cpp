@@ -5,7 +5,7 @@
  */
 
 #include "validator/LookupValidator.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 #include "util/SchemaUtil.h"
 

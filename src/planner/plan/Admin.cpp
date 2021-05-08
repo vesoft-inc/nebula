@@ -5,7 +5,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 
 #include "util/ToJson.h"
 #include <thrift/lib/cpp/util/EnumUtils.h>

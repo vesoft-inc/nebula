@@ -6,7 +6,7 @@
 #ifndef _VALIDATOR_INDEXSCAN_VALIDATOR_H_
 #define _VALIDATOR_INDEXSCAN_VALIDATOR_H_
 
-#include <planner/Query.h>
+#include "planner/plan/Query.h"
 #include "common/base/Base.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"

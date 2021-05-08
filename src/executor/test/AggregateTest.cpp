@@ -8,7 +8,7 @@
 
 #include "context/QueryContext.h"
 #include "executor/query/AggregateExecutor.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

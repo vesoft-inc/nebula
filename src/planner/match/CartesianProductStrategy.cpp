@@ -6,10 +6,10 @@
 
 #include "planner/match/CartesianProductStrategy.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 #include "planner/match/MatchSolver.h"
-#include "planner/Algo.h"
+#include "planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {

@@ -10,8 +10,8 @@
 
 #include "common/interface/gen-cpp2/common_types.h"
 #include "context/QueryExpressionContext.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "util/ScopedTimer.h"
 
 using folly::stringPrintf;

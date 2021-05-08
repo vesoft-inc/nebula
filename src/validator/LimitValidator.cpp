@@ -6,7 +6,7 @@
 
 #include "validator/LimitValidator.h"
 #include "parser/TraverseSentences.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

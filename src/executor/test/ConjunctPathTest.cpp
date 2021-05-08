@@ -8,8 +8,8 @@
 
 #include "context/QueryContext.h"
 #include "executor/algo/ConjunctPathExecutor.h"
-#include "planner/Algo.h"
-#include "planner/Logic.h"
+#include "planner/plan/Algo.h"
+#include "planner/plan/Logic.h"
 
 namespace nebula {
 namespace graph {

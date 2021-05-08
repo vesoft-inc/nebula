@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLANNODE_H_
-#define PLANNER_PLANNODE_H_
+#ifndef PLANNER_PLAN_PLANNODE_H_
+#define PLANNER_PLAN_PLANNODE_H_
 
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
@@ -372,4 +372,4 @@ protected:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // PLANNER_PLANNODE_H_
+#endif  // PLANNER_PLAN_PLANNODE_H_

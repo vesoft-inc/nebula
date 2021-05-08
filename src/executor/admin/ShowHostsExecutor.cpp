@@ -8,7 +8,7 @@
 
 #include "executor/admin/ShowHostsExecutor.h"
 #include "context/QueryContext.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

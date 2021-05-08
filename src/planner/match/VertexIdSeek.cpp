@@ -6,7 +6,7 @@
 
 #include "planner/match/VertexIdSeek.h"
 
-#include "planner/Logic.h"
+#include "planner/plan/Logic.h"
 #include "planner/match/MatchSolver.h"
 #include "visitor/VidExtractVisitor.h"
 #include "util/ExpressionUtils.h"

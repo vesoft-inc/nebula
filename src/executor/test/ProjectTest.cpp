@@ -9,8 +9,8 @@
 #include "context/QueryContext.h"
 #include "executor/query/ProjectExecutor.h"
 #include "executor/test/QueryTestBase.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

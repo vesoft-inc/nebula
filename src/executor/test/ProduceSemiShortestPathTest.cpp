@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "context/QueryContext.h"
-#include "planner/Algo.h"
+#include "planner/plan/Algo.h"
 #include "executor/algo/ProduceSemiShortestPathExecutor.h"
 
 namespace nebula {

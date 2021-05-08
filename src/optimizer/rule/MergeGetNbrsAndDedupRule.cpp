@@ -8,8 +8,8 @@
 
 #include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
-#include "planner/PlanNode.h"
-#include "planner/Query.h"
+#include "planner/plan/PlanNode.h"
+#include "planner/plan/Query.h"
 
 using nebula::graph::Dedup;
 using nebula::graph::GetNeighbors;

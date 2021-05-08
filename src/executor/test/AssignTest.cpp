@@ -9,7 +9,7 @@
 #include "context/QueryContext.h"
 #include "executor/query/AssignExecutor.h"
 #include "common/expression/VariableExpression.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

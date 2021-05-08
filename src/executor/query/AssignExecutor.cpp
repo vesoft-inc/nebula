@@ -5,7 +5,7 @@
  */
 
 #include "executor/query/AssignExecutor.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

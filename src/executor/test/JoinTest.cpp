@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "context/QueryContext.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "executor/query/InnerJoinExecutor.h"
 #include "executor/query/LeftJoinExecutor.h"
 #include "executor/test/QueryTestBase.h"

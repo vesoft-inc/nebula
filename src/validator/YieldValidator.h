@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "common/base/Status.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "validator/Validator.h"
 #include "validator/GroupByValidator.h"
 

@@ -5,7 +5,7 @@
  */
 
 #include "validator/AdminJobValidator.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

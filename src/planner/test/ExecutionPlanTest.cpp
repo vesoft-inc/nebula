@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/ExecutionPlan.h"
+#include "planner/plan/ExecutionPlan.h"
 
 #include <folly/init/Init.h>
 #include <folly/stop_watch.h>
@@ -13,7 +13,7 @@
 #include "context/QueryContext.h"
 #include "executor/ExecutionError.h"
 #include "executor/Executor.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "scheduler/Scheduler.h"
 
 using std::chrono::duration_cast;

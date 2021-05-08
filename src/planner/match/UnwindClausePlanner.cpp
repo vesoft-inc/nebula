@@ -6,7 +6,7 @@
 
 #include "planner/match/UnwindClausePlanner.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "planner/match/MatchSolver.h"
 #include "planner/match/OrderByClausePlanner.h"
 #include "planner/match/PaginationPlanner.h"

@@ -8,7 +8,7 @@
 
 #include "context/QueryContext.h"
 #include "executor/admin/ShowTSClientsExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "service/PermissionManager.h"
 
 namespace nebula {

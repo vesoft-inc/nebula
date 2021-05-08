@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "validator/BalanceValidator.h"
 
 namespace nebula {

@@ -6,8 +6,8 @@
 
 #include "validator/UseValidator.h"
 #include "parser/TraverseSentences.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

@@ -8,7 +8,7 @@
 
 #include "context/QueryContext.h"
 #include "executor/admin/ChangePasswordExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

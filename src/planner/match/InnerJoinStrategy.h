@@ -7,7 +7,7 @@
 #ifndef PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
 #define PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "planner/match/SegmentsConnectStrategy.h"
 
 namespace nebula {

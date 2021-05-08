@@ -7,7 +7,7 @@
 #include "planner/match/MatchClausePlanner.h"
 
 #include "context/ast/CypherAstContext.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "planner/match/Expand.h"
 #include "planner/match/MatchSolver.h"
 #include "planner/match/SegmentsConnector.h"

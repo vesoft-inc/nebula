@@ -8,7 +8,7 @@
 #define VALIDATOR_GROUPBY_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "validator/Validator.h"
 
 namespace nebula {

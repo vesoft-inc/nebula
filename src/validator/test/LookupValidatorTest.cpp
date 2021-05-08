@@ -5,8 +5,8 @@
  */
 
 #include "common/base/ObjectPool.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "validator/LookupValidator.h"
 #include "validator/test/ValidatorTestBase.h"
 

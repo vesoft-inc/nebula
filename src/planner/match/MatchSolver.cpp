@@ -10,7 +10,7 @@
 #include "context/ast/AstContext.h"
 #include "context/ast/CypherAstContext.h"
 #include "planner/Planner.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 #include "visitor/RewriteVisitor.h"
 

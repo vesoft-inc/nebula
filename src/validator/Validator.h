@@ -12,7 +12,7 @@
 #include "context/QueryContext.h"
 #include "context/ValidateContext.h"
 #include "parser/Sentence.h"
-#include "planner/ExecutionPlan.h"
+#include "planner/plan/ExecutionPlan.h"
 #include "planner/Planner.h"
 #include "service/PermissionCheck.h"
 #include "visitor/DeducePropsVisitor.h"

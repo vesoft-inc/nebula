@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/Logic.h"
+#include "planner/plan/Logic.h"
 
 #include "common/interface/gen-cpp2/graph_types.h"
 

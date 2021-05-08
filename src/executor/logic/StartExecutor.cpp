@@ -6,7 +6,7 @@
 
 #include "executor/logic/StartExecutor.h"
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

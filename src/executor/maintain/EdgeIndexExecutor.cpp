@@ -5,7 +5,7 @@
  */
 
 #include "executor/maintain/EdgeIndexExecutor.h"
-#include "planner/Maintain.h"
+#include "planner/plan/Maintain.h"
 #include "util/IndexUtil.h"
 
 namespace nebula {

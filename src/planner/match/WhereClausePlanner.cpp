@@ -6,7 +6,7 @@
 
 #include "planner/match/WhereClausePlanner.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "planner/match/MatchSolver.h"
 #include "visitor/RewriteVisitor.h"
 

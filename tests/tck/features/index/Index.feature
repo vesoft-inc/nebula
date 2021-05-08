@@ -542,7 +542,7 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     And wait 3 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         tag_1(col1, col2, col3, col4)

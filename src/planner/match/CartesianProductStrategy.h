@@ -8,7 +8,7 @@
 #define PLANNER_MATCH_CARTESIANPRODUCTSTRATEGY_H_
 
 #include "planner/match/SegmentsConnector.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {

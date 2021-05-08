@@ -8,7 +8,7 @@
 
 #include "executor/admin/ListRolesExecutor.h"
 #include "context/QueryContext.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "service/PermissionManager.h"
 
 namespace nebula {

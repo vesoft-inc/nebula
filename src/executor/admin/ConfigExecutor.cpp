@@ -8,7 +8,7 @@
 
 #include "common/conf/Configuration.h"
 #include "executor/admin/ConfigExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "util/SchemaUtil.h"
 #include "context/QueryContext.h"
 #include "util/ScopedTimer.h"

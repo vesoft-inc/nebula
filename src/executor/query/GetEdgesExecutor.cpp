@@ -6,7 +6,7 @@
 
 #include "executor/query/GetEdgesExecutor.h"
 #include "context/QueryContext.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 

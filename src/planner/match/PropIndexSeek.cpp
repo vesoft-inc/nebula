@@ -6,7 +6,7 @@
 
 #include "planner/match/PropIndexSeek.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "planner/match/MatchSolver.h"
 #include "util/ExpressionUtils.h"
 

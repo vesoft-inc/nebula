@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "common/base/StatusOr.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 namespace nebula {
 

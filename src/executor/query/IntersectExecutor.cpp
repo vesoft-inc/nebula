@@ -8,8 +8,8 @@
 
 #include <unordered_set>
 
-#include "planner/PlanNode.h"
-#include "planner/Query.h"
+#include "planner/plan/PlanNode.h"
+#include "planner/plan/Query.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

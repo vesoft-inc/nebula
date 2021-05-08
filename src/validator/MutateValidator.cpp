@@ -6,8 +6,8 @@
 #include "validator/MutateValidator.h"
 
 #include "common/expression/LabelAttributeExpression.h"
-#include "planner/Mutate.h"
-#include "planner/Query.h"
+#include "planner/plan/Mutate.h"
+#include "planner/plan/Query.h"
 #include "util/SchemaUtil.h"
 #include "visitor/RewriteSymExprVisitor.h"
 

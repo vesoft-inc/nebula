@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_ADMIN_H_
-#define PLANNER_ADMIN_H_
+#ifndef PLANNER_PLAN_ADMIN_H_
+#define PLANNER_PLAN_ADMIN_H_
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "common/interface/gen-cpp2/meta_types.h"
 #include "common/clients/meta/MetaClient.h"
 
@@ -1319,4 +1319,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_ADMIN_H_
+#endif  // PLANNER_PLAN_ADMIN_H_

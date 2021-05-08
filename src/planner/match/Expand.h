@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "context/ast/CypherAstContext.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "planner/Planner.h"
 
 namespace nebula {

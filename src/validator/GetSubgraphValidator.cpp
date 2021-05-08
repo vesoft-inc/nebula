@@ -12,9 +12,9 @@
 #include "common/expression/VertexExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "parser/TraverseSentences.h"
-#include "planner/Logic.h"
-#include "planner/Query.h"
-#include "planner/Algo.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
+#include "planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {

@@ -6,7 +6,7 @@
 
 #include "executor/query/JoinExecutor.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "context/QueryExpressionContext.h"
 #include "context/Iterator.h"
 

@@ -10,8 +10,8 @@
 #include "common/expression/AggregateExpression.h"
 #include "context/QueryExpressionContext.h"
 #include "context/Result.h"
-#include "planner/PlanNode.h"
-#include "planner/Query.h"
+#include "planner/plan/PlanNode.h"
+#include "planner/plan/Query.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

@@ -5,7 +5,7 @@
  */
 
 #include "validator/GroupByValidator.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/AnonColGenerator.h"
 #include "util/AnonVarGenerator.h"
 #include "util/ExpressionUtils.h"

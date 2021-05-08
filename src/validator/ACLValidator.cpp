@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include "common/clients/meta/MetaClient.h"
 
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "service/PermissionManager.h"
 #include "util/SchemaUtil.h"
 #include "validator/ACLValidator.h"

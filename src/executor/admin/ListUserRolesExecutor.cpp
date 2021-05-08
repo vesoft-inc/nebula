@@ -7,7 +7,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "executor/admin/ListUserRolesExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "context/QueryContext.h"
 
 namespace nebula {

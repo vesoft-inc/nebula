@@ -6,7 +6,7 @@
 
 #include "planner/match/PaginationPlanner.h"
 
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

@@ -6,8 +6,8 @@
 
 #include "planner/match/Expand.h"
 
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "planner/match/MatchSolver.h"
 #include "planner/match/SegmentsConnector.h"
 #include "util/AnonColGenerator.h"

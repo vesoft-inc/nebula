@@ -7,7 +7,7 @@
 #ifndef PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
 #define PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "planner/match/SegmentsConnectStrategy.h"
 
 namespace nebula {

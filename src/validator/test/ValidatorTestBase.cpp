@@ -10,12 +10,12 @@
 #include "context/QueryContext.h"
 #include "context/ValidateContext.h"
 #include "parser/GQLParser.h"
-#include "planner/Admin.h"
-#include "planner/ExecutionPlan.h"
-#include "planner/Maintain.h"
-#include "planner/Mutate.h"
-#include "planner/PlanNode.h"
-#include "planner/Query.h"
+#include "planner/plan/Admin.h"
+#include "planner/plan/ExecutionPlan.h"
+#include "planner/plan/Maintain.h"
+#include "planner/plan/Mutate.h"
+#include "planner/plan/PlanNode.h"
+#include "planner/plan/Query.h"
 #include "util/Utils.h"
 
 namespace nebula {

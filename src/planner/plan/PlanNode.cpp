@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 #include <memory>
 #include <vector>

@@ -11,8 +11,8 @@
 #include "context/QueryContext.h"
 #include "optimizer/OptContext.h"
 #include "optimizer/OptRule.h"
-#include "planner/Logic.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/PlanNode.h"
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;

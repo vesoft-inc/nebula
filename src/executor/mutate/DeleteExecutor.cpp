@@ -5,7 +5,7 @@
  */
 
 #include "DeleteExecutor.h"
-#include "planner/Mutate.h"
+#include "planner/plan/Mutate.h"
 #include "context/QueryContext.h"
 #include "util/SchemaUtil.h"
 #include "executor/mutate/DeleteExecutor.h"

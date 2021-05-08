@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_QUERY_H_
-#define PLANNER_QUERY_H_
+#ifndef PLANNER_PLAN_QUERY_H_
+#define PLANNER_PLAN_QUERY_H_
 
 #include "common/expression/AggregateExpression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "context/QueryContext.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 /**
  * All query-related nodes would be put in this file,
@@ -1167,4 +1167,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_QUERY_H_
+#endif  // PLANNER_PLAN_QUERY_H_

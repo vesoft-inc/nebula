@@ -8,7 +8,7 @@
 
 #include "context/Iterator.h"
 #include "context/QueryExpressionContext.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

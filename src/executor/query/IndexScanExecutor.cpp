@@ -6,7 +6,7 @@
 
 #include "executor/query/IndexScanExecutor.h"
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "context/QueryContext.h"
 #include "service/GraphFlags.h"
 

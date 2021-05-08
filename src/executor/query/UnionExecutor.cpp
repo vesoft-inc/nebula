@@ -8,7 +8,7 @@
 
 #include "context/ExecutionContext.h"
 #include "util/ScopedTimer.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

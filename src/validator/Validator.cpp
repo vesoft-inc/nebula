@@ -8,7 +8,7 @@
 
 #include "common/function/FunctionManager.h"
 #include "parser/Sentence.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 #include "util/SchemaUtil.h"
 #include "validator/ACLValidator.h"

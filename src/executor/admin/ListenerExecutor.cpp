@@ -7,7 +7,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "executor/admin/ListenerExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

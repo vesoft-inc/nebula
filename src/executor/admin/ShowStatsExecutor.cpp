@@ -7,7 +7,7 @@
 #include "executor/admin/ShowStatsExecutor.h"
 #include "context/QueryContext.h"
 #include "service/PermissionManager.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 

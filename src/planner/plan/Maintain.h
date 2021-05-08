@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MAINTAIN_H_
-#define PLANNER_MAINTAIN_H_
+#ifndef PLANNER_PLAN_MAINTAIN_H_
+#define PLANNER_PLAN_MAINTAIN_H_
 
 #include "common/interface/gen-cpp2/meta_types.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -600,4 +600,4 @@ private:
 
 }   // namespace graph
 }   // namespace nebula
-#endif   // PLANNER_MAINTAIN_H_
+#endif   // PLANNER_PLAN_MAINTAIN_H_

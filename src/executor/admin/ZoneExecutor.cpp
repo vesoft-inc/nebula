@@ -5,7 +5,7 @@
 */
 
 #include "executor/admin/ZoneExecutor.h"
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "util/ScopedTimer.h"
 
 namespace nebula {

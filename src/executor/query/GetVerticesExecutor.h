@@ -8,7 +8,7 @@
 #define EXECUTOR_QUERY_GETVERTICESEXECUTOR_H_
 
 #include "executor/query/GetPropExecutor.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

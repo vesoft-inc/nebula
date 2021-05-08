@@ -9,7 +9,7 @@
 #include "executor/query/FilterExecutor.h"
 #include "executor/query/ProjectExecutor.h"
 #include "executor/test/QueryTestBase.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 
 namespace nebula {

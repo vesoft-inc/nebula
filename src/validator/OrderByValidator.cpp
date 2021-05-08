@@ -6,7 +6,7 @@
 
 #include "validator/OrderByValidator.h"
 #include "parser/TraverseSentences.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "common/expression/LabelExpression.h"
 
 namespace nebula {

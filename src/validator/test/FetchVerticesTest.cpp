@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/Logic.h"
-#include "planner/Query.h"
+#include "planner/plan/Logic.h"
+#include "planner/plan/Query.h"
 #include "common/base/ObjectPool.h"
 #include "validator/FetchVerticesValidator.h"
 #include "validator/test/ValidatorTestBase.h"

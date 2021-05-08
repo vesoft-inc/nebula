@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_ALGO_H_
-#define PLANNER_ALGO_H_
+#ifndef PLANNER_PLAN_ALGO_H_
+#define PLANNER_PLAN_ALGO_H_
 
 #include "context/QueryContext.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
@@ -179,4 +179,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_ALGO_H_
+#endif  // PLANNER_PLAN_ALGO_H_

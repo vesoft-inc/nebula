@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/Mutate.h"
+#include "planner/plan/Mutate.h"
 
 #include "common/interface/gen-cpp2/storage_types.h"
 #include "util/ToJson.h"

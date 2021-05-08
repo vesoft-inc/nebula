@@ -6,7 +6,7 @@
 
 #include "executor/maintain/EdgeExecutor.h"
 #include "context/QueryContext.h"
-#include "planner/Maintain.h"
+#include "planner/plan/Maintain.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
 

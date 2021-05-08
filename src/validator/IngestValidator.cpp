@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 
-#include "planner/Admin.h"
+#include "planner/plan/Admin.h"
 #include "validator/IngestValidator.h"
 #include "parser/MutateSentences.h"
 

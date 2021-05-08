@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/Maintain.h"
+#include "planner/plan/Maintain.h"
 
 #include <sstream>
 

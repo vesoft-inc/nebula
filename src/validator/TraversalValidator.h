@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "validator/Validator.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

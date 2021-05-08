@@ -7,7 +7,7 @@
 #define OPTIMIZER_INDEXSCANRULE_H_
 
 #include "optimizer/OptRule.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "optimizer/OptimizerUtils.h"
 
 namespace nebula {

@@ -10,7 +10,7 @@
 #include <ostream>
 
 #include "common/base/Base.h"
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "context/ast/AstContext.h"
 
 namespace nebula {

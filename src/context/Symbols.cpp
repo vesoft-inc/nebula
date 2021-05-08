@@ -8,7 +8,7 @@
 
 #include <sstream>
 
-#include "planner/PlanNode.h"
+#include "planner/plan/PlanNode.h"
 #include "util/Utils.h"
 
 namespace nebula {

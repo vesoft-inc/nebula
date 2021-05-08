@@ -7,7 +7,7 @@
 #include "planner/match/InnerJoinStrategy.h"
 
 #include "common/expression/AttributeExpression.h"
-#include "planner/Query.h"
+#include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
 #include "planner/match/MatchSolver.h"
 

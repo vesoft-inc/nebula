@@ -5,7 +5,7 @@
  */
 
 #include "UpdateExecutor.h"
-#include "planner/Mutate.h"
+#include "planner/plan/Mutate.h"
 #include "util/SchemaUtil.h"
 #include "context/QueryContext.h"
 #include "util/ScopedTimer.h"
