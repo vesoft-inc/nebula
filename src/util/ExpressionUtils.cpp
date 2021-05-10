@@ -139,17 +139,7 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
 
         return RewriteVisitor::transform(expr,
                                          std::move(matcher),
-                                         std::move(rewriter),
-                                         {Expression::Kind::kFunctionCall,
-                                          Expression::Kind::kTypeCasting,
-                                          Expression::Kind::kAdd,
-                                          Expression::Kind::kMinus,
-                                          Expression::Kind::kMultiply,
-                                          Expression::Kind::kDivision,
-                                          Expression::Kind::kMod,
-                                          Expression::Kind::kPredicate,
-                                          Expression::Kind::kListComprehension,
-                                          Expression::Kind::kReduce});
+                                         std::move(rewriter));
     }
 
 std::unique_ptr<Expression> ExpressionUtils::foldConstantExpr(const Expression *expr) {

@@ -466,6 +466,20 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in order, with relax comparison:
       | count | sum | avg  | min  | max  | std  | b1   | b2   | b3   |
       | 0     | 0   | NULL | NULL | NULL | NULL | NULL | NULL | NULL |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS d RETURN d | YIELD 1 IN COLLECT($-.d) AS b
+      """
+    Then the result should be, in order, with relax comparison:
+      | b    |
+      | True |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS d RETURN d | YIELD ANY(l IN COLLECT($-.d) WHERE l==1) AS b
+      """
+    Then the result should be, in order, with relax comparison:
+      | b    |
+      | True |
 
   Scenario: Empty input
     When executing query:
