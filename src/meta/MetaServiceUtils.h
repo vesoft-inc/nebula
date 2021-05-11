@@ -317,6 +317,16 @@ public:
 
     static std::vector<cpp2::FTClient> parseFTClients(folly::StringPiece rawData);
 
+    static const std::string& sessionPrefix();
+
+    static std::string sessionKey(SessionID sessionId);
+
+    static std::string sessionVal(const meta::cpp2::Session &session);
+
+    static SessionID getSessionId(const folly::StringPiece &key);
+
+    static meta::cpp2::Session parseSessionVal(const folly::StringPiece &val);
+
     static std::string genTimestampStr();
 
     static GraphSpaceID parseEdgesKeySpaceID(folly::StringPiece key);

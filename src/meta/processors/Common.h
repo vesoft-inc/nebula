@@ -73,6 +73,7 @@ GENERATE_LOCK(snapshot);
 GENERATE_LOCK(group);
 GENERATE_LOCK(zone);
 GENERATE_LOCK(listener);
+GENERATE_LOCK(session);
 
 #undef GENERATE_LOCK
 };

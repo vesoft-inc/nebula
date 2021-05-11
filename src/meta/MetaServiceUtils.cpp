@@ -23,7 +23,8 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
     {"zones", {"__zones__", true}},
-    {"ft_service", {"__ft_service__", false}}};
+    {"ft_service", {"__ft_service__", false}},
+    {"sessions", {"__sessions__", true}}};
 
 // name => {prefix, parseSpaceid}, nullptr means that the backup should be skipped.
 static const std::unordered_map<
@@ -76,6 +77,7 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
 const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
+const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
 
 const int kMaxIpAddrLen = 15;   // '255.255.255.255'
 
@@ -1354,5 +1356,32 @@ std::vector<cpp2::FTClient> MetaServiceUtils::parseFTClients(folly::StringPiece 
     return clients;
 }
 
+const std::string& MetaServiceUtils::sessionPrefix() {
+    return kSessionsTable;
+}
+
+std::string MetaServiceUtils::sessionKey(SessionID sessionId) {
+    std::string key;
+    key.reserve(kSessionsTable.size() + sizeof(sessionId));
+    key.append(kSessionsTable.data(), kSessionsTable.size())
+       .append(reinterpret_cast<const char*>(&sessionId), sizeof(SessionID));
+    return key;
+}
+
+std::string MetaServiceUtils::sessionVal(const meta::cpp2::Session &session) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(session, &val);
+    return val;
+}
+
+SessionID MetaServiceUtils::getSessionId(const folly::StringPiece &key) {
+    return *reinterpret_cast<const SessionID*>(key.data() + kSessionsTable.size());
+}
+
+meta::cpp2::Session MetaServiceUtils::parseSessionVal(const folly::StringPiece &val) {
+    meta::cpp2::Session session;
+    apache::thrift::CompactSerializer::deserialize(val, session);
+    return session;
+}
 }  // namespace meta
 }  // namespace nebula

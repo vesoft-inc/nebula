@@ -37,7 +37,10 @@
 #include "meta/processors/zoneMan/AddZoneProcessor.h"
 #include "meta/processors/zoneMan/ListZonesProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
+#include "meta/processors/sessionMan/SessionManagerProcessor.h"
 
+
+DECLARE_int32(expired_threshold_sec);
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
 namespace nebula {
@@ -2592,6 +2595,94 @@ TEST(ProcessorTest, SameNameTagsTest) {
     }
 }
 
+TEST(ProcessorTest, SessionManagerTest) {
+    fs::TempDir rootPath("/tmp/SessionTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    TestUtils::assembleSpace(kv.get(), 1, 1);
+    SessionID sessionId = 0;
+    {
+        cpp2::CreateUserReq req;
+        req.set_if_not_exists(false);
+        req.set_account("test_user");
+        req.set_encoded_pwd("password");
+        auto* processor = CreateUserProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // create session
+    {
+        cpp2::CreateSessionReq req;
+        req.set_user("test_user");
+        req.set_graph_addr(HostAddr("127.0.0.1", 3699));
+
+        auto* processor = CreateSessionProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        sessionId = resp.get_session().get_session_id();
+    }
+    // update session
+    {
+        cpp2::UpdateSessionsReq req;
+        meta::cpp2::Session session;
+        session.set_session_id(sessionId);
+        session.set_space_name("test");
+        req.set_sessions({session});
+
+        auto* processor = UpdateSessionsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // list session
+    {
+        cpp2::ListSessionsReq req;
+
+        auto* processor = ListSessionsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // get session
+    {
+        cpp2::GetSessionReq req;
+        req.set_session_id(sessionId);
+
+        auto* processor = GetSessionProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ("test", resp.get_session().get_space_name());
+    }
+    // delete session
+    {
+        cpp2::RemoveSessionReq delReq;
+        delReq.set_session_id(sessionId);
+
+        auto* dProcessor = RemoveSessionProcessor::instance(kv.get());
+        auto delFut = dProcessor->getFuture();
+        dProcessor->process(delReq);
+        auto dResp = std::move(delFut).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, dResp.get_code());
+
+        // check result
+        cpp2::GetSessionReq getReq;
+        getReq.set_session_id(sessionId);
+
+        auto* gProcessor = GetSessionProcessor::instance(kv.get());
+        auto getFut = gProcessor->getFuture();
+        gProcessor->process(getReq);
+        auto gResp = std::move(getFut).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, gResp.get_code());
+    }
+}
 }  // namespace meta
 }  // namespace nebula
 

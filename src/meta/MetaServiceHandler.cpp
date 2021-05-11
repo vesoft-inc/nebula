@@ -67,6 +67,7 @@
 #include "meta/processors/zoneMan/UpdateGroupProcessor.h"
 #include "meta/processors/listenerMan/ListenerProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
+#include "meta/processors/sessionMan/SessionManagerProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -526,5 +527,35 @@ MetaServiceHandler::future_getStatis(const cpp2::GetStatisReq &req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::CreateSessionResp>
+MetaServiceHandler::future_createSession(const cpp2::CreateSessionReq& req) {
+    auto* processor = CreateSessionProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_updateSessions(const cpp2::UpdateSessionsReq& req) {
+    auto* processor = UpdateSessionsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListSessionsResp>
+MetaServiceHandler::future_listSessions(const cpp2::ListSessionsReq& req) {
+    auto* processor = ListSessionsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetSessionResp>
+MetaServiceHandler::future_getSession(const cpp2::GetSessionReq& req) {
+    auto* processor = GetSessionProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeSession(const cpp2::RemoveSessionReq& req) {
+    auto* processor = RemoveSessionProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
 }  // namespace meta
 }  // namespace nebula
+
