@@ -310,7 +310,7 @@ enum AdminCmd {
     REBUILD_EDGE_INDEX  = 3,
     STATS               = 4,
     DATA_BALANCE        = 5,
-    DOWELOAD            = 6,
+    DOWNLOAD            = 6,
     INGEST              = 7,
     UNKNOWN             = 99,
 } (cpp.enum_strict)
