@@ -274,9 +274,9 @@ std::string AdminJobSentence::toString() const {
                 case meta::cpp2::AdminCmd::STATS:
                     return paras_.empty() ? "SUBMIT JOB STATS"
                         : folly::stringPrintf("SUBMIT JOB STATS %s", paras_[0].c_str());
-                case meta::cpp2::AdminCmd::DOWELOAD:
-                    return paras_.empty() ? "DOWELOAD HDFS "
-                        : folly::stringPrintf("DOWELOAD HDFS %s", paras_[0].c_str());
+                case meta::cpp2::AdminCmd::DOWNLOAD:
+                    return paras_.empty() ? "DOWNLOAD HDFS "
+                        : folly::stringPrintf("DOWNLOAD HDFS %s", paras_[0].c_str());
                 case meta::cpp2::AdminCmd::INGEST:
                     return "INGEST";
                 case meta::cpp2::AdminCmd::DATA_BALANCE:
