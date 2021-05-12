@@ -79,18 +79,7 @@ Status MatchValidator::validateImpl() {
                 unwindClauseCtx->aliasesUsed = aliasesUsed;
                 NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
-                if (aliasesUsed) {
-                    NG_RETURN_IF_ERROR(
-                        combineAliases(unwindClauseCtx->aliasesGenerated, *aliasesUsed));
-                }
-                aliasesUsed = &unwindClauseCtx->aliasesGenerated;
-                if (prevYieldColumns) {
-                    NG_RETURN_IF_ERROR(combineYieldColumns(
-                        const_cast<YieldColumns *>(unwindClauseCtx->yieldColumns),
-                        prevYieldColumns));
-                }
-                prevYieldColumns = const_cast<YieldColumns *>(unwindClauseCtx->yieldColumns);
-
+                aliasesUsed = unwindClauseCtx->aliasesUsed;
                 if (i == clauses.size() - 1) {
                     retClauseCtx->yield->aliasesUsed = aliasesUsed;
                     NG_RETURN_IF_ERROR(
@@ -98,6 +87,8 @@ Status MatchValidator::validateImpl() {
                 }
                 matchCtx_->clauses.emplace_back(std::move(unwindClauseCtx));
 
+                // TODO: delete prevYieldColumns
+                UNUSED(prevYieldColumns);
                 break;
             }
             case ReadingClause::Kind::kWith: {
@@ -356,7 +347,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
         } else if (kind == CypherClauseKind::kUnwind) {
             auto unwindClauseCtx = static_cast<const UnwindClauseContext *>(cypherClauseCtx);
             columns = saveObject(new YieldColumns());
-            columns->addColumn(makeColumn(unwindClauseCtx->aliasesGenerated.begin()->first));
+            columns->addColumn(makeColumn(unwindClauseCtx->alias));
         } else {
             // kWith
             auto withClauseCtx = static_cast<const WithClauseContext *>(cypherClauseCtx);
@@ -486,22 +477,27 @@ Status MatchValidator::validateWith(const WithClause *with,
     return Status::OK();
 }
 
-Status MatchValidator::validateUnwind(const UnwindClause *unwind,
-                                      UnwindClauseContext &unwindClauseCtx) const {
-    if (unwind->alias() == nullptr) {
+Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
+                                      UnwindClauseContext &unwindCtx) const {
+    if (unwindClause->alias() == nullptr) {
         return Status::SemanticError("Expression in UNWIND must be aliased (use AS)");
     }
-    YieldColumns *columns = saveObject(new YieldColumns());
-    auto *expr = unwind->expr()->clone().release();
-    auto *alias = new std::string(*unwind->alias());
-    columns->addColumn(new YieldColumn(expr, alias));
-    NG_RETURN_IF_ERROR(
-        validateAliases(std::vector<const Expression *>{expr}, unwindClauseCtx.aliasesUsed));
+    unwindCtx.alias = *unwindClause->alias();
+    unwindCtx.unwindExpr = unwindCtx.qctx->objPool()->add(unwindClause->expr()->clone().release());
 
-    unwindClauseCtx.yieldColumns = columns;
-
-    if (!unwindClauseCtx.aliasesGenerated.emplace(*unwind->alias(), AliasType::kDefault).second) {
-        return Status::SemanticError("`%s': Redefined alias", unwind->alias()->c_str());
+    auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
+    for (auto *labelExpr : labelExprs) {
+        DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
+        auto label = *(static_cast<const LabelExpression *>(labelExpr)->name());
+        if (!unwindCtx.aliasesUsed || !unwindCtx.aliasesUsed->count(label)) {
+            return Status::SemanticError("Variable `%s` not defined", label.c_str());
+        }
+    }
+    unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, AliasType::kDefault);
+    if (!unwindCtx.aliasesUsed) {
+        unwindCtx.aliasesUsed = &unwindCtx.aliasesGenerated;
+    } else if (!unwindCtx.aliasesUsed->emplace(unwindCtx.alias, AliasType::kDefault).second) {
+        return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
     }
 
     return Status::OK();

@@ -37,6 +37,17 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
             case CypherClauseKind::kUnwind: {
                 auto subplan = std::make_unique<UnwindClausePlanner>()->transform(clauseCtx.get());
                 NG_RETURN_IF_ERROR(subplan);
+                auto& unwind = subplan.value().root;
+                std::vector<std::string> inputCols;
+                if (!subplans.empty()) {
+                    auto input = subplans.back().root;
+                    auto cols = input->colNames();
+                    for (auto col : cols) {
+                        inputCols.emplace_back(col);
+                    }
+                }
+                inputCols.emplace_back(unwind->colNames().front());
+                unwind->setColNames(inputCols);
                 subplans.emplace_back(std::move(subplan).value());
                 break;
             }

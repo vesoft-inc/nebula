@@ -295,7 +295,8 @@ void Project::cloneMembers(const Project &p) {
 
 std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
     auto desc = SingleInputNode::explain();
-    addDescription("unwind", cols_? cols_->toString() : "", desc.get());
+    addDescription("alias", alias(), desc.get());
+    addDescription("unwindExpr", unwindExpr()->toString(), desc.get());
     return desc;
 }
 
@@ -308,10 +309,8 @@ PlanNode* Unwind::clone() const {
 void Unwind::cloneMembers(const Unwind &p) {
     SingleInputNode::cloneMembers(p);
 
-    cols_ = qctx_->objPool()->add(new YieldColumns());
-    for (const auto &col : p.columns()->columns()) {
-        cols_->addColumn(col->clone().release());
-    }
+    unwindExpr_ = qctx_->objPool()->add(p.unwindExpr()->clone().release());
+    alias_ = p.alias();
 }
 
 

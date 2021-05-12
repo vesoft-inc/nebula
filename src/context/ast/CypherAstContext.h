@@ -143,8 +143,11 @@ struct MatchClauseContext final : CypherClauseContextBase {
 struct UnwindClauseContext final : CypherClauseContextBase {
     UnwindClauseContext() : CypherClauseContextBase(CypherClauseKind::kUnwind) {}
 
-    const YieldColumns*                         yieldColumns{nullptr};
-    std::unordered_map<std::string, AliasType>* aliasesUsed{nullptr};
+    Expression* unwindExpr{nullptr};
+    std::string alias;
+
+    // TODO: refactor alias
+    std::unordered_map<std::string, AliasType>*  aliasesUsed{nullptr};
     std::unordered_map<std::string, AliasType>  aliasesGenerated;
 };
 

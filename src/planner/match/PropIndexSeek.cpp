@@ -105,10 +105,10 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
                                       scan,
                                       yieldColumns);
         project->setColNames({kVid});
-        auto *unwindColumns = matchClauseCtx->qctx->objPool()->makeAndAdd<YieldColumns>();
-        unwindColumns->addColumn(new YieldColumn(new ColumnExpression(0)));
-        auto *unwind = Unwind::make(matchClauseCtx->qctx, project, unwindColumns);
-        unwind->setColNames({kVid});
+
+        auto* unwindExpr = matchClauseCtx->qctx->objPool()->add(new ColumnExpression(0));
+        auto* unwind = Unwind::make(matchClauseCtx->qctx, project, unwindExpr, kVid);
+        unwind->setColNames({"vidList", kVid});
         plan.root = unwind;
     }
 

@@ -669,25 +669,33 @@ private:
 
 class Unwind final : public SingleInputNode {
 public:
-    static Unwind* make(QueryContext* qctx, PlanNode* input, YieldColumns* cols = nullptr) {
-        return qctx->objPool()->add(new Unwind(qctx, input, cols));
+    static Unwind* make(QueryContext* qctx,
+                        PlanNode* input,
+                        Expression* unwindExpr = nullptr,
+                        std::string alias = "") {
+        return qctx->objPool()->add(new Unwind(qctx, input, unwindExpr, alias));
     }
 
-    const YieldColumns* columns() const {
-        return cols_;
+    Expression* unwindExpr() const {
+        return unwindExpr_;
+    }
+
+    const std::string alias() const {
+        return alias_;
     }
 
     PlanNode* clone() const override;
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
-    Unwind(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
-        : SingleInputNode(qctx, Kind::kUnwind, input), cols_(cols) {}
+    Unwind(QueryContext* qctx, PlanNode* input, Expression* unwindExpr, std::string alias)
+        : SingleInputNode(qctx, Kind::kUnwind, input), unwindExpr_(unwindExpr), alias_(alias) {}
 
     void cloneMembers(const Unwind&);
 
 private:
-    YieldColumns*               cols_{nullptr};
+    Expression* unwindExpr_;
+    std::string alias_;
 };
 
 /**

@@ -17,27 +17,23 @@ folly::Future<Status> UnwindExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto *unwind = asNode<Unwind>(node());
-    auto columns = unwind->columns()->columns();
-    DCHECK_GT(columns.size(), 0);
-
-    auto iter = ectx_->getResult(unwind->inputVar()).iter();
-    DCHECK(!!iter);
+    auto &inputRes = ectx_->getResult(unwind->inputVar());
+    auto iter = inputRes.iter();
+    bool emptyInput = inputRes.valuePtr()->type() == Value::Type::DATASET ? false : true;
     QueryExpressionContext ctx(ectx_);
+    auto *unwindExpr = unwind->unwindExpr();
 
     DataSet ds;
     ds.colNames = unwind->colNames();
     for (; iter->valid(); iter->next()) {
-        auto &unwind_col = columns[0];
-        Value list = unwind_col->expr()->eval(ctx(iter.get()));
+        Value list = unwindExpr->eval(ctx(iter.get()));
         std::vector<Value> vals = extractList(list);
         for (auto &v : vals) {
             Row row;
-            row.values.emplace_back(std::move(v));
-            for (size_t i = 1; i < columns.size(); ++i) {
-                auto &col = columns[i];
-                Value val = col->expr()->eval(ctx(iter.get()));
-                row.values.emplace_back(std::move(val));
+            if (!emptyInput) {
+                row = *(iter->row());
             }
+            row.values.emplace_back(std::move(v));
             ds.rows.emplace_back(std::move(row));
         }
     }

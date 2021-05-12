@@ -27,25 +27,10 @@ StatusOr<SubPlan> UnwindClausePlanner::transform(CypherClauseContextBase* clause
 }
 
 Status UnwindClausePlanner::buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan) {
-    auto* yields = new YieldColumns();
-    uctx->qctx->objPool()->add(yields);
-    std::vector<std::string> colNames;
-
-    for (auto* col : uctx->yieldColumns->columns()) {
-        YieldColumn* newColumn =
-            new YieldColumn(MatchSolver::doRewrite(*uctx->aliasesUsed, col->expr()),
-                            new std::string(*col->alias()));
-        yields->addColumn(newColumn);
-
-        if (col->alias() != nullptr) {
-            colNames.emplace_back(*col->alias());
-        } else {
-            return Status::Error("Expression in UNWIND must be aliased (use AS)");
-        }
-    }
-
-    auto* unwind = Unwind::make(uctx->qctx, nullptr, yields);
-    unwind->setColNames(std::move(colNames));
+    auto* newUnwindExpr =
+        uctx->qctx->objPool()->add(MatchSolver::doRewrite(*uctx->aliasesUsed, uctx->unwindExpr));
+    auto* unwind = Unwind::make(uctx->qctx, nullptr, newUnwindExpr, uctx->alias);
+    unwind->setColNames({uctx->alias});
     subPlan.root = unwind;
     subPlan.tail = unwind;
 
