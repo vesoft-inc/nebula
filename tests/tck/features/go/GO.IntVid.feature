@@ -1631,3 +1631,42 @@ Feature: IntegerVid Go  Sentence
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | like._dst     |
       | "Tony Parker" |
+
+  Scenario: Step over end
+    When executing query:
+      """
+      GO 2 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 10000000000000 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 1 TO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | serve._dst |
+      | "Spurs"    |
+    When executing query:
+      """
+      GO 2 TO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | serve._dst |
+    When executing query:
+      """
+      GO 10000000000 TO 10000000002 STEPS FROM hash("Tim Duncan") OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |

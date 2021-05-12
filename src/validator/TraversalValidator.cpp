@@ -201,11 +201,25 @@ Expression* TraversalValidator::buildNStepLoopCondition(uint32_t steps) const {
     VLOG(1) << "steps: " << steps;
     // ++loopSteps{0} <= steps
     qctx_->ectx()->setValue(loopSteps_, 0);
-    return qctx_->objPool()->add(new RelationalExpression(
+    return new RelationalExpression(
         Expression::Kind::kRelLE,
         new UnaryExpression(Expression::Kind::kUnaryIncr,
                             new VariableExpression(new std::string(loopSteps_))),
-        new ConstantExpression(static_cast<int32_t>(steps))));
+        new ConstantExpression(static_cast<int32_t>(steps)));
+}
+
+// $var == empty || size($var) != 0
+Expression* TraversalValidator::buildExpandEndCondition(const std::string &lastStepResult) const {
+    auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(new std::string(lastStepResult)),
+                                        new ConstantExpression(Value()));
+
+    auto* args = new ArgumentList();
+    args->addArgument(std::make_unique<VariableExpression>(new std::string(lastStepResult)));
+    auto* neZero = new RelationalExpression(
+        Expression::Kind::kRelNE,
+        new FunctionCallExpression(new std::string("size"), args),
+        new ConstantExpression(0));
+    return ExpressionUtils::Or(eqEmpty, neZero);
 }
 
 }  // namespace graph

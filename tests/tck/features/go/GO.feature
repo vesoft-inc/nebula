@@ -1662,3 +1662,42 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | like._dst     |
       | "Tony Parker" |
+
+  Scenario: Step over end
+    When executing query:
+      """
+      GO 2 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 10 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 10000000000000 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 1 TO 10 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+      | "Spurs"    |
+    When executing query:
+      """
+      GO 2 TO 10 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |
+    When executing query:
+      """
+      GO 1000000000 TO 1000000002 STEPS FROM "Tim Duncan" OVER serve;
+      """
+    Then the result should be, in any order:
+      | serve._dst |

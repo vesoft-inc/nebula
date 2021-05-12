@@ -144,7 +144,8 @@ Status Expand::expandSteps(const NodeInfo& node, const EdgeInfo& edge, SubPlan* 
     auto body = subplan.root;
 
     // Loop condition
-    auto condition = buildNStepLoopCondition(startIndex, maxHop);
+    auto condition = buildExpandCondition(body->outputVar(), startIndex, maxHop);
+    matchCtx_->qctx->objPool()->add(condition);
 
     // Create loop
     auto* loop = Loop::make(matchCtx_->qctx, firstStep, body, condition);
@@ -260,11 +261,25 @@ Expression* Expand::buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) 
     // ++loopSteps{startIndex} <= maxHop
     auto loopSteps = matchCtx_->qctx->vctx()->anonVarGen()->getVar();
     matchCtx_->qctx->ectx()->setValue(loopSteps, startIndex);
-    return matchCtx_->qctx->objPool()->add(new RelationalExpression(
+    return new RelationalExpression(
         Expression::Kind::kRelLE,
         new UnaryExpression(Expression::Kind::kUnaryIncr,
                             new VariableExpression(new std::string(loopSteps))),
-        new ConstantExpression(static_cast<int64_t>(maxHop))));
+        new ConstantExpression(static_cast<int64_t>(maxHop)));
+}
+
+// $var == empty || size($var) != 0
+Expression* Expand::buildExpandEndCondition(const std::string &lastStepResult) const {
+    auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(new std::string(lastStepResult)),
+                                        new ConstantExpression(Value()));
+
+    auto* args = new ArgumentList();
+    args->addArgument(std::make_unique<VariableExpression>(new std::string(lastStepResult)));
+    auto* neZero = new RelationalExpression(
+        Expression::Kind::kRelNE,
+        new FunctionCallExpression(new std::string("size"), args),
+        new ConstantExpression(0));
+    return ExpressionUtils::Or(eqEmpty, neZero);
 }
 
 }   // namespace graph

@@ -11,6 +11,7 @@
 #include "context/ast/CypherAstContext.h"
 #include "planner/plan/PlanNode.h"
 #include "planner/Planner.h"
+#include "util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -62,6 +63,15 @@ private:
                                      SubPlan* plan);
 
     Expression* buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) const;
+
+    Expression* buildExpandEndCondition(const std::string &lastStepResult) const;
+
+    Expression* buildExpandCondition(const std::string &lastStepResult,
+                                     int64_t startIndex,
+                                     int64_t maxHop) {
+        return ExpressionUtils::And(buildNStepLoopCondition(startIndex, maxHop),
+                                    buildExpandEndCondition(lastStepResult));
+    }
 
     template <typename T>
     T* saveObject(T* obj) const {

@@ -229,6 +229,7 @@ Status GetSubgraphValidator::toPlan() {
     subgraph->setColNames({nebula::kVid});
 
     auto* loopCondition = buildNStepLoopCondition(steps_.steps + 1);
+    qctx_->objPool()->add(loopCondition);
     auto* loop = Loop::make(qctx_, loopDep, subgraph, loopCondition);
 
     std::vector<std::string> collects = {gn->outputVar(), oneMoreStepOutput};

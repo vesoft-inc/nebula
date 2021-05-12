@@ -327,3 +327,32 @@ Feature: Integer Vid Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"<-"LaMarcus Aldridge"], [:like "LaMarcus Aldridge"<-"Tony Parker"]] | [:serve "Tony Parker"->"Spurs"] |
       | [[:like "Tim Duncan"->"Tony Parker"]]                                                   | [:serve "Tony Parker"->"Spurs"] |
       | [[:like "Tim Duncan"<-"Tony Parker"]]                                                   | [:serve "Tony Parker"->"Spurs"] |
+
+  Scenario: Over expand end
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name     |
+      | "Yao Ming" |
+      | "Yao Ming" |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name     |
+      | "Yao Ming" |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name |

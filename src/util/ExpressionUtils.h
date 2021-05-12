@@ -114,6 +114,18 @@ public:
     static std::vector<std::unique_ptr<Expression>> expandImplOr(const Expression* expr);
 
     static Status checkAggExpr(const AggregateExpression* aggExpr);
+
+    static Expression* And(Expression *l, Expression* r) {
+        return new LogicalExpression(Expression::Kind::kLogicalAnd, l, r);
+    }
+
+    static Expression* Or(Expression* l, Expression *r) {
+        return new LogicalExpression(Expression::Kind::kLogicalOr, l, r);
+    }
+
+    static Expression* Eq(Expression* l, Expression *r) {
+        return new RelationalExpression(Expression::Kind::kRelEQ, l, r);
+    }
 };
 
 }   // namespace graph

@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "validator/Validator.h"
 #include "planner/plan/Query.h"
+#include "util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -63,6 +64,13 @@ protected:
     PlanNode* buildRuntimeInput(Starts& starts, PlanNode*& project);
 
     Expression* buildNStepLoopCondition(uint32_t steps) const;
+
+    Expression* buildExpandEndCondition(const std::string &lastStepResult) const;
+
+    Expression* buildExpandCondition(const std::string &lastStepResult, uint32_t steps) {
+        return ExpressionUtils::And(buildNStepLoopCondition(steps),
+                                    buildExpandEndCondition(lastStepResult));
+    }
 
 protected:
     Starts                from_;

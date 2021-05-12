@@ -349,3 +349,32 @@ Feature: Variable length Pattern match (m to n)
       RETURN p
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `e'
+
+  Scenario: Over expand end
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*0..1]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name     |
+      | "Yao Ming" |
+      | "Yao Ming" |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1..3]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name     |
+      | "Yao Ming" |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*2..3]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name |
+    When executing query:
+      """
+      MATCH (v:player {name: "Yao Ming"})-[:serve*1000000000..1000000002]->() RETURN v.name
+      """
+    Then the result should be, in any order:
+      | v.name |
