@@ -48,7 +48,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     item.set_space_id(spaceId);
     item.set_properties(std::move(properties));
     resp_.set_item(std::move(item));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

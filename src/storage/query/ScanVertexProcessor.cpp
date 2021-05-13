@@ -29,14 +29,14 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     partId_ = req.get_part_id();
 
     auto retCode = getSpaceVidLen(spaceId_);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         pushResultCode(retCode, partId_);
         onFinished();
         return;
     }
 
     retCode = checkAndBuildContexts(req);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         pushResultCode(retCode, partId_);
         onFinished();
         return;
@@ -53,7 +53,7 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = env_->kvstore_->rangeWithPrefix(
         spaceId_, partId_, start, prefix, &iter, req.get_enable_read_from_follower());
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+    if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(kvRet, spaceId_, partId_);
         onFinished();
         return;
@@ -99,9 +99,10 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     onFinished();
 }
 
-cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVertexRequest& req) {
+nebula::cpp2::ErrorCode
+ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVertexRequest& req) {
     auto ret = getSpaceVertexSchema();
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
 

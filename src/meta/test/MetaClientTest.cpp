@@ -272,7 +272,6 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
-        ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
     {
         // Multi Put Test
@@ -1002,10 +1001,10 @@ TEST(MetaClientTest, TagIndexTest) {
         GraphSpaceID spaceNotExist = 99;
         IndexID tagIndexNotExist = 99;
         auto checkTagIndexNotExist = client->checkTagIndexed(space, tagIndexNotExist);
-        ASSERT_EQ(Status::IndexNotFound(), checkTagIndexNotExist);
+        ASSERT_FALSE(checkTagIndexNotExist.ok());
 
         auto checkSpaceNotExist = client->checkTagIndexed(spaceNotExist, singleFieldIndexID);
-        ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
+        ASSERT_FALSE(checkSpaceNotExist.ok());
 
         auto spaceNotExistRet = client->getTagIndexFromCache(spaceNotExist, singleFieldIndexID);
         ASSERT_FALSE(spaceNotExistRet.ok());
@@ -1027,12 +1026,10 @@ TEST(MetaClientTest, TagIndexTest) {
     {
         auto result = client->getTagIndex(space, "tag_single_field_index").get();
         ASSERT_FALSE(result.ok());
-        ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
         auto result = client->dropTagIndex(space, "tag_single_field_index").get();
         ASSERT_FALSE(result.ok());
-        ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
 }
 
@@ -1113,7 +1110,6 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               "edge_not_exist",
                                               std::move(fields)).get();
         ASSERT_FALSE(result.ok());
-        ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
         std::vector<cpp2::IndexFieldDef> fields;
@@ -1189,10 +1185,10 @@ TEST(MetaClientTest, EdgeIndexTest) {
         GraphSpaceID spaceNotExist = 99;
         IndexID edgeIndexNotExist = 99;
         auto checkEdgeIndexNotExist = client->checkEdgeIndexed(space, edgeIndexNotExist);
-        ASSERT_EQ(Status::IndexNotFound(), checkEdgeIndexNotExist);
+        ASSERT_FALSE(checkEdgeIndexNotExist.ok());
 
         auto checkSpaceNotExist = client->checkEdgeIndexed(spaceNotExist, singleFieldIndexID);
-        ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
+        ASSERT_FALSE(checkSpaceNotExist.ok());
 
         auto spaceNotExistRet = client->getEdgeIndexFromCache(spaceNotExist, singleFieldIndexID);
         ASSERT_FALSE(spaceNotExistRet.ok());
@@ -1214,12 +1210,10 @@ TEST(MetaClientTest, EdgeIndexTest) {
     {
         auto result = client->getEdgeIndex(space, "edge_single_field_index").get();
         ASSERT_FALSE(result.ok());
-        ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
         auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();
         ASSERT_FALSE(result.ok());
-        ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
 }
 
@@ -1778,7 +1772,7 @@ public:
         folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
         cpp2::HBResp resp;
-        resp.set_code(cpp2::ErrorCode::SUCCEEDED);
+        resp.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
         pro.setValue(std::move(resp));
         return f;
     }
@@ -1801,9 +1795,9 @@ public:
         auto f = pro.getFuture();
         cpp2::HBResp resp;
         if (addr_ == leader_) {
-            resp.set_code(cpp2::ErrorCode::SUCCEEDED);
+            resp.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
         } else {
-            resp.set_code(cpp2::ErrorCode::E_LEADER_CHANGED);
+            resp.set_code(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
             resp.set_leader(leader_);
         }
         pro.setValue(std::move(resp));

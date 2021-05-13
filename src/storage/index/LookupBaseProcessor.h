@@ -42,7 +42,7 @@ protected:
 
     virtual void onProcessFinished() = 0;
 
-    cpp2::ErrorCode requestCheck(const cpp2::LookupIndexRequest& req);
+    nebula::cpp2::ErrorCode requestCheck(const cpp2::LookupIndexRequest& req);
 
     bool isOutsideIndex(Expression* filter, const meta::cpp2::IndexItem* index);
 
@@ -82,7 +82,9 @@ protected:
     std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> schemas_;
     std::vector<size_t>                                            deDupColPos_;
 };
+
 }  // namespace storage
 }  // namespace nebula
+
 #include "storage/index/LookupBaseProcessor.inl"
 #endif  // STORAGE_QUERY_LOOKUPBASEPROCESSOR_H_

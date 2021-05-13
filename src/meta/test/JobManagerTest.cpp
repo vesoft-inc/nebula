@@ -18,7 +18,6 @@
 #include "meta/processors/jobMan/JobManager.h"
 
 DECLARE_int32(ws_storage_http_port);
-using ResultCode = nebula::kvstore::ResultCode;
 
 namespace nebula {
 namespace meta {
@@ -79,7 +78,7 @@ TEST_F(JobManagerTest, addJob) {
     std::vector<std::string> paras{"test"};
     JobDescription job(1, cpp2::AdminCmd::COMPACT, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
 
@@ -90,7 +89,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
     std::vector<std::string> paras{"tag_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
     auto result = jobMgr->runJobInternal(job);
     ASSERT_TRUE(result);
 }
@@ -103,7 +102,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
     std::vector<std::string> paras{"edge_index_name", "test_space"};
     JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
     auto result = jobMgr->runJobInternal(job);
     ASSERT_TRUE(result);
 }
@@ -115,7 +114,7 @@ TEST_F(JobManagerTest, StatisJob) {
     std::vector<std::string> paras{"test_space"};
     JobDescription job(12, cpp2::AdminCmd::STATS, paras);
     auto rc = jobMgr->addJob(job, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
     auto result = jobMgr->runJobInternal(job);
     ASSERT_TRUE(result);
     // Function runJobInternal does not set the finished status of the job
@@ -138,12 +137,12 @@ TEST_F(JobManagerTest, JobPriority) {
     std::vector<std::string> paras{"test"};
     JobDescription job1(13, cpp2::AdminCmd::COMPACT, paras);
     auto rc1 = jobMgr->addJob(job1, adminClient_.get());
-    ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     std::vector<std::string> paras1{"test_space"};
     JobDescription job2(14, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->addJob(job2, adminClient_.get());
-    ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     ASSERT_EQ(2, jobMgr->jobSize());
 
@@ -173,12 +172,12 @@ TEST_F(JobManagerTest, JobDeduplication) {
     std::vector<std::string> paras{"test"};
     JobDescription job1(15, cpp2::AdminCmd::COMPACT, paras);
     auto rc1 = jobMgr->addJob(job1, adminClient_.get());
-    ASSERT_EQ(rc1, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     std::vector<std::string> paras1{"test_space"};
     JobDescription job2(16, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->addJob(job2, adminClient_.get());
-    ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     ASSERT_EQ(2, jobMgr->jobSize());
 
@@ -187,7 +186,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
     auto jobExist = jobMgr->checkJobExist(job3.getCmd(), job3.getParas(), jId3);
     if (!jobExist) {
         auto rc3 = jobMgr->addJob(job3, adminClient_.get());
-        ASSERT_EQ(rc3, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
     JobDescription job4(18, cpp2::AdminCmd::COMPACT, paras);
@@ -195,7 +194,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
     jobExist = jobMgr->checkJobExist(job4.getCmd(), job4.getParas(), jId4);
     if (!jobExist) {
         auto rc4 = jobMgr->addJob(job4, adminClient_.get());
-        ASSERT_NE(rc4, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_NE(rc4, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
     ASSERT_EQ(2, jobMgr->jobSize());
@@ -221,7 +220,7 @@ TEST_F(JobManagerTest, loadJobDescription) {
     job1.setStatus(cpp2::JobStatus  ::RUNNING);
     job1.setStatus(cpp2::JobStatus::FINISHED);
     auto rc = jobMgr->addJob(job1, adminClient_.get());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
     ASSERT_EQ(job1.id_, 1);
     ASSERT_EQ(job1.cmd_, cpp2::AdminCmd::COMPACT);
     ASSERT_EQ(job1.paras_[0], "test_space");

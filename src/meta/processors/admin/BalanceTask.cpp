@@ -245,8 +245,8 @@ bool BalanceTask::saveInStore() {
     kv_->asyncMultiPut(kDefaultSpaceId,
                        kDefaultPartId,
                        std::move(data),
-                       [this, &ret, &baton] (kvstore::ResultCode code) {
-        if (kvstore::ResultCode::SUCCEEDED != code) {
+                       [this, &ret, &baton] (nebula::cpp2::ErrorCode code) {
+        if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
             ret = false;
             LOG(ERROR) << taskIdStr_ << " Can't persist task!";
         }

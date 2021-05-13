@@ -19,11 +19,11 @@
 namespace nebula {
 namespace storage {
 
-using NullHandler = std::function<kvstore::ResultCode(const std::vector<PropContext>*)>;
+using NullHandler = std::function<nebula::cpp2::ErrorCode(const std::vector<PropContext>*)>;
 
-using PropHandler = std::function<kvstore::ResultCode(folly::StringPiece,
-                                                      RowReader*,
-                                                      const std::vector<PropContext>* props)>;
+using PropHandler = std::function<nebula::cpp2::ErrorCode(folly::StringPiece,
+                                                          RowReader*,
+                                                          const std::vector<PropContext>* props)>;
 
 template<typename T> class StoragePlan;
 
@@ -32,25 +32,26 @@ template<typename T> class StoragePlan;
 template<typename T>
 class RelNode {
     friend class StoragePlan<T>;
+
 public:
-    virtual kvstore::ResultCode execute(PartitionID partId, const T& input) {
+    virtual nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) {
         for (auto* dependency : dependencies_) {
             auto ret = dependency->execute(partId, input);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return ret;
             }
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-    virtual kvstore::ResultCode execute(PartitionID partId) {
+    virtual nebula::cpp2::ErrorCode execute(PartitionID partId) {
         for (auto* dependency : dependencies_) {
             auto ret = dependency->execute(partId);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return ret;
             }
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     void addDependency(RelNode<T>* dep) {

@@ -33,7 +33,7 @@ void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
         iter->next();
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_zones(std::move(zones));
     onFinished();
 }

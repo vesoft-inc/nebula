@@ -15,7 +15,7 @@ void GetGroupProcessor::process(const cpp2::GetGroupReq& req) {
     auto groupIdRet = getGroupId(groupName);
     if (!nebula::ok(groupIdRet)) {
         auto retCode = nebula::error(groupIdRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND) {
             LOG(ERROR) << "Get Group Failed, Group " << groupName << " not found.";
         } else {
             LOG(ERROR) << "Get Group Failed, error: "
@@ -40,7 +40,7 @@ void GetGroupProcessor::process(const cpp2::GetGroupReq& req) {
     auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
     LOG(INFO) << "Get Group: " << groupName << " zone size: " << zoneNames.size();
     resp_.set_zone_names(std::move(zoneNames));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

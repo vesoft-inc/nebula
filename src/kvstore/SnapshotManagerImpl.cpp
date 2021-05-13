@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
 #include "kvstore/SnapshotManagerImpl.h"
 #include "utils/NebulaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
@@ -11,6 +12,7 @@ DEFINE_int32(snapshot_batch_size, 1024 * 1024 * 10, "batch size for snapshot");
 
 namespace nebula {
 namespace kvstore {
+
 const int32_t kReserveNum = 1024 * 4;
 void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                                   PartitionID partId,
@@ -40,7 +42,7 @@ bool SnapshotManagerImpl::accessTable(GraphSpaceID spaceId,
                                       int64_t& totalSize) {
     std::unique_ptr<KVIterator> iter;
     auto ret = store_->prefix(spaceId, partId, prefix, &iter);
-    if (ret != ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "[spaceId:" << spaceId << ", partId:" << partId << "] access prefix failed"
                   << ", error code:" << static_cast<int32_t>(ret);
         cb(data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);

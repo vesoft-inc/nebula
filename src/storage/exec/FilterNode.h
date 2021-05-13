@@ -39,9 +39,9 @@ public:
         , expCtx_(expCtx)
         , filterExp_(exp) {}
 
-    kvstore::ResultCode execute(PartitionID partId, const T& vId) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId, const T& vId) override {
         auto ret = RelNode<T>::execute(partId, vId);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
 
@@ -56,7 +56,7 @@ public:
             }
             break;
         } while (true);
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
 private:

@@ -15,7 +15,7 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
     auto groupIdRet = getGroupId(groupName);
     if (!nebula::ok(groupIdRet)) {
         auto retCode = nebula::error(groupIdRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND) {
             LOG(ERROR) << "Drop Group Failed, Group " << groupName << " not found.";
         } else {
             LOG(ERROR) << "Drop Group Failed, error: "
@@ -28,7 +28,7 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
 
     // If any space rely on this group, it should not be droped.
     auto retCode = checkSpaceDependency(groupName);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -41,7 +41,8 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
+nebula::cpp2::ErrorCode
+DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
     const auto& prefix = MetaServiceUtils::spacePrefix();
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
@@ -58,11 +59,11 @@ cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::string& grou
             *properties.group_name_ref() == groupName) {
             LOG(ERROR) << "Space " << properties.get_space_name()
                        << " is bind to the group " << groupName;
-            return cpp2::ErrorCode::E_NOT_DROP;
+            return nebula::cpp2::ErrorCode::E_NOT_DROP;
         }
         iter->next();
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

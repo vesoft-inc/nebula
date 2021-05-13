@@ -37,7 +37,7 @@
         storage::cpp2::ResponseCommon result; \
         std::vector<storage::cpp2::PartitionResult> partRetCode; \
         storage::cpp2::PartitionResult thriftRet; \
-        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        thriftRet.set_code(nebula::cpp2::ErrorCode::E_LEADER_CHANGED); \
         thriftRet.set_leader(leader); \
         partRetCode.emplace_back(std::move(thriftRet)); \
         result.set_failed_parts(partRetCode); \
@@ -222,8 +222,8 @@ TEST(AdminClientTest, RetryTest) {
         kv->asyncMultiPut(kDefaultSpaceId,
                           kDefaultPartId,
                           std::move(data),
-                          [&baton] (kvstore::ResultCode code) {
-            CHECK_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                          [&baton] (nebula::cpp2::ErrorCode code) {
+            ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
             baton.post();
         });
         baton.wait();
@@ -344,6 +344,7 @@ TEST(AdminClientTest, SnapshotTest) {
         ASSERT_TRUE(status.ok());
     }
 }
+
 }  // namespace meta
 }  // namespace nebula
 

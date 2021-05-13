@@ -24,7 +24,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     if (!ret.ok()) {
         LOG(ERROR) << ret.status();
         for (auto& part : partVertices) {
-            pushResultCode(cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
         }
         onFinished();
         return;
@@ -37,7 +37,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
     if (!iRet.ok()) {
         LOG(ERROR) << iRet.status();
         for (auto& part : partVertices) {
-            pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
         }
         onFinished();
         return;
@@ -53,22 +53,21 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             auto partId = part.first;
             const auto& vertexIds = part.second;
             keys.clear();
-            cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+            auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
             for (auto& vid : vertexIds) {
                 if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
                     LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                                << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
-                    code = cpp2::ErrorCode::E_INVALID_VID;
+                    code = nebula::cpp2::ErrorCode::E_INVALID_VID;
                     break;
                 }
 
                 auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid.getStr());
                 std::unique_ptr<kvstore::KVIterator> iter;
-                auto retRes = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-                if (retRes != kvstore::ResultCode::SUCCEEDED) {
-                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(retRes)
+                code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                    VLOG(3) << "Error! ret = " << static_cast<int32_t>(code)
                             << ", spaceID " << spaceId_;
-                    code = to(retRes);
                     break;
                 }
                 while (iter->valid()) {
@@ -84,7 +83,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                     iter->next();
                 }
             }
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 handleAsync(spaceId_, partId, code);
                 continue;
             }
@@ -109,12 +108,12 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         << std::get<1>(conflict) << ":"
                         << std::get<2>(conflict) << ":"
                         << std::get<3>(conflict);
-                handleAsync(spaceId_, partId, cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
+                handleAsync(spaceId_, partId, nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
                 continue;
             }
             env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(nebula::value(batch)),
                 [l = std::move(lg), icw = std::move(wrapper), partId, this] (
-                    kvstore::ResultCode code) {
+                    nebula::cpp2::ErrorCode code) {
                     UNUSED(l);
                     UNUSED(icw);
                     handleAsync(spaceId_, partId, code);
@@ -124,7 +123,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
 }
 
 
-ErrorOr<kvstore::ResultCode, std::string>
+ErrorOr<nebula::cpp2::ErrorCode, std::string>
 DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                         const std::vector<Value>& vertices,
                                         std::vector<VMLI>& target) {
@@ -134,7 +133,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId_;
             return ret;
@@ -155,7 +154,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                                                                     iter->val());
                         if (reader == nullptr) {
                             LOG(WARNING) << "Bad format row";
-                            return kvstore::ResultCode::ERR_INVALID_DATA;
+                            return nebula::cpp2::ErrorCode::E_INVALID_DATA;
                         }
                     }
                     const auto& cols = index->get_fields();
@@ -177,7 +176,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                         batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
                     } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                        return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+                        return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                     } else {
                         batchHolder->remove(std::move(indexKey));
                     }

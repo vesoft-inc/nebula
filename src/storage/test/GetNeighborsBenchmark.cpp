@@ -258,7 +258,7 @@ void prefix(int32_t iters,
                 std::unique_ptr<nebula::kvstore::KVIterator> iter;
                 auto prefix = nebula::NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
                 auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
-                CHECK_EQ(code, nebula::kvstore::ResultCode::SUCCEEDED);
+                ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                 CHECK(iter->valid());
                 auto val = iter->val();
                 reader.reset(*tagSchema, val);
@@ -273,7 +273,7 @@ void prefix(int32_t iters,
                 std::unique_ptr<nebula::kvstore::KVIterator> iter;
                 auto prefix = nebula::NebulaKeyUtils::edgePrefix(vIdLen, partId, vId, serve);
                 auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
-                CHECK_EQ(code, nebula::kvstore::ResultCode::SUCCEEDED);
+                ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                 int32_t count = 0;
                 auto& cell = row[2].mutableList();
                 for (; iter->valid(); iter->next()) {

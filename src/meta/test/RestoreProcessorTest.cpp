@@ -77,8 +77,8 @@ TEST(RestoreProcessorTest, RestoreTest) {
     data.emplace_back(MetaServiceUtils::zoneKey(zoneName), MetaServiceUtils::zoneVal(hosts));
 
     folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode code) {
-        ret = (code == kvstore::ResultCode::SUCCEEDED);
+    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
         baton.post();
     });
     baton.wait();
@@ -110,14 +110,14 @@ TEST(RestoreProcessorTest, RestoreTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-        kvstore::ResultCode result;
+        nebula::cpp2::ErrorCode result;
         std::unique_ptr<kvstore::KVIterator> iter;
 
         const auto& partPrefix = MetaServiceUtils::partPrefix(id);
         result = kv->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, result);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
 
         std::unordered_map<HostAddr, std::vector<size_t>> toPartInfo;
 
@@ -140,7 +140,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
 
         auto prefix = MetaServiceUtils::zonePrefix();
         result = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, result);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
 
         std::vector<cpp2::Zone> zones;
         std::vector<HostAddr> restoredHosts = {host4, host5, host6};

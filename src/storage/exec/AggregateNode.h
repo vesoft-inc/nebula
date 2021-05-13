@@ -46,23 +46,23 @@ public:
         , planContext_(planCtx)
         , edgeContext_(edgeContext) {}
 
-    kvstore::ResultCode execute(PartitionID partId, const T& input) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) override {
         auto ret = RelNode<T>::execute(partId, input);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
 
         CHECK_GT(edgeContext_->statCount_, 0);
         initStatValue(edgeContext_);
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-    kvstore::ResultCode execute(PartitionID partId) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId) override {
         auto ret = RelNode<T>::execute(partId);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     void next() override {
@@ -125,9 +125,9 @@ private:
         }
     }
 
-    kvstore::ResultCode collectEdgeStats(folly::StringPiece key,
-                                         RowReader* reader,
-                                         const std::vector<PropContext>* props) {
+    nebula::cpp2::ErrorCode collectEdgeStats(folly::StringPiece key,
+                                     RowReader* reader,
+                                     const std::vector<PropContext>* props) {
         for (const auto& prop : *props) {
             if (prop.hasStat_) {
                 for (const auto statIndex : prop.statIndex_) {
@@ -135,13 +135,13 @@ private:
                     auto value = QueryUtils::readEdgeProp(
                         key, planContext_->vIdLen_, planContext_->isIntId_, reader, prop);
                     if (!value.ok()) {
-                        return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
+                        return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
                     addStatValue(std::move(value).value(), stats_[statIndex]);
                 }
             }
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     void addStatValue(const Value& value, PropStat& stat) {

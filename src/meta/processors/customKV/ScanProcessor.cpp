@@ -21,7 +21,7 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
         return;
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_values(std::move(nebula::value(result)));
     onFinished();
 }

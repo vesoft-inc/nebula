@@ -212,8 +212,8 @@ void mockData(kvstore::KVStore* kv ,
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
                 0, partId, std::move(data),
-                [&](kvstore::ResultCode code) {
-                    EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                [&](cpp2::ErrorCode code) {
+                    EXPECT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
                     baton.post();
                 });
         baton.wait();
@@ -403,8 +403,8 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
             folly::Baton<true, std::atomic> baton;
             kv->asyncMultiPut(
                     0, partId, std::move(data),
-                    [&](kvstore::ResultCode code) {
-                        EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                    [&](cpp2::ErrorCode code) {
+                        EXPECT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
                         baton.post();
                     });
             baton.wait();
@@ -493,8 +493,8 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
             folly::Baton<true, std::atomic> baton;
             kv->asyncMultiPut(
                     0, partId, std::move(data),
-                    [&](kvstore::ResultCode code) {
-                        EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                    [&](cpp2::ErrorCode code) {
+                        EXPECT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
                         baton.post();
                     });
             baton.wait();
@@ -590,8 +590,8 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
             folly::Baton<true, std::atomic> baton;
             kv->asyncMultiPut(
                     0, partId, std::move(data),
-                    [&](kvstore::ResultCode code) {
-                        EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                    [&](cpp2::ErrorCode code) {
+                        EXPECT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
                         baton.post();
                     });
             baton.wait();
@@ -684,8 +684,8 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
             folly::Baton<true, std::atomic> baton;
             kv->asyncMultiPut(
                     0, partId, std::move(data),
-                    [&](kvstore::ResultCode code) {
-                        EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                    [&](cpp2::ErrorCode code) {
+                        EXPECT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
                         baton.post();
                     });
             baton.wait();

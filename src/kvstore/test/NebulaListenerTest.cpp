@@ -271,8 +271,9 @@ TEST_P(ListenerBasicTest, SimpleTest) {
         auto leader = findLeader(partId);
         auto index = findStoreIndex(leader);
         folly::Baton<true, std::atomic> baton;
-        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data), [&baton](ResultCode code) {
-            EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data),
+                                      [&baton](cpp2::ErrorCode code) {
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
             baton.post();
         });
         baton.wait();
@@ -304,8 +305,9 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
         auto leader = findLeader(partId);
         auto index = findStoreIndex(leader);
         folly::Baton<true, std::atomic> baton;
-        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data), [&baton](ResultCode code) {
-            EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data),
+                                      [&baton](cpp2::ErrorCode code) {
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
             baton.post();
         });
         baton.wait();
@@ -320,7 +322,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
         auto partRet = stores_[index]->part(spaceId_, partId);
         CHECK(ok(partRet));
         auto part = value(partRet);
-        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode) {
+        part->asyncTransferLeader(targetAddr, [&] (cpp2::ErrorCode) {
             baton.post();
         });
         baton.wait();
@@ -341,8 +343,9 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
         auto leader = findLeader(partId);
         auto index = findStoreIndex(leader);
         folly::Baton<true, std::atomic> baton;
-        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data), [&baton](ResultCode code) {
-            EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        stores_[index]->asyncMultiPut(spaceId_, partId, std::move(data),
+                                      [&baton](cpp2::ErrorCode code) {
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
             baton.post();
         });
         baton.wait();

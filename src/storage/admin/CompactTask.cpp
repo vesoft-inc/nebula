@@ -5,13 +5,12 @@
  */
 
 #include "storage/admin/CompactTask.h"
-#include "storage/admin/TaskUtils.h"
 #include "common/base/Logging.h"
 
 namespace nebula {
 namespace storage {
 
-ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
 CompactTask::genSubTasks() {
     std::vector<AdminSubTask> ret;
     if (!env_->kvstore_) {
@@ -21,7 +20,7 @@ CompactTask::genSubTasks() {
     auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
     auto errOrSpace = store->space(*ctx_.parameters_.space_id_ref());
     if (!ok(errOrSpace)) {
-        return toStorageErr(error(errOrSpace));
+        return error(errOrSpace);
     }
 
     auto space = nebula::value(errOrSpace);
@@ -33,7 +32,7 @@ CompactTask::genSubTasks() {
     return ret;
 }
 
-kvstore::ResultCode CompactTask::subTask(kvstore::KVEngine* engine) {
+nebula::cpp2::ErrorCode CompactTask::subTask(kvstore::KVEngine* engine) {
     return engine->compact();
 }
 

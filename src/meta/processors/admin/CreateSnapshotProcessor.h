@@ -22,18 +22,19 @@ public:
     }
     void process(const cpp2::CreateSnapshotReq& req);
 
-    cpp2::ErrorCode cancelWriteBlocking();
+    nebula::cpp2::ErrorCode cancelWriteBlocking();
 
 private:
     explicit CreateSnapshotProcessor(kvstore::KVStore* kvstore,
                                      AdminClient* client)
             : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
-    ErrorOr<cpp2::ErrorCode, bool> isIndexRebuilding();
+    ErrorOr<nebula::cpp2::ErrorCode, bool> isIndexRebuilding();
 
 private:
     AdminClient* client_;
 };
+
 }  // namespace meta
 }  // namespace nebula
 

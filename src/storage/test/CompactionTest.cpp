@@ -38,7 +38,7 @@ void checkTagVertexData(int32_t spaceVidLen,
     for (int part = 1; part <= parts; part++) {
         auto prefix = NebulaKeyUtils::vertexPrefix(part);
         auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
-        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
         while (iter && iter->valid()) {
             auto key = iter->key();
@@ -81,7 +81,7 @@ void checkEdgeData(int32_t spaceVidLen,
     for (int part = 1; part <= parts; part++) {
         auto prefix = NebulaKeyUtils::edgePrefix(part);
         auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
-        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
         while (iter && iter->valid()) {
             auto key = iter->key();
@@ -127,7 +127,7 @@ void checkIndexData(GraphSpaceID spaceId,
     for (int part = 1; part <= parts; part++) {
         auto prefix = IndexKeyUtils::indexPrefix(part, indexId);
         auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
-        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 
         while (iter && iter->valid()) {
             totalCount++;

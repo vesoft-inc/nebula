@@ -173,7 +173,7 @@ struct TossEnvironment {
         return e;
     }
 
-    cpp2::ErrorCode syncAddMultiEdges(std::vector<cpp2::NewEdge>& edges, bool useToss) {
+    nebula::cpp2::ErrorCode syncAddMultiEdges(std::vector<cpp2::NewEdge>& edges, bool useToss) {
         bool retLeaderChange = false;
         int32_t retry = 0;
         int32_t retryMax = 10;
@@ -186,8 +186,9 @@ struct TossEnvironment {
             auto f = addEdgesAsync(edges, useToss);
             f.wait();
             if (!f.valid()) {
-                LOG(INFO) << apache::thrift::util::enumNameSafe(cpp2::ErrorCode::E_UNKNOWN);
-                return cpp2::ErrorCode::E_UNKNOWN;
+                auto retcode = nebula::cpp2::ErrorCode::E_UNKNOWN;
+                LOG(INFO) << apache::thrift::util::enumNameSafe(retcode);
+                return retcode;
             }
             if (!f.value().succeeded()) {
                 LOG(INFO) << "addEdgeAsync() !f.value().succeeded()";
@@ -195,7 +196,7 @@ struct TossEnvironment {
                 for (auto& part : f.value().failedParts()) {
                     LOG(INFO) << "partId=" << part.first
                               << ", ec=" << apache::thrift::util::enumNameSafe(part.second);
-                    if (part.second == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                    if (part.second == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                         retLeaderChange = true;
                     }
                 }
@@ -207,7 +208,7 @@ struct TossEnvironment {
                 auto& respComn = execResp.get_result();
                 auto& failedParts = respComn.get_failed_parts();
                 for (auto& part : failedParts) {
-                    if (part.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                    if (part.code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                         retLeaderChange = true;
                         LOG(INFO) << "addEdgeAsync() !f.value().succeeded(), retry";
                     }
@@ -220,10 +221,10 @@ struct TossEnvironment {
             }
         } while (retLeaderChange);
         LOG(INFO) << "addEdgeAsync() succeeded";
-        return cpp2::ErrorCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-    cpp2::ErrorCode syncAddEdge(const cpp2::NewEdge& edge, bool useToss = true) {
+    nebula::cpp2::ErrorCode syncAddEdge(const cpp2::NewEdge& edge, bool useToss = true) {
         std::vector<cpp2::NewEdge> edges{edge};
         return syncAddMultiEdges(edges, useToss);
     }
@@ -288,7 +289,7 @@ struct TossEnvironment {
                 for (auto& p : rpcResp.failedParts()) {
                     LOG(INFO) << "failedPart: " << p.first
                               << ", err=" << apache::thrift::util::enumNameSafe(p.second);
-                    if (p.second == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                    if (p.second == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                         needRetry = true;
                         continue;
                     }
@@ -408,7 +409,7 @@ struct TossEnvironment {
             }
             auto parts = f.value().failedParts();
             for (auto& part : parts) {
-                if (part.second == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                if (part.second == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                     retLeaderChange = true;
                     break;
                 }
@@ -623,7 +624,7 @@ struct TossEnvironment {
         auto sf = interClient_->forwardTransaction(txnId, spaceId_, partId, std::move(batch));
         sf.wait();
 
-        if (sf.value() != cpp2::ErrorCode::SUCCEEDED) {
+        if (sf.value() != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(FATAL) << "forward txn return=" << apache::thrift::util::enumNameSafe(sf.value());
         }
     }

@@ -22,11 +22,11 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto spaceRet = getSpaceId(spaceName);
 
     if (nebula::ok(spaceRet)) {
-        cpp2::ErrorCode ret = cpp2::ErrorCode::SUCCEEDED;
+        auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
         if (!req.get_if_not_exists()) {
             LOG(ERROR) << "Create Space Failed : Space " << spaceName
                        << " have existed!";
-            ret = cpp2::ErrorCode::E_EXISTED;
+            ret = nebula::cpp2::ErrorCode::E_EXISTED;
         }
         resp_.set_id(to(nebula::value(spaceRet), EntryType::SPACE));
         handleErrorCode(ret);
@@ -34,7 +34,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     } else {
         auto retCode = nebula::error(spaceRet);
-        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode != nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
             LOG(ERROR) << "Create Space Failed : Space  " << spaceName
                        << apache::thrift::util::enumNameSafe(retCode);
             handleErrorCode(retCode);
@@ -56,7 +56,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         partitionNum = FLAGS_default_parts_num;
         if (partitionNum <= 0) {
             LOG(ERROR) << "Create Space Failed : partition_num is illegal: " << partitionNum;
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();
             return;
         }
@@ -67,7 +67,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         replicaFactor = FLAGS_default_replica_factor;
         if (replicaFactor <= 0) {
             LOG(ERROR) << "Create Space Failed : replicaFactor is illegal: " << replicaFactor;
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();
             return;
         }
@@ -76,21 +76,21 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     if (vidSize == 0) {
         LOG(ERROR) << "Create Space Failed : vid_size is illegal: " << vidSize;
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
     if (vidType != cpp2::PropertyType::INT64 && vidType != cpp2::PropertyType::FIXED_STRING) {
         LOG(ERROR) << "Create Space Failed : vid_type is illegal: "
                    << apache::thrift::util::enumNameSafe(vidType);
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
     if (vidType == cpp2::PropertyType::INT64 && vidSize != 8) {
         LOG(ERROR) << "Create Space Failed : vid_size should be 8 if vid type is interger: "
                    << vidSize;
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
@@ -117,8 +117,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         auto groupKey = MetaServiceUtils::groupKey(groupName);
         auto ret = doGet(groupKey);
         if (!nebula::ok(ret)) {
+            auto retCode = nebula::error(ret);
+            if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+                retCode = nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND;
+            }
             LOG(ERROR) << " Get Group Name: " << groupName << " failed.";
-            handleErrorCode(nebula::error(ret));
+            handleErrorCode(retCode);
             onFinished();
             return;
         }
@@ -127,7 +131,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         int32_t zoneNum = zones.size();
         if (replicaFactor > zoneNum) {
             LOG(ERROR) << "Replication number should less than or equal to zone number.";
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
             onFinished();
             return;
         }
@@ -136,8 +140,8 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         if (!nebula::ok(hostLoadingRet)) {
             LOG(ERROR) << "Get host loading failed.";
             auto retCode = nebula::error(hostLoadingRet);
-            if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
-                retCode = cpp2::ErrorCode::E_INVALID_PARM;
+            if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+                retCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
             }
             handleErrorCode(retCode);
             onFinished();
@@ -150,8 +154,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             auto zoneKey = MetaServiceUtils::zoneKey(zone);
             auto zoneValueRet = doGet(std::move(zoneKey));
             if (!nebula::ok(zoneValueRet)) {
+                auto retCode = nebula::error(zoneValueRet);
+                if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+                    retCode = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
+                }
                 LOG(ERROR) << "Get zone " << zone << " failed.";
-                handleErrorCode(nebula::error(zoneValueRet));
+                handleErrorCode(retCode);
                 onFinished();
                 return;
             }
@@ -173,7 +181,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             auto pickedZonesRet = pickLightLoadZones(replicaFactor);
             if (!pickedZonesRet.ok()) {
                 LOG(ERROR) << "Pick zone failed.";
-                handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
                 onFinished();
                 return;
             }
@@ -182,7 +190,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
             auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
             if (!partHostsRet.ok()) {
                 LOG(ERROR) << "Pick hosts with zone failed.";
-                handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+                handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
                 onFinished();
                 return;
             }
@@ -211,7 +219,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         auto hosts = std::move(nebula::value(hostsRet));
         if (hosts.empty()) {
             LOG(ERROR) << "Create Space Failed : No Hosts!";
-            handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
             onFinished();
             return;
         }
@@ -219,7 +227,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         if ((int32_t)hosts.size() < replicaFactor) {
             LOG(ERROR) << "Not enough hosts existed for replica "
                        << replicaFactor << ", hosts num " << hosts.size();
-            handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
             onFinished();
             return;
         }
@@ -249,7 +257,7 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
-ErrorOr<cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>>
 CreateSpaceProcessor::getHostLoading() {
     const auto& prefix = MetaServiceUtils::partPrefix();
     auto iterRet = doPrefix(prefix);
@@ -287,7 +295,7 @@ CreateSpaceProcessor::pickHostsWithZone(const std::vector<std::string>& zones,
             auto hostIter = hostLoading_.find(host);
             if (hostIter == hostLoading_.end()) {
                 LOG(ERROR) << "Host " << host << " not found";
-                handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
+                handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
                 onFinished();
                 return Status::Error("Host not found");
             }

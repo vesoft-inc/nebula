@@ -15,7 +15,6 @@
 #include "common/thrift/ThriftTypes.h"
 #include "kvstore/Common.h"
 #include "kvstore/NebulaStore.h"
-#include "storage/admin/TaskUtils.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {
@@ -25,20 +24,14 @@ class AdminSubTask {
 public:
     AdminSubTask() = default;
 
-    explicit AdminSubTask(std::function<cpp2::ErrorCode()> f) : run_(f) {}
+    explicit AdminSubTask(std::function<nebula::cpp2::ErrorCode()> f) : run_(f) {}
 
-    explicit AdminSubTask(std::function<kvstore::ResultCode()> f) {
-        run_ = [f = f]() {
-            return toStorageErr(f());
-        };
-    }
-
-    cpp2::ErrorCode invoke() {
+    nebula::cpp2::ErrorCode invoke() {
         return run_();
     }
 
 private:
-    std::function<cpp2::ErrorCode()> run_;
+    std::function<nebula::cpp2::ErrorCode()> run_;
 };
 
 enum class TaskPriority : int8_t {
@@ -48,7 +41,7 @@ enum class TaskPriority : int8_t {
 };
 
 struct TaskContext {
-    using CallBack = std::function<void(cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&)>;
+    using CallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&)>;
 
     TaskContext() = default;
     TaskContext(const cpp2::AddAdminTaskRequest& req,
@@ -69,7 +62,7 @@ struct TaskContext {
 };
 
 class AdminTask {
-    using TCallBack = std::function<void(cpp2::ErrorCode,
+    using TCallBack = std::function<void(nebula::cpp2::ErrorCode,
                                          nebula::meta::cpp2::StatisItem&)>;
     using SubTaskQueue = folly::UnboundedBlockingQueue<AdminSubTask>;
 
@@ -78,7 +71,8 @@ public:
 
     explicit AdminTask(StorageEnv* env, TaskContext&& ctx) : env_(env), ctx_(ctx) {}
 
-    virtual ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() = 0;
+    virtual ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
+    genSubTasks() = 0;
 
     virtual ~AdminTask() {}
 
@@ -94,7 +88,7 @@ public:
         finish(rc_);
     }
 
-    virtual void finish(cpp2::ErrorCode rc) {
+    virtual void finish(nebula::cpp2::ErrorCode rc) {
         FLOG_INFO("task(%d, %d) finished, rc=[%s]", ctx_.jobId_, ctx_.taskId_,
                   apache::thrift::util::enumNameSafe(rc).c_str());
         nebula::meta::cpp2::StatisItem statisItem;
@@ -119,19 +113,19 @@ public:
         return ctx_.concurrentReq_;
     }
 
-    virtual cpp2::ErrorCode status() const {
+    virtual nebula::cpp2::ErrorCode status() const {
         return rc_;
     }
 
-    virtual void subTaskFinish(cpp2::ErrorCode rc) {
-        cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
+    virtual void subTaskFinish(nebula::cpp2::ErrorCode rc) {
+        auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
         rc_.compare_exchange_strong(suc, rc);
     }
 
     virtual void cancel() {
         FLOG_INFO("task(%d, %d) cancelled", ctx_.jobId_, ctx_.taskId_);
-        cpp2::ErrorCode suc{cpp2::ErrorCode::SUCCEEDED};
-        rc_.compare_exchange_strong(suc, cpp2::ErrorCode::E_USER_CANCEL);
+        auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+        rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
     }
 
 public:
@@ -139,9 +133,9 @@ public:
     SubTaskQueue                subtasks_;
 
 protected:
-    StorageEnv*                     env_;
-    TaskContext                     ctx_;
-    std::atomic<cpp2::ErrorCode>    rc_{cpp2::ErrorCode::SUCCEEDED};
+    StorageEnv*                             env_;
+    TaskContext                             ctx_;
+    std::atomic<nebula::cpp2::ErrorCode>    rc_{nebula::cpp2::ErrorCode::SUCCEEDED};
 };
 
 class AdminTaskFactory {

@@ -18,9 +18,9 @@ template<typename T>
 class FutureNode {
     friend class FutureDAG<T>;
 public:
-    folly::Future<kvstore::ResultCode> execute(PartitionID, const T&) {
+    folly::Future<nebula::cpp2::ErrorCode> execute(PartitionID, const T&) {
         VLOG(1) << name_;
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     void addDependency(FutureNode<T>* dep) {
@@ -35,7 +35,7 @@ public:
 
 private:
     std::string name_;
-    folly::SharedPromise<kvstore::ResultCode> promise_;
+    folly::SharedPromise<nebula::cpp2::ErrorCode> promise_;
     std::vector<FutureNode<T>*> dependencies_;
     bool hasDependents_ = false;
 };
@@ -43,7 +43,7 @@ private:
 template<typename T>
 class FutureDAG {
 public:
-    folly::Future<kvstore::ResultCode> go(PartitionID partId, const T& vId) {
+    folly::Future<nebula::cpp2::ErrorCode> go(PartitionID partId, const T& vId) {
         // find the root nodes and leaf nodes. All root nodes depends on a dummy input node,
         // and a dummy output node depends on all leaf node.
         if (firstLoop_) {
@@ -66,7 +66,7 @@ public:
 
         for (size_t i = 0; i < nodes_.size() - 1; i++) {
             auto* node = nodes_[i].get();
-            std::vector<folly::Future<kvstore::ResultCode>> futures;
+            std::vector<folly::Future<nebula::cpp2::ErrorCode>> futures;
             for (auto dep : node->dependencies_) {
                 futures.emplace_back(dep->promise_.getFuture());
             }
@@ -79,7 +79,7 @@ public:
                         if (codeTry.hasException()) {
                             node->promise_.setException(std::move(codeTry.exception()));
                             return;
-                        } else if (codeTry.value() != kvstore::ResultCode::SUCCEEDED) {
+                        } else if (codeTry.value() != nebula::cpp2::ErrorCode::SUCCEEDED) {
                             node->promise_.setValue(codeTry.value());
                             return;
                         }
@@ -94,9 +94,9 @@ public:
                 });
         }
 
-        getNode(inputIdx_)->promise_.setValue(kvstore::ResultCode::SUCCEEDED);
+        getNode(inputIdx_)->promise_.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
         return getNode(outputIdx_)->promise_.getFuture()
-            .thenTry([this](auto&& t) -> folly::Future<kvstore::ResultCode> {
+            .thenTry([this](auto&& t) -> folly::Future<nebula::cpp2::ErrorCode> {
                 CHECK(!t.hasException());
                 reset();
                 return t.value();
@@ -118,7 +118,7 @@ private:
     // reset all promise after dag has run
     void reset() {
         for (auto& node : nodes_) {
-            node->promise_ = folly::SharedPromise<kvstore::ResultCode>();
+            node->promise_ = folly::SharedPromise<nebula::cpp2::ErrorCode>();
         }
     }
 

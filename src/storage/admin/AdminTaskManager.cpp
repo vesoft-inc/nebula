@@ -37,10 +37,10 @@ void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
                                      task->getConcurrentReq());
 }
 
-cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
+nebula::cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
     // When the job does not exist on the host,
     // it should return success instead of failure
-    auto ret = cpp2::ErrorCode::SUCCEEDED;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     auto it = tasks_.begin();
     while (it != tasks_.end()) {
         auto handle = it->first;
@@ -53,15 +53,15 @@ cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
     return ret;
 }
 
-cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId) {
+nebula::cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId) {
     if (taskId < 0) {
         return cancelJob(jobId);
     }
-    auto ret = cpp2::ErrorCode::SUCCEEDED;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     TaskHandle handle = std::make_pair(jobId, taskId);
     auto it = tasks_.find(handle);
     if (it == tasks_.cend()) {
-        ret = cpp2::ErrorCode::E_KEY_NOT_FOUND;
+        ret = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
     } else {
         it->second->cancel();
     }
@@ -156,8 +156,8 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
     auto task = it->second;
     std::chrono::milliseconds take_dura{10};
     if (auto subTask = task->subtasks_.try_take_for(take_dura)) {
-        if (task->status() == cpp2::ErrorCode::SUCCEEDED) {
-            auto rc = cpp2::ErrorCode::E_UNKNOWN;
+        if (task->status() == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            auto rc = nebula::cpp2::ErrorCode::E_UNKNOWN;
             try {
                 rc = subTask->invoke();
             } catch (std::exception& ex) {

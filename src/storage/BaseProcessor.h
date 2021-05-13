@@ -22,7 +22,6 @@
 namespace nebula {
 namespace storage {
 
-using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 
 template<typename RESP>
 class BaseProcessor {
@@ -58,27 +57,28 @@ protected:
         delete this;
     }
 
-    cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
+    nebula::cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
         auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
         if (!len.ok()) {
-            return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
         }
         spaceVidLen_ = len.value();
 
         auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
         if (!vIdType.ok()) {
-            return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
         }
         isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
 
-        return cpp2::ErrorCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
 
-    kvstore::ResultCode doSyncPut(GraphSpaceID spaceId,
-                                  PartitionID partId,
-                                  std::vector<kvstore::KV>&& data);
+    nebula::cpp2::ErrorCode
+    doSyncPut(GraphSpaceID spaceId,
+              PartitionID partId,
+              std::vector<kvstore::KV>&& data);
 
     void doRemove(GraphSpaceID spaceId,
                   PartitionID partId,
@@ -89,28 +89,24 @@ protected:
                        const std::string& start,
                        const std::string& end);
 
-    cpp2::ErrorCode to(kvstore::ResultCode code);
-
-    cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
+    nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
 
     nebula::meta::cpp2::ColumnDef columnDef(std::string name,
                                             nebula::meta::cpp2::PropertyType type);
 
-    void pushResultCode(cpp2::ErrorCode code, PartitionID partId);
+    void pushResultCode(nebula::cpp2::ErrorCode code,
+                        PartitionID partId,
+                        HostAddr leader = HostAddr("", 0));
 
-    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader);
-
-    void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId);
+    void handleErrorCode(nebula::cpp2::ErrorCode code,
+                         GraphSpaceID spaceId,
+                         PartitionID partId);
 
     void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId);
 
     void handleAsync(GraphSpaceID spaceId,
                      PartitionID partId,
-                     kvstore::ResultCode code);
-
-    void handleAsync(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     cpp2::ErrorCode code);
+                     nebula::cpp2::ErrorCode code);
 
     StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
                                        const std::vector<std::string>& propNames,

@@ -27,20 +27,20 @@ private:
     /**
      *  return online/offline, gitInfoSHA for the specific HostRole
      * */
-    cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
+    nebula::cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
 
-    cpp2::ErrorCode fillLeaders();
+    nebula::cpp2::ErrorCode fillLeaders();
 
-    cpp2::ErrorCode fillAllParts();
+    nebula::cpp2::ErrorCode fillAllParts();
 
     /**
      * Get gitInfoSHA from all meta hosts gitInfoSHA
      * now, assume of of them are equal
      * */
-    cpp2::ErrorCode allMetaHostsStatus();
+    nebula::cpp2::ErrorCode allMetaHostsStatus();
 
     // Get map of spaceId -> spaceName
-    cpp2::ErrorCode getSpaceIdNameMap();
+    nebula::cpp2::ErrorCode getSpaceIdNameMap();
 
     std::unordered_map<std::string, std::vector<PartitionID>>
     getLeaderPartsWithSpaceName(const LeaderParts& leaderParts);

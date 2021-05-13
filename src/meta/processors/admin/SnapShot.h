@@ -30,28 +30,31 @@ public:
         spaces_ = std::move(spaces);
     }
 
-    ErrorOr<cpp2::ErrorCode,
+    ErrorOr<nebula::cpp2::ErrorCode,
             std::unordered_map<
                 GraphSpaceID,
                 std::pair<nebula::cpp2::PartitionBackupInfo, std::vector<cpp2::CheckpointInfo>>>>
     createSnapshot(const std::string& name);
 
-    cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
+    nebula::cpp2::ErrorCode
+    dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
 
-    cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
+    nebula::cpp2::ErrorCode
+    blockingWrites(storage::cpp2::EngineSignType sign);
 
 private:
     Snapshot(kvstore::KVStore* kv, AdminClient* client) : kv_(kv), client_(client) {
         executor_.reset(new folly::CPUThreadPoolExecutor(1));
     }
 
-    ErrorOr<cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
+    ErrorOr<nebula::cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>>
+    getSpacesHosts();
 
 private:
-    kvstore::KVStore* kv_{nullptr};
-    AdminClient* client_{nullptr};
-    std::unordered_set<GraphSpaceID> spaces_;
-    std::unique_ptr<folly::Executor> executor_;
+    kvstore::KVStore                   *kv_{nullptr};
+    AdminClient                        *client_{nullptr};
+    std::unordered_set<GraphSpaceID>    spaces_;
+    std::unique_ptr<folly::Executor>    executor_;
 };
 
 }  // namespace meta

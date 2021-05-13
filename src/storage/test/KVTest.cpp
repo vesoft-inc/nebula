@@ -52,7 +52,7 @@ TEST(KVTest, SimpleTest) {
             std::string value;
             auto code = cluster.storageKV_->get(space, part, key, &value);
             EXPECT_EQ(folly::stringPrintf("value_%ld", part), value);
-            EXPECT_EQ(nebula::kvstore::ResultCode::SUCCEEDED, code);
+            EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
         }
     }
     {
@@ -68,7 +68,7 @@ TEST(KVTest, SimpleTest) {
                                               folly::stringPrintf("key_%ld", part));
             std::string value;
             auto code = cluster.storageKV_->get(space, part, key, &value);
-            EXPECT_EQ(nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND, code);
+            EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, code);
         }
     }
 }

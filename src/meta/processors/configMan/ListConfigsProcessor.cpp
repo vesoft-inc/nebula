@@ -34,7 +34,7 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
         items.emplace_back(std::move(item));
         iter->next();
     }
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

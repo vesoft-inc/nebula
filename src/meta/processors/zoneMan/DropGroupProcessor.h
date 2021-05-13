@@ -24,9 +24,10 @@ private:
     explicit DropGroupProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    cpp2::ErrorCode checkSpaceDependency(const std::string& groupName);
+    nebula::cpp2::ErrorCode checkSpaceDependency(const std::string& groupName);
 };
 
 }  // namespace meta
 }  // namespace nebula
+
 #endif  // META_DROPGROUPPROCESSOR_H

@@ -24,9 +24,10 @@ private:
     explicit DropZoneProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
+    nebula::cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
 };
 
 }  // namespace meta
 }  // namespace nebula
+
 #endif  // META_DROPZONEPROCESSOR_H

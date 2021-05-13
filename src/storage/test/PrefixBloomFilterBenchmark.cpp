@@ -11,6 +11,7 @@
 #include "kvstore/RocksEngineConfig.h"
 #include "mock/MockCluster.h"
 #include "utils/NebulaKeyUtils.h"
+#include <gtest/gtest.h>
 
 DEFINE_int64(vertex_per_part, 100, "vertex count with each partition");
 
@@ -35,13 +36,13 @@ void mockData(StorageEnv* env, int32_t partCount) {
         }
         folly::Baton<true, std::atomic> baton;
         env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                     [&](kvstore::ResultCode code) {
-            CHECK_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                                     [&](nebula::cpp2::ErrorCode code) {
+            ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
             baton.post();
             folly::doNotOptimizeAway(code);
         });
         baton.wait();
-        CHECK_EQ(kvstore::ResultCode::SUCCEEDED, env->kvstore_->flush(spaceId));
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, env->kvstore_->flush(spaceId));
     }
 }
 
@@ -57,7 +58,7 @@ void testPrefixSeek(StorageEnv* env, int32_t partCount, int32_t iters) {
                     NebulaKeyUtils::vertexPrefix(vIdLen, partId, std::to_string(vertexId));
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
-                CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                 CHECK(iter->valid());
                 iter->next();
             }
@@ -102,7 +103,9 @@ BENCHMARK_RELATIVE(PrefixWithFilterOn, n) {
 }  // namespace nebula
 
 int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
+    google::SetStderrLogging(google::INFO);
     folly::runBenchmarks();
     return 0;
 }

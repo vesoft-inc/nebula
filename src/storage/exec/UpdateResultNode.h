@@ -31,10 +31,10 @@ public:
         , result_(result) {
         }
 
-    kvstore::ResultCode execute(PartitionID partId, const T& vId) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId, const T& vId) override {
         auto ret = RelNode<T>::execute(partId, vId);
-        if (ret != kvstore::ResultCode::SUCCEEDED &&
-            ret != kvstore::ResultCode::ERR_RESULT_FILTERED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
+            ret != nebula::cpp2::ErrorCode::E_FILTER_OUT) {
             return ret;
         }
 

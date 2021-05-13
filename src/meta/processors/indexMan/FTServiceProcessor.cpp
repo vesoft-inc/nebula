@@ -15,12 +15,12 @@ void SignInFTServiceProcessor::process(const cpp2::SignInFTServiceReq& req) {
     auto ret = doGet(serviceKey);
     if (nebula::ok(ret)) {
         LOG(ERROR) << "Fulltext already exists.";
-        handleErrorCode(cpp2::ErrorCode::E_EXISTED);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     } else {
         auto retCode = nebula::error(ret);
-        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             LOG(ERROR) << "Sign in fulltext failed, error: "
                        << apache::thrift::util::enumNameSafe(retCode);
             handleErrorCode(retCode);
@@ -41,7 +41,7 @@ void SignOutFTServiceProcessor::process(const cpp2::SignOutFTServiceReq&) {
     auto ret = doGet(serviceKey);
     if (!nebula::ok(ret)) {
         auto retCode = nebula::error(ret);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             LOG(ERROR) << "Sign out fulltext failed, Fulltext not exists.";
         } else {
             LOG(ERROR) << "Sign out fulltext failed, error: "
@@ -74,7 +74,7 @@ void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
         clients = MetaServiceUtils::parseFTClients(iter->val());
     }
     resp_.set_clients(std::move(clients));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

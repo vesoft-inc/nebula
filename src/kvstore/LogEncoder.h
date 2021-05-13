@@ -95,6 +95,7 @@ public:
 private:
     std::vector<std::tuple<BatchLogType, std::string, std::string>> batch_;
 };
+
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_LOGENCODER_H_

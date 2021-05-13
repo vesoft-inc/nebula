@@ -48,7 +48,7 @@ public:
      *        get a batch of raft operations.
      *        used by updateNode, need to run this func after edge locked
      * */
-    folly::Future<cpp2::ErrorCode> addSamePartEdges(
+    folly::Future<nebula::cpp2::ErrorCode> addSamePartEdges(
         size_t vIdLen,
         GraphSpaceID spaceId,
         PartitionID localPart,
@@ -66,11 +66,12 @@ public:
      *        and addSamePartEdges() will set a lock to edge,
      *        I would like to forward this function to addSamePartEdges()
      * */
-    folly::Future<cpp2::ErrorCode> updateEdgeAtomic(size_t vIdLen,
-                                                    GraphSpaceID spaceId,
-                                                    PartitionID partId,
-                                                    const cpp2::EdgeKey& edgeKey,
-                                                    GetBatchFunc batchGetter);
+    folly::Future<nebula::cpp2::ErrorCode>
+    updateEdgeAtomic(size_t vIdLen,
+                     GraphSpaceID spaceId,
+                     PartitionID partId,
+                     const cpp2::EdgeKey& edgeKey,
+                     GetBatchFunc batchGetter);
 
     /*
      * resume an unfinished add/update/upsert request
@@ -79,14 +80,16 @@ public:
      * 2. if mvcc enabled, will commit the value of lock
      *       else, get props from in-edge, then re-check index and commit
      * */
-    folly::Future<cpp2::ErrorCode> resumeTransaction(size_t vIdLen,
-                                                     GraphSpaceID spaceId,
-                                                     std::string lockKey,
-                                                     ResumedResult result = nullptr);
+    folly::Future<nebula::cpp2::ErrorCode>
+    resumeTransaction(size_t vIdLen,
+                      GraphSpaceID spaceId,
+                      std::string lockKey,
+                      ResumedResult result = nullptr);
 
-    folly::SemiFuture<kvstore::ResultCode> commitBatch(GraphSpaceID spaceId,
-                                                       PartitionID partId,
-                                                       std::string&& batch);
+    folly::SemiFuture<nebula::cpp2::ErrorCode>
+    commitBatch(GraphSpaceID spaceId,
+                PartitionID partId,
+                std::string&& batch);
 
     bool enableToss(GraphSpaceID spaceId) {
         return nebula::meta::cpp2::IsolationLevel::TOSS == getSpaceIsolationLvel(spaceId);
@@ -98,17 +101,19 @@ public:
     std::unordered_map<std::string, std::list<int64_t>> timer_;
 
 protected:
-    folly::SemiFuture<kvstore::ResultCode> commitEdgeOut(GraphSpaceID spaceId,
-                                                         PartitionID partId,
-                                                         std::string&& key,
-                                                         std::string&& props);
+    folly::SemiFuture<nebula::cpp2::ErrorCode>
+    commitEdgeOut(GraphSpaceID spaceId,
+                  PartitionID partId,
+                  std::string&& key,
+                  std::string&& props);
 
-    folly::SemiFuture<kvstore::ResultCode> commitEdge(GraphSpaceID spaceId,
-                                                      PartitionID partId,
-                                                      std::string& key,
-                                                      std::string& encodedProp);
+    folly::SemiFuture<nebula::cpp2::ErrorCode>
+    commitEdge(GraphSpaceID spaceId,
+               PartitionID partId,
+               std::string& key,
+               std::string& encodedProp);
 
-    folly::SemiFuture<cpp2::ErrorCode>
+    folly::SemiFuture<nebula::cpp2::ErrorCode>
     eraseKey(GraphSpaceID spaceId, PartitionID partId, const std::string& key);
 
     void eraseMemoryLock(const std::string& rawKey, int64_t ver);

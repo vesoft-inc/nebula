@@ -206,10 +206,10 @@ void UpgraderSpace::runPartV1() {
         // Handle vertex and edge, if there is an index, generate index data
         LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_
                   << " part id " << partId;
-        auto prefix = NebulaKeyUtilsV1::prefix(partId);
+        const auto& prefix = NebulaKeyUtilsV1::prefix(partId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retCode = readEngine_->prefix(prefix, &iter);
-        if (retCode != kvstore::ResultCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Space id " << spaceId_ << " part " << partId
                        << " no found!";
             LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_
@@ -341,7 +341,7 @@ void UpgraderSpace::runPartV1() {
             if (data.size() >= FLAGS_write_batch_num) {
                 VLOG(2) << "Send record total rows " << data.size();
                 auto code = writeEngine_->multiPut(data);
-                if (code != kvstore::ResultCode::SUCCEEDED) {
+                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(FATAL) << "Write multi put in space id " << spaceId_
                                << " part id " << partId << " failed.";
                 }
@@ -352,7 +352,7 @@ void UpgraderSpace::runPartV1() {
         }
 
         auto code = writeEngine_->multiPut(data);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(FATAL) << "Write multi put in space id " << spaceId_
                        << " part id " << partId << " failed.";
         }
@@ -399,7 +399,7 @@ void UpgraderSpace::doProcessV1() {
         auto prefix = NebulaKeyUtilsV1::systemPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retCode = readEngine_->prefix(prefix, &iter);
-        if (retCode != kvstore::ResultCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Space id " << spaceId_ << " get system data failed";
             LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed";
             return;
@@ -412,7 +412,7 @@ void UpgraderSpace::doProcessV1() {
             if (data.size() >= FLAGS_write_batch_num) {
                 VLOG(2) << "Send system data total rows " << data.size();
                 auto code = writeEngine_->multiPut(data);
-                if (code != kvstore::ResultCode::SUCCEEDED) {
+                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
                 }
                 data.clear();
@@ -421,7 +421,7 @@ void UpgraderSpace::doProcessV1() {
         }
 
         auto code = writeEngine_->multiPut(data);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
         }
         LOG(INFO) << "Handle system data in space id " << spaceId_ << " success";
@@ -439,7 +439,7 @@ void UpgraderSpace::runPartV2() {
         auto prefix = NebulaKeyUtilsV2::partPrefix(partId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retCode = readEngine_->prefix(prefix, &iter);
-        if (retCode != kvstore::ResultCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Space id " << spaceId_ << " part " << partId
                        << " no found!";
             LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_
@@ -567,7 +567,7 @@ void UpgraderSpace::runPartV2() {
             if (data.size() >= FLAGS_write_batch_num) {
                 VLOG(2) << "Send record total rows " << data.size();
                 auto code = writeEngine_->multiPut(data);
-                if (code != kvstore::ResultCode::SUCCEEDED) {
+                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(FATAL) << "Write multi put in space id " << spaceId_
                                << " part id " << partId << " failed.";
                 }
@@ -578,7 +578,7 @@ void UpgraderSpace::runPartV2() {
         }
 
         auto code = writeEngine_->multiPut(data);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(FATAL) << "Write multi put in space id " << spaceId_
                        << " part id " << partId << " failed.";
         }
@@ -624,7 +624,7 @@ void UpgraderSpace::doProcessV2() {
         auto prefix = NebulaKeyUtilsV2::systemPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retCode = readEngine_->prefix(prefix, &iter);
-        if (retCode != kvstore::ResultCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Space id " << spaceId_ << " get system data failed.";
             LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed.";
             return;
@@ -637,7 +637,7 @@ void UpgraderSpace::doProcessV2() {
             if (data.size() >= FLAGS_write_batch_num) {
                 VLOG(2) << "Send system data total rows " << data.size();
                 auto code = writeEngine_->multiPut(data);
-                if (code != kvstore::ResultCode::SUCCEEDED) {
+                if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
                 }
                 data.clear();
@@ -646,7 +646,7 @@ void UpgraderSpace::doProcessV2() {
         }
 
         auto code = writeEngine_->multiPut(data);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
         }
         LOG(INFO) << "Handle system data in space id " << spaceId_ << " success";
@@ -990,7 +990,7 @@ void UpgraderSpace::doCompaction() {
     LOG(INFO) << "Path " << dstPath_ << " space id " << spaceId_
               << " compaction begin";
     auto ret = writeEngine_->compact();
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Path " << dstPath_ << " space id " << spaceId_
                    << " compaction failed!";
     }

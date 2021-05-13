@@ -15,7 +15,7 @@ void StopAdminTaskProcessor::process(const cpp2::StopAdminTaskRequest& req) {
     auto taskManager = AdminTaskManager::instance();
     auto rc = taskManager->cancelJob(req.get_job_id());
 
-    if (rc != cpp2::ErrorCode::SUCCEEDED) {
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
         cpp2::PartitionResult thriftRet;
         thriftRet.set_code(rc);
         codes_.emplace_back(std::move(thriftRet));
@@ -26,4 +26,3 @@ void StopAdminTaskProcessor::process(const cpp2::StopAdminTaskRequest& req) {
 
 }  // namespace storage
 }  // namespace nebula
-

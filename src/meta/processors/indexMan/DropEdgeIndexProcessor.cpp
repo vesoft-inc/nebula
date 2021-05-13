@@ -18,9 +18,9 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     auto edgeIndexIDRet = getIndexID(spaceID, indexName);
     if (!nebula::ok(edgeIndexIDRet)) {
         auto retCode = nebula::error(edgeIndexIDRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
                 LOG(ERROR) << "Drop Edge Index Failed, index name " << indexName
                            << " not exists in Space: "<< spaceID;

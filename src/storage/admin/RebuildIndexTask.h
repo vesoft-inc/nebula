@@ -26,7 +26,7 @@ public:
         LOG(INFO) << "Release Rebuild Task";
     }
 
-    ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
 protected:
     virtual StatusOr<IndexItems>
@@ -35,7 +35,7 @@ protected:
     virtual StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
     getIndex(GraphSpaceID space, IndexID index) = 0;
 
-    virtual kvstore::ResultCode
+    virtual nebula::cpp2::ErrorCode
     buildIndexGlobal(GraphSpaceID space,
                      PartitionID part,
                      const IndexItems& items) = 0;
@@ -44,29 +44,33 @@ protected:
         canceled_ = true;
     }
 
-    kvstore::ResultCode buildIndexOnOperations(GraphSpaceID space,
-                                               PartitionID part);
+    nebula::cpp2::ErrorCode
+    buildIndexOnOperations(GraphSpaceID space, PartitionID part);
 
 
     // Remove the legacy operation log to make sure the index is correct.
-    kvstore::ResultCode removeLegacyLogs(GraphSpaceID space,
-                                         PartitionID part);
+    nebula::cpp2::ErrorCode
+    removeLegacyLogs(GraphSpaceID space, PartitionID part);
 
-    kvstore::ResultCode writeData(GraphSpaceID space,
-                                  PartitionID part,
-                                  std::vector<kvstore::KV> data);
+    nebula::cpp2::ErrorCode
+    writeData(GraphSpaceID space,
+              PartitionID part,
+              std::vector<kvstore::KV> data);
 
-    kvstore::ResultCode removeData(GraphSpaceID space,
-                                   PartitionID part,
-                                   std::string&& key);
+    nebula::cpp2::ErrorCode
+    removeData(GraphSpaceID space,
+               PartitionID part,
+               std::string&& key);
 
-    kvstore::ResultCode cleanupOperationLogs(GraphSpaceID space,
-                                             PartitionID part,
-                                             std::vector<std::string> keys);
+    nebula::cpp2::ErrorCode
+    cleanupOperationLogs(GraphSpaceID space,
+                         PartitionID part,
+                         std::vector<std::string> keys);
 
-    kvstore::ResultCode invoke(GraphSpaceID space,
-                               PartitionID part,
-                               const IndexItems& items);
+    nebula::cpp2::ErrorCode
+    invoke(GraphSpaceID space,
+           PartitionID part,
+           const IndexItems& items);
 
 protected:
     std::atomic<bool>   canceled_{false};
@@ -75,4 +79,5 @@ protected:
 
 }  // namespace storage
 }  // namespace nebula
+
 #endif  // STORAGE_ADMIN_REBUILDINDEXTASK_H_

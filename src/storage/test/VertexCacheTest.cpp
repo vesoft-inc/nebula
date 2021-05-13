@@ -223,7 +223,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
         auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
         EXPECT_TRUE(iter && iter->valid());
 
         auto reader =

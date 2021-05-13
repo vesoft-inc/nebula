@@ -24,7 +24,7 @@ public:
         auto userKey = MetaServiceUtils::userKey("root");
         std::string val;
         auto result = kv->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-        if (result == kvstore::ResultCode::SUCCEEDED) {
+        if (result == nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(INFO) << "Root user exists";
             return true;
         } else {
@@ -47,8 +47,8 @@ public:
         bool ret = true;
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId,
-                          std::move(data), [&](kvstore::ResultCode code) {
-            if (code != kvstore::ResultCode::SUCCEEDED) {
+                          std::move(data), [&](nebula::cpp2::ErrorCode code) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Put failed, error " << static_cast<int32_t>(code);
                 ret = false;
             }

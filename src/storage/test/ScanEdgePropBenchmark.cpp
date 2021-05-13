@@ -99,7 +99,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         std::unique_ptr<kvstore::KVIterator> kvIter;
         std::unique_ptr<storage::StorageIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
-        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && kvIter && kvIter->valid()) {
             iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
         }
         size_t edgeRowCount = 0;
@@ -130,7 +130,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         std::unique_ptr<kvstore::KVIterator> kvIter;
         std::unique_ptr<storage::StorageIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
-        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && kvIter && kvIter->valid()) {
             iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
         }
         size_t edgeRowCount = 0;
@@ -156,7 +156,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         std::unique_ptr<kvstore::KVIterator> kvIter;
         std::unique_ptr<storage::StorageIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
-        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && kvIter && kvIter->valid()) {
             iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
         }
         size_t edgeRowCount = 0;
@@ -183,7 +183,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         std::unique_ptr<kvstore::KVIterator> kvIter;
         std::unique_ptr<storage::StorageIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
-        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && kvIter && kvIter->valid()) {
             iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
         }
         size_t edgeRowCount = 0;
@@ -218,7 +218,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         std::unique_ptr<kvstore::KVIterator> kvIter;
         std::unique_ptr<storage::StorageIterator> iter;
         auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &kvIter);
-        if (ret == kvstore::ResultCode::SUCCEEDED && kvIter && kvIter->valid()) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && kvIter && kvIter->valid()) {
             iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
         }
         size_t edgeRowCount = 0;

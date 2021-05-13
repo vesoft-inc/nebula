@@ -34,8 +34,8 @@ void mockData(kvstore::KVStore* kv) {
             }
         }
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
-            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        kv->asyncMultiPut(0, partId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+            EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
             baton.post();
         });
         baton.wait();

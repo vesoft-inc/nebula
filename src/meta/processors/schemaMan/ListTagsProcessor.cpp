@@ -42,7 +42,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         iter->next();
     }
     resp_.set_tags(std::move(tags));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

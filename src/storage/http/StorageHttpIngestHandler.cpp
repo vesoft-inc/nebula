@@ -7,6 +7,7 @@
 #include "storage/http/StorageHttpIngestHandler.h"
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {
 namespace storage {
@@ -92,10 +93,11 @@ void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
 
 bool StorageHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     auto code = kvstore_->ingest(space);
-    if (code == kvstore::ResultCode::SUCCEEDED) {
+    if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         return true;
     } else {
-        LOG(ERROR) << "SSTFile Ingest Failed: " << code;
+        LOG(ERROR) << "SSTFile Ingest Failed: "
+                   << apache::thrift::util::enumNameSafe(code);
         return false;
     }
 }

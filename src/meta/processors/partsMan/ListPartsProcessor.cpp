@@ -75,7 +75,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         LOG(ERROR) << "Maybe lost some partitions!";
     }
     auto retCode = getLeaderDist(partItems);
-    if (retCode == cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
         resp_.set_parts(std::move(partItems));
     }
     handleErrorCode(retCode);
@@ -83,7 +83,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
 }
 
 
-ErrorOr<cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
 ListPartsProcessor::getAllParts() {
     std::unordered_map<PartitionID, std::vector<HostAddr>> partHostsMap;
 
@@ -110,7 +110,8 @@ ListPartsProcessor::getAllParts() {
     return partHostsMap;
 }
 
-cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
+nebula::cpp2::ErrorCode
+ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
     if (!nebula::ok(activeHostsRet)) {
         return nebula::error(activeHostsRet);
@@ -124,23 +125,24 @@ cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& p
         leaderKeys.emplace_back(std::move(key));
     }
 
-    kvstore::ResultCode rc;
+    nebula::cpp2::ErrorCode rc;
     std::vector<Status> statuses;
     std::vector<std::string> values;
     std::tie(rc, statuses) =
         kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(leaderKeys), &values);
-    if (rc != kvstore::ResultCode::SUCCEEDED && rc != kvstore::ResultCode::ERR_PARTIAL_RESULT) {
-        return MetaCommon::to(rc);
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED
+        && rc != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
+        return rc;
     }
 
     HostAddr host;
-    cpp2::ErrorCode code;
+    nebula::cpp2::ErrorCode code;
     for (auto i = 0U; i != statuses.size(); ++i) {
         if (!statuses[i].ok()) {
             continue;
         }
         std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(values[i]);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             continue;
         }
         if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
@@ -150,7 +152,7 @@ cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& p
         partItems[i].set_leader(host);
     }
 
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

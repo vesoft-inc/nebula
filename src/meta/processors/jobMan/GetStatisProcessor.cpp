@@ -17,10 +17,10 @@ void GetStatisProcessor::process(const cpp2::GetStatisReq& req) {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statisKey, &val);
 
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "SpaceId " << spaceId << " no statis data, "
                    << "please submit job statis under space.";
-        handleErrorCode(MetaCommon::to(ret));
+        handleErrorCode(ret);
         onFinished();
         return;
     }
@@ -29,12 +29,12 @@ void GetStatisProcessor::process(const cpp2::GetStatisReq& req) {
     if (statisJobStatus != cpp2::JobStatus::FINISHED) {
         LOG(ERROR) << "SpaceId " << spaceId << " statis job is running or failed, "
                    << "please show jobs.";
-        handleErrorCode(cpp2::ErrorCode::E_JOB_NOT_FINISHED);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED);
         onFinished();
         return;
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_statis(std::move(statisItem));
     onFinished();
 }

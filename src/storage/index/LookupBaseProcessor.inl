@@ -9,10 +9,11 @@ namespace nebula {
 namespace storage {
 
 template<typename REQ, typename RESP>
-cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupIndexRequest& req) {
+nebula::cpp2::ErrorCode
+LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupIndexRequest& req) {
     spaceId_ = req.get_space_id();
     auto retCode = this->getSpaceVidLen(spaceId_);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return retCode;
     }
 
@@ -24,15 +25,15 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         planContext_->edgeType_ = indices.get_tag_or_edge_id();
         auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, planContext_->edgeType_);
         if (!edgeName.ok()) {
-            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         planContext_->edgeName_ = std::move(edgeName.value());
         auto allEdges = this->env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
         if (!allEdges.ok()) {
-            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         if (!allEdges.value().count(planContext_->edgeType_)) {
-            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         schemas_ = std::move(allEdges).value()[planContext_->edgeType_];
         planContext_->edgeSchema_ = schemas_.back().get();
@@ -40,15 +41,15 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         planContext_->tagId_ = indices.get_tag_or_edge_id();
         auto tagName = this->env_->schemaMan_->toTagName(spaceId_, planContext_->tagId_);
         if (!tagName.ok()) {
-            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         planContext_->tagName_ = std::move(tagName.value());
         auto allTags = this->env_->schemaMan_->getAllVerTagSchema(spaceId_);
         if (!allTags.ok()) {
-            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         if (!allTags.value().count(planContext_->tagId_)) {
-            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         schemas_ = std::move(allTags).value()[planContext_->tagId_];
         planContext_->tagSchema_ = schemas_.back().get();
@@ -56,7 +57,7 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
 
     if (indices.get_contexts().empty() || !req.return_columns_ref().has_value() ||
         (*req.return_columns_ref()).empty()) {
-        return cpp2::ErrorCode::E_INVALID_OPERATION;
+        return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
     }
     contexts_ = indices.get_contexts();
 
@@ -72,7 +73,7 @@ cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(const cpp2::LookupI
         }
     }
 
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 template<typename REQ, typename RESP>

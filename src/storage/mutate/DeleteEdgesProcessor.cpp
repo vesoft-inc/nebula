@@ -24,7 +24,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     if (!ret.ok()) {
         LOG(ERROR) << ret.status();
         for (auto& part : partEdges) {
-            pushResultCode(cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
         }
         onFinished();
         return;
@@ -37,7 +37,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     if (!iRet.ok()) {
         LOG(ERROR) << iRet.status();
         for (auto& part : partEdges) {
-            pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
         }
         onFinished();
         return;
@@ -51,7 +51,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
             std::vector<std::string> keys;
             keys.reserve(32);
             auto partId = part.first;
-            cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+            auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
             for (auto& edgeKey : part.second) {
                 if (!NebulaKeyUtils::isValidVidLen(
                         spaceVidLen_,
@@ -61,7 +61,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                << "space vid len: " << spaceVidLen_
                                << ", edge srcVid: " << *edgeKey.src_ref()
                                << " dstVid: " << *edgeKey.dst_ref();
-                    code = cpp2::ErrorCode::E_INVALID_VID;
+                    code = nebula::cpp2::ErrorCode::E_INVALID_VID;
                     break;
                 }
                 // todo(doodle): delete lock in toss
@@ -73,7 +73,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                                     (*edgeKey.dst_ref()).getStr());
                 keys.emplace_back(edge.data(), edge.size());
             }
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 handleAsync(spaceId_, partId, code);
                 continue;
             }
@@ -110,12 +110,12 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                         << std::get<3>(conflict) << ":"
                         << std::get<4>(conflict) << ":"
                         << std::get<5>(conflict);
-                handleAsync(spaceId_, partId, cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
+                handleAsync(spaceId_, partId, nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
                 continue;
             }
             env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(nebula::value(batch)),
                 [l = std::move(lg), icw = std::move(wrapper), partId, this] (
-                    kvstore::ResultCode code) {
+                    nebula::cpp2::ErrorCode code) {
                     UNUSED(l);
                     UNUSED(icw);
                     handleAsync(spaceId_, partId, code);
@@ -125,7 +125,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
 }
 
 
-ErrorOr<kvstore::ResultCode, std::string>
+ErrorOr<nebula::cpp2::ErrorCode, std::string>
 DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::EdgeKey>& edges) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (auto& edge : edges) {
@@ -136,7 +136,7 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::Ed
         auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, srcId, type, rank, dstId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId_;
             return ret;
@@ -163,7 +163,7 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::Ed
                                                                      iter->val());
                         if (reader == nullptr) {
                             LOG(WARNING) << "Bad format row!";
-                            return kvstore::ResultCode::ERR_INVALID_DATA;
+                            return nebula::cpp2::ErrorCode::E_INVALID_DATA;
                         }
                     }
                     auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(),
@@ -184,7 +184,7 @@ DeleteEdgesProcessor::deleteEdges(PartitionID partId, const std::vector<cpp2::Ed
                         batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
                     } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                        return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+                        return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                     } else {
                         batchHolder->remove(std::move(indexKey));
                     }

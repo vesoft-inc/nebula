@@ -20,10 +20,11 @@ public:
 
     void process(const cpp2::SetConfigReq& req);
 
-    cpp2::ErrorCode setConfig(const cpp2::ConfigModule& module,
-                              const std::string& name,
-                              const Value& value,
-                              std::vector<kvstore::KV>& data);
+    nebula::cpp2::ErrorCode
+    setConfig(const cpp2::ConfigModule& module,
+              const std::string& name,
+              const Value& value,
+              std::vector<kvstore::KV>& data);
 
 private:
     explicit SetConfigProcessor(kvstore::KVStore* kvstore)

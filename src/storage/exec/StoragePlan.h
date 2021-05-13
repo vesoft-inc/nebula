@@ -17,7 +17,7 @@ namespace storage {
 /*
 Origined from folly::FutureDAG, not thread-safe.
 
-The StoragePlan contains a set of RelNode, all you need to do is define a RelNode, add it 
+The StoragePlan contains a set of RelNode, all you need to do is define a RelNode, add it
 to plan by calling addNode, which will return the index of the RelNode in this plan.
 The denpendencies between different nodes is defined by calling addDependency in RelNode.
 
@@ -34,7 +34,7 @@ FutureDAG in StorageDAGBenchmark.cpp
 template<typename T>
 class StoragePlan {
 public:
-    kvstore::ResultCode go(PartitionID partId, const T& input) {
+    nebula::cpp2::ErrorCode go(PartitionID partId, const T& input) {
         // find all leaf nodes, and a dummy output node depends on all leaf node.
         if (firstLoop_) {
             auto output = std::make_unique<RelNode<T>>();
@@ -52,7 +52,7 @@ public:
         return nodes_[outputIdx_]->execute(partId, input);
     }
 
-    kvstore::ResultCode go(PartitionID partId) {
+    nebula::cpp2::ErrorCode go(PartitionID partId) {
         // find all leaf nodes, and a dummy output node depends on all leaf node.
         if (firstLoop_) {
             auto output = std::make_unique<RelNode<T>>();

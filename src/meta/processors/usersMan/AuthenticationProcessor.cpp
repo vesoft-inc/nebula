@@ -16,12 +16,12 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     const auto& password = req.get_encoded_pwd();
 
     auto retCode = userExist(account);
-    if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
-        if (retCode == cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::E_USER_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
             if (!req.get_if_not_exists()) {
                 LOG(ERROR) << "Create User Failed : User " << account
                            << " already existed!";
-                retCode = cpp2::ErrorCode::E_EXISTED;
+                retCode = nebula::cpp2::ErrorCode::E_EXISTED;
             }
         } else {
             LOG(ERROR) << "Create User Failed : User " << account
@@ -49,6 +49,9 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     auto iRet = doGet(userKey);
     if (!nebula::ok(iRet)) {
         auto errCode = nebula::error(iRet);
+        if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            errCode = nebula::cpp2::ErrorCode::E_USER_NOT_FOUND;
+        }
         LOG(ERROR) << "Get User Failed : User " << account
                    << " error: " << apache::thrift::util::enumNameSafe(errCode);
         handleErrorCode(errCode);
@@ -67,15 +70,15 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     const auto& account = req.get_account();
 
     auto retCode = userExist(account);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        if (retCode == nebula::cpp2::ErrorCode::E_USER_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
-                LOG(ERROR) << "Drop User Failed :" << account << " not found.";
+                LOG(ERROR) << "Drop User Failed: " << account << " not found.";
             }
         } else {
-            LOG(ERROR) << "Drop User Failed : User " << account
+            LOG(ERROR) << "Drop User Failed, User " << account
                        << " error: " << apache::thrift::util::enumNameSafe(retCode);
         }
         handleErrorCode(retCode);
@@ -92,8 +95,8 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     if (!nebula::ok(iterRet)) {
         retCode = nebula::error(iterRet);
         // The error of prefix is leader change
-        LOG(ERROR) << "Drop User Failed : User " << account
-                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        LOG(ERROR) << "Drop User Failed, User " << account  << " error: "
+                   << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -131,7 +134,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
         CHECK_SPACE_ID_AND_RETURN(spaceId);
     }
     auto retCode = userExist(account);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Grant User Failed : User " << account
                    << " error: " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
@@ -155,7 +158,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     const auto& account = roleItem.get_user_id();
 
     auto userRet = userExist(account);
-    if (userRet != cpp2::ErrorCode::SUCCEEDED) {
+    if (userRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Revoke User Failed : User " << account
                    << " error: " << apache::thrift::util::enumNameSafe(userRet);
         handleErrorCode(userRet);
@@ -167,6 +170,9 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     auto result = doGet(roleKey);
     if (!nebula::ok(result)) {
         userRet = nebula::error(result);
+        if (userRet == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            userRet = nebula::cpp2::ErrorCode::E_ROLE_NOT_FOUND;
+        }
         LOG(ERROR) << "Get Role User Failed : User " << account
                    << " error: " << apache::thrift::util::enumNameSafe(userRet);
         handleErrorCode(userRet);
@@ -177,8 +183,8 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     const auto role = *reinterpret_cast<const cpp2::RoleType *>(val.c_str());
     if (role != roleItem.get_role_type()) {
         LOG(ERROR) << "Revoke User Failed : User " << account << " error: "
-                   << apache::thrift::util::enumNameSafe(cpp2::ErrorCode::E_IMPROPER_ROLE);
-        handleErrorCode(cpp2::ErrorCode::E_IMPROPER_ROLE);
+                   << apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_IMPROPER_ROLE);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_IMPROPER_ROLE);
         onFinished();
         return;
     }
@@ -190,7 +196,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& account = req.get_account();
     auto userRet = userExist(account);
-    if (userRet != cpp2::ErrorCode::SUCCEEDED) {
+    if (userRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Change password Failed, get user " << account << " failed, "
                    << " error: " << apache::thrift::util::enumNameSafe(userRet);
         handleErrorCode(userRet);
@@ -201,8 +207,8 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     auto checkRet = checkPassword(account, req.get_old_encoded_pwd());
     if (!nebula::ok(checkRet)) {
         auto retCode = nebula::error(checkRet);
-        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
-            retCode = cpp2::ErrorCode::E_INVALID_PASSWORD;
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            retCode = nebula::cpp2::ErrorCode::E_USER_NOT_FOUND;
         }
         LOG(ERROR) << "Get user " << account << " failed, " << " error: "
                    << apache::thrift::util::enumNameSafe(retCode);
@@ -211,8 +217,10 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
         return;
     } else {
         if (!nebula::value(checkRet)) {
-            LOG(ERROR) << "Check password failed, user " << account;
-            handleErrorCode(cpp2::ErrorCode::E_INVALID_PASSWORD);
+            auto retCode = nebula::cpp2::ErrorCode::E_INVALID_PASSWORD;
+            handleErrorCode(retCode);
+            LOG(ERROR) << "Change password failed, user " << account
+                       << apache::thrift::util::enumNameSafe(retCode);
             onFinished();
             return;
         }
@@ -249,7 +257,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
         iter->next();
     }
     resp_.set_users(std::move(users));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -282,7 +290,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         iter->next();
     }
     resp_.set_roles(std::move(roles));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -317,7 +325,7 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
         iter->next();
     }
     resp_.set_roles(std::move(roles));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

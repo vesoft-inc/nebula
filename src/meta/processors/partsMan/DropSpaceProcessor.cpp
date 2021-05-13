@@ -17,9 +17,9 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
 
     if (!nebula::ok(spaceRet)) {
         auto retCode = nebula::error(spaceRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
                 LOG(ERROR) << "Drop space Failed, space " << spaceName << " not existed.";
             }

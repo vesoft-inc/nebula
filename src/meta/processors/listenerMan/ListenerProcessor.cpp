@@ -19,10 +19,10 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     auto type = req.get_type();
     const auto& hosts = req.get_hosts();
     auto ret = listenerExist(space, type);
-    if (ret != cpp2::ErrorCode::E_NOT_FOUND) {
-        if (ret == cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND) {
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Add listener failed, listener already exists.";
-            ret = cpp2::ErrorCode::E_EXISTED;
+            ret = nebula::cpp2::ErrorCode::E_EXISTED;
         } else {
            LOG(ERROR) << "Add listener failed, error: "
                       << apache::thrift::util::enumNameSafe(ret);
@@ -65,8 +65,8 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
     CHECK_SPACE_ID_AND_RETURN(space);
     auto type = req.get_type();
     auto ret = listenerExist(space, type);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        if (ret == cpp2::ErrorCode::E_NOT_FOUND) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        if (ret == nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND) {
             LOG(ERROR) << "Remove listener failed, listener not exists.";
         } else {
             LOG(ERROR) << "Remove listener failed, error: "
@@ -141,7 +141,7 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
         iter->next();
     }
     resp_.set_listeners(std::move(listeners));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

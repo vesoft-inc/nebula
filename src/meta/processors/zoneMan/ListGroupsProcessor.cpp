@@ -33,7 +33,7 @@ void ListGroupsProcessor::process(const cpp2::ListGroupsReq&) {
         iter->next();
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_groups(std::move(groups));
     onFinished();
 }

@@ -13,7 +13,7 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
     const auto& user = req.get_user();
     auto ret = userExist(user);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "User does not exist, errorCode: "
                    << apache::thrift::util::enumNameSafe(ret);
         handleErrorCode(ret);
@@ -35,7 +35,7 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
                       MetaServiceUtils::sessionVal(session));
     resp_.set_session(session);
     ret = doSyncPut(std::move(data));
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Put data error on meta server, errorCode: "
                    << apache::thrift::util::enumNameSafe(ret);
     }
@@ -52,8 +52,12 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
         auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
         auto ret = doGet(sessionKey);
         if (!nebula::ok(ret)) {
+            auto errCode = nebula::error(ret);
             LOG(WARNING) << "Session id `" << sessionId << "' not found";
-            handleErrorCode(nebula::error(ret));
+            if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+                errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
+            }
+            handleErrorCode(errCode);
             onFinished();
             return;
         }
@@ -62,7 +66,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
                           MetaServiceUtils::sessionVal(session));
     }
     auto ret = doSyncPut(std::move(data));
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Put data error on meta server, errorCode: "
                    << apache::thrift::util::enumNameSafe(ret);
     }
@@ -94,7 +98,7 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
     for (auto &session : resp_.get_sessions()) {
         LOG(INFO) << "resp list session: " << session.get_session_id();
     }
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -105,15 +109,19 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
     auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
+        auto errCode = nebula::error(ret);
         LOG(ERROR) << "Session id `" << sessionId << "' not found";
-        handleErrorCode(nebula::error(ret));
+        if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
+        }
+        handleErrorCode(errCode);
         onFinished();
         return;
     }
 
     auto session = MetaServiceUtils::parseSessionVal(nebula::value(ret));
     resp_.set_session(std::move(session));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 
@@ -123,13 +131,17 @@ void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
     auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
+        auto errCode = nebula::error(ret);
         LOG(ERROR) << "Session id `" << sessionId << "' not found";
-        handleErrorCode(nebula::error(ret));
+        if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
+        }
+        handleErrorCode(errCode);
         onFinished();
         return;
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     doRemove(sessionKey);
 }
 

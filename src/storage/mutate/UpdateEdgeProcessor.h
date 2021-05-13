@@ -40,16 +40,17 @@ private:
                                                                             counters,
                                                                             executor) {}
 
-    cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req) override;
+    nebula::cpp2::ErrorCode
+    checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req) override;
 
     StoragePlan<cpp2::EdgeKey> buildPlan(nebula::DataSet* result);
 
     // Get the schema of all versions of edgeType in the spaceId
-    cpp2::ErrorCode buildEdgeSchema();
+    nebula::cpp2::ErrorCode buildEdgeSchema();
 
     // Build EdgeContext by parsing return props expressions,
     // filter expression, update props expression
-    cpp2::ErrorCode buildEdgeContext(const cpp2::UpdateEdgeRequest& req);
+    nebula::cpp2::ErrorCode buildEdgeContext(const cpp2::UpdateEdgeRequest& req);
 
     void onProcessFinished() override;
 
@@ -85,4 +86,5 @@ private:
 
 }  // namespace storage
 }  // namespace nebula
+
 #endif  // STORAGE_MUTATE_UPDATEEDGEROCESSOR_H_

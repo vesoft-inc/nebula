@@ -23,12 +23,12 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
             LOG(ERROR) << "Failed to create edge `" << edgeName
                        << "': some edge with the same name already exists.";
             resp_.set_id(to(nebula::value(conflictRet), EntryType::EDGE));
-            handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
             onFinished();
             return;
         } else {
             auto retCode = nebula::error(conflictRet);
-            if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+            if (retCode != nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND) {
                 LOG(ERROR) << "Failed to create edge " << edgeName << " error "
                            << apache::thrift::util::enumNameSafe(retCode);
                 handleErrorCode(retCode);
@@ -40,7 +40,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
 
     auto columns = req.get_schema().get_columns();
     if (!SchemaUtil::checkType(columns)) {
-        handleErrorCode(cpp2::ErrorCode::E_INVALID_PARM);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
@@ -53,17 +53,17 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     auto ret = getEdgeType(spaceId, edgeName);
     if (nebula::ok(ret)) {
         if (req.get_if_not_exists()) {
-            handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+            handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
         } else {
             LOG(ERROR) << "Create Edge Failed :" << edgeName << " has existed";
-            handleErrorCode(cpp2::ErrorCode::E_EXISTED);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(nebula::value(ret), EntryType::EDGE));
         onFinished();
         return;
     } else {
         auto retCode = nebula::error(ret);
-        if (retCode != cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode != nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND) {
             LOG(ERROR) << "Failed to create edge " << edgeName << " error "
                        << apache::thrift::util::enumNameSafe(retCode);
             handleErrorCode(retCode);

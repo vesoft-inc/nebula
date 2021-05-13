@@ -35,7 +35,8 @@ private:
     AddEdgesAtomicProcessor(StorageEnv* env, const ProcessorCounters* counters)
         : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    cpp2::ErrorCode encodeSingleEdgeProps(const cpp2::NewEdge& e, std::string& encodedVal);
+    nebula::cpp2::ErrorCode
+    encodeSingleEdgeProps(const cpp2::NewEdge& e, std::string& encodedVal);
 
     GraphSpaceID                                                spaceId_;
     int64_t                                                     vIdLen_;

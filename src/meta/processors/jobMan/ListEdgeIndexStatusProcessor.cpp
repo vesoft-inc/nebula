@@ -13,9 +13,8 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
     auto curSpaceId = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(curSpaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto rc = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
-    if (rc != nebula::kvstore::ResultCode::SUCCEEDED) {
-        auto retCode = MetaCommon::to(rc);
+    auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
         onFinished();
@@ -38,8 +37,8 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
                 auto spaceName = paras.back();
                 auto ret = getSpaceId(spaceName);
                 if (!nebula::ok(ret)) {
-                    auto retCode = nebula::error(ret);
-                    if (retCode == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                    retCode = nebula::error(ret);
+                    if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
                         handleErrorCode(retCode);
                         onFinished();
                         return;
@@ -75,7 +74,7 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
         statuses.emplace_back(std::move(status));
     }
     resp_.set_statuses(std::move(statuses));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

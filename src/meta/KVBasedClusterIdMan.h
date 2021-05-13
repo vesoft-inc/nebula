@@ -80,10 +80,10 @@ public:
         CHECK_NOTNULL(kv);
         std::string value;
         auto code = kv->get(0, 0, key, &value, true);
-        if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+        if (code == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             LOG(INFO) << "There is no clusterId existed in kvstore!";
             return 0;
-        } else if (code == kvstore::ResultCode::SUCCEEDED) {
+        } else if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
             if (value.size() != sizeof(ClusterID)) {
                 LOG(ERROR) << "Bad clusterId " << value;
                 return 0;
@@ -105,8 +105,8 @@ public:
                           std::string(reinterpret_cast<char*>(&clusterId), sizeof(ClusterID)));
         bool ret = true;
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode code) {
-                          if (code != kvstore::ResultCode::SUCCEEDED) {
+        kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+                          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                               LOG(ERROR) << "Put failed, error "
                                          << static_cast<int32_t>(code);
                               ret = false;
@@ -123,5 +123,5 @@ public:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // META_CLUSTERIDMAN_H_
 
+#endif  // META_CLUSTERIDMAN_H_

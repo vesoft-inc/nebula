@@ -369,6 +369,7 @@ nebula_add_executable(
         wangle
         follybenchmark
         boost_regex
+        gtest
 )
 
 nebula_add_test(
@@ -422,6 +423,7 @@ nebula_add_executable(
         follybenchmark
         wangle
         boost_regex
+        gtest
 )
 
 nebula_add_test(

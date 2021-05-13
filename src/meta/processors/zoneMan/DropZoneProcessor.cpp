@@ -15,7 +15,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     auto zoneIdRet = getZoneId(zoneName);
     if (!nebula::ok(zoneIdRet)) {
         auto retCode = nebula::error(zoneIdRet);
-         if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+         if (retCode == nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND) {
             LOG(ERROR) << "Drop Zone Failed, Zone " << zoneName << " not found.";
         } else {
             LOG(ERROR) << "Drop Zone Failed, error: "
@@ -28,7 +28,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
 
     // If zone belong to any group, it should not be droped.
     auto retCode = checkGroupDependency(zoneName);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(retCode);
         onFinished();
         return;
@@ -41,7 +41,8 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-cpp2::ErrorCode DropZoneProcessor::checkGroupDependency(const std::string& zoneName) {
+nebula::cpp2::ErrorCode
+DropZoneProcessor::checkGroupDependency(const std::string& zoneName) {
     const auto& prefix = MetaServiceUtils::groupPrefix();
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
@@ -58,11 +59,11 @@ cpp2::ErrorCode DropZoneProcessor::checkGroupDependency(const std::string& zoneN
         if (zoneIter != zoneNames.end()) {
             auto groupName = MetaServiceUtils::parseGroupName(iter->key());
             LOG(ERROR) << "Zone " << zoneName << " is belong to Group " << groupName;
-            return cpp2::ErrorCode::E_NOT_DROP;
+            return nebula::cpp2::ErrorCode::E_NOT_DROP;
         }
         iter->next();
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

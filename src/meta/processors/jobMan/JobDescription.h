@@ -46,7 +46,7 @@ public:
     /*
      * return the JobDescription if both key & val is valid
      * */
-    static ErrorOr<cpp2::ErrorCode, JobDescription>
+    static ErrorOr<nebula::cpp2::ErrorCode, JobDescription>
     makeJobDescription(folly::StringPiece key, folly::StringPiece val);
 
     JobID getJobId() const { return id_; }
@@ -94,7 +94,7 @@ public:
     /*
      * get a existed job from kvstore, return folly::none if there isn't
      * */
-    static ErrorOr<cpp2::ErrorCode, JobDescription>
+    static ErrorOr<nebula::cpp2::ErrorCode, JobDescription>
     loadJobDescription(JobID iJob, nebula::kvstore::KVStore* kv);
 
     /*

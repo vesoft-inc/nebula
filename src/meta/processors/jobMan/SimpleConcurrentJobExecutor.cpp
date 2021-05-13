@@ -23,7 +23,7 @@ bool SimpleConcurrentJobExecutor::check() {
     return parasNum == 1 || parasNum == 2;
 }
 
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 SimpleConcurrentJobExecutor::prepare() {
     std::string spaceName = paras_.back();
     auto errOrSpaceId = getSpaceIdFromName(spaceName);
@@ -42,11 +42,11 @@ SimpleConcurrentJobExecutor::prepare() {
     if (paras_.size() > 1) {
         concurrency_ = std::atoi(paras_[0].c_str());
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode SimpleConcurrentJobExecutor::stop() {
-    return cpp2::ErrorCode::SUCCEEDED;
+nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::stop() {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

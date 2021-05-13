@@ -30,8 +30,8 @@ private:
     explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
             : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    ErrorOr<kvstore::ResultCode, std::string> deleteEdges(PartitionID partId,
-                                                          const std::vector<cpp2::EdgeKey>& edges);
+    ErrorOr<nebula::cpp2::ErrorCode, std::string>
+    deleteEdges(PartitionID partId, const std::vector<cpp2::EdgeKey>& edges);
 
 private:
     GraphSpaceID                                                spaceId_;

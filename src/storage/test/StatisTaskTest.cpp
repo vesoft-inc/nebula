@@ -73,8 +73,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         request.set_para(std::move(parameter));
 
         nebula::meta::cpp2::StatisItem statisItem;
-        auto callback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
-            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
                 if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
@@ -138,8 +138,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         request.set_para(std::move(parameter));
 
         nebula::meta::cpp2::StatisItem statisItem;
-        auto callback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
-            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
                 if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
@@ -209,8 +209,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         request.set_para(std::move(parameter));
 
         nebula::meta::cpp2::StatisItem statisItem;
-        auto callback = [&](cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
-            if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 // Do nothing
             } else {
                 if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
@@ -300,7 +300,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
             auto prefix = NebulaKeyUtils::vertexPrefix(part);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 continue;
             }
 
@@ -333,7 +333,7 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
 
             prefix = NebulaKeyUtils::edgePrefix(part);
             ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 continue;
             }
 

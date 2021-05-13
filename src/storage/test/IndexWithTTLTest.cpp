@@ -41,7 +41,7 @@ int64_t verifyResultNum(GraphSpaceID spaceId, PartitionID partId,
                         nebula::kvstore::KVStore *kv,
                         int64_t ts = 0) {
     std::unique_ptr<kvstore::KVIterator> iter;
-    EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(spaceId, partId, prefix, &iter));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, kv->prefix(spaceId, partId, prefix, &iter));
     int64_t rowCount = 0;
     auto now = time::WallClock::fastNowInSec();
     while (iter->valid()) {
@@ -436,7 +436,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
     request.set_task_id(13);
     request.set_para(std::move(parameter));
 
-    auto callback = [](cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+    auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
     TaskContext context(request, callback);
 
     auto task = std::make_shared<RebuildTagIndexTask>(env, std::move(context));
@@ -505,7 +505,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
     request.set_task_id(13);
     request.set_para(std::move(parameter));
 
-    auto callback = [](cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+    auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
     TaskContext context(request, callback);
 
     auto task = std::make_shared<RebuildEdgeIndexTask>(env, std::move(context));
@@ -576,7 +576,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
     request.set_task_id(13);
     request.set_para(std::move(parameter));
 
-    auto callback = [](cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+    auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
     TaskContext context(request, callback);
 
     auto task = std::make_shared<RebuildTagIndexTask>(env, std::move(context));
@@ -647,7 +647,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
     request.set_task_id(15);
     request.set_para(std::move(parameter));
 
-    auto callback = [](cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+    auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
     TaskContext context(request, callback);
 
     auto task = std::make_shared<RebuildEdgeIndexTask>(env, std::move(context));

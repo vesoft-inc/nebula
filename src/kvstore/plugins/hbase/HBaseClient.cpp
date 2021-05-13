@@ -61,7 +61,7 @@ ResultCode HBaseClient::get(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 
@@ -109,7 +109,7 @@ std::pair<ResultCode, std::vector<Status>> HBaseClient::multiGet(
         LOG(ERROR) << "TTransportException: " << tte.what();
         return {ResultCode::ERR_IO_ERROR, status};
     }
-    return {ResultCode::ERR_UNKNOWN, status};
+    return {ResultCode::E_UNKNOWN, status};
 }
 
 
@@ -138,7 +138,7 @@ ResultCode HBaseClient::put(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 
@@ -171,7 +171,7 @@ ResultCode HBaseClient::multiPut(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 
@@ -222,7 +222,7 @@ ResultCode HBaseClient::range(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 
@@ -247,7 +247,7 @@ ResultCode HBaseClient::remove(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 ResultCode HBaseClient::multiRemove(const std::string& tableName,
@@ -276,7 +276,7 @@ ResultCode HBaseClient::multiRemove(const std::string& tableName,
         LOG(ERROR) << "TTransportException: " << tte.what();
         return ResultCode::ERR_IO_ERROR;
     }
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::E_UNKNOWN;
 }
 
 }  // namespace kvstore

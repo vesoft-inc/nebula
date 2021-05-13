@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
 FlushTask::genSubTasks() {
     std::vector<AdminSubTask> ret;
     if (!env_->kvstore_) {
@@ -20,7 +20,7 @@ FlushTask::genSubTasks() {
     auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
     auto errOrSpace = store->space(*ctx_.parameters_.space_id_ref());
     if (!ok(errOrSpace)) {
-        return toStorageErr(error(errOrSpace));
+        return error(errOrSpace);
     }
 
     auto space = nebula::value(errOrSpace);
@@ -28,11 +28,11 @@ FlushTask::genSubTasks() {
     ret.emplace_back([space = space]() {
         for (auto& engine : space->engines_) {
             auto code = engine->flush();
-            if (code != kvstore::ResultCode::SUCCEEDED) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return code;
             }
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     });
     return ret;
 }

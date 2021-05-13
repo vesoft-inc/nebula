@@ -24,7 +24,6 @@ namespace nebula {
 namespace meta {
 
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
-    using ResultCode = nebula::kvstore::ResultCode;
     friend class JobManagerTest;
     friend class GetStatisTest;
     FRIEND_TEST(JobManagerTest, reserveJobId);
@@ -61,7 +60,7 @@ public:
     /*
      * Load job description from kvstore
      * */
-    cpp2::ErrorCode addJob(const JobDescription& jobDesc, AdminClient* client);
+    nebula::cpp2::ErrorCode addJob(const JobDescription& jobDesc, AdminClient* client);
 
     /*
      * The same job is in jobMap
@@ -70,24 +69,23 @@ public:
                        const std::vector<std::string>& paras,
                        JobID& iJob);
 
-    ErrorOr<cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs();
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs();
 
-    ErrorOr<cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
     showJob(JobID iJob);
 
-    cpp2::ErrorCode stopJob(JobID iJob);
+    nebula::cpp2::ErrorCode stopJob(JobID iJob);
 
-    ErrorOr<cpp2::ErrorCode, JobID> recoverJob();
+    ErrorOr<nebula::cpp2::ErrorCode, JobID> recoverJob();
 
     /**
      * @brief persist job executed result, and do the cleanup
      * @return cpp2::ErrorCode if error when write to kv store
      */
-    cpp2::ErrorCode jobFinished(JobID jobId, cpp2::JobStatus jobStatus);
+    nebula::cpp2::ErrorCode jobFinished(JobID jobId, cpp2::JobStatus jobStatus);
 
     // report task finished.
-    // cpp2::ErrorCode reportTaskFinish(JobID jobId, int32_t taskId, cpp2::ErrorCode code);
-    cpp2::ErrorCode reportTaskFinish(const cpp2::ReportTaskReq& req);
+    nebula::cpp2::ErrorCode reportTaskFinish(const cpp2::ReportTaskReq& req);
 
     // Only used for Test
     // The number of jobs in lowPriorityQueue_ a and highPriorityQueue_
@@ -110,19 +108,20 @@ private:
     bool runJobInternal(const JobDescription& jobDesc);
     bool runJobInternalOld(const JobDescription& jobDesc);
 
-    ErrorOr<cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
+    ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
-    cpp2::ErrorCode save(const std::string& k, const std::string& v);
+    nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
 
-    cpp2::ErrorCode removeExpiredJobs(std::vector<std::string>&& jobKeys);
+    nebula::cpp2::ErrorCode removeExpiredJobs(std::vector<std::string>&& jobKeys);
 
-    ErrorOr<cpp2::ErrorCode, std::list<TaskDescription>> getAllTasks(JobID jobId);
+    ErrorOr<nebula::cpp2::ErrorCode, std::list<TaskDescription>> getAllTasks(JobID jobId);
 
     void cleanJob(JobID jobId);
 
-    cpp2::ErrorCode saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
+    nebula::cpp2::ErrorCode
+    saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
 
 private:
     // Todo(pandasheep)

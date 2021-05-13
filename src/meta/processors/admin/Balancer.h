@@ -83,22 +83,23 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::vector<HostAddr>&& lostHosts = {});
+    ErrorOr<nebula::cpp2::ErrorCode, BalanceID>
+    balance(std::vector<HostAddr>&& lostHosts = {});
 
     /**
      * Show balance plan id status.
      * */
-    ErrorOr<cpp2::ErrorCode, BalancePlan> show(BalanceID id) const;
+    ErrorOr<nebula::cpp2::ErrorCode, BalancePlan> show(BalanceID id) const;
 
     /**
      * Stop balance plan by canceling all waiting balance task.
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> stop();
+    ErrorOr<nebula::cpp2::ErrorCode, BalanceID> stop();
 
     /**
      * Clean invalid plan, return the invalid plan key if any
      * */
-    ErrorOr<cpp2::ErrorCode, BalanceID> cleanLastInValidPlan();
+    ErrorOr<nebula::cpp2::ErrorCode, BalanceID> cleanLastInValidPlan();
 
     /**
      * TODO(heng): rollback some balance plan.
@@ -123,7 +124,7 @@ public:
         return Status::Error("Unsupport it yet!");
     }
 
-    cpp2::ErrorCode leaderBalance();
+    nebula::cpp2::ErrorCode leaderBalance();
 
     void finish() {
         CHECK(!lock_.try_lock());
@@ -145,31 +146,33 @@ private:
     /*
      * When the balancer failover, we should recovery the status.
      * */
-    cpp2::ErrorCode recovery();
+    nebula::cpp2::ErrorCode recovery();
 
     /**
      * Build balance plan and save it in kvstore.
      * */
-    cpp2::ErrorCode buildBalancePlan(std::vector<HostAddr>&& lostHosts);
+    nebula::cpp2::ErrorCode buildBalancePlan(std::vector<HostAddr>&& lostHosts);
 
-    ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>>
     genTasks(GraphSpaceID spaceId,
              int32_t spaceReplica,
              bool dependentOnGroup,
              std::vector<HostAddr>&& lostHosts);
 
-    ErrorOr<cpp2::ErrorCode, std::pair<HostParts, std::vector<HostAddr>>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::pair<HostParts, std::vector<HostAddr>>>
     fetchHostParts(GraphSpaceID spaceId,
                    bool dependentOnGroup,
                    const HostParts& hostParts,
                    std::vector<HostAddr>& lostHosts);
 
-    ErrorOr<cpp2::ErrorCode, bool> getHostParts(GraphSpaceID spaceId,
-                                                bool dependentOnGroup,
-                                                HostParts& hostParts,
-                                                int32_t& totalParts);
+    ErrorOr<nebula::cpp2::ErrorCode, bool>
+    getHostParts(GraphSpaceID spaceId,
+                 bool dependentOnGroup,
+                 HostParts& hostParts,
+                 int32_t& totalParts);
 
-    cpp2::ErrorCode assembleZoneParts(const std::string& groupName, HostParts& hostParts);
+    nebula::cpp2::ErrorCode
+    assembleZoneParts(const std::string& groupName, HostParts& hostParts);
 
     void calDiff(const HostParts& hostParts,
                  const std::vector<HostAddr>& activeHosts,
@@ -181,10 +184,10 @@ private:
                         int32_t replica,
                         PartitionID partId);
 
-    ErrorOr<cpp2::ErrorCode, HostAddr>
+    ErrorOr<nebula::cpp2::ErrorCode, HostAddr>
     hostWithMinimalParts(const HostParts& hostParts, PartitionID partId);
 
-    ErrorOr<cpp2::ErrorCode, HostAddr>
+    ErrorOr<nebula::cpp2::ErrorCode, HostAddr>
     hostWithMinimalPartsForZone(const HostAddr& source,
                                 const HostParts& hostParts,
                                 PartitionID partId);
@@ -194,19 +197,21 @@ private:
                       int32_t totalParts,
                       std::vector<BalanceTask>& tasks);
 
-    cpp2::ErrorCode transferLostHost(std::vector<BalanceTask>& tasks,
-                                     HostParts& newHostParts,
-                                     const HostAddr& source,
-                                     GraphSpaceID spaceId,
-                                     PartitionID partId,
-                                     bool dependentOnGroup);
+    nebula::cpp2::ErrorCode
+    transferLostHost(std::vector<BalanceTask>& tasks,
+                     HostParts& newHostParts,
+                     const HostAddr& source,
+                     GraphSpaceID spaceId,
+                     PartitionID partId,
+                     bool dependentOnGroup);
 
     std::vector<std::pair<HostAddr, int32_t>>
     sortedHostsByParts(const HostParts& hostParts);
 
-    cpp2::ErrorCode getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
+    nebula::cpp2::ErrorCode
+    getAllSpaces(std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
 
-    ErrorOr<cpp2::ErrorCode, bool>
+    ErrorOr<nebula::cpp2::ErrorCode, bool>
     buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap,
                            GraphSpaceID spaceId,
                            int32_t replicaFactor,
@@ -231,7 +236,8 @@ private:
                           LeaderBalancePlan& plan,
                           GraphSpaceID spaceId);
 
-    cpp2::ErrorCode collectZoneParts(const std::string& groupName, HostParts& hostParts);
+    nebula::cpp2::ErrorCode
+    collectZoneParts(const std::string& groupName, HostParts& hostParts);
 
     bool checkZoneLegal(const HostAddr& source, const HostAddr& target, PartitionID part);
 

@@ -25,7 +25,7 @@ void GetValueProcessor::process(const cpp2::GetValueRequest& req) {
                                    << ", key=" << folly::hexlify(key)
                                    << ", rc=" << static_cast<int>(rc);
 
-    if (rc != kvstore::ResultCode::SUCCEEDED) {
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(rc, spaceId, partId);
     } else {
         resp_.set_value(std::move(value));

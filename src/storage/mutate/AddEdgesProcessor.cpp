@@ -27,7 +27,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     if (!ret.ok()) {
         LOG(ERROR) << ret.status();
         for (auto& part : partEdges) {
-            pushResultCode(cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
         }
         onFinished();
         return;
@@ -41,7 +41,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     if (!iRet.ok()) {
         LOG(ERROR) << iRet.status();
         for (auto& part : partEdges) {
-            pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+            pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
         }
         onFinished();
         return;
@@ -66,7 +66,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 
         std::vector<kvstore::KV> data;
         data.reserve(32);
-        cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+        auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
         std::unordered_set<std::string> visited;
         visited.reserve(newEdges.size());
 
@@ -83,7 +83,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                            << "space vid len: " << spaceVidLen_
                            << ", edge srcVid: " << *edgeKey.src_ref()
                            << ", dstVid: " << *edgeKey.dst_ref();
-                code = cpp2::ErrorCode::E_INVALID_VID;
+                code = nebula::cpp2::ErrorCode::E_INVALID_VID;
                 break;
             }
 
@@ -104,7 +104,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                         continue;
                     }
                 } else {
-                    code = to(nebula::error(obsIdx));
+                    code = nebula::error(obsIdx);
                     break;
                 }
             }
@@ -113,7 +113,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
                            << *edgeKey.edge_type_ref() << " invalid";
-                code = cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 break;
             }
 
@@ -128,7 +128,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
                 data.emplace_back(std::move(key), std::move(retEnc.value()));
             }
         }
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             handleAsync(spaceId_, partId, code);
         } else {
             doPut(spaceId_, partId, std::move(data));
@@ -147,7 +147,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         const auto& newEdges = part.second;
         std::vector<EMLI> dummyLock;
         dummyLock.reserve(newEdges.size());
-        cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+        auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
         std::unordered_set<std::string> visited;
         visited.reserve(newEdges.size());
@@ -164,7 +164,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                            << "space vid len: " << spaceVidLen_
                            << ", edge srcVid: " << *edgeKey.src_ref()
                            << ", dstVid: " << *edgeKey.dst_ref();
-                code = cpp2::ErrorCode::E_INVALID_VID;
+                code = nebula::cpp2::ErrorCode::E_INVALID_VID;
                 break;
             }
 
@@ -182,7 +182,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
             if (!schema) {
                 LOG(ERROR) << "Space " << spaceId_ << ", Edge "
                            << *edgeKey.edge_type_ref() << " invalid";
-                code = cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 break;
             }
 
@@ -210,7 +210,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                                                       nebula::value(obsIdx));
                     }
                 } else {
-                    code = to(nebula::error(obsIdx));
+                    code = nebula::error(obsIdx);
                     break;
                 }
                 if (!retEnc.value().empty()) {
@@ -235,7 +235,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
-                                    code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                                    code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                                     break;
                                 } else {
                                     batchHolder->remove(std::move(oi));
@@ -260,7 +260,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                 } else if (env_->checkIndexLocked(indexState)) {
                                     LOG(ERROR) << "The index has been locked: "
                                                << index->get_index_name();
-                                    code = cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                                    code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                                     break;
                                 } else {
                                     batchHolder->put(std::move(nik), std::move(niv));
@@ -270,7 +270,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                     }
                 }
             }
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 break;
             }
             batchHolder->put(std::move(key), std::move(retEnc.value()));
@@ -281,7 +281,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                                    *edgeKey.ranking_ref(),
                                                    (*edgeKey.dst_ref()).getStr()));
         }
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             handleAsync(spaceId_, partId, code);
             continue;
         }
@@ -297,19 +297,20 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                         << std::get<3>(conflict) << ":"
                         << std::get<4>(conflict) << ":"
                         << std::get<5>(conflict);
-            handleAsync(spaceId_, partId, cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
+            handleAsync(spaceId_, partId, nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
             continue;
         }
         env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch),
-            [l = std::move(lg), icw = std::move(wrapper), partId, this](kvstore::ResultCode kvRet) {
+            [l = std::move(lg), icw = std::move(wrapper), partId, this]
+            (nebula::cpp2::ErrorCode retCode) {
                 UNUSED(l);
                 UNUSED(icw);
-                handleAsync(spaceId_, partId, kvRet);
+                handleAsync(spaceId_, partId, retCode);
             });
     }
 }
 
-ErrorOr<kvstore::ResultCode, std::string>
+ErrorOr<nebula::cpp2::ErrorCode, std::string>
 AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& edges) {
     IndexCountWrapper wrapper(env_);
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
@@ -341,7 +342,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
         auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
         if (!schema) {
             LOG(ERROR) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
-            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
         for (auto& index : indexes_) {
             if (edgeType == index->get_schema_id().get_edge_type()) {
@@ -361,7 +362,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
                                                                       val);
                         if (oReader == nullptr) {
                             LOG(ERROR) << "Bad format row";
-                            return kvstore::ResultCode::ERR_INVALID_DATA;
+                            return nebula::cpp2::ErrorCode::E_INVALID_DATA;
                         }
                     }
                 }
@@ -376,7 +377,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
                             batchHolder->put(std::move(deleteOpKey), std::move(oi));
                         } else if (env_->checkIndexLocked(indexState)) {
                             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                            return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+                            return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                         } else {
                             batchHolder->remove(std::move(oi));
                         }
@@ -393,7 +394,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
                                                                   e.second);
                     if (nReader == nullptr) {
                         LOG(ERROR) << "Bad format row";
-                        return kvstore::ResultCode::ERR_INVALID_DATA;
+                        return nebula::cpp2::ErrorCode::E_INVALID_DATA;
                     }
                 }
 
@@ -409,7 +410,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
                         batchHolder->put(std::move(modifyOpKey), std::move(niv));
                     } else if (env_->checkIndexLocked(indexState)) {
                         LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                        return kvstore::ResultCode::ERR_DATA_CONFLICT_ERROR;
+                        return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                     } else {
                         batchHolder->put(std::move(nik), std::move(niv));
                     }
@@ -426,7 +427,7 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
     return encodeBatchValue(batchHolder->getBatch());
 }
 
-ErrorOr<kvstore::ResultCode, std::string>
+ErrorOr<nebula::cpp2::ErrorCode, std::string>
 AddEdgesProcessor::findOldValue(PartitionID partId, const folly::StringPiece& rawKey) {
     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_,
                                              partId,
@@ -436,7 +437,7 @@ AddEdgesProcessor::findOldValue(PartitionID partId, const folly::StringPiece& ra
                                              NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
                    << ", spaceId " << spaceId_;
         return ret;

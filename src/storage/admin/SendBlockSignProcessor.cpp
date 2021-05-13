@@ -15,11 +15,12 @@ void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     LOG(INFO) << "Receive block sign for space " << req.get_space_id() << ", block: " <<  sign;
 
     auto code = env_->kvstore_->setWriteBlocking(spaceId, sign);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         cpp2::PartitionResult thriftRet;
-        thriftRet.set_code(to(code));
+        thriftRet.set_code(code);
         codes_.emplace_back(std::move(thriftRet));
-        LOG(INFO) << "set block sign failed, error: " << code;
+        LOG(INFO) << "set block sign failed, error: "
+                  << apache::thrift::util::enumNameSafe(code);
     }
     onFinished();
 }

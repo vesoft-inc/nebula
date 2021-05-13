@@ -21,12 +21,12 @@ bool BalanceJobExecutor::check() {
     return false;
 }
 
-cpp2::ErrorCode BalanceJobExecutor::prepare() {
-    return cpp2::ErrorCode::SUCCEEDED;
+nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode BalanceJobExecutor::stop() {
-    return cpp2::ErrorCode::SUCCEEDED;
+nebula::cpp2::ErrorCode BalanceJobExecutor::stop() {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 folly::Future<Status>

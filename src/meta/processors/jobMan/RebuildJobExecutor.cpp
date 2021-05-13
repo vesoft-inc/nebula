@@ -21,7 +21,7 @@ bool RebuildJobExecutor::check() {
     return paras_.size() >= 1;
 }
 
-cpp2::ErrorCode RebuildJobExecutor::prepare() {
+nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
     // the last value of paras_ is the space name, others are index name
     auto spaceRet = getSpaceIdFromName(paras_.back());
     if (!nebula::ok(spaceRet)) {
@@ -34,9 +34,8 @@ cpp2::ErrorCode RebuildJobExecutor::prepare() {
     IndexID indexId = -1;
     for (auto i = 0u; i < paras_.size() - 1; i++) {
         auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[i]);
-        auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
-        if (result != kvstore::ResultCode::SUCCEEDED) {
-            auto retCode = MetaCommon::to(result);
+        auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Get indexKey error indexName: " << paras_[i] << " error: "
                        << apache::thrift::util::enumNameSafe(retCode);
             return retCode;
@@ -46,16 +45,16 @@ cpp2::ErrorCode RebuildJobExecutor::prepare() {
         LOG(INFO) << "Rebuild Index Space " << space_ << ", Index " << indexId;
         taskParameters_.emplace_back(folly::to<std::string>(indexId));
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
+nebula::cpp2::ErrorCode RebuildJobExecutor::stop() {
     auto errOrTargetHost = getTargetHost(space_);
     if (!nebula::ok(errOrTargetHost)) {
         LOG(ERROR) << "Get target host failed";
         auto retCode = nebula::error(errOrTargetHost);
-        if (retCode != cpp2::ErrorCode::E_LEADER_CHANGED) {
-            retCode = cpp2::ErrorCode::E_NO_HOSTS;
+        if (retCode != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+            retCode = nebula::cpp2::ErrorCode::E_NO_HOSTS;
         }
         return retCode;
     }
@@ -71,15 +70,15 @@ meta::cpp2::ErrorCode RebuildJobExecutor::stop() {
     auto tries = folly::collectAll(std::move(futures)).get();
     if (std::any_of(tries.begin(), tries.end(), [](auto& t){ return t.hasException(); })) {
         LOG(ERROR) << "RebuildJobExecutor::stop() RPC failure.";
-        return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
+        return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
     for (const auto& t : tries) {
         if (!t.value().ok()) {
             LOG(ERROR) << "Stop Build Index Failed";
-            return cpp2::ErrorCode::E_STOP_JOB_FAILURE;
+            return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
         }
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

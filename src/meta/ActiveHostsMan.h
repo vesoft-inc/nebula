@@ -109,34 +109,36 @@ public:
     ~ActiveHostsMan() = default;
 
     using AllLeaders = std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>;
-    static cpp2::ErrorCode updateHostInfo(kvstore::KVStore* kv,
-                                          const HostAddr& hostAddr,
-                                          const HostInfo& info,
-                                          const AllLeaders* leaderParts = nullptr);
+    static nebula::cpp2::ErrorCode
+    updateHostInfo(kvstore::KVStore* kv,
+                   const HostAddr& hostAddr,
+                   const HostInfo& info,
+                   const AllLeaders* leaderParts = nullptr);
 
-    static ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+    static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
     getActiveHosts(kvstore::KVStore* kv,
                    int32_t expiredTTL = 0,
                    cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
-    static ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+    static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
     getActiveHostsInZone(kvstore::KVStore* kv,
                          const std::string& zoneName,
                          int32_t expiredTTL = 0);
 
-    static ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+    static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
     getActiveHostsWithGroup(kvstore::KVStore* kv,
                             GraphSpaceID spaceId,
                             int32_t expiredTTL = 0);
 
-    static ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+    static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
     getActiveAdminHosts(kvstore::KVStore* kv,
                         int32_t expiredTTL = 0,
                         cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
-    static ErrorOr<cpp2::ErrorCode, bool> isLived(kvstore::KVStore* kv, const HostAddr& host);
+    static ErrorOr<nebula::cpp2::ErrorCode, bool>
+    isLived(kvstore::KVStore* kv, const HostAddr& host);
 
-    static ErrorOr<cpp2::ErrorCode, HostInfo>
+    static ErrorOr<nebula::cpp2::ErrorCode, HostInfo>
     getHostInfo(kvstore::KVStore* kv, const HostAddr& host);
 
 protected:
@@ -148,9 +150,10 @@ class LastUpdateTimeMan final {
 public:
     ~LastUpdateTimeMan() = default;
 
-    static cpp2::ErrorCode update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
+    static nebula::cpp2::ErrorCode
+    update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
 
-    static ErrorOr<cpp2::ErrorCode, int64_t> get(kvstore::KVStore* kv);
+    static ErrorOr<nebula::cpp2::ErrorCode, int64_t> get(kvstore::KVStore* kv);
 
 protected:
     LastUpdateTimeMan() = default;

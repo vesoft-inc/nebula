@@ -35,9 +35,10 @@ private:
         : BaseProcessor<cpp2::ExecResponse>(env, counters)
         , vertexCache_(cache) {}
 
-    ErrorOr<kvstore::ResultCode, std::string> deleteVertices(PartitionID partId,
-                                                             const std::vector<Value>& vertices,
-                                                             std::vector<VMLI>& target);
+    ErrorOr<nebula::cpp2::ErrorCode, std::string>
+    deleteVertices(PartitionID partId,
+                   const std::vector<Value>& vertices,
+                   std::vector<VMLI>& target);
 
 private:
     GraphSpaceID                                                spaceId_;

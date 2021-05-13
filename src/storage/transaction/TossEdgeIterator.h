@@ -253,11 +253,11 @@ private:
      * use stopAtFirstEdge_ to let caller tell if this need to stop early
      * use stopSearching_ to judge inside.
      */
-    bool                                                 stopAtFirstEdge_{false};
-    bool                                                 calledByCtor_{true};
-    std::list<folly::SemiFuture<cpp2::ErrorCode>>        resumeTasks_;
-    std::list<TResultsItem>                              recoverEdges_;
-    std::list<TResultsItem>::iterator                    recoverEdgesIter_;
+    bool                                                     stopAtFirstEdge_{false};
+    bool                                                     calledByCtor_{true};
+    std::list<folly::SemiFuture<nebula::cpp2::ErrorCode>>    resumeTasks_;
+    std::list<TResultsItem>                                  recoverEdges_;
+    std::list<TResultsItem>::iterator                        recoverEdgesIter_;
 };
 
 }  // namespace storage

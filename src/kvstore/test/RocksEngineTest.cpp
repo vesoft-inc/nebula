@@ -19,9 +19,9 @@ const int32_t kDefaultVIdLen = 8;
 TEST(RocksEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_SimpleTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get("key", &val));
     EXPECT_EQ("val", val);
 }
 
@@ -34,7 +34,7 @@ TEST(RocksEngineTest, RangeTest) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
 
     auto checkRange = [&](int32_t start,
                           int32_t end,
@@ -47,7 +47,7 @@ TEST(RocksEngineTest, RangeTest) {
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
         std::unique_ptr<KVIterator> iter;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->range(s, e, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -86,7 +86,7 @@ TEST(RocksEngineTest, PrefixTest) {
         data.emplace_back(folly::stringPrintf("c_%d", i),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
 
     auto checkPrefix = [&](const std::string& prefix,
                            int32_t expectedFrom,
@@ -96,7 +96,7 @@ TEST(RocksEngineTest, PrefixTest) {
                 << ", expectedTotal " << expectedTotal;
 
         std::unique_ptr<KVIterator> iter;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->prefix(prefix, &iter));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->prefix(prefix, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -118,12 +118,12 @@ TEST(RocksEngineTest, PrefixTest) {
 TEST(RocksEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_RemoveTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get("key", &val));
     EXPECT_EQ("val", val);
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->remove("key"));
-    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->remove("key"));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, engine->get("key", &val));
 }
 
 
@@ -133,15 +133,15 @@ TEST(RocksEngineTest, RemoveRangeTest) {
     for (int32_t i = 0; i < 100; i++) {
         std::string key(reinterpret_cast<const char*>(&i), sizeof(int32_t));
         std::string value(folly::stringPrintf("%d_val", i));
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(key, value));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->put(key, value));
         std::string val;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->get(key, &val));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get(key, &val));
         EXPECT_EQ(value, val);
     }
     {
         int32_t s = 0, e = 50;
         EXPECT_EQ(
-            ResultCode::SUCCEEDED,
+            nebula::cpp2::ErrorCode::SUCCEEDED,
             engine->removeRange(
                 std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
                 std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
@@ -151,7 +151,7 @@ TEST(RocksEngineTest, RemoveRangeTest) {
         std::unique_ptr<KVIterator> iter;
         std::string start(reinterpret_cast<const char*>(&s), sizeof(int32_t));
         std::string end(reinterpret_cast<const char*>(&e), sizeof(int32_t));
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(start, end, &iter));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->range(start, end, &iter));
         int num = 0;
         int expectedFrom = 50;
         while (iter->valid()) {
@@ -171,19 +171,19 @@ TEST(RocksEngineTest, RemoveRangeTest) {
 TEST(RocksEngineTest, OptionTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_OptionTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
-    EXPECT_EQ(ResultCode::SUCCEEDED,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->setOption("disable_auto_compactions", "true"));
-    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM,
               engine->setOption("disable_auto_compactions_", "true"));
-    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM,
               engine->setOption("disable_auto_compactions", "bad_value"));
-    EXPECT_EQ(ResultCode::SUCCEEDED,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->setDBOption("max_background_compactions", "2"));
-    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM,
               engine->setDBOption("max_background_compactions_", "2"));
-    EXPECT_EQ(ResultCode::SUCCEEDED,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
               engine->setDBOption("max_background_compactions", "2_"));
-    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM,
               engine->setDBOption("max_background_compactions", "bad_value"));
 }
 
@@ -196,8 +196,8 @@ TEST(RocksEngineTest, CompactTest) {
         data.emplace_back(folly::stringPrintf("key_%d", i),
                           folly::stringPrintf("value_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compact());
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->compact());
 }
 
 TEST(RocksEngineTest, IngestTest) {
@@ -216,14 +216,14 @@ TEST(RocksEngineTest, IngestTest) {
 
     auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
     std::vector<std::string> files = {file};
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->ingest(files));
 
     std::string result;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get("key", &result));
     EXPECT_EQ("value", result);
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key_empty", &result));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get("key_empty", &result));
     EXPECT_EQ("", result);
-    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key_not_exist", &result));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, engine->get("key_not_exist", &result));
 }
 
 TEST(RocksEngineTest, BackupRestoreTable) {
@@ -239,7 +239,7 @@ TEST(RocksEngineTest, BackupRestoreTable) {
         data.emplace_back(folly::stringPrintf("tags_%d", i),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
 
     std::vector<std::string> sst_files;
     std::string partPrefix = "part_";
@@ -259,10 +259,10 @@ TEST(RocksEngineTest, BackupRestoreTable) {
 
     fs::TempDir restoreRootPath("/tmp/rocksdb_engine_restoretable.XXXXXX");
     auto restore_engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, restoreRootPath.path());
-    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->ingest(sst_files));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, restore_engine->ingest(sst_files));
 
     std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->prefix(partPrefix, &iter));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, restore_engine->prefix(partPrefix, &iter));
     int index = 0;
     while (iter->valid()) {
         auto key = iter->key();
@@ -274,7 +274,7 @@ TEST(RocksEngineTest, BackupRestoreTable) {
     }
     EXPECT_EQ(index, 10);
 
-    EXPECT_EQ(ResultCode::SUCCEEDED, restore_engine->prefix(tagsPrefix, &iter));
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, restore_engine->prefix(tagsPrefix, &iter));
     index = 1;
     int num = 0;
     while (iter->valid()) {

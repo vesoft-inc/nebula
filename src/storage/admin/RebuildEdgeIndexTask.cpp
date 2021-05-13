@@ -22,18 +22,19 @@ RebuildEdgeIndexTask::getIndex(GraphSpaceID space, IndexID index) {
     return env_->indexMan_->getEdgeIndex(space, index);
 }
 
-kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
-                                                           PartitionID part,
-                                                           const IndexItems& items) {
+nebula::cpp2::ErrorCode
+RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
+                                       PartitionID part,
+                                       const IndexItems& items) {
     if (canceled_) {
         LOG(ERROR) << "Rebuild Edge Index is Canceled";
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     auto vidSizeRet = env_->schemaMan_->getSpaceVidLen(space);
     if (!vidSizeRet.ok()) {
         LOG(ERROR) << "Get VID Size Failed";
-        return kvstore::ResultCode::ERR_IO_ERROR;
+        return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
     std::unordered_set<EdgeType> edgeTypes;
@@ -43,9 +44,9 @@ kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
 
     auto vidSize = vidSizeRet.value();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::edgePrefix(part);
+    const auto& prefix = NebulaKeyUtils::edgePrefix(part);
     auto ret = env_->kvstore_->prefix(space, part, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Processing Part " << part << " Failed";
         return ret;
     }
@@ -59,12 +60,12 @@ kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
     while (iter && iter->valid()) {
         if (canceled_) {
             LOG(ERROR) << "Rebuild Edge Index is Canceled";
-            return kvstore::ResultCode::SUCCEEDED;
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
 
         if (static_cast<int32_t>(data.size()) == FLAGS_rebuild_index_batch_num) {
             auto result = writeData(space, part, data);
-            if (result != kvstore::ResultCode::SUCCEEDED) {
+            if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Write Part " << part << " Index Failed";
                 return result;
             }
@@ -159,11 +160,11 @@ kvstore::ResultCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
     }
 
     auto result = writeData(space, part, std::move(data));
-    if (result != kvstore::ResultCode::SUCCEEDED) {
+    if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
-        return kvstore::ResultCode::ERR_IO_ERROR;
+        return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    return kvstore::ResultCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace storage

@@ -90,8 +90,8 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
 
         folly::Baton<true, std::atomic> baton;
         env->kvstore_->asyncMultiPut(spaceId, 1, std::move(keyValues),
-                                     [&](kvstore::ResultCode code) {
-                                         EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                                     [&](nebula::cpp2::ErrorCode code) {
+                                         EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                                          baton.post();
                                      });
         baton.wait();

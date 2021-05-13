@@ -62,19 +62,19 @@ private:
         std::vector<kvstore::KV> data;
         data.emplace_back(key.str(), val.str());
         folly::Baton<true, std::atomic> baton;
-        auto ret = kvstore::ResultCode::SUCCEEDED;
+        auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
         kv_->asyncMultiPut(kDefaultSpaceId,
                            kDefaultPartId,
                            std::move(data),
-                           [&ret, &baton] (kvstore::ResultCode code) {
-                               if (kvstore::ResultCode::SUCCEEDED != code) {
+                           [&ret, &baton] (nebula::cpp2::ErrorCode code) {
+                               if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
                                    ret = code;
                                    LOG(INFO) << "Put data error on meta server";
                                }
                                baton.post();
                            });
         baton.wait();
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return Status::Error("Put data failed");
         }
         return Status::OK();
@@ -83,19 +83,19 @@ private:
     Status remove(const folly::StringPiece& key) {
         std::vector<std::string> keys{key.str()};
         folly::Baton<true, std::atomic> baton;
-        auto ret = kvstore::ResultCode::SUCCEEDED;
+        auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
         kv_->asyncMultiRemove(kDefaultSpaceId,
                               kDefaultPartId,
                               std::move(keys),
-                              [&ret, &baton] (kvstore::ResultCode code) {
-                                  if (kvstore::ResultCode::SUCCEEDED != code) {
+                              [&ret, &baton] (nebula::cpp2::ErrorCode code) {
+                                  if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
                                       ret = code;
                                       LOG(INFO) << "Remove data error on meta server";
                                   }
                                   baton.post();
                               });
         baton.wait();
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return Status::Error("Remove data failed");
         }
         return Status::OK();;
@@ -113,4 +113,5 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
+
 #endif  // TOOLS_METADATAUPGRADETOOL_METADATAUPGRADE_H_

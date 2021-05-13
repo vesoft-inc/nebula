@@ -135,7 +135,7 @@ private:
 
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-    ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
     getPeers(GraphSpaceID spaceId, PartitionID partId);
 
     std::vector<HostAddr> getAdminAddrFromPeers(const std::vector<HostAddr> &peers);

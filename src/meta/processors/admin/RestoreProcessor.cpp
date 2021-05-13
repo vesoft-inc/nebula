@@ -11,12 +11,12 @@
 namespace nebula {
 namespace meta {
 
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 RestoreProcessor::replaceHostInPartition(const HostAddr& ipv4From,
                                          const HostAddr& ipv4To,
                                          bool direct) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    cpp2::ErrorCode retCode = cpp2::ErrorCode::SUCCEEDED;
+    auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     auto iterRet = doPrefix(spacePrefix);
     if (!nebula::ok(iterRet)) {
@@ -65,9 +65,8 @@ RestoreProcessor::replaceHostInPartition(const HostAddr& ipv4From,
     }
 
     if (direct) {
-        auto kvRet = kvstore_->multiPutWithoutReplicator(kDefaultSpaceId, std::move(data));
-        retCode = MetaCommon::to(kvRet);
-        if (retCode!= cpp2::ErrorCode::SUCCEEDED) {
+        retCode = kvstore_->multiPutWithoutReplicator(kDefaultSpaceId, std::move(data));
+        if (retCode!= nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "multiPutWithoutReplicator failed, error: "
                        << apache::thrift::util::enumNameSafe(retCode);
         }
@@ -78,8 +77,8 @@ RestoreProcessor::replaceHostInPartition(const HostAddr& ipv4From,
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [&](kvstore::ResultCode code) {
-            retCode = MetaCommon::to(code);
+                            [&](nebula::cpp2::ErrorCode code) {
+            retCode = code;
             baton.post();
         });
     baton.wait();
@@ -87,12 +86,12 @@ RestoreProcessor::replaceHostInPartition(const HostAddr& ipv4From,
     return retCode;
 }
 
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 RestoreProcessor::replaceHostInZone(const HostAddr& ipv4From,
                                     const HostAddr& ipv4To,
                                     bool direct) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    cpp2::ErrorCode retCode = cpp2::ErrorCode::SUCCEEDED;
+    auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
     const auto& zonePrefix = MetaServiceUtils::zonePrefix();
     auto iterRet = doPrefix(zonePrefix);
     if (!nebula::ok(iterRet)) {
@@ -122,9 +121,8 @@ RestoreProcessor::replaceHostInZone(const HostAddr& ipv4From,
     }
 
     if (direct) {
-        auto kvRet = kvstore_->multiPutWithoutReplicator(kDefaultSpaceId, std::move(data));
-        retCode = MetaCommon::to(kvRet);
-        if (retCode!= cpp2::ErrorCode::SUCCEEDED) {
+        retCode = kvstore_->multiPutWithoutReplicator(kDefaultSpaceId, std::move(data));
+        if (retCode!= nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "multiPutWithoutReplicator failed, error: "
                        << apache::thrift::util::enumNameSafe(retCode);
         }
@@ -135,8 +133,8 @@ RestoreProcessor::replaceHostInZone(const HostAddr& ipv4From,
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [&](kvstore::ResultCode code) {
-            retCode = MetaCommon::to(code);
+                            [&](nebula::cpp2::ErrorCode code) {
+            retCode = code;
             baton.post();
         });
     baton.wait();
@@ -148,15 +146,15 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
     auto files = req.get_files();
     if (files.empty()) {
         LOG(ERROR) << "restore must contain the sst file.";
-        handleErrorCode(cpp2::ErrorCode::E_RESTORE_FAILURE);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_RESTORE_FAILURE);
         onFinished();
         return;
     }
 
     auto ret = kvstore_->restoreFromFiles(kDefaultSpaceId, files);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Failed to restore file";
-        handleErrorCode(cpp2::ErrorCode::E_RESTORE_FAILURE);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_RESTORE_FAILURE);
         onFinished();
         return;
     }
@@ -165,7 +163,7 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
     if (!replaceHosts.empty()) {
         for (auto h : replaceHosts) {
             auto result = replaceHostInPartition(h.get_from_host(), h.get_to_host(), true);
-            if (result != cpp2::ErrorCode::SUCCEEDED) {
+            if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "replaceHost in partition fails when recovered";
                 handleErrorCode(result);
                 onFinished();
@@ -173,7 +171,7 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
             }
 
             result = replaceHostInZone(h.get_from_host(), h.get_to_host(), true);
-            if (result != cpp2::ErrorCode::SUCCEEDED) {
+            if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "replaceHost in zone fails when recovered";
                 handleErrorCode(result);
                 onFinished();
@@ -186,7 +184,7 @@ void RestoreProcessor::process(const cpp2::RestoreMetaReq& req) {
         unlink(f.c_str());
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

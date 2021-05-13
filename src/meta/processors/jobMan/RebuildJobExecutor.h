@@ -26,9 +26,9 @@ public:
 
     bool check() override;
 
-    cpp2::ErrorCode prepare() override;
+    nebula::cpp2::ErrorCode prepare() override;
 
-    meta::cpp2::ErrorCode stop() override;
+    nebula::cpp2::ErrorCode stop() override;
 
 protected:
     std::vector<std::string>  taskParameters_;

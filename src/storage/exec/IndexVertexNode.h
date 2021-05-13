@@ -29,9 +29,9 @@ public:
         , schemas_(schemas)
         , schemaName_(schemaName) {}
 
-    kvstore::ResultCode execute(PartitionID partId) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId) override {
         auto ret = RelNode<T>::execute(partId);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
 
@@ -75,13 +75,13 @@ public:
                                                        vId, planContext_->tagId_);
             ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
                                                        partId, prefix, &vIter);
-            if (ret == kvstore::ResultCode::SUCCEEDED && vIter && vIter->valid()) {
+            if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && vIter && vIter->valid()) {
                 data_.emplace_back(vIter->key(), vIter->val());
             } else {
                 return ret;
             }
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     std::vector<kvstore::KV> moveData() {

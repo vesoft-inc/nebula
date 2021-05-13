@@ -33,8 +33,8 @@ void GetProcessor::process(const cpp2::KVGetRequest& req) {
                        [partId] (const auto& key) { return NebulaKeyUtils::kvKey(partId, key); });
         std::vector<std::string> values;
         auto ret = env_->kvstore_->multiGet(spaceId, partId, kvKeys, &values);
-        if ((ret.first == kvstore::ResultCode::SUCCEEDED) ||
-            (ret.first == kvstore::ResultCode::ERR_PARTIAL_RESULT && returnPartly)) {
+        if ((ret.first == nebula::cpp2::ErrorCode::SUCCEEDED) ||
+            (ret.first == nebula::cpp2::ErrorCode::E_PARTIAL_RESULT && returnPartly)) {
             auto& status = ret.second;
             for (size_t i = 0; i < kvKeys.size(); i++) {
                 if (status[i].ok()) {

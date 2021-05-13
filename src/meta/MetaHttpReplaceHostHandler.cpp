@@ -113,7 +113,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+    if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
         errMsg_ = folly::stringPrintf("can't get space prefix=%s", spacePrefix.c_str());
         LOG(ERROR) << errMsg_;
         return false;
@@ -131,7 +131,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
     for (const auto& spaceId : allSpaceId) {
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-        if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
             errMsg_ = folly::stringPrintf("can't get partPrefix=%s", partPrefix.c_str());
             LOG(ERROR) << errMsg_;
             return false;
@@ -156,8 +156,8 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
     bool updateSucceed{false};
     folly::Baton<true, std::atomic> baton;
     kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                        [&] (kvstore::ResultCode code) {
-                            updateSucceed = (code == kvstore::ResultCode::SUCCEEDED);
+                        [&] (nebula::cpp2::ErrorCode code) {
+                            updateSucceed = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
                             errMsg_ = folly::stringPrintf("write to kvstore failed, %s , %d",
                                                           __func__, __LINE__);
                             baton.post();

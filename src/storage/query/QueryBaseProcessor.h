@@ -154,19 +154,19 @@ protected:
         this->tagContext_.vertexCache_ = cache;
     }
 
-    virtual cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;
+    virtual nebula::cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;
     virtual void onProcessFinished() = 0;
 
-    cpp2::ErrorCode getSpaceVertexSchema();
-    cpp2::ErrorCode getSpaceEdgeSchema();
+    nebula::cpp2::ErrorCode getSpaceVertexSchema();
+    nebula::cpp2::ErrorCode getSpaceEdgeSchema();
 
     // build tagContexts_ according to return props
-    cpp2::ErrorCode handleVertexProps(std::vector<cpp2::VertexProp>& tagProps);
+    nebula::cpp2::ErrorCode handleVertexProps(std::vector<cpp2::VertexProp>& tagProps);
     // build edgeContexts_ according to return props
-    cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
+    nebula::cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
 
-    cpp2::ErrorCode buildFilter(const REQ& req);
-    cpp2::ErrorCode buildYields(const REQ& req);
+    nebula::cpp2::ErrorCode buildFilter(const REQ& req);
+    nebula::cpp2::ErrorCode buildYields(const REQ& req);
 
     // build ttl info map
     void buildTagTTLInfo();
@@ -175,8 +175,11 @@ protected:
     std::vector<cpp2::VertexProp> buildAllTagProps();
     std::vector<cpp2::EdgeProp> buildAllEdgeProps(const cpp2::EdgeDirection& direction);
 
-    cpp2::ErrorCode checkExp(const Expression* exp, bool returned, bool filtered,
-                             bool updated = false);
+    nebula::cpp2::ErrorCode
+    checkExp(const Expression* exp,
+             bool returned,
+             bool filtered,
+             bool updated = false);
 
     void addReturnPropContext(std::vector<PropContext>& ctxs,
                               const char* propName,

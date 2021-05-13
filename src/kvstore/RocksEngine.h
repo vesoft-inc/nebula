@@ -110,40 +110,45 @@ public:
 
     std::unique_ptr<WriteBatch> startBatchWrite() override;
 
-    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
-                                bool disableWAL,
-                                bool sync) override;
+    nebula::cpp2::ErrorCode
+    commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                     bool disableWAL,
+                     bool sync) override;
 
     /*********************
      * Data retrieval
      ********************/
-    ResultCode get(const std::string& key, std::string* value) override;
+    nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) override;
 
     std::vector<Status> multiGet(const std::vector<std::string>& keys,
                                  std::vector<std::string>* values) override;
 
-    ResultCode range(const std::string& start,
-                     const std::string& end,
-                     std::unique_ptr<KVIterator>* iter) override;
+    nebula::cpp2::ErrorCode
+    range(const std::string& start,
+          const std::string& end,
+          std::unique_ptr<KVIterator>* iter) override;
 
-    ResultCode prefix(const std::string& prefix, std::unique_ptr<KVIterator>* iter) override;
+    nebula::cpp2::ErrorCode
+    prefix(const std::string& prefix, std::unique_ptr<KVIterator>* iter) override;
 
-    ResultCode rangeWithPrefix(const std::string& start,
-                               const std::string& prefix,
-                               std::unique_ptr<KVIterator>* iter) override;
+    nebula::cpp2::ErrorCode
+    rangeWithPrefix(const std::string& start,
+                    const std::string& prefix,
+                    std::unique_ptr<KVIterator>* iter) override;
 
     /*********************
      * Data modification
      ********************/
-    ResultCode put(std::string key, std::string value) override;
+    nebula::cpp2::ErrorCode put(std::string key, std::string value) override;
 
-    ResultCode multiPut(std::vector<KV> keyValues) override;
+    nebula::cpp2::ErrorCode multiPut(std::vector<KV> keyValues) override;
 
-    ResultCode remove(const std::string& key) override;
+    nebula::cpp2::ErrorCode remove(const std::string& key) override;
 
-    ResultCode multiRemove(std::vector<std::string> keys) override;
+    nebula::cpp2::ErrorCode multiRemove(std::vector<std::string> keys) override;
 
-    ResultCode removeRange(const std::string& start, const std::string& end) override;
+    nebula::cpp2::ErrorCode
+    removeRange(const std::string& start, const std::string& end) override;
 
     /*********************
      * Non-data operation
@@ -156,25 +161,27 @@ public:
 
     int32_t totalPartsNum() override;
 
-    ResultCode ingest(const std::vector<std::string>& files) override;
+    nebula::cpp2::ErrorCode ingest(const std::vector<std::string>& files) override;
 
-    ResultCode setOption(const std::string& configKey, const std::string& configValue) override;
+    nebula::cpp2::ErrorCode
+    setOption(const std::string& configKey, const std::string& configValue) override;
 
-    ResultCode setDBOption(const std::string& configKey, const std::string& configValue) override;
+    nebula::cpp2::ErrorCode
+    setDBOption(const std::string& configKey, const std::string& configValue) override;
 
-    ResultCode compact() override;
+    nebula::cpp2::ErrorCode compact() override;
 
-    ResultCode flush() override;
+    nebula::cpp2::ErrorCode flush() override;
 
     /*********************
      * Checkpoint operation
      ********************/
-    ResultCode createCheckpoint(const std::string& path) override;
+    nebula::cpp2::ErrorCode createCheckpoint(const std::string& path) override;
 
-    ErrorOr<ResultCode, std::string> backupTable(
-        const std::string& path,
-        const std::string& tablePrefix,
-        std::function<bool(const folly::StringPiece& key)> filter) override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::string>
+    backupTable(const std::string& path,
+                const std::string& tablePrefix,
+                std::function<bool(const folly::StringPiece& key)> filter) override;
 
 private:
     std::string partKey(PartitionID partId);
@@ -187,4 +194,5 @@ private:
 
 }   // namespace kvstore
 }   // namespace nebula
+
 #endif   // KVSTORE_ROCKSENGINE_H_

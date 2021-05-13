@@ -24,7 +24,7 @@ private:
     explicit DropEdgeProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
     getEdgeKeys(GraphSpaceID id, EdgeType edgeType);
 };
 

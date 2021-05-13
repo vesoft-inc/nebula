@@ -71,7 +71,7 @@ TEST(ActiveHostsManTest, NormalTest) {
         const auto& prefix = MetaServiceUtils::hostPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        CHECK_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
         int i = 0;
         while (iter->valid()) {
             auto host = MetaServiceUtils::parseHostKey(iter->key());
@@ -144,18 +144,18 @@ TEST(ActiveHostsManTest, LeaderTest) {
     using HostAndTerm = std::pair<HostAddr, int64_t>;
 
     TermID term;
-    cpp2::ErrorCode code;
+    nebula::cpp2::ErrorCode code;
     std::map<SpaceAndPart, HostAndTerm> results;
     {
         const auto& prefix = MetaServiceUtils::leaderPrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        CHECK_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
         int i = 0;
         while (iter->valid()) {
             auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(iter->key());
             std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(INFO) << "error: " << apache::thrift::util::enumNameSafe(code);
                 continue;
             }
@@ -196,7 +196,7 @@ TEST(LastUpdateTimeManTest, NormalTest) {
         auto key = MetaServiceUtils::lastUpdateTimeKey();
         std::string val;
         auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
         int64_t lastUpdateTime = *reinterpret_cast<const int64_t*>(val.data());
         ASSERT_EQ(now - 100, lastUpdateTime);
     }

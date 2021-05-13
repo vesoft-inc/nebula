@@ -115,7 +115,7 @@ TEST(HBaseStoreTest, SimpleTest) {
 
     retEdgeValues.clear();
     ret = hbaseStore->multiGet(spaceId, partId, edgeKeys, &retEdgeValues);
-    EXPECT_EQ(ResultCode::ERR_UNKNOWN, ret.first);
+    EXPECT_EQ(ResultCode::E_UNKNOWN, ret.first);
     EXPECT_EQ(0, retEdgeValues.size());
 }
 

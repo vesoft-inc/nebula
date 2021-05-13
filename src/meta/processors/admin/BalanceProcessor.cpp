@@ -14,14 +14,14 @@ namespace meta {
 void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     if (req.get_space_id() != nullptr) {
         LOG(ERROR) << "Unsupport balance for specific space " << *req.get_space_id();
-        handleErrorCode(cpp2::ErrorCode::E_UNSUPPORTED);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
     }
 
     if (req.get_stop() != nullptr) {
         if (!(*req.get_stop())) {
-            handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_UNKNOWN);
             onFinished();
             return;
         }
@@ -31,7 +31,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
             onFinished();
             return;
         }
-        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
         resp_.set_id(nebula::value(ret));
         onFinished();
         return;
@@ -39,7 +39,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
 
     if (req.get_reset() != nullptr) {
         if (!(*req.get_reset())) {
-            handleErrorCode(cpp2::ErrorCode::E_UNKNOWN);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_UNKNOWN);
             onFinished();
             return;
         }
@@ -50,7 +50,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
             return;
         }
         resp_.set_id(value(plan));
-        handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+        handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
         onFinished();
         return;
     }
@@ -104,7 +104,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
 
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
-        handleErrorCode(cpp2::ErrorCode::E_NO_HOSTS);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
@@ -123,7 +123,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         return;
     }
     resp_.set_id(value(ret));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

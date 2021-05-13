@@ -38,7 +38,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     }
 
     auto retCode = getSpaceVidLen(spaceId_);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         pushResultCode(retCode, partId);
         onFinished();
         return;
@@ -47,14 +47,14 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId.getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
-        pushResultCode(cpp2::ErrorCode::E_INVALID_VID, partId);
+        pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
         onFinished();
         return;
     }
     planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
 
     retCode = checkAndBuildContexts(req);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Failure build contexts!";
         pushResultCode(retCode, partId);
         onFinished();
@@ -65,7 +65,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
     if (!iRet.ok()) {
         LOG(ERROR) << iRet.status();
-        pushResultCode(cpp2::ErrorCode::E_SPACE_NOT_FOUND, partId);
+        pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, partId);
         onFinished();
         return;
     }
@@ -76,9 +76,9 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     auto plan = buildPlan(&resultDataSet_);
     auto ret = plan.go(partId, vId.getStr());
 
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(ret, spaceId_, partId);
-        if (ret == kvstore::ResultCode::ERR_RESULT_FILTERED) {
+        if (ret == nebula::cpp2::ErrorCode::E_FILTER_OUT) {
             onProcessFinished();
         }
     } else {
@@ -88,23 +88,23 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
     return;
 }
 
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 UpdateVertexProcessor::checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) {
     // Build tagContext_.schemas_
     auto retCode = buildTagSchema();
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return retCode;
     }
 
     // Build tagContext_.propContexts_  tagIdProps_
     retCode = buildTagContext(req);
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return retCode;
     }
 
     // Build tagContext_.ttlInfo_
     buildTagTTLInfo();
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 /*
@@ -163,27 +163,27 @@ StoragePlan<VertexID> UpdateVertexProcessor::buildPlan(nebula::DataSet* result) 
 }
 
 // Get all tag schema in spaceID
-cpp2::ErrorCode UpdateVertexProcessor::buildTagSchema() {
+nebula::cpp2::ErrorCode UpdateVertexProcessor::buildTagSchema() {
     auto tags = env_->schemaMan_->getAllVerTagSchema(spaceId_);
     if (!tags.ok()) {
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
     tagContext_.schemas_ = std::move(tags).value();
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 // tagContext_.propContexts_ has return prop, filter prop, update prop
 // returnPropsExp_ has return expression
 // filterExp_      has filter expression
 // updatedVertexProps_  has update expression
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     // Build context of the update vertex tag props
     auto vId = req.get_vertex_id();
     auto tagNameRet = env_->schemaMan_->toTagName(spaceId_, tagId_);
     if (!tagNameRet.ok()) {
         VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId_;
-        return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
     }
     auto tagName = tagNameRet.value();
 
@@ -197,7 +197,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         SourcePropertyExpression sourcePropExp(new std::string(tagName),
                                                new std::string(prop.get_name()));
         auto retCode = checkExp(&sourcePropExp, false, false);
-        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(1) << "Invalid update vertex expression!";
             return retCode;
         }
@@ -205,12 +205,12 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         auto updateExp = Expression::decode(prop.get_value());
         if (!updateExp) {
             VLOG(1) << "Can't decode the prop's value " << prop.get_value();
-            return cpp2::ErrorCode::E_INVALID_UPDATER;
+            return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
         }
 
         valueProps_.clear();
         retCode = checkExp(updateExp.get(), false, false, insertable_);
-        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return retCode;
         }
         if (insertable_) {
@@ -224,10 +224,10 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
             auto colExp = Expression::decode(prop);
             if (!colExp) {
                 VLOG(1) << "Can't decode the return expression";
-                return cpp2::ErrorCode::E_INVALID_UPDATER;
+                return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
             }
             auto retCode = checkExp(colExp.get(), true, false);
-            if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }
             returnPropsExp_.emplace_back(std::move(colExp));
@@ -241,10 +241,10 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
             filterExp_ = Expression::decode(filterStr);
             if (!filterExp_) {
                 VLOG(1) << "Can't decode the filter " << filterStr;
-                return cpp2::ErrorCode::E_INVALID_FILTER;
+                return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
             }
             auto retCode = checkExp(filterExp_.get(), false, true);
-            if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }
         }
@@ -256,7 +256,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     if (tagContext_.tagNames_.size() != 1 ||
         iter == tagContext_.tagNames_.end()) {
         VLOG(1) << "should only contain one tag in update vertex!";
-        return cpp2::ErrorCode::E_MUTATE_TAG_CONFLICT;
+        return nebula::cpp2::ErrorCode::E_MUTATE_TAG_CONFLICT;
     }
 
     planContext_->tagId_ = tagId_;
@@ -268,12 +268,12 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         auto schema = schemas.back().get();
         if (!schema) {
             VLOG(1) << "Fail to get schema in TagId " << tagId_;
-            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+            return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
         planContext_->tagSchema_ = schema;
     } else {
         VLOG(1) << "Fail to get schema in TagId " << tagId_;
-        return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
     }
 
     if (expCtx_ == nullptr) {
@@ -283,7 +283,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
                                                              planContext_->tagSchema_,
                                                              false);
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 void UpdateVertexProcessor::onProcessFinished() {

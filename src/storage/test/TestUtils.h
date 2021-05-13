@@ -45,7 +45,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
                 auto prefix =
                     NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr(), tagId);
                 std::unique_ptr<kvstore::KVIterator> iter;
-                EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
+                EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                           env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
                 auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
@@ -156,7 +156,7 @@ void checkVerticesData(int32_t spaceVidLen,
         for (auto& vid : deleteVidVec) {
             auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
+            EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
             while (iter && iter->valid()) {
@@ -194,7 +194,7 @@ void checkAddEdgesData(cpp2::AddEdgesRequest req,
                                                      edgekey.get_ranking(),
                                                      edgekey.get_dst().getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
+            EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
             auto schema = env->schemaMan_->getEdgeSchema(spaceId,
@@ -273,7 +273,7 @@ void checkEdgesData(int32_t spaceVidLen,
                                                      edgeKey.get_ranking(),
                                                      edgeKey.get_dst().getStr());
             std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED,
+            EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                       env->kvstore_->prefix(spaceId, partId, prefix, &iter));
 
             while (iter && iter->valid()) {

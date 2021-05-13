@@ -13,17 +13,17 @@
 namespace nebula {
 namespace storage {
 
-cpp2::ErrorCode
+nebula::cpp2::ErrorCode
 StatisTask::getSchemas(GraphSpaceID spaceId) {
     CHECK_NOTNULL(env_->schemaMan_);
     auto tags = env_->schemaMan_->getAllVerTagSchema(spaceId);
     if (!tags.ok()) {
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
 
     auto edges = env_->schemaMan_->getAllVerEdgeSchema(spaceId);
     if (!edges.ok()) {
-        return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
 
     for (auto tag : tags.value()) {
@@ -46,33 +46,37 @@ StatisTask::getSchemas(GraphSpaceID spaceId) {
         }
         edges_.emplace(edgeType, std::move(edgeNameRet.value()));
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-ErrorOr<cpp2::ErrorCode, std::vector<AdminSubTask>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>>
 StatisTask::genSubTasks() {
     spaceId_ = *ctx_.parameters_.space_id_ref();
     auto parts = *ctx_.parameters_.parts_ref();
     subTaskSize_ = parts.size();
 
     auto ret = getSchemas(spaceId_);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Space not found, spaceId: " << spaceId_;
         return ret;
     }
 
     std::vector<AdminSubTask> tasks;
     for (const auto& part : parts) {
-        std::function<kvstore::ResultCode()> task = std::bind(&StatisTask::genSubTask,
-                                                              this, spaceId_, part,
-                                                              tags_, edges_);
+        std::function<nebula::cpp2::ErrorCode()> task =
+            std::bind(&StatisTask::genSubTask,
+                      this,
+                      spaceId_,
+                      part,
+                      tags_,
+                      edges_);
         tasks.emplace_back(std::move(task));
     }
     return tasks;
 }
 
 // Statis the specified tags and edges
-kvstore::ResultCode
+nebula::cpp2::ErrorCode
 StatisTask::genSubTask(GraphSpaceID spaceId,
                        PartitionID part,
                        std::unordered_map<TagID, std::string> tags,
@@ -80,13 +84,13 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     auto vIdLenRet = env_->schemaMan_->getSpaceVidLen(spaceId);
     if (!vIdLenRet.ok()) {
         LOG(ERROR) << "Get space vid length failed";
-        return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
 
     auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
     if (!vIdType.ok()) {
         LOG(ERROR) << "Get space vid type failed";
-        return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
 
     auto vIdLen = vIdLenRet.value();
@@ -94,7 +98,7 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     auto partitionNumRet = env_->schemaMan_->getPartsNum(spaceId);
     if (!partitionNumRet.ok()) {
         LOG(ERROR) << "Get space partition number failed";
-        return kvstore::ResultCode::ERR_SPACE_NOT_FOUND;
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
 
     auto partitionNum = partitionNumRet.value();
@@ -108,12 +112,12 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
     // When the storage occurs leader change, continue to read data from the follower
     // instead of reporting an error.
     auto ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Statis task failed";
         return ret;
     }
     ret = env_->kvstore_->prefix(spaceId, part, edgePrefix, &edgeIter, true);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Statis task failed";
         return ret;
     }
@@ -267,16 +271,16 @@ StatisTask::genSubTask(GraphSpaceID spaceId,
 
     statistics_.emplace(part, std::move(statisItem));
     LOG(INFO) << "Statis task finished";
-    return kvstore::ResultCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void StatisTask::finish(cpp2::ErrorCode rc) {
+void StatisTask::finish(nebula::cpp2::ErrorCode rc) {
     FLOG_INFO("task(%d, %d) finished, rc=[%s]", ctx_.jobId_, ctx_.taskId_,
               apache::thrift::util::enumNameSafe(rc).c_str());
     nebula::meta::cpp2::StatisItem  result;
     result.set_status(nebula::meta::cpp2::JobStatus::FAILED);
 
-    if (rc == cpp2::ErrorCode::SUCCEEDED && statistics_.size() == subTaskSize_) {
+    if (rc == nebula::cpp2::ErrorCode::SUCCEEDED && statistics_.size() == subTaskSize_) {
         result.set_space_vertices(0);
         result.set_space_edges(0);
         for (auto& elem : statistics_) {
@@ -313,11 +317,11 @@ void StatisTask::finish(cpp2::ErrorCode rc) {
         }
         result.set_status(nebula::meta::cpp2::JobStatus::FINISHED);
         ctx_.onFinish_(rc, result);
-    } else if (rc != cpp2::ErrorCode::SUCCEEDED) {
+    } else if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
         ctx_.onFinish_(rc, result);
     } else {
         LOG(ERROR) << "The number of subtasks is not equal to the number of parts";
-        ctx_.onFinish_(cpp2::ErrorCode::E_PART_NOT_FOUND, result);
+        ctx_.onFinish_(nebula::cpp2::ErrorCode::E_PART_NOT_FOUND, result);
     }
 }
 

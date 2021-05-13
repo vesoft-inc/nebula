@@ -152,8 +152,8 @@ bool mockVertexData(storage::StorageEnv* ev, int32_t totalParts, int32_t vidLen,
     }
 
     ev->kvstore_->asyncMultiPut(spaceId, pId, std::move(data),
-                                [&](kvstore::ResultCode code) {
-                                    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                                [&](nebula::cpp2::ErrorCode code) {
+                                    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                                     count.fetch_sub(1);
                                     if (count.load() == 0) {
                                         baton.post();
@@ -219,8 +219,8 @@ bool mockEdgeData(storage::StorageEnv* ev, int32_t totalParts, int32_t vidLen, b
         return false;
     }
     ev->kvstore_->asyncMultiPut(spaceId, pId, std::move(data),
-                                [&](kvstore::ResultCode code) {
-                                    CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                                [&](nebula::cpp2::ErrorCode code) {
+                                    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
                                     count.fetch_sub(1);
                                     if (count.load() == 0) {
                                         baton.post();

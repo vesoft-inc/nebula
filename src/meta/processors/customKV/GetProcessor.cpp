@@ -22,7 +22,7 @@ void GetProcessor::process(const cpp2::GetReq& req) {
         return;
     }
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_value(std::move(nebula::value(result)));
     onFinished();
 }

@@ -104,7 +104,8 @@ public:
     }
 
     // Return the current leader
-    ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override;
+    ErrorOr<nebula::cpp2::ErrorCode, HostAddr>
+    partLeader(GraphSpaceID spaceId, PartitionID partId) override;
 
     PartManager* partManager() const override {
         return options_.partMan_.get();
@@ -114,13 +115,14 @@ public:
         return !options_.listenerPath_.empty();
     }
 
-    ResultCode get(GraphSpaceID spaceId,
-                   PartitionID partId,
-                   const std::string& key,
-                   std::string* value,
-                   bool canReadFromFollower = false) override;
+    nebula::cpp2::ErrorCode
+    get(GraphSpaceID spaceId,
+        PartitionID partId,
+        const std::string& key,
+        std::string* value,
+        bool canReadFromFollower = false) override;
 
-    std::pair<ResultCode, std::vector<Status>>
+    std::pair<nebula::cpp2::ErrorCode, std::vector<Status>>
     multiGet(GraphSpaceID spaceId,
              PartitionID partId,
              const std::vector<std::string>& keys,
@@ -128,52 +130,58 @@ public:
              bool canReadFromFollower = false) override;
 
     // Get all results in range [start, end)
-    ResultCode range(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     const std::string& start,
-                     const std::string& end,
-                     std::unique_ptr<KVIterator>* iter,
-                     bool canReadFromFollower = false) override;
+    nebula::cpp2::ErrorCode
+    range(GraphSpaceID spaceId,
+          PartitionID partId,
+          const std::string& start,
+          const std::string& end,
+          std::unique_ptr<KVIterator>* iter,
+          bool canReadFromFollower = false) override;
 
     // Delete the overloading with a rvalue `start' and `end'
-    ResultCode range(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     std::string&& start,
-                     std::string&& end,
-                     std::unique_ptr<KVIterator>* iter,
-                     bool canReadFromFollower = false) override = delete;
+    nebula::cpp2::ErrorCode
+    range(GraphSpaceID spaceId,
+          PartitionID partId,
+          std::string&& start,
+          std::string&& end,
+          std::unique_ptr<KVIterator>* iter,
+          bool canReadFromFollower = false) override = delete;
 
     // Get all results with prefix.
-    ResultCode prefix(GraphSpaceID spaceId,
-                      PartitionID partId,
-                      const std::string& prefix,
-                      std::unique_ptr<KVIterator>* iter,
-                      bool canReadFromFollower = false) override;
+    nebula::cpp2::ErrorCode
+    prefix(GraphSpaceID spaceId,
+           PartitionID partId,
+           const std::string& prefix,
+           std::unique_ptr<KVIterator>* iter,
+           bool canReadFromFollower = false) override;
 
     // Delete the overloading with a rvalue `prefix'
-    ResultCode prefix(GraphSpaceID spaceId,
-                      PartitionID partId,
-                      std::string&& prefix,
-                      std::unique_ptr<KVIterator>* iter,
-                      bool canReadFromFollower = false) override = delete;
+    nebula::cpp2::ErrorCode
+    prefix(GraphSpaceID spaceId,
+           PartitionID partId,
+           std::string&& prefix,
+           std::unique_ptr<KVIterator>* iter,
+           bool canReadFromFollower = false) override = delete;
 
     // Get all results with prefix starting from start
-    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               const std::string& start,
-                               const std::string& prefix,
-                               std::unique_ptr<KVIterator>* iter,
-                               bool canReadFromFollower = false) override;
+    nebula::cpp2::ErrorCode
+    rangeWithPrefix(GraphSpaceID spaceId,
+                    PartitionID partId,
+                    const std::string& start,
+                    const std::string& prefix,
+                    std::unique_ptr<KVIterator>* iter,
+                    bool canReadFromFollower = false) override;
 
     // Delete the overloading with a rvalue `prefix'
-    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               std::string&& start,
-                               std::string&& prefix,
-                               std::unique_ptr<KVIterator>* iter,
-                               bool canReadFromFollower = false) override = delete;
+    nebula::cpp2::ErrorCode
+    rangeWithPrefix(GraphSpaceID spaceId,
+                    PartitionID partId,
+                    std::string&& start,
+                    std::string&& prefix,
+                    std::unique_ptr<KVIterator>* iter,
+                    bool canReadFromFollower = false) override = delete;
 
-    ResultCode sync(GraphSpaceID spaceId, PartitionID partId) override;
+    nebula::cpp2::ErrorCode sync(GraphSpaceID spaceId, PartitionID partId) override;
 
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
@@ -207,34 +215,37 @@ public:
                        raftex::AtomicOp op,
                        KVCallback cb) override;
 
-    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
-                                                    PartitionID partId) override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>>
+    part(GraphSpaceID spaceId, PartitionID partId) override;
 
-    ResultCode ingest(GraphSpaceID spaceId) override;
+    nebula::cpp2::ErrorCode ingest(GraphSpaceID spaceId) override;
 
-    ResultCode setOption(GraphSpaceID spaceId,
-                         const std::string& configKey,
-                         const std::string& configValue);
+    nebula::cpp2::ErrorCode
+    setOption(GraphSpaceID spaceId,
+              const std::string& configKey,
+              const std::string& configValue);
 
-    ResultCode setDBOption(GraphSpaceID spaceId,
-                           const std::string& configKey,
-                           const std::string& configValue);
+    nebula::cpp2::ErrorCode
+    setDBOption(GraphSpaceID spaceId,
+                const std::string& configKey,
+                const std::string& configValue);
 
-    ResultCode compact(GraphSpaceID spaceId) override;
+    nebula::cpp2::ErrorCode compact(GraphSpaceID spaceId) override;
 
-    ResultCode flush(GraphSpaceID spaceId) override;
+    nebula::cpp2::ErrorCode flush(GraphSpaceID spaceId) override;
 
-    ErrorOr<ResultCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>> createCheckpoint(
-        GraphSpaceID spaceId,
-        const std::string& name) override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>
+    createCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
-    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+    nebula::cpp2::ErrorCode
+    dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
-    ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
+    nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
-    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+    ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>>
+    space(GraphSpaceID spaceId);
 
     /**
      * Implement four interfaces in Handler.
@@ -253,14 +264,15 @@ public:
     int32_t allLeader(std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>&
                           leaderIds) override;
 
-    ErrorOr<ResultCode, std::vector<std::string>> backupTable(
-        GraphSpaceID spaceId,
-        const std::string& name,
-        const std::string& tablePrefix,
-        std::function<bool(const folly::StringPiece& key)> filter) override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
+    backupTable(GraphSpaceID spaceId,
+                const std::string& name,
+                const std::string& tablePrefix,
+                std::function<bool(const folly::StringPiece& key)> filter) override;
 
-    ResultCode restoreFromFiles(GraphSpaceID spaceId,
-                                const std::vector<std::string>& files) override;
+    nebula::cpp2::ErrorCode
+    restoreFromFiles(GraphSpaceID spaceId,
+                     const std::vector<std::string>& files) override;
 
     void addListener(GraphSpaceID spaceId,
                      PartitionID partId,
@@ -275,8 +287,8 @@ public:
                               PartitionID partId,
                               const std::vector<HostAddr>& remoteListeners) override;
 
-    ResultCode multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                        std::vector<KV> keyValues) override;
+    nebula::cpp2::ErrorCode
+    multiPutWithoutReplicator(GraphSpaceID spaceId, std::vector<KV> keyValues) override;
 
 private:
     void loadPartFromDataPath();
@@ -304,7 +316,8 @@ private:
                                           meta::cpp2::ListenerType type,
                                           const std::vector<HostAddr>& peers);
 
-    ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
+    ErrorOr<nebula::cpp2::ErrorCode, KVEngine*>
+    engine(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkLeader(std::shared_ptr<Part> part, bool canReadFromFollower = false) const;
 
@@ -314,23 +327,24 @@ private:
 
 private:
     // The lock used to protect spaces_
-    folly::RWSpinLock lock_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
+    folly::RWSpinLock                                                    lock_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>>     spaces_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceListenerInfo>> spaceListeners_;
 
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
-    std::shared_ptr<thread::GenericWorker> cleanWalWorker_;
-    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
-    HostAddr storeSvcAddr_;
-    std::shared_ptr<folly::Executor> workers_;
-    HostAddr raftAddr_;
-    KVOptions options_;
+    std::shared_ptr<folly::IOThreadPoolExecutor>                         ioPool_;
+    std::shared_ptr<thread::GenericWorker>                               cleanWalWorker_;
+    std::shared_ptr<thread::GenericThreadPool>                           bgWorkers_;
+    HostAddr                                                             storeSvcAddr_;
+    std::shared_ptr<folly::Executor>                                     workers_;
+    HostAddr                                                             raftAddr_;
+    KVOptions                                                            options_;
 
-    std::shared_ptr<raftex::RaftexService> raftService_;
-    std::shared_ptr<raftex::SnapshotManager> snapshot_;
+    std::shared_ptr<raftex::RaftexService>                               raftService_;
+    std::shared_ptr<raftex::SnapshotManager>                             snapshot_;
     std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
 };
 
 }   // namespace kvstore
 }   // namespace nebula
+
 #endif   // KVSTORE_NEBULASTORE_H_

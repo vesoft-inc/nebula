@@ -54,11 +54,11 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                return client->future_transLeader(request);
            }, [] (auto&& resp) -> Status {
                switch (resp.get_code()) {
-                   case storage::cpp2::ErrorCode::SUCCEEDED:
-                   case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                   case nebula::cpp2::ErrorCode::SUCCEEDED:
+                   case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
                        return Status::OK();
                    }
-                   case storage::cpp2::ErrorCode::E_PART_NOT_FOUND: {
+                   case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND: {
                        return Status::PartNotFound();
                    }
                    default:
@@ -88,7 +88,7 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                            return client->future_addPart(request);
                        },
                        [] (auto&& resp) -> Status {
-                           if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
+                           if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                                return Status::OK();
                            } else {
                                return Status::Error("Add part failed! code=%d",
@@ -216,11 +216,11 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                       MetaServiceUtils::partVal(peers));
-    part->asyncMultiPut(std::move(data), [] (kvstore::ResultCode) {});
-    part->sync([this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
+    part->asyncMultiPut(std::move(data), [] (nebula::cpp2::ErrorCode) {});
+    part->sync([this, p = std::move(pro)] (nebula::cpp2::ErrorCode code) mutable {
         // To avoid dead lock, we call future callback in ioThreadPool_
         folly::via(ioThreadPool_.get(), [code, p = std::move(p)] () mutable {
-            if (code == kvstore::ResultCode::SUCCEEDED) {
+            if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 p.setValue(Status::OK());
             } else {
                 p.setValue(Status::Error("Access kv failed, code: %d", static_cast<int32_t>(code)));
@@ -240,7 +240,7 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
            [] (auto client, auto request) {
                return client->future_removePart(request);
            }, [] (auto&& resp) -> Status {
-               if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
+               if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                    return Status::OK();
                } else {
                    return Status::Error("Remove part failed! code=%d",
@@ -281,7 +281,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
                  [] (auto client, auto request) {
                     return client->future_checkPeers(request);
                  }, [] (auto&& resp) -> Status {
-                    if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
+                    if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                         return Status::OK();
                     } else {
                         return Status::Error("Check peers failed! code=%d",
@@ -342,7 +342,7 @@ folly::Future<Status> AdminClient::getResponse(
                 auto&& result = std::move(t).value().get_result();
                 if (result.get_failed_parts().empty()) {
                     storage::cpp2::PartitionResult resultCode;
-                    resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
+                    resultCode.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
                     resultCode.set_part_id(partId);
                     p.setValue(respGen(resultCode));
                 } else {
@@ -410,7 +410,7 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
             }
             auto resp = adminResp.result.get_failed_parts().front();
             switch (resp.get_code()) {
-                case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                case nebula::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
                         HostAddr leader("", 0);
                         if (resp.get_leader() != nullptr) {
@@ -493,16 +493,16 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
     });  // via
 }
 
-ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>>
 AdminClient::getPeers(GraphSpaceID spaceId, PartitionID partId) {
     CHECK_NOTNULL(kv_);
     auto partKey = MetaServiceUtils::partKey(spaceId, partId);
     std::string value;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
-    if (code == kvstore::ResultCode::SUCCEEDED) {
+    if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         return MetaServiceUtils::parsePartVal(value);
     }
-    return MetaCommon::to(code);
+    return code;
 }
 
 std::vector<HostAddr> AdminClient::getAdminAddrFromPeers(const std::vector<HostAddr> &peers) {

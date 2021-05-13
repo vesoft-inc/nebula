@@ -33,7 +33,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
                                                                          indexMan.get(),
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
-    EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
+    EXPECT_EQ(typeid(nebula::cpp2::ExecResponse).name() , typeid(resp).name());
 
     LOG(INFO) << "Check ErrorCode of AddVerticesProcessor...";
     ASSERT_EQ(0, resp.result.failed_codes.size());
@@ -41,7 +41,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = NebulaKeyUtils::vertexPrefix(1, 19);
     std::unique_ptr<kvstore::KVIterator> iter;
-    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
         ASSERT_EQ(TestUtils::encodeValue(1, 19, tagId), iter->val());

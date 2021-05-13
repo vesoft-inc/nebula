@@ -18,9 +18,9 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     auto tagIndexIDRet = getIndexID(spaceID, indexName);
     if (!nebula::ok(tagIndexIDRet)) {
         auto retCode = nebula::error(tagIndexIDRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
                 LOG(ERROR) << "Drop Tag Index Failed, index name " << indexName
                            << " not exists in Space: "<< spaceID;

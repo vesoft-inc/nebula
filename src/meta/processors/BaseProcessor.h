@@ -31,7 +31,7 @@ using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     auto retSpace = spaceExist(spaceID); \
-    if (retSpace != cpp2::ErrorCode::SUCCEEDED) { \
+    if (retSpace != nebula::cpp2::ErrorCode::SUCCEEDED) { \
         handleErrorCode(retSpace); \
         onFinished(); \
         return; \
@@ -42,7 +42,7 @@ using SignType = storage::cpp2::EngineSignType;
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
-        handleErrorCode(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
+        handleErrorCode(nebula::cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
     }
@@ -68,10 +68,11 @@ protected:
         delete this;
     }
 
-    void handleErrorCode(cpp2::ErrorCode code, GraphSpaceID spaceId = kDefaultSpaceId,
+    void handleErrorCode(nebula::cpp2::ErrorCode code,
+                         GraphSpaceID spaceId = kDefaultSpaceId,
                          PartitionID partId = kDefaultPartId) {
         resp_.set_code(code);
-        if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+        if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
             handleLeaderChanged(spaceId, partId);
         }
     }
@@ -81,7 +82,7 @@ protected:
         if (ok(leaderRet)) {
             resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
         } else {
-            resp_.set_code(MetaCommon::to(nebula::error(leaderRet)));
+            resp_.set_code(nebula::error(leaderRet));
         }
     }
 
@@ -119,18 +120,19 @@ protected:
      * */
     void doPut(std::vector<kvstore::KV> data);
 
-    ErrorOr<cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<kvstore::KVIterator>>
     doPrefix(const std::string& key);
 
     /**
      * General get function.
      * */
-    ErrorOr<cpp2::ErrorCode, std::string> doGet(const std::string& key);
+    ErrorOr<nebula::cpp2::ErrorCode, std::string>
+    doGet(const std::string& key);
 
     /**
      * General multi get function.
      * */
-    ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
     doMultiGet(const std::vector<std::string>& keys);
 
     /**
@@ -146,7 +148,7 @@ protected:
     /**
      * Scan keys from start to end, doesn't contain end.
      * */
-    ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
     doScan(const std::string& start, const std::string& end);
      /**
      * General multi remove function.
@@ -156,62 +158,64 @@ protected:
     /**
      * Get all hosts
      * */
-    ErrorOr<cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
 
     /**
      * Get one auto-increment Id.
      * */
-    ErrorOr<cpp2::ErrorCode, int32_t> autoIncrementId();
+    ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();
 
     /**
      * Check spaceId exist or not.
      * */
-    cpp2::ErrorCode spaceExist(GraphSpaceID spaceId);
+    nebula::cpp2::ErrorCode spaceExist(GraphSpaceID spaceId);
 
     /**
      * Check user exist or not.
      **/
-    cpp2::ErrorCode userExist(const std::string& account);
+    nebula::cpp2::ErrorCode userExist(const std::string& account);
 
     /**
      * Check host has been registered or not.
      * */
-    cpp2::ErrorCode hostExist(const std::string& hostKey);
+    nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
 
     /**
      * Return the spaceId for name.
      * */
-    ErrorOr<cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
+    ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
     /**
      * Return the tagId for name.
      */
-    ErrorOr<cpp2::ErrorCode, TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+    ErrorOr<nebula::cpp2::ErrorCode, TagID>
+    getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Fetch the latest version tag's schema.
      */
-    ErrorOr<cpp2::ErrorCode, cpp2::Schema>
+    ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema>
     getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId);
 
     /**
      * Return the edgeType for name.
      */
-    ErrorOr<cpp2::ErrorCode, EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+    ErrorOr<nebula::cpp2::ErrorCode, EdgeType>
+    getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Fetch the latest version edge's schema.
      */
-    ErrorOr<cpp2::ErrorCode, cpp2::Schema>
+    ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema>
     getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType);
 
-    ErrorOr<cpp2::ErrorCode, IndexID>
+    ErrorOr<nebula::cpp2::ErrorCode, IndexID>
     getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
-    ErrorOr<cpp2::ErrorCode, bool>
+    ErrorOr<nebula::cpp2::ErrorCode, bool>
     checkPassword(const std::string& account, const std::string& password);
 
-    cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
+    nebula::cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
 
     void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
 
@@ -220,29 +224,31 @@ protected:
     /**
      * Check the edge or tag contains indexes when alter it.
      **/
-    cpp2::ErrorCode indexCheck(const std::vector<cpp2::IndexItem>& items,
-                               const std::vector<cpp2::AlterSchemaItem>& alterItems);
+    nebula::cpp2::ErrorCode
+    indexCheck(const std::vector<cpp2::IndexItem>& items,
+               const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
-    ErrorOr<cpp2::ErrorCode, std::vector<cpp2::IndexItem>>
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>>
     getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge);
 
     bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                          const cpp2::IndexItem& item);
 
-    ErrorOr<cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
+    ErrorOr<nebula::cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
 
-    ErrorOr<cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
+    ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 
-    cpp2::ErrorCode listenerExist(GraphSpaceID space, cpp2::ListenerType type);
+    nebula::cpp2::ErrorCode
+    listenerExist(GraphSpaceID space, cpp2::ListenerType type);
 
     // A direct value of true means that data will not be written to follow via the raft protocol,
     // but will be written directly to local disk
-    ErrorOr<cpp2::ErrorCode, bool>
+    ErrorOr<nebula::cpp2::ErrorCode, bool>
     replaceHostInPartition(const HostAddr& ipv4From,
                            const HostAddr& ipv4To,
                            bool direct = false);
 
-    ErrorOr<cpp2::ErrorCode, bool>
+    ErrorOr<nebula::cpp2::ErrorCode, bool>
     replaceHostInZone(const HostAddr& ipv4From,
                       const HostAddr& ipv4To,
                       bool direct = false);

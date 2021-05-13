@@ -227,6 +227,7 @@ void RaftexService::sendSnapshot(
 
     part->processSendSnapshotRequest(req, resp);
 }
+
 }  // namespace raftex
 }  // namespace nebula
 

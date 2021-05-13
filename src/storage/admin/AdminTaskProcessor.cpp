@@ -16,39 +16,25 @@ namespace storage {
 void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
     auto taskManager = AdminTaskManager::instance();
 
-    auto toMetaErrCode = [](storage::cpp2::ErrorCode storageCode) {
-        switch (storageCode) {
-            case storage::cpp2::ErrorCode::SUCCEEDED:
-                return meta::cpp2::ErrorCode::SUCCEEDED;
-            case storage::cpp2::ErrorCode::E_UNKNOWN:
-                return meta::cpp2::ErrorCode::E_UNKNOWN;
-            default:
-                LOG(ERROR) << "unsupported conversion of code "
-                           << apache::thrift::util::enumNameSafe(storageCode);
-                return meta::cpp2::ErrorCode::E_UNKNOWN;
-        }
-    };
-
-    auto cb = [env = env_, toMetaErrCode = std::move(toMetaErrCode),
+    auto cb = [env = env_,
                jobId = req.get_job_id(), taskId = req.get_task_id()](
-                  nebula::storage::cpp2::ErrorCode errCode,
+                  nebula::cpp2::ErrorCode errCode,
                   nebula::meta::cpp2::StatisItem& result) {
         meta::cpp2::StatisItem* pStatis = nullptr;
-        if (errCode == cpp2::ErrorCode::SUCCEEDED &&
+        if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED &&
             *result.status_ref() == nebula::meta::cpp2::JobStatus::FINISHED) {
             pStatis = &result;
         }
 
-        auto metaCode = toMetaErrCode(errCode);
         LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
                                     jobId,
                                     taskId,
-                                    apache::thrift::util::enumNameSafe(metaCode));
+                                    apache::thrift::util::enumNameSafe(errCode));
         auto maxRetry = 5;
         auto retry = 0;
         while (retry++ < maxRetry) {
-            auto rc = meta::cpp2::ErrorCode::SUCCEEDED;
-            auto fut = env->metaClient_->reportTaskFinish(jobId, taskId, metaCode, pStatis);
+            auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+            auto fut = env->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStatis);
             fut.wait();
             if (!fut.hasValue()) {
                 LOG(INFO) << folly::sformat(
@@ -70,8 +56,8 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
                                         jobId,
                                         taskId,
                                         apache::thrift::util::enumNameSafe(rc));
-            if (rc == meta::cpp2::ErrorCode::E_LEADER_CHANGED ||
-                rc == meta::cpp2::ErrorCode::E_STORE_FAILURE) {
+            if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
+                rc == nebula::cpp2::ErrorCode::E_STORE_FAILURE) {
                 continue;
             } else {
                 break;
@@ -85,7 +71,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
         taskManager->addAsyncTask(task);
     } else {
         cpp2::PartitionResult thriftRet;
-        thriftRet.set_code(cpp2::ErrorCode::E_INVALID_TASK_PARA);
+        thriftRet.set_code(nebula::cpp2::ErrorCode::E_INVALID_TASK_PARA);
         codes_.emplace_back(std::move(thriftRet));
     }
     onFinished();

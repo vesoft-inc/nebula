@@ -103,7 +103,7 @@ void insertVertices(bool withoutIndex) {
             auto prefix = NebulaKeyUtils::prefix(0);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -122,7 +122,7 @@ void insertVertices(bool withoutIndex) {
                 auto prefix = NebulaKeyUtils::prefix(0);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto status = kv->prefix(0, 0, prefix, &iter);
-                if (status != kvstore::ResultCode::SUCCEEDED) {
+                if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(ERROR) << "Index scan error";
                     return;
                 }
@@ -142,7 +142,7 @@ void insertVertices(bool withoutIndex) {
                 auto prefix = NebulaKeyUtils::indexPrefix(0, 1);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 auto status = kv->prefix(0, 0, prefix, &iter);
-                if (status != kvstore::ResultCode::SUCCEEDED) {
+                if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     LOG(ERROR) << "Index scan error";
                     return;
                 }
@@ -189,7 +189,7 @@ void insertUnmatchIndex() {
             auto prefix = NebulaKeyUtils::prefix(0);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -209,7 +209,7 @@ void insertUnmatchIndex() {
             auto prefix = NebulaKeyUtils::indexPrefix(0, 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -260,7 +260,7 @@ void insertDupVertices() {
             auto prefix = NebulaKeyUtils::prefix(0);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -280,7 +280,7 @@ void insertDupVertices() {
             auto prefix = NebulaKeyUtils::indexPrefix(0, 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -331,7 +331,7 @@ void insertVerticesMultIndex() {
             auto prefix = NebulaKeyUtils::prefix(0);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }
@@ -355,7 +355,7 @@ void insertVerticesMultIndex() {
             prefix.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
             std::unique_ptr<kvstore::KVIterator> iter;
             auto status = kv->prefix(0, 0, prefix, &iter);
-            if (status != kvstore::ResultCode::SUCCEEDED) {
+            if (status != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 LOG(ERROR) << "Index scan error";
                 return;
             }

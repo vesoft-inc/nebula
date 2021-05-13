@@ -81,7 +81,7 @@ TEST(HBaseClientTest, MultiTest) {
     EXPECT_EQ(ResultCode::SUCCEEDED, hbaseClient->multiRemove(tableName, rowKeys));
     retDataList.clear();
     ret = hbaseClient->multiGet(tableName, rowKeys, retDataList);
-    EXPECT_EQ(ResultCode::ERR_UNKNOWN, ret.first);
+    EXPECT_EQ(ResultCode::E_UNKNOWN, ret.first);
     EXPECT_EQ(0, retDataList.size());
 }
 

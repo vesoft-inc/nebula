@@ -118,8 +118,8 @@ bool genData(kvstore::KVStore* kv,
     folly::Baton<true, std::atomic> baton;
     bool ret = false;
     kv->asyncMultiPut(spaceId, partId, std::move(data),
-                      [&ret, &baton] (kvstore::ResultCode code) {
-                          if (kvstore::ResultCode::SUCCEEDED == code) {
+                      [&ret, &baton] (nebula::cpp2::ErrorCode code) {
+                          if (nebula::cpp2::ErrorCode::SUCCEEDED == code) {
                               ret = true;
                           }
                           baton.post();
@@ -130,7 +130,7 @@ bool genData(kvstore::KVStore* kv,
     }
 
     auto code = kv->compact(spaceId);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return false;
     }
     return true;

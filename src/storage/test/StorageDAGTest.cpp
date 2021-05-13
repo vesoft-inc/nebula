@@ -22,7 +22,7 @@ TEST_F(StorageDAGTest, SimpleTest) {
     auto out = std::make_unique<RelNode<VertexID>>("leaf");
     dag.addNode(std::move(out));
     auto ret = dag.go(partId_, vId_);
-    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 }
 
 TEST_F(StorageDAGTest, ChainTest) {
@@ -39,7 +39,7 @@ TEST_F(StorageDAGTest, ChainTest) {
     out->addDependency(dag.getNode(lastIdx));
     dag.addNode(std::move(out));
     auto ret = dag.go(partId_, vId_);
-    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 }
 
 TEST_F(StorageDAGTest, FanOutInTest) {
@@ -52,7 +52,7 @@ TEST_F(StorageDAGTest, FanOutInTest) {
     }
     dag.addNode(std::move(out));
     auto ret = dag.go(partId_, vId_);
-    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 }
 
 TEST_F(StorageDAGTest, RerunTest) {
@@ -68,7 +68,7 @@ TEST_F(StorageDAGTest, RerunTest) {
     // re-run the dag
     for (size_t i = 0; i < 10; i++) {
         auto ret = dag.go(partId_, vId_);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     }
 }
 

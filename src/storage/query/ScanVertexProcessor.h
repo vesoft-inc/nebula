@@ -39,15 +39,18 @@ private:
                                                        executor) {
     }
 
-    cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanVertexRequest& req) override;
+    nebula::cpp2::ErrorCode
+    checkAndBuildContexts(const cpp2::ScanVertexRequest& req) override;
 
     void buildTagColName(const std::vector<cpp2::VertexProp>& tagProps);
 
     void onProcessFinished() override;
 
+private:
     PartitionID partId_;
 };
 
 }  // namespace storage
 }  // namespace nebula
+
 #endif  // STORAGE_QUERY_SCANVERTEXPROCESSOR_H_

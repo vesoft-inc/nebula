@@ -25,11 +25,12 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         resp_.set_id(to(edgeType, EntryType::EDGE));
     } else {
         auto retCode = nebula::error(iRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
                 LOG(ERROR) << "Drop edge failed :" << edgeName << " not found.";
+                retCode = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
             }
         } else {
              LOG(ERROR) << "Get edgetype failed, edge name " << edgeName
@@ -48,7 +49,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     }
     if (!nebula::value(indexes).empty()) {
         LOG(ERROR) << "Drop edge error, index conflict, please delete index first.";
-        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
@@ -66,7 +67,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
 DropEdgeProcessor::getEdgeKeys(GraphSpaceID id, EdgeType edgeType) {
     std::vector<std::string> keys;
     auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
@@ -86,5 +87,3 @@ DropEdgeProcessor::getEdgeKeys(GraphSpaceID id, EdgeType edgeType) {
 
 }  // namespace meta
 }  // namespace nebula
-
-

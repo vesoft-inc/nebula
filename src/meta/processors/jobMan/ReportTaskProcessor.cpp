@@ -15,7 +15,7 @@ namespace meta {
 void ReportTaskProcessor::process(const cpp2::ReportTaskReq& req) {
     JobManager* jobMgr = JobManager::getInstance();
     auto rc = jobMgr->reportTaskFinish(req);
-    if (rc != cpp2::ErrorCode::SUCCEEDED) {
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(rc);
     }
     onFinished();

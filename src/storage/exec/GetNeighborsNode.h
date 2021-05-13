@@ -37,14 +37,14 @@ public:
         , resultDataSet_(resultDataSet)
         , limit_(limit) {}
 
-    kvstore::ResultCode execute(PartitionID partId, const VertexID& vId) override {
+    nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
 
         if (planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
-            return kvstore::ResultCode::ERR_INVALID_DATA;
+            return nebula::cpp2::ErrorCode::E_INVALID_DATA;
         }
 
         std::vector<Value> row;
@@ -66,7 +66,7 @@ public:
         row.resize(row.size() + edgeContext_->propContexts_.size() + 1, Value());
 
         ret = iterateEdges(row);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
 
@@ -79,18 +79,18 @@ public:
         }
 
         resultDataSet_->rows.emplace_back(std::move(row));
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
 protected:
     GetNeighborsNode() = default;
 
-    virtual kvstore::ResultCode iterateEdges(std::vector<Value>& row) {
+    virtual nebula::cpp2::ErrorCode iterateEdges(std::vector<Value>& row) {
         int64_t edgeRowCount = 0;
         nebula::List list;
         for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
             if (edgeRowCount >= limit_) {
-                return kvstore::ResultCode::SUCCEEDED;
+                return nebula::cpp2::ErrorCode::SUCCEEDED;
             }
             auto key = upstream_->key();
             auto reader = upstream_->reader();
@@ -101,7 +101,7 @@ protected:
             // collect props need to return
             if (!QueryUtils::collectEdgeProps(key, planContext_->vIdLen_, planContext_->isIntId_,
                                               reader, props, list).ok()) {
-                return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
+                return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
             }
 
             // add edge prop value to the target column
@@ -111,7 +111,7 @@ protected:
             auto& cell = row[columnIdx].mutableList();
             cell.values.emplace_back(std::move(list));
         }
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     PlanContext* planContext_;
@@ -141,7 +141,7 @@ private:
                               const std::vector<PropContext>*,
                               size_t>;
 
-    kvstore::ResultCode iterateEdges(std::vector<Value>& row) override {
+    nebula::cpp2::ErrorCode iterateEdges(std::vector<Value>& row) override {
         int64_t edgeRowCount = 0;
         nebula::List list;
         for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
@@ -176,13 +176,13 @@ private:
             const auto& props = std::get<3>(sample);
             if (!QueryUtils::collectEdgeProps(key, planContext_->vIdLen_, planContext_->isIntId_,
                                               reader.get(), props, list).ok()) {
-                return kvstore::ResultCode::ERR_EDGE_PROP_NOT_FOUND;
+                return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
             }
             auto& cell = row[columnIdx].mutableList();
             cell.values.emplace_back(std::move(list));
         }
 
-        return kvstore::ResultCode::SUCCEEDED;
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
     std::unique_ptr<nebula::algorithm::ReservoirSampling<Sample>> sampler_;

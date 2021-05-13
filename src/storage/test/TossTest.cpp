@@ -112,7 +112,7 @@ TEST_F(TossTest, NO_TOSS) {
 
     LOG(INFO) << "going to add edge:" << edges.back().get_props().back();
     auto code = env_->syncAddMultiEdges(edges, kNotUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     props = env_->getNeiProps(startWith);
 
@@ -136,7 +136,7 @@ TEST_F(TossTest, ONE_EDGE) {
 
     LOG(INFO) << "going to add edge:" << TossTestUtils::hexEdgeId(edges.back().get_key());
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);;
 
     props = env_->getNeiProps(startWith);
 
@@ -169,7 +169,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_1) {
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     props = env_->getNeiProps(startWith);
     EXPECT_EQ(env_->countSquareBrackets(props), 2);
@@ -196,7 +196,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_2) {
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
+    LOG_IF(FATAL, code != nebula::cpp2::ErrorCode::SUCCEEDED)
         << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     props = env_->getNeiProps(first);
@@ -230,7 +230,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_3) {
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     props = env_->getNeiProps(first);
     LOG(INFO) << "props.size()=" << props.size();
@@ -270,7 +270,7 @@ TEST_F(TossTest, TWO_EDGES_CASE_4) {
     EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
+    LOG_IF(FATAL, code != nebula::cpp2::ErrorCode::SUCCEEDED)
         << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     props = env_->getNeiProps(startWith);
@@ -297,7 +297,7 @@ TEST_F(TossTest, TEN_EDGES_CASE_1) {
     // EXPECT_EQ(env_->countSquareBrackets(props), 0);
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
+    LOG_IF(FATAL, code != nebula::cpp2::ErrorCode::SUCCEEDED)
         << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     auto props = env_->getNeiProps(first);
@@ -320,7 +320,7 @@ TEST_F(TossTest, TEN_EDGES_CASE_2) {
     std::vector<cpp2::NewEdge> first{edges[0]};
 
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    LOG_IF(FATAL, code != cpp2::ErrorCode::SUCCEEDED)
+    LOG_IF(FATAL, code != nebula::cpp2::ErrorCode::SUCCEEDED)
         << "fatal code=" << apache::thrift::util::enumNameSafe(code);
 
     auto props = env_->getNeiProps(first);
@@ -1342,7 +1342,7 @@ TEST_F(TossTest, get_props_test_0) {
 
     LOG(INFO) << "going to add edge:" << edges.back().get_props().back();
     auto code = env_->syncAddMultiEdges(edges, kNotUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     auto vvec = env_->getProps(edges[0]);
     LOG(INFO) << "vvec.size()=" << vvec.size();
@@ -1362,7 +1362,7 @@ TEST_F(TossTest, get_props_test_1) {
 
     LOG(INFO) << "going to add edge:" << edges.back().get_props().back();
     auto code = env_->syncAddMultiEdges(edges, kUseToss);
-    ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     auto vvec = env_->getProps(edges[0]);
     LOG(INFO) << "vvec.size()=" << vvec.size();

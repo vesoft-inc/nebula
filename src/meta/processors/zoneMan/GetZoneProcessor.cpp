@@ -15,7 +15,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     auto zoneIdRet = getZoneId(zoneName);
     if (!nebula::ok(zoneIdRet)) {
         auto retCode = nebula::error(zoneIdRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND) {
             LOG(ERROR) << "Get Zone Failed, Zone " << zoneName << " not found.";
         } else {
             LOG(ERROR) << "Get Zone Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -29,6 +29,9 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     auto zoneValueRet = doGet(std::move(zoneKey));
     if (!nebula::ok(zoneValueRet)) {
         auto retCode = nebula::error(zoneValueRet);
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            retCode = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
+        }
         LOG(ERROR) << "Get zone " << zoneName << " failed, error: "
                    << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
@@ -39,7 +42,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
     LOG(INFO) << "Get Zone: " << zoneName << " node size: " << hosts.size();
     resp_.set_hosts(std::move(hosts));
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }
 

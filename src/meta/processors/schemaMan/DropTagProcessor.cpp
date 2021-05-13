@@ -25,11 +25,12 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         resp_.set_id(to(tagId, EntryType::TAG));
     } else {
         auto retCode = nebula::error(iRet);
-        if (retCode == cpp2::ErrorCode::E_NOT_FOUND) {
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
             if (req.get_if_exists()) {
-                retCode = cpp2::ErrorCode::SUCCEEDED;
+                retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
             } else {
                 LOG(ERROR) << "Drop tag failed :" << tagName << " not found.";
+                retCode = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
             }
         } else {
             LOG(ERROR) << "Get Tag failed, tag name " << tagName
@@ -48,7 +49,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     }
     if (!nebula::value(indexes).empty()) {
         LOG(ERROR) << "Drop tag error, index conflict, please delete index first.";
-        handleErrorCode(cpp2::ErrorCode::E_CONFLICT);
+        handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
     }
@@ -66,7 +67,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-ErrorOr<cpp2::ErrorCode, std::vector<std::string>>
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
 DropTagProcessor::getTagKeys(GraphSpaceID id, TagID tagId) {
     std::vector<std::string> keys;
     auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);

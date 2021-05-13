@@ -29,9 +29,9 @@ public:
 
     bool check() override;
 
-    cpp2::ErrorCode prepare() override;
+    nebula::cpp2::ErrorCode prepare() override;
 
-    cpp2::ErrorCode stop() override;
+    nebula::cpp2::ErrorCode stop() override;
 
 protected:
     folly::Future<Status>

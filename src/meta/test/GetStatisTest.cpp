@@ -57,7 +57,7 @@ struct JobCallBack {
 
     folly::Future<nebula::Status> operator()() {
         cpp2::ReportTaskReq req;
-        req.set_code(cpp2::ErrorCode::SUCCEEDED);
+        req.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
         req.set_job_id(jobId_);
         req.set_task_id(taskId_);
 
@@ -127,7 +127,7 @@ TEST_F(GetStatisTest, StatisJob) {
     NiceMock<MockAdminClient> adminClient;
     jobMgr->adminClient_ = &adminClient;
     auto rc = jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
-    ASSERT_EQ(rc, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     {
         // Job is not executed, job status is QUEUE.
@@ -144,18 +144,18 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         // Directly find statis data in kvstore, statis data does not exist.
         auto key = MetaServiceUtils::statisKey(spaceId);
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_NE(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
         auto res = job1.setStatus(cpp2::JobStatus::RUNNING);
         ASSERT_TRUE(res);
         auto retsav = jobMgr->save(job1.jobKey(), job1.jobVal());
-        ASSERT_EQ(retsav, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
     // Run statis job, job finished.
@@ -186,10 +186,10 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        if (resp.get_code() != cpp2::ErrorCode::SUCCEEDED) {
+        if (resp.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(INFO) << "resp.code=" << apache::thrift::util::enumNameSafe(resp.get_code());
         }
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
@@ -202,7 +202,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto key = MetaServiceUtils::statisKey(spaceId);
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
@@ -216,7 +216,7 @@ TEST_F(GetStatisTest, StatisJob) {
     std::vector<std::string> paras1{"test_space"};
     JobDescription statisJob2(13, cpp2::AdminCmd::STATS, paras1);
     auto rc2 = jobMgr->save(statisJob2.jobKey(), statisJob2.jobVal());
-    ASSERT_EQ(rc2, cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
     {
         // Job is not executed, job status is QUEUE.
         // Statis data exists, but it is the result of the last statis job execution.
@@ -233,7 +233,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
@@ -246,7 +246,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto key = MetaServiceUtils::statisKey(spaceId);
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
@@ -258,29 +258,30 @@ TEST_F(GetStatisTest, StatisJob) {
         auto res = job1.setStatus(cpp2::JobStatus::RUNNING);
         ASSERT_TRUE(res);
         auto retsav = jobMgr->save(job1.jobKey(), job1.jobVal());
-        ASSERT_EQ(retsav, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(retsav, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
     // Remove statis data.
     {
         auto key = MetaServiceUtils::statisKey(spaceId);
         folly::Baton<true, std::atomic> baton;
-        auto retCode = nebula::kvstore::ResultCode::SUCCEEDED;
+        auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
         kv_->asyncRemove(kDefaultSpaceId, kDefaultPartId, key,
-                         [&](nebula::kvstore::ResultCode code) {
-                             if (code != kvstore::ResultCode::SUCCEEDED) {
+                         [&](nebula::cpp2::ErrorCode code) {
+                             if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
                                  retCode = code;
-                                 LOG(ERROR) << "kvstore asyncRemove failed: " << code;
+                                 LOG(ERROR) << "kvstore asyncRemove failed: "
+                                            << apache::thrift::util::enumNameSafe(code);
                              }
                              baton.post();
                          });
         baton.wait();
-        ASSERT_EQ(nebula::kvstore::ResultCode::SUCCEEDED, retCode);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
 
         // Directly find statis data in kvstore, statis data does not exist.
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_NE(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
         cpp2::GetStatisReq req;
         req.set_space_id(spaceId);
@@ -288,7 +289,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
 
     // Run statis job.
@@ -322,7 +323,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
@@ -335,7 +336,7 @@ TEST_F(GetStatisTest, StatisJob) {
         auto key = MetaServiceUtils::statisKey(spaceId);
         std::string val;
         auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
         auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
@@ -362,7 +363,7 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
             entry.first,
             HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
             &entry.second);
-        ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
     NiceMock<MockAdminClient> adminClient;
@@ -397,7 +398,7 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
@@ -437,7 +438,7 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
@@ -479,7 +480,7 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
             entry.first,
             HostInfo(now, cpp2::HostRole::STORAGE, gitInfoSha()),
             &entry.second);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, ret);
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     }
 
     NiceMock<MockAdminClient> adminClient;
@@ -516,7 +517,7 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
         auto statisItem = resp.get_statis();
         ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());

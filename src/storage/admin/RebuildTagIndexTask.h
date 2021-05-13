@@ -26,9 +26,10 @@ private:
     StatusOr<std::shared_ptr<meta::cpp2::IndexItem>>
     getIndex(GraphSpaceID space, IndexID index) override;
 
-    kvstore::ResultCode buildIndexGlobal(GraphSpaceID space,
-                                         PartitionID part,
-                                         const IndexItems& items) override;
+    nebula::cpp2::ErrorCode
+    buildIndexGlobal(GraphSpaceID space,
+                     PartitionID part,
+                     const IndexItems& items) override;
 };
 
 }  // namespace storage

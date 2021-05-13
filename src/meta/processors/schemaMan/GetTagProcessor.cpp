@@ -41,7 +41,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
         if (!iter->valid()) {
             LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: "
                        << tagName << ", latest version " << " not found.";
-            handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+            handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
             onFinished();
             return;
         }
@@ -62,7 +62,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     VLOG(3) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
             << ", version " << ver;
 
-    handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
+    handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }

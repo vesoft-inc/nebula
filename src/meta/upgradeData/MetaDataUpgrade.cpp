@@ -441,6 +441,7 @@ void MetaDataUpgrade::printJobDesc(const folly::StringPiece &key, const folly::S
     LOG(INFO) << "JobDesc startTime: " << startTime;
     LOG(INFO) << "JobDesc stopTime: " << stopTime;
 }
+
 }  // namespace meta
 }  // namespace nebula
 
