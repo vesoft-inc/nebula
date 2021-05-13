@@ -587,10 +587,10 @@ public:
     folly::Future<StatusOr<cpp2::StatisItem>>
     getStatis(GraphSpaceID spaceId);
 
-    folly::Future<StatusOr<cpp2::ErrorCode>> reportTaskFinish(
+    folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
         int32_t jobId,
         int32_t taskId,
-        nebula::meta::cpp2::ErrorCode taskErrCode,
+        nebula::cpp2::ErrorCode taskErrCode,
         cpp2::StatisItem* statisticItem);
 
     folly::Future<StatusOr<bool>>
