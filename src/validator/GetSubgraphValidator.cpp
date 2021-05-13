@@ -228,7 +228,7 @@ Status GetSubgraphValidator::toPlan() {
     subgraph->setOutputVar(startVidsVar);
     subgraph->setColNames({nebula::kVid});
 
-    auto* loopCondition = buildNStepLoopCondition(steps_.steps + 1);
+    auto* loopCondition = buildExpandCondition(gn->outputVar(), steps_.steps + 1);
     qctx_->objPool()->add(loopCondition);
     auto* loop = Loop::make(qctx_, loopDep, subgraph, loopCondition);
 

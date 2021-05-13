@@ -470,9 +470,6 @@ Feature: subgraph
       | _vertices      | _edges                             |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
-      | []             | []                                 |
-      | []             | []                                 |
-      | []             | []                                 |
     When executing query:
       """
       GET SUBGRAPH 4 STEPS FROM 'NOBODY' IN teammate OUT serve
@@ -480,10 +477,6 @@ Feature: subgraph
     Then the result should be, in any order, with relax comparison:
       | _vertices    | _edges |
       | [("NOBODY")] | []     |
-      | []           | []     |
-      | []           | []     |
-      | []           | []     |
-      | []           | []     |
     When executing query:
       """
       Get Subgraph 4 steps from 'Yao Ming' IN teammate OUT serve BOTH like
@@ -675,3 +668,13 @@ Feature: subgraph
       | <[vertex3]>      | <[edge3]> |
       | <[vertex4]>      | <[edge4]> |
       | <[vertex5]>      | []        |
+
+  Scenario: over end
+    When executing query:
+      """
+      GET SUBGRAPH 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve
+      """
+    Then the result should be, in any order, with relax comparison:
+      | _vertices      | _edges                             |
+      | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
+      | [("Rockets")]  | []                                 |
