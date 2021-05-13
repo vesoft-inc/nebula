@@ -97,7 +97,7 @@ Feature: Insert string vid of vertex and edge
       """
       DESCRIBE TAG not_exist
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Tag not existed!
     # unreserved keyword
     When executing query:
       """
@@ -133,7 +133,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG person DROP (gender)
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Tag prop not existed!
     # check result
     When executing query:
       """
@@ -194,7 +194,7 @@ Feature: Insert string vid of vertex and edge
       """
       DROP TAG not_exist_tag
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Tag not existed!
     # drop if exists with not exist tag
     When executing query:
       """
@@ -301,7 +301,7 @@ Feature: Insert string vid of vertex and edge
       """
       DESCRIBE EDGE not_exist
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Edge not existed!
     # create edge with timestamp
     When executing query:
       """
@@ -340,7 +340,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE education DROP (id, time_)
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Edge prop not existed!
     # check result
     When executing query:
       """
@@ -379,7 +379,7 @@ Feature: Insert string vid of vertex and edge
       """
       DROP EDGE not_exist_edge
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Edge not existed!
     # drop if exists
     When executing query:
       """

@@ -254,7 +254,7 @@ Feature: User & privilege Test
       """
       REVOKE ROLE DBA ON user_tmp_space_3 FROM user1
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: Role not existed!
     When executing query:
       """
       DROP SPACE IF EXISTS revoke_tmp_space
@@ -274,7 +274,7 @@ Feature: User & privilege Test
       """
       REVOKE ROLE DBA ON user_tmp_space_3 FROM user_revoke_tmp
       """
-    Then a ExecutionError should be raised at runtime: Not existed!
+    Then a ExecutionError should be raised at runtime: User not existed!
     When executing query:
       """
       DROP SPACE user_tmp_space_3;

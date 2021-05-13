@@ -59,61 +59,61 @@ protected:
         return Result::State::kSuccess;
     }
 
-    Status handleErrorCode(nebula::storage::cpp2::ErrorCode code, PartitionID partId) const {
+    Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
         switch (code) {
-            case storage::cpp2::ErrorCode::E_KEY_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
                 return Status::Error("Storage Error: Vertex or edge not found.");
-            case storage::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
+            case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
                 std::string error = "Storage Error: The data type does not meet the requirements. "
                                     "Use the correct type of data.";
                 return Status::Error(std::move(error));
             }
-            case storage::cpp2::ErrorCode::E_INVALID_VID: {
+            case nebula::cpp2::ErrorCode::E_INVALID_VID: {
                 std::string error = "Storage Error: The VID must be a 64-bit interger"
                                     " or a string fitting space vertex id length limit.";
                 return Status::Error(std::move(error));
             }
-            case storage::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
+            case nebula::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
                 std::string error = "Storage Error: Invalid field value: "
                                     "may be the filed is not NULL "
                                     "or without default value or wrong schema.";
                 return Status::Error(std::move(error));
             }
-            case storage::cpp2::ErrorCode::E_LEADER_CHANGED:
+            case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
                 return Status::Error("Storage Error: The leader has changed. Try again later");
-            case storage::cpp2::ErrorCode::E_INVALID_FILTER:
+            case nebula::cpp2::ErrorCode::E_INVALID_FILTER:
                 return Status::Error("Storage Error: Invalid filter.");
-            case storage::cpp2::ErrorCode::E_INVALID_UPDATER:
+            case nebula::cpp2::ErrorCode::E_INVALID_UPDATER:
                 return Status::Error("Storage Error: Invalid Update col or yield col.");
-            case storage::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN:
+            case nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN:
                 return Status::Error("Storage Error: Invalid space vid len.");
-            case storage::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
                 return Status::Error("Storage Error: Space not found.");
-            case storage::cpp2::ErrorCode::E_TAG_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
                 return Status::Error("Storage Error: Tag not found.");
-            case storage::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
                 return Status::Error("Storage Error: Tag prop not found.");
-            case storage::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
                 return Status::Error("Storage Error: Edge not found.");
-            case storage::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
                 return Status::Error("Storage Error: Edge prop not found.");
-            case storage::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
+            case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
                 return Status::Error("Storage Error: Index not found.");
-            case storage::cpp2::ErrorCode::E_INVALID_DATA:
+            case nebula::cpp2::ErrorCode::E_INVALID_DATA:
                 return Status::Error("Storage Error: Invalid data, may be wrong value type.");
-            case storage::cpp2::ErrorCode::E_NOT_NULLABLE:
+            case nebula::cpp2::ErrorCode::E_NOT_NULLABLE:
                 return Status::Error("Storage Error: The not null field cannot be null.");
-            case storage::cpp2::ErrorCode::E_FIELD_UNSET:
+            case nebula::cpp2::ErrorCode::E_FIELD_UNSET:
                 return Status::Error("Storage Error: "
                                      "The not null field doesn't have a default value.");
-            case storage::cpp2::ErrorCode::E_OUT_OF_RANGE:
+            case nebula::cpp2::ErrorCode::E_OUT_OF_RANGE:
                 return Status::Error("Storage Error: Out of range value.");
-            case storage::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
+            case nebula::cpp2::ErrorCode::E_ATOMIC_OP_FAILED:
                 return Status::Error("Storage Error: Atomic operation failed.");
-            case storage::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
+            case nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
                 return Status::Error("Storage Error: More than one request trying to "
                                      "add/update/delete one edge/vertex at the same time.");
-            case storage::cpp2::ErrorCode::E_FILTER_OUT:
+            case nebula::cpp2::ErrorCode::E_FILTER_OUT:
                 return Status::OK();
             default:
                 auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
