@@ -477,6 +477,10 @@ Status ShowEdgeIndexStatusValidator::toPlan() {
 }
 
 Status AddGroupValidator::validateImpl() {
+    auto sentence = static_cast<AddGroupSentence *>(sentence_);
+    if (*sentence->groupName() == "default") {
+        return Status::SemanticError("Group default conflict");
+    }
     return Status::OK();
 }
 

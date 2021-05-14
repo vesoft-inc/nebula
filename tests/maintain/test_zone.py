@@ -41,6 +41,9 @@ class TestZone(NebulaTestSuite):
         resp = self.client.execute('ADD GROUP group_0 zone_0')
         self.check_resp_succeeded(resp)
 
+        resp = self.client.execute('ADD GROUP default zone_0')
+        self.check_resp_failed(resp)
+
         # Get Group
         resp = self.client.execute('DESC GROUP group_0')
         self.check_resp_succeeded(resp)

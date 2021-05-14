@@ -319,6 +319,10 @@ public:
         groupName_.reset(name);
     }
 
+    const std::string* groupName() const {
+        return groupName_.get();
+    }
+
     void setComment(std::string *name) {
         comment_.reset(name);
     }
