@@ -41,9 +41,9 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Quick start
 
-Read the [Getting started](https://docs.nebula-graph.io/manual-EN/1.overview/2.quick-start/1.get-started/) guide to quickly get going with **Nebula Graph**.
+Read the [Getting started](https://docs.nebula-graph.io/2.0.1/2.quick-start/1.quick-start-workflow/) guide to quickly get going with **Nebula Graph**.
 
-Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
+Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/2.install-nebula-graph-by-rpm-or-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 In case you encounter any problem, be sure to ask us on our [official forum](https://discuss.nebula-graph.io).
 
@@ -79,7 +79,7 @@ In order to prevent cloud providers from monetizing the project without contribu
 Contributions are warmly welcomed and greatly appreciated. Here are a few ways you can contribute:
 
 * Start by some [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/manual-EN/4.contributions/how-to-contribute/).
+* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/2.0.1/15.contribution/how-to-contribute/).
 
 ## Getting help & Contact
 
