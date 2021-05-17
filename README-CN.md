@@ -41,13 +41,25 @@
 
 [Nebula Graph Cloud Service](https://cloud.nebula-graph.com.cn/) 是 Nebula Graph 的图数据库云服务平台（Database-as-a-Service，DBaaS），支持一键部署 Nebula Graph。Nebula Graph Cloud Service 服务目前处于公测阶段。公测期间不会就云服务收取任何费用，欢迎 **免费试用**。
 
+## 关于这个 Repo
+
+Please note that this repo is only for Nebula Graph `v1.*.*`.
+
+请注意当前 Repo(https://github.com/vesoft-inc/nebula) 是 Nebula Graph 的旧版本（ `v1.*.*`）仓库。
+
+从 `v2.*.*`开始（2021年四月发布了 GA），Nebula Graph 的代码被分到了三个仓库中： [nebula-graph](https://github.com/vesoft-inc/nebula-graph)，[nebula-common](https://github.com/vesoft-inc/nebula-common) 和 [nebula-storage](https://github.com/vesoft-inc/nebula-storage)。
+
+我们推荐您从访问 [nebula-graph](https://github.com/vesoft-inc/nebula-graph) 开始。
+
 ## 快速使用
 
 请查看[快速使用手册](https://docs.nebula-graph.com.cn/2.0.1/2.quick-start/1.quick-start-workflow/)，开始使用 **Nebula Graph**。
 
 在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/2.install-nebula-graph-by-rpm-or-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
-**注意** 如果您想使用 v1.* 版本请参考接下来的链接 [Getting started](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/1.overview/2.quick-start/1.get-started/), [installing source code](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
+**注意**
+
+如果您想使用旧的  `v1.*.*` 版本请参考接下来的链接 [Getting started](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/1.overview/2.quick-start/1.get-started/), [installing source code](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.com.cn/1.2.0/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
 
 如果您遇到任何问题，请前往 Nebula Graph [官方论坛](https://discuss.nebula-graph.com.cn) 提问。
 
