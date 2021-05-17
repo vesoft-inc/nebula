@@ -360,8 +360,8 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
     }
 
     // fold constant expression
-    expr = qctx_->objPool()->add(
-        static_cast<RelationalExpression*>(ExpressionUtils::foldConstantExpr(expr).release()));
+    auto pool = qctx_->objPool();
+    expr = static_cast<RelationalExpression*>(ExpressionUtils::foldConstantExpr(expr, pool));
     DCHECK_EQ(expr->left()->kind(), Expression::Kind::kLabelAttribute);
 
     std::string prop = la->right()->value().getStr();

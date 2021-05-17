@@ -60,11 +60,19 @@ public:
 
     static Expression* rewriteAgg2VarProp(const Expression* expr);
 
+    // Rewrite relational expression, gather evaluable expressions to one side
+    static Expression* rewriteRelExpr(const Expression* expr, ObjectPool* pool);
+    static Expression* rewriteRelExprHelper(const Expression* expr,
+                                            std::unique_ptr<Expression>& relRightOperandExpr);
+
     // Clone and fold constant expression
-    static std::unique_ptr<Expression> foldConstantExpr(const Expression* expr);
+    static Expression* foldConstantExpr(const Expression* expr, ObjectPool* objPool);
 
     // Clone and reduce unaryNot expression
     static Expression* reduceUnaryNotExpr(const Expression* expr, ObjectPool* pool);
+
+    // Transform filter using multiple expression rewrite strategies
+    static Expression* filterTransform(const Expression* expr, ObjectPool* objPool);
 
     // Negate the given logical expr: (A && B) -> (!A || !B)
     static std::unique_ptr<LogicalExpression> reverseLogicalExpr(LogicalExpression* expr);
@@ -78,7 +86,11 @@ public:
     // Return the negation of the given logical kind
     static Expression::Kind getNegatedLogicalExprKind(const Expression::Kind kind);
 
+    // Return the negation of the given arithmetic kind: plus -> minus
+    static Expression::Kind getNegatedArithmeticType(const Expression::Kind kind);
+
     static void pullAnds(Expression* expr);
+
     static void pullAndsImpl(LogicalExpression* expr,
                              std::vector<std::unique_ptr<Expression>>& operands);
 

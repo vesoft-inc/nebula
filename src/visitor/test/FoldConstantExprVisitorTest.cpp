@@ -57,21 +57,32 @@ TEST_F(FoldConstantExprVisitorTest, TestRelationExpr) {
 }
 
 TEST_F(FoldConstantExprVisitorTest, TestLogicalExpr) {
-    // false AND (false || (3 > (1 + 1))) => false AND true
-    auto expr = pool.add(
-        andExpr(constantExpr(false),
-                orExpr(constantExpr(false),
-                       gtExpr(constantExpr(3), addExpr(constantExpr(1), constantExpr(1))))));
-    auto expected = pool.add(andExpr(constantExpr(false), constantExpr(true)));
-    FoldConstantExprVisitor visitor;
-    expr->accept(&visitor);
-    ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
-    ASSERT(visitor.canBeFolded());
+    {
+        // false AND (false || (3 > (1 + 1))) => false AND true
+        auto expr = pool.add(
+            andExpr(constantExpr(false),
+                    orExpr(constantExpr(false),
+                           gtExpr(constantExpr(3), addExpr(constantExpr(1), constantExpr(1))))));
+        auto expected = pool.add(andExpr(constantExpr(false), constantExpr(true)));
+        FoldConstantExprVisitor visitor;
+        expr->accept(&visitor);
+        ASSERT_EQ(*expr, *expected) << expr->toString() << " vs. " << expected->toString();
+        ASSERT(visitor.canBeFolded());
 
-    // false AND true => false
-    auto root = pool.add(visitor.fold(expr));
-    auto rootExpected = pool.add(constantExpr(false));
-    ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
+        // false AND true => false
+        auto root = pool.add(visitor.fold(expr));
+        auto rootExpected = pool.add(constantExpr(false));
+        ASSERT_EQ(*root, *rootExpected) << root->toString() << " vs. " << rootExpected->toString();
+    }
+    {
+        // false == false => true
+        auto expr = pool.add(eqExpr(constantExpr(false), constantExpr(false)));
+        FoldConstantExprVisitor visitor;
+        auto foldedExpr = pool.add(visitor.fold(expr));
+        auto rootExpected = pool.add(constantExpr(true));
+        ASSERT_EQ(*foldedExpr, *rootExpected)
+            << foldedExpr->toString() << " vs. " << rootExpected->toString();
+    }
 }
 
 TEST_F(FoldConstantExprVisitorTest, TestSubscriptExpr) {

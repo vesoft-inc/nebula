@@ -10,6 +10,7 @@
 
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
+#include "context/QueryExpressionContext.h"
 #include "visitor/FoldConstantExprVisitor.h"
 #include "common/base/ObjectPool.h"
 
@@ -142,14 +143,14 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
                                          std::move(rewriter));
     }
 
-std::unique_ptr<Expression> ExpressionUtils::foldConstantExpr(const Expression *expr) {
+Expression *ExpressionUtils::foldConstantExpr(const Expression *expr, ObjectPool *objPool) {
     auto newExpr = expr->clone();
     FoldConstantExprVisitor visitor;
     newExpr->accept(&visitor);
     if (visitor.canBeFolded()) {
-        return std::unique_ptr<Expression>(visitor.fold(newExpr.get()));
+        return objPool->add(visitor.fold(newExpr.get()));
     }
-    return newExpr;
+    return objPool->add(newExpr.release());
 }
 
 Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPool *pool) {
@@ -191,6 +192,124 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPo
     };
 
     return pool->add(RewriteVisitor::transform(expr, rootMatcher, rewriter));
+}
+
+Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr, ObjectPool *pool) {
+    // Match relational expressions containing at least one airthmetic expr
+    auto matcher = [&](const Expression *e) -> bool {
+        if (e->isRelExpr()) {
+            auto relExpr = static_cast<const RelationalExpression *>(e);
+            if (isEvaluableExpr(relExpr->right())) {
+                return true;
+            }
+            // TODO: To match arithmetic expression on both side
+            auto lExpr = relExpr->left();
+            if (lExpr->isArithmeticExpr()) {
+                auto arithmExpr = static_cast<const ArithmeticExpression *>(lExpr);
+                return isEvaluableExpr(arithmExpr->left()) || isEvaluableExpr(arithmExpr->right());
+            }
+        }
+        return false;
+    };
+
+    // Simplify relational expressions involving boolean literals
+    auto simplifyBoolOperand =
+        [&](RelationalExpression *relExpr, Expression *lExpr, Expression *rExpr) -> Expression * {
+        QueryExpressionContext ctx(nullptr);
+        if (rExpr->kind() == Expression::Kind::kConstant) {
+            auto conExpr = static_cast<ConstantExpression *>(rExpr);
+            auto val = conExpr->eval(ctx(nullptr));
+            auto valType = val.type();
+            // Rewrite to null if the expression contains any operand that is null
+            if (valType == Value::Type::NULLVALUE) {
+                return rExpr->clone().release();
+            }
+            if (relExpr->kind() == Expression::Kind::kRelEQ) {
+                if (valType == Value::Type::BOOL) {
+                    return val.getBool() ? lExpr->clone().release()
+                                         : new UnaryExpression(Expression::Kind::kUnaryNot,
+                                                               lExpr->clone().release());
+                }
+            } else if (relExpr->kind() == Expression::Kind::kRelNE) {
+                if (valType == Value::Type::BOOL) {
+                    return val.getBool() ? new UnaryExpression(Expression::Kind::kUnaryNot,
+                                                               lExpr->clone().release())
+                                         : lExpr->clone().release();
+                }
+            }
+        }
+        return nullptr;
+    };
+
+    std::function<Expression *(const Expression *)> rewriter =
+        [&](const Expression *e) -> Expression * {
+        auto exprCopy = pool->add(e->clone().release());
+        auto relExpr = static_cast<RelationalExpression *>(exprCopy);
+        auto lExpr = relExpr->left();
+        auto rExpr = relExpr->right();
+
+        // Simplify relational expressions involving boolean literals
+        auto simplifiedExpr = simplifyBoolOperand(relExpr, lExpr, rExpr);
+        if (simplifiedExpr) {
+            return simplifiedExpr;
+        }
+        // Move all evaluable expression to the right side
+        auto relRightOperandExpr = relExpr->right()->clone();
+        auto relLeftOperandExpr = rewriteRelExprHelper(relExpr->left(), relRightOperandExpr);
+        return new RelationalExpression(relExpr->kind(),
+                                        relLeftOperandExpr->clone().release(),
+                                        relRightOperandExpr->clone().release());
+    };
+
+    return pool->add(RewriteVisitor::transform(expr, matcher, rewriter));
+}
+
+Expression *ExpressionUtils::rewriteRelExprHelper(
+    const Expression *expr,
+    std::unique_ptr<Expression> &relRightOperandExpr) {
+    // TODO: Support rewrite mul/div expressoion after fixing overflow
+    auto matcher = [](const Expression *e) -> bool {
+        if (!e->isArithmeticExpr() ||
+            e->kind() == Expression::Kind::kMultiply ||
+            e->kind() == Expression::Kind::kDivision)
+            return false;
+        auto arithExpr = static_cast<const ArithmeticExpression *>(e);
+        return ExpressionUtils::isEvaluableExpr(arithExpr->left()) ||
+               ExpressionUtils::isEvaluableExpr(arithExpr->right());
+    };
+
+    if (!matcher(expr)) {
+        return const_cast<Expression *>(expr);
+    }
+
+    auto arithExpr = static_cast<const ArithmeticExpression *>(expr);
+    auto kind = getNegatedArithmeticType(arithExpr->kind());
+    auto lexpr = relRightOperandExpr->clone().release();
+    const Expression *root = nullptr;
+    Expression *rexpr = nullptr;
+
+    // Use left operand as root
+    if (ExpressionUtils::isEvaluableExpr(arithExpr->right())) {
+        rexpr = arithExpr->right()->clone().release();
+        root = arithExpr->left();
+    } else {
+        rexpr = arithExpr->left()->clone().release();
+        root = arithExpr->right();
+    }
+
+    relRightOperandExpr.reset(new ArithmeticExpression(kind, lexpr, rexpr));
+    return rewriteRelExprHelper(root, relRightOperandExpr);
+}
+
+Expression *ExpressionUtils::filterTransform(const Expression *filter, ObjectPool *pool) {
+    auto rewrittenExpr = const_cast<Expression *>(filter);
+    // Rewrite relational expression
+    rewrittenExpr = rewriteRelExpr(rewrittenExpr, pool);
+    // Fold constant expression
+    rewrittenExpr = foldConstantExpr(rewrittenExpr, pool);
+    // Reduce Unary expression
+    rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr, pool);
+    return rewrittenExpr;
 }
 
 void ExpressionUtils::pullAnds(Expression *expr) {
@@ -466,6 +585,25 @@ Expression::Kind ExpressionUtils::getNegatedRelExprKind(const Expression::Kind k
             return Expression::Kind::kEndsWith;
         default:
             LOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
+            break;
+    }
+}
+
+Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kind kind) {
+    switch (kind) {
+        case Expression::Kind::kAdd:
+            return Expression::Kind::kMinus;
+        case Expression::Kind::kMinus:
+            return Expression::Kind::kAdd;
+        case Expression::Kind::kMultiply:
+            return Expression::Kind::kDivision;
+        case Expression::Kind::kDivision:
+            return Expression::Kind::kMultiply;
+        case Expression::Kind::kMod:
+            LOG(FATAL) << "Unsupported expression kind: " << static_cast<uint8_t>(kind);
+            break;
+        default:
+            LOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(kind);
             break;
     }
 }

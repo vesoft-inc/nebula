@@ -46,9 +46,10 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
                                                  property->defaultValue()->toString().c_str());
                 }
                 auto *defaultValueExpr = property->defaultValue();
+                auto pool = qctx()->objPool();
                 // some expression is evaluable but not pure so only fold instead of eval here
                 column.set_default_value(
-                    ExpressionUtils::foldConstantExpr(defaultValueExpr)->encode());
+                    ExpressionUtils::foldConstantExpr(defaultValueExpr, pool)->encode());
             } else if (property->isComment()) {
                 column.set_comment(*DCHECK_NOTNULL(property->comment()));
             }

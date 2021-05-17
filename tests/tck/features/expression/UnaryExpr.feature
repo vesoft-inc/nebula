@@ -77,7 +77,7 @@ Feature: UnaryExpression
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     |
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             |
 
-  Scenario: Unary deduce
+  Scenario: Unary reduce
     When profiling query:
       """
       MATCH (v:player) WHERE !!(v.age>=40)

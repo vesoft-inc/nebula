@@ -181,8 +181,9 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
     }
     if (filter != nullptr) {
         NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
-        auto newFilter = ExpressionUtils::foldConstantExpr(filter);
-        filterCondition_ = qctx_->objPool()->add(newFilter.release());
+        auto pool = qctx_->objPool();
+        auto newFilter = ExpressionUtils::foldConstantExpr(filter, pool);
+        filterCondition_ = newFilter;
     }
     return Status::OK();
 }

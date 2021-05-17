@@ -244,13 +244,15 @@ Feature: Match seek by id
       RETURN v.name AS Name
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: with arithmetic
     When executing query:
       """
       MATCH (v)
       WHERE (id(v) + 1) == hash('James Harden')
       RETURN v.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then the execution should be successful
 
   Scenario: Start from end
     When executing query:

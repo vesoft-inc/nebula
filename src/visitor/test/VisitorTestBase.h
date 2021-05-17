@@ -30,6 +30,14 @@ protected:
         return new ArithmeticExpression(Expression::Kind::kMinus, lhs, rhs);
     }
 
+    static ArithmeticExpression *multiplyExpr(Expression *lhs, Expression *rhs) {
+        return new ArithmeticExpression(Expression::Kind::kMultiply, lhs, rhs);
+    }
+
+    static ArithmeticExpression *divideExpr(Expression *lhs, Expression *rhs) {
+        return new ArithmeticExpression(Expression::Kind::kDivision, lhs, rhs);
+    }
+
     static RelationalExpression *eqExpr(Expression *lhs, Expression *rhs) {
         return new RelationalExpression(Expression::Kind::kRelEQ, lhs, rhs);
     }
@@ -154,6 +162,15 @@ protected:
         expr->setCondition(cond);
         expr->setDefault(defaltResult);
         return expr;
+    }
+
+    static LabelExpression *labelExpr(const std::string &name) {
+        return new LabelExpression(new std::string(name));
+    }
+
+    static LabelAttributeExpression *laExpr(const std::string &name, Value value) {
+        return new LabelAttributeExpression(new LabelExpression(new std::string(name)),
+                                            new ConstantExpression(std::move(value)));
     }
 };
 

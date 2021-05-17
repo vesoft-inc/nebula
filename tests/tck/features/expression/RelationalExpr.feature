@@ -215,3 +215,25 @@ Feature: RelationalExpression
       """
     Then the result should be, in any order, with relax comparison:
       | player | age |
+
+  Scenario: Transform Relational expr in MATCH clause
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.age - 5 >= 40 RETURN v
+      """
+    Then the result should be, in any order:
+      | v                                                             |
+      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})           |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})           |
+      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"}) |
+      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})           |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info                                      |
+      | 10 | Project     | 13           |                                                    |
+      | 13 | Filter      | 7            |                                                    |
+      | 7  | Project     | 6            |                                                    |
+      | 6  | Project     | 5            |                                                    |
+      | 5  | Filter      | 13           |                                                    |
+      | 15 | GetVertices | 11           |                                                    |
+      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
+      | 0  | Start       |              |                                                    |
