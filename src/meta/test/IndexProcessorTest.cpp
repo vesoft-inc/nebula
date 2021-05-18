@@ -22,8 +22,6 @@
 #include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
 
-DECLARE_int32(heartbeat_interval_secs);
-DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 

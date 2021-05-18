@@ -258,6 +258,8 @@ protected:
     RESP                      resp_;
     folly::Promise<RESP>      promise_;
     time::Duration            duration_;
+
+    static const int32_t      maxIndexLimit = 16;
 };
 
 }  // namespace meta

@@ -28,8 +28,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     // A maximum of 16 columns are allowed in the index.
-    if (columnSet.size() > 16) {
-        LOG(ERROR) << "The number of index columns exceeds maximum limit 16";
+    if (columnSet.size() > maxIndexLimit) {
+        LOG(ERROR) << "The number of index columns exceeds maximum limit "
+                   << maxIndexLimit;
         handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
         onFinished();
         return;
