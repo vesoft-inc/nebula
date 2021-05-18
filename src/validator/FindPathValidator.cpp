@@ -69,11 +69,12 @@ Status FindPathValidator::singlePairPlan() {
     auto* loop = Loop::make(
         qctx_, nullptr, conjunct, buildBfsLoopCondition(steps_.steps, conjunct->outputVar()));
 
-    auto* dataCollect = DataCollect::make(
-        qctx_, loop, DataCollect::CollectKind::kBFSShortest, {conjunct->outputVar()});
-    dataCollect->setColNames({"path"});
+    auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kBFSShortest);
+    dc->addDep(loop);
+    dc->setInputVars({conjunct->outputVar()});
+    dc->setColNames({"path"});
 
-    root_ = dataCollect;
+    root_ = dc;
     tail_ = loop;
     return Status::OK();
 }
@@ -218,11 +219,12 @@ Status FindPathValidator::allPairPaths() {
     auto* loop =
         Loop::make(qctx_, projectTo, conjunct, buildAllPathsLoopCondition(steps_.steps));
 
-    auto* dataCollect = DataCollect::make(
-        qctx_, loop, DataCollect::CollectKind::kAllPaths, {conjunct->outputVar()});
-    dataCollect->setColNames({"path"});
+    auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kAllPaths);
+    dc->addDep(loop);
+    dc->setInputVars({conjunct->outputVar()});
+    dc->setColNames({"path"});
 
-    root_ = dataCollect;
+    root_ = dc;
     tail_ = loopDepTail_ == nullptr ? projectFrom : loopDepTail_;
     return Status::OK();
 }
@@ -361,11 +363,12 @@ Status FindPathValidator::multiPairPlan() {
                    conjunct,
                    buildMultiPairLoopCondition(steps_.steps, cartesianProduct->outputVar()));
 
-    auto* dataCollect = DataCollect::make(
-        qctx_, loop, DataCollect::CollectKind::kMultiplePairShortest, {conjunct->outputVar()});
-    dataCollect->setColNames({"path"});
+    auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kMultiplePairShortest);
+    dc->addDep(loop);
+    dc->setInputVars({conjunct->outputVar()});
+    dc->setColNames({"path"});
 
-    root_ = dataCollect;
+    root_ = dc;
     tail_ = loopDepTail_ == nullptr ? projectFrom : loopDepTail_;
     return Status::OK();
 }

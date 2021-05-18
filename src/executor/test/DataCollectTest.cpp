@@ -137,8 +137,8 @@ protected:
 };
 
 TEST_F(DataCollectTest, CollectSubgraph) {
-    auto* dc = DataCollect::make(qctx_.get(), nullptr,
-            DataCollect::CollectKind::kSubgraph, {"input_datasets"});
+    auto* dc = DataCollect::make(qctx_.get(), DataCollect::DCKind::kSubgraph);
+    dc->setInputVars({"input_datasets"});
     dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
 
     auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());
@@ -188,8 +188,8 @@ TEST_F(DataCollectTest, CollectSubgraph) {
 }
 
 TEST_F(DataCollectTest, RowBasedMove) {
-    auto* dc = DataCollect::make(qctx_.get(), nullptr,
-            DataCollect::CollectKind::kRowBasedMove, {"input_sequential"});
+    auto* dc = DataCollect::make(qctx_.get(), DataCollect::DCKind::kRowBasedMove);
+    dc->setInputVars({"input_sequential"});
     dc->setColNames(std::vector<std::string>{"col1", "col2"});
 
     DataSet expected;
@@ -207,8 +207,8 @@ TEST_F(DataCollectTest, RowBasedMove) {
 }
 
 TEST_F(DataCollectTest, EmptyResult) {
-    auto* dc = DataCollect::make(qctx_.get(), nullptr,
-            DataCollect::CollectKind::kSubgraph, {"empty_get_neighbors"});
+    auto* dc = DataCollect::make(qctx_.get(), DataCollect::DCKind::kSubgraph);
+    dc->setInputVars({"empty_get_neighbors"});
     dc->setColNames(std::vector<std::string>{"_vertices", "_edges"});
 
     auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());

@@ -87,7 +87,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
         case PlanNode::Kind::kDataCollect: {
             const auto *lDC = static_cast<const DataCollect*>(l);
             const auto *rDC = static_cast<const DataCollect*>(r);
-            if (lDC->collectKind() != rDC->collectKind()) {
+            if (lDC->kind() != rDC->kind()) {
                 return Status::Error(
                     "%s.collectKind_ != %s.collectKind_",
                     l->outputVar().c_str(), r->outputVar().c_str());

@@ -44,8 +44,8 @@ struct PathContext {
     Over over;
 
     bool isShortest_{false};
-    bool isWeight_{false};
-    bool noLoop_{false};
+    bool isWeight{false};
+    bool noLoop{false};
 
     // runtime
     PlanNode* loopDepTail{nullptr};

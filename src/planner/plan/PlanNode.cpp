@@ -374,5 +374,12 @@ std::unique_ptr<PlanNodeDescription> BinaryInputNode::explain() const {
     return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
+    auto desc = PlanNode::explain();
+    DCHECK(desc->dependencies == nullptr);
+    desc->dependencies.reset(new std::vector<int64_t>(dependIds()));
+    return desc;
+}
+
 }   // namespace graph
 }   // namespace nebula

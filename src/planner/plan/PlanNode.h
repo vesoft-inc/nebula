@@ -369,6 +369,32 @@ protected:
     }
 };
 
+// some PlanNode may depend on multiple Nodes(may be one OR more)
+// Attention: user need to set inputs byself
+class VariableDependencyNode : public PlanNode {
+public:
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
+    PlanNode* clone() const override {
+        LOG(FATAL) << "Shouldn't call the unimplemented method";
+    }
+
+protected:
+    VariableDependencyNode(QueryContext* qctx, Kind kind) : PlanNode(qctx, kind) {}
+
+    void cloneMembers(const VariableDependencyNode& node) {
+        PlanNode::cloneMembers(node);
+    }
+
+    std::vector<int64_t> dependIds() const {
+        std::vector<int64_t> ids(numDeps());
+        std::transform(dependencies_.begin(), dependencies_.end(), ids.begin(), [](auto& dep) {
+            return dep->id();
+        });
+        return ids;
+    }
+};
+
 }  // namespace graph
 }  // namespace nebula
 
