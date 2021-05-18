@@ -89,7 +89,7 @@ In order to prevent cloud providers from monetizing the project without contribu
 Contributions are warmly welcomed and greatly appreciated. Here are a few ways you can contribute:
 
 * Start by some [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/2.0.1/15.contribution/how-to-contribute/).
+* Submit Pull Requests to us. See [how-to-contribute](https://github.com/vesoft-inc/nebula-community/blob/master/Contributors/how-to-contribute.md).
 
 ## Getting help & Contact
 

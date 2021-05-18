@@ -95,7 +95,7 @@ Please note that this repo is only for Nebula Graph `v1.*.*`.
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
 
 * 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
-* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/2.0.1/15.contribution/how-to-contribute/)
+* 贡献代码，详情请参见 [如何贡献](https://github.com/vesoft-inc/nebula-community/blob/master/Contributors/how-to-contribute.md)
 * 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
 
 ## 获取帮助 & 联系方式
