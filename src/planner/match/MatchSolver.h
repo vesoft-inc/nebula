@@ -74,10 +74,6 @@ public:
                                         Expression* initialExpr,
                                         std::string inputVar,
                                         SubPlan& plan);
-
-    // Fetch all tags in the space and retrieve props from tags
-    static StatusOr<std::vector<storage::cpp2::VertexProp>> flattenTags(QueryContext* qctx,
-                                                                        const SpaceInfo& space);
 };
 
 }   // namespace graph

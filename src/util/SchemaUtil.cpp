@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "util/SchemaUtil.h"
+#include "context/QueryContext.h"
 #include "context/QueryExpressionContext.h"
 
 namespace nebula {
@@ -311,5 +312,53 @@ bool SchemaUtil::isValidVid(const Value &value) {
     return value.isStr() || value.isInt();
 }
 
+StatusOr<std::vector<storage::cpp2::VertexProp>>
+SchemaUtil::getAllVertexProp(QueryContext *qctx, const SpaceInfo &space) {
+    // Get all tags in the space
+    const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
+    NG_RETURN_IF_ERROR(allTagsResult);
+    // allTags: std::unordered_map<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
+    const auto allTags = std::move(allTagsResult).value();
+
+    std::vector<storage::cpp2::VertexProp> props;
+    props.reserve(allTags.size());
+    // Retrieve prop names of each tag and append "_tag" to the name list to query empty tags
+    for (const auto &tag : allTags) {
+        // tag: pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
+        std::vector<std::string> propNames;
+        storage::cpp2::VertexProp vProp;
+
+        const auto tagId = tag.first;
+        vProp.set_tag(tagId);
+        const auto tagSchema = tag.second;   // nebulaSchemaProvider
+        for (size_t i = 0; i < tagSchema->getNumFields(); i++) {
+            const auto propName = tagSchema->getFieldName(i);
+            propNames.emplace_back(propName);
+        }
+        propNames.emplace_back(nebula::kTag);   // "_tag"
+        vProp.set_props(std::move(propNames));
+        props.emplace_back(std::move(vProp));
+    }
+    return props;
+}
+
+StatusOr<std::vector<storage::cpp2::EdgeProp>> SchemaUtil::getEdgeProp(
+    QueryContext *qctx,
+    const SpaceInfo &space,
+    const std::vector<EdgeType> &edgeTypes) {
+    std::vector<storage::cpp2::EdgeProp> edgeProps;
+    for (const auto& edgeType : edgeTypes) {
+        std::vector<std::string> propNames = {kSrc, kType, kRank, kDst};
+        auto edgeSchema = qctx->schemaMng()->getEdgeSchema(space.id, edgeType);
+        for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+            propNames.emplace_back(edgeSchema->getFieldName(i));
+        }
+        storage::cpp2::EdgeProp prop;
+        prop.set_type(edgeType);
+        prop.set_props(std::move(propNames));
+        edgeProps.emplace_back(std::move(prop));
+    }
+    return edgeProps;
+}
 }  // namespace graph
 }  // namespace nebula

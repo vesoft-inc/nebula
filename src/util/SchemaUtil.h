@@ -18,7 +18,8 @@
 
 namespace nebula {
 namespace graph {
-
+class QueryContext;
+struct SpaceInfo;
 class SchemaUtil final {
 public:
     SchemaUtil() = delete;
@@ -56,6 +57,14 @@ public:
     static bool isValidVid(const Value& value, meta::cpp2::PropertyType type);
 
     static bool isValidVid(const Value& value);
+
+    // Fetch all tags in the space and retrieve props from tags
+    static StatusOr<std::vector<storage::cpp2::VertexProp>>
+    getAllVertexProp(QueryContext* qctx, const SpaceInfo& space);
+
+    // retrieve prop from specific edgetypes
+    static StatusOr<std::vector<storage::cpp2::EdgeProp>>
+    getEdgeProp(QueryContext* qctx, const SpaceInfo& space, const std::vector<EdgeType>& edgeTypes);
 };
 
 }  // namespace graph
