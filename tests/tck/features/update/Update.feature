@@ -665,7 +665,7 @@ Feature: Update string vid of vertex and edge
       UPSERT EDGE "1"->"100" OF like SET likeness = 2.0;
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
@@ -1167,7 +1167,7 @@ Feature: Update string vid of vertex and edge
       UPSERT EDGE ON like "1"->"100" SET likeness = 2.0;
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP ON like "1"->"100"@0 YIELD like.likeness, like.new_field
       """
