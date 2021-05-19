@@ -17,21 +17,21 @@
 namespace nebula {
 
 enum class ErrorCode {
-    SUCCEEDED = 0,
-    E_DISCONNECTED = -1,
-    E_FAIL_TO_CONNECT = -2,
-    E_RPC_FAILURE = -3,
-    E_BAD_USERNAME_PASSWORD = -4,
-    E_SESSION_INVALID = -5,
-    E_SESSION_TIMEOUT = -6,
-    E_SYNTAX_ERROR = -7,
-    E_EXECUTION_ERROR = -8,
-    E_STATEMENT_EMPTY = -9,
-    E_USER_NOT_FOUND = -10,
-    E_BAD_PERMISSION = -11,
-    E_SEMANTIC_ERROR = -12,
-    E_TOO_MANY_CONNECTIONS = -13,
-    E_PARTIAL_SUCCEEDED = -14,
+    SUCCEEDED                         = 0,
+    E_DISCONNECTED                    = -1,        // RPC Failure
+    E_FAIL_TO_CONNECT                 = -2,
+    E_RPC_FAILURE                     = -3,
+    E_BAD_USERNAME_PASSWORD           = -1001,     // Authentication error
+    E_SESSION_INVALID                 = -1002,     // Execution errors
+    E_SESSION_TIMEOUT                 = -1003,
+    E_SYNTAX_ERROR                    = -1004,
+    E_EXECUTION_ERROR                 = -1005,
+    E_STATEMENT_EMPTY                 = -1006,     // Nothing is executed When command is comment
+    E_USER_NOT_FOUND                  = -18,
+    E_BAD_PERMISSION                  = -1008,
+    E_SEMANTIC_ERROR                  = -1009,     // semantic error
+    E_TOO_MANY_CONNECTIONS            = -1010,     // Exceeding the maximum number of connections
+    E_PARTIAL_SUCCEEDED               = -1011,
 };
 
 template <typename T>
