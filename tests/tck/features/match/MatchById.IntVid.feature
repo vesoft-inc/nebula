@@ -919,6 +919,17 @@ Feature: Integer Vid Match By Id
       | COUNT(1) |
       | 927      |
 
+  Scenario: count relationship
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e]->() RETURN type(e), count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | type(e)    | count(*) |
+      | "serve"    | 1        |
+      | "teammate" | 4        |
+      | "like"     | 2        |
+
   Scenario: the referred vertex of id fn is not the first
     When executing query:
       """
