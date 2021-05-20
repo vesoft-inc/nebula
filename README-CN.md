@@ -53,9 +53,9 @@ Please note that this repo is only for Nebula Graph `v1.*.*`.
 
 ## 快速使用
 
-请查看[快速使用手册](https://docs.nebula-graph.com.cn/2.0.1/2.quick-start/1.quick-start-workflow/)，开始使用 **Nebula Graph**。
+请查看[文档](https://docs.nebula-graph.com.cn)中的【快速使用手册】，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/2.install-nebula-graph-by-rpm-or-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，除了参文档通过：编译源码、rpm/deb 包、 docker compose 三者之一方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 **注意**
 

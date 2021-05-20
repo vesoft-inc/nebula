@@ -47,13 +47,13 @@ From `v2.*.*`, which was already GA in 2021 April, Nebula Graph's core code base
 
 ## Quick start
 
-Read the [Getting started](https://docs.nebula-graph.io/2.0.1/2.quick-start/1.quick-start-workflow/) guide to quickly get going with **Nebula Graph**.
+Read the `Getting started` from [docs](https://docs.nebula-graph.io/) to quickly get going with **Nebula Graph**.
 
-Please note that you must install **Nebula Graph** by [installing source code](https://docs.nebula-graph.io/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/2.0.1/4.deployment-and-installation/2.compile-and-install-nebula-graph/2.install-nebula-graph-by-rpm-or-deb/) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
+For Nebula Graph Installation, in addition to referring to the docs to deploy from one of the three options: source code, RPM/DEB package, or Docker Compose, if you prefer a video tutorial, please check out our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 **Note**
 
-For the users from the legacy `v1.*.*`, please reach out to the following links [Getting started](https://docs.nebula-graph.io/1.2.0/manual-EN/1.overview/2.quick-start/1.get-started/), [installing source code](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
+For the users from the legacy `v1.*.*`, please reach out to the following links [Getting started](https://docs.nebula-graph.io/1.2.0/manual-EN/1.overview/2.quick-start/1.get-started/), [installing from source code](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
 
 In case you encounter any problem, be sure to ask us on our [official forum](https://discuss.nebula-graph.io).
 
