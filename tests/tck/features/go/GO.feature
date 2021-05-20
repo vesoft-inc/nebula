@@ -129,6 +129,22 @@ Feature: Go Sentence
       | "Hornets"       |
       | "Trail Blazers" |
 
+  Scenario: In expression
+    When executing query:
+      """
+      GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] YIELD $$.player.name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $$.player.name |
+      | "Tim Duncan"   |
+    When executing query:
+      """
+      GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] YIELD $^.player.name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $^.player.name |
+      | "Tony Parker"  |
+
   Scenario: assignment simple
     When executing query:
       """
