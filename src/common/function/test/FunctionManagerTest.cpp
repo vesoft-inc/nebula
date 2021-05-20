@@ -1399,6 +1399,11 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(Value::Type::STRING, result.value());
     }
     {
+        auto result = FunctionManager::getReturnType("typeid", {Value::Type::EDGE});
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(Value::Type::INT, result.value());
+    }
+    {
         auto result = FunctionManager::getReturnType("rank", {Value::Type::EDGE});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::INT, result.value());
@@ -1575,6 +1580,7 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
                     {"p7", false},
                     })));
     TEST_SCHEMA_FUNCTION("type", edge, Value("type"));
+    TEST_SCHEMA_FUNCTION("typeid", edge, Value(0));
     TEST_SCHEMA_FUNCTION("src", edge, Value("src"));
     TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
     TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
