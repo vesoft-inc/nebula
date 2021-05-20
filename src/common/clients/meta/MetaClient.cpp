@@ -440,7 +440,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId,
         auto indexName = tagIndex.get_index_name();
         auto indexID = tagIndex.get_index_id();
         std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
-        tagNameIndexMap_.emplace(std::move(pair), indexID);
+        tagNameIndexMap_[pair] = indexID;
         auto tagIndexPtr = std::make_shared<cpp2::IndexItem>(tagIndex);
         tagIndexes.emplace(indexID, tagIndexPtr);
     }
@@ -451,7 +451,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId,
         auto indexName = edgeIndex.get_index_name();
         auto indexID = edgeIndex.get_index_id();
         std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
-        edgeNameIndexMap_.emplace(std::move(pair), indexID);
+        edgeNameIndexMap_[pair] = indexID;
         auto edgeIndexPtr = std::make_shared<cpp2::IndexItem>(edgeIndex);
         edgeIndexes.emplace(indexID, edgeIndexPtr);
     }
