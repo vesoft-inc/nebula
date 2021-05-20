@@ -72,9 +72,7 @@ std::shared_ptr<Session> SessionManager::removeSession(int64_t id) {
 
 int64_t SessionManager::newSessionId() {
     int64_t id = ++nextId_;
-    if (id == 0) {
-        id = ++nextId_;
-    }
+    DCHECK_GT(id, 0);
     return id;
 }
 
