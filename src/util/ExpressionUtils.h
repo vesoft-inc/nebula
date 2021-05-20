@@ -138,6 +138,16 @@ public:
     static Expression* Eq(Expression* l, Expression *r) {
         return new RelationalExpression(Expression::Kind::kRelEQ, l, r);
     }
+
+    // loop condition
+    // ++loopSteps <= steps
+    static std::unique_ptr<Expression> stepCondition(const std::string& loopStep, uint32_t steps);
+
+    // size(var) == 0
+    static std::unique_ptr<Expression> zeroCondition(const std::string& var);
+
+    // size(var) != 0
+    static std::unique_ptr<Expression> neZeroCondition(const std::string& var);
 };
 
 }   // namespace graph

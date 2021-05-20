@@ -62,16 +62,9 @@ private:
                                      PlanNode* input,
                                      SubPlan* plan);
 
-    Expression* buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) const;
-
-    Expression* buildExpandEndCondition(const std::string &lastStepResult) const;
-
-    Expression* buildExpandCondition(const std::string &lastStepResult,
+    Expression* buildExpandCondition(const std::string& lastStepResult,
                                      int64_t startIndex,
-                                     int64_t maxHop) {
-        return ExpressionUtils::And(buildNStepLoopCondition(startIndex, maxHop),
-                                    buildExpandEndCondition(lastStepResult));
-    }
+                                     int64_t maxHop) const;
 
     template <typename T>
     T* saveObject(T* obj) const {

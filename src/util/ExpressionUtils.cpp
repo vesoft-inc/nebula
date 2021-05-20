@@ -645,5 +645,35 @@ Expression::Kind ExpressionUtils::getNegatedLogicalExprKind(const Expression::Ki
     }
 }
 
+// ++loopStep <= steps
+std::unique_ptr<Expression> ExpressionUtils::stepCondition(const std::string &loopStep,
+                                                           uint32_t steps) {
+    return std::make_unique<RelationalExpression>(
+        Expression::Kind::kRelLE,
+        new UnaryExpression(Expression::Kind::kUnaryIncr,
+                            new VariableExpression(new std::string(loopStep))),
+        new ConstantExpression(static_cast<int32_t>(steps)));
+}
+
+// size(var) != 0
+std::unique_ptr<Expression> ExpressionUtils::neZeroCondition(const std::string &var) {
+    auto *args = new ArgumentList();
+    args->addArgument(std::make_unique<VariableExpression>(new std::string(var)));
+    return std::make_unique<RelationalExpression>(
+        Expression::Kind::kRelNE,
+        new FunctionCallExpression(new std::string("size"), args),
+        new ConstantExpression(0));
+}
+
+// size(var) == 0
+std::unique_ptr<Expression> ExpressionUtils::zeroCondition(const std::string &var) {
+    auto *args = new ArgumentList();
+    args->addArgument(std::make_unique<VariableExpression>(new std::string(var)));
+    return std::make_unique<RelationalExpression>(
+        Expression::Kind::kRelEQ,
+        new FunctionCallExpression(new std::string("size"), args),
+        new ConstantExpression(0));
+}
+
 }   // namespace graph
 }   // namespace nebula

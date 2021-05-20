@@ -256,30 +256,21 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, 
     return Status::OK();
 }
 
-Expression* Expand::buildNStepLoopCondition(int64_t startIndex, int64_t maxHop) const {
+// loopSteps{startIndex} <= maxHop &&  ($lastStepResult == empty || size($lastStepResult) != 0)
+Expression* Expand::buildExpandCondition(const std::string& lastStepResult,
+                                         int64_t startIndex,
+                                         int64_t maxHop) const {
     VLOG(1) << "match expand maxHop: " << maxHop;
-    // ++loopSteps{startIndex} <= maxHop
     auto loopSteps = matchCtx_->qctx->vctx()->anonVarGen()->getVar();
     matchCtx_->qctx->ectx()->setValue(loopSteps, startIndex);
-    return new RelationalExpression(
-        Expression::Kind::kRelLE,
-        new UnaryExpression(Expression::Kind::kUnaryIncr,
-                            new VariableExpression(new std::string(loopSteps))),
-        new ConstantExpression(static_cast<int64_t>(maxHop)));
-}
-
-// $var == empty || size($var) != 0
-Expression* Expand::buildExpandEndCondition(const std::string &lastStepResult) const {
+    // ++loopSteps{startIndex} << maxHop
+    auto stepCondition = ExpressionUtils::stepCondition(loopSteps, maxHop);
+    // lastStepResult == empty || size(lastStepReult) != 0
     auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(new std::string(lastStepResult)),
                                         new ConstantExpression(Value()));
-
-    auto* args = new ArgumentList();
-    args->addArgument(std::make_unique<VariableExpression>(new std::string(lastStepResult)));
-    auto* neZero = new RelationalExpression(
-        Expression::Kind::kRelNE,
-        new FunctionCallExpression(new std::string("size"), args),
-        new ConstantExpression(0));
-    return ExpressionUtils::Or(eqEmpty, neZero);
+    auto neZero = ExpressionUtils::neZeroCondition(lastStepResult);
+    auto* existValCondition = ExpressionUtils::Or(eqEmpty, neZero.release());
+    return ExpressionUtils::And(stepCondition.release(), existValCondition);
 }
 
 }   // namespace graph
