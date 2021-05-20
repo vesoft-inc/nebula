@@ -1525,7 +1525,7 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
 
     edge.src = "src";
     edge.dst = "dst";
-    edge.type = 0;
+    edge.type = 1;
     edge.name = "type";
     edge.ranking = 123;
     edge.props = {
@@ -1549,10 +1549,23 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
     };
     edge1.src = 0;
     edge1.dst = 1;
-    edge1.type = 0;
+    edge1.type = 1;
     edge1.name = "type";
     edge1.ranking = 123;
     edge1.props = {
+        {"p1", 123},
+        {"p2", 456},
+        {"p3", true},
+        {"p4", false},
+    };
+
+    Edge edge2;
+    edge2.src = 0;
+    edge2.dst = 1;
+    edge2.type = -1;
+    edge2.name = "type";
+    edge2.ranking = 123;
+    edge2.props = {
         {"p1", 123},
         {"p2", 456},
         {"p3", true},
@@ -1580,7 +1593,7 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
                     {"p7", false},
                     })));
     TEST_SCHEMA_FUNCTION("type", edge, Value("type"));
-    TEST_SCHEMA_FUNCTION("typeid", edge, Value(0));
+    TEST_SCHEMA_FUNCTION("typeid", edge, Value(1));
     TEST_SCHEMA_FUNCTION("src", edge, Value("src"));
     TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
     TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
@@ -1602,7 +1615,9 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
                     {"p3", true},
                     {"p4", false},
                     })));
-
+    // Reverse edge
+    TEST_SCHEMA_FUNCTION("src", edge2, 1);
+    TEST_SCHEMA_FUNCTION("dst", edge2, 0);
 #undef TEST_SCHEMA_FUNCTION
 }
 

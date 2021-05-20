@@ -1748,7 +1748,8 @@ FunctionManager::FunctionManager() {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return args[0].getEdge().src;
+                    const auto &edge = args[0].getEdge();
+                    return edge.type > 0 ? edge.src : edge.dst;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1767,7 +1768,8 @@ FunctionManager::FunctionManager() {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return args[0].getEdge().dst;
+                    const auto &edge = args[0].getEdge();
+                    return edge.type > 0 ? edge.dst : edge.src;
                 }
                 default: {
                     return Value::kNullBadType;
