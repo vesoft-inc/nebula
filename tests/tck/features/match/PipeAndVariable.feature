@@ -60,3 +60,18 @@ Feature: Pipe or use variable to store the match results
       | 42  | false | "Tim Duncan" | "Shaquile O'Neal"   |
       | 42  | false | "Tim Duncan" | "Tiago Splitter"    |
       | 42  | true  | "Tim Duncan" | "Tony Parker"       |
+
+  Scenario: yield collect
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE v.name CONTAINS 'Tim'
+      RETURN v.age as age, id(v) as vid |
+      GO FROM $-.vid OVER like REVERSELY YIELD $-.age AS age, like._dst AS dst |
+      YIELD
+        any(d IN COLLECT(DISTINCT $-.dst) WHERE d=='Tony Parker') AS d,
+        $-.age as age
+      """
+    Then the result should be, in any order:
+      | d    | age |
+      | true | 42  |

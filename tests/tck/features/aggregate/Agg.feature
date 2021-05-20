@@ -579,6 +579,15 @@ Feature: Basic Aggregate and GroupBy
       | "Carmelo Anthony" | 1.5 | 1     |
       | "Dwyane Wade"     | 1.5 | 1     |
 
+  Scenario: Distinct sum
+    When executing query:
+      """
+      UNWIND [1,2,3,3] AS d RETURN d | YIELD sum(distinct $-.d) AS sum
+      """
+    Then the result should be, in any order:
+      | sum |
+      | 6   |
+
   Scenario: Error Check
     When executing query:
       """
