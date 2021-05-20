@@ -7,7 +7,7 @@
 
 import time
 
-from nebula2.graph import ttypes
+from nebula2.common import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 

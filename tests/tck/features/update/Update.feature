@@ -619,7 +619,7 @@ Feature: Update string vid of vertex and edge
       UPSERT VERTEX "100" SET building.name = "No2"
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP ON building "100" YIELD building.name, building.new_field
       """
@@ -1121,7 +1121,7 @@ Feature: Update string vid of vertex and edge
       UPSERT VERTEX  ON building "100" SET name = "No2"
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP ON building "100" YIELD building.name, building.new_field
       """

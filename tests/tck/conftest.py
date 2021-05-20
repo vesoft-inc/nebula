@@ -11,8 +11,7 @@ import io
 import csv
 import re
 
-from nebula2.common.ttypes import Value
-from nebula2.graph.ttypes import ErrorCode
+from nebula2.common.ttypes import Value, ErrorCode
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
