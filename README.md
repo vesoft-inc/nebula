@@ -22,6 +22,13 @@
   <br>
 </p>
 
+## About this Repo
+
+Please note that this repo is only for Nebula Graph `v1.*.*`.
+
+From `v2.*.*`, which was already GA in 2021 April, Nebula Graph's core codebases are [nebula-graph](https://github.com/vesoft-inc/nebula-graph), [nebula-common](https://github.com/vesoft-inc/nebula-common) and [nebula-storage](https://github.com/vesoft-inc/nebula-storage), it's recommended to start from the repo: [nebula-graph](https://github.com/vesoft-inc/nebula-graph).
+
+
 # What is Nebula Graph
 
 **Nebula Graph** is an open-source graph database capable of hosting super large-scale graphs with billions of vertices (nodes) and trillions of edges, with milliseconds of latency. It delivers enterprise-grade high performance to simplify the most complex data sets imaginable into meaningful and useful information.
@@ -39,23 +46,21 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 * SQL-like query language
 * Role-based access control for higher level security
 
-## About this Repo
-
-Please note that this repo is only for Nebula Graph `v1.*.*`.
-
-From `v2.*.*`, which was already GA in 2021 April, Nebula Graph's core code bases are [nebula-graph](https://github.com/vesoft-inc/nebula-graph), [nebula-common](https://github.com/vesoft-inc/nebula-common) and [nebula-storage](https://github.com/vesoft-inc/nebula-storage), it's recommended to start from the repo: [nebula-graph](https://github.com/vesoft-inc/nebula-graph).
-
 ## Quick start
 
 Read the `Getting started` from [docs](https://docs.nebula-graph.io/) to quickly get going with **Nebula Graph**.
 
 For Nebula Graph Installation, in addition to referring to the docs to deploy from one of the three options: source code, RPM/DEB package, or Docker Compose, if you prefer a video tutorial, please check out our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
-**Note**
-
-For the users from the legacy `v1.*.*`, please reach out to the following links [Getting started](https://docs.nebula-graph.io/1.2.0/manual-EN/1.overview/2.quick-start/1.get-started/), [installing from source code](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/), [rpm/deb packages](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
-
 In case you encounter any problem, be sure to ask us on our [official forum](https://discuss.nebula-graph.io).
+
+>**Note**
+>
+>For the users from the legacy `v1.*.*`, please reach out to the following links:
+>- [Getting started](https://docs.nebula-graph.io/1.2.0/manual-EN/1.overview/2.quick-start/1.get-started/)
+>- [installing from source code](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/)
+>- [rpm/deb packages](https://docs.nebula-graph.io/1.2.0/manual-EN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
+
 
 ## Documentation
 
