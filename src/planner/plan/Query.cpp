@@ -476,6 +476,10 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
             addDescription("kind", "Multiple Pair Shortest", desc.get());
             break;
         }
+        case DCKind::kPathProp: {
+            addDescription("kind", "PathProp", desc.get());
+            break;
+        }
     }
     return desc;
 }

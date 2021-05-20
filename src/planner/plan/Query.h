@@ -940,6 +940,7 @@ public:
         kBFSShortest,
         kAllPaths,
         kMultiplePairShortest,
+        kPathProp,
     };
 
     static DataCollect* make(QueryContext* qctx, DCKind kind) {

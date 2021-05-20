@@ -130,6 +130,54 @@ protected:
                                          .iter(Iterator::Kind::kGetNeighbors)
                                          .finish());
         }
+        {
+            // for path with prop
+            // <("0")-[:like]->("1")>
+            DataSet vertices;
+            vertices.colNames = {kVid, "player.name", "player.age"};
+            for (auto i = 0; i < 2; ++i) {
+                Row row;
+                row.values.emplace_back(folly::to<std::string>(i));
+                row.values.emplace_back(folly::to<std::string>(i));
+                row.values.emplace_back(i + 20);
+                vertices.rows.emplace_back(std::move(row));
+            }
+            qctx_->symTable()->newVariable("vertices");
+            qctx_->ectx()->setResult("vertices",
+                                     ResultBuilder()
+                                         .value(Value(std::move(vertices)))
+                                         .iter(Iterator::Kind::kProp)
+                                         .finish());
+            DataSet edges;
+            edges.colNames = {
+                "like._src", "like._dst", "like._rank", "like._type", "like.likeness"};
+            Row edge;
+            edge.values.emplace_back("0");
+            edge.values.emplace_back("1");
+            edge.values.emplace_back(0);
+            edge.values.emplace_back(15);
+            edge.values.emplace_back(90);
+            edges.rows.emplace_back(std::move(edge));
+            qctx_->symTable()->newVariable("edges");
+            qctx_->ectx()->setResult("edges",
+                                     ResultBuilder()
+                                         .value(Value(std::move(edges)))
+                                         .iter(Iterator::Kind::kProp)
+                                         .finish());
+
+            DataSet paths;
+            paths.colNames = {"paths"};
+            Vertex src("0", {});
+            Vertex dst("1", {});
+            Step step(std::move(dst), 15, "like", 0, {});
+            Path path(std::move(src), {step});
+            Row row;
+            row.values.emplace_back(std::move(path));
+            paths.rows.emplace_back(std::move(row));
+            qctx_->symTable()->newVariable("paths");
+            qctx_->ectx()->setResult("paths",
+                                     ResultBuilder().value(Value(std::move(paths))).finish());
+        }
     }
 
 protected:
@@ -226,5 +274,30 @@ TEST_F(DataCollectTest, EmptyResult) {
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
+
+TEST_F(DataCollectTest, PathWithProp) {
+    auto* dc = DataCollect::make(qctx_.get(), DataCollect::DCKind::kPathProp);
+    dc->setInputVars({"vertices", "edges", "paths"});
+    dc->setColNames({"paths"});
+
+    auto dcExe = std::make_unique<DataCollectExecutor>(dc, qctx_.get());
+    auto future = dcExe->execute();
+    auto status = std::move(future).get();
+    EXPECT_TRUE(status.ok());
+    auto& result = qctx_->ectx()->getResult(dc->outputVar());
+
+    DataSet expected;
+    expected.colNames = {"paths"};
+    Vertex src("0", {Tag("player", {{"age", Value(20)}, {"name", Value("0")}})});
+    Vertex dst("1", {Tag("player", {{"age", Value(21)}, {"name", Value("1")}})});
+    Step step(std::move(dst), 15, "like", 0, {{"likeness", 90}});
+    Path path(std::move(src), {std::move(step)});
+    Row row;
+    row.values.emplace_back(std::move(path));
+    expected.rows.emplace_back(std::move(row));
+    EXPECT_EQ(result.value().getDataSet(), expected);
+    EXPECT_EQ(result.state(), Result::State::kSuccess);
+}
+
 }  // namespace graph
 }  // namespace nebula
