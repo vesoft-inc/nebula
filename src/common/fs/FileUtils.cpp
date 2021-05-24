@@ -10,6 +10,7 @@
 #include <fnmatch.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <sys/statfs.h>
 
 namespace nebula {
 namespace fs {
@@ -370,6 +371,24 @@ bool FileUtils::rename(const std::string& src, const std::string& dst) {
     LOG_IF(WARNING, status != 0) << "Rename " << src << " to " << dst << " failed, the errno: "
         << ::strerror(errno);
     return status == 0;
+}
+
+StatusOr<uint64_t> FileUtils::free(const char* path) {
+    struct statfs diskInfo;
+    int err = statfs(path, &diskInfo);
+    if (err != 0) {
+        return Status::Error("Failed to get diskInfo of %s", path);
+    }
+    return diskInfo.f_bfree * diskInfo.f_bsize;
+}
+
+StatusOr<uint64_t> FileUtils::available(const char* path) {
+    struct statfs diskInfo;
+    int err = statfs(path, &diskInfo);
+    if (err != 0) {
+        return Status::Error("Failed to get diskInfo of %s", path);
+    }
+    return diskInfo.f_bavail * diskInfo.f_bsize;
 }
 
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(

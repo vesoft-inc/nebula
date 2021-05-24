@@ -156,6 +156,12 @@ public:
     static bool isFifo(struct dirent* dEnt, const char* path);
     static bool isSock(struct dirent* dEnt, const char* path);
 
+    // free space in bytes
+    static StatusOr<uint64_t> free(const char* path);
+
+    // available space in bytes
+    static StatusOr<uint64_t> available(const char* path);
+
     /**
      * class Iterator works like other iterators,
      * which iterates over lines in a file or entries in a directory.

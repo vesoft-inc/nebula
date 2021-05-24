@@ -292,6 +292,34 @@ TEST(FileUtils, listContentInDir) {
     EXPECT_EQ(FileType::NOTEXIST, FileUtils::fileType(dirTemp));
 }
 
+TEST(FileUtils, readLinkDir) {
+    // Create a temp directory
+    char dirTemp[] = "/tmp/FileUtilTest-TempDir.XXXXXX";
+    ASSERT_NE(mkdtemp(dirTemp), nullptr);
+
+    // Check free space and available space
+    auto free = FileUtils::free(dirTemp);
+    EXPECT_TRUE(free.ok());
+    auto available = FileUtils::available(dirTemp);
+    EXPECT_TRUE(available.ok());
+
+    // Create sub-directory
+    char subDirTemp[64];
+    snprintf(subDirTemp, sizeof(subDirTemp), "%s/subDir.XXXXXX", dirTemp);
+    ASSERT_NE(mkdtemp(subDirTemp), nullptr);
+
+    char endWithSlash[70];
+    snprintf(endWithSlash, sizeof(endWithSlash), "%s/", subDirTemp);
+
+    // Check canonical paths of subDirTemp and endWithSlash are equal
+    auto status1 = FileUtils::realPath(subDirTemp);
+    auto status2 = FileUtils::realPath(endWithSlash);
+    EXPECT_TRUE(status1.ok());
+    EXPECT_TRUE(status2.ok());
+    EXPECT_EQ(status1.value(), status2.value());
+
+    EXPECT_TRUE(FileUtils::remove(dirTemp, true));
+}
 
 TEST(FileUtilsIterator, Directory) {
     auto stopped = false;
