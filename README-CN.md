@@ -53,7 +53,7 @@
 
 请查看[快速入门](https://docs.nebula-graph.com.cn/master/2.quick-start/1.quick-start-workflow/)，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，除了参文档，您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，除了参考文档，您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 如果您遇到任何问题，请前往 Nebula Graph [官方论坛](https://discuss.nebula-graph.com.cn) 提问。
 
