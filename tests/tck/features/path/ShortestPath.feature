@@ -447,3 +447,31 @@ Feature: Shortest Path
       | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                                                   |
       | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                       |
       | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                   |
+
+  @skip
+  Scenario: Shortest Path With PROP
+    When executing query:
+      """
+      FIND SHORTEST PATH WITH PROP FROM "Tim Duncan" TO "LaMarcus Aldridge" OVER like
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                                                                                                                      |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})> |
+    When executing query:
+      """
+      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * REVERSELY
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})> |
+    When executing query:
+      """
+      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT UPTO 2 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                                                 |
+      | <("Yao Ming" : player{age: 38, name: Yao Ming})-[:like@0 {likeness: 90}]->("Shaquile O'Neal" :player {age: 47,name: Shaquile O'Neal})-[:serve@0 {end_year: 2004, start_year: 1996}]->("Lakers": team{name: Lakers})> |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2018, start_year: 1999}]->("Spurs" :team{name: "Spurs"})>                                                                                |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                  |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                                          |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                  |
