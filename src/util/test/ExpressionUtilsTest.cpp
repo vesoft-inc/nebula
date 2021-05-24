@@ -505,6 +505,47 @@ TEST_F(ExpressionUtilsTest, flattenInnerLogicalExpr) {
     }
 }
 
+TEST_F(ExpressionUtilsTest, splitFilter) {
+    using Kind = Expression::Kind;
+    {
+        // true AND false AND true
+        auto *first = new ConstantExpression(true);
+        auto *second = new ConstantExpression(false);
+        auto *third = new ConstantExpression(true);
+        LogicalExpression expr(
+            Kind::kLogicalAnd, new LogicalExpression(Kind::kLogicalAnd, first, second), third);
+        LogicalExpression expected1(Kind::kLogicalAnd);
+        expected1.addOperand(first->clone().release());
+        expected1.addOperand(third->clone().release());
+        auto picker = [](const Expression *e) {
+            if (e->kind() != Kind::kConstant) return false;
+            auto &v = static_cast<const ConstantExpression *>(e)->value();
+            if (v.type() != Value::Type::BOOL) return false;
+            return v.getBool();
+        };
+        std::unique_ptr<Expression> newExpr1;
+        std::unique_ptr<Expression> newExpr2;
+        ExpressionUtils::splitFilter(&expr, picker, &newExpr1, &newExpr2);
+        ASSERT_EQ(expected1, *newExpr1);
+        ASSERT_EQ(*second, *newExpr2);
+    }
+    {
+        // true
+        auto expr = std::make_unique<ConstantExpression>(true);
+        auto picker = [](const Expression *e) {
+            if (e->kind() != Kind::kConstant) return false;
+            auto &v = static_cast<const ConstantExpression *>(e)->value();
+            if (v.type() != Value::Type::BOOL) return false;
+            return v.getBool();
+        };
+        std::unique_ptr<Expression> newExpr1;
+        std::unique_ptr<Expression> newExpr2;
+        ExpressionUtils::splitFilter(expr.get(), picker, &newExpr1, &newExpr2);
+        ASSERT_EQ(*expr, *newExpr1);
+        ASSERT_EQ(nullptr, newExpr2);
+    }
+}
+
 std::unique_ptr<Expression> parse(const std::string& expr) {
     std::string query = "LOOKUP on t1 WHERE " + expr;
     GQLParser parser;

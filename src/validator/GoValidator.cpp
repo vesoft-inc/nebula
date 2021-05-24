@@ -752,14 +752,15 @@ void GoValidator::extractPropExprs(const Expression* expr) {
     const_cast<Expression*>(expr)->accept(&visitor);
 }
 
-Expression* GoValidator::rewriteToInputProp(const Expression* expr) {
+Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
     auto matcher = [this](const Expression* e) -> bool {
         return propExprColMap_.find(e->toString()) != propExprColMap_.end();
     };
     auto rewriter = [this](const Expression* e) -> Expression* {
         auto iter = propExprColMap_.find(e->toString());
         DCHECK(iter != propExprColMap_.end());
-        return new InputPropertyExpression(new std::string(*(iter->second->alias())));
+        return new VariablePropertyExpression(new std::string(""),
+                                              new std::string(*(iter->second->alias())));
     };
 
     return RewriteVisitor::transform(expr, matcher, rewriter);
@@ -788,7 +789,7 @@ Status GoValidator::buildColumns() {
         extractPropExprs(filter_);
         auto newFilter = filter_->clone();
         DCHECK(!newFilter_);
-        newFilter_ = rewriteToInputProp(newFilter.get());
+        newFilter_ = rewrite2VarProp(newFilter.get());
         pool->add(newFilter_);
     }
 
@@ -796,7 +797,7 @@ Status GoValidator::buildColumns() {
     for (auto* yield : yields_->columns()) {
         extractPropExprs(yield->expr());
         auto* alias = yield->alias() == nullptr ? nullptr : new std::string(*(yield->alias()));
-        newYieldCols_->addColumn(new YieldColumn(rewriteToInputProp(yield->expr()), alias));
+        newYieldCols_->addColumn(new YieldColumn(rewrite2VarProp(yield->expr()), alias));
     }
 
     return Status::OK();

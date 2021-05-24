@@ -112,6 +112,23 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
     return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+// rewrite var in VariablePropExpr to another var
+std::unique_ptr<Expression> ExpressionUtils::rewriteInnerVar(const Expression *expr,
+                                                             std::string newVar) {
+    auto matcher = [](const Expression *e) -> bool {
+        return e->kind() == Expression::Kind::kVarProperty;
+    };
+    auto rewriter = [newVar](const Expression *e) -> Expression * {
+        DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
+        auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
+        auto *newProp = new std::string(*varPropExpr->prop());
+        return new VariablePropertyExpression(new std::string(newVar), newProp);
+    };
+
+    return std::unique_ptr<Expression>(
+        RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter)));
+}
+
 // rewrite LabelAttr to tagProp
 Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
     auto matcher = [](const Expression *e) -> bool {
@@ -381,6 +398,50 @@ std::unique_ptr<Expression> ExpressionUtils::flattenInnerLogicalExpr(const Expre
     auto allFlattenExpr = flattenInnerLogicalOrExpr(andFlattenExpr.get());
 
     return allFlattenExpr;
+}
+
+// pick the subparts of expression that meet picker's criteria
+void ExpressionUtils::splitFilter(const Expression *expr,
+                                  std::function<bool(const Expression *)> picker,
+                                  std::unique_ptr<Expression> *filterPicked,
+                                  std::unique_ptr<Expression> *filterUnpicked) {
+    // Pick the non-LogicalAndExpr directly
+    if (expr->kind() != Expression::Kind::kLogicalAnd) {
+        if (picker(expr)) {
+            filterPicked->reset(expr->clone().release());
+        } else {
+            filterUnpicked->reset(expr->clone().release());
+        }
+        return;
+    }
+
+    auto flattenExpr = ExpressionUtils::flattenInnerLogicalExpr(expr);
+    DCHECK(flattenExpr->kind() == Expression::Kind::kLogicalAnd);
+    auto *logicExpr = static_cast<LogicalExpression *>(flattenExpr.get());
+    auto filterPickedPtr = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
+    auto filterUnpickedPtr = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
+
+    std::vector<std::unique_ptr<Expression>> &operands = logicExpr->operands();
+    for (auto iter = operands.begin(); iter != operands.end(); ++iter) {
+        if (picker((*iter).get())) {
+            filterPickedPtr->addOperand((*iter)->clone().release());
+        } else {
+            filterUnpickedPtr->addOperand((*iter)->clone().release());
+        }
+    }
+    auto foldLogicalExpr = [](const LogicalExpression *e) -> Expression * {
+        const auto &ops = e->operands();
+        auto size = ops.size();
+        if (size > 1) {
+            return e->clone().release();
+        } else if (size == 1) {
+            return ops[0]->clone().release();
+        } else {
+            return nullptr;
+        }
+    };
+    filterPicked->reset(foldLogicalExpr(filterPickedPtr.get()));
+    filterUnpicked->reset(foldLogicalExpr(filterUnpickedPtr.get()));
 }
 
 VariablePropertyExpression *ExpressionUtils::newVarPropExpr(const std::string &prop,

@@ -28,7 +28,7 @@ private:
 
     void extractPropExprs(const Expression* expr);
 
-    Expression* rewriteToInputProp(const Expression* expr);
+    Expression* rewrite2VarProp(const Expression* expr);
 
     Status buildColumns();
 

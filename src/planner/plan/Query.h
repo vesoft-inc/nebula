@@ -1009,12 +1009,28 @@ public:
         return rightVar_;
     }
 
+    void setLeftVar(std::pair<std::string, int64_t> lvar) {
+        leftVar_ = lvar;
+    }
+
+    void setRightVar(std::pair<std::string, int64_t> rvar) {
+        rightVar_ = rvar;
+    }
+
     const std::vector<Expression*>& hashKeys() const {
         return hashKeys_;
     }
 
     const std::vector<Expression*>& probeKeys() const {
         return probeKeys_;
+    }
+
+    void setHashKeys(std::vector<Expression*> newHashKeys) {
+        hashKeys_ = newHashKeys;
+    }
+
+    void setProbeKeys(std::vector<Expression*> newProbeKeys) {
+        probeKeys_ = newProbeKeys;
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -1045,7 +1061,7 @@ class LeftJoin final : public Join {
 public:
     static LeftJoin* make(QueryContext* qctx,
                           PlanNode* input,
-                          std::pair<std::string, int64_t> leftVar,
+                          std::pair<std::string, int64_t> leftVar ,
                           std::pair<std::string, int64_t> rightVar,
                           std::vector<Expression*> hashKeys = {},
                           std::vector<Expression*> probeKeys = {}) {

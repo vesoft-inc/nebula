@@ -60,6 +60,9 @@ public:
 
     static Expression* rewriteAgg2VarProp(const Expression* expr);
 
+    static std::unique_ptr<Expression> rewriteInnerVar(const Expression* expr,
+                                                       std::string newVar);
+
     // Rewrite relational expression, gather evaluable expressions to one side
     static Expression* rewriteRelExpr(const Expression* expr, ObjectPool* pool);
     static Expression* rewriteRelExprHelper(const Expression* expr,
@@ -118,6 +121,11 @@ public:
     static std::unique_ptr<Expression> flattenInnerLogicalOrExpr(const Expression* expr);
 
     static std::unique_ptr<Expression> flattenInnerLogicalExpr(const Expression* expr);
+
+    static void splitFilter(const Expression* expr,
+                            std::function<bool(const Expression*)> picker,
+                            std::unique_ptr<Expression>* filterPicked,
+                            std::unique_ptr<Expression>* filterUnpicked);
 
     static std::unique_ptr<Expression> expandExpr(const Expression* expr);
 
