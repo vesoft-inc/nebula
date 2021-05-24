@@ -22,6 +22,7 @@ nebula_add_library(
     rule/LimitPushDownRule.cpp
     rule/TopNRule.cpp
     rule/PushFilterDownAggregateRule.cpp
+    rule/PushFilterDownProjectRule.cpp
 )
 
 nebula_add_subdirectory(test)
