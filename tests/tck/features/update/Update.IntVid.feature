@@ -572,7 +572,7 @@ Feature: Update int vid of vertex and edge
       UPSERT VERTEX 100 SET building.name = "No2"
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP on building 100 YIELD building.name, building.new_field
       """
@@ -618,7 +618,7 @@ Feature: Update int vid of vertex and edge
       UPSERT EDGE 1->100 OF like SET likeness = 2.0;
       """
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       FETCH PROP ON like 1->100@0 YIELD like.likeness, like.new_field
       """

@@ -58,7 +58,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         tag_1(col1, col2, col3, col4)
@@ -203,7 +203,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE
         edge_1(col1, col2, col3, col4)
@@ -542,7 +542,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES 100:(true,  18, 1.1, `timestamp`("2000-10-10T10:00:00"))
       """
@@ -558,7 +558,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4, col5) VALUES 100:(true,  18, 1.1, `timestamp`("2000-10-10T10:00:00"), 5)
       """
@@ -693,7 +693,7 @@ Feature: IndexTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX alter_tag(id) VALUES 100:(1), 200:(2)
       """
@@ -704,7 +704,7 @@ Feature: IndexTest_Vid_Int
       """
     And wait 6 seconds
     Then the execution should be successful
-    When executing query:
+    When try to execute query:
       """
       LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
       """
