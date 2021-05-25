@@ -192,18 +192,20 @@ Status YieldValidator::toPlan() {
     auto yield = static_cast<const YieldSentence *>(sentence_);
 
     std::string inputVar;
+    std::vector<std::string> colNames(inputs_.size());
     if (!userDefinedVarName_.empty()) {
         inputVar = userDefinedVarName_;
+        colNames = qctx_->symTable()->getVar(inputVar)->colNames;
     } else if (!constantExprVar_.empty()) {
         inputVar = constantExprVar_;
+    } else {
+        std::transform(
+            inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });
     }
 
     Filter *filter = nullptr;
     if (yield->where()) {
         filter = Filter::make(qctx_, nullptr, filterCondition_);
-        std::vector<std::string> colNames(inputs_.size());
-        std::transform(
-            inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });
         filter->setColNames(std::move(colNames));
     }
 

@@ -41,7 +41,7 @@ jobs:
       matrix:
         os:
           - centos7
-          - ubuntu1804
+          - ubuntu2004
         compiler:
           - gcc-9.2
           - clang-9
@@ -96,7 +96,7 @@ jobs:
                   -B build
               echo "::set-output name=j::10"
               ;;
-            ubuntu1804)
+            ubuntu2004)
               # build with Debug type
               cmake \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/g++ \
