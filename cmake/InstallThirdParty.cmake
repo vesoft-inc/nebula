@@ -6,6 +6,12 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     else()
         set(cxx_cmd g++)
     endif()
+else()
+    if(${DISABLE_CXX11_ABI})
+        set(cxx_cmd "g++ -D_GLIBCXX_USE_CXX11_ABI=0")
+    else()
+        set(cxx_cmd "g++ -D_GLIBCXX_USE_CXX11_ABI=1")
+    endif()
 endif()
 execute_process(
     COMMAND

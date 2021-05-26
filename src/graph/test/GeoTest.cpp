@@ -78,12 +78,12 @@ protected:
 
 protected:
     static uint16_t                             storagePort_;
-    static std::unique_ptr<GraphClient>         client_;
+    static std::unique_ptr<NebulaClientImpl>    client_;
     static std::vector<Merchant>                merchants_;
 };
 
 uint16_t                              GeoTest::storagePort_;
-std::unique_ptr<GraphClient>          GeoTest::client_;
+std::unique_ptr<NebulaClientImpl>          GeoTest::client_;
 std::vector<GeoTest::Merchant>        GeoTest::merchants_ = {
     Merchant{"HCYQJ Convenience", "(30.28522 120.01338)", 4.1},
     Merchant{"LYJ Convenience", "(30.28115 120.01438)", 3.7}

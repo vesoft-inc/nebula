@@ -46,10 +46,10 @@ protected:
 
     static AssertionResult removeData();
 
-    static std::unique_ptr<GraphClient>         client_;
+    static std::unique_ptr<NebulaClientImpl>         client_;
 };
 
-std::unique_ptr<GraphClient>         DataTest::client_{nullptr};
+std::unique_ptr<NebulaClientImpl>         DataTest::client_{nullptr};
 
 AssertionResult DataTest::prepareSchema() {
     {
@@ -1020,7 +1020,7 @@ TEST_F(DataTest, DstWithFilterAndMax) {
     }
 }
 
-static inline void execute(GraphClient* client, const std::string& nGQL) {
+static inline void execute(NebulaClientImpl* client, const std::string& nGQL) {
     cpp2::ExecutionResponse resp;
     auto code = client->execute(nGQL, resp);
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << "Do cmd:" << nGQL << " failed";
@@ -1041,7 +1041,7 @@ protected:
         execute(client_.get(), "DROP SPACE empty");
     }
 
-    std::unique_ptr<GraphClient> client_ = nullptr;
+    std::unique_ptr<NebulaClientImpl> client_ = nullptr;
 
 private:
     void prepareSchema() {

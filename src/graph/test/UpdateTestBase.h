@@ -48,12 +48,12 @@ protected:
 
 protected:
     static uint16_t                             storagePort_;
-    static std::unique_ptr<GraphClient>         client_;
+    static std::unique_ptr<NebulaClientImpl>         client_;
 };
 
 uint16_t UpdateTestBase::storagePort_ = 0;
 
-std::unique_ptr<GraphClient> UpdateTestBase::client_;
+std::unique_ptr<NebulaClientImpl> UpdateTestBase::client_;
 
 // static
 AssertionResult UpdateTestBase::prepareSchema() {

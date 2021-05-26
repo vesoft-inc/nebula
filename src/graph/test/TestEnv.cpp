@@ -74,6 +74,13 @@ void TestEnv::SetUp() {
 
     // Create graphServer
     graphServer_ = TestUtils::mockGraphServer(0);
+    ConnectionInfo connectionInfo;
+    connectionInfo.addr = "127.0.0.1";
+    connectionInfo.port = graphServerPort();
+    connectionInfo.connectionNum = 10;
+    connectionInfo.timeout = 1000;
+    std::vector<ConnectionInfo> connVec(1, connectionInfo);
+    NebulaClientImpl::initConnectionPool(connVec);
 }
 
 
@@ -99,10 +106,11 @@ uint16_t TestEnv::storageServerPort() const {
     return storageServer_->port_;
 }
 
-std::unique_ptr<GraphClient> TestEnv::getClient(const std::string& user,
-                                                const std::string& password) const {
-    auto client = std::make_unique<GraphClient>("127.0.0.1", graphServerPort());
-    if (cpp2::ErrorCode::SUCCEEDED != client->connect(user, password)) {
+std::unique_ptr<NebulaClientImpl> TestEnv::getClient(const std::string& user,
+                                                     const std::string& password) const {
+    auto client = std::make_unique<NebulaClientImpl>("127.0.0.1", graphServerPort());
+    if (cpp2::ErrorCode::SUCCEEDED != client->authenticate(user, password)) {
+        LOG(ERROR) << user << ":" << password << " connect failed";
         return nullptr;
     }
     return client;

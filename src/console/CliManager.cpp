@@ -11,7 +11,7 @@
 #include "readline/readline.h"
 #include "readline/history.h"
 #include "console/CliManager.h"
-#include "client/cpp/GraphClient.h"
+#include "client/cpp/lib/NebulaClientImpl.h"
 #include "fs/FileUtils.h"
 #include "network/NetworkUtils.h"
 
@@ -19,6 +19,8 @@ DECLARE_string(addr);
 DECLARE_int32(port);
 DECLARE_string(u);
 DECLARE_string(p);
+DEFINE_int32(server_conn_timeout_ms, 1000,
+            "Connection timeout in milliseconds");
 DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
@@ -56,8 +58,17 @@ bool CliManager::connect() {
         return false;
     }
 
-    auto client = std::make_unique<GraphClient>(addr_, port_);
-    cpp2::ErrorCode res = client->connect(username_, passwd);
+    ConnectionInfo connectionInfo;
+    connectionInfo.addr = addr_;
+    connectionInfo.port = port_;
+    connectionInfo.connectionNum = 1;
+    connectionInfo.timeout = FLAGS_server_conn_timeout_ms;
+
+    std::vector<ConnectionInfo> connVec(1, connectionInfo);
+    NebulaClientImpl::initConnectionPool(connVec);
+    auto client = std::make_unique<NebulaClientImpl>(addr_, port_);
+    cpp2::ErrorCode res = client->authenticate(username_, passwd);
+
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "
