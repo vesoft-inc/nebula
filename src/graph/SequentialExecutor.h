@@ -30,6 +30,9 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    void executeSub(unsigned idx);
+
+private:
     SequentialSentences                        *sentences_{nullptr};
     std::vector<std::unique_ptr<Executor>>      executors_;
     uint32_t                                    respExecutorIndex_{0};

@@ -99,20 +99,22 @@ bool PermissionCheck::permissionCheck(session::Session *session, Sentence* sente
         case Sentence::Kind::kDescribeTagIndex :
         case Sentence::Kind::kDescribeEdgeIndex :
         case Sentence::Kind::kGo :
-        case Sentence::Kind::kSet :
-        case Sentence::Kind::kPipe :
         case Sentence::Kind::kMatch :
-        case Sentence::Kind::kAssignment :
         case Sentence::Kind::kLookup :
-        case Sentence::Kind::kYield :
-        case Sentence::Kind::kOrderBy :
         case Sentence::Kind::kFetchVertices :
         case Sentence::Kind::kFetchEdges :
-        case Sentence::Kind::kFindPath :
+        case Sentence::Kind::kFindPath : {
+            return permission::PermissionManager::canReadSchemaOrData(session);
+        }
+        case Sentence::Kind::kAssignment :
+        case Sentence::Kind::kSet :
+        case Sentence::Kind::kPipe :
+        case Sentence::Kind::kYield :
+        case Sentence::Kind::kOrderBy :
         case Sentence::Kind::kLimit :
         case Sentence::Kind::KGroupBy :
         case Sentence::Kind::kReturn : {
-            return permission::PermissionManager::canReadSchemaOrData(session);
+            return true;
         }
         case Sentence::Kind::kShow : {
             auto *stc = static_cast<ShowSentence*>(sentence);
