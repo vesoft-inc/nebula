@@ -1,15 +1,15 @@
 ########## basics ##########
-# Whether to run as a daemon process
+# Enabling/Disabling daemon process
 --daemonize=true
-# The file to host the process id
+# Specify the file to which to write the process ID
 --pid_file=pids/nebula-graphd.pid
 
 ########## logging ##########
-# The directory to host logging files, which must already exists
+# Specify the path where log is written. The path must exist
 --log_dir=logs
 # Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
-# Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+# Specify the verbose log severity levels. Available levels are 1, 2, 3, 4. The higher the level, the more verbose of the log
 --v=0
 # Maximum seconds to buffer the log messages
 --logbufsecs=0
@@ -30,11 +30,11 @@
 --listen_netdev=any
 # Port to listen on
 --port=3699
-# To turn on SO_REUSEPORT or not
+# Enabling/Disabling SO_REUSEPORT
 --reuse_port=false
 # Backlog of the listen socket, adjust this together with net.core.somaxconn
 --listen_backlog=1024
-# Seconds before the idle connections are closed, 0 for never closed
+# The number of seconds Nebula waits before closing the idle connections. 0 for never close
 --client_idle_timeout_secs=0
 # Seconds before the idle sessions are expired, 0 for no expiration
 --session_idle_timeout_secs=60000
@@ -54,7 +54,7 @@
 --heartbeat_interval_secs=10
 
 ########## authorization ##########
-# Enable authorization
+# Enabling/Disabling authorization
 --enable_authorize=false
 
 ########## authentication ##########
