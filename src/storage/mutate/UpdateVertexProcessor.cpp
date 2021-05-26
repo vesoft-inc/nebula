@@ -86,6 +86,71 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
     }
 }
 
+kvstore::ResultCode UpdateVertexProcessor::checkField(const std::string& tagName,
+                                                      const std::string& propName) {
+    auto tagRet = this->schemaMan_->toTagID(spaceId_, tagName);
+    if (!tagRet.ok()) {
+        VLOG(3) << "toTagID failed, tagName: " << tagName << ", in space " << spaceId_;
+        return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+    }
+    tagId_ = tagRet.value();
+    schema_ = this->schemaMan_->getTagSchema(spaceId_, tagId_).get();
+    if (schema_ == nullptr) {
+        VLOG(3) << "Can't find the schema for tagId " << tagId_;
+        return kvstore::ResultCode::ERR_TAG_NOT_FOUND;
+    }
+
+    auto field = schema_->field(propName);
+    if (!field) {
+        VLOG(3) << "Can't find the schema prop  " << propName
+                << " in tag " << tagName;
+        return kvstore::ResultCode::ERR_UNKNOWN;
+    }
+
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+kvstore::ResultCode UpdateVertexProcessor::checkAndGetDefault(const std::string& tagName,
+                                                              const std::string& propName) {
+    auto ret = checkField(tagName, propName);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ret;
+    }
+
+    auto value = schema_->getDefaultValue(propName);
+    if (!value.ok()) {
+        VLOG(3) << "TagId: " << tagId_ << ", prop: " << propName
+                << " without default value";
+        return kvstore::ResultCode::ERR_UNKNOWN;
+    }
+    auto v = std::move(value.value());
+    tagFilters_.emplace(std::make_pair(tagId_, propName), v);
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+kvstore::ResultCode UpdateVertexProcessor::buildDependProps() {
+    // Check depPropMap_ in set clause
+    for (auto& prop : depPropMap_) {
+        for (auto& p : prop.second) {
+            auto it = checkedProp_.find(p);
+            if (it == checkedProp_.end()) {
+                auto ret = checkAndGetDefault(p.first, p.second);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                checkedProp_.emplace(p);
+            }
+        }
+
+        // set field not need default value or nullable
+        auto ret = checkField(prop.first.first, prop.first.second);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+        checkedProp_.emplace(prop.first);
+    }
+    return kvstore::ResultCode::SUCCEEDED;
+}
 
 kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                             const PartitionID partId,
@@ -159,21 +224,24 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
         auto tagName = std::move(tagStatus.value());
-
         auto updater = std::make_unique<RowUpdater>(schema);
-        // When the schema field is not in update field or the update item has src item,
+
+        // Multiple tags, only execute once
+        if (!checked_) {
+            ret = buildDependProps();
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
+            checked_ = true;
+        }
+
+        // When the schema field is not in update set clause
         // need to get default value from schema. If nonexistent return error.
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
-            auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
-                    [&propName, &tagName](auto &item) {
-                return item.prop == propName && item.name == tagName; });
-            OptVariantType value;
-
-            if (findIter == updateItems_.end()) {
-                // When the schema field is not in update field
-                // need to get default value from schema. If nonexistent return error.
-                value = schema->getDefaultValue(index);
+            auto propIter = checkedProp_.find(std::make_pair(tagName, propName));
+            if (propIter == checkedProp_.end()) {
+                auto value = schema->getDefaultValue(propName);
                 if (!value.ok()) {
                     LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName
                                << " without default value";
@@ -181,42 +249,9 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                 }
                 auto v = std::move(value.value());
                 tagFilters_.emplace(std::make_pair(tagId, propName), v);
-            } else {
-                // When the update item has src item,
-                // need to get default value from schema. If nonexistent return error.
-                auto expStatus = Expression::decode(findIter->get_value());
-                if (!expStatus.ok()) {
-                    LOG(ERROR) << "Expression decode failed, tagName: " << tagName
-                               << ", propName: " << propName;
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-                }
-
-                auto expression = std::move(expStatus).value();
-                ExpressionContext expCtx;
-                expression->setContext(&expCtx);
-                if (!expression->prepare().ok()) {
-                    LOG(ERROR) << "Expression::prepare failed";
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-                }
-                if (expCtx.hasSrcTagProp()) {
-                    auto srcTagProps = expCtx.srcTagProps();
-                    for (auto& tag : srcTagProps) {
-                        value = schema->getDefaultValue(tag.second);
-                        if (!value.ok()) {
-                            LOG(ERROR) << "TagId: " << tagId << ", prop: " << tag.second
-                                       << " without default value";
-                            return kvstore::ResultCode::ERR_UNKNOWN;
-                        }
-                        VLOG(2) << "UpdateItem on tagName: " << tagName
-                                << ", propName: " << tag.second << " has src prop";
-                        auto v = std::move(value.value());
-                        tagFilters_.emplace(std::make_pair(tagId, tag.second), v);
-                    }
-                } else {
-                    VLOG(2) << "Nothing set on tagName: " << tagName << ", propName: " << propName;
-                }
             }
         }
+
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
         auto& tagUpdater = tagUpdaters_[tagId];
         auto version = FLAGS_enable_multi_versions ?
@@ -494,9 +529,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     auto vId = req.get_vertex_id();
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        const auto &name = item.get_name();
+        const auto& name = item.get_name();
+        const auto& propName = item.get_prop();
         SourcePropertyExpression sourcePropExp(new std::string(name),
-                                               new std::string(item.get_prop()));
+                                               new std::string(propName));
         sourcePropExp.setContext(this->expCtx_.get());
         auto status = sourcePropExp.prepare();
         if (!status.ok() || !this->checkExp(&sourcePropExp)) {
@@ -519,10 +555,16 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto vexp = std::move(exp).value();
+
+        // Get dependent prop
+        valueProps_.clear();
         vexp->setContext(this->expCtx_.get());
         status = vexp->prepare();
-        if (!status.ok() || !this->checkExp(vexp.get())) {
+        if (!status.ok() || !this->checkExp(vexp.get(), insertable_)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
+        }
+        if (insertable_) {
+            depPropMap_.emplace_back(std::make_pair(std::make_pair(name, propName), valueProps_));
         }
     }
 

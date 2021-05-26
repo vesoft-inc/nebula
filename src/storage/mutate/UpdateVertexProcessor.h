@@ -52,6 +52,12 @@ private:
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateVertexRequest& req);
 
+    kvstore::ResultCode checkField(const std::string& tagName, const std::string& propName);
+
+    kvstore::ResultCode checkAndGetDefault(const std::string& tagName, const std::string& propName);
+
+    kvstore::ResultCode buildDependProps();
+
     kvstore::ResultCode collectVertexProps(
                             const PartitionID partId,
                             const VertexID vId,
@@ -72,6 +78,18 @@ private:
     meta::IndexManager*                                             indexMan_{nullptr};
     std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>           indexes_;
     std::atomic<cpp2::ErrorCode>                          filterResult_{cpp2::ErrorCode::SUCCEEDED};
+
+    // The following variables are only used when upsert
+    // Each UpdateItem in updateItems_ depend props in value expression
+    // <tagname,propNmae> -> unordered_set<tagname,propNmae>
+    using PropPair = std::pair<std::string, std::string>;
+    std::vector<std::pair<PropPair, std::unordered_set<PropPair>>>  depPropMap_;
+
+    // Checked props
+    std::unordered_set<std::pair<std::string, std::string>>         checkedProp_;
+    bool                                                            checked_{false};
+    const meta::SchemaProviderIf*                                   schema_{nullptr};
+    TagID                                                           tagId_;
 };
 
 }  // namespace storage

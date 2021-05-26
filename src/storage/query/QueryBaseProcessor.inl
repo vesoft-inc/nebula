@@ -192,7 +192,9 @@ QueryBaseProcessor<REQ, RESP>::getEdgeTTLInfo(EdgeType edgeType) {
 }
 
 template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
+bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
+                                             bool updated,
+                                             bool updateEdge) {
     switch (exp->kind()) {
         case Expression::kPrimary:
             return true;
@@ -206,7 +208,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                 return false;
             }
             for (auto& arg : args) {
-                if (!checkExp(arg)) {
+                if (!checkExp(arg, updated, updateEdge)) {
                     return false;
                 }
             }
@@ -215,25 +217,33 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kUnary: {
             auto* unaExp = static_cast<const UnaryExpression*>(exp);
-            return checkExp(unaExp->operand());
+            return checkExp(unaExp->operand(), updated, updateEdge);
         }
         case Expression::kTypeCasting: {
             auto* typExp = static_cast<const TypeCastingExpression*>(exp);
-            return checkExp(typExp->operand());
+            return checkExp(typExp->operand(), updated, updateEdge);
         }
         case Expression::kArithmetic: {
             auto* ariExp = static_cast<const ArithmeticExpression*>(exp);
-            return checkExp(ariExp->left()) && checkExp(ariExp->right());
+            return checkExp(ariExp->left(), updated, updateEdge) &&
+                   checkExp(ariExp->right(), updated, updateEdge);
         }
         case Expression::kRelational: {
             auto* relExp = static_cast<const RelationalExpression*>(exp);
-            return checkExp(relExp->left()) && checkExp(relExp->right());
+            return checkExp(relExp->left(), updated, updateEdge) &&
+                   checkExp(relExp->right(), updated, updateEdge);
         }
         case Expression::kLogical: {
             auto* logExp = static_cast<const LogicalExpression*>(exp);
-            return checkExp(logExp->left()) && checkExp(logExp->right());
+            return checkExp(logExp->left(), updated, updateEdge) &&
+                   checkExp(logExp->right(), updated, updateEdge);
         }
         case Expression::kSourceProp: {
+            if (updateEdge) {
+                VLOG(1) << "Tag props are not allowed to use in the update edge set clause!";
+                return false;
+            }
+
             auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
             const auto* tagName = sourceExp->alias();
             const auto* propName = sourceExp->prop();
@@ -261,6 +271,9 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                     } else if (!prop->filtered()) {
                         prop->setTagOrEdgeName(*tagName);
                     }
+                    if (updated) {
+                        valueProps_.emplace(std::make_pair(*tagName, *propName));
+                    }
                     return true;
                 }
             }
@@ -269,6 +282,10 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             tc.tagId_ = tagId;
             tc.pushFilterProp(*tagName, *propName, field->getType());
             tagContexts_.emplace_back(std::move(tc));
+
+            if (updated) {
+                valueProps_.emplace(std::make_pair(*tagName, *propName));
+            }
             return true;
         }
         case Expression::kEdgeRank:
@@ -285,10 +302,11 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
 
             auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
 
+            const auto* edgeName = edgeExp->alias();
             // TODO(simon.liu) we need handle rename.
-            auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, *edgeExp->alias());
+            auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, *edgeName);
             if (!edgeStatus.ok()) {
-                VLOG(1) << "Can't find edge " << *(edgeExp->alias());
+                VLOG(1) << "Can't find edge " << *edgeName;
                 return false;
             }
 
@@ -305,6 +323,9 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                 VLOG(1) << "Can't find related prop " << *propName << " on edge "
                         << *(edgeExp->alias());
                 return false;
+            }
+            if (updated) {
+                valueProps_.emplace(std::make_pair(*edgeName, *propName));
             }
             return true;
         }
