@@ -10,6 +10,7 @@
 #include "planner/plan/Admin.h"
 #include "util/SchemaUtil.h"
 #include "util/ScopedTimer.h"
+#include "util/FTIndexUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -95,9 +96,22 @@ folly::Future<Status> DropSpaceExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto *dsNode = asNode<DropSpace>(node());
+
+    // prepare text search index before drop meta data.
+    std::vector<std::string> ftIndexes;
+    auto spaceIdRet = qctx()->getMetaClient()->getSpaceIdByNameFromCache(dsNode->getSpaceName());
+    if (spaceIdRet.ok()) {
+        auto ftIndexesRet = qctx()->getMetaClient()->getFTIndexBySpaceFromCache(spaceIdRet.value());
+        NG_RETURN_IF_ERROR(ftIndexesRet);
+        auto map = std::move(ftIndexesRet).value();
+        transform(map.begin(), map.end(), ftIndexes.begin(), [](auto pair) { return pair.first; });
+    } else {
+        LOG(WARNING) << "Get space ID failed when prepare text index: " << dsNode->getSpaceName();
+    }
+
     return qctx()->getMetaClient()->dropSpace(dsNode->getSpaceName(), dsNode->getIfExists())
             .via(runner())
-            .thenValue([this, dsNode](StatusOr<bool> resp) {
+            .thenValue([this, dsNode, spaceIdRet, ftIndexes](StatusOr<bool> resp) {
                 if (!resp.ok()) {
                     LOG(ERROR) << "Drop space `" << dsNode->getSpaceName()
                                << "' failed: " << resp.status();
@@ -108,6 +122,20 @@ folly::Future<Status> DropSpaceExecutor::execute() {
                     spaceInfo.name = "";
                     spaceInfo.id = -1;
                     qctx()->rctx()->session()->setSpace(std::move(spaceInfo));
+                }
+                if (!ftIndexes.empty()) {
+                    auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
+                    if (!tsRet.ok()) {
+                        LOG(WARNING) << "Get text search clients failed";
+                        return Status::OK();
+                    }
+                    for (const auto& ftindex : ftIndexes) {
+                        auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), ftindex);
+                        if (!ftRet.ok()) {
+                            LOG(WARNING) << "Drop fulltext index `"
+                                         << ftindex << "' failed: " << ftRet.status();
+                        }
+                    }
                 }
                 return Status::OK();
             });

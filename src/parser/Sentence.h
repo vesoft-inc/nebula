@@ -79,6 +79,7 @@ public:
         kShowZones,
         kShowStats,
         kShowTSClients,
+        kShowFTIndexes,
         kDeleteVertices,
         kDeleteEdges,
         kLookup,
@@ -126,6 +127,8 @@ public:
         kShowListener,
         kSignInTSService,
         kSignOutTSService,
+        kCreateFTIndex,
+        kDropFTIndex,
     };
 
     Kind kind() const {

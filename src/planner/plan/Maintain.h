@@ -598,6 +598,94 @@ private:
         : SingleInputNode(qctx, Kind::kShowEdgeIndexStatus, input) {}
 };
 
+class CreateFTIndexNode : public SingleInputNode {
+protected:
+    CreateFTIndexNode(QueryContext* qctx,
+                      Kind kind,
+                      PlanNode* input,
+                      std::string indexName,
+                      nebula::meta::cpp2::FTIndex index)
+        : SingleInputNode(qctx, kind, input)
+        , indexName_(std::move(indexName))
+        , index_(std::move(index)) {}
+
+public:
+    const std::string& getIndexName() const {
+        return indexName_;
+    }
+
+    const meta::cpp2::FTIndex& getIndex() const {
+        return index_;
+    }
+
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
+protected:
+    std::string              indexName_;
+    meta::cpp2::FTIndex      index_;
+};
+class CreateFTIndex final : public CreateFTIndexNode {
+public:
+    static CreateFTIndex* make(QueryContext* qctx,
+                               PlanNode* input,
+                               std::string indexName,
+                               meta::cpp2::FTIndex index) {
+        return qctx->objPool()->add(new CreateFTIndex(qctx,
+                                                      input,
+                                                      std::move(indexName),
+                                                      std::move(index)));
+    }
+
+private:
+    CreateFTIndex(QueryContext* qctx,
+                  PlanNode* input,
+                  std::string indexName,
+                  meta::cpp2::FTIndex index)
+        : CreateFTIndexNode(qctx,
+                            Kind::kCreateFTIndex,
+                            input,
+                            std::move(indexName),
+                            std::move(index)) {}
+};
+
+class DropFTIndexNode : public SingleInputNode {
+protected:
+    DropFTIndexNode(QueryContext* qctx, Kind kind, PlanNode* input, std::string name)
+        : SingleInputNode(qctx, kind, input), name_(std::move(name)) {}
+
+public:
+    const std::string& getName() const {
+        return name_;
+    }
+
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
+protected:
+    std::string name_;
+};
+
+class DropFTIndex final : public DropFTIndexNode {
+public:
+    static DropFTIndex* make(QueryContext* qctx, PlanNode* input, std::string name) {
+        return qctx->objPool()->add(new DropFTIndex(qctx, input, std::move(name)));
+    }
+
+private:
+    DropFTIndex(QueryContext* qctx, PlanNode* input, std::string name)
+        : DropFTIndexNode(qctx, Kind::kDropFTIndex, input, std::move(name)) {}
+};
+
+class ShowFTIndexes final : public SingleInputNode {
+public:
+    static ShowFTIndexes* make(QueryContext* qctx, PlanNode* input) {
+        return qctx->objPool()->add(new ShowFTIndexes(qctx, input));
+    }
+
+private:
+    ShowFTIndexes(QueryContext* qctx, PlanNode* input)
+        : SingleInputNode(qctx, Kind::kShowFTIndexes, input) {}
+};
+
 }   // namespace graph
 }   // namespace nebula
 #endif   // PLANNER_PLAN_MAINTAIN_H_

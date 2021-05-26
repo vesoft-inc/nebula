@@ -69,5 +69,19 @@ std::unique_ptr<PlanNodeDescription> DropIndexNode::explain() const {
     return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> DropFTIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("indexName", name_, desc.get());
+    return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> CreateFTIndexNode::explain() const {
+    auto desc = SingleInputNode::explain();
+    addDescription("indexName", indexName_, desc.get());
+    std::vector<std::string> fields;
+    addDescription("fields", folly::toJson(util::toJson(index_.get_fields())), desc.get());
+    return desc;
+}
+
 }   // namespace graph
 }   // namespace nebula

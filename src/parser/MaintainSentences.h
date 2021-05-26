@@ -1143,6 +1143,75 @@ private:
     std::unique_ptr<HostAddr>                   address_;
 };
 
+#ifndef FULLTEXT_INDEX_NAME_PREFIX
+#define FULLTEXT_INDEX_NAME_PREFIX "nebula_"
+#endif
+class CreateFTIndexSentence final : public Sentence {
+public:
+    CreateFTIndexSentence(bool isEdge,
+                          std::string* indexName,
+                          std::string* schemaName,
+                          NameLabelList *fields) {
+        isEdge_ = isEdge;
+        indexName_.reset(indexName);
+        schemaName_.reset(schemaName);
+        fields_.reset(fields);
+        kind_ = Kind::kCreateFTIndex;
+    }
+
+    std::string toString() const override;
+
+    bool isEdge() {
+        return isEdge_;
+    }
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+    const std::string* schemaName() const {
+        return schemaName_.get();
+    }
+
+    std::vector<std::string> fields() const {
+        std::vector<std::string> result;
+        auto fields = fields_->labels();
+        result.resize(fields.size());
+        auto get = [] (auto ptr) { return *ptr; };
+        std::transform(fields.begin(), fields.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    bool                             isEdge_;
+    std::unique_ptr<std::string>     indexName_;
+    std::unique_ptr<std::string>     schemaName_;
+    std::unique_ptr<NameLabelList>   fields_;
+};
+class DropFTIndexSentence final : public Sentence {
+public:
+    explicit DropFTIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDropFTIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* name() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>     indexName_;
+};
+
+class ShowFTIndexesSentence final : public Sentence {
+public:
+    ShowFTIndexesSentence() {
+        kind_ = Kind::kShowFTIndexes;
+    }
+    std::string toString() const override;
+};
+
 
 }   // namespace nebula
 

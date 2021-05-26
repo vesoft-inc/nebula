@@ -186,7 +186,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
-%token KW_LISTENER KW_ELASTICSEARCH
+%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
@@ -332,8 +332,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-%type <sentence> create_tag_index_sentence create_edge_index_sentence
-%type <sentence> drop_tag_index_sentence drop_edge_index_sentence
+%type <sentence> create_tag_index_sentence create_edge_index_sentence create_fulltext_index_sentence
+%type <sentence> drop_tag_index_sentence drop_edge_index_sentence drop_fulltext_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
 %type <sentence> add_group_sentence drop_group_sentence desc_group_sentence
@@ -486,6 +486,7 @@ unreserved_keyword
     | KW_ZONES              { $$ = new std::string("zones"); }
     | KW_LISTENER           { $$ = new std::string("listener"); }
     | KW_ELASTICSEARCH      { $$ = new std::string("elasticsearch"); }
+    | KW_FULLTEXT           { $$ = new std::string("fulltext"); }
     | KW_STATS              { $$ = new std::string("stats"); }
     | KW_STATUS             { $$ = new std::string("status"); }
     | KW_AUTO               { $$ = new std::string("auto"); }
@@ -2276,6 +2277,21 @@ create_edge_index_sentence
     }
     ;
 
+create_fulltext_index_sentence
+    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+        $$ = new CreateFTIndexSentence(false, $5, $7, $9);
+    }
+    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+        $$ = new CreateFTIndexSentence(true, $5, $7, $9);
+    }
+    ;
+
+drop_fulltext_index_sentence
+    : KW_DROP KW_FULLTEXT KW_INDEX name_label {
+        $$ = new DropFTIndexSentence($4);
+    }
+    ;
+
 opt_comment_prop_assignment
     : %empty {
         $$ = nullptr;
@@ -2871,6 +2887,9 @@ show_sentence
     | KW_SHOW KW_TEXT KW_SEARCH KW_CLIENTS {
         $$ = new ShowTSClientsSentence();
     }
+    | KW_SHOW KW_FULLTEXT KW_INDEXES {
+        $$ = new ShowFTIndexesSentence();
+    }
     ;
 
 list_host_type
@@ -3238,8 +3257,10 @@ maintain_sentence
     | drop_edge_sentence { $$ = $1; }
     | create_tag_index_sentence { $$ = $1; }
     | create_edge_index_sentence { $$ = $1; }
+    | create_fulltext_index_sentence { $$ = $1; }
     | drop_tag_index_sentence { $$ = $1; }
     | drop_edge_index_sentence { $$ = $1; }
+    | drop_fulltext_index_sentence { $$ = $1; }
     | describe_tag_index_sentence { $$ = $1; }
     | describe_edge_index_sentence { $$ = $1; }
     | rebuild_tag_index_sentence { $$ = $1; }

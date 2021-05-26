@@ -66,6 +66,8 @@ public:
         // index related
         kCreateTagIndex,
         kCreateEdgeIndex,
+        kCreateFTIndex,
+        kDropFTIndex,
         kDropTagIndex,
         kDropEdgeIndex,
         kDescTagIndex,
@@ -137,6 +139,7 @@ public:
         kShowListener,
         // text service related
         kShowTSClients,
+        kShowFTIndexes,
         kSignInTSService,
         kSignOutTSService,
         kDownload,

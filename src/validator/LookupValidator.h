@@ -32,12 +32,6 @@ private:
 
     Status prepareFilter();
 
-    StatusOr<std::string> rewriteTSFilter(Expression* expr);
-
-    StatusOr<std::vector<std::string>> textSearch(TextSearchExpression* expr);
-
-    bool needTextSearch(Expression* expr);
-
     StatusOr<Expression*> checkFilter(Expression* expr);
 
     StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
@@ -48,13 +42,9 @@ private:
                                    const std::string& prop,
                                    const Expression::Kind kind);
 
+    StatusOr<std::string> checkTSExpr(Expression* expr);
+
     std::unique_ptr<Expression> reverseRelKind(RelationalExpression* expr);
-
-    Status checkTSService();
-
-    Status checkTSIndex();
-
-    const nebula::plugin::HttpClient& randomFTClient() const;
 
 private:
     static constexpr char kSrcVID[] = "SrcVID";
@@ -69,9 +59,8 @@ private:
     bool                              isEdge_{false};
     int32_t                           schemaId_;
     bool                              isEmptyResultSet_{false};
-    bool                              textSearchReady_{false};
     std::string                       from_;
-    std::vector<nebula::plugin::HttpClient> esClients_;
+    std::vector<nebula::plugin::HttpClient> tsClients_;
     std::vector<std::string>          idxScanColNames_;
     std::vector<std::string>          colNames_;
     bool                              withProject_{false};

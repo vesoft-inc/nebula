@@ -86,8 +86,10 @@ Status PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kDropEdge:
         case Sentence::Kind::kCreateTagIndex:
         case Sentence::Kind::kCreateEdgeIndex:
+        case Sentence::Kind::kCreateFTIndex:
         case Sentence::Kind::kDropTagIndex:
         case Sentence::Kind::kDropEdgeIndex:
+        case Sentence::Kind::kDropFTIndex:
         case Sentence::Kind::kAddListener:
         case Sentence::Kind::kRemoveListener: {
             return PermissionManager::canWriteSchema(session);
@@ -148,7 +150,8 @@ Status PermissionCheck::permissionCheck(Session *session,
         case Sentence::Kind::kShowCreateEdge:
         case Sentence::Kind::kShowCreateTagIndex:
         case Sentence::Kind::kShowCreateEdgeIndex:
-        case Sentence::Kind::kShowListener: {
+        case Sentence::Kind::kShowListener:
+        case Sentence::Kind::kShowFTIndexes: {
             /**
              * Above operations can get the space id via session,
              * so the permission same with canReadSchemaOrData.

@@ -98,10 +98,14 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "CreateTagIndex";
         case Kind::kCreateEdgeIndex:
             return "CreateEdgeIndex";
+        case Kind::kCreateFTIndex:
+            return "CreateFTIndex";
         case Kind::kDropTagIndex:
             return "DropTagIndex";
         case Kind::kDropEdgeIndex:
             return "DropEdgeIndex";
+        case Kind::kDropFTIndex:
+            return "DropFTIndex";
         case Kind::kDescTagIndex:
             return "DescTagIndex";
         case Kind::kDescEdgeIndex:
@@ -253,6 +257,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
         // text search
         case Kind::kShowTSClients:
             return "ShowTSClients";
+        case Kind::kShowFTIndexes:
+            return "ShowFTIndexes";
         case Kind::kSignInTSService:
             return "SignInTSService";
         case Kind::kSignOutTSService:

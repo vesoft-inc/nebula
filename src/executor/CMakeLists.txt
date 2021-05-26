@@ -69,6 +69,7 @@ nebula_add_library(
     maintain/TagIndexExecutor.cpp
     maintain/EdgeExecutor.cpp
     maintain/EdgeIndexExecutor.cpp
+    maintain/FTIndexExecutor.cpp
     mutate/InsertExecutor.cpp
     mutate/DeleteExecutor.cpp
     mutate/UpdateExecutor.cpp

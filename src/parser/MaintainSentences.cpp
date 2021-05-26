@@ -442,4 +442,37 @@ std::string DropHostFromZoneSentence::toString() const {
     return buf;
 }
 
+std::string CreateFTIndexSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "CREATE FULLTEXT ";
+    if (isEdge_) {
+        buf += "EDGE";
+    } else {
+        buf += "TAG";
+    }
+    buf += " INDEX ";
+    buf += *indexName_;
+    buf += " ON ";
+    buf += *schemaName_;
+    buf += "(";
+    std::vector<std::string> fieldDefs;
+    for (const auto& field : fields()) {
+        fieldDefs.emplace_back(field);
+    }
+    std::string fields;
+    folly::join(", ", fieldDefs, fields);
+    buf += fields;
+    buf += ")";
+    return buf;
+}
+
+std::string DropFTIndexSentence::toString() const {
+    return folly::stringPrintf("DROP FULLTEXT INDEX %s", indexName_.get()->c_str());
+}
+
+std::string ShowFTIndexesSentence::toString() const {
+    return "SHOW FULLTEXT INDEXES";
+}
+
 }   // namespace nebula

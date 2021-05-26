@@ -16,6 +16,7 @@
 #include "util/IndexUtil.h"
 #include "util/SchemaUtil.h"
 #include "util/ExpressionUtils.h"
+#include "util/FTIndexUtils.h"
 #include "validator/MaintainValidator.h"
 
 namespace nebula {
@@ -651,5 +652,72 @@ Status DropHostFromZoneValidator::toPlan() {
     return Status::OK();
 }
 
+Status CreateFTIndexValidator::validateImpl() {
+    auto sentence = static_cast<CreateFTIndexSentence*>(sentence_);
+    auto name = *sentence->indexName();
+    if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
+        return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
+    }
+    auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
+    NG_RETURN_IF_ERROR(tsRet);
+    auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name);
+    NG_RETURN_IF_ERROR(tsIndex);
+    if (tsIndex.value()) {
+        return Status::Error("text search index exist : %s", name.c_str());
+    }
+    auto space = vctx_->whichSpace();
+    auto status = sentence->isEdge()
+                ? qctx_->schemaMng()->toEdgeType(space.id, *sentence->schemaName())
+                : qctx_->schemaMng()->toTagID(space.id, *sentence->schemaName());
+    NG_RETURN_IF_ERROR(status);
+    meta::cpp2::SchemaID id;
+    if (sentence->isEdge()) {
+        id.set_edge_type(status.value());
+    } else {
+        id.set_tag_id(status.value());
+    }
+    index_.set_space_id(space.id);
+    index_.set_depend_schema(std::move(id));
+    index_.set_fields(sentence->fields());
+    return Status::OK();
+}
+
+Status CreateFTIndexValidator::toPlan() {
+    auto sentence = static_cast<CreateFTIndexSentence*>(sentence_);
+    auto *doNode = CreateFTIndex::make(qctx_,
+                                       nullptr,
+                                       *sentence->indexName(),
+                                       index_);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status DropFTIndexValidator::validateImpl() {
+    auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
+    NG_RETURN_IF_ERROR(tsRet);
+    return Status::OK();
+}
+
+Status DropFTIndexValidator::toPlan() {
+    auto sentence = static_cast<DropFTIndexSentence*>(sentence_);
+    auto *doNode = DropFTIndex::make(qctx_,
+                                     nullptr,
+                                     *sentence->name());
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status ShowFTIndexesValidator::validateImpl() {
+    return Status::OK();
+}
+
+Status ShowFTIndexesValidator::toPlan() {
+    auto *doNode = ShowFTIndexes::make(qctx_, nullptr);
+    root_ = doNode;
+    tail_ = root_;
+    return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula
