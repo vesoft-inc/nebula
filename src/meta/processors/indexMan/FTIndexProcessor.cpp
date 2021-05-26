@@ -85,7 +85,8 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
     }
 
     // Check fulltext index exist.
-    auto ret = doPrefix(MetaServiceUtils::fulltextIndexPrefix());
+    auto ftPrefix = MetaServiceUtils::fulltextIndexPrefix();
+    auto ret = doPrefix(ftPrefix);
     if (!nebula::ok(ret)) {
         auto retCode = nebula::error(ret);
         LOG(ERROR) << "Fulltext Prefix failed, "

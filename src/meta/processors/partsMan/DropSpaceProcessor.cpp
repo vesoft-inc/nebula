@@ -102,7 +102,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     deleteKeys.emplace_back(statiskey);
 
     // 6. Delte related fulltext index meta data
-    auto ftRet = doPrefix(MetaServiceUtils::fulltextIndexPrefix());
+    auto ftPrefix = MetaServiceUtils::fulltextIndexPrefix();
+    auto ftRet = doPrefix(ftPrefix);
     if (!nebula::ok(ftRet)) {
         auto retCode = nebula::error(ftRet);
         LOG(ERROR) << "Drop space Failed, space " << spaceName
