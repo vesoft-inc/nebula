@@ -551,9 +551,7 @@ void Cpp2Ops<nebula::DateTime>::read(Protocol* proto, nebula::DateTime* obj) {
 
 _readField_year:
     {
-        int16_t year;
-        detail::pm::protocol_methods<type_class::integral, int16_t>::read(*proto, year);
-        obj->year = year;
+        detail::pm::protocol_methods<type_class::integral, int16_t>::read(*proto, obj->year);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 1, 2, protocol::T_BYTE))) {
@@ -562,9 +560,7 @@ _readField_year:
 
 _readField_month:
     {
-        int8_t month;
-        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, month);
-        obj->month = month;
+        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, obj->month);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 2, 3, protocol::T_BYTE))) {
@@ -573,9 +569,7 @@ _readField_month:
 
 _readField_day:
     {
-        int8_t day;
-        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, day);
-        obj->day = day;
+        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, obj->day);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 3, 4, protocol::T_BYTE))) {
@@ -584,9 +578,7 @@ _readField_day:
 
 _readField_hour:
     {
-        int8_t hour;
-        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, hour);
-        obj->hour = hour;
+        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, obj->hour);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 4, 5, protocol::T_BYTE))) {
@@ -595,9 +587,7 @@ _readField_hour:
 
 _readField_minute:
     {
-        int8_t minute;
-        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, minute);
-        obj->minute = minute;
+        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, obj->minute);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 5, 6, protocol::T_BYTE))) {
@@ -606,9 +596,7 @@ _readField_minute:
 
 _readField_sec:
     {
-        int8_t sec;
-        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, sec);
-        obj->sec = sec;
+        detail::pm::protocol_methods<type_class::integral, int8_t>::read(*proto, obj->sec);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 6, 7, protocol::T_I32))) {
@@ -617,10 +605,8 @@ _readField_sec:
 
 _readField_microsec:
     {
-        int32_t microsec;
         detail::pm::protocol_methods<type_class::integral, int32_t>
-            ::read(*proto, microsec);
-        obj->microsec = microsec;
+            ::read(*proto, obj->microsec);
     }
 
     if (UNLIKELY(!readState.advanceToNextField(proto, 7, 8, protocol::T_I32))) {
