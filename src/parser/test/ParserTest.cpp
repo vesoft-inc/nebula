@@ -2078,5 +2078,11 @@ TEST(Parser, UseReservedKeyword) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok());
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 0 OVER * YIELD $-.`$-.label`";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok());
+    }
 }
 }   // namespace nebula
