@@ -14,6 +14,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/clients/meta/FileBasedClusterIdMan.h"
 #include "common/webservice/Common.h"
+#include "common/version/Version.h"
 #include <folly/hash/Hash.h>
 #include <folly/ScopeGuard.h>
 #include <folly/executors/Async.h>
@@ -2379,6 +2380,9 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_host(options_.localHost_);
     req.set_role(options_.role_);
     req.set_git_info_sha(options_.gitInfoSHA_);
+#if defined(NEBULA_BUILD_VERSION)
+    req.set_version(simpleVersionString());
+#endif
     if (options_.role_ == cpp2::HostRole::STORAGE) {
         if (options_.clusterId_.load() == 0) {
             options_.clusterId_ =

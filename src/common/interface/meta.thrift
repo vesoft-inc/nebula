@@ -191,6 +191,8 @@ struct HostItem {
     5: HostRole             role,
     6: binary               git_info_sha,
     7: optional binary      zone_name,
+    // version of binary
+    8: optional binary      version,
 }
 
 struct UserItem {
@@ -569,7 +571,9 @@ struct HBReq {
     3: ClusterID cluster_id,
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
-    5: binary     git_info_sha
+    5: binary     git_info_sha,
+    // version of binary
+    6: optional binary version,
 }
 
 struct IndexFieldDef {
