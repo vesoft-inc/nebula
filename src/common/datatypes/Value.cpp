@@ -211,7 +211,7 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
         }
         case Type::STRING:
         {
-            setS(rhs.value_.sVal);
+            setS(*rhs.value_.sVal);
             break;
         }
         case Type::DATE:
@@ -713,7 +713,7 @@ const double& Value::getFloat() const {
 
 const std::string& Value::getStr() const {
     CHECK_EQ(type_, Type::STRING);
-    return value_.sVal;
+    return *value_.sVal;
 }
 
 const Date& Value::getDate() const {
@@ -824,7 +824,7 @@ double& Value::mutableFloat() {
 
 std::string& Value::mutableStr() {
     CHECK_EQ(type_, Type::STRING);
-    return value_.sVal;
+    return *value_.sVal;
 }
 
 Date& Value::mutableDate() {
@@ -908,7 +908,7 @@ double Value::moveFloat() {
 
 std::string Value::moveStr() {
     CHECK_EQ(type_, Type::STRING);
-    std::string v = std::move(value_.sVal);
+    std::string v = std::move(*value_.sVal);
     clear();
     return v;
 }
@@ -1187,7 +1187,7 @@ Value& Value::operator=(const Value& rhs) {
         }
         case Type::STRING:
         {
-            setS(rhs.value_.sVal);
+            setS(*rhs.value_.sVal);
             break;
         }
         case Type::DATE:
@@ -1291,19 +1291,24 @@ void Value::setF(double&& v) {
     new (std::addressof(value_.fVal)) double(std::move(v));     // NOLINT
 }
 
+void Value::setS(std::unique_ptr<std::string> v) {
+    type_ = Type::STRING;
+    new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(std::move(v));
+}
+
 void Value::setS(const std::string& v) {
     type_ = Type::STRING;
-    new (std::addressof(value_.sVal)) std::string(v);
+    new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
 }
 
 void Value::setS(std::string&& v) {
     type_ = Type::STRING;
-    new (std::addressof(value_.sVal)) std::string(std::move(v));
+    new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(std::move(v)));
 }
 
 void Value::setS(const char* v) {
     type_ = Type::STRING;
-    new (std::addressof(value_.sVal)) std::string(v);
+    new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
 }
 
 void Value::setD(const Date& v) {
