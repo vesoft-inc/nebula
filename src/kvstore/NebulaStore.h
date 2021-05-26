@@ -17,6 +17,9 @@
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
+DECLARE_int32(num_raft_client_threads);
+DECLARE_int32(num_raft_workers);
+
 namespace nebula {
 namespace kvstore {
 
@@ -43,13 +46,28 @@ public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 HostAddr serviceAddr,
-                std::shared_ptr<folly::Executor> workers)
+                std::shared_ptr<folly::Executor> deprecatedWorkers)
             : ioPool_(ioPool)
             , storeSvcAddr_(serviceAddr)
-            , workers_(workers)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
         CHECK_NOTNULL(options_.partMan_);
+
+        std::shared_ptr<folly::ThreadFactory> threadFactory =
+            std::make_shared<folly::NamedThreadFactory>("raftClientPool");
+        raftClientPool_ = std::make_shared<folly::IOThreadPoolExecutor>(
+                FLAGS_num_raft_client_threads,
+                threadFactory);
+        LOG(INFO) << __func__ << ": set raftClientPool's size: " << FLAGS_num_raft_client_threads;
+
+        (void)deprecatedWorkers;
+        auto raftWorkers =
+            apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                    FLAGS_num_raft_workers, true /*stats*/);
+        raftWorkers->setNamePrefix("raftWorker");
+        raftWorkers->start();
+        workers_ = raftWorkers;
+        LOG(INFO) << __func__ << ": set raftWorker's size: " << FLAGS_num_raft_workers;
     }
 
     ~NebulaStore();
@@ -253,6 +271,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
+    std::shared_ptr<folly::IOThreadPoolExecutor> raftClientPool_;
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     HostAddr storeSvcAddr_;
     std::shared_ptr<folly::Executor> workers_;

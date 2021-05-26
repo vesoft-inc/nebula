@@ -539,6 +539,15 @@ protected:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
+    // In order to improve the stability of the heartbeat, each leader holds a separate thread
+    // to send its heartbeat.
+    // Note:
+    //  - leaderHeartbeatWorker_ only works when the role is leader, and other roles use the
+    //    shared bgWorker_.
+    // Problem solved:
+    //  - When the write load is high and the disk IO Util is high, shared bgworker_ may be too
+    //    busy, causing more frequent follower election.
+    thread::GenericThreadPool leaderHeartbeatWorker_;
     // Workers pool
     std::shared_ptr<folly::Executor> executor_;
 

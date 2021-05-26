@@ -21,6 +21,8 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600,
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
 DEFINE_bool(auto_remove_invalid_space, false, "whether remove data of invalid space when restart");
+DEFINE_int32(num_raft_client_threads, 16, "Number of raft client threads");
+DEFINE_int32(num_raft_workers, 16, "Number of raft worker threads");
 
 DECLARE_bool(rocksdb_disable_wal);
 
@@ -137,7 +139,7 @@ bool NebulaStore::init() {
                                                                        enginePtr->getDataRoot(),
                                                                        partId),
                                                                enginePtr,
-                                                               ioPool_,
+                                                               raftClientPool_,
                                                                bgWorkers_,
                                                                workers_,
                                                                snapshot_);
@@ -306,7 +308,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                                engine->getDataRoot(),
                                                partId),
                                        engine,
-                                       ioPool_,
+                                       raftClientPool_,
                                        bgWorkers_,
                                        workers_,
                                        snapshot_);
