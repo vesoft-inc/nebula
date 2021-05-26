@@ -17,7 +17,7 @@
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv) {
+static void mockData(kvstore::KVStore* kv) {
     for (int32_t partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
@@ -43,8 +43,7 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-
-void buildRequest(cpp2::GetNeighborsRequest& req) {
+static void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
@@ -71,7 +70,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
 }
 
 
-void checkResponse(const cpp2::QueryStatsResponse& resp) {
+static void checkResponse(const cpp2::QueryStatsResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(7, resp.schema.columns.size());
@@ -112,7 +111,6 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
             }
             default: {
                 LOG(FATAL) << "Should not reach here!";
-                break;
             }
         }
     }

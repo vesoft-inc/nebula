@@ -93,7 +93,7 @@ void FileBasedWal::scanAllWalFiles() {
         try {
             startIdFromName = folly::to<int64_t>(parts[0]);
         } catch (const std::exception& ex) {
-            LOG(ERROR) << "Ignore bad file name \"" << fn << "\"";
+            LOG(ERROR) << "Ignore bad file name \"" << fn << "\"" <<", error: " << ex.what();
             continue;
         }
 

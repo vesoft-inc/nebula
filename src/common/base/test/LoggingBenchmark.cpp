@@ -20,7 +20,7 @@
  *
  **************************/
 #include <glog/logging.h>
-void  loggingUsingGlog(int64_t iters) {
+static void  loggingUsingGlog(int64_t iters) {
     LOG_SOMETHING(iters);
 }
 
@@ -31,7 +31,7 @@ void  loggingUsingGlog(int64_t iters) {
  *
  **************************/
 #include <base/Logging.h>
-void  loggingOptimized(int64_t iters) {
+static void  loggingOptimized(int64_t iters) {
     LOG_SOMETHING(iters);
 }
 

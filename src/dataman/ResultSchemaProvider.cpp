@@ -54,7 +54,6 @@ VariantType ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
     switch (column_->default_value.getType()) {
         case nebula::cpp2::Value::Type::__EMPTY__:
             LOG(FATAL) << "Empty type ";
-            break;
         case nebula::cpp2::Value::Type::int_value:
             defaultValue = column_->default_value.get_int_value();
             break;

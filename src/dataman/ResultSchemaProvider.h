@@ -34,7 +34,7 @@ public:
 
 public:
     explicit ResultSchemaProvider(cpp2::Schema);
-    virtual ~ResultSchemaProvider() = default;
+    ~ResultSchemaProvider() override = default;
 
     SchemaVer getVersion() const noexcept override {
         return schemaVer_;

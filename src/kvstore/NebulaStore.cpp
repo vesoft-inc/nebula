@@ -173,7 +173,8 @@ bool NebulaStore::init() {
                     baton.wait();
                     LOG(INFO) << "Load space " << spaceId << " complete";
                 } catch (std::exception& e) {
-                    LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
+                    LOG(FATAL) << "Invalid data directory \"" << dir << "\""
+                               << ", error: " << e.what();
                 }
             }
         }
@@ -222,7 +223,6 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                              cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
-        return nullptr;
     }
 }
 

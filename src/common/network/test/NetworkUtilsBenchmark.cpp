@@ -10,7 +10,7 @@
 
 using nebula::network::NetworkUtils;
 
-bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
+static bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
     std::vector<std::string> parts;
     folly::split(".", ipStr, parts, true);
     if (parts.size() != 4) {
@@ -23,7 +23,7 @@ bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
         try {
             ip |= folly::to<uint8_t>(s);
         } catch (const std::exception& ex) {
-            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"";
+            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"" << ", error: " << ex.what();
             return false;
         }
     }
@@ -32,7 +32,7 @@ bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
 }
 
 
-std::string intToIp(uint32_t ip) {
+static std::string intToIp(uint32_t ip) {
     std::deque<std::string> parts;
     for (int i = 0; i < 4; i++) {
         try {

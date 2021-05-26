@@ -23,7 +23,7 @@ namespace nebula {
 namespace kvstore {
 
 template<typename T>
-void dump(const std::vector<T>& v) {
+static void dump(const std::vector<T>& v) {
     std::stringstream ss;
     for (auto& e : v) {
         ss << e << ", ";
@@ -31,7 +31,7 @@ void dump(const std::vector<T>& v) {
     VLOG(1) << ss.str();
 }
 
-std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
+static std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
 getHandlers() {
     auto handlersPool
         = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
@@ -310,7 +310,6 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             }
         }
         LOG(FATAL) << "Should not reach here!";
-        return 0UL;
     };
     LOG(INFO) << "Put some data then read them...";
     for (int part = 0; part < 3; part++) {
@@ -446,7 +445,6 @@ TEST(NebulaStoreTest, TransLeaderTest) {
             }
         }
         LOG(FATAL) << "Should not reach here!";
-        return 0UL;
     };
 
     LOG(INFO) << "Transfer leader to first copy";
@@ -644,7 +642,6 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
             }
         }
         LOG(FATAL) << "Should not reach here!";
-        return 0UL;
     };
     LOG(INFO) << "Put some data then read them...";
     for (int part = 0; part < 3; part++) {

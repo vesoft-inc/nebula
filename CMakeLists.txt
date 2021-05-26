@@ -274,7 +274,6 @@ else()
     file(REMOVE ${CMAKE_SOURCE_DIR}/src/common/base/Base.h.gch)
 endif()
 
-add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Wpedantic)
 add_compile_options(-Wunused-parameter)
@@ -297,6 +296,7 @@ else()
 endif()
 
 include(CheckCXXCompilerFlag)
+include(NebulaCompilerFlags)
 
 # TODO(dutor) Move all compiler-config-related operations to a separate file
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -304,7 +304,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.1)
         add_compile_options(-Wsuggest-override)
     endif()
+    add_compile_options(${NEBULA_GCC_FLAGS})
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(${NEBULA_CLANG_FLAGS})
     MESSAGE(STATUS "NEBULA_CLANG_USE_GCC_TOOLCHAIN: ${NEBULA_CLANG_USE_GCC_TOOLCHAIN}")
     # Here we need to specify the path of libstdc++ used by Clang
     if(NOT ${NEBULA_CLANG_USE_GCC_TOOLCHAIN} STREQUAL "")

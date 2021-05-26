@@ -64,7 +64,6 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
             return false;
         }
     }
-    return false;
 }
 }  // namespace cpp2
 

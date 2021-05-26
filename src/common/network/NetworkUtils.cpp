@@ -208,7 +208,7 @@ bool NetworkUtils::ipv4ToInt(const std::string& ipStr, IPv4& ip) {
         try {
             ip |= folly::to<uint8_t>(s);
         } catch (const std::exception& ex) {
-            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"";
+            LOG(ERROR) << "Invalid ip string: \"" << ipStr << "\"" << ",error: " << ex.what();
             return false;
         }
     }

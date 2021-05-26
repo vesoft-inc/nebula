@@ -16,7 +16,7 @@ DEFINE_int32(versions, 100, "Total versions");
 namespace nebula {
 namespace kvstore {
 
-std::string genKey(int prefix, int version) {
+static std::string genKey(int prefix, int version) {
     std::string key;
     key.reserve(8);
     key.append(reinterpret_cast<const char*>(&prefix), sizeof(prefix));
@@ -24,7 +24,7 @@ std::string genKey(int prefix, int version) {
     return key;
 }
 
-void testFn(bool withVersion) {
+static void testFn(bool withVersion) {
     rocksdb::DB* db = nullptr;
     BENCHMARK_SUSPEND {
         fs::TempDir rootPath("/tmp/multi_versions_test.XXXXXX");

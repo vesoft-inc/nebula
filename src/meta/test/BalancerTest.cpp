@@ -1071,9 +1071,10 @@ TEST(BalanceTest, StopBalanceDataTest) {
     }
 }
 
-
-void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
-        size_t minLoad, size_t maxLoad) {
+static void verifyLeaderBalancePlan(
+    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
+    size_t minLoad,
+    size_t maxLoad) {
     for (const auto& hostEntry : leaderCount) {
         EXPECT_GE(hostEntry.second.size(), minLoad);
         EXPECT_LE(hostEntry.second.size(), maxLoad);

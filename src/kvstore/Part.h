@@ -32,7 +32,7 @@ public:
          std::shared_ptr<folly::Executor> handlers,
          std::shared_ptr<raftex::SnapshotManager> snapshotMan);
 
-    virtual ~Part() {
+    ~Part() override {
         LOG(INFO) << idStr_ << "~Part()";
     }
 

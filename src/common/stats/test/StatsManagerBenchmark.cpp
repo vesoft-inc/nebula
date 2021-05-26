@@ -14,7 +14,7 @@ const int32_t kCounterStats = StatsManager::registerStats("stats");
 const int32_t kCounterHisto = StatsManager::registerHisto("histogram", 10, 1, 100);
 
 
-void statsBM(int32_t counterId, uint32_t numThreads, uint32_t iters) {
+static void statsBM(int32_t counterId, uint32_t numThreads, uint32_t iters) {
     std::vector<std::thread> threads;
     for (uint32_t i = 0; i < numThreads; i++) {
         auto itersInThread = i == 0 ? iters - (iters / numThreads) * (numThreads - 1)

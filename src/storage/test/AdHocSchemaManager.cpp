@@ -140,6 +140,7 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
     try {
         return folly::to<GraphSpaceID>(spaceName);
     } catch (const std::exception& e) {
+        LOG(WARNING) << e.what();
         return Status::SpaceNotFound();
     }
 }
@@ -149,7 +150,7 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
     try {
         return folly::to<TagID>(tagName);
     } catch (const std::exception& e) {
-        LOG(FATAL) << e.what();
+        LOG(ERROR) << e.what();
     }
     return -1;
 }
@@ -169,7 +170,7 @@ StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::Str
     try {
         return folly::to<EdgeType>(typeName);
     } catch (const std::exception& e) {
-        LOG(FATAL) << e.what();
+        LOG(ERROR) << e.what();
     }
     return -1;
 }
@@ -179,10 +180,9 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     try {
         return folly::to<std::string>(edgeType);
     } catch (const std::exception& e) {
-        LOG(FATAL) << e.what();
+        LOG(ERROR) << e.what();
     }
     return "";
 }
-
 }  // namespace storage
 }  // namespace nebula

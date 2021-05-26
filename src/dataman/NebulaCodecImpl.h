@@ -15,6 +15,8 @@ namespace dataman {
 
 class NebulaCodecImpl : public NebulaCodec {
 public:
+    NebulaCodecImpl() = default;
+    ~NebulaCodecImpl() override = default;
     std::string encode(std::vector<Value> values,
                        std::shared_ptr<const meta::SchemaProviderIf> schema
                            = std::shared_ptr<const meta::SchemaProviderIf>()) override;

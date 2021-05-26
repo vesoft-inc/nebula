@@ -18,7 +18,7 @@ using nebula::RowReader;
 
 auto schema = std::make_shared<SchemaWriter>();
 
-void prepareSchema() {
+static void prepareSchema() {
     nebula::cpp2::Value value;
     value.set_int_value(0);
     schema->appendCol("col1", nebula::cpp2::SupportedType::INT, value);

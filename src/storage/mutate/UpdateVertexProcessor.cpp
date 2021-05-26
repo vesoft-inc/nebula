@@ -76,7 +76,6 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
                }
                default: {
                    LOG(FATAL) << "Unknown VariantType: " << v.which();
-                   return;
                }
            }
            respScheam.columns.emplace_back(std::move(column));
@@ -394,7 +393,7 @@ folly::Optional<std::string> UpdateVertexProcessor::updateAndWriteBack(const Par
                 break;
              }
             default: {
-                LOG(FATAL) << "Unknown VariantType: " << expValue.which();
+                LOG(ERROR) << "Unknown VariantType: " << expValue.which();
                 return folly::none;
             }
         }

@@ -17,9 +17,7 @@
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv,
-              meta::SchemaManager* schemaMng,
-              EdgeVersion version) {
+static void mockData(kvstore::KVStore* kv, meta::SchemaManager* schemaMng, EdgeVersion version) {
     auto edgeType = 101;
     auto spaceId = 0;
     auto schema = schemaMng->getEdgeSchema(spaceId, edgeType);
@@ -30,24 +28,21 @@ void mockData(kvstore::KVStore* kv,
             for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(
-                        partId, vertexId, edgeType, dstId - 10001, dstId, version);
+                    partId, vertexId, edgeType, dstId - 10001, dstId, version);
                 auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(
-            0, partId, std::move(data),
-            [&](kvstore::ResultCode code) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                baton.post();
-            });
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
+            EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
+        });
         baton.wait();
     }
 }
 
-
-void buildRequest(cpp2::EdgePropRequest& req) {
+static void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpEdges;
     for (PartitionID partId = 0; partId < 3; partId++) {
@@ -72,7 +67,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_return_columns(std::move(tmpColumns));
 }
 
-void checkResponse(cpp2::EdgePropResponse& resp, uint32_t expectedColSize) {
+static void checkResponse(cpp2::EdgePropResponse& resp, uint32_t expectedColSize) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
     EXPECT_EQ(expectedColSize, resp.schema.columns.size());
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
@@ -163,7 +158,6 @@ void checkAlteredProp(cpp2::EdgePropResponse& resp,
            }
            default:
                 LOG(FATAL) << "No such type: " << val.which();
-                break;
         }
         ++it;
     }

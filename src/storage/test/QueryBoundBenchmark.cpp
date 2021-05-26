@@ -30,7 +30,7 @@ std::unique_ptr<nebula::storage::AdHocSchemaManager> schema;
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv) {
+static void mockData(kvstore::KVStore* kv) {
     for (PartitionID partId = 0; partId < 6; partId++) {
         std::vector<kvstore::KV> data;
         for (VertexID vertexId = 1; vertexId < 1000; vertexId++) {
@@ -70,7 +70,7 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-void setUp(const char* path) {
+static void setUp(const char* path) {
     gKV = TestUtils::initKV(path);
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
@@ -82,7 +82,7 @@ void setUp(const char* path) {
     mockData(gKV.get());
 }
 
-cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
+static cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
@@ -117,7 +117,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
 }  // namespace storage
 }  // namespace nebula
 
-void run(int32_t iters, int32_t handlerNum) {
+static void run(int32_t iters, int32_t handlerNum) {
     FLAGS_max_handlers_per_req = handlerNum;
     nebula::storage::cpp2::GetNeighborsRequest req;
     BENCHMARK_SUSPEND {

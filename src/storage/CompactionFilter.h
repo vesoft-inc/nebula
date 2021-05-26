@@ -210,7 +210,7 @@ public:
         : schemaMan_(schemaMan)
         , indexMan_(indexMan) {}
 
-    virtual ~StorageCompactionFilterFactoryBuilder() = default;
+    ~StorageCompactionFilterFactoryBuilder() override = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
     buildCfFactory(GraphSpaceID spaceId) override {

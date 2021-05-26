@@ -41,7 +41,7 @@ int32_t RowSetReader::Iterator::prepareReader() {
                 schema_);
             return lenBytes + rowLen;
         } catch (const std::exception& ex) {
-            LOG(ERROR) << "Failed to read the row length";
+            LOG(ERROR) << "Failed to read the row length: " << ex.what();
             offset_ = data_.size();
             reader_.reset();
         }

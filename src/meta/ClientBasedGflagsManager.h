@@ -18,7 +18,7 @@ class ClientBasedGflagsManager : public GflagsManager {
 public:
     explicit ClientBasedGflagsManager(MetaClient *metaClient);
 
-    ~ClientBasedGflagsManager();
+    ~ClientBasedGflagsManager() override;
 
     folly::Future<StatusOr<bool>> setConfig(const cpp2::ConfigModule& module,
                                             const std::string& name,
