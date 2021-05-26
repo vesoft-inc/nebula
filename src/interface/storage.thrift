@@ -462,53 +462,52 @@ struct LookUpIndexResp {
 }
 
 service StorageService {
-    QueryResponse getBound(1: GetNeighborsRequest req)
-
-    QueryStatsResponse boundStats(1: GetNeighborsRequest req)
+    QueryResponse getBound(1: GetNeighborsRequest req) (priority = "IMPORTANT")
+    QueryStatsResponse boundStats(1: GetNeighborsRequest req) (priority = "IMPORTANT")
 
     // When return_columns is empty, return all properties
-    QueryResponse getProps(1: VertexPropRequest req);
-    EdgePropResponse getEdgeProps(1: EdgePropRequest req)
+    QueryResponse getProps(1: VertexPropRequest req) (priority = "IMPORTANT")
+    EdgePropResponse getEdgeProps(1: EdgePropRequest req) (priority = "IMPORTANT")
 
-    ExecResponse addVertices(1: AddVerticesRequest req);
-    ExecResponse addEdges(1: AddEdgesRequest req);
+    ExecResponse addVertices(1: AddVerticesRequest req) (priority = "NORMAL")
+    ExecResponse addEdges(1: AddEdgesRequest req) (priority = "NORMAL")
 
-    ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertices(1: DeleteVerticesRequest req);
+    ExecResponse deleteEdges(1: DeleteEdgesRequest req) (priority = "NORMAL")
+    ExecResponse deleteVertices(1: DeleteVerticesRequest req) (priority = "NORMAL")
 
-    UpdateResponse updateVertex(1: UpdateVertexRequest req)
-    UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+    UpdateResponse updateVertex(1: UpdateVertexRequest req) (priority = "NORMAL")
+    UpdateResponse updateEdge(1: UpdateEdgeRequest req) (priority = "NORMAL")
 
-    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
-    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req) (priority = "IMPORTANT")
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req) (priority = "IMPORTANT")
 
     // Interfaces for admin operations
-    AdminExecResp transLeader(1: TransLeaderReq req);
-    AdminExecResp addPart(1: AddPartReq req);
-    AdminExecResp addLearner(1: AddLearnerReq req);
-    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
-    AdminExecResp removePart(1: RemovePartReq req);
-    AdminExecResp memberChange(1: MemberChangeReq req);
-    AdminExecResp checkPeers(1: CheckPeersReq req);
-    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+    AdminExecResp transLeader(1: TransLeaderReq req) (priority = "HIGH")
+    AdminExecResp addPart(1: AddPartReq req) (priority = "HIGH")
+    AdminExecResp addLearner(1: AddLearnerReq req) (priority = "HIGH")
+    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req) (priority = "HIGH")
+    AdminExecResp removePart(1: RemovePartReq req) (priority = "HIGH")
+    AdminExecResp memberChange(1: MemberChangeReq req) (priority = "HIGH")
+    AdminExecResp checkPeers(1: CheckPeersReq req) (priority = "HIGH")
+    GetLeaderResp getLeaderPart(1: GetLeaderReq req) (priority = "HIGH")
 
     // Interfaces for manage checkpoint
-    AdminExecResp createCheckpoint(1: CreateCPRequest req);
-    AdminExecResp dropCheckpoint(1: DropCPRequest req);
-    AdminExecResp blockingWrites(1: BlockingSignRequest req);
+    AdminExecResp createCheckpoint(1: CreateCPRequest req) (priority = "BEST_EFFORT")
+    AdminExecResp dropCheckpoint(1: DropCPRequest req) (priority = "BEST_EFFORT")
+    AdminExecResp blockingWrites(1: BlockingSignRequest req) (priority = "BEST_EFFORT")
 
     // Interfaces for rebuild index
-    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
-    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req) (priority = "BEST_EFFORT")
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req) (priority = "BEST_EFFORT")
 
     // Interfaces for key-value storage
-    ExecResponse      put(1: PutRequest req);
-    GeneralResponse   get(1: GetRequest req);
-    ExecResponse      remove(1: RemoveRequest req);
-    ExecResponse      removeRange(1: RemoveRangeRequest req);
+    ExecResponse      put(1: PutRequest req) (priority = "NORMAL")
+    GeneralResponse   get(1: GetRequest req) (priority = "IMPORTANT")
+    ExecResponse      remove(1: RemoveRequest req) (priority = "NORMAL")
+    ExecResponse      removeRange(1: RemoveRangeRequest req) (priority = "NORMAL")
 
-    GetUUIDResp getUUID(1: GetUUIDReq req);
+    GetUUIDResp getUUID(1: GetUUIDReq req) (priority = "IMPORTANT")
 
     // Interfaces for edge and vertex index scan
-    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req);
+    LookUpIndexResp   lookUpIndex(1: LookUpIndexRequest req) (priority = "IMPORTANT")
 }

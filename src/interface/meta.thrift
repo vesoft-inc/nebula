@@ -688,70 +688,70 @@ struct ListIndexStatusResp {
 }
 
 service MetaService {
-    ExecResp createSpace(1: CreateSpaceReq req);
-    ExecResp dropSpace(1: DropSpaceReq req);
-    GetSpaceResp getSpace(1: GetSpaceReq req);
-    ListSpacesResp listSpaces(1: ListSpacesReq req);
+    ExecResp createSpace(1: CreateSpaceReq req) (thread = "eb")
+    ExecResp dropSpace(1: DropSpaceReq req) (thread = "eb")
+    GetSpaceResp getSpace(1: GetSpaceReq req) (thread = "eb")
+    ListSpacesResp listSpaces(1: ListSpacesReq req) (thread = "eb")
 
-    ExecResp createTag(1: CreateTagReq req);
-    ExecResp alterTag(1: AlterTagReq req);
-    ExecResp dropTag(1: DropTagReq req);
-    GetTagResp getTag(1: GetTagReq req);
-    ListTagsResp listTags(1: ListTagsReq req);
+    ExecResp createTag(1: CreateTagReq req) (thread = "eb")
+    ExecResp alterTag(1: AlterTagReq req) (thread = "eb")
+    ExecResp dropTag(1: DropTagReq req) (thread = "eb")
+    GetTagResp getTag(1: GetTagReq req) (thread = "eb")
+    ListTagsResp listTags(1: ListTagsReq req) (thread = "eb")
 
-    ExecResp createEdge(1: CreateEdgeReq req);
-    ExecResp alterEdge(1: AlterEdgeReq req);
-    ExecResp dropEdge(1: DropEdgeReq req);
-    GetEdgeResp getEdge(1: GetEdgeReq req);
-    ListEdgesResp listEdges(1: ListEdgesReq req);
+    ExecResp createEdge(1: CreateEdgeReq req) (thread = "eb")
+    ExecResp alterEdge(1: AlterEdgeReq req) (thread = "eb")
+    ExecResp dropEdge(1: DropEdgeReq req) (thread = "eb")
+    GetEdgeResp getEdge(1: GetEdgeReq req) (thread = "eb")
+    ListEdgesResp listEdges(1: ListEdgesReq req) (thread = "eb")
 
-    ListHostsResp listHosts(1: ListHostsReq req);
+    ListHostsResp listHosts(1: ListHostsReq req) (thread = "eb")
 
-    GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
-    ListPartsResp listParts(1: ListPartsReq req);
+    GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req) (thread = "eb")
+    ListPartsResp listParts(1: ListPartsReq req) (thread = "eb")
 
-    ExecResp multiPut(1: MultiPutReq req);
-    GetResp get(1: GetReq req);
-    MultiGetResp multiGet(1: MultiGetReq req);
-    ExecResp remove(1: RemoveReq req);
-    ExecResp removeRange(1: RemoveRangeReq req);
-    ScanResp scan(1: ScanReq req);
+    ExecResp multiPut(1: MultiPutReq req) (thread = "eb")
+    GetResp get(1: GetReq req) (thread = "eb")
+    MultiGetResp multiGet(1: MultiGetReq req) (thread = "eb")
+    ExecResp remove(1: RemoveReq req) (thread = "eb")
+    ExecResp removeRange(1: RemoveRangeReq req) (thread = "eb")
+    ScanResp scan(1: ScanReq req) (thread = "eb")
 
-    ExecResp             createTagIndex(1: CreateTagIndexReq req);
-    ExecResp             dropTagIndex(1: DropTagIndexReq req );
-    GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
-    ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
-    ExecResp             rebuildTagIndex(1: RebuildIndexReq req);
-    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
-    ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
-    ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
-    GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
-    ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
-    ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req);
-    ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
+    ExecResp             createTagIndex(1: CreateTagIndexReq req) (thread = "eb")
+    ExecResp             dropTagIndex(1: DropTagIndexReq req ) (thread = "eb")
+    GetTagIndexResp      getTagIndex(1: GetTagIndexReq req) (thread = "eb")
+    ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req) (thread = "eb")
+    ExecResp             rebuildTagIndex(1: RebuildIndexReq req) (thread = "eb")
+    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req) (thread = "eb")
+    ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req) (thread = "eb")
+    ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req ) (thread = "eb")
+    GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req) (thread = "eb")
+    ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req) (thread = "eb")
+    ExecResp             rebuildEdgeIndex(1: RebuildIndexReq req) (thread = "eb")
+    ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req) (thread = "eb")
 
-    ExecResp createUser(1: CreateUserReq req);
-    ExecResp dropUser(1: DropUserReq req);
-    ExecResp alterUser(1: AlterUserReq req);
-    ExecResp grantRole(1: GrantRoleReq req);
-    ExecResp revokeRole(1: RevokeRoleReq req);
-    ListUsersResp listUsers(1: ListUsersReq req);
-    ListRolesResp listRoles(1: ListRolesReq req);
-    ListRolesResp getUserRoles(1: GetUserRolesReq req);
-    ExecResp changePassword(1: ChangePasswordReq req);
+    ExecResp createUser(1: CreateUserReq req) (thread = "eb")
+    ExecResp dropUser(1: DropUserReq req) (thread = "eb")
+    ExecResp alterUser(1: AlterUserReq req) (thread = "eb")
+    ExecResp grantRole(1: GrantRoleReq req) (thread = "eb")
+    ExecResp revokeRole(1: RevokeRoleReq req) (thread = "eb")
+    ListUsersResp listUsers(1: ListUsersReq req) (thread = "eb")
+    ListRolesResp listRoles(1: ListRolesReq req) (thread = "eb")
+    ListRolesResp getUserRoles(1: GetUserRolesReq req) (thread = "eb")
+    ExecResp changePassword(1: ChangePasswordReq req) (thread = "eb")
 
-    HBResp           heartBeat(1: HBReq req);
-    BalanceResp      balance(1: BalanceReq req);
-    ExecResp         leaderBalance(1: LeaderBalanceReq req);
+    HBResp           heartBeat(1: HBReq req) (thread = "eb")
+    BalanceResp      balance(1: BalanceReq req) (thread = "eb")
+    ExecResp         leaderBalance(1: LeaderBalanceReq req) (thread = "eb")
 
-    ExecResp regConfig(1: RegConfigReq req);
-    GetConfigResp getConfig(1: GetConfigReq req);
-    ExecResp setConfig(1: SetConfigReq req);
-    ListConfigsResp listConfigs(1: ListConfigsReq req);
+    ExecResp regConfig(1: RegConfigReq req) (thread = "eb")
+    GetConfigResp getConfig(1: GetConfigReq req) (thread = "eb")
+    ExecResp setConfig(1: SetConfigReq req) (thread = "eb")
+    ListConfigsResp listConfigs(1: ListConfigsReq req) (thread = "eb")
 
-    ExecResp createSnapshot(1: CreateSnapshotReq req);
-    ExecResp dropSnapshot(1: DropSnapshotReq req);
-    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
-    AdminJobResp runAdminJob(1: AdminJobReq req);
+    ExecResp createSnapshot(1: CreateSnapshotReq req) (thread = "eb")
+    ExecResp dropSnapshot(1: DropSnapshotReq req) (thread = "eb")
+    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req) (thread = "eb")
+    AdminJobResp runAdminJob(1: AdminJobReq req) (thread = "eb")
 }
 
