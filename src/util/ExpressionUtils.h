@@ -33,6 +33,8 @@ public:
         return expected.find(expr->kind()) != expected.end();
     }
 
+    static bool isPropertyExpr(const Expression* expr);
+
     static const Expression* findAny(const Expression* self,
                                      const std::unordered_set<Expression::Kind>& expected);
 

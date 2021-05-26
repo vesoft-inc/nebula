@@ -247,7 +247,6 @@ Status YieldValidator::toPlan() {
         }
     }
 
-
     if (yield->yield()->isDistinct()) {
         auto dedup = Dedup::make(qctx_, dedupDep);
         dedup->setColNames(dedupDep->colNames());

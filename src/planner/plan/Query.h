@@ -1061,7 +1061,7 @@ class LeftJoin final : public Join {
 public:
     static LeftJoin* make(QueryContext* qctx,
                           PlanNode* input,
-                          std::pair<std::string, int64_t> leftVar ,
+                          std::pair<std::string, int64_t> leftVar,
                           std::pair<std::string, int64_t> rightVar,
                           std::vector<Expression*> hashKeys = {},
                           std::vector<Expression*> probeKeys = {}) {

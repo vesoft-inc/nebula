@@ -17,6 +17,18 @@
 namespace nebula {
 namespace graph {
 
+bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
+    auto kind = expr->kind();
+
+    return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
+                                                Expression::Kind::kEdgeProperty,
+                                                Expression::Kind::kInputProperty,
+                                                Expression::Kind::kVarProperty,
+                                                Expression::Kind::kDstProperty,
+                                                Expression::Kind::kSrcProperty}
+        .count(kind);
+}
+
 const Expression *ExpressionUtils::findAny(const Expression *self,
                                      const std::unordered_set<Expression::Kind> &expected) {
     auto finder = [&expected](const Expression *expr) -> bool {

@@ -34,60 +34,118 @@ const Pattern& PushFilterDownProjectRule::pattern() const {
 StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
     OptContext* octx,
     const MatchedResult& matched) const {
-    auto filterGroupNode = matched.node;
-    auto oldFilterNode = filterGroupNode->node();
-    auto projGroupNode = matched.dependencies.front().node;
-    auto oldProjNode = projGroupNode->node();
+    const auto* filterGroupNode = matched.node;
+    const auto* filterNode = filterGroupNode->node();
+    DCHECK_EQ(filterNode->kind(), PlanNode::Kind::kFilter);
+    auto* oldFilterNode = static_cast<const graph::Filter*>(filterNode);
+    const auto* projGroupNode = matched.dependencies.front().node;
+    const auto* projNode = projGroupNode->node();
+    DCHECK_EQ(projNode->kind(), PlanNode::Kind::kProject);
+    const auto* oldProjNode = static_cast<const graph::Project*>(projNode);
+    const auto* condition = oldFilterNode->condition();
+    auto objPool = octx->qctx()->objPool();
 
-    auto newFilterNode = static_cast<graph::Filter*>(oldFilterNode->clone());
-    auto newProjNode = static_cast<graph::Project*>(oldProjNode->clone());
-    const auto condition = newFilterNode->condition();
+    auto projColNames = oldProjNode->colNames();
+    auto projColumns = oldProjNode->columns()->columns();
+    std::unordered_map<std::string, Expression*> rewriteMap;
+    // split the `condition` based on whether the propExprs comes from the left child
+    auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
+        auto varProps = graph::ExpressionUtils::collectAll(e,
+                                                           {Expression::Kind::kTagProperty,
+                                                            Expression::Kind::kEdgeProperty,
+                                                            Expression::Kind::kInputProperty,
+                                                            Expression::Kind::kVarProperty,
+                                                            Expression::Kind::kDstProperty,
+                                                            Expression::Kind::kSrcProperty});
+        if (varProps.empty()) {
+            return false;
+        }
+        std::vector<std::string> propNames;
+        for (auto* expr : varProps) {
+            DCHECK(graph::ExpressionUtils::isPropertyExpr(expr));
+            propNames.emplace_back(*static_cast<const PropertyExpression*>(expr)->prop());
+        }
+        for (size_t i = 0; i < projColNames.size(); ++i) {
+            auto column = projColumns[i];
+            auto colName = projColNames[i];
+            auto iter =
+                std::find_if(propNames.begin(), propNames.end(), [&colName](const auto& name) {
+                    return !colName.compare(name);
+                });
+            if (iter == propNames.end()) continue;
+            if (graph::ExpressionUtils::isPropertyExpr(column->expr())) {
+                if (column->alias()) {
+                    rewriteMap[colName] = column->expr();
+                }
+                continue;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    };
+    std::unique_ptr<Expression> filterPicked;
+    std::unique_ptr<Expression> filterUnpicked;
+    graph::ExpressionUtils::splitFilter(condition, picker, &filterPicked, &filterUnpicked);
 
-    auto varProps = graph::ExpressionUtils::collectAll(condition, {Expression::Kind::kVarProperty});
-    if (varProps.empty()) {
+    if (!filterPicked) {
         return TransformResult::noTransform();
     }
-    std::vector<std::string> propNames;
-    for (auto expr : varProps) {
-        DCHECK(expr->kind() == Expression::Kind::kVarProperty);
-        propNames.emplace_back(*static_cast<const VariablePropertyExpression*>(expr)->prop());
-    }
-
-    auto projColNames = newProjNode->colNames();
-    auto projColumns = newProjNode->columns()->columns();
-    for (size_t i = 0; i < projColNames.size(); ++i) {
-        auto column = projColumns[i];
-        auto colName = projColNames[i];
-        auto iter = std::find_if(propNames.begin(), propNames.end(), [&colName](const auto& name) {
-            return !colName.compare(name);
-        });
-        if (iter == propNames.end()) continue;
-        if (!column->alias() && column->expr()->kind() == Expression::Kind::kVarProperty) {
-            continue;
-        } else {
-            // project column contains computing expression, need to rewrite
-            return TransformResult::noTransform();
+    // Rewrite PropertyExpr in filter's condition
+    auto matcher = [&rewriteMap](const Expression* e) -> bool {
+        if (!graph::ExpressionUtils::isPropertyExpr(e)) {
+            return false;
         }
-    }
+        auto* propName = static_cast<const PropertyExpression*>(e)->prop();
+        return rewriteMap[*propName];
+    };
+    auto rewriter = [&rewriteMap](const Expression* e) -> Expression* {
+        DCHECK(graph::ExpressionUtils::isPropertyExpr(e));
+        auto* propName = static_cast<const PropertyExpression*>(e)->prop();
+        return rewriteMap[*propName]->clone().release();
+    };
+    auto* newFilterPicked = rewriteMap.empty()
+                                ? filterPicked.release()
+                                : graph::RewriteVisitor::transform(
+                                      filterPicked.get(), std::move(matcher), std::move(rewriter));
 
-    // Exchange planNode
-    newProjNode->setOutputVar(oldFilterNode->outputVar());
-    newFilterNode->setInputVar(oldProjNode->inputVar());
-    newProjNode->setInputVar(oldProjNode->outputVar());
-    newFilterNode->setOutputVar(oldProjNode->outputVar());
-
-    // Push down filter's optGroup and embed newProjGroupNode into old filter's Group
-    auto newProjGroupNode = OptGroupNode::create(octx, newProjNode, filterGroupNode->group());
-    auto newFilterGroup = OptGroup::create(octx);
-    auto newFilterGroupNode = newFilterGroup->makeGroupNode(newFilterNode);
-    newProjGroupNode->dependsOn(newFilterGroup);
+    // produce new Filter node below
+    auto* newBelowFilterNode = graph::Filter::make(octx->qctx(),
+                                                   const_cast<graph::PlanNode*>(oldProjNode->dep()),
+                                                   objPool->add(newFilterPicked));
+    newBelowFilterNode->setInputVar(oldProjNode->inputVar());
+    auto newBelowFilterGroup = OptGroup::create(octx);
+    auto newFilterGroupNode = newBelowFilterGroup->makeGroupNode(newBelowFilterNode);
     for (auto dep : projGroupNode->dependencies()) {
         newFilterGroupNode->dependsOn(dep);
     }
 
+    // produce new Proj node
+    auto* newProjNode = static_cast<graph::Project*>(oldProjNode->clone());
+    newProjNode->setInputVar(newBelowFilterNode->outputVar());
+
     TransformResult result;
     result.eraseAll = true;
-    result.newGroupNodes.emplace_back(newProjGroupNode);
+    if (filterUnpicked) {
+        // produce new Filter node above
+        auto* newAboveFilterNode =
+            graph::Filter::make(octx->qctx(), newProjNode, objPool->add(filterUnpicked.release()));
+        newAboveFilterNode->setOutputVar(oldFilterNode->outputVar());
+        auto newAboveFilterGroupNode =
+            OptGroupNode::create(octx, newAboveFilterNode, filterGroupNode->group());
+
+        auto newProjGroup = OptGroup::create(octx);
+        auto newProjGroupNode = newProjGroup->makeGroupNode(newProjNode);
+        newProjGroupNode->setDeps({newBelowFilterGroup});
+        newAboveFilterGroupNode->setDeps({newProjGroup});
+        result.newGroupNodes.emplace_back(newAboveFilterGroupNode);
+    } else {
+        newProjNode->setOutputVar(oldFilterNode->outputVar());
+        auto newProjGroupNode = OptGroupNode::create(octx, newProjNode, filterGroupNode->group());
+        newProjGroupNode->setDeps({newBelowFilterGroup});
+        result.newGroupNodes.emplace_back(newProjGroupNode);
+    }
+
     return result;
 }
 
@@ -97,4 +155,3 @@ std::string PushFilterDownProjectRule::toString() const {
 
 }   // namespace opt
 }   // namespace nebula
-
