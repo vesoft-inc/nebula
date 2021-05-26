@@ -1,0 +1,15 @@
+diff --git a/folly/FBString.h b/folly/FBString.h
+index 3c521e5..a8d8584 100644
+--- a/folly/FBString.h
++++ b/folly/FBString.h
+@@ -24,6 +24,7 @@
+ #include <iosfwd>
+ #include <limits>
+ #include <type_traits>
++#include <stdexcept>
+ 
+ // This file appears in two locations: inside fbcode and in the
+ // libstdc++ source code (when embedding fbstring as std::string).
+-- 
+2.28.0
+

@@ -5,6 +5,17 @@
 
 set(name libunwind)
 set(source_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/source)
+
+# gcc 10 change the default from -fcommon to fno-common: https://gcc.gnu.org/PR85678
+# the workaround is if gcc version >= 10 then add '-fcommon' to CFLAGS
+#  - https://github.com/libunwind/libunwind/issues/154
+#  - https://github.com/libunwind/libunwind/pull/166
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
+    configure_append(libunwind_common_configure_envs common_configure_envs "^CFLAGS" "-fcommon")
+else()
+    set(libunwind_common_configure_envs "${common_configure_envs}")
+endif()
+
 ExternalProject_Add(
     ${name}
     URL https://github.com/libunwind/libunwind/releases/download/v1.2.1/libunwind-1.2.1.tar.gz
@@ -15,7 +26,7 @@ ExternalProject_Add(
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     SOURCE_DIR ${source_dir}
     CONFIGURE_COMMAND
-        ${common_configure_envs}
+        ${libunwind_common_configure_envs}
         ./configure ${common_configure_args}
                     --disable-minidebuginfo
                     --disable-shared --enable-static

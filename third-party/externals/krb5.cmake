@@ -3,6 +3,14 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
+# gcc 10 change the default from -fcommon to fno-common: https://gcc.gnu.org/PR85678
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
+    configure_append(krb5_common_configure_envs common_configure_envs "^CFLAGS" "-fcommon")
+else()
+    set(krb5_common_configure_envs "${common_configure_envs}")
+endif()
+
+
 set(name krb5)
 set(source_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/source)
 ExternalProject_Add(
@@ -33,7 +41,7 @@ ExternalProject_Add_Step(krb5 mannual-configure
     DEPENDEES download update patch configure
     DEPENDERS build install
     COMMAND
-        ${common_configure_envs}
+        ${krb5_common_configure_envs}
         ./configure
             ${common_configure_args}
             --enable-static
