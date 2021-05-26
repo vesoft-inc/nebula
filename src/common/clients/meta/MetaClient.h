@@ -107,6 +107,8 @@ using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::stri
 // get fulltext services
 using FulltextClientsList = std::vector<cpp2::FTClient>;
 
+using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
+
 class MetaChangedListener {
 public:
     virtual ~MetaChangedListener() = default;
@@ -421,6 +423,28 @@ public:
 
     StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
 
+    // Opeartions for fulltext index.
+
+    folly::Future<StatusOr<bool>>
+    createFTIndex(const std::string& name, const cpp2::FTIndex& index);
+
+    folly::Future<StatusOr<bool>>
+    dropFTIndex(GraphSpaceID spaceId, const std::string& name);
+
+    folly::Future<StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>>
+    listFTIndexes();
+
+    StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> getFTIndexesFromCache();
+
+    StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>
+    getFTIndexBySpaceFromCache(GraphSpaceID spaceId);
+
+    StatusOr<std::pair<std::string, cpp2::FTIndex>>
+    getFTIndexBySpaceSchemaFromCache(GraphSpaceID spaceId, int32_t schemaId);
+
+    StatusOr<cpp2::FTIndex>
+    getFTIndexByNameFromCache(GraphSpaceID spaceId, const std::string& name);
+
     // session
     folly::Future<StatusOr<cpp2::CreateSessionResp>> createSession(
             const std::string &userName, const HostAddr& graphAddr, const std::string &clientIp);
@@ -630,6 +654,8 @@ protected:
 
     bool loadFulltextClients();
 
+    bool loadFulltextIndexes();
+
     folly::Future<StatusOr<bool>> heartbeat();
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
@@ -716,6 +742,7 @@ private:
     NameIndexMap          tagNameIndexMap_;
     NameIndexMap          edgeNameIndexMap_;
     FulltextClientsList   fulltextClientList_;
+    FTIndexMap            fulltextIndexMap_;
 
     mutable folly::RWSpinLock     localCacheLock_;
     // The listener_ is the NebulaStore

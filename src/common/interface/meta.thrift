@@ -1033,6 +1033,32 @@ struct ListFTClientsResp {
     3: list<FTClient>      clients,
 }
 
+struct FTIndex {
+    1: common.GraphSpaceID  space_id,
+    2: SchemaID             depend_schema,
+    3: list<binary>         fields,
+}
+
+struct CreateFTIndexReq {
+    1: binary              fulltext_index_name,
+    2: FTIndex             index,
+}
+
+struct DropFTIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: binary              fulltext_index_name,
+}
+
+struct ListFTIndexesReq {
+}
+
+struct ListFTIndexesResp {
+    1: common.ErrorCode     code,
+    2: common.HostAddr      leader,
+    3: map<binary, FTIndex> (cpp.template = "std::unordered_map") indexes,
+}
+
+
 struct Session {
     1: common.SessionID session_id,
     2: common.Timestamp create_time,
@@ -1183,6 +1209,10 @@ service MetaService {
     ExecResp signInFTService(1: SignInFTServiceReq req);
     ExecResp signOutFTService(1: SignOutFTServiceReq req);
     ListFTClientsResp listFTClients(1: ListFTClientsReq req);
+
+    ExecResp createFTIndex(1: CreateFTIndexReq req);
+    ExecResp dropFTIndex(1: DropFTIndexReq req);
+    ListFTIndexesResp listFTIndexes(1: ListFTIndexesReq req);
 
     CreateSessionResp createSession(1: CreateSessionReq req);
     ExecResp updateSessions(1: UpdateSessionsReq req);

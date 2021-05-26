@@ -159,6 +159,15 @@ StatusOr<std::vector<nebula::meta::cpp2::FTClient>> ServerBasedSchemaManager::ge
     return std::move(ret).value();
 }
 
+StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>>
+ServerBasedSchemaManager::getFTIndex(GraphSpaceID spaceId, int32_t schemaId) {
+    auto ret = metaClient_->getFTIndexBySpaceSchemaFromCache(spaceId, schemaId);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    return std::move(ret).value();
+}
+
 std::unique_ptr<ServerBasedSchemaManager> ServerBasedSchemaManager::create(MetaClient *client) {
     auto mgr = std::make_unique<ServerBasedSchemaManager>();
     mgr->init(client);

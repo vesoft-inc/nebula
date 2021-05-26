@@ -88,12 +88,6 @@ std::string ESGraphAdapter::header(const HttpClient& client,
     return os.str();
 }
 
-folly::dynamic ESGraphAdapter::schemaBody(int32_t id) const noexcept {
-    // "term": {"schema_id": 1}
-    folly::dynamic itemTag = folly::dynamic::object("schema_id", id);
-    return folly::dynamic::object("term", itemTag);
-}
-
 folly::dynamic ESGraphAdapter::columnBody(const std::string& col) const noexcept {
     // "term": {"column_id": "col1"}
     folly::dynamic itemColumn = folly::dynamic::object("column_id", DocIDTraits::column(col));
@@ -123,9 +117,7 @@ std::string ESGraphAdapter::body(const DocItem& item,
             obj = fuzzyBody(item.val, fuzziness, op);
         }
     }
-    auto itemArray = folly::dynamic::array(schemaBody(item.schema),
-                                           columnBody(item.column),
-                                           obj);
+    auto itemArray = folly::dynamic::array(columnBody(item.column), obj);
     folly::dynamic itemMust = folly::dynamic::object("must", itemArray);
     folly::dynamic itemBool = folly::dynamic::object("bool", itemMust);
     folly::dynamic itemQuery = folly::dynamic::object("query", itemBool)

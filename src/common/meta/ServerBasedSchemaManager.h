@@ -68,6 +68,9 @@ public:
 
     StatusOr<std::vector<nebula::meta::cpp2::FTClient>> getFTClients() override;
 
+    StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>>
+    getFTIndex(GraphSpaceID spaceId, int32_t schemaId) override;
+
     void init(MetaClient *client);
 
     static std::unique_ptr<ServerBasedSchemaManager> create(MetaClient *client);

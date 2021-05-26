@@ -66,8 +66,6 @@ private:
                        const DocItem& item,
                        const LimitItem& limit) const noexcept;
 
-    folly::dynamic schemaBody(int32_t id) const noexcept;
-
     folly::dynamic columnBody(const std::string& col) const noexcept;
 
     std::string body(const DocItem& item,

@@ -13,13 +13,13 @@
 #include "common/datatypes/HostAddr.h"
 #include "common/encryption/MD5Utils.h"
 #include "common/encryption/Base64.h"
+#include "common/base/CommonMacro.h"
 
 #define CURL "/usr/bin/curl"
 #define XPUT " -XPUT"
 #define XPOST " -XPOST"
 #define XGET " -XGET"
 #define XDELETE " -XDELETE"
-#define MAX_VALUE_LEN 255
 #define CURL_CONTENT_JSON " -H \"Content-Type: application/json; charset=utf-8\""
 #define CURL_CONTENT_NDJSON " -H \"Content-Type: application/x-ndjson; charset=utf-8\""
 #define ESCAPE_SINGLE_QUOTE  "\'\\\'\'"
@@ -95,7 +95,6 @@ struct DocItem {
     std::string index;
     std::string column;
     int32_t part;
-    int32_t schema;
     std::string val;
 
     ~DocItem() = default;
@@ -104,54 +103,44 @@ struct DocItem {
     : index(std::move(v.index))
     , column(std::move(v.column))
     , part(std::move(v.part))
-    , schema(std::move(v.schema))
     , val(std::move(v.val)) {}
 
     explicit DocItem(const DocItem& v) noexcept
         : index(v.index)
         , column(v.column)
         , part(v.part)
-        , schema(v.schema)
         , val(v.val) {}
 
     DocItem(std::string&& idx,
             std::string&& col,
-            int32_t&& sc,
             std::string&& v)
     : index(std::move(idx))
     , column(std::move(col))
-    , schema(std::move(sc))
     , val(std::move(v)) {}
 
     DocItem(const std::string& idx,
             const std::string& col,
-            const int32_t& sc,
             const std::string& v)
         : index(idx)
         , column(col)
-        , schema(sc)
         , val(v) {}
 
     DocItem(std::string&& idx,
             std::string&& col,
             int32_t&& p,
-            int32_t&& sc,
             std::string&& v)
         : index(std::move(idx))
         , column(std::move(col))
         , part(std::move(p))
-        , schema(std::move(sc))
         , val(std::move(v)) {}
 
     DocItem(const std::string& idx,
             const std::string& col,
             const int32_t& p,
-            const int32_t& sc,
             const std::string& v)
         : index(idx)
         , column(col)
         , part(p)
-        , schema(sc)
         , val(v) {}
 };
 
@@ -181,7 +170,7 @@ struct DocIDTraits {
     }
 
     static std::string val(const std::string &v) {
-        return ((v.size() > MAX_VALUE_LEN) ? v.substr(0, MAX_VALUE_LEN) : v);
+        return ((v.size() > MAX_INDEX_TYPE_LENGTH) ? v.substr(0, MAX_INDEX_TYPE_LENGTH) : v);
     }
 
     static std::string normalizedJson(const std::string &v) {
@@ -189,24 +178,18 @@ struct DocIDTraits {
     }
 
     static std::string docId(const DocItem& item) {
-        // partId_schemaId_column_value,
+        // partId_column_value,
         // The value length limit is 255 bytes
         // docId structure : partId(10bytes) + schemaId(10Bytes) +
         //                   columnName(32bytes) + encoded_val(max 344bytes)
         // the max length of docId is 512 bytes, still have about 100 bytes reserved
-        auto encoded = encryption::Base64::encode((item.val.size() > MAX_VALUE_LEN)
-                                                   ? item.val.substr(0, MAX_VALUE_LEN)
+        auto encoded = encryption::Base64::encode((item.val.size() > MAX_INDEX_TYPE_LENGTH)
+                                                   ? item.val.substr(0, MAX_INDEX_TYPE_LENGTH)
                                                    : item.val);
         std::replace(encoded.begin(), encoded.end(), '/', '_');
         std::stringstream ss;
-        ss << id(item.part) << id(item.schema) << column(item.column) << encoded;
+        ss << id(item.part) << column(item.column) << encoded;
         return ss.str();
-    }
-};
-
-struct IndexTraits {
-    static std::string indexName(const std::string& space, bool isEdge) {
-        return folly::stringPrintf("nebula_%s_%s", space.c_str(), (isEdge ? "edge" : "tag"));
     }
 };
 }  // namespace plugin

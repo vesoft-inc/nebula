@@ -182,6 +182,11 @@ bool MetaClient::loadData() {
         return false;
     }
 
+    if (!loadFulltextIndexes()) {
+        LOG(ERROR) << "Load fulltext indexes Failed";
+        return false;
+    }
+
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
@@ -484,6 +489,19 @@ bool MetaClient::loadFulltextClients() {
      {
          folly::RWSpinLock::WriteHolder holder(localCacheLock_);
          fulltextClientList_ = std::move(ftRet).value();
+     }
+     return true;
+ }
+
+bool MetaClient::loadFulltextIndexes() {
+     auto ftRet = listFTIndexes().get();
+     if (!ftRet.ok()) {
+         LOG(ERROR) << "List fulltext indexes failed, status:" << ftRet.status();
+         return false;
+     }
+     {
+         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+         fulltextIndexMap_ = std::move(ftRet).value();
      }
      return true;
  }
@@ -2405,7 +2423,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                     }
                     metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
                     VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
-                    return true;  // resp.code == cpp2::ErrorCode::SUCCEEDED
+                    return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
                 },
                 std::move(promise));
     return future;
@@ -3436,6 +3454,114 @@ StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
         return Status::Error("Not ready!");
     }
     return fulltextClientList_;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::createFTIndex(const std::string& name, const cpp2::FTIndex& index) {
+    cpp2::CreateFTIndexReq req;
+    req.set_fulltext_index_name(name);
+    req.set_index(index);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_createFTIndex(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropFTIndex(GraphSpaceID spaceId, const std::string& name) {
+    cpp2::DropFTIndexReq req;
+    req.set_fulltext_index_name(name);
+    req.set_space_id(spaceId);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_dropFTIndex(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+folly::Future<StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>>
+MetaClient::listFTIndexes() {
+    cpp2::ListFTIndexesReq req;
+    folly::Promise<StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_listFTIndexes(request);
+                },
+                [] (cpp2::ListFTIndexesResp&& resp) -> decltype(auto){
+                    return std::move(resp).get_indexes();
+                },
+                std::move(promise));
+    return future;
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>
+MetaClient::getFTIndexesFromCache() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    return fulltextIndexMap_;
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>
+MetaClient::getFTIndexBySpaceFromCache(GraphSpaceID spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    std::unordered_map<std::string, cpp2::FTIndex> indexes;
+    for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
+        if (it->second.get_space_id() == spaceId) {
+            indexes[it->first] = it->second;
+        }
+    }
+    return indexes;
+}
+
+StatusOr<std::pair<std::string, cpp2::FTIndex>>
+MetaClient::getFTIndexBySpaceSchemaFromCache(GraphSpaceID spaceId, int32_t schemaId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
+        auto id = it->second.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type
+                ? it->second.get_depend_schema().get_edge_type()
+                : it->second.get_depend_schema().get_tag_id();
+        if (it->second.get_space_id() == spaceId && id == schemaId) {
+            return std::make_pair(it->first, it->second);
+        }
+    }
+    return Status::IndexNotFound();
+}
+
+StatusOr<cpp2::FTIndex>
+MetaClient::getFTIndexByNameFromCache(GraphSpaceID spaceId, const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    if (fulltextIndexMap_.find(name) != fulltextIndexMap_.end() &&
+        fulltextIndexMap_[name].get_space_id() != spaceId) {
+        return Status::IndexNotFound();
+    }
+    return fulltextIndexMap_[name];
 }
 
 folly::Future<StatusOr<cpp2::CreateSessionResp>>

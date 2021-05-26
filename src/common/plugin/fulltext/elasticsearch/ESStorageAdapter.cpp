@@ -154,9 +154,8 @@ std::string ESStorageAdapter::putHeader(const HttpClient& client,
 }
 
 std::string ESStorageAdapter::putBody(const DocItem& item) const noexcept {
-    //    -d'{"schema_id" : 4, "column_id" : "col4", "value" : "hello"}'
-    folly::dynamic d = folly::dynamic::object("schema_id", item.schema)
-                                             ("column_id", DocIDTraits::column(item.column))
+    //    -d'{"column_id" : "col4", "value" : "hello"}'
+    folly::dynamic d = folly::dynamic::object("column_id", DocIDTraits::column(item.column))
                                              ("value", DocIDTraits::val(item.val));
     std::stringstream os;
     os << " -d'" << DocIDTraits::normalizedJson(folly::toJson(d)) << "'";
@@ -181,9 +180,9 @@ std::string ESStorageAdapter::bulkHeader(const HttpClient& client) const noexcep
 std::string ESStorageAdapter::bulkBody(const std::vector<DocItem>& items) const noexcept {
     //    -d '
     //    { "index" : { "_index" : "bulk_index", "_id" : "1" } }
-    //    { "schema_id" : 1 , "column_id" : "col1", "value" : "row_1"}
+    //    { "column_id" : "col1", "value" : "row_1"}
     //    { "index" : { "_index" : "bulk_index", "_id" : "2" } }
-    //    { "schema_id" : 1 , "column_id" : "col1", "value" : "row_2"}
+    //    { "column_id" : "col1", "value" : "row_2"}
     //    '
     if (items.empty()) {
         return "";
@@ -194,8 +193,7 @@ std::string ESStorageAdapter::bulkBody(const std::vector<DocItem>& items) const 
         folly::dynamic meta = folly::dynamic::object("_id", DocIDTraits::docId(item))
                                                     ("_index", item.index);
         folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))
-                                                    ("column_id", DocIDTraits::column(item.column))
-                                                    ("schema_id", item.schema);
+                                                    ("column_id", DocIDTraits::column(item.column));
         os << folly::toJson(folly::dynamic::object("index", meta)) << "\n";
         os << DocIDTraits::normalizedJson(folly::toJson(data)) << "\n";
     }

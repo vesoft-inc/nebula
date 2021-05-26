@@ -65,17 +65,16 @@ TEST(FulltextPluginTest, ESDropIndexTest) {
 TEST(FulltextPluginTest, ESPutTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
-    DocItem item("index1", "col1", 1, 2, "aaaa");
+    DocItem item("index1", "col1", 1, "aaaa");
     auto header = ESStorageAdapter().putHeader(hc, item);
     std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
                            "-XPUT \"http://127.0.0.1:9200/index1/_doc/"
-                           "000000000100000000028c43de7b01bca674276c43e09b3ec5baYWFhYQ==\"";
+                           "00000000018c43de7b01bca674276c43e09b3ec5baYWFhYQ==\"";
     ASSERT_EQ(expected, header);
 
     auto body = ESStorageAdapter().putBody(item);
 
-    folly::dynamic d = folly::dynamic::object("schema_id", item.schema)
-                                             ("column_id", DocIDTraits::column(item.column))
+    folly::dynamic d = folly::dynamic::object("column_id", DocIDTraits::column(item.column))
                                              ("value", DocIDTraits::val(item.val));
     verifyBodyStr(std::move(body), std::move(d));
 }
@@ -83,14 +82,14 @@ TEST(FulltextPluginTest, ESPutTest) {
 TEST(FulltextPluginTest, ESBulkTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
-    DocItem item1("index1", "col1", 1, 2, "aaaa");
-    DocItem item2("index1", "col1", 1, 2, "bbbb");
+    DocItem item1("index1", "col1", 1, "aaaa");
+    DocItem item2("index1", "col1", 1, "bbbb");
     std::set<std::string> strs;
     strs.emplace("aaa");
     strs.emplace("bbb");
     std::vector<DocItem> items;
-    items.emplace_back(DocItem("index1", "col1", 1, 2, "aaaa"));
-    items.emplace_back(DocItem("index1", "col1", 1, 2, "bbbb"));
+    items.emplace_back(DocItem("index1", "col1", 1, "aaaa"));
+    items.emplace_back(DocItem("index1", "col1", 1, "bbbb"));
     auto header = ESStorageAdapter().bulkHeader(hc);
     std::string expected = "/usr/bin/curl -H \"Content-Type: application/x-ndjson; "
                            "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
@@ -101,7 +100,6 @@ TEST(FulltextPluginTest, ESBulkTest) {
         folly::dynamic meta = folly::dynamic::object("_id", DocIDTraits::docId(item))
                                                     ("_index", item.index);
         folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))
-                                                    ("schema_id", item.schema)
                                                     ("column_id", DocIDTraits::column(item.column));
         bodys.emplace_back(folly::dynamic::object("index", std::move(meta)));
         bodys.emplace_back(std::move(data));
@@ -114,7 +112,7 @@ TEST(FulltextPluginTest, ESBulkTest) {
 TEST(FulltextPluginTest, ESPutToTest) {
     HostAddr localHost_{"127.0.0.1", 11111};
     HttpClient hc(localHost_);
-    DocItem item1("index1", "col1", 1, 2, "aaaa");
+    DocItem item1("index1", "col1", 1, "aaaa");
     // A ElasticSearch instance needs to be turn on at here, so expected false.
     auto ret = ESStorageAdapter::kAdapter->put(hc, item1);
     ASSERT_FALSE(ret);
@@ -240,7 +238,7 @@ TEST(FulltextPluginTest, ESResultTest) {
 TEST(FulltextPluginTest, ESPrefixTest) {
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient client(localHost_);
-    DocItem item("index1", "col1", 1, 2, "aa");
+    DocItem item("index1", "col1", 1, "aa");
     LimitItem limit(10, 100);
     auto header = ESGraphAdapter().header(client, item, limit);
     std::string expected = "/usr/bin/curl -H \"Content-Type: application/json; charset=utf-8\" "
