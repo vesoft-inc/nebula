@@ -193,4 +193,15 @@ std::string versionString();
 
 }  // namespace nebula
 
+namespace std {
+
+template <>
+struct hash<nebula::VariantType> {
+    std::size_t operator()(const nebula::VariantType& v) const {
+        return boost::hash<nebula::VariantType>()(v);
+    }
+};
+
+}
+
 #endif  // COMMON_BASE_BASE_H_

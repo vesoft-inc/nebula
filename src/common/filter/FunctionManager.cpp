@@ -9,6 +9,9 @@
 #include "filter/Expressions.h"
 #include "time/WallClock.h"
 #include "filter/geo/GeoFilter.h"
+#include "base/FlattenList.h"
+#include <proxygen/lib/utils/Base64.h>
+#include <rocksdb/filter_policy.h>
 
 namespace nebula {
 
@@ -18,6 +21,8 @@ FunctionManager& FunctionManager::instance() {
     return instance;
 }
 
+static std::unique_ptr<const rocksdb::FilterPolicy>
+    filter_policy_(rocksdb::NewBloomFilterPolicy(10, true));
 
 FunctionManager::FunctionManager() {
     {
@@ -25,6 +30,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["abs"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::abs(Expression::asDouble(args[0]));
         };
@@ -34,6 +40,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["floor"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::floor(Expression::asDouble(args[0]));
         };
@@ -43,6 +50,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["ceil"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::ceil(Expression::asDouble(args[0]));
         };
@@ -52,6 +60,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["round"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::round(Expression::asDouble(args[0]));
         };
@@ -61,6 +70,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["sqrt"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::sqrt(Expression::asDouble(args[0]));
         };
@@ -70,6 +80,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cbrt"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::cbrt(Expression::asDouble(args[0]));
         };
@@ -79,6 +90,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["hypot"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto x = Expression::asDouble(args[0]);
             auto y = Expression::asDouble(args[1]);
@@ -90,6 +102,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["pow"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto base = Expression::asDouble(args[0]);
             auto exp = Expression::asDouble(args[1]);
@@ -101,6 +114,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["exp"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::exp(Expression::asDouble(args[0]));
         };
@@ -110,6 +124,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["exp2"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::exp2(Expression::asDouble(args[0]));
         };
@@ -119,6 +134,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::log(Expression::asDouble(args[0]));
         };
@@ -128,6 +144,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log2"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::log2(Expression::asDouble(args[0]));
         };
@@ -137,6 +154,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log10"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::log10(Expression::asDouble(args[0]));
         };
@@ -145,6 +163,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["sin"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::sin(Expression::asDouble(args[0]));
         };
@@ -153,6 +172,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["asin"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::asin(Expression::asDouble(args[0]));
         };
@@ -161,6 +181,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cos"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::cos(Expression::asDouble(args[0]));
         };
@@ -169,6 +190,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["acos"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::acos(Expression::asDouble(args[0]));
         };
@@ -177,6 +199,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["tan"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::tan(Expression::asDouble(args[0]));
         };
@@ -185,6 +208,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["atan"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             return std::atan(Expression::asDouble(args[0]));
         };
@@ -194,6 +218,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand32"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
+        attr.cacheable_ = false;
         attr.body_ = [] (const auto &args) -> OptVariantType {
             if (args.empty()) {
                 auto value = folly::Random::rand32();
@@ -230,6 +255,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand64"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
+        attr.cacheable_ = false;
         attr.body_ = [] (const auto &args) -> OptVariantType {
             if (args.empty()) {
                 return static_cast<int64_t>(folly::Random::rand64());
@@ -257,6 +283,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["now"];
         attr.minArity_ = 0;
         attr.maxArity_ = 0;
+        attr.cacheable_ = false;
         attr.body_ = [] (const auto &args) {
             UNUSED(args);
             return time::WallClock::fastNowInSec();
@@ -266,6 +293,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["strcasecmp"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto &left = Expression::asString(args[0]);
             auto &right = Expression::asString(args[1]);
@@ -276,6 +304,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["lower"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             std::transform(value.begin(), value.end(), value.begin(),
@@ -287,6 +316,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["upper"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             std::transform(value.begin(), value.end(), value.begin(),
@@ -298,8 +328,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["length"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             return static_cast<int64_t>(value.length());
         };
     }
@@ -307,6 +338,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["trim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             value.erase(0, value.find_first_not_of(" "));
@@ -318,6 +350,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["ltrim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             value.erase(0, value.find_first_not_of(" "));
@@ -328,6 +361,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rtrim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             value.erase(value.find_last_not_of(" ") + 1);
@@ -338,8 +372,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["left"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
                 return std::string();
@@ -351,8 +386,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["right"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value  = Expression::asString(args[0]);
+            auto& value  = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
                 return std::string();
@@ -367,8 +403,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["lpad"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
 
             if (size == 0) {
@@ -393,8 +430,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rpad"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value = Expression::asString(args[0]);
+            auto& value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
             if (size == 0) {
                 return std::string("");
@@ -418,8 +456,9 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["substr"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
-            auto value   = Expression::asString(args[0]);
+            auto& value   = Expression::asString(args[0]);
             auto start   = Expression::asInt(args[1]);
             auto length  = Expression::asInt(args[2]);
             if (static_cast<size_t>(std::abs(start)) > value.size() ||
@@ -439,6 +478,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["hash"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             switch (args[0].which()) {
                 case VAR_INT64: {
@@ -467,6 +507,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["udf_is_in"];
         attr.minArity_ = 2;
         attr.maxArity_ = INT64_MAX;
+        attr.cacheable_ = false;
         attr.body_ = [] (const auto &args) {
             VariantType cmp = args.front();
             switch (cmp.which()) {
@@ -498,7 +539,7 @@ FunctionManager::FunctionManager() {
                     return !ret.second;
                 }
                 case VAR_STR: {
-                    auto v = Expression::asString(cmp);
+                    auto& v = Expression::asString(cmp);
                     std::unordered_set<std::string> vals;
                     for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toString(*iter));
@@ -516,6 +557,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["near"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             auto result = geo::GeoFilter::near(args);
             if (!result.ok()) {
@@ -529,6 +571,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cos_similarity"];
         attr.minArity_ = 2;
         attr.maxArity_ = INT64_MAX;
+        attr.cacheable_ = true;
         attr.body_ = [] (const auto &args) {
             if (args.size() % 2 != 0) {
                 LOG(ERROR) << "The number of arguments must be even.";
@@ -553,18 +596,171 @@ FunctionManager::FunctionManager() {
             }
         };
     }
+    {
+        auto &attr = functions_["concat_ws"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& sep   = Expression::asString(args[0]);
+            auto& encoded   = Expression::asString(args[1]);
+
+            FlattenListReader r(encoded);
+            ICord<> cord;
+            auto iter = r.begin();
+            for (; iter != r.end(); ++iter) {
+                if (!iter->ok()) {
+                    return iter->status();
+                }
+                if (iter != r.begin()) {
+                    cord << sep;
+                }
+                auto value = iter->value();
+                switch (value.which()) {
+                    case VAR_INT64:
+                        cord << folly::to<std::string>(Expression::asInt(value));
+                        break;
+                    case VAR_BOOL:
+                        cord << folly::to<std::string>(Expression::asBool(value));
+                        break;
+                    case VAR_DOUBLE:
+                        cord << folly::to<std::string>(Expression::asDouble(value));
+                        break;
+                    case VAR_STR:
+                        cord << folly::to<std::string>(Expression::asString(value));
+                        break;
+                    default:
+                        return Status::Error("data corrupt.");
+                }
+            }
+            return cord.str();
+        };
+    }
+    {
+        auto &attr = functions_["collect"];
+        attr.minArity_ = 0;
+        attr.maxArity_ = std::numeric_limits<size_t>::max();
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            FlattenListWriter w;
+            for (const VariantType& item : args) {
+                w << item;
+            }
+            return w.finish();
+        };
+    }
+    {
+        auto &attr = functions_["base64_encode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& s = Expression::asString(args[0]);
+            return proxygen::Base64::urlEncode(folly::StringPiece(s));
+        };
+    }
+    {
+        auto &attr = functions_["base64_decode"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& s = Expression::asString(args[0]);
+            return proxygen::Base64::urlDecode(s);
+        };
+    }
+    {
+        auto &attr = functions_["bloom_create_filter"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& encoded   = Expression::asString(args[0]);
+
+            std::vector<rocksdb::Slice> keys;
+            FlattenListReader r(encoded);
+            auto iter = r.begin();
+            for (; iter != r.end(); ++iter) {
+                if (!iter->ok()) {
+                    return iter->status();
+                }
+                auto status = iter.raw();
+                if (!status.ok()) {
+                    return status.status();
+                }
+                auto key = status.value();
+                keys.emplace_back(rocksdb::Slice(key.data(), key.size()));
+            }
+
+            std::string filter;
+            filter_policy_->CreateFilter(keys.data(), keys.size(), &filter);
+            return OptVariantType(std::move(filter));
+        };
+    }
+    {
+        auto &attr = functions_["bloom_key_may_match"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto& filter   = Expression::asString(args[1]);
+            switch (args[0].which()) {
+                case VAR_INT64: {
+                    auto v = Expression::asInt(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_DOUBLE: {
+                    auto v = Expression::asDouble(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_BOOL: {
+                    auto v = Expression::asBool(args[0]);
+                    rocksdb::Slice key(reinterpret_cast<const char *>(&v), sizeof(v));
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                case VAR_STR: {
+                    auto &key = Expression::asString(args[0]);
+                    return filter_policy_->KeyMayMatch(key, filter);
+                }
+                default:
+                    return Status::Error("Unkown type.");
+            }
+        };
+    }
+    {
+        auto &attr = functions_["range"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 3;
+        attr.cacheable_ = true;
+        attr.body_ = [] (const auto &args) -> OptVariantType {
+            auto start = Expression::asInt(args[0]);
+            auto end = Expression::asInt(args[1]);
+            int64_t step = 1;
+            if (args.size() > 2) {
+                step = Expression::asInt(args[2]);
+            }
+
+            FlattenListWriter w;
+            for (int64_t i = start; i <= end; i += step) {
+                w << i;
+            }
+            return OptVariantType(w.finish());
+        };
+    }
 }  // NOLINT
 
 
 // static
 StatusOr<FunctionManager::Function>
-FunctionManager::get(const std::string &func, size_t arity) {
-    return instance().getInternal(func, arity);
+FunctionManager::get(const std::string &func, size_t arity, bool* cacheable) {
+    return instance().getInternal(func, arity, cacheable);
 }
 
 
 StatusOr<FunctionManager::Function>
-FunctionManager::getInternal(const std::string &func, size_t arity) const {
+FunctionManager::getInternal(const std::string &func, size_t arity, bool* cacheable) const {
     auto status = Status::OK();
     // check existence
     auto iter = functions_.find(func);
@@ -574,6 +770,7 @@ FunctionManager::getInternal(const std::string &func, size_t arity) const {
     // check arity
     auto minArity = iter->second.minArity_;
     auto maxArity = iter->second.maxArity_;
+    if (cacheable) *cacheable = iter->second.cacheable_;
     if (arity < minArity || arity > maxArity) {
         if (minArity == maxArity) {
             return Status::Error("Arity not match for function `%s': "

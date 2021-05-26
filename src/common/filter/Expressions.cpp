@@ -7,6 +7,7 @@
 
 #include "base/Base.h"
 #include "base/ICord.h"
+#include "base/FlattenList.h"
 #include "filter/Expressions.h"
 #include "filter/FunctionManager.h"
 
@@ -92,7 +93,12 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
 // static
 std::string Expression::encode(Expression *expr) noexcept {
     ICord<> cord;
-    expr->encode(cord);
+    if (expr->cacheable()) {
+        PrimaryExpression e(*expr->cache());
+        dynamic_cast<Expression*>(&e)->encode(cord);
+    } else {
+        expr->encode(cord);
+    }
     return cord.str();
 }
 
@@ -396,39 +402,40 @@ Status SourcePropertyExpression::prepare() {
 
 std::string PrimaryExpression::toString() const {
     char buf[1024];
-    switch (operand_.which()) {
+    DCHECK(cache_.hasValue());
+    auto& operand = *cache_;
+    switch (operand.which()) {
         case VAR_INT64:
-            snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
+            snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand));
             break;
         case VAR_DOUBLE: {
             int digits10 = std::numeric_limits<double>::digits10;
             std::string fmt = folly::sformat("%.{}lf", digits10);
-            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand_));
+            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand));
             break;
         }
         case VAR_BOOL:
-            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
+            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand) ? "true" : "false");
             break;
         case VAR_STR:
-            return boost::get<std::string>(operand_);
+            return boost::get<std::string>(operand);
     }
     return buf;
 }
 
 OptVariantType PrimaryExpression::eval(Getters &getters) const {
     UNUSED(getters);
-    switch (operand_.which()) {
+    DCHECK(cache_.hasValue());
+    const VariantType& operand = *cache_;
+    switch (operand.which()) {
         case VAR_INT64:
-            return boost::get<int64_t>(operand_);
-            break;
+            return asInt(operand);
         case VAR_DOUBLE:
-            return boost::get<double>(operand_);
-            break;
+            return asDouble(operand);
         case VAR_BOOL:
-            return boost::get<bool>(operand_);
-            break;
+            return asBool(operand);
         case VAR_STR:
-            return boost::get<std::string>(operand_);
+            return asString(operand);
     }
 
     return OptVariantType(Status::Error("Unknown type"));
@@ -449,21 +456,29 @@ Status PrimaryExpression::prepare() {
 
 void PrimaryExpression::encode(ICord<> &cord) const {
     cord << kindToInt(kind());
-    uint8_t which = operand_.which();
+    DCHECK(cache_.hasValue());
+    const VariantType& operand = *cache_;
+    uint8_t which = operand.which();
     cord << which;
     switch (which) {
         case VAR_INT64:
-            cord << boost::get<int64_t>(operand_);
+            cord << boost::get<int64_t>(operand);
             break;
         case VAR_DOUBLE:
-            cord << boost::get<double>(operand_);
+            cord << boost::get<double>(operand);
             break;
         case VAR_BOOL:
-            cord << static_cast<uint8_t>(boost::get<bool>(operand_));
+            cord << static_cast<uint8_t>(boost::get<bool>(operand));
             break;
         case VAR_STR: {
-            auto &str = boost::get<std::string>(operand_);
-            cord << static_cast<uint16_t>(str.size());
+            auto &str = boost::get<std::string>(operand);
+            size_t size = str.size();
+            if (size <= (1UL << 15)) {
+                cord << static_cast<uint16_t>(str.size());
+            } else {
+                cord << static_cast<uint16_t>((size & ((1UL << 15) - 1)) | (1UL << 15));
+                cord << static_cast<uint16_t>(size >> 15);
+            }
             cord << str;
             break;
         }
@@ -479,24 +494,31 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
     switch (which) {
         case VAR_INT64:
             THROW_IF_NO_SPACE(pos, end, 8UL);
-            operand_ = *reinterpret_cast<const int64_t*>(pos);
+            cache_ = *reinterpret_cast<const int64_t*>(pos);
             pos += 8;
             break;
         case VAR_DOUBLE:
             THROW_IF_NO_SPACE(pos, end, 8UL);
-            operand_ = *reinterpret_cast<const double*>(pos);
+            cache_ = *reinterpret_cast<const double*>(pos);
             pos += 8;
             break;
         case VAR_BOOL:
             THROW_IF_NO_SPACE(pos, end, 1UL);
-            operand_ = *reinterpret_cast<const bool*>(pos++);
+            cache_ = *reinterpret_cast<const bool*>(pos++);
             break;
         case VAR_STR: {
             THROW_IF_NO_SPACE(pos, end, 2UL);
-            auto size = *reinterpret_cast<const uint16_t*>(pos);
+            size_t size_l = *reinterpret_cast<const uint16_t*>(pos);
+            size_t size_h = 0;
             pos += 2;
-            THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
-            operand_ = std::string(pos, size);
+            if (size_l & (1UL << 15)) {
+                THROW_IF_NO_SPACE(pos, end, 2UL);
+                size_h = *reinterpret_cast<const uint16_t*>(pos);
+                pos += 2;
+            }
+            size_t size = (size_h << 15) | (size_l & ~(1UL << 15));
+            THROW_IF_NO_SPACE(pos, end, size);
+            cache_ = std::string(pos, size);
             pos += size;
             break;
         }
@@ -524,6 +546,9 @@ std::string FunctionCallExpression::toString() const {
 }
 
 OptVariantType FunctionCallExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     std::vector<VariantType> args;
 
     for (auto it = args_.cbegin(); it != args_.cend(); ++it) {
@@ -551,7 +576,8 @@ Status FunctionCallExpression::traversal(std::function<void(const Expression*)> 
 }
 
 Status FunctionCallExpression::prepare() {
-    auto result = FunctionManager::get(*name_, args_.size());
+    bool cacheable = false;
+    auto result = FunctionManager::get(*name_, args_.size(), &cacheable);
     if (!result.ok()) {
         return std::move(result).status();
     }
@@ -564,6 +590,17 @@ Status FunctionCallExpression::prepare() {
         if (!status.ok()) {
             break;
         }
+        if (cacheable && !arg->cacheable()) {
+            cacheable = false;
+        }
+    }
+    if (cacheable) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
     }
     return status;
 }
@@ -660,6 +697,9 @@ std::string UnaryExpression::toString() const {
 }
 
 OptVariantType UnaryExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto value = operand_->eval(getters);
     if (value.ok()) {
         if (op_ == PLUS) {
@@ -693,7 +733,19 @@ Status UnaryExpression::traversal(std::function<void(const Expression*)> visitor
 }
 
 Status UnaryExpression::prepare() {
-    return operand_->prepare();
+    auto status = operand_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (operand_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
+    }
+    return Status::OK();
 }
 
 
@@ -746,6 +798,9 @@ std::string TypeCastingExpression::toString() const {
 
 
 OptVariantType TypeCastingExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto result = operand_->eval(getters);
     if (!result.ok()) {
         return result;
@@ -775,7 +830,19 @@ Status TypeCastingExpression::traversal(std::function<void(const Expression*)> v
 }
 
 Status TypeCastingExpression::prepare() {
-    return operand_->prepare();
+    auto status = operand_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (operand_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
+    }
+    return Status::OK();
 }
 
 
@@ -826,6 +893,9 @@ std::string ArithmeticExpression::toString() const {
 }
 
 OptVariantType ArithmeticExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
     if (!left.ok()) {
@@ -836,8 +906,8 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         return right;
     }
 
-    auto l = left.value();
-    auto r = right.value();
+    auto& l = left.value();
+    auto& r = right.value();
 
     static constexpr int64_t maxInt = std::numeric_limits<int64_t>::max();
     static constexpr int64_t minInt = std::numeric_limits<int64_t>::min();
@@ -998,6 +1068,14 @@ Status ArithmeticExpression::prepare() {
     if (!status.ok()) {
         return status;
     }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
+    }
     return Status::OK();
 }
 
@@ -1051,6 +1129,9 @@ std::string RelationalExpression::toString() const {
         case CONTAINS:
             buf += " CONTAINS ";
             break;
+        case IN:
+            buf += " IN ";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -1058,6 +1139,9 @@ std::string RelationalExpression::toString() const {
 }
 
 OptVariantType RelationalExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
 
@@ -1069,12 +1153,14 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
         return right;
     }
 
-    auto l = left.value();
-    auto r = right.value();
+    auto& l = left.value();
+    auto& r = right.value();
     if (l.which() != r.which()) {
-        auto s = implicitCasting(l, r);
-        if (!s.ok()) {
-            return s;
+        if (op_ != IN) {
+            auto s = implicitCasting(l, r);
+            if (!s.ok()) {
+                return s;
+            }
         }
     }
 
@@ -1107,6 +1193,27 @@ OptVariantType RelationalExpression::eval(Getters &getters) const {
             if (isString(l) && isString(r)) {
                 return OptVariantType(contains(asString(l), asString(r)));
             }
+            break;
+        case IN:
+            if (set_.hasValue()) {
+                auto& set = set_.value();
+                return OptVariantType(set.find(l) != set.end());
+            }
+            if (isString(r)) {
+                FlattenListReader reader(asString(r));
+                auto iter = reader.begin();
+                auto end = reader.end();
+                for (; iter != end; ++iter) {
+                    if (!iter->ok()) {
+                        return OptVariantType(Status::Error("Wrong operator of IN"));
+                    }
+                    if (l == iter->value()) {
+                        return OptVariantType(true);
+                    }
+                }
+                return OptVariantType(false);
+            }
+            break;
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
@@ -1151,6 +1258,31 @@ Status RelationalExpression::prepare() {
     if (!status.ok()) {
         return status;
     }
+    if (right_->cacheable() && op_ == IN) {
+        auto& r = *right_->cache();
+        if (!isString(r)) {
+            return Status::Error("Wrong operator");
+        }
+        FlattenListReader reader(asString(r));
+        auto iter = reader.begin();
+        auto end = reader.end();
+        std::unordered_set<VariantType> set;
+        for (; iter != end; ++iter) {
+            if (!iter->ok()) {
+                return Status::Error("Wrong operator of IN");
+            }
+            set.insert(std::move(*iter).value());
+        }
+        set_ = std::move(set);
+    }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
+    }
     return Status::OK();
 }
 
@@ -1168,7 +1300,7 @@ const char* RelationalExpression::decode(const char *pos, const char *end) {
     op_ = *reinterpret_cast<const Operator*>(pos++);
     DCHECK(op_ == LT || op_ == LE || op_ == GT ||
             op_ == GE || op_ == EQ || op_ == NE ||
-            op_ == CONTAINS);
+            op_ == CONTAINS || op_ == IN);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);
@@ -1201,6 +1333,9 @@ std::string LogicalExpression::toString() const {
 }
 
 OptVariantType LogicalExpression::eval(Getters &getters) const {
+    if (cache_.hasValue()) {
+        return *cache_;
+    }
     auto left = left_->eval(getters);
     auto right = right_->eval(getters);
 
@@ -1246,6 +1381,17 @@ Status LogicalExpression::prepare() {
         return status;
     }
     status = right_->prepare();
+    if (!status.ok()) {
+        return status;
+    }
+    if (left_->cacheable() && right_->cacheable()) {
+        Getters getters;
+        auto cache = eval(getters);
+        if (!cache.ok()) {
+            return cache.status();
+        }
+        cache_ = std::move(cache).value();
+    }
     return Status::OK();
 }
 

@@ -558,6 +558,10 @@ macro(nebula_link_libraries target)
         ${COMPRESSION_LIBRARIES}
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        proxygenhttpserver
+        proxygenlib
         keyutils
         resolv
         dl

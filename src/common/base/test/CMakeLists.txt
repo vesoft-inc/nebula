@@ -68,6 +68,13 @@ nebula_add_test(
     LIBRARIES gtest gtest_main
 )
 
+nebula_add_test(
+        NAME flattern_list_test
+        SOURCES FlatternListTest.cpp
+        OBJECTS $<TARGET_OBJECTS:base_obj>
+        LIBRARIES gtest gtest_main
+)
+
 nebula_add_executable(
     NAME hash_bm
     SOURCES HashBenchmark.cpp

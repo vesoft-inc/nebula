@@ -8,6 +8,7 @@
 #define GRAPH_AGGREGATEFUNCTION_H
 
 #include "base/Base.h"
+#include "base/FlattenList.h"
 
 namespace nebula {
 namespace graph {
@@ -38,6 +39,8 @@ constexpr char kStd[] = "STD";
 constexpr char kBitAnd[] = "BIT_AND";
 constexpr char kBitOr[] = "BIT_OR";
 constexpr char kBitXor[] = "BIT_XOR";
+constexpr char kCollectList[] = "COLLECT_LIST";
+constexpr char kCollectSet[] = "COLLECT_SET";
 
 class GroupByHash {
 public:
@@ -421,6 +424,82 @@ private:
     cpp2::ColumnValue     bitXor_;
 };
 
+class CollectList final : public AggFun {
+public:
+    void apply(cpp2::ColumnValue &val) override {
+        switch(val.getType()) {
+            case ColumnType::int_type:
+                writer_ << val.get_integer();
+                break;
+            case ColumnType::id_type:
+                writer_ << val.get_id();
+                break;
+            case ColumnType::timestamp_type:
+                writer_ << val.get_timestamp();
+                break;
+            case ColumnType::bool_type:
+                writer_ << val.get_bool_val();
+                break;
+            case ColumnType::double_type:
+                writer_ << val.get_double_precision();
+                break;
+            case ColumnType::str_type:
+                writer_ << val.get_str();
+                break;
+            default:
+                return;
+        }
+    }
+
+    cpp2::ColumnValue getResult() override {
+        cpp2::ColumnValue result;
+        result.set_str(writer_.finish());
+        return result;
+    }
+private:
+    FlattenListWriter writer_;
+};
+
+class CollectSet final : public AggFun {
+public:
+    void apply(cpp2::ColumnValue &val) override {
+        switch(val.getType()) {
+            case ColumnType::int_type:
+                set_.insert(val.get_integer());
+                break;
+            case ColumnType::id_type:
+                set_.insert(val.get_id());
+                break;
+            case ColumnType::timestamp_type:
+                set_.insert(val.get_timestamp());
+                break;
+            case ColumnType::bool_type:
+                set_.insert(val.get_bool_val());
+                break;
+            case ColumnType::double_type:
+                set_.insert(val.get_double_precision());
+                break;
+            case ColumnType::str_type:
+                set_.insert(val.get_str());
+                break;
+            default:
+                return;
+        }
+    }
+
+    cpp2::ColumnValue getResult() override {
+        for (auto& item : set_) {
+            writer_ << item;
+        }
+        cpp2::ColumnValue result;
+        result.set_str(writer_.finish());
+        return result;
+    }
+private:
+    std::unordered_set<VariantType> set_;
+    FlattenListWriter               writer_;
+};
+
 static std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>> funVec = {
     { "", []() -> auto { return std::make_shared<Group>();} },
     { kCount, []() -> auto { return std::make_shared<Count>();} },
@@ -432,7 +511,9 @@ static std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>>
     { kStd, []() -> auto { return std::make_shared<Stdev>();} },
     { kBitAnd, []() -> auto { return std::make_shared<BitAnd>();} },
     { kBitOr, []() -> auto { return std::make_shared<BitOr>();} },
-    { kBitXor, []() -> auto { return std::make_shared<BitXor>();} }
+    { kBitXor, []() -> auto { return std::make_shared<BitXor>();} },
+    { kCollectList, []() -> auto { return std::make_shared<CollectList>();} },
+    { kCollectSet, []() -> auto { return std::make_shared<CollectSet>();} },
 };
 
 
