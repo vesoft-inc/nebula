@@ -67,6 +67,7 @@ GENERATE_LOCK(edge);
 GENERATE_LOCK(tagIndex);
 GENERATE_LOCK(edgeIndex);
 GENERATE_LOCK(fulltextServices);
+GENERATE_LOCK(fulltextIndex);
 GENERATE_LOCK(user);
 GENERATE_LOCK(config);
 GENERATE_LOCK(snapshot);

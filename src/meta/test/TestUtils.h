@@ -8,6 +8,7 @@
 #define META_TEST_TESTUTILS_H_
 
 #include "common/base/Base.h"
+#include "common/base/CommonMacro.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "common/time/WallClock.h"
 #include "common/expression/ConstantExpression.h"
@@ -250,8 +251,12 @@ public:
             for (auto i = 0; i < 2; i++) {
                 cpp2::ColumnDef column;
                 column.set_name(folly::stringPrintf("tag_%d_col_%d", tagId, i));
-                (*column.type_ref()).set_type(i < 1 ?
-                        PropertyType::INT64 : PropertyType::FIXED_STRING);
+                if (i < 1) {
+                    column.type.set_type(PropertyType::INT64);
+                } else {
+                    column.type.set_type(PropertyType::FIXED_STRING);
+                    column.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+                }
                 if (nullable) {
                     column.set_nullable(nullable);
                 }
@@ -338,7 +343,12 @@ public:
             for (auto i = 0; i < 2; i++) {
                 cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
-                column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::FIXED_STRING);
+                if (i < 1) {
+                    column.type.set_type(PropertyType::INT64);
+                } else {
+                    column.type.set_type(PropertyType::FIXED_STRING);
+                    column.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+                }
                 if (nullable) {
                     column.set_nullable(nullable);
                 }

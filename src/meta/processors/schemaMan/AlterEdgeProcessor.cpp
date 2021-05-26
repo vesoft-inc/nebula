@@ -96,6 +96,22 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         }
     }
 
+    // check fulltext index
+    auto ftIdxRet = getFTIndex(spaceId, edgeType);
+    if (nebula::ok(ftIdxRet)) {
+        auto fti = std::move(nebula::value(ftIdxRet));
+        auto ftStatus = ftIndexCheck(fti.get_fields(), edgeItems);
+        if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(ftStatus);
+            onFinished();
+            return;
+        }
+    } else if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
+        handleErrorCode(nebula::error(ftIdxRet));
+        onFinished();
+        return;
+    }
+
     for (auto& edgeItem : edgeItems) {
         auto &cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {

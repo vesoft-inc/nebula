@@ -332,6 +332,16 @@ public:
 
     static meta::cpp2::Session parseSessionVal(const folly::StringPiece &val);
 
+    static std::string fulltextIndexKey(const std::string& indexName);
+
+    static std::string fulltextIndexVal(const cpp2::FTIndex& index);
+
+    static std::string parsefulltextIndexName(folly::StringPiece key);
+
+    static cpp2::FTIndex parsefulltextIndex(folly::StringPiece val);
+
+    static std::string fulltextIndexPrefix();
+
     static std::string genTimestampStr();
 
     static GraphSpaceID parseEdgesKeySpaceID(folly::StringPiece key);

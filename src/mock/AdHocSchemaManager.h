@@ -108,6 +108,12 @@ public:
 
     void addFTClient(const nebula::meta::cpp2::FTClient& client);
 
+    StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>>
+    getFTIndex(GraphSpaceID, int32_t) override {
+        LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
+    }
+
     StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
         return partNum_;
     }

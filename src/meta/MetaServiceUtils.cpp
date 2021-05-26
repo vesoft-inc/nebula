@@ -1397,5 +1397,34 @@ meta::cpp2::Session MetaServiceUtils::parseSessionVal(const folly::StringPiece &
     apache::thrift::CompactSerializer::deserialize(val, session);
     return session;
 }
+
+std::string MetaServiceUtils::fulltextIndexKey(const std::string& indexName) {
+    std::string key;
+    key.reserve(kFTIndexTable.size() + indexName.size());
+    key.append(kFTIndexTable.data(), kFTIndexTable.size())
+       .append(indexName);
+    return key;
+}
+
+std::string MetaServiceUtils::fulltextIndexVal(const cpp2::FTIndex& index) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(index, &val);
+    return val;
+}
+
+std::string MetaServiceUtils::parsefulltextIndexName(folly::StringPiece key) {
+    return key.subpiece(kFTIndexTable.size(), key.size()).toString();
+}
+
+cpp2::FTIndex MetaServiceUtils::parsefulltextIndex(folly::StringPiece val) {
+   cpp2::FTIndex ftIndex;
+   apache::thrift::CompactSerializer::deserialize(val, ftIndex);
+   return ftIndex;
+}
+
+std::string MetaServiceUtils::fulltextIndexPrefix() {
+    return kFTIndexTable;
+}
+
 }  // namespace meta
 }  // namespace nebula

@@ -154,10 +154,10 @@ bool ESListener::appendDocItem(std::vector<DocItem>& items, const KV& kv) const 
 
 bool ESListener::appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) const {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, kv.first);
-    auto schema = schemaMan_->getEdgeSchema(spaceId_, edgeType);
-    if (schema == nullptr) {
-        VLOG(3) << "get edge schema failed, edgeType " << edgeType;
-        return false;
+    auto ftIndex = schemaMan_->getFTIndex(spaceId_, edgeType);
+    if (!ftIndex.ok()) {
+        VLOG(3) << "get text search index failed";
+        return (ftIndex.status() == nebula::Status::IndexNotFound()) ? true : false;
     }
     auto reader = RowReaderWrapper::getEdgePropReader(schemaMan_,
                                                       spaceId_,
@@ -167,15 +167,15 @@ bool ESListener::appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) co
         VLOG(3) << "get edge reader failed, schema ID " << edgeType;
         return false;
     }
-    return appendDocs(items, schema.get(), reader.get(), edgeType, true);
+    return appendDocs(items, reader.get(), std::move(ftIndex).value());
 }
 
 bool ESListener::appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const {
     auto tagId = NebulaKeyUtils::getTagId(vIdLen_, kv.first);
-    auto schema = schemaMan_->getTagSchema(spaceId_, tagId);
-    if (schema == nullptr) {
-        VLOG(3) << "get tag schema failed, tagId " << tagId;
-        return false;
+    auto ftIndex = schemaMan_->getFTIndex(spaceId_, tagId);
+    if (!ftIndex.ok()) {
+        VLOG(3) << "get text search index failed";
+        return (ftIndex.status() == nebula::Status::IndexNotFound()) ? true : false;
     }
     auto reader = RowReaderWrapper::getTagPropReader(schemaMan_,
                                                      spaceId_,
@@ -185,27 +185,18 @@ bool ESListener::appendTagDocItem(std::vector<DocItem>& items, const KV& kv) con
         VLOG(3) << "get tag reader failed, tagID " << tagId;
         return false;
     }
-    return appendDocs(items, schema.get(), reader.get(), tagId, false);
+    return appendDocs(items, reader.get(), std::move(ftIndex).value());
 }
 
 bool ESListener::appendDocs(std::vector<DocItem>& items,
-                            const meta::SchemaProviderIf* schema,
                             RowReader* reader,
-                            int32_t schemaId,
-                            bool isEdge) const {
-    auto count = schema->getNumFields();
-    for (size_t i = 0; i < count; i++) {
-        auto name = schema->getFieldName(i);
-        auto v = reader->getValueByName(name);
+                            const std::pair<std::string, nebula::meta::cpp2::FTIndex>& fti) const {
+    for (const auto& field : fti.second.get_fields()) {
+        auto v = reader->getValueByName(field);
         if (v.type() != Value::Type::STRING) {
             continue;
         }
-        auto ftIndex = nebula::plugin::IndexTraits::indexName(*spaceName_, isEdge);
-        items.emplace_back(DocItem(std::move(ftIndex),
-                                   std::move(name),
-                                   partId_,
-                                   schemaId,
-                                   std::move(v).getStr()));
+        items.emplace_back(DocItem(fti.first, field, partId_, std::move(v).getStr()));
     }
     return true;
 }

@@ -97,6 +97,22 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         }
     }
 
+    // check fulltext index
+    auto ftIdxRet = getFTIndex(spaceId, tagId);
+    if (nebula::ok(ftIdxRet)) {
+        auto fti = std::move(nebula::value(ftIdxRet));
+        auto ftStatus = ftIndexCheck(fti.get_fields(), tagItems);
+        if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(ftStatus);
+            onFinished();
+            return;
+        }
+    } else if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
+        handleErrorCode(nebula::error(ftIdxRet));
+        onFinished();
+        return;
+    }
+
     for (auto& tagItem : tagItems) {
         auto &cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {

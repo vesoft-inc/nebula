@@ -32,6 +32,7 @@
 #include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
 #include "meta/processors/indexMan/FTServiceProcessor.h"
+#include "meta/processors/indexMan/FTIndexProcessor.h"
 #include "meta/processors/customKV/MultiPutProcessor.h"
 #include "meta/processors/customKV/GetProcessor.h"
 #include "meta/processors/customKV/MultiGetProcessor.h"
@@ -302,6 +303,24 @@ MetaServiceHandler::future_signOutFTService(const cpp2::SignOutFTServiceReq& req
 folly::Future<cpp2::ListFTClientsResp>
 MetaServiceHandler::future_listFTClients(const cpp2::ListFTClientsReq& req) {
     auto* processor = ListFTClientsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createFTIndex(const cpp2::CreateFTIndexReq& req) {
+    auto* processor = CreateFTIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropFTIndex(const cpp2::DropFTIndexReq& req) {
+    auto* processor = DropFTIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListFTIndexesResp>
+MetaServiceHandler::future_listFTIndexes(const cpp2::ListFTIndexesReq& req) {
+    auto* processor = ListFTIndexesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

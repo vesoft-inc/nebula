@@ -101,6 +101,25 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto statiskey = MetaServiceUtils::statisKey(spaceId);
     deleteKeys.emplace_back(statiskey);
 
+    // 6. Delte related fulltext index meta data
+    auto ftRet = doPrefix(MetaServiceUtils::fulltextIndexPrefix());
+    if (!nebula::ok(ftRet)) {
+        auto retCode = nebula::error(ftRet);
+        LOG(ERROR) << "Drop space Failed, space " << spaceName
+                   << " error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
+        onFinished();
+        return;
+    }
+    auto ftIter = nebula::value(ftRet).get();
+    while (ftIter->valid()) {
+        auto index = MetaServiceUtils::parsefulltextIndex(ftIter->val());
+        if (index.get_space_id() == spaceId) {
+            deleteKeys.emplace_back(ftIter->key());
+        }
+        ftIter->next();
+    }
+
     doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
     LOG(INFO) << "Drop space " << spaceName << ", id " << spaceId;
 }

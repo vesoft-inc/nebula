@@ -60,11 +60,8 @@ private:
 
     bool appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const;
 
-    bool appendDocs(std::vector<DocItem>& items,
-                    const meta::SchemaProviderIf* schema,
-                    RowReader* reader,
-                    int32_t schemaId,
-                    bool isEdge) const;
+    bool appendDocs(std::vector<DocItem>& items, RowReader* reader,
+                    const std::pair<std::string, nebula::meta::cpp2::FTIndex>& fti) const;
 
     bool writeData(const std::vector<nebula::plugin::DocItem>& items) const;
 

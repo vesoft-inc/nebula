@@ -443,7 +443,31 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId, int32_t tagOrEdge) {
     }
     return items;
 }
+template<typename RESP>
+ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex>
+BaseProcessor<RESP>::getFTIndex(GraphSpaceID spaceId, int32_t tagOrEdge) {
+    const auto& indexPrefix = MetaServiceUtils::fulltextIndexPrefix();
+    auto iterRet = doPrefix(indexPrefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Tag or edge fulltext index prefix failed, error :"
+                   << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
+    }
+    auto indexIter = nebula::value(iterRet).get();
 
+    while (indexIter->valid()) {
+        auto index = MetaServiceUtils::parsefulltextIndex(indexIter->val());
+        auto id = index.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type
+                ? index.get_depend_schema().get_edge_type()
+                : index.get_depend_schema().get_tag_id();
+        if (spaceId == index.get_space_id() && tagOrEdge == id) {
+            return index;
+        }
+        indexIter->next();
+    }
+    return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+}
 
 template<typename RESP>
 nebula::cpp2::ErrorCode
@@ -471,7 +495,28 @@ BaseProcessor<RESP>::indexCheck(const std::vector<cpp2::IndexItem>& items,
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
-
+template<typename RESP>
+nebula::cpp2::ErrorCode
+BaseProcessor<RESP>::ftIndexCheck(const std::vector<std::string>& cols,
+                                  const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+    for (const auto& item : alterItems) {
+        if (*item.op_ref() == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+            *item.op_ref() == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+            const auto& itemCols = item.get_schema().get_columns();
+            for (const auto& iCol : itemCols) {
+                auto it = std::find_if(cols.begin(), cols.end(),
+                                       [&] (const auto& c) {
+                                           return c == iCol.name;
+                                       });
+                if (it != cols.end()) {
+                    LOG(ERROR) << "fulltext index conflict";
+                    return nebula::cpp2::ErrorCode::E_CONFLICT;
+                }
+            }
+        }
+    }
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
 template<typename RESP>
 bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,

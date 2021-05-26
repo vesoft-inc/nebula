@@ -54,6 +54,21 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         return;
     }
 
+    auto ftIdxRet = getFTIndex(spaceId, tagId);
+    if (nebula::ok(ftIdxRet)) {
+        LOG(ERROR) << "Drop tag error, fulltext index conflict, "
+                   << "please delete fulltext index first.";
+        handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
+    if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
+        handleErrorCode(nebula::error(ftIdxRet));
+        onFinished();
+        return;
+    }
+
     auto ret = getTagKeys(spaceId, tagId);
     if (!nebula::ok(ret)) {
         handleErrorCode(nebula::error(ret));

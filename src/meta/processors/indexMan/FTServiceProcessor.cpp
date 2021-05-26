@@ -56,7 +56,7 @@ void SignOutFTServiceProcessor::process(const cpp2::SignOutFTServiceReq&) {
 }
 
 void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
-    folly::SharedMutex::WriteHolder rHolder(LockUtils::fulltextServicesLock());
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::fulltextServicesLock());
     const auto& prefix = MetaServiceUtils::fulltextServiceKey();
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
