@@ -64,6 +64,12 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
+    Status prepareNeededProps();
+
+    Status checkNeededProps();
+
     void getNeighborsAndFindPath();
 
     bool isFinalStep() {
@@ -74,7 +80,12 @@ private:
 
     void getToFrontiers(std::vector<storage::cpp2::PropDef> props);
 
+    std::vector<VertexID> getNeighborIdsFromResps(
+        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &result) const;
+
     void findPath();
+
+    inline void saveSinglePath(VertexID src, Neighbor &neighbor);
 
     inline void meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor);
 
@@ -87,7 +98,8 @@ private:
         std::multimap<VertexID, Path> &pathToNeighbor,
         VisitedBy visitedBy);
 
-    inline bool isPathAcceptable(Path path, Neighbor &neighbor, VisitedBy visitedBy);
+    inline bool isPathAcceptable(Path path, VertexID stepOutSrcId, Neighbor &neighbor,
+                                 VisitedBy visitedBy, bool dstShortest);
 
     Status setupVids();
 
@@ -95,13 +107,37 @@ private:
 
     Status doFilter(
         storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
-        Expression *filter,
-        bool isOutBound,
-        Frontiers &frontiers);
+        Frontiers &frontiers,
+        bool isToSide);
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
+    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool isToSide);
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
+    StatusOr<std::vector<storage::cpp2::PropDef>> getNeighborProps(bool isToSide);
+
+    void fetchVertexPropsAndFilter(
+        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+        std::vector<VertexID> ids,
+        bool isToSide);
+
+    void doWithFilter(
+        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+        bool isToSide);
+    /**
+     * A container to hold the mapping from vertex id to its properties.
+     */
+    class VertexHolder final {
+    public:
+        explicit VertexHolder(ExecutionContext* ectx) : ectx_(ectx) { }
+        OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
+        OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
+        void add(const std::vector<storage::cpp2::QueryResponse> &responses);
+
+    private:
+        std::unordered_map<std::pair<VertexID, TagID>, RowReader> data_;
+        mutable std::unordered_map<
+            TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagSchemaMap_;
+        ExecutionContext* ectx_{nullptr};
+    };
 
 private:
     FindPathSentence                               *sentence_{nullptr};
@@ -113,8 +149,12 @@ private:
     Clause::Step                                    step_;
     Clause::Where                                   where_;
     OverClause::Direction                           direction_{OverClause::Direction::kForward};
+    std::vector<EdgeType>                           fEdgeTypes_;
+    std::vector<EdgeType>                           tEdgeTypes_;
     bool                                            shortest_{false};
+    bool                                            singleShortest_{false};
     bool                                            noLoop_{false};
+    bool oneWayTraverse_{false};
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                                 srcTagProps_;
     SchemaPropIndex                                 dstTagProps_;
@@ -138,10 +178,17 @@ private:
     // interim path
     std::multimap<VertexID, Path>                   pathFrom_;
     std::multimap<VertexID, Path>                   pathTo_;
+    // interim path shortest length
+    using PathShortestLengthMap = std::unordered_map<std::pair<VertexID, VertexID>, size_t>;
+    PathShortestLengthMap                           pathFromShortestLength_;
+    PathShortestLengthMap                           pathToShortestLength_;
     // final path(shortest or all)
     std::multimap<VertexID, Path>                   finalPath_;
     uint64_t                                        currentStep_{1};
     uint64_t                                        steps_{0};
+    std::unique_ptr<WhereWrapper>                   whereWrapper_;
+    std::unique_ptr<VertexHolder>                   fromVertexHolder_;
+    std::unique_ptr<VertexHolder>                   toVertexHolder_;
 };
 }  // namespace graph
 }  // namespace nebula
