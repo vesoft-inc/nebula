@@ -378,6 +378,7 @@ public:
         kLeader,
         kData,
         kDataStop,
+        kDataReset,
         kShowBalancePlan,
     };
 

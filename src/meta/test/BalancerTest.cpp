@@ -891,7 +891,8 @@ TEST(BalanceTest, RecoveryTest) {
         }
         ASSERT_EQ(6, num);
     }
-    LOG(INFO) << "Now let's recovery it.";
+    LOG(INFO) << "Now let's try to recovery it. Since the the host will expired in 1 second, "
+              << "the src host would be regarded as offline, so all task will be invalid";
     std::vector<Status> normalSts(7, Status::OK());
     static_cast<TestFaultInjector*>(balancer.client_->faultInjector())->reset(std::move(normalSts));
     ret = balancer.balance();
@@ -908,7 +909,7 @@ TEST(BalanceTest, RecoveryTest) {
             auto id = BalancePlan::id(iter->key());
             auto status = BalancePlan::status(iter->val());
             ASSERT_EQ(balanceId, id);
-            ASSERT_EQ(BalancePlan::Status::SUCCEEDED, status);
+            ASSERT_EQ(BalancePlan::Status::FAILED, status);
             num++;
             iter->next();
         }
@@ -934,6 +935,7 @@ TEST(BalanceTest, RecoveryTest) {
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTask::Status::START, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::INVALID, task.ret_);
                 task.startTimeMs_ = std::get<2>(tup);
@@ -948,7 +950,7 @@ TEST(BalanceTest, RecoveryTest) {
     }
 }
 
-TEST(BalanceTest, StopBalanceDataTest) {
+TEST(BalanceTest, StopAndRecoverTest) {
     FLAGS_task_concurrency = 1;
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -972,8 +974,8 @@ TEST(BalanceTest, StopBalanceDataTest) {
     sleep(1);
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     std::vector<Status> sts(9, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjectorWithSleep(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
+    std::unique_ptr<FaultInjector> sleepInjector(new TestFaultInjectorWithSleep(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(sleepInjector));
     Balancer balancer(kv.get(), std::move(client));
     auto ret = balancer.balance();
     CHECK(ok(ret));
@@ -1034,40 +1036,96 @@ TEST(BalanceTest, StopBalanceDataTest) {
         ASSERT_EQ(5, taskStopped);
     }
 
+    std::unique_ptr<FaultInjector> normalInjector(
+        new TestFaultInjector(std::vector<Status>(9, Status::OK())));
+    balancer.client_ = std::make_unique<AdminClient>(std::move(normalInjector));
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.balance();
     CHECK(ok(ret));
-    ASSERT_NE(value(ret), balanceId);
+    ASSERT_EQ(value(ret), balanceId);
     // resume stopped plan
     sleep(1);
+    // all task should succeed
     {
         const auto& prefix = BalanceTask::prefix(balanceId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
         int32_t num = 0;
-        int32_t taskStarted = 0;
-        int32_t taskEnded = 0;
         while (iter->valid()) {
             BalanceTask task;
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
+                ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
+                ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
                 task.startTimeMs_ = std::get<2>(tup);
                 task.endTimeMs_ = std::get<3>(tup);
-                if (task.status_ == BalanceTask::Status::END) {
-                    ++taskEnded;
-                } else if (task.status_ == BalanceTask::Status::START) {
-                    ++taskStarted;
-                }
             }
             num++;
             iter->next();
         }
         ASSERT_EQ(6, num);
-        EXPECT_EQ(5, taskStarted);
-        EXPECT_EQ(1, taskEnded);
+    }
+}
+
+TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
+    FLAGS_task_concurrency = 1;
+    fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 1;
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+
+    sleep(1);
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    std::vector<Status> sts(9, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjectorWithSleep(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+    Balancer balancer(kv.get(), std::move(client));
+    auto ret = balancer.balance();
+    CHECK(ok(ret));
+    auto balanceId = value(ret);
+
+    sleep(1);
+    // stop the running plan
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    auto stopRet = balancer.stop();
+    CHECK(stopRet.ok());
+    ASSERT_EQ(stopRet.value(), balanceId);
+
+    // wait until the plan finished, no running plan for now
+    sleep(5);
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    auto cleanRet = balancer.cleanLastInValidPlan();
+    CHECK(ok(cleanRet));
+    ASSERT_EQ(value(cleanRet), balanceId);
+
+    {
+        const auto& prefix = BalancePlan::prefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(0, num);
     }
 }
 
