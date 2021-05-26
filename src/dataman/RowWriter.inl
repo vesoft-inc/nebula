@@ -21,6 +21,19 @@ RowWriter::operator<<(T v) noexcept {
             cord_ << (uint64_t)v;
             break;
         }
+        case cpp2::SupportedType::FLOAT: {
+            cord_ << static_cast<float>(v);
+            break;
+        }
+        case cpp2::SupportedType::DOUBLE: {
+            cord_ << static_cast<double>(v);
+            break;
+        }
+        case cpp2::SupportedType::BOOL: {
+            bool ret = v == 0 ? false : true;
+            cord_ << ret;
+            break;
+        }
         default: {
             LOG(ERROR) << "Incompatible value type \"int\""
                        << ", current type " << static_cast<int32_t>(type->get_type());

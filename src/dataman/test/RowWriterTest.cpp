@@ -289,6 +289,72 @@ TEST(RowWriter, skip) {
     EXPECT_DOUBLE_EQ(0.0, dVal);
 }
 
+TEST(RowWriter, withSchemaTypeConvert) {
+    auto schema = std::make_shared<SchemaWriter>();
+    schema->appendCol("col1", cpp2::SupportedType::BOOL);
+    schema->appendCol("col2", cpp2::SupportedType::INT);
+    schema->appendCol("col3", cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col4", cpp2::SupportedType::INT);
+    schema->appendCol("col5", cpp2::SupportedType::INT);
+    schema->appendCol("col6", cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col7", cpp2::SupportedType::BOOL);
+
+    double dval = 3.1415926;
+    RowWriter writer(schema);
+    writer << true
+           << true         // bool to int
+           << dval
+           << dval         // double to int
+           << 1551331827
+           << 1551331827   // int to double
+           << 1551331827;  // int to bool
+    std::string encoded = writer.encode();
+    auto reader = RowReader::getRowReader(encoded, schema);
+
+    bool bVal;
+    int64_t btoiVal;
+    double dVal;
+    int64_t dtoiVal;
+    int64_t iVal;
+    double  itodVal;
+    bool itobVal;
+
+    // Col 1
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getBool("col1", bVal));
+    EXPECT_TRUE(bVal);
+
+    // Col 2
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getInt("col2", btoiVal));
+    EXPECT_EQ(1, btoiVal);
+
+    // Col 3
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getDouble("col3", dVal));
+    EXPECT_FLOAT_EQ(3.1415926, dVal);
+
+    // Col 4
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getInt("col4", dtoiVal));
+    EXPECT_EQ(3, dtoiVal);
+
+    // Col 5
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getInt("col5", iVal));
+    EXPECT_EQ(1551331827, iVal);
+
+    // Col 6
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getDouble("col6", itodVal));
+    EXPECT_FLOAT_EQ(1551331827.0, itodVal);
+
+    // Col 7
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getBool("col7", itobVal));
+    EXPECT_TRUE(itobVal);
+}
+
 }  // namespace nebula
 
 
