@@ -1380,6 +1380,28 @@ TEST_F(SchemaTest, fetchWithTimestamp) {
         ASSERT_EQ((*resp.get_rows())[0].get_columns()[3].getType(),
                   cpp2::ColumnValue::Type::timestamp);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "FETCH PROP ON tag_timestamp 111 YIELD tag_timestamp.`create`;";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns().size(), 2);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns()[1].getType(),
+                  cpp2::ColumnValue::Type::timestamp);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "FETCH PROP ON edge_timestamp 111->222 YIELD edge_timestamp.`create`;";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_TRUE(resp.get_rows() != nullptr);
+        ASSERT_EQ(resp.get_rows()->size(), 1);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns().size(), 4);
+        ASSERT_EQ((*resp.get_rows())[0].get_columns()[3].getType(),
+                  cpp2::ColumnValue::Type::timestamp);
+    }
 }
 
 }   // namespace graph
