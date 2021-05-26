@@ -257,7 +257,7 @@ public:
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
     }
 
-    // Only int and double are supported
+    // Only int, double and timestamp are supported
     static std::string boundVariant(nebula::cpp2::SupportedType type,
                                     NebulaBoundValueType op,
                                     const VariantType& v = 0L) {
@@ -270,7 +270,8 @@ public:
             }
             case NebulaBoundValueType::kSubtraction : {
                 std::string str;
-                if (type == nebula::cpp2::SupportedType::INT) {
+                if (type == nebula::cpp2::SupportedType::INT ||
+                    type == nebula::cpp2::SupportedType::TIMESTAMP) {
                     str = encodeInt64(boost::get<int64_t>(v));
                 } else {
                     str = encodeDouble(boost::get<double>(v));
@@ -288,7 +289,8 @@ public:
             }
             case NebulaBoundValueType::kAddition : {
                 std::string str;
-                if (type == nebula::cpp2::SupportedType::INT) {
+                if (type == nebula::cpp2::SupportedType::INT ||
+                    type == nebula::cpp2::SupportedType::TIMESTAMP) {
                     str = encodeInt64(boost::get<int64_t>(v));
                 } else {
                     str = encodeDouble(boost::get<double>(v));
