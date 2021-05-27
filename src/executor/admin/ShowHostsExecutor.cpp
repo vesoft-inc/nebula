@@ -24,7 +24,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     static constexpr char kPartitionDelimeter[] = ", ";
 
     auto *shNode = asNode<ShowHosts>(node());
-    auto makeTranditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
+    auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
         DataSet v({"Host",
                    "Port",
                    "Status",
@@ -128,13 +128,15 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     };
 
     auto makeGitInfoResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
-        DataSet v({"Host", "Port", "Status", "Role", "Git Info Sha"});
+        DataSet v({"Host", "Port", "Status", "Role", "Git Info Sha", "Version"});
         for (const auto &host : hostVec) {
             nebula::Row r({host.get_hostAddr().host,
                            host.get_hostAddr().port,
                            apache::thrift::util::enumNameSafe(host.get_status()),
                            apache::thrift::util::enumNameSafe(host.get_role()),
                            host.get_git_info_sha()});
+            // empty for non-versioned
+            r.emplace_back(host.version_ref().has_value() ? Value(*host.version_ref()) : Value());
             v.emplace_back(std::move(r));
         }   // row loop
         return v;
@@ -151,7 +153,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
             }
             auto value = std::move(resp).value();
             if (type == meta::cpp2::ListHostType::ALLOC) {
-                return finish(makeTranditionalResult(value));
+                return finish(makeTraditionalResult(value));
             }
             return finish(makeGitInfoResult(value));
         });

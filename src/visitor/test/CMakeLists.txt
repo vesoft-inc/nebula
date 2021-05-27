@@ -54,6 +54,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_graph_obj>
         $<TARGET_OBJECTS:common_ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:common_ws_common_obj>
+        $<TARGET_OBJECTS:common_version_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

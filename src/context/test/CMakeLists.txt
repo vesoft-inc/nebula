@@ -29,6 +29,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_graph_obj>
     $<TARGET_OBJECTS:common_ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:common_ws_common_obj>
+    $<TARGET_OBJECTS:common_version_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:context_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
