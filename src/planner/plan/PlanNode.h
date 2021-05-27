@@ -23,7 +23,8 @@ class PlanNode {
 public:
     enum class Kind : uint8_t {
         kUnknown = 0,
-        kStart,
+
+        // Query
         kGetNeighbors,
         kGetVertices,
         kGetEdges,
@@ -39,12 +40,25 @@ public:
         kTopN,
         kLimit,
         kAggregate,
-        kSelect,
-        kLoop,
         kSwitchSpace,
         kDedup,
-        kPassThrough,
         kAssign,
+        kBFSShortest,
+        kProduceSemiShortestPath,
+        kConjunctPath,
+        kProduceAllPaths,
+        kCartesianProduct,
+        kSubgraph,
+        kDataCollect,
+        kLeftJoin,
+        kInnerJoin,
+
+        // Logic
+        kStart,
+        kSelect,
+        kLoop,
+        kPassThrough,
+
         // schema related
         kCreateSpace,
         kCreateTag,
@@ -63,6 +77,7 @@ public:
         kDropSpace,
         kDropTag,
         kDropEdge,
+
         // index related
         kCreateTagIndex,
         kCreateEdgeIndex,
@@ -87,7 +102,7 @@ public:
         kShowBalance,
         kSubmitJob,
         kShowHosts,
-        kDataCollect,
+
         // user related
         kCreateUser,
         kDropUser,
@@ -98,31 +113,30 @@ public:
         kListUserRoles,
         kListUsers,
         kListRoles,
+
+        // Snapshot
         kCreateSnapshot,
         kDropSnapshot,
         kShowSnapshots,
-        kLeftJoin,
-        kInnerJoin,
+
+        // Update/Delete
         kDeleteVertices,
         kDeleteEdges,
         kUpdateVertex,
         kUpdateEdge,
+
+        // Show
         kShowParts,
         kShowCharset,
         kShowCollation,
         kShowStats,
         kShowConfigs,
-        kShowGroups,
-        kShowZones,
         kSetConfig,
         kGetConfig,
-        kBFSShortest,
-        kProduceSemiShortestPath,
-        kConjunctPath,
-        kProduceAllPaths,
-        kCartesianProduct,
-        kSubgraph,
+
         // zone related
+        kShowGroups,
+        kShowZones,
         kAddGroup,
         kDropGroup,
         kDescribeGroup,
@@ -133,10 +147,12 @@ public:
         kDescribeZone,
         kAddHostIntoZone,
         kDropHostFromZone,
+
         // listener related
         kAddListener,
         kRemoveListener,
         kShowListener,
+
         // text service related
         kShowTSClients,
         kShowFTIndexes,
@@ -146,6 +162,9 @@ public:
         kIngest,
     };
 
+    bool isQueryNode() const {
+        return kind_ < Kind::kStart;
+    }
 
     // Describe plan node
     virtual std::unique_ptr<PlanNodeDescription> explain() const;
