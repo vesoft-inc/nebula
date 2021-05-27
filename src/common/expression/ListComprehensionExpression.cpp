@@ -139,6 +139,13 @@ void ListComprehensionExpression::resetFrom(Decoder& decoder) {
 }
 
 std::string ListComprehensionExpression::toString() const {
+    if (originString_ != nullptr) {
+        return *originString_;
+    }
+    return makeString();
+}
+
+std::string ListComprehensionExpression::makeString() const {
     std::string buf;
     buf.reserve(256);
 

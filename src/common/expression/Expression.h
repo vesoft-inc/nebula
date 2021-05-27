@@ -131,10 +131,6 @@ public:
 
     virtual std::string toString() const = 0;
 
-    virtual std::string rawString() const {
-        return toString();
-    }
-
     virtual void accept(ExprVisitor* visitor) = 0;
 
     // Deep copy
