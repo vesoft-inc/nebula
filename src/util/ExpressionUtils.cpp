@@ -748,5 +748,13 @@ std::unique_ptr<Expression> ExpressionUtils::zeroCondition(const std::string &va
         new ConstantExpression(0));
 }
 
+// var == value
+std::unique_ptr<Expression> ExpressionUtils::equalCondition(const std::string &var,
+                                                            const Value &value) {
+    return std::make_unique<RelationalExpression>(Expression::Kind::kRelEQ,
+                                                  new VariableExpression(new std::string(var)),
+                                                  new ConstantExpression(value));
+}
+
 }   // namespace graph
 }   // namespace nebula

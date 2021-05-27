@@ -195,7 +195,6 @@ Feature: Integer Vid All Path
       | <("Tim Duncan")<-[:like]-("Dejounte Murray")-[:like]->("Manu Ginobili")<-[:like]-("Tony Parker")>   |
       | <("Tim Duncan")<-[:like]-("Tiago Splitter")-[:like]->("Manu Ginobili")<-[:like]-("Tony Parker")>    |
 
-  @skip
   Scenario: Integer Vid ALL Path WITH PROP
     When executing query:
       """

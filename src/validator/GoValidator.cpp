@@ -126,15 +126,15 @@ Status GoValidator::validateYield(YieldClause* yield) {
 }
 
 Status GoValidator::toPlan() {
-    if (steps_.mToN == nullptr) {
-        if (steps_.steps == 0) {
+    if (!steps_.isMToN()) {
+        if (steps_.steps() == 0) {
             auto* passThrough = PassThroughNode::make(qctx_, nullptr);
             passThrough->setColNames(std::move(colNames_));
             tail_ = passThrough;
             root_ = tail_;
             return Status::OK();
         }
-        if (steps_.steps == 1) {
+        if (steps_.steps() == 1) {
             return buildOneStepPlan();
         }
         return buildNStepsPlan();
@@ -241,7 +241,7 @@ Status GoValidator::buildNStepsPlan() {
         loopBody = projectFromJoin;
     }
 
-    auto *condition = buildExpandCondition(gn->outputVar(), steps_.steps - 1);
+    auto *condition = buildExpandCondition(gn->outputVar(), steps_.steps() - 1);
     qctx_->objPool()->add(condition);
     auto* loop = Loop::make(
         qctx_,
@@ -368,7 +368,7 @@ Status GoValidator::buildMToNPlan() {
 
     PlanNode *body = dedupNode == nullptr ? projectResult : dedupNode;
     auto *condition = buildExpandCondition(body->outputVar(),
-                                           steps_.mToN->nSteps);
+                                           steps_.nSteps());
     qctx_->objPool()->add(condition);
     auto* loop = Loop::make(
         qctx_,
@@ -391,7 +391,7 @@ Status GoValidator::buildMToNPlan() {
     auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kMToN);
     dc->addDep(loop);
     dc->setInputVars(collectVars);
-    dc->setMToN(steps_.mToN);
+    dc->setMToN(steps_);
     dc->setDistinct(distinct_);
     dc->setColNames(projectResult->colNames());
     root_ = dc;
@@ -475,7 +475,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
                                                     PlanNode* dependencyForJoinInput) {
     auto* pool = qctx_->objPool();
 
-    if (steps_.steps > 1 || steps_.mToN != nullptr) {
+    if (steps_.steps() > 1 || steps_.isMToN()) {
         DCHECK(projectFromJoin != nullptr);
         auto* joinHashKey = pool->add(new VariablePropertyExpression(
             new std::string(dependencyForJoinInput->outputVar()), new std::string(kVid)));
@@ -486,7 +486,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
                            dependencyForJoinInput,
                            {dependencyForJoinInput->outputVar(), ExecutionContext::kLatestVersion},
                            {projectFromJoin->outputVar(),
-                            steps_.mToN != nullptr ? ExecutionContext::kPreviousOneVersion
+                            steps_.isMToN() ? ExecutionContext::kPreviousOneVersion
                                                    : ExecutionContext::kLatestVersion},
                            {joinHashKey},
                            {probeKey});
@@ -502,7 +502,7 @@ PlanNode* GoValidator::buildJoinPipeOrVariableInput(PlanNode* projectFromJoin,
     DCHECK(dependencyForJoinInput != nullptr);
     auto* joinHashKey = pool->add(
         new VariablePropertyExpression(new std::string(dependencyForJoinInput->outputVar()),
-                                       new std::string((steps_.steps > 1 || steps_.mToN != nullptr)
+                                       new std::string((steps_.steps() > 1 || steps_.isMToN())
                                                            ? from_.firstBeginningSrcVidColName
                                                            : kVid)));
     std::string varName = from_.fromType == kPipe ? inputVarName_ : from_.userDefinedVarName;

@@ -37,7 +37,7 @@ folly::Future<Status> UnwindExecutor::execute() {
             ds.rows.emplace_back(std::move(row));
         }
     }
-
+    VLOG(1) << "Unwind result is: " << ds;
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 

@@ -162,7 +162,6 @@ Feature: NoLoop Path
       | <("Tim Duncan")<-[:like]-("Dejounte Murray")-[:like]->("Manu Ginobili")<-[:like]-("Tony Parker")>   |
       | <("Tim Duncan")<-[:like]-("Tiago Splitter")-[:like]->("Manu Ginobili")<-[:like]-("Tony Parker")>    |
 
-  @skip
   Scenario: NOLOOP Path WITH PROP
     When executing query:
       """

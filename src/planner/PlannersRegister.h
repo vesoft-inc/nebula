@@ -20,6 +20,8 @@ private:
     static void registSequential();
 
     static void registMatch();
+
+    static void registPath();
 };
 }  // namespace graph
 }  // namespace nebula

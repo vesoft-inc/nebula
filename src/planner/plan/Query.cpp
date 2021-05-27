@@ -492,7 +492,7 @@ PlanNode* DataCollect::clone() const {
 
 void DataCollect::cloneMembers(const DataCollect &l) {
     VariableDependencyNode::cloneMembers(l);
-    mToN_ = l.mToN();
+    step_ = l.step();
     distinct_ = l.distinct();
 }
 

@@ -60,7 +60,6 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
                 return Status::SemanticError(ss.str());
             }
             starts.vids.emplace_back(std::move(vid));
-            startVidList_->add(expr->clone().release());
         }
     }
     return Status::OK();
@@ -106,35 +105,20 @@ Status TraversalValidator::validateOver(const OverClause* clause, Over& over) {
     return Status::OK();
 }
 
-Status TraversalValidator::validateStep(const StepClause* clause, Steps& step) {
+Status TraversalValidator::validateStep(const StepClause* clause, StepClause& step) {
     if (clause == nullptr) {
         return Status::SemanticError("Step clause nullptr.");
     }
+    step = *clause;
     if (clause->isMToN()) {
-        auto* mToN = qctx_->objPool()->makeAndAdd<StepClause::MToN>();
-        mToN->mSteps = clause->mToN()->mSteps;
-        mToN->nSteps = clause->mToN()->nSteps;
-
-        if (mToN->mSteps == 0 && mToN->nSteps == 0) {
-            step.steps = 0;
-            return Status::OK();
+        if (step.mSteps() == 0) {
+            step.setMSteps(1);
         }
-        if (mToN->mSteps == 0) {
-            mToN->mSteps = 1;
-        }
-        if (mToN->nSteps < mToN->mSteps) {
+        if (step.nSteps() < step.mSteps()) {
             return Status::SemanticError(
                 "`%s', upper bound steps should be greater than lower bound.",
-                clause->toString().c_str());
+                step.toString().c_str());
         }
-        if (mToN->mSteps == mToN->nSteps) {
-            steps_.steps = mToN->mSteps;
-            return Status::OK();
-        }
-        step.mToN = mToN;
-    } else {
-        auto steps = clause->steps();
-        step.steps = steps;
     }
     return Status::OK();
 }

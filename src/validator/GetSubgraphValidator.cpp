@@ -207,7 +207,7 @@ Status GetSubgraphValidator::toPlan() {
         startVidsVar = loopDep->outputVar();
     }
 
-    if (steps_.steps == 0) {
+    if (steps_.steps() == 0) {
         return zeroStep(loopDep == nullptr ? bodyStart : loopDep, startVidsVar);
     }
 
@@ -224,11 +224,11 @@ Status GetSubgraphValidator::toPlan() {
     gn->setInputVar(startVidsVar);
 
     auto oneMoreStepOutput = vctx_->anonVarGen()->getVar();
-    auto* subgraph = Subgraph::make(qctx_, gn, oneMoreStepOutput, loopSteps_, steps_.steps + 1);
+    auto* subgraph = Subgraph::make(qctx_, gn, oneMoreStepOutput, loopSteps_, steps_.steps() + 1);
     subgraph->setOutputVar(startVidsVar);
     subgraph->setColNames({nebula::kVid});
 
-    auto* loopCondition = buildExpandCondition(gn->outputVar(), steps_.steps + 1);
+    auto* loopCondition = buildExpandCondition(gn->outputVar(), steps_.steps() + 1);
     qctx_->objPool()->add(loopCondition);
     auto* loop = Loop::make(qctx_, loopDep, subgraph, loopCondition);
 

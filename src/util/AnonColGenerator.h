@@ -19,6 +19,7 @@ constexpr char kVerticesStr[] = "_vertices";
 constexpr char kEdgeStr[]     = "_edge";
 constexpr char kEdgesStr[]    = "_edges";
 constexpr char kPathStr[]     = "_path";
+constexpr char kCostStr[]     = "_cost";
 
 /**
  * An utility to generate an anonymous column name.

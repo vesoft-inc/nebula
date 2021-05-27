@@ -34,7 +34,7 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
             break;
         }
         case DataCollect::DCKind::kMToN: {
-            NG_RETURN_IF_ERROR(collectMToN(vars, dc->mToN(), dc->distinct()));
+            NG_RETURN_IF_ERROR(collectMToN(vars, dc->step(), dc->distinct()));
             break;
         }
         case DataCollect::DCKind::kBFSShortest: {
@@ -131,7 +131,7 @@ Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
 }
 
 Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
-                                        StepClause::MToN* mToN,
+                                        const StepClause& mToN,
                                         bool distinct) {
     DataSet ds;
     ds.colNames = std::move(colNames_);
@@ -142,9 +142,9 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
     for (auto& var : vars) {
         auto& hist = ectx_->getHistory(var);
         std::size_t histSize = hist.size();
-        DCHECK_GE(mToN->mSteps, 1);
-        std::size_t n = mToN->nSteps > histSize ? histSize : mToN->nSteps;
-        for (auto i = mToN->mSteps - 1; i < n; ++i) {
+        DCHECK_GE(mToN.mSteps(), 1);
+        std::size_t n = mToN.nSteps() > histSize ? histSize : mToN.nSteps();
+        for (auto i = mToN.mSteps() - 1; i < n; ++i) {
             auto iter = hist[i].iter();
             if (iter->isSequentialIter()) {
                 auto* seqIter = static_cast<SequentialIter*>(iter.get());
@@ -226,8 +226,8 @@ Status DataCollectExecutor::collectMultiplePairShortestPath(const std::vector<st
             }
             auto* seqIter = static_cast<SequentialIter*>(iter.get());
             for (; seqIter->valid(); seqIter->next()) {
-                auto& pathVal = seqIter->getColumn("_path");
-                auto cost = seqIter->getColumn("cost");
+                auto& pathVal = seqIter->getColumn(kPathStr);
+                auto cost = seqIter->getColumn(kCostStr);
                 if (!pathVal.isPath()) {
                     return Status::Error("Type error `%s', should be PATH",
                                          pathVal.typeName().c_str());

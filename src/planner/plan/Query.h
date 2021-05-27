@@ -947,8 +947,8 @@ public:
         return qctx->objPool()->add(new DataCollect(qctx, kind));
     }
 
-    void setMToN(StepClause::MToN* mToN) {
-        mToN_ = mToN;
+    void setMToN(StepClause step) {
+        step_ = std::move(step);
     }
 
     void setDistinct(bool distinct) {
@@ -974,8 +974,8 @@ public:
         return vars;
     }
 
-    StepClause::MToN* mToN() const {
-        return mToN_;
+    StepClause step() const {
+        return step_;
     }
 
     bool distinct() const {
@@ -993,10 +993,10 @@ private:
     void cloneMembers(const DataCollect&);
 
 private:
-    DCKind kind_;
+    DCKind          kind_;
     // using for m to n steps
-    StepClause::MToN* mToN_{nullptr};
-    bool distinct_{false};
+    StepClause      step_;
+    bool            distinct_{false};
 };
 
 class Join : public SingleDependencyNode {

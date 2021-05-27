@@ -174,6 +174,15 @@ protected:
 
     Status invalidLabelIdentifiers(const Expression* expr) const;
 
+    template <typename T>
+    std::unique_ptr<T> getContext() const {
+        auto ctx = std::make_unique<T>();
+        ctx->sentence = sentence_;
+        ctx->qctx = qctx_;
+        ctx->space = space_;
+        return ctx;
+    }
+
 protected:
     SpaceInfo                       space_;
     Sentence*                       sentence_{nullptr};

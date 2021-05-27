@@ -158,6 +158,9 @@ public:
 
     // size(var) != 0
     static std::unique_ptr<Expression> neZeroCondition(const std::string& var);
+
+    // var == value
+    static std::unique_ptr<Expression> equalCondition(const std::string& var, const Value& value);
 };
 
 }   // namespace graph

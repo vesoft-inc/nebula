@@ -93,15 +93,6 @@ private:
 
     Status buildOutputs(const YieldColumns *yields);
 
-    template <typename T>
-    std::unique_ptr<T> getContext() const {
-        auto ctx = std::make_unique<T>();
-        ctx->sentence = sentence_;
-        ctx->qctx = qctx_;
-        ctx->space = space_;
-        return ctx;
-    }
-
 private:
     std::unique_ptr<MatchAstContext>            matchCtx_;
 };

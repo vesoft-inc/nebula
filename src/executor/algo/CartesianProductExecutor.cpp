@@ -34,6 +34,7 @@ folly::Future<Status> CartesianProductExecutor::execute() {
                                std::make_move_iterator(cols.begin()),
                                std::make_move_iterator(cols.end()));
     }
+    VLOG(1) << "Cartesian Product is : " << result;
     return finish(ResultBuilder().value(Value(std::move(result))).finish());
 }
 

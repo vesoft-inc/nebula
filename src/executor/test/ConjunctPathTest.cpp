@@ -65,7 +65,7 @@ protected:
         {
             DataSet ds;
             auto cost = 1;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 0->1
                 Row row;
@@ -136,7 +136,7 @@ protected:
         {
             DataSet ds;
             auto cost = 2;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 0->1->5
                 Row row;
@@ -208,7 +208,7 @@ protected:
         {
             DataSet ds;
             auto cost = 3;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 0->1->5->7, 0->1->6->7
                 List paths;
@@ -304,7 +304,7 @@ protected:
         // backward endVid {9, 12}
         {
             DataSet ds;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 Row row;
                 row.values = {"9", Value::kEmpty, 0, Value::kEmpty};
@@ -319,7 +319,7 @@ protected:
 
             DataSet ds1;
             auto cost = 1;
-            ds1.colNames = {"_dst", "_src", "cost", "paths"};
+            ds1.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 9->8
                 Row row;
@@ -352,7 +352,7 @@ protected:
         {
             DataSet ds;
             auto cost = 2;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 9->8->7
                 Row row;
@@ -385,7 +385,7 @@ protected:
         {
             DataSet ds;
             auto cost = 3;
-            ds.colNames = {"_dst", "_src", "cost", "paths"};
+            ds.colNames = {kDst, kSrc, kCostStr, kPathStr};
             {
                 // 9->8->7->4, 9->8->7->5, 9->8->7->6
                 for (auto i = 4; i < 7; i++) {
@@ -426,7 +426,7 @@ protected:
             // 1->2
             // 1->3
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"1", Value::kEmpty};
@@ -435,7 +435,7 @@ protected:
             qctx_->ectx()->setResult("forward1", ResultBuilder().value(ds1).finish());
 
             DataSet ds2;
-            ds2.colNames = {kVid, "edge"};
+            ds2.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"2", Edge("1", "2", 1, "edge1", 0, {})};
@@ -451,7 +451,7 @@ protected:
         {
             // 4
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"4", Value::kEmpty};
@@ -460,13 +460,13 @@ protected:
             qctx_->ectx()->setResult("backward1", ResultBuilder().value(ds1).finish());
 
             DataSet ds2;
-            ds2.colNames = {kVid, "edge"};
+            ds2.colNames = {kVid, kEdgeStr};
             qctx_->ectx()->setResult("backward1", ResultBuilder().value(ds2).finish());
         }
         {
             // 2
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"2", Value::kEmpty};
@@ -475,13 +475,13 @@ protected:
             qctx_->ectx()->setResult("backward2", ResultBuilder().value(ds1).finish());
 
             DataSet ds2;
-            ds2.colNames = {kVid, "edge"};
+            ds2.colNames = {kVid, kEdgeStr};
             qctx_->ectx()->setResult("backward2", ResultBuilder().value(ds2).finish());
         }
         {
             // 4->3
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"4", Value::kEmpty};
@@ -490,7 +490,7 @@ protected:
             qctx_->ectx()->setResult("backward3", ResultBuilder().value(ds1).finish());
 
             DataSet ds2;
-            ds2.colNames = {kVid, "edge"};
+            ds2.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"3", Edge("4", "3", -1, "edge1", 0, {})};
@@ -501,7 +501,7 @@ protected:
         {
             // 5->4
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"5", Value::kEmpty};
@@ -510,7 +510,7 @@ protected:
             qctx_->ectx()->setResult("backward4", ResultBuilder().value(ds1).finish());
 
             DataSet ds2;
-            ds2.colNames = {kVid, "edge"};
+            ds2.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"4", Edge("5", "4", -1, "edge1", 0, {})};
@@ -530,7 +530,7 @@ protected:
             // 1->2
             // 1->3
             DataSet ds;
-            ds.colNames = {kVid, "path"};
+            ds.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -552,7 +552,7 @@ protected:
         {
             // 4->7
             DataSet ds2;
-            ds2.colNames = {kVid, "path"};
+            ds2.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -566,7 +566,7 @@ protected:
         {
             // 2
             DataSet ds1;
-            ds1.colNames = {kVid, "path"};
+            ds1.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -580,7 +580,7 @@ protected:
 
             // 2->7
             DataSet ds2;
-            ds2.colNames = {kVid, "path"};
+            ds2.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -594,7 +594,7 @@ protected:
         {
             // 4->3
             DataSet ds2;
-            ds2.colNames = {kVid, "path"};
+            ds2.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -608,7 +608,7 @@ protected:
         {
             // 5->4
             DataSet ds;
-            ds.colNames = {kVid, "path"};
+            ds.colNames = {kVid, kPathStr};
             {
                 Row row;
                 List paths;
@@ -640,7 +640,7 @@ TEST_F(ConjunctPathTest, BiBFSNoPath) {
                                         5);
     conjunct->setLeftVar("forward1");
     conjunct->setRightVar("backward1");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -649,7 +649,7 @@ TEST_F(ConjunctPathTest, BiBFSNoPath) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
@@ -662,7 +662,7 @@ TEST_F(ConjunctPathTest, BiBFSOneStepPath) {
                                         5);
     conjunct->setLeftVar("forward1");
     conjunct->setRightVar("backward2");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -671,7 +671,7 @@ TEST_F(ConjunctPathTest, BiBFSOneStepPath) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     Row row;
     Path path;
     path.src = Vertex("1", {});
@@ -691,7 +691,7 @@ TEST_F(ConjunctPathTest, BiBFSTwoStepsPath) {
                                         5);
     conjunct->setLeftVar("forward1");
     conjunct->setRightVar("backward3");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -700,7 +700,7 @@ TEST_F(ConjunctPathTest, BiBFSTwoStepsPath) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     Row row;
     Path path;
     path.src = Vertex("1", {});
@@ -721,7 +721,7 @@ TEST_F(ConjunctPathTest, BiBFSThreeStepsPath) {
                                         5);
     conjunct->setLeftVar("forward1");
     conjunct->setRightVar("backward4");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
 
@@ -732,7 +732,7 @@ TEST_F(ConjunctPathTest, BiBFSThreeStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         EXPECT_EQ(result.value().getDataSet(), expected);
         EXPECT_EQ(result.state(), Result::State::kSuccess);
     }
@@ -742,7 +742,7 @@ TEST_F(ConjunctPathTest, BiBFSThreeStepsPath) {
             // 2->4@0
             // 2->4@1
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"4", Edge("2", "4", 1, "edge1", 0, {})};
@@ -758,7 +758,7 @@ TEST_F(ConjunctPathTest, BiBFSThreeStepsPath) {
         {
             // 4->6@0
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"6", Edge("4", "6", -1, "edge1", 0, {})};
@@ -772,7 +772,7 @@ TEST_F(ConjunctPathTest, BiBFSThreeStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         {
             Row row;
             Path path = createPath("1", {"2", "4", "5"}, 1);
@@ -803,7 +803,7 @@ TEST_F(ConjunctPathTest, BiBFSFourStepsPath) {
                                         5);
     conjunct->setLeftVar("forward1");
     conjunct->setRightVar("backward4");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
 
@@ -814,7 +814,7 @@ TEST_F(ConjunctPathTest, BiBFSFourStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         EXPECT_EQ(result.value().getDataSet(), expected);
         EXPECT_EQ(result.state(), Result::State::kSuccess);
     }
@@ -824,7 +824,7 @@ TEST_F(ConjunctPathTest, BiBFSFourStepsPath) {
             // 2->6@0
             // 2->6@1
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"6", Edge("2", "6", 1, "edge1", 0, {})};
@@ -840,7 +840,7 @@ TEST_F(ConjunctPathTest, BiBFSFourStepsPath) {
         {
             // 4->6@0
             DataSet ds1;
-            ds1.colNames = {kVid, "edge"};
+            ds1.colNames = {kVid, kEdgeStr};
             {
                 Row row;
                 row.values = {"6", Edge("4", "6", -1, "edge1", 0, {})};
@@ -854,7 +854,7 @@ TEST_F(ConjunctPathTest, BiBFSFourStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         {
             Row row;
             Path path = createPath("1", {"2", "6", "4", "5"}, 1);
@@ -886,14 +886,14 @@ TEST_F(ConjunctPathTest, AllPathsNoPath) {
                                         5);
     conjunct->setLeftVar("all_paths_forward1");
     conjunct->setRightVar("all_paths_backward1");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();
     EXPECT_TRUE(status.ok());
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
@@ -906,7 +906,7 @@ TEST_F(ConjunctPathTest, AllPathsOneStepPath) {
                                         5);
     conjunct->setLeftVar("all_paths_forward1");
     conjunct->setRightVar("all_paths_backward2");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();
@@ -914,7 +914,7 @@ TEST_F(ConjunctPathTest, AllPathsOneStepPath) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     Row row;
     Path path;
     path.src = Vertex("1", {});
@@ -933,7 +933,7 @@ TEST_F(ConjunctPathTest, AllPathsTwoStepsPath) {
                                         5);
     conjunct->setLeftVar("all_paths_forward1");
     conjunct->setRightVar("all_paths_backward3");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
     auto status = std::move(future).get();
@@ -941,7 +941,7 @@ TEST_F(ConjunctPathTest, AllPathsTwoStepsPath) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path"};
+    expected.colNames = {kPathStr};
     Row row;
     Path path = createPath("1", {"3", "4"}, 1);
     row.values.emplace_back(std::move(path));
@@ -959,7 +959,7 @@ TEST_F(ConjunctPathTest, AllPathsThreeStepsPath) {
                                         5);
     conjunct->setLeftVar("all_paths_forward1");
     conjunct->setRightVar("all_paths_backward4");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
 
@@ -970,7 +970,7 @@ TEST_F(ConjunctPathTest, AllPathsThreeStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         EXPECT_EQ(result.value().getDataSet(), expected);
         EXPECT_EQ(result.state(), Result::State::kSuccess);
     }
@@ -980,7 +980,7 @@ TEST_F(ConjunctPathTest, AllPathsThreeStepsPath) {
             // 1->2->4@0
             // 1->2->4@1
             DataSet ds1;
-            ds1.colNames = {kVid, "path"};
+            ds1.colNames = {kVid, kPathStr};
 
             Row row;
             List paths;
@@ -1005,7 +1005,7 @@ TEST_F(ConjunctPathTest, AllPathsThreeStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         {
             Row row;
             Path path = createPath("1", {"2", "4", "5"}, 1);
@@ -1036,7 +1036,7 @@ TEST_F(ConjunctPathTest, AllPathsFourStepsPath) {
                                         5);
     conjunct->setLeftVar("all_paths_forward1");
     conjunct->setRightVar("all_paths_backward4");
-    conjunct->setColNames({"_path"});
+    conjunct->setColNames({kPathStr});
 
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
 
@@ -1047,7 +1047,7 @@ TEST_F(ConjunctPathTest, AllPathsFourStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         EXPECT_EQ(result.value().getDataSet(), expected);
         EXPECT_EQ(result.state(), Result::State::kSuccess);
     }
@@ -1057,7 +1057,7 @@ TEST_F(ConjunctPathTest, AllPathsFourStepsPath) {
             // 1->2->6@0
             // 1->2->6@1
             DataSet ds1;
-            ds1.colNames = {kVid, "path"};
+            ds1.colNames = {kVid, kPathStr};
 
             Row row;
             List paths;
@@ -1079,7 +1079,7 @@ TEST_F(ConjunctPathTest, AllPathsFourStepsPath) {
         {
             // 5->4->6@0
             DataSet ds1;
-            ds1.colNames = {kVid, "path"};
+            ds1.colNames = {kVid, kPathStr};
 
             Row row;
             List paths;
@@ -1100,7 +1100,7 @@ TEST_F(ConjunctPathTest, AllPathsFourStepsPath) {
         auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
         DataSet expected;
-        expected.colNames = {"_path"};
+        expected.colNames = {kPathStr};
         {
             Row row;
             Path path = createPath("1", {"2", "6", "4", "5"}, 1);
@@ -1132,7 +1132,7 @@ TEST_F(ConjunctPathTest, multiplePairOneStep) {
                                         5);
     conjunct->setLeftVar("forwardPath1");
     conjunct->setRightVar("backwardPath1");
-    conjunct->setColNames({"_path", "cost"});
+    conjunct->setColNames({kPathStr, kCostStr});
     conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -1141,7 +1141,7 @@ TEST_F(ConjunctPathTest, multiplePairOneStep) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path", "cost"};
+    expected.colNames = {kPathStr, kCostStr};
     EXPECT_EQ(result.value().getDataSet(), expected);
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
@@ -1154,7 +1154,7 @@ TEST_F(ConjunctPathTest, multiplePairTwoSteps) {
                                         5);
     conjunct->setLeftVar("forwardPath2");
     conjunct->setRightVar("backwardPath2");
-    conjunct->setColNames({"_path", "cost"});
+    conjunct->setColNames({kPathStr, kCostStr});
     conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -1163,7 +1163,7 @@ TEST_F(ConjunctPathTest, multiplePairTwoSteps) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path", "cost"};
+    expected.colNames = {kPathStr, kCostStr};
     {
         // 1->5->7->8->9, 1->6->7->8->9
         for (auto i = 5; i < 7; i++) {
@@ -1205,7 +1205,7 @@ TEST_F(ConjunctPathTest, multiplePairThreeSteps) {
                                         5);
     conjunct->setLeftVar("forwardPath3");
     conjunct->setRightVar("backwardPath3");
-    conjunct->setColNames({"_path", "cost"});
+    conjunct->setColNames({kPathStr, kCostStr});
     conjunct->setConditionalVar("conditionalVar");
     auto conjunctExe = std::make_unique<ConjunctPathExecutor>(conjunct, qctx_.get());
     auto future = conjunctExe->execute();
@@ -1214,7 +1214,7 @@ TEST_F(ConjunctPathTest, multiplePairThreeSteps) {
     auto& result = qctx_->ectx()->getResult(conjunct->outputVar());
 
     DataSet expected;
-    expected.colNames = {"_path", "cost"};
+    expected.colNames = {kPathStr, kCostStr};
     {
         // 1->5->7->10->11->12, 1->6->7->10->11->12
         for (auto i = 5; i < 7; i++) {

@@ -13,38 +13,45 @@
 namespace nebula {
 class StepClause final {
 public:
-    struct MToN {
-        uint32_t mSteps;
-        uint32_t nSteps;
-    };
-
     explicit StepClause(uint32_t steps = 1) {
-        steps_ = steps;
+        mSteps_ = steps;
+        nSteps_ = steps;
     }
 
     StepClause(uint32_t m, uint32_t n) {
-        mToN_ = std::make_unique<MToN>();
-        mToN_->mSteps = m;
-        mToN_->nSteps = n;
+        mSteps_ = m;
+        nSteps_ = n;
     }
 
     uint32_t steps() const {
-        return steps_;
-    }
-
-    MToN* mToN() const {
-        return mToN_.get();
+        return mSteps_;
     }
 
     bool isMToN() const {
-        return mToN_ != nullptr;
+        return mSteps_ != nSteps_;
+    }
+
+    uint32_t mSteps() const {
+        return mSteps_;
+    }
+
+    uint32_t nSteps() const {
+        return nSteps_;
+    }
+
+    void setMSteps(uint32_t m) {
+        mSteps_ = m;
+    }
+
+    void setNSteps(uint32_t n) {
+        nSteps_ = n;
     }
 
     std::string toString() const;
 
 private:
-    uint32_t                                    steps_{1};
-    std::unique_ptr<MToN>                       mToN_;
+    uint32_t             mSteps_{0};
+    uint32_t             nSteps_{0};
 };
 
 
