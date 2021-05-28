@@ -620,7 +620,7 @@ TEST(MetaClientTest, TagTest) {
         if (isFunction) {
             ArgumentList *argList = new ArgumentList();
             argList->addArgument(std::make_unique<ConstantExpression>(std::move(valueExpr)));
-            FunctionCallExpression fExpr(new std::string("timestamp"), argList);
+            FunctionCallExpression fExpr("timestamp", argList);
             columns.back().set_default_value(Expression::encode(fExpr));
         } else {
             columns.back().set_default_value(Expression::encode(valueExpr));

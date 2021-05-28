@@ -165,29 +165,19 @@ TEST(VertexCacheTest, OperationVertexTest) {
         LOG(INFO) << "Build yield...";
         // Return player props: name, age, country
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-        auto* yTag4 = new std::string("1");
-        auto* yProp4 = new std::string(kVid);
-        SourcePropertyExpression sourcePropExp4(yTag4, yProp4);
+        SourcePropertyExpression sourcePropExp4("1", kVid);
         tmpProps.emplace_back(Expression::encode(sourcePropExp4));
 
-        auto* yTag5 = new std::string("1");
-        auto* yProp5 = new std::string(kTag);
-        SourcePropertyExpression sourcePropExp5(yTag5, yProp5);
+        SourcePropertyExpression sourcePropExp5("1", kTag);
         tmpProps.emplace_back(Expression::encode(sourcePropExp5));
 
         req.set_return_props(std::move(tmpProps));
@@ -541,4 +531,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-

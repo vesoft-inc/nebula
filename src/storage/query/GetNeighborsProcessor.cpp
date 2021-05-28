@@ -312,11 +312,11 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
             case Expression::Kind::kEdgeRank:
             case Expression::Kind::kEdgeProperty: {
                 auto* edgeExp = static_cast<const PropertyExpression*>(exp.get());
-                const auto* edgeName = edgeExp->sym();
-                const auto* propName = edgeExp->prop();
-                auto edgeRet = this->env_->schemaMan_->toEdgeType(spaceId_, *edgeName);
+                const auto& edgeName = edgeExp->sym();
+                const auto& propName = edgeExp->prop();
+                auto edgeRet = this->env_->schemaMan_->toEdgeType(spaceId_, edgeName);
                 if (!edgeRet.ok()) {
-                    VLOG(1) << "Can't find edge " << *edgeName << ", in space " << spaceId_;
+                    VLOG(1) << "Can't find edge " << edgeName << ", in space " << spaceId_;
                     return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 }
 
@@ -332,10 +332,10 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
 
                 const meta::SchemaProviderIf::Field* field = nullptr;
                 if (exp->kind() == Expression::Kind::kEdgeProperty) {
-                    field = edgeSchema->field(*propName);
+                    field = edgeSchema->field(propName);
                     if (field == nullptr) {
-                        VLOG(1) << "Can't find related prop " << *propName
-                                << " on edge " << *edgeName;
+                        VLOG(1) << "Can't find related prop " << propName
+                                << " on edge " << edgeName;
                         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
                     auto ret = checkStatType(field, statProp.get_stat());

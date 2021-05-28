@@ -95,27 +95,19 @@ static bool mockEdgeData(storage::StorageEnv* env, int32_t totalParts, int32_t s
 
 void addEdgePropInKey(std::vector<std::string>& returnCols) {
     {
-        auto* edge = new std::string("101");
-        auto* prop = new std::string(kSrc);
-        EdgePropertyExpression exp(edge, prop);
+        EdgePropertyExpression exp("101", kSrc);
         returnCols.emplace_back(Expression::encode(exp));
     }
     {
-        auto* edge = new std::string("101");
-        auto* prop = new std::string(kType);
-        EdgePropertyExpression exp(edge, prop);
+        EdgePropertyExpression exp("101", kType);
         returnCols.emplace_back(Expression::encode(exp));
     }
     {
-        auto* edge = new std::string("101");
-        auto* prop = new std::string(kRank);
-        EdgePropertyExpression exp(edge, prop);
+        EdgePropertyExpression exp("101", kRank);
         returnCols.emplace_back(Expression::encode(exp));
     }
     {
-        auto* edge = new std::string("101");
-        auto* prop = new std::string(kDst);
-        EdgePropertyExpression exp(edge, prop);
+        EdgePropertyExpression exp("101", kDst);
         returnCols.emplace_back(Expression::encode(exp));
     }
 }
@@ -173,24 +165,16 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         LOG(INFO) << "Build yield...";
         // Return serve props: playerName, teamName, teamCareer, type
         std::vector<std::string> tmpProps;
-        auto* yEdge1 = new std::string("101");
-        auto* yProp1 = new std::string("playerName");
-        EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+        EdgePropertyExpression edgePropExp1("101", "playerName");
         tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-        auto* yEdge2 = new std::string("101");
-        auto* yProp2 = new std::string("teamName");
-        EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+        EdgePropertyExpression edgePropExp2("101", "teamName");
         tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-        auto* yEdge3 = new std::string("101");
-        auto* yProp3 = new std::string("teamCareer");
-        EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+        EdgePropertyExpression edgePropExp3("101", "teamCareer");
         tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-        auto* yEdge4 = new std::string("101");
-        auto* yProp4 = new std::string("type");
-        EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+        EdgePropertyExpression edgePropExp4("101", "type");
         tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
         addEdgePropInKey(tmpProps);
@@ -291,24 +275,16 @@ TEST(UpdateEdgeTest, No_Filter_Test) {
         LOG(INFO) << "Build yield...";
         // Return serve props: playerName, teamName, teamCareer, type
         std::vector<std::string> tmpProps;
-        auto* yEdge1 = new std::string("101");
-        auto* yProp1 = new std::string("playerName");
-        EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+        EdgePropertyExpression edgePropExp1("101", "playerName");
         tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-        auto* yEdge2 = new std::string("101");
-        auto* yProp2 = new std::string("teamName");
-        EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+        EdgePropertyExpression edgePropExp2("101", "teamName");
         tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-        auto* yEdge3 = new std::string("101");
-        auto* yProp3 = new std::string("teamCareer");
-        EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+        EdgePropertyExpression edgePropExp3("101", "teamCareer");
         tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-        auto* yEdge4 = new std::string("101");
-        auto* yProp4 = new std::string("type");
-        EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+        EdgePropertyExpression edgePropExp4("101", "type");
         tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
         addEdgePropInKey(tmpProps);
@@ -403,18 +379,14 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
 
     LOG(INFO) << "Build filter...";
     // left int:  101.startYear = 1997
-    auto* fEdge1 = new std::string("101");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new EdgePropertyExpression(fEdge1, fProp1);
+    auto* srcExp1 = new EdgePropertyExpression("101", "startYear");
     auto* priExp1 = new ConstantExpression(1997L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
                                           priExp1);
 
     // right int: 101.endYear = 2017
-    auto* fEdge2 = new std::string("101");
-    auto* fProp2 = new std::string("endYear");
-    auto* srcExp2 = new EdgePropertyExpression(fEdge2, fProp2);
+    auto* srcExp2 = new EdgePropertyExpression("101", "endYear");
     auto* priExp2 = new ConstantExpression(2017L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -446,24 +418,16 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     addEdgePropInKey(tmpProps);
@@ -597,24 +561,16 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     addEdgePropInKey(tmpProps);
@@ -726,24 +682,16 @@ TEST(UpdateEdgeTest, Invalid_Update_Prop_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     req.set_return_props(std::move(tmpProps));
@@ -814,18 +762,14 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Build filter...";
     // left int:  101.startYear = 1997
-    auto* fEdge1 = new std::string("101");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new EdgePropertyExpression(fEdge1, fProp1);
+    auto* srcExp1 = new EdgePropertyExpression("101", "startYear");
     auto* priExp1 = new ConstantExpression(1997L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
                                           priExp1);
 
     // right int: 101.endYear = 2017
-    auto* fEdge2 = new std::string("101");
-    auto* fProp2 = new std::string("birth");
-    auto* srcExp2 = new EdgePropertyExpression(fEdge2, fProp2);
+    auto* srcExp2 = new EdgePropertyExpression("101", "birth");
     auto* priExp2 = new ConstantExpression(1990L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -857,24 +801,16 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     req.set_return_props(std::move(tmpProps));
@@ -980,18 +916,14 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
     LOG(INFO) << "Build filter...";
     // filter is valid, but filter value is false
     // left int:  101.startYear = 1997
-    auto* fEdge1 = new std::string("101");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new EdgePropertyExpression(fEdge1, fProp1);
+    auto* srcExp1 = new EdgePropertyExpression("101", "startYear");
     auto* priExp1 = new ConstantExpression(1997L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
                                           priExp1);
 
     // right int: 101.endYear = 2017
-    auto* fEdge2 = new std::string("101");
-    auto* fProp2 = new std::string("endYear");
-    auto* srcExp2 = new EdgePropertyExpression(fEdge2, fProp2);
+    auto* srcExp2 = new EdgePropertyExpression("101", "endYear");
     auto* priExp2 = new ConstantExpression(2017L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -1005,24 +937,16 @@ TEST(UpdateEdgeTest, Insertable_Filter_value_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     addEdgePropInKey(tmpProps);
@@ -1144,19 +1068,13 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
 
@@ -1230,14 +1148,10 @@ TEST(UpdateEdgeTest, TTL_NoInsert_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     req.set_return_props(std::move(tmpProps));
@@ -1321,24 +1235,16 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     addEdgePropInKey(tmpProps);
@@ -1465,24 +1371,16 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     addEdgePropInKey(tmpProps);
@@ -1613,41 +1511,29 @@ TEST(UpdateEdgeTest, Yield_Key_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     // same as pass by EdgePropertyExpression
-    auto* yEdge5 = new std::string("101");
-    EdgeSrcIdExpression edgeSrcIdExp5(yEdge5);
+    EdgeSrcIdExpression edgeSrcIdExp5("101");
     tmpProps.emplace_back(Expression::encode(edgeSrcIdExp5));
 
-    auto* yEdge6 = new std::string("101");
-    EdgeDstIdExpression edgeDstIdExp6(yEdge6);
+    EdgeDstIdExpression edgeDstIdExp6("101");
     tmpProps.emplace_back(Expression::encode(edgeDstIdExp6));
 
-    auto* yEdge7 = new std::string("101");
-    EdgeRankExpression edgeRankExp7(yEdge7);
+    EdgeRankExpression edgeRankExp7("101");
     tmpProps.emplace_back(Expression::encode(edgeRankExp7));
 
-    auto* yEdge8 = new std::string("101");
-    EdgeTypeExpression edgeTypeExp8(yEdge8);
+    EdgeTypeExpression edgeTypeExp8("101");
     tmpProps.emplace_back(Expression::encode(edgeTypeExp8));
 
     req.set_return_props(std::move(tmpProps));
@@ -1758,40 +1644,28 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
-    auto* yEdge5 = new std::string("1010");
-    EdgeSrcIdExpression edgeSrcIdExp5(yEdge5);
+    EdgeSrcIdExpression edgeSrcIdExp5("1010");
     tmpProps.emplace_back(Expression::encode(edgeSrcIdExp5));
 
-    auto* yEdge6 = new std::string("1011");
-    EdgeDstIdExpression edgeDstIdExp6(yEdge6);
+    EdgeDstIdExpression edgeDstIdExp6("1011");
     tmpProps.emplace_back(Expression::encode(edgeDstIdExp6));
 
-    auto* yEdge7 = new std::string("1012");
-    EdgeRankExpression edgeRankExp7(yEdge7);
+    EdgeRankExpression edgeRankExp7("1012");
     tmpProps.emplace_back(Expression::encode(edgeRankExp7));
 
-    auto* yEdge8 = new std::string("1013");
-    EdgeTypeExpression edgeTypeExp8(yEdge8);
+    EdgeTypeExpression edgeTypeExp8("1013");
     tmpProps.emplace_back(Expression::encode(edgeTypeExp8));
 
     req.set_return_props(std::move(tmpProps));
@@ -1889,19 +1763,13 @@ TEST(UpdateEdgeTest, Insertable_No_Default_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
     req.set_return_props(std::move(tmpProps));
@@ -1987,19 +1855,13 @@ TEST(UpdateEdgeTest, Insertable_In_Set_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
     addEdgePropInKey(tmpProps);
@@ -2093,9 +1955,7 @@ TEST(UpdateEdgeTest, Update_Multi_edge_Test) {
     // string: Serve.teamCareer_ = Teammate.endYear_
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("teamCareer");
-    auto* uEdge = new std::string("102");
-    auto* uProp = new std::string("endYear");
-    EdgePropertyExpression val1(uEdge, uProp);
+    EdgePropertyExpression val1("102", "endYear");
     uProp1.set_value(Expression::encode(val1));
     props.emplace_back(uProp1);
     req.set_updated_props(std::move(props));
@@ -2103,19 +1963,13 @@ TEST(UpdateEdgeTest, Update_Multi_edge_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamCareer
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
     addEdgePropInKey(tmpProps);
@@ -2190,9 +2044,7 @@ TEST(UpdateEdgeTest, Upsert_Multi_edge_Test) {
     // string: Serve.teamCareer_ = Teammate.endYear_
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("teamCareer");
-    auto* uEdge = new std::string("102");
-    auto* uProp = new std::string("endYear");
-    EdgePropertyExpression val1(uEdge, uProp);
+    EdgePropertyExpression val1("102", "endYear");
     uProp1.set_value(Expression::encode(val1));
     props.emplace_back(uProp1);
     req.set_updated_props(std::move(props));
@@ -2200,19 +2052,13 @@ TEST(UpdateEdgeTest, Upsert_Multi_edge_Test) {
     LOG(INFO) << "Build yield...";
     // Return serve props: playerName, teamName, teamCareer
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
     addEdgePropInKey(tmpProps);

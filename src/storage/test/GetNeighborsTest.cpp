@@ -430,8 +430,7 @@ TEST(GetNeighborsTest, StatTest) {
             // count teamGames_ in all served history
             cpp2::StatProp statProp;
             statProp.set_alias("Total games");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamGames"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamGames");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::SUM);
             statProps.emplace_back(std::move(statProp));
@@ -440,8 +439,7 @@ TEST(GetNeighborsTest, StatTest) {
             // avg scores in all served teams
             cpp2::StatProp statProp;
             statProp.set_alias("Avg scores in all served teams");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamAvgScore"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamAvgScore");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::AVG);
             statProps.emplace_back(std::move(statProp));
@@ -450,8 +448,7 @@ TEST(GetNeighborsTest, StatTest) {
             // longest consecutive team career in a team
             cpp2::StatProp statProp;
             statProp.set_alias("Longest consecutive team career in a team");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamCareer"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamCareer");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::MAX);
             statProps.emplace_back(std::move(statProp));
@@ -460,7 +457,7 @@ TEST(GetNeighborsTest, StatTest) {
             // sum of rank in serve edge
             cpp2::StatProp statProp;
             statProp.set_alias("Sum of rank in serve edge");
-            EdgeRankExpression exp(new std::string(folly::to<std::string>(serve)));
+            EdgeRankExpression exp(folly::to<std::string>(serve));
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::SUM);
             statProps.emplace_back(std::move(statProp));
@@ -496,8 +493,7 @@ TEST(GetNeighborsTest, StatTest) {
             // avg scores in all served teams
             cpp2::StatProp statProp;
             statProp.set_alias("Avg scores in all served teams");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamAvgScore"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamAvgScore");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::AVG);
             statProps.emplace_back(std::move(statProp));
@@ -506,8 +502,7 @@ TEST(GetNeighborsTest, StatTest) {
             // min avg scores in all served teams
             cpp2::StatProp statProp;
             statProp.set_alias("Min scores in all served teams");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamAvgScore"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamAvgScore");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::MIN);
             statProps.emplace_back(std::move(statProp));
@@ -516,8 +511,7 @@ TEST(GetNeighborsTest, StatTest) {
             // max avg scores in all served teams
             cpp2::StatProp statProp;
             statProp.set_alias("Max scores in all served teams");
-            EdgePropertyExpression exp(new std::string(folly::to<std::string>(serve)),
-                                       new std::string("teamAvgScore"));
+            EdgePropertyExpression exp(folly::to<std::string>(serve), "teamAvgScore");
             statProp.set_prop(Expression::encode(exp));
             statProp.set_stat(cpp2::StatType::MAX);
             statProps.emplace_back(std::move(statProp));
@@ -1340,8 +1334,7 @@ TEST(GetNeighborsTest, FilterTest) {
             // where serve.teamAvgScore > 20
             RelationalExpression exp(
                 Expression::Kind::kRelGT,
-                new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
-                                           new std::string("teamAvgScore")),
+                new EdgePropertyExpression(folly::to<std::string>(serve), "teamAvgScore"),
                 new ConstantExpression(Value(20)));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1384,10 +1377,8 @@ TEST(GetNeighborsTest, FilterTest) {
                 Expression::Kind::kRelGT,
                 new ArithmeticExpression(
                     Expression::Kind::kMinus,
-                    new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
-                                            new std::string("endYear")),
-                    new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
-                                            new std::string("startYear"))),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "endYear"),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "startYear")),
                 new ConstantExpression(Value(5)));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1431,15 +1422,11 @@ TEST(GetNeighborsTest, FilterTest) {
                 Expression::Kind::kLogicalAnd,
                 new RelationalExpression(
                     Expression::Kind::kRelGT,
-                    new EdgePropertyExpression(
-                        new std::string(folly::to<std::string>(serve)),
-                        new std::string("teamAvgScore")),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "teamAvgScore"),
                     new ConstantExpression(Value(20))),
                 new RelationalExpression(
                     Expression::Kind::kRelLE,
-                    new EdgePropertyExpression(
-                        new std::string(folly::to<std::string>(serve)),
-                        new std::string("teamCareer")),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "teamCareer"),
                     new ConstantExpression(Value(4))));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1478,10 +1465,9 @@ TEST(GetNeighborsTest, FilterTest) {
 
         {
             // where serve._dst == Rockets
-            RelationalExpression exp(
-                Expression::Kind::kRelEQ,
-                new EdgeDstIdExpression(new std::string(folly::to<std::string>(serve))),
-                new ConstantExpression(Value("Rockets")));
+            RelationalExpression exp(Expression::Kind::kRelEQ,
+                                     new EdgeDstIdExpression(folly::to<std::string>(serve)),
+                                     new ConstantExpression(Value("Rockets")));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
 
@@ -1520,18 +1506,15 @@ TEST(GetNeighborsTest, FilterTest) {
 
         {
             // where serve.teamAvgScore > 20 && $^.player.games < 1000
-            LogicalExpression exp(Expression::Kind::kLogicalAnd,
+            LogicalExpression exp(
+                Expression::Kind::kLogicalAnd,
                 new RelationalExpression(
                     Expression::Kind::kRelGT,
-                    new EdgePropertyExpression(
-                            new std::string(folly::to<std::string>(serve)),
-                            new std::string("teamAvgScore")),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "teamAvgScore"),
                     new ConstantExpression(Value(20))),
                 new RelationalExpression(
                     Expression::Kind::kRelLE,
-                    new SourcePropertyExpression(
-                        new std::string(folly::to<std::string>(player)),
-                        new std::string("games")),
+                    new SourcePropertyExpression(folly::to<std::string>(player), "games"),
                     new ConstantExpression(Value(1000))));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1571,18 +1554,15 @@ TEST(GetNeighborsTest, FilterTest) {
 
         {
             // where serve.teamAvgScore > 18 && $^.player.avgScore > 18
-            LogicalExpression exp(Expression::Kind::kLogicalAnd,
+            LogicalExpression exp(
+                Expression::Kind::kLogicalAnd,
                 new RelationalExpression(
                     Expression::Kind::kRelGT,
-                    new EdgePropertyExpression(
-                            new std::string(folly::to<std::string>(serve)),
-                            new std::string("teamAvgScore")),
+                    new EdgePropertyExpression(folly::to<std::string>(serve), "teamAvgScore"),
                     new ConstantExpression(Value(18))),
                 new RelationalExpression(
                     Expression::Kind::kRelGT,
-                    new SourcePropertyExpression(
-                        new std::string(folly::to<std::string>(player)),
-                        new std::string("avgScore")),
+                    new SourcePropertyExpression(folly::to<std::string>(player), "avgScore"),
                     new ConstantExpression(Value(18))));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1677,8 +1657,7 @@ TEST(GetNeighborsTest, FilterTest) {
             // where serve.teamGames > 1000
             RelationalExpression exp(
                 Expression::Kind::kRelGT,
-                new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
-                                           new std::string("teamGames")),
+                new EdgePropertyExpression(folly::to<std::string>(serve), "teamGames"),
                 new ConstantExpression(Value(1000)));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1726,8 +1705,7 @@ TEST(GetNeighborsTest, FilterTest) {
             // where reverseServe.teamAvgScore >= 10
             RelationalExpression exp(
                 Expression::Kind::kRelGE,
-                new EdgePropertyExpression(new std::string(folly::to<std::string>(serve)),
-                                           new std::string("teamAvgScore")),
+                new EdgePropertyExpression(folly::to<std::string>(serve), "teamAvgScore"),
                 new ConstantExpression(Value(15)));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }
@@ -1775,8 +1753,7 @@ TEST(GetNeighborsTest, FilterTest) {
             // where teammate.startYear < 2002
             RelationalExpression exp(
                 Expression::Kind::kRelLT,
-                new EdgePropertyExpression(new std::string(folly::to<std::string>(teammate)),
-                                           new std::string("startYear")),
+                new EdgePropertyExpression(folly::to<std::string>(teammate), "startYear"),
                 new ConstantExpression(Value(2002)));
             (*req.traverse_spec_ref()).set_filter(Expression::encode(exp));
         }

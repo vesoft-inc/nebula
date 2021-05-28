@@ -88,15 +88,11 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
 
 void addTagPropInKey(std::vector<std::string>& returnCols) {
     {
-        auto* tag = new std::string("1");
-        auto* prop = new std::string(kVid);
-        SourcePropertyExpression exp(tag, prop);
+        SourcePropertyExpression exp("1", kVid);
         returnCols.emplace_back(Expression::encode(exp));
     }
     {
-        auto* tag = new std::string("1");
-        auto* prop = new std::string(kTag);
-        SourcePropertyExpression exp(tag, prop);
+        SourcePropertyExpression exp("1", kTag);
         returnCols.emplace_back(Expression::encode(exp));
     }
 }
@@ -148,19 +144,13 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    auto* yTag1 = new std::string("1");
-    auto* yProp1 = new std::string("name");
-    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    SourcePropertyExpression sourcePropExp1("1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-    auto* yTag2 = new std::string("1");
-    auto* yProp2 = new std::string("age");
-    SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+    SourcePropertyExpression sourcePropExp2("1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    auto* yTag3 = new std::string("1");
-    auto* yProp3 = new std::string("country");
-    SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+    SourcePropertyExpression sourcePropExp3("1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
     addTagPropInKey(tmpProps);
@@ -237,18 +227,14 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
     LOG(INFO) << "Build filter...";
     // left int:  1.startYear = 1997
-    auto* fTag1 = new std::string("1");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new SourcePropertyExpression(fTag1, fProp1);
+    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
     auto* priExp1 = new ConstantExpression(1997L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
                                           priExp1);
 
     // right int: 1.endYear = 2017
-    auto* fTag2 = new std::string("1");
-    auto* fProp2 = new std::string("endYear");
-    auto* srcExp2 = new SourcePropertyExpression(fTag2, fProp2);
+    auto* srcExp2 = new SourcePropertyExpression("1", "endYear");
     auto* priExp2 = new ConstantExpression(2017L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -280,19 +266,13 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     {
         // Return player props: name, age, country
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -392,19 +372,13 @@ TEST(UpdateVertexTest, Insertable_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -499,14 +473,10 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         req.set_return_props(std::move(tmpProps));
@@ -565,9 +535,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Build filter...";
     // left int:  1.startYear = 1997
-    auto* fTag1 = new std::string("1");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new SourcePropertyExpression(fTag1, fProp1);
+    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
     auto* priExp1 = new ConstantExpression(1997L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
@@ -575,9 +543,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     // invalid prop
     // right int: 1.birth = 1990
-    auto* fTag2 = new std::string("1");
-    auto* fProp2 = new std::string("birth");
-    auto* srcExp2 = new SourcePropertyExpression(fTag2, fProp2);
+    auto* srcExp2 = new SourcePropertyExpression("1", "birth");
     auto* priExp2 = new ConstantExpression(1990L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -610,19 +576,13 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         req.set_return_props(std::move(tmpProps));
@@ -701,18 +661,14 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     LOG(INFO) << "Build filter...";
     // filter is valid, but filter value is false
     // left int:  1.startYear = 2020
-    auto* fTag1 = new std::string("1");
-    auto* fProp1 = new std::string("startYear");
-    auto* srcExp1 = new SourcePropertyExpression(fTag1, fProp1);
+    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
     auto* priExp1 = new ConstantExpression(2020L);
     auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
                                           srcExp1,
                                           priExp1);
 
     // right int: 1.age = 30
-    auto* fTag2 = new std::string("1");
-    auto* fProp2 = new std::string("age");
-    auto* srcExp2 = new SourcePropertyExpression(fTag2, fProp2);
+    auto* srcExp2 = new SourcePropertyExpression("1", "age");
     auto* priExp2 = new ConstantExpression(30L);
     auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
                                            srcExp2,
@@ -727,19 +683,13 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -837,9 +787,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    auto* yTag1 = new std::string("1");
-    auto* yProp1 = new std::string("country");
-    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    SourcePropertyExpression sourcePropExp1("1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     req.set_return_props(std::move(tmpProps));
@@ -905,19 +853,13 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         req.set_return_props(std::move(tmpProps));
@@ -988,19 +930,13 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -1114,19 +1050,13 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        auto* yTag3 = new std::string("1");
-        auto* yProp3 = new std::string("country");
-        SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+        SourcePropertyExpression sourcePropExp3("1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -1243,14 +1173,10 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         req.set_return_props(std::move(tmpProps));
@@ -1306,9 +1232,7 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     // int: player.age = $^.player.career
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    auto* uTag = new std::string("1");
-    auto* uProp = new std::string("career");
-    SourcePropertyExpression val2(uTag, uProp);
+    SourcePropertyExpression val2("1", "career");
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -1317,14 +1241,10 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        auto* yTag1 = new std::string("1");
-        auto* yProp1 = new std::string("name");
-        SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+        SourcePropertyExpression sourcePropExp1("1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        auto* yTag2 = new std::string("1");
-        auto* yProp2 = new std::string("age");
-        SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+        SourcePropertyExpression sourcePropExp2("1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         addTagPropInKey(tmpProps);
@@ -1404,9 +1324,7 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     // value is another tag expression
-    auto* uTag = new std::string("2");
-    auto* uProp = new std::string("name");
-    SourcePropertyExpression val2(uTag, uProp);
+    SourcePropertyExpression val2("2", "name");
     uProp1.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
@@ -1415,9 +1333,7 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    auto* yTag1 = new std::string("1");
-    auto* yProp1 = new std::string("name");
-    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    SourcePropertyExpression sourcePropExp1("1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     addTagPropInKey(tmpProps);
@@ -1480,9 +1396,7 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     // value is another tag expression
-    auto* uTag = new std::string("2");
-    auto* uProp = new std::string("name");
-    SourcePropertyExpression val2(uTag, uProp);
+    SourcePropertyExpression val2("2", "name");
     uProp1.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
@@ -1491,9 +1405,7 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    auto* yTag1 = new std::string("1");
-    auto* yProp1 = new std::string("name");
-    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    SourcePropertyExpression sourcePropExp1("1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     addTagPropInKey(tmpProps);
@@ -1532,4 +1444,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-

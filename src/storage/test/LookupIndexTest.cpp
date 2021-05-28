@@ -638,12 +638,9 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
-        RelationalExpression expr(
-            Expression::Kind::kRelEQ,
-            new TagPropertyExpression(
-                new std::string(folly::to<std::string>("player")),
-                new std::string("age")),
-            new ConstantExpression(Value(34L)));
+        RelationalExpression expr(Expression::Kind::kRelEQ,
+                                  new TagPropertyExpression("player", "age"),
+                                  new ConstantExpression(Value(34L)));
         context1.set_filter(expr.encode());
         context1.set_index_id(1);
         decltype(indices.contexts) contexts;
@@ -720,12 +717,9 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
-        RelationalExpression expr(
-            Expression::Kind::kRelGT,
-            new TagPropertyExpression(
-                new std::string(folly::to<std::string>("player")),
-                new std::string("age")),
-            new ConstantExpression(Value(34L)));
+        RelationalExpression expr(Expression::Kind::kRelGT,
+                                  new TagPropertyExpression("player", "age"),
+                                  new ConstantExpression(Value(34L)));
         context1.set_filter(expr.encode());
         context1.set_index_id(1);
         decltype(indices.contexts) contexts;
@@ -811,12 +805,9 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
-        RelationalExpression expr(
-            Expression::Kind::kRelGT,
-            new EdgePropertyExpression(
-                new std::string(folly::to<std::string>("Teammate")),
-                new std::string("teamName")),
-            new ConstantExpression(Value("Spurs")));
+        RelationalExpression expr(Expression::Kind::kRelGT,
+                                  new EdgePropertyExpression("Teammate", "teamName"),
+                                  new ConstantExpression(Value("Spurs")));
         context1.set_filter("");
         context1.set_index_id(102);
         decltype(indices.contexts) contexts;
@@ -910,12 +901,9 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
         columnHints.emplace_back(std::move(columnHint));
         cpp2::IndexQueryContext context1;
         context1.set_column_hints(std::move(columnHints));
-        RelationalExpression expr(
-            Expression::Kind::kRelNE,
-            new EdgePropertyExpression(
-                new std::string(folly::to<std::string>("Teammate")),
-                new std::string("teamName")),
-            new ConstantExpression(Value("Spurs")));
+        RelationalExpression expr(Expression::Kind::kRelNE,
+                                  new EdgePropertyExpression("Teammate", "teamName"),
+                                  new ConstantExpression(Value("Spurs")));
         context1.set_filter(expr.encode());
         context1.set_index_id(102);
         decltype(indices.contexts) contexts;
@@ -1818,9 +1806,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
 
         RelationalExpression expr(
             Expression::Kind::kRelGT,
-            new TagPropertyExpression(
-                new std::string("111"),
-                new std::string("col3")),
+            new TagPropertyExpression("111", "col3"),
             new ConstantExpression(Value(1)));
 
         cpp2::IndexQueryContext context;
@@ -1864,9 +1850,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         }
         RelationalExpression expr(
             Expression::Kind::kRelLT,
-            new TagPropertyExpression(
-                new std::string("111"),
-                new std::string("col3")),
+            new TagPropertyExpression("111", "col3"),
             new ConstantExpression(Value(5)));
 
         cpp2::IndexQueryContext context;
@@ -1910,18 +1894,12 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         }
         nebula::LogicalExpression expr(
             nebula::Expression::Kind::kLogicalAnd,
-            new RelationalExpression(
-                Expression::Kind::kRelGT,
-                new TagPropertyExpression(
-                    new std::string("111"),
-                    new std::string("col3")),
-                new ConstantExpression(Value(1))),
-            new RelationalExpression(
-                Expression::Kind::kRelGT,
-                new TagPropertyExpression(
-                    new std::string("111"),
-                    new std::string("col4")),
-                new ConstantExpression(Value("a"))));
+            new RelationalExpression(Expression::Kind::kRelGT,
+                                     new TagPropertyExpression("111", "col3"),
+                                     new ConstantExpression(Value(1))),
+            new RelationalExpression(Expression::Kind::kRelGT,
+                                     new TagPropertyExpression("111", "col4"),
+                                     new ConstantExpression(Value("a"))));
 
         cpp2::IndexQueryContext context;
         context.set_filter(expr.encode());

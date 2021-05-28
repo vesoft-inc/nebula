@@ -360,19 +360,13 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
     // Build yield
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    auto* yTag1 = new std::string("1");
-    auto* yProp1 = new std::string("name");
-    SourcePropertyExpression sourcePropExp1(yTag1, yProp1);
+    SourcePropertyExpression sourcePropExp1("1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-    auto* yTag2 = new std::string("1");
-    auto* yProp2 = new std::string("age");
-    SourcePropertyExpression sourcePropExp2(yTag2, yProp2);
+    SourcePropertyExpression sourcePropExp2("1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    auto* yTag3 = new std::string("1");
-    auto* yProp3 = new std::string("country");
-    SourcePropertyExpression sourcePropExp3(yTag3, yProp3);
+    SourcePropertyExpression sourcePropExp3("1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
     req.set_return_props(std::move(tmpProps));
@@ -422,24 +416,16 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
 
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    auto* yEdge1 = new std::string("101");
-    auto* yProp1 = new std::string("playerName");
-    EdgePropertyExpression edgePropExp1(yEdge1, yProp1);
+    EdgePropertyExpression edgePropExp1("101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    auto* yEdge2 = new std::string("101");
-    auto* yProp2 = new std::string("teamName");
-    EdgePropertyExpression edgePropExp2(yEdge2, yProp2);
+    EdgePropertyExpression edgePropExp2("101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    auto* yEdge3 = new std::string("101");
-    auto* yProp3 = new std::string("teamCareer");
-    EdgePropertyExpression edgePropExp3(yEdge3, yProp3);
+    EdgePropertyExpression edgePropExp3("101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    auto* yEdge4 = new std::string("101");
-    auto* yProp4 = new std::string("type");
-    EdgePropertyExpression edgePropExp4(yEdge4, yProp4);
+    EdgePropertyExpression edgePropExp4("101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     req.set_return_props(std::move(tmpProps));

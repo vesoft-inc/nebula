@@ -119,9 +119,7 @@ void goFilter(int32_t iters,
             // where serve.startYear < value
             nebula::RelationalExpression exp(
                 nebula::Expression::Kind::kRelLT,
-                new nebula::EdgePropertyExpression(
-                    new std::string(folly::to<std::string>(serve)),
-                    new std::string("startYear")),
+                new nebula::EdgePropertyExpression(folly::to<std::string>(serve), "startYear"),
                 new nebula::ConstantExpression(nebula::Value(value)));
             (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
         } else {
@@ -132,15 +130,11 @@ void goFilter(int32_t iters,
                 nebula::Expression::Kind::kLogicalAnd,
                 new nebula::RelationalExpression(
                     nebula::Expression::Kind::kRelLT,
-                    new nebula::EdgePropertyExpression(
-                        new std::string(folly::to<std::string>(serve)),
-                        new std::string("startYear")),
+                    new nebula::EdgePropertyExpression(folly::to<std::string>(serve), "startYear"),
                     new nebula::ConstantExpression(nebula::Value(value))),
                 new nebula::RelationalExpression(
                     nebula::Expression::Kind::kRelLT,
-                    new nebula::EdgePropertyExpression(
-                        new std::string(folly::to<std::string>(serve)),
-                        new std::string("endYear")),
+                    new nebula::EdgePropertyExpression(folly::to<std::string>(serve), "endYear"),
                     new nebula::ConstantExpression(nebula::Value(value))));
             (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
         }

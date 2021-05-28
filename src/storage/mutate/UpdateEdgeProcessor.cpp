@@ -199,8 +199,7 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
 
     // Build context of the update edge prop
     for (auto& edgeProp : updatedProps_) {
-        EdgePropertyExpression edgePropExp(new std::string(edgeName),
-                                           new std::string(edgeProp.get_name()));
+        EdgePropertyExpression edgePropExp(edgeName, edgeProp.get_name());
         auto retCode = checkExp(&edgePropExp, false, false);
         if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(1) << "Invalid update edge expression!";

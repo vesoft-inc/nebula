@@ -117,13 +117,13 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
         case Expression::Kind::kEdgeRank:
         case Expression::Kind::kEdgeDst: {
             auto* sExpr = static_cast<PropertyExpression*>(filter);
-            auto propName = *(sExpr->prop());
+            auto propName = sExpr->prop();
             return propsInEdgeKey.find(propName) == propsInEdgeKey.end();
         }
         case Expression::Kind::kTagProperty:
         case Expression::Kind::kEdgeProperty: {
             auto* sExpr = static_cast<PropertyExpression*>(filter);
-            auto propName = *(sExpr->prop());
+            auto propName = sExpr->prop();
             auto it = std::find_if(fields.begin(), fields.end(), [&propName] (const auto& f) {
                 return f.get_name() == propName;
             });

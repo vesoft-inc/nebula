@@ -700,12 +700,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(
-        Expression::Kind::kRelNE,
-        new TagPropertyExpression(
-            new std::string(folly::to<std::string>("2021001")),
-            new std::string("c1")),
-        new ConstantExpression(Value(34L)));
+    RelationalExpression expr(Expression::Kind::kRelNE,
+                              new TagPropertyExpression("2021001", "c1"),
+                              new ConstantExpression(Value(34L)));
     cpp2::IndexQueryContext context1;
     context1.set_filter(expr.encode());
     context1.set_index_id(2021002);
@@ -746,12 +743,9 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(
-        Expression::Kind::kRelNE,
-        new TagPropertyExpression(
-            new std::string(folly::to<std::string>("2021001")),
-            new std::string("c1")),
-        new ConstantExpression(Value(34L)));
+    RelationalExpression expr(Expression::Kind::kRelNE,
+                              new TagPropertyExpression("2021001", "c1"),
+                              new ConstantExpression(Value(34L)));
     cpp2::IndexQueryContext context1;
     context1.set_filter(expr.encode());
     context1.set_index_id(2021002);
@@ -794,12 +788,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(
-        Expression::Kind::kRelNE,
-        new TagPropertyExpression(
-            new std::string(folly::to<std::string>("2021001")),
-            new std::string("c1")),
-        new ConstantExpression(Value(34L)));
+    RelationalExpression expr(Expression::Kind::kRelNE,
+                              new TagPropertyExpression("2021001", "c1"),
+                              new ConstantExpression(Value(34L)));
     cpp2::IndexQueryContext context1;
     context1.set_filter(expr.encode());
     context1.set_index_id(2021002);
@@ -842,12 +833,9 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(
-        Expression::Kind::kRelNE,
-        new TagPropertyExpression(
-            new std::string(folly::to<std::string>("2021001")),
-            new std::string("c1")),
-        new ConstantExpression(Value(34L)));
+    RelationalExpression expr(Expression::Kind::kRelNE,
+                              new TagPropertyExpression("2021001", "c1"),
+                              new ConstantExpression(Value(34L)));
     cpp2::IndexQueryContext context1;
     context1.set_filter(expr.encode());
     context1.set_index_id(2021002);
