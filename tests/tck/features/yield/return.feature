@@ -48,7 +48,17 @@ Feature: Return
       | ((!(false) OR (false AND false)) XOR false) |
       | true                                        |
 
-  Scenario: tagProp
+  Scenario: Error check
+    When executing query:
+      """
+      RETURN count(rand32());
+      """
+    Then a SyntaxError should be raised at runtime: Can't use non-deterministic (random) functions inside of aggregate functions near `rand32()'
+    When executing query:
+      """
+      RETURN avg(ranD()+1);
+      """
+    Then a SyntaxError should be raised at runtime: Can't use non-deterministic (random) functions inside of aggregate functions near `ranD()+1'
     When executing query:
       """
       RETURN $$.dummyTag.p

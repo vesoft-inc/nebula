@@ -615,6 +615,26 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
     return Status::OK();
 }
 
+bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
+    auto finder = [](const Expression *e) -> bool {
+        if (e->kind() == Expression::Kind::kFunctionCall) {
+            auto func = *static_cast<const FunctionCallExpression *>(e)->name();
+            std::transform(func.begin(), func.end(), func.begin(), ::tolower);
+            return !func.compare("rand") || !func.compare("rand32") || !func.compare("rand64");
+        }
+        return false;
+    };
+    if (finder(expr)) {
+        return true;
+    }
+    FindVisitor visitor(finder);
+    const_cast<Expression *>(expr)->accept(&visitor);
+    if (!visitor.results().empty()) {
+        return true;
+    }
+    return false;
+}
+
 // Negate the given relational expr
 std::unique_ptr<RelationalExpression> ExpressionUtils::reverseRelExpr(RelationalExpression *expr) {
     auto left = static_cast<RelationalExpression *>(expr)->left();

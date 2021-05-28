@@ -137,6 +137,8 @@ public:
 
     static Status checkAggExpr(const AggregateExpression* aggExpr);
 
+    static bool findInnerRandFunction(const Expression *expr);
+
     static Expression* And(Expression *l, Expression* r) {
         return new LogicalExpression(Expression::Kind::kLogicalAnd, l, r);
     }

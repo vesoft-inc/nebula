@@ -914,6 +914,13 @@ edge_prop_expression
 function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
         if ($3->numArgs() == 1 && AggFunctionManager::find(*$1).ok()) {
+            if (graph::ExpressionUtils::findInnerRandFunction($3->args()[0].get())) {
+                delete($1);
+                delete($3);
+                throw nebula::GraphParser::syntax_error(
+                    @3,
+                    "Can't use non-deterministic (random) functions inside of aggregate functions");
+            }
             $$ = new AggregateExpression($1, $3->args()[0].release(), false);
             delete($3);
         } else if (FunctionManager::find(*$1, $3->numArgs()).ok()) {

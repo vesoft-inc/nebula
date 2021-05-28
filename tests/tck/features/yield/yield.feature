@@ -281,6 +281,16 @@ Feature: Yield Sentence
   Scenario: Error
     When executing query:
       """
+      YIELD count(rand32());
+      """
+    Then a SyntaxError should be raised at runtime: Can't use non-deterministic (random) functions inside of aggregate functions near `rand32()'
+    When executing query:
+      """
+      YIELD avg(ranD()+1);
+      """
+    Then a SyntaxError should be raised at runtime: Can't use non-deterministic (random) functions inside of aggregate functions near `ranD()+1'
+    When executing query:
+      """
       $var = GO FROM "Boris Diaw" OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team;YIELD $var.team WHERE $-.start > 2005
       """
     Then a SemanticError should be raised at runtime: Not support both input and variable.
