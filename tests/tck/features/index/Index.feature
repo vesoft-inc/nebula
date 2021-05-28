@@ -58,7 +58,7 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         tag_1(col1, col2, col3, col4)
@@ -561,7 +561,7 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     And wait 3 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         tag_1(col1, col2, col3, col4, col5)
@@ -699,7 +699,7 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX alter_tag(id) VALUES "100":(1), "200":(2)
       """

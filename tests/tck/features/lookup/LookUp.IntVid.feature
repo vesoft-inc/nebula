@@ -15,7 +15,7 @@ Feature: LookUpTest_Vid_Int
       CREATE TAG INDEX t_index_3 ON lookup_tag_1(col2, col3);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX lookup_tag_1(col1, col2, col3) VALUES 200:(200, 200, 200),201:(201, 201, 201), 202:(202, 202, 202);
       """
@@ -63,7 +63,7 @@ Feature: LookUpTest_Vid_Int
       CREATE EDGE INDEX e_index_3 ON lookup_edge_1(col2, col3);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE
         lookup_edge_1(col1, col2, col3)
@@ -118,7 +118,7 @@ Feature: LookUpTest_Vid_Int
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         lookup_tag_1(col1, col2, col3)
@@ -160,7 +160,7 @@ Feature: LookUpTest_Vid_Int
       CREATE EDGE INDEX e_index_4 ON lookup_edge_2(col3, col4);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE
         lookup_edge_1(col1, col2, col3)
@@ -199,7 +199,7 @@ Feature: LookUpTest_Vid_Int
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         lookup_tag_2(col1, col2, col3, col4)
@@ -356,7 +356,7 @@ Feature: LookUpTest_Vid_Int
       CREATE EDGE INDEX e_index_4 ON lookup_edge_2(col3, col4);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT EDGE
         lookup_edge_2(col1, col2, col3, col4)
@@ -508,7 +508,7 @@ Feature: LookUpTest_Vid_Int
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         lookup_tag_2(col1, col2, col3, col4)
@@ -653,7 +653,7 @@ Feature: LookUpTest_Vid_Int
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX
         student(number, age),
@@ -886,9 +886,9 @@ Feature: LookUpTest_Vid_Int
       """
       CREATE TAG INDEX i3_with_str ON tag_with_str(c1, c2(30), c3(30))
       """
-    And wait 6 seconds
     Then the execution should be successful
-    When executing query:
+    And wait 6 seconds
+    When try to execute query:
       """
       INSERT VERTEX
         tag_with_str(c1, c2, c3)
@@ -965,9 +965,9 @@ Feature: LookUpTest_Vid_Int
       ON
         identity(BIRTHDAY, NATION(30), BIRTHPLACE_CITY(30))
       """
-    And wait 6 seconds
     Then the execution should be successful
-    When executing query:
+    And wait 6 seconds
+    When try to execute query:
       """
       INSERT VERTEX identity (BIRTHDAY, NATION, BIRTHPLACE_CITY) VALUES 1:(19860413, "汉族", "aaa")
       """
