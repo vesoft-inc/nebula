@@ -40,7 +40,6 @@ public:
         kTopN,
         kLimit,
         kAggregate,
-        kSwitchSpace,
         kDedup,
         kAssign,
         kBFSShortest,
@@ -70,6 +69,7 @@ public:
         kAlterTag,
         kAlterEdge,
         kShowSpaces,
+        kSwitchSpace,
         kShowTags,
         kShowEdges,
         kShowCreateTag,
@@ -421,3 +421,4 @@ protected:
 }  // namespace nebula
 
 #endif  // PLANNER_PLAN_PLANNODE_H_
+
