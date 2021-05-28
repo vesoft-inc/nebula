@@ -404,7 +404,7 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
         if (!ok()) return;
         argsTypeList.push_back(type_);
     }
-    auto funName = *expr->name();
+    auto funName = expr->name();
     if (funName == "id" || funName == "src" || funName == "dst") {
         type_ = vidType_;
         return;
@@ -456,8 +456,8 @@ void DeduceTypeVisitor::visit(TagPropertyExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
-    auto *edge = expr->sym();
-    auto edgeType = qctx_->schemaMng()->toEdgeType(space_, *edge);
+    const auto &edge = expr->sym();
+    auto edgeType = qctx_->schemaMng()->toEdgeType(space_, edge);
     if (!edgeType.ok()) {
         status_ = edgeType.status();
         return;
@@ -465,46 +465,46 @@ void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
     auto schema = qctx_->schemaMng()->getEdgeSchema(space_, edgeType.value());
     if (!schema) {
         status_ = Status::SemanticError(
-            "`%s', not found edge `%s'.", expr->toString().c_str(), edge->c_str());
+            "`%s', not found edge `%s'.", expr->toString().c_str(), edge.c_str());
         return;
     }
 
-    auto *prop = expr->prop();
-    auto *field = schema->field(*prop);
+    const auto &prop = expr->prop();
+    auto *field = schema->field(prop);
     if (field == nullptr) {
         status_ = Status::SemanticError(
-            "`%s', not found the property `%s'.", expr->toString().c_str(), prop->c_str());
+            "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
         return;
     }
     type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
 void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
-    auto *prop = expr->prop();
+    const auto &prop = expr->prop();
     auto found = std::find_if(
-        inputs_.cbegin(), inputs_.cend(), [&prop](auto &col) { return *prop == col.name; });
+        inputs_.cbegin(), inputs_.cend(), [&prop](auto &col) { return prop == col.name; });
     if (found == inputs_.cend()) {
         status_ = Status::SemanticError(
-            "`%s', not exist prop `%s'", expr->toString().c_str(), prop->c_str());
+            "`%s', not exist prop `%s'", expr->toString().c_str(), prop.c_str());
         return;
     }
     type_ = found->type;
 }
 
 void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
-    auto *var = expr->sym();
-    if (!vctx_->existVar(*var)) {
+    const auto &var = expr->sym();
+    if (!vctx_->existVar(var)) {
         status_ = Status::SemanticError(
-            "`%s', not exist variable `%s'", expr->toString().c_str(), var->c_str());
+            "`%s', not exist variable `%s'", expr->toString().c_str(), var.c_str());
         return;
     }
-    auto *prop = expr->prop();
-    auto cols = vctx_->getVar(*var);
+    const auto &prop = expr->prop();
+    auto cols = vctx_->getVar(var);
     auto found =
-        std::find_if(cols.begin(), cols.end(), [&prop](auto &col) { return *prop == col.name; });
+        std::find_if(cols.begin(), cols.end(), [&prop](auto &col) { return prop == col.name; });
     if (found == cols.end()) {
         status_ = Status::SemanticError(
-            "`%s', not exist prop `%s'", expr->toString().c_str(), prop->c_str());
+            "`%s', not exist prop `%s'", expr->toString().c_str(), prop.c_str());
         return;
     }
     type_ = found->type;
@@ -693,8 +693,8 @@ void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
 }
 
 void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
-    auto *tag = expr->sym();
-    auto tagId = qctx_->schemaMng()->toTagID(space_, *tag);
+    const auto &tag = expr->sym();
+    auto tagId = qctx_->schemaMng()->toTagID(space_, tag);
     if (!tagId.ok()) {
         status_ = tagId.status();
         return;
@@ -702,14 +702,14 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
     auto schema = qctx_->schemaMng()->getTagSchema(space_, tagId.value());
     if (!schema) {
         status_ = Status::SemanticError(
-            "`%s', not found tag `%s'.", expr->toString().c_str(), tag->c_str());
+            "`%s', not found tag `%s'.", expr->toString().c_str(), tag.c_str());
         return;
     }
-    auto *prop = expr->prop();
-    auto *field = schema->field(*prop);
+    const auto &prop = expr->prop();
+    auto *field = schema->field(prop);
     if (field == nullptr) {
         status_ = Status::SemanticError(
-            "`%s', not found the property `%s'.", expr->toString().c_str(), prop->c_str());
+            "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
         return;
     }
     type_ = SchemaUtil::propTypeToValueType(field->type());

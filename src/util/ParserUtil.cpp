@@ -32,19 +32,18 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
-            if (*label->name() == oldVarName) {
-                ret = new VariableExpression(new std::string(newVarName), true);
+            if (label->name() == oldVarName) {
+                ret = new VariableExpression(newVarName, true);
             } else {
                 ret = label->clone().release();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
-            if (*la->left()->name() == oldVarName) {
+            if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(
-                    new VariableExpression(new std::string(newVarName), true),
-                    new ConstantExpression(value));
+                ret = new AttributeExpression(new VariableExpression(newVarName, true),
+                                              new ConstantExpression(value));
             } else {
                 ret = la->clone().release();
             }
@@ -52,8 +51,8 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
         return ret;
     };
 
-    lc->setOriginString(new std::string(lc->makeString()));
-    lc->setInnerVar(new std::string(newVarName));
+    lc->setOriginString(lc->makeString());
+    lc->setInnerVar(newVarName);
     if (lc->hasFilter()) {
         Expression *filter = lc->filter();
         auto *newFilter = RewriteVisitor::transform(filter, matcher, rewriter);
@@ -82,19 +81,18 @@ void ParserUtil::rewritePred(QueryContext *qctx,
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
-            if (*label->name() == oldVarName) {
-                ret = new VariableExpression(new std::string(newVarName), true);
+            if (label->name() == oldVarName) {
+                ret = new VariableExpression(newVarName, true);
             } else {
                 ret = label->clone().release();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
-            if (*la->left()->name() == oldVarName) {
+            if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(
-                    new VariableExpression(new std::string(newVarName), true),
-                    new ConstantExpression(value));
+                ret = new AttributeExpression(new VariableExpression(newVarName, true),
+                                              new ConstantExpression(value));
             } else {
                 ret = la->clone().release();
             }
@@ -102,8 +100,8 @@ void ParserUtil::rewritePred(QueryContext *qctx,
         return ret;
     };
 
-    pred->setOriginString(new std::string(pred->makeString()));
-    pred->setInnerVar(new std::string(newVarName));
+    pred->setOriginString(pred->makeString());
+    pred->setInnerVar(newVarName);
 
     auto *newFilter =
         RewriteVisitor::transform(pred->filter(), std::move(matcher), std::move(rewriter));
@@ -128,26 +126,24 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
-            if (*label->name() == oldAccName) {
-                ret = new VariableExpression(new std::string(newAccName), true);
-            } else if (*label->name() == oldVarName) {
-                ret = new VariableExpression(new std::string(newVarName), true);
+            if (label->name() == oldAccName) {
+                ret = new VariableExpression(newAccName, true);
+            } else if (label->name() == oldVarName) {
+                ret = new VariableExpression(newVarName, true);
             } else {
                 ret = label->clone().release();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
-            if (*la->left()->name() == oldAccName) {
+            if (la->left()->name() == oldAccName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(
-                    new VariableExpression(new std::string(newAccName), true),
-                    new ConstantExpression(value));
-            } else if (*la->left()->name() == oldVarName) {
+                ret = new AttributeExpression(new VariableExpression(newAccName, true),
+                                              new ConstantExpression(value));
+            } else if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(
-                    new VariableExpression(new std::string(newVarName), true),
-                    new ConstantExpression(value));
+                ret = new AttributeExpression(new VariableExpression(newVarName, true),
+                                              new ConstantExpression(value));
             } else {
                 ret = la->clone().release();
             }
@@ -155,9 +151,9 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
         return ret;
     };
 
-    reduce->setOriginString(new std::string(reduce->makeString()));
-    reduce->setAccumulator(new std::string(newAccName));
-    reduce->setInnerVar(new std::string(newVarName));
+    reduce->setOriginString(reduce->makeString());
+    reduce->setAccumulator(newAccName);
+    reduce->setInnerVar(newVarName);
 
     auto *newMapping =
         RewriteVisitor::transform(reduce->mapping(), std::move(matcher), std::move(rewriter));

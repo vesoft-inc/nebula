@@ -55,11 +55,11 @@ private:
 
 class MatchEdgeProp final {
 public:
-    MatchEdgeProp(std::string *alias,
+    MatchEdgeProp(const std::string &alias,
                   MatchEdgeTypeList *types,
                   MatchStepRange *range,
                   Expression *props = nullptr) {
-        alias_.reset(alias);
+        alias_ = alias;
         range_.reset(range);
         props_.reset(static_cast<MapExpression*>(props));
         if (types != nullptr) {
@@ -76,7 +76,7 @@ public:
     }
 
 private:
-    std::unique_ptr<std::string>                        alias_;
+    std::string                                         alias_;
     std::vector<std::unique_ptr<std::string>>           types_;
     std::unique_ptr<MapExpression>                      props_;
     std::unique_ptr<MatchStepRange>                     range_;
@@ -102,8 +102,8 @@ public:
         return direction_;
     }
 
-    const std::string* alias() const {
-        return alias_.get();
+    const std::string& alias() const {
+        return alias_;
     }
 
     auto& types() const {
@@ -122,7 +122,7 @@ public:
 
 private:
     Direction                                       direction_;
-    std::unique_ptr<std::string>                    alias_;
+    std::string                                     alias_;
     std::vector<std::unique_ptr<std::string>>       types_;
     std::unique_ptr<MatchStepRange>                 range_;
     std::unique_ptr<MapExpression>                  props_;
@@ -185,16 +185,16 @@ private:
 
 class MatchNode final {
 public:
-    MatchNode(std::string *alias,
+    MatchNode(const std::string &alias,
               MatchNodeLabelList *labels,
               Expression *props = nullptr) {
-        alias_.reset(alias);
+        alias_ = alias;
         labels_.reset(labels);
         props_.reset(static_cast<MapExpression*>(props));
     }
 
-    const std::string* alias() const {
-        return alias_.get();
+    const std::string& alias() const {
+        return alias_;
     }
 
     const auto* labels() const {
@@ -208,7 +208,7 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<std::string>                    alias_;
+    std::string                                     alias_;
     std::unique_ptr<MatchNodeLabelList>             labels_;
     std::unique_ptr<MapExpression>                  props_;
 };
@@ -398,10 +398,10 @@ private:
 
 class UnwindClause final : public ReadingClause {
 public:
-    UnwindClause(Expression *expr, std::string *alias)
+    UnwindClause(Expression *expr, const std::string &alias)
         : ReadingClause(Kind::kUnwind) {
         expr_.reset(expr);
-        alias_.reset(alias);
+        alias_ = alias;
     }
 
     Expression* expr() {
@@ -412,21 +412,16 @@ public:
         return expr_.get();
     }
 
-    std::string* alias() {
-        return alias_.get();
-    }
-
-    const std::string* alias() const {
-        return alias_.get();
+    const std::string& alias() const {
+        return alias_;
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<Expression>         expr_;
-    std::unique_ptr<std::string>        alias_;
+    std::unique_ptr<Expression> expr_;
+    std::string alias_;
 };
-
 
 class WithClause final : public ReadingClause {
 public:

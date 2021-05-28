@@ -57,7 +57,7 @@ Status FetchVerticesValidator::toPlan() {
         }
     } else {
         auto *columns = qctx_->objPool()->add(new YieldColumns());
-        columns->addColumn(new YieldColumn(new VertexExpression(), new std::string("vertices_")));
+        columns->addColumn(new YieldColumn(new VertexExpression(), "vertices_"));
         auto *projectNode = Project::make(qctx_, current, columns);
         projectNode->setInputVar(current->outputVar());
         projectNode->setColNames(colNames_);
@@ -208,8 +208,8 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     // TODO(shylock) select kVid from storage
     newYieldColumns_ = qctx_->objPool()->add(new YieldColumns());
     // note eval vid by input expression
-    newYieldColumns_->addColumn(new YieldColumn(
-        new InputPropertyExpression(new std::string(nebula::kVid)), new std::string(VertexID)));
+    newYieldColumns_->addColumn(
+        new YieldColumn(new InputPropertyExpression(nebula::kVid), VertexID));
     for (auto col : yield->columns()) {
         newYieldColumns_->addColumn(col->clone().release());
     }
@@ -246,9 +246,7 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
 std::string FetchVerticesValidator::buildConstantInput() {
     auto input = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).finish());
-
-    src_ = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(new std::string(input),
-                                                                    new std::string(kVid));
+    src_ = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(input, kVid);
     return input;
 }
 

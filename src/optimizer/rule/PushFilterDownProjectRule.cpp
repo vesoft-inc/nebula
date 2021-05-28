@@ -63,7 +63,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
         std::vector<std::string> propNames;
         for (auto* expr : varProps) {
             DCHECK(graph::ExpressionUtils::isPropertyExpr(expr));
-            propNames.emplace_back(*static_cast<const PropertyExpression*>(expr)->prop());
+            propNames.emplace_back(static_cast<const PropertyExpression*>(expr)->prop());
         }
         for (size_t i = 0; i < projColNames.size(); ++i) {
             auto column = projColumns[i];
@@ -74,7 +74,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
                 });
             if (iter == propNames.end()) continue;
             if (graph::ExpressionUtils::isPropertyExpr(column->expr())) {
-                if (column->alias()) {
+                if (!column->alias().empty()) {
                     rewriteMap[colName] = column->expr();
                 }
                 continue;
@@ -96,13 +96,13 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
         if (!graph::ExpressionUtils::isPropertyExpr(e)) {
             return false;
         }
-        auto* propName = static_cast<const PropertyExpression*>(e)->prop();
-        return rewriteMap[*propName];
+        auto& propName = static_cast<const PropertyExpression*>(e)->prop();
+        return rewriteMap[propName];
     };
     auto rewriter = [&rewriteMap](const Expression* e) -> Expression* {
         DCHECK(graph::ExpressionUtils::isPropertyExpr(e));
-        auto* propName = static_cast<const PropertyExpression*>(e)->prop();
-        return rewriteMap[*propName]->clone().release();
+        auto& propName = static_cast<const PropertyExpression*>(e)->prop();
+        return rewriteMap[propName]->clone().release();
     };
     auto* newFilterPicked = rewriteMap.empty()
                                 ? filterPicked.release()

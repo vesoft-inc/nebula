@@ -307,9 +307,7 @@ std::string DeleteVerticesValidator::buildVIds() {
     }
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
 
-    auto* vIds = new VariablePropertyExpression(
-            new std::string(input),
-            new std::string(kVid));
+    auto *vIds = new VariablePropertyExpression(input, kVid);
     qctx_->objPool()->add(vIds);
     vidRef_ = vIds;
     return input;
@@ -320,7 +318,7 @@ Status DeleteVerticesValidator::toPlan() {
     if (!vertices_.empty() && vidRef_ == nullptr) {
         vidVar = buildVIds();
     } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
-        vidVar = *static_cast<PropertyExpression*>(vidRef_)->sym();
+        vidVar = static_cast<PropertyExpression*>(vidRef_)->sym();
     } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kInputProperty) {
         vidVar = inputVarName_;
     }
@@ -330,11 +328,10 @@ Status DeleteVerticesValidator::toPlan() {
     auto index = 0u;
     DCHECK(edgeTypes_.size() == edgeNames_.size());
     for (auto &name : edgeNames_) {
-        auto *edgeKeyRef = new EdgeKeyRef(
-                new EdgeSrcIdExpression(new std::string(name)),
-                new EdgeDstIdExpression(new std::string(name)),
-                new EdgeRankExpression(new std::string(name)));
-        edgeKeyRef->setType(new EdgeTypeExpression(new std::string(name)));
+        auto *edgeKeyRef = new EdgeKeyRef(new EdgeSrcIdExpression(name),
+                                          new EdgeDstIdExpression(name),
+                                          new EdgeRankExpression(name));
+        edgeKeyRef->setType(new EdgeTypeExpression(name));
         qctx_->objPool()->add(edgeKeyRef);
         edgeKeyRefs_.emplace_back(edgeKeyRef);
 
@@ -426,10 +423,10 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKe
     }
     qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).finish());
 
-    auto* srcIdExpr = new InputPropertyExpression(new std::string(kSrc));
-    auto* typeExpr = new InputPropertyExpression(new std::string(kType));
-    auto* rankExpr = new InputPropertyExpression(new std::string(kRank));
-    auto* dstIdExpr = new InputPropertyExpression(new std::string(kDst));
+    auto *srcIdExpr = new InputPropertyExpression(kSrc);
+    auto *typeExpr = new InputPropertyExpression(kType);
+    auto *rankExpr = new InputPropertyExpression(kRank);
+    auto *dstIdExpr = new InputPropertyExpression(kDst);
     auto* edgeKeyRef = new EdgeKeyRef(srcIdExpr, dstIdExpr, rankExpr);
     edgeKeyRef->setType(typeExpr);
     qctx_->objPool()->add(edgeKeyRef);
@@ -468,7 +465,7 @@ Status DeleteEdgesValidator::checkInput() {
     NG_RETURN_IF_ERROR(status);
 
     if (edgeKeyRef->srcid()->kind() == Expression::Kind::kVarProperty) {
-        edgeKeyVar_ = *static_cast<PropertyExpression*>(edgeKeyRef->srcid())->sym();
+        edgeKeyVar_ = static_cast<PropertyExpression*>(edgeKeyRef->srcid())->sym();
     } else if (edgeKeyRef->srcid()->kind() == Expression::Kind::kInputProperty) {
         edgeKeyVar_ = inputVarName_;
     }
@@ -530,10 +527,10 @@ Status UpdateValidator::getReturnProps() {
     if (clause != nullptr) {
         auto yields = clause->columns();
         for (auto *col : yields) {
-            if (col->alias() == nullptr) {
+            if (col->alias().empty()) {
                 yieldColNames_.emplace_back(col->expr()->toString());
             } else {
-                yieldColNames_.emplace_back(*col->alias());
+                yieldColNames_.emplace_back(col->alias());
             }
             std::string encodeStr;
             auto copyColExpr = col->expr()->clone();
@@ -549,19 +546,19 @@ Status UpdateValidator::getUpdateProps() {
     auto items = sentence_->updateList()->items();
     std::unordered_set<std::string> symNames;
     std::string fieldName;
-    const std::string *symName = nullptr;
+    std::string symName;
     for (auto& item : items) {
         storage::cpp2::UpdatedProp updatedProp;
         // The syntax has guaranteed it is name or expression
         if (item->getFieldName() != nullptr) {
-            symName = &name_;
+            symName = name_;
             fieldName = *item->getFieldName();
             symNames.emplace(name_);
         }
         if (item->getFieldExpr() != nullptr) {
             DCHECK(item->getFieldExpr()->kind() == Expression::Kind::kLabelAttribute);
             auto laExpr = static_cast<const LabelAttributeExpression*>(item->getFieldExpr());
-            symNames.emplace(*laExpr->left()->name());
+            symNames.emplace(laExpr->left()->name());
             symName = laExpr->left()->name();
             const auto &value = laExpr->right()->value();
             fieldName = value.getStr();
@@ -573,7 +570,7 @@ Status UpdateValidator::getUpdateProps() {
         }
         std::string encodeStr;
         auto copyValueExpr = valueExpr->clone();
-        NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr.get(), *symName, encodeStr));
+        NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr.get(), symName, encodeStr));
         updatedProp.set_value(std::move(encodeStr));
         updatedProp.set_name(fieldName);
         updatedProps_.emplace_back(std::move(updatedProp));
@@ -584,8 +581,8 @@ Status UpdateValidator::getUpdateProps() {
         LOG(ERROR) << errorMsg;
         return Status::SemanticError(std::move(errorMsg));
     }
-    if (symName != nullptr) {
-        name_ = *symName;
+    if (!symName.empty()) {
+        name_ = symName;
     }
     return status;
 }

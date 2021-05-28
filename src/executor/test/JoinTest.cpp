@@ -86,11 +86,9 @@ protected:
 
 void JoinTest::testInnerJoin(std::string left, std::string right,
                             DataSet& expected, int64_t line) {
-    VariablePropertyExpression key(new std::string(left),
-                                   new std::string("dst"));
+    VariablePropertyExpression key(left, "dst");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right),
-                                     new std::string("_vid"));
+    VariablePropertyExpression probe(right, "_vid");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join =
@@ -126,11 +124,9 @@ void JoinTest::testInnerJoin(std::string left, std::string right,
 
 void JoinTest::testLeftJoin(std::string left, std::string right,
                             DataSet& expected, int64_t line) {
-    VariablePropertyExpression key(new std::string(left),
-                                   new std::string("_vid"));
+    VariablePropertyExpression key(left, "_vid");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right),
-                                     new std::string("dst"));
+    VariablePropertyExpression probe(right, "dst");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join =
@@ -197,11 +193,9 @@ TEST_F(JoinTest, InnerJoinTwice) {
     {
         std::string left = "var2";
         std::string right = "var1";
-        VariablePropertyExpression key(new std::string(left),
-                                    new std::string("dst"));
+        VariablePropertyExpression key(left, "dst");
         std::vector<Expression*> hashKeys = {&key};
-        VariablePropertyExpression probe(new std::string(right),
-                                        new std::string("_vid"));
+        VariablePropertyExpression probe(right, "_vid");
         std::vector<Expression*> probeKeys = {&probe};
 
         auto* join =
@@ -219,11 +213,9 @@ TEST_F(JoinTest, InnerJoinTwice) {
 
     std::string left = joinOutput;
     std::string right = "var3";
-    VariablePropertyExpression key(new std::string(left),
-                                new std::string("src"));
+    VariablePropertyExpression key(left, "src");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right),
-                                    new std::string("col1"));
+    VariablePropertyExpression probe(right, "col1");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join =
@@ -323,9 +315,9 @@ TEST_F(JoinTest, LeftJoinTwice) {
     {
         std::string left = "var1";
         std::string right = "var2";
-        VariablePropertyExpression key(new std::string(left), new std::string("_vid"));
+        VariablePropertyExpression key(left, "_vid");
         std::vector<Expression*> hashKeys = {&key};
-        VariablePropertyExpression probe(new std::string(right), new std::string("dst"));
+        VariablePropertyExpression probe(right, "dst");
         std::vector<Expression*> probeKeys = {&probe};
 
         auto* join = LeftJoin::make(
@@ -341,9 +333,9 @@ TEST_F(JoinTest, LeftJoinTwice) {
 
     std::string left = joinOutput;
     std::string right = "var3";
-    VariablePropertyExpression key(new std::string(left), new std::string("src"));
+    VariablePropertyExpression key(left, "src");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right), new std::string("col1"));
+    VariablePropertyExpression probe(right, "col1");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join = LeftJoin::make(
@@ -426,9 +418,9 @@ TEST_F(JoinTest, LeftJoinAndInnerjoin) {
     {
         std::string left = "var1";
         std::string right = "var2";
-        VariablePropertyExpression key(new std::string(left), new std::string("_vid"));
+        VariablePropertyExpression key(left, "_vid");
         std::vector<Expression*> hashKeys = {&key};
-        VariablePropertyExpression probe(new std::string(right), new std::string("dst"));
+        VariablePropertyExpression probe(right, "dst");
         std::vector<Expression*> probeKeys = {&probe};
 
         auto* join = LeftJoin::make(
@@ -444,9 +436,9 @@ TEST_F(JoinTest, LeftJoinAndInnerjoin) {
 
     std::string left = joinOutput;
     std::string right = "var3";
-    VariablePropertyExpression key(new std::string(left), new std::string("src"));
+    VariablePropertyExpression key(left, "src");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right), new std::string("col1"));
+    VariablePropertyExpression probe(right, "col1");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join = InnerJoin::make(
@@ -495,9 +487,9 @@ TEST_F(JoinTest, InnerJoinAndLeftjoin) {
     {
         std::string left = "var1";
         std::string right = "var2";
-        VariablePropertyExpression key(new std::string(left), new std::string("_vid"));
+        VariablePropertyExpression key(left, "_vid");
         std::vector<Expression*> hashKeys = {&key};
-        VariablePropertyExpression probe(new std::string(right), new std::string("dst"));
+        VariablePropertyExpression probe(right, "dst");
         std::vector<Expression*> probeKeys = {&probe};
 
         auto* join = InnerJoin::make(
@@ -513,9 +505,9 @@ TEST_F(JoinTest, InnerJoinAndLeftjoin) {
 
     std::string left = joinOutput;
     std::string right = "var3";
-    VariablePropertyExpression key(new std::string(left), new std::string("src"));
+    VariablePropertyExpression key(left, "src");
     std::vector<Expression*> hashKeys = {&key};
-    VariablePropertyExpression probe(new std::string(right), new std::string("col1"));
+    VariablePropertyExpression probe(right, "col1");
     std::vector<Expression*> probeKeys = {&probe};
 
     auto* join = LeftJoin::make(

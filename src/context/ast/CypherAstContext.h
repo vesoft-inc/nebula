@@ -38,7 +38,7 @@ struct NodeInfo {
     std::vector<TagID>                      tids;
     std::vector<const std::string*>         labels;
     std::vector<MapExpression*>             labelProps;
-    const std::string                      *alias{nullptr};
+    std::string                             alias;
     const MapExpression                    *props{nullptr};
     Expression                             *filter{nullptr};
 };
@@ -49,7 +49,7 @@ struct EdgeInfo {
     std::vector<EdgeType>                   edgeTypes;
     MatchEdge::Direction                    direction{MatchEdge::Direction::OUT_EDGE};
     std::vector<const std::string*>         types;
-    const std::string                      *alias{nullptr};
+    std::string                             alias;
     const MapExpression                    *props{nullptr};
     Expression                             *filter{nullptr};
 };

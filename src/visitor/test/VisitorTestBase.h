@@ -130,7 +130,7 @@ protected:
         std::initializer_list<std::pair<std::string, Expression *>> exprs) {
         auto mapItemList = new MapItemList;
         for (auto expr : exprs) {
-            mapItemList->add(new std::string(expr.first), expr.second);
+            mapItemList->add(expr.first, expr.second);
         }
         return new MapExpression(mapItemList);
     }
@@ -145,11 +145,11 @@ protected:
         for (auto arg : args) {
             argsList->addArgument(std::unique_ptr<Expression>(arg));
         }
-        return new FunctionCallExpression(new std::string(std::move(fn)), argsList);
+        return new FunctionCallExpression(std::move(fn), argsList);
     }
 
     static VariableExpression *varExpr(const std::string &name) {
-        return new VariableExpression(new std::string(name));
+        return new VariableExpression(name);
     }
 
     static CaseExpression *caseExpr(Expression *cond,
@@ -165,11 +165,11 @@ protected:
     }
 
     static LabelExpression *labelExpr(const std::string &name) {
-        return new LabelExpression(new std::string(name));
+        return new LabelExpression(name);
     }
 
     static LabelAttributeExpression *laExpr(const std::string &name, Value value) {
-        return new LabelAttributeExpression(new LabelExpression(new std::string(name)),
+        return new LabelAttributeExpression(new LabelExpression(name),
                                             new ConstantExpression(std::move(value)));
     }
 };

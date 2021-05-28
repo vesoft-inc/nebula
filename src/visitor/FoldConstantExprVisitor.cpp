@@ -108,7 +108,7 @@ void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
             }
         }
     }
-    auto result = FunctionManager::getIsPure(*expr->name(), expr->args()->args().size());
+    auto result = FunctionManager::getIsPure(expr->name(), expr->args()->args().size());
     if (!result.ok()) {
         canBeFolded = false;
     } else if (!result.value()) {
@@ -192,9 +192,8 @@ void FoldConstantExprVisitor::visit(MapExpression *expr) {
         }
         item->accept(this);
         if (canBeFolded_) {
-            auto key = std::make_unique<std::string>(*pair.first);
             auto val = std::unique_ptr<Expression>(fold(item));
-            expr->setItem(i, std::make_pair(std::move(key), std::move(val)));
+            expr->setItem(i, std::make_pair(pair.first, std::move(val)));
         } else {
             canBeFolded = false;
         }

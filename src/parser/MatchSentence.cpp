@@ -33,7 +33,7 @@ std::string UnwindClause::toString() const {
     buf += "UNWIND ";
     buf += expr_->toString();
     buf += " AS ";
-    buf += *alias_;
+    buf += alias_;
 
     return buf;
 }
@@ -94,10 +94,10 @@ std::string MatchEdge::toString() const {
         end = "-";
     }
 
-    if (alias_ != nullptr || !types_.empty() || range_ != nullptr || props_ != nullptr) {
+    if (!alias_.empty() || !types_.empty() || range_ != nullptr || props_ != nullptr) {
         buf += '[';
-        if (alias_ != nullptr) {
-            buf += *alias_;
+        if (!alias_.empty()) {
+            buf += alias_;
         }
         if (!types_.empty()) {
             buf += ':';
@@ -141,8 +141,8 @@ std::string MatchNode::toString() const {
     buf.reserve(64);
 
     buf += '(';
-    if (alias_ != nullptr) {
-        buf += *alias_;
+    if (!alias_.empty()) {
+        buf += alias_;
     }
     if (labels_ != nullptr) {
         buf += labels_->toString();

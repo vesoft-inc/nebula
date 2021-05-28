@@ -59,7 +59,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
         std::vector<std::string> propNames;
         for (auto* expr : varProps) {
             DCHECK(expr->kind() == Expression::Kind::kVarProperty);
-            propNames.emplace_back(*static_cast<const VariablePropertyExpression*>(expr)->prop());
+            propNames.emplace_back(static_cast<const VariablePropertyExpression*>(expr)->prop());
         }
         for (auto prop : propNames) {
             auto iter = std::find_if(leftVarColNames.begin(),

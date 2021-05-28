@@ -94,14 +94,12 @@ const std::string& index, const std::vector<nebula::plugin::HttpClient>& tsClien
         if (isEdge) {
             r = std::make_unique<RelationalExpression>(
                 Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(new std::string(*tsExpr->arg()->from()),
-                                           new std::string(*tsExpr->arg()->prop())),
+                new EdgePropertyExpression(tsExpr->arg()->from(), tsExpr->arg()->prop()),
                 new ConstantExpression(Value(row)));
         } else {
             r = std::make_unique<RelationalExpression>(
                 Expression::Kind::kRelEQ,
-                new TagPropertyExpression(new std::string(*tsExpr->arg()->from()),
-                                          new std::string(*tsExpr->arg()->prop())),
+                new TagPropertyExpression(tsExpr->arg()->from(), tsExpr->arg()->prop()),
                 new ConstantExpression(Value(row)));
         }
         rels.emplace_back(std::move(r));
@@ -122,7 +120,7 @@ FTIndexUtils::textSearch(Expression* expr,
     //     return Status::SemanticError("Schema name error : %s", tsExpr->arg()->from()->c_str());
     // }
     // auto index = plugin::IndexTraits::indexName(*space_.spaceDesc.space_name_ref(), isEdge_);
-    nebula::plugin::DocItem doc(index, *tsExpr->arg()->prop(), *tsExpr->arg()->val());
+    nebula::plugin::DocItem doc(index, tsExpr->arg()->prop(), tsExpr->arg()->val());
     nebula::plugin::LimitItem limit(tsExpr->arg()->timeout(), tsExpr->arg()->limit());
     std::vector<std::string> result;
     // TODO (sky) : External index load balancing
@@ -137,7 +135,7 @@ FTIndexUtils::textSearch(Expression* expr,
                 } else {
                     fuzz = tsExpr->arg()->fuzziness();
                 }
-                std::string op = (tsExpr->arg()->op() == nullptr) ? "or" : *tsExpr->arg()->op();
+                std::string op = tsExpr->arg()->op().empty() ? "or" : tsExpr->arg()->op();
                 ret = nebula::plugin::ESGraphAdapter::kAdapter->fuzzy(
                     randomFTClient(tsClients), doc, limit, fuzz, op, result);
                 break;

@@ -127,40 +127,40 @@ void DeducePropsVisitor::visit(EdgePropertyExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(TagPropertyExpression *expr) {
-    auto status = qctx_->schemaMng()->toTagID(space_, *expr->sym());
+    auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
     if (!status.ok()) {
         status_ = std::move(status).status();
         return;
     }
-    exprProps_->insertTagNameIds(*expr->sym(), status.value());
-    exprProps_->insertTagProp(status.value(), *expr->prop());
+    exprProps_->insertTagNameIds(expr->sym(), status.value());
+    exprProps_->insertTagProp(status.value(), expr->prop());
 }
 
 void DeducePropsVisitor::visit(InputPropertyExpression *expr) {
-    exprProps_->insertInputProp(*expr->prop());
+    exprProps_->insertInputProp(expr->prop());
 }
 
 void DeducePropsVisitor::visit(VariablePropertyExpression *expr) {
-    exprProps_->insertVarProp(*expr->sym(), *expr->prop());
-    userDefinedVarNameList_->emplace(*expr->sym());
+    exprProps_->insertVarProp(expr->sym(), expr->prop());
+    userDefinedVarNameList_->emplace(expr->sym());
 }
 
 void DeducePropsVisitor::visit(DestPropertyExpression *expr) {
-    auto status = qctx_->schemaMng()->toTagID(space_, *expr->sym());
+    auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
     if (!status.ok()) {
         status_ = std::move(status).status();
         return;
     }
-    exprProps_->insertDstTagProp(std::move(status).value(), *expr->prop());
+    exprProps_->insertDstTagProp(std::move(status).value(), expr->prop());
 }
 
 void DeducePropsVisitor::visit(SourcePropertyExpression *expr) {
-    auto status = qctx_->schemaMng()->toTagID(space_, *expr->sym());
+    auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
     if (!status.ok()) {
         status_ = std::move(status).status();
         return;
     }
-    exprProps_->insertSrcTagProp(std::move(status).value(), *expr->prop());
+    exprProps_->insertSrcTagProp(std::move(status).value(), expr->prop());
 }
 
 void DeducePropsVisitor::visit(EdgeSrcIdExpression *expr) {
@@ -220,12 +220,12 @@ void DeducePropsVisitor::visit(ColumnExpression *expr) {
 }
 
 void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
-    auto status = qctx_->schemaMng()->toEdgeType(space_, *expr->sym());
+    auto status = qctx_->schemaMng()->toEdgeType(space_, expr->sym());
     if (!status.ok()) {
         status_ = std::move(status).status();
         return;
     }
-    exprProps_->insertEdgeProp(status.value(), *expr->prop());
+    exprProps_->insertEdgeProp(status.value(), expr->prop());
 }
 
 void DeducePropsVisitor::reportError(const Expression *expr) {

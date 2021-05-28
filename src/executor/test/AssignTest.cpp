@@ -132,9 +132,8 @@ TEST_F(AssignExecutorTest, VariableExpression) {
         EXPECT_EQ(result.getInt(), val);
     }
 
-    auto* addExpr = new ArithmeticExpression(Expression::Kind::kAdd,
-                                             new VariableExpression(new std::string(varName1)),
-                                             new ConstantExpression(7));
+    auto* addExpr = new ArithmeticExpression(
+        Expression::Kind::kAdd, new VariableExpression(varName1), new ConstantExpression(7));
     auto* assign = Assign::make(qctx_.get(), nullptr);
     assign->assignVar(varName, addExpr);
     auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());
@@ -168,8 +167,8 @@ TEST_F(AssignExecutorTest, VariableExpression1) {
         EXPECT_EQ(result.getInt(), val);
     }
     // var = var1++
-    auto* addExpr = new UnaryExpression(Expression::Kind::kUnaryIncr,
-                                        new VariableExpression(new std::string(varName1)));
+    auto* addExpr =
+        new UnaryExpression(Expression::Kind::kUnaryIncr, new VariableExpression(varName1));
     auto* assign = Assign::make(qctx_.get(), nullptr);
     assign->assignVar(varName, addExpr);
     auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());

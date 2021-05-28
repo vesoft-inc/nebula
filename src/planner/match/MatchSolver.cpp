@@ -63,12 +63,11 @@ Expression* MatchSolver::rewriteLabel2VarProp(const Expression* expr) {
                e->kind() == Expression::Kind::kLabel);
         if (e->kind() == Expression::Kind::kLabelAttribute) {
             auto* la = static_cast<const LabelAttributeExpression*>(e);
-            auto* var = new VariablePropertyExpression(new std::string(),
-                                                       new std::string(*la->left()->name()));
+            auto* var = new VariablePropertyExpression("", la->left()->name());
             return new AttributeExpression(var, new ConstantExpression(la->right()->value()));
         }
         auto label = static_cast<const LabelExpression*>(e);
-        return new VariablePropertyExpression(new std::string(), new std::string(*label->name()));
+        return new VariablePropertyExpression("", label->name());
     };
 
     return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
@@ -78,7 +77,7 @@ Expression* MatchSolver::doRewrite(const std::unordered_map<std::string, AliasTy
                                    const Expression* expr) {
     if (expr->kind() == Expression::Kind::kLabel) {
         auto* labelExpr = static_cast<const LabelExpression*>(expr);
-        auto alias = aliases.find(*labelExpr->name());
+        auto alias = aliases.find(labelExpr->name());
         DCHECK(alias != aliases.end());
     }
 
@@ -91,9 +90,9 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          bool isEdgeProperties) {
     auto makePropExpr = [=, &label](const std::string& prop) -> Expression* {
         if (isEdgeProperties) {
-            return new EdgePropertyExpression(new std::string(label), new std::string(prop));
+            return new EdgePropertyExpression(label, prop);
         }
-        return new TagPropertyExpression(new std::string(label), new std::string(prop));
+        return new TagPropertyExpression(label, prop);
     };
 
     auto root = qctx->objPool()->makeAndAdd<LogicalExpression>(Expression::Kind::kLogicalAnd);
@@ -101,7 +100,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     operands.reserve(map->size());
     for (const auto& item : map->items()) {
         operands.emplace_back(new RelationalExpression(
-            Expression::Kind::kRelEQ, makePropExpr(*item.first), item.second->clone().release()));
+            Expression::Kind::kRelEQ, makePropExpr(item.first), item.second->clone().release()));
     }
     root->setOperands(std::move(operands));
     return root;
@@ -158,16 +157,15 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
             continue;
         }
 
-        if (*la->left()->name() != alias) {
+        if (la->left()->name() != alias) {
             continue;
         }
 
         const auto &value = la->right()->value();
-        auto *tpExpr = isEdgeProperties ?
-                       static_cast<Expression*>(new EdgePropertyExpression(new std::string(label),
-                                                                 new std::string(value.getStr()))) :
-                       static_cast<Expression*>(new TagPropertyExpression(new std::string(label),
-                                                                  new std::string(value.getStr())));
+        auto* tpExpr =
+            isEdgeProperties
+                ? static_cast<Expression*>(new EdgePropertyExpression(label, value.getStr()))
+                : static_cast<Expression*>(new TagPropertyExpression(label, value.getStr()));
         auto *newConstant = constant->clone().release();
         if (left->kind() == Expression::Kind::kLabelAttribute) {
             auto* rel = new RelationalExpression(item->kind(), tpExpr, newConstant);
@@ -224,8 +222,7 @@ Expression* MatchSolver::getEndVidInPath(const std::string& colName) {
     // expr: endNode(path) => vn
     auto args = std::make_unique<ArgumentList>();
     args->addArgument(std::move(columnExpr));
-    auto fn = std::make_unique<std::string>("endNode");
-    auto endNode = std::make_unique<FunctionCallExpression>(fn.release(), args.release());
+    auto endNode = std::make_unique<FunctionCallExpression>("endNode", args.release());
     // expr: en[_dst] => dst vid
     auto vidExpr = std::make_unique<ConstantExpression>(kVid);
     return new AttributeExpression(endNode.release(), vidExpr.release());
@@ -237,8 +234,7 @@ Expression* MatchSolver::getStartVidInPath(const std::string& colName) {
     // expr: startNode(path) => v1
     auto args = std::make_unique<ArgumentList>();
     args->addArgument(std::move(columnExpr));
-    auto fn = std::make_unique<std::string>("startNode");
-    auto firstVertexExpr = std::make_unique<FunctionCallExpression>(fn.release(), args.release());
+    auto firstVertexExpr = std::make_unique<FunctionCallExpression>("startNode", args.release());
     // expr: v1[_vid] => vid
     return new AttributeExpression(firstVertexExpr.release(), new ConstantExpression(kVid));
 }
@@ -248,8 +244,7 @@ PlanNode* MatchSolver::filtPathHasSameEdge(PlanNode* input,
                                            QueryContext* qctx) {
     auto args = std::make_unique<ArgumentList>();
     args->addArgument(ExpressionUtils::inputPropExpr(column));
-    auto fn = std::make_unique<std::string>("hasSameEdgeInPath");
-    auto fnCall = std::make_unique<FunctionCallExpression>(fn.release(), args.release());
+    auto fnCall = std::make_unique<FunctionCallExpression>("hasSameEdgeInPath", args.release());
     auto pool = qctx->objPool();
     auto cond = pool->makeAndAdd<UnaryExpression>(Expression::Kind::kUnaryNot, fnCall.release());
     auto filter = Filter::make(qctx, input, cond);

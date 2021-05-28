@@ -116,8 +116,8 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
     auto rewriter = [](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
         auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
-        auto leftName = new std::string(*labelAttrExpr->left()->name());
-        auto rightName = new std::string(labelAttrExpr->right()->value().getStr());
+        auto leftName = labelAttrExpr->left()->name();
+        auto rightName = labelAttrExpr->right()->value().getStr();
         return new EdgePropertyExpression(leftName, rightName);
     };
 
@@ -133,8 +133,8 @@ std::unique_ptr<Expression> ExpressionUtils::rewriteInnerVar(const Expression *e
     auto rewriter = [newVar](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
         auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
-        auto *newProp = new std::string(*varPropExpr->prop());
-        return new VariablePropertyExpression(new std::string(newVar), newProp);
+        auto newProp = varPropExpr->prop();
+        return new VariablePropertyExpression(newVar, newProp);
     };
 
     return std::unique_ptr<Expression>(
@@ -149,8 +149,8 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
     auto rewriter = [](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
         auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
-        auto leftName = new std::string(*labelAttrExpr->left()->name());
-        auto rightName = new std::string(labelAttrExpr->right()->value().getStr());
+        auto leftName = labelAttrExpr->left()->name();
+        auto rightName = labelAttrExpr->right()->value().getStr();
         return new TagPropertyExpression(leftName, rightName);
     };
 
@@ -162,9 +162,8 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
         auto matcher = [](const Expression* e) -> bool {
             return e->kind() == Expression::Kind::kAggregate;
         };
-        auto rewriter = [](const Expression* e) -> Expression* {
-            return new VariablePropertyExpression(new std::string(""),
-                                                  new std::string(e->toString()));
+        auto rewriter = [](const Expression *e) -> Expression * {
+            return new VariablePropertyExpression("", e->toString());
         };
 
         return RewriteVisitor::transform(expr,
@@ -458,11 +457,11 @@ void ExpressionUtils::splitFilter(const Expression *expr,
 
 VariablePropertyExpression *ExpressionUtils::newVarPropExpr(const std::string &prop,
                                                             const std::string &var) {
-    return new VariablePropertyExpression(new std::string(var), new std::string(prop));
+    return new VariablePropertyExpression(var, prop);
 }
 
 std::unique_ptr<InputPropertyExpression> ExpressionUtils::inputPropExpr(const std::string &prop) {
-    return std::make_unique<InputPropertyExpression>(new std::string(prop));
+    return std::make_unique<InputPropertyExpression>(prop);
 }
 
 std::unique_ptr<Expression> ExpressionUtils::pushOrs(
@@ -590,7 +589,7 @@ std::vector<std::unique_ptr<Expression>> ExpressionUtils::expandImplOr(const Exp
 }
 
 Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
-    auto func = *aggExpr->name();
+    auto func = aggExpr->name();
     std::transform(func.begin(), func.end(), func.begin(), ::toupper);
 
     NG_RETURN_IF_ERROR(AggFunctionManager::find(func));
@@ -605,7 +604,7 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
     if (func.compare("COUNT") && (aggArg->kind() == Expression::Kind::kInputProperty ||
                                   aggArg->kind() == Expression::Kind::kVarProperty)) {
         auto propExpr = static_cast<const PropertyExpression *>(aggArg);
-        if (*propExpr->prop() == "*") {
+        if (propExpr->prop() == "*") {
             return Status::SemanticError("Could not apply aggregation function `%s' on `%s'",
                                          aggExpr->toString().c_str(),
                                          propExpr->toString().c_str());
@@ -618,7 +617,7 @@ Status ExpressionUtils::checkAggExpr(const AggregateExpression *aggExpr) {
 bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
     auto finder = [](const Expression *e) -> bool {
         if (e->kind() == Expression::Kind::kFunctionCall) {
-            auto func = *static_cast<const FunctionCallExpression *>(e)->name();
+            auto func = static_cast<const FunctionCallExpression *>(e)->name();
             std::transform(func.begin(), func.end(), func.begin(), ::tolower);
             return !func.compare("rand") || !func.compare("rand32") || !func.compare("rand64");
         }
@@ -743,37 +742,33 @@ std::unique_ptr<Expression> ExpressionUtils::stepCondition(const std::string &lo
                                                            uint32_t steps) {
     return std::make_unique<RelationalExpression>(
         Expression::Kind::kRelLE,
-        new UnaryExpression(Expression::Kind::kUnaryIncr,
-                            new VariableExpression(new std::string(loopStep))),
+        new UnaryExpression(Expression::Kind::kUnaryIncr, new VariableExpression(loopStep)),
         new ConstantExpression(static_cast<int32_t>(steps)));
 }
 
 // size(var) != 0
 std::unique_ptr<Expression> ExpressionUtils::neZeroCondition(const std::string &var) {
     auto *args = new ArgumentList();
-    args->addArgument(std::make_unique<VariableExpression>(new std::string(var)));
-    return std::make_unique<RelationalExpression>(
-        Expression::Kind::kRelNE,
-        new FunctionCallExpression(new std::string("size"), args),
-        new ConstantExpression(0));
+    args->addArgument(std::make_unique<VariableExpression>(var));
+    return std::make_unique<RelationalExpression>(Expression::Kind::kRelNE,
+                                                  new FunctionCallExpression("size", args),
+                                                  new ConstantExpression(0));
 }
 
 // size(var) == 0
 std::unique_ptr<Expression> ExpressionUtils::zeroCondition(const std::string &var) {
     auto *args = new ArgumentList();
-    args->addArgument(std::make_unique<VariableExpression>(new std::string(var)));
-    return std::make_unique<RelationalExpression>(
-        Expression::Kind::kRelEQ,
-        new FunctionCallExpression(new std::string("size"), args),
-        new ConstantExpression(0));
+    args->addArgument(std::make_unique<VariableExpression>(var));
+    return std::make_unique<RelationalExpression>(Expression::Kind::kRelEQ,
+                                                  new FunctionCallExpression("size", args),
+                                                  new ConstantExpression(0));
 }
 
 // var == value
 std::unique_ptr<Expression> ExpressionUtils::equalCondition(const std::string &var,
                                                             const Value &value) {
-    return std::make_unique<RelationalExpression>(Expression::Kind::kRelEQ,
-                                                  new VariableExpression(new std::string(var)),
-                                                  new ConstantExpression(value));
+    return std::make_unique<RelationalExpression>(
+        Expression::Kind::kRelEQ, new VariableExpression(var), new ConstantExpression(value));
 }
 
 }   // namespace graph

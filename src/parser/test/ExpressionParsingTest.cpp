@@ -432,8 +432,7 @@ TEST_F(ExpressionParsingTest, Precedence) {
     ast = make<AttributeExpression>(
             make<SubscriptExpression>(
                 make<SubscriptExpression>(
-                    make<VariableExpression>(
-                        new std::string("var")),
+                    make<VariableExpression>("var"),
                     make<ConstantExpression>(0)),
                 make<ConstantExpression>("1")),
             make<ConstantExpression>("m"));
@@ -450,15 +449,12 @@ TEST_F(ExpressionParsingTest, Precedence) {
                                       make<SubscriptExpression>(
                                           make<SubscriptExpression>(
                                               make<AttributeExpression>(
-                                                  make<VariablePropertyExpression>(
-                                                      new std::string("var"),
-                                                      new std::string("p")),
+                                                  make<VariablePropertyExpression>("var", "p"),
                                                   make<ConstantExpression>("q")),
                                               make<LabelExpression>("r")),
                                           make<LabelExpression>("s")))),
                                   make<RelationalExpression>(Kind::kRelIn,
-                                      make<InputPropertyExpression>(
-                                          new std::string("m")),
+                                      make<InputPropertyExpression>("m"),
                                       make<ListExpression>(
                                           &(*(new ExpressionList))
                                           .add(make<ConstantExpression>(1))

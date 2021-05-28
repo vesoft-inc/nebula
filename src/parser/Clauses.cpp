@@ -132,9 +132,9 @@ std::string YieldColumn::toString() const {
     buf.reserve(256);
     buf += expr_->toString();
 
-    if (alias_ != nullptr) {
+    if (!alias_.empty()) {
         buf += " AS ";
-        buf += *alias_;
+        buf += alias_;
     }
 
     return buf;
@@ -154,8 +154,8 @@ std::string YieldColumns::toString() const {
 }
 
 bool operator==(const YieldColumn &l, const YieldColumn &r) {
-    if (l.alias() != nullptr && r.alias() != nullptr) {
-        if (*l.alias() != *r.alias()) {
+    if (!l.alias().empty() && !r.alias().empty()) {
+        if (l.alias() != r.alias()) {
             return false;
         }
     } else if (l.alias() != r.alias()) {

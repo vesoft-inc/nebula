@@ -198,7 +198,7 @@ Status Expand::expandStep(const EdgeInfo& edge,
     }
 
     auto listColumns = saveObject(new YieldColumns);
-    listColumns->addColumn(new YieldColumn(buildPathExpr(), new std::string(kPathStr)));
+    listColumns->addColumn(new YieldColumn(buildPathExpr(), kPathStr));
     // [Project]
     root = Project::make(qctx, root, listColumns);
     root->setColNames({kPathStr});
@@ -243,8 +243,7 @@ Status Expand::filterDatasetByPathLength(const EdgeInfo& edge, PlanNode* input, 
     // Expr: length(relationships(p)) >= minHop
     auto pathExpr = ExpressionUtils::inputPropExpr(kPathStr);
     args->addArgument(std::move(pathExpr));
-    auto fn = std::make_unique<std::string>("length");
-    auto edgeExpr = std::make_unique<FunctionCallExpression>(fn.release(), args.release());
+    auto edgeExpr = std::make_unique<FunctionCallExpression>("length", args.release());
     auto minHop = edge.range == nullptr ? 1 : edge.range->min();
     auto minHopExpr = std::make_unique<ConstantExpression>(minHop);
     auto expr = std::make_unique<RelationalExpression>(
@@ -266,7 +265,7 @@ Expression* Expand::buildExpandCondition(const std::string& lastStepResult,
     // ++loopSteps{startIndex} << maxHop
     auto stepCondition = ExpressionUtils::stepCondition(loopSteps, maxHop);
     // lastStepResult == empty || size(lastStepReult) != 0
-    auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(new std::string(lastStepResult)),
+    auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(lastStepResult),
                                         new ConstantExpression(Value()));
     auto neZero = ExpressionUtils::neZeroCondition(lastStepResult);
     auto* existValCondition = ExpressionUtils::Or(eqEmpty, neZero.release());

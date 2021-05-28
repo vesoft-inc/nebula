@@ -90,14 +90,14 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
     auto& whereCtx = matchClauseCtx->where;
     if (whereCtx && whereCtx->filter) {
         auto* filter = whereCtx->filter;
-        const auto nodeAlias = *nodeCtx->info->alias;
+        const auto& nodeAlias = nodeCtx->info->alias;
         auto* objPool = matchClauseCtx->qctx->objPool();
         if (filter->kind() == Expression::Kind::kLogicalOr) {
             auto labelExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
             bool labelMatched = true;
             for (auto* labelExpr : labelExprs) {
                 DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
-                if (*(static_cast<const LabelExpression*>(labelExpr)->name()) != nodeAlias) {
+                if (static_cast<const LabelExpression*>(labelExpr)->name() != nodeAlias) {
                     labelMatched = false;
                     break;
                 }

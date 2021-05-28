@@ -388,12 +388,12 @@ Status IndexScanRule::addFilterItem(RelationalExpression* expr, FilterItems* ite
         expr->right()->kind() == Expression::Kind::kConstant) {
         auto* l = static_cast<const E*>(expr->left());
         auto* r = static_cast<ConstantExpression*>(expr->right());
-        items->addItem(*l->prop(), expr->kind(), r->eval(ctx));
+        items->addItem(l->prop(), expr->kind(), r->eval(ctx));
     } else if (expr->left()->kind() == Expression::Kind::kConstant &&
                expr->right()->kind() == relType) {
         auto* r = static_cast<const E*>(expr->right());
         auto* l = static_cast<ConstantExpression*>(expr->left());
-        items->addItem(*r->prop(), reverseRelationalExprKind(expr->kind()), l->eval(ctx));
+        items->addItem(r->prop(), reverseRelationalExprKind(expr->kind()), l->eval(ctx));
     } else {
         return Status::Error("Optimizer error, when rewrite relational expression");
     }

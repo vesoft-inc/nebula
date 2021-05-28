@@ -36,7 +36,7 @@ void QueryUtil::buildConstantInput(QueryContext *qctx, Starts& starts, std::stri
 SubPlan QueryUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
     auto pool = qctx->objPool();
     auto* columns = pool->add(new YieldColumns());
-    auto* column = new YieldColumn(starts.originalSrc->clone().release(), new std::string(kVid));
+    auto* column = new YieldColumn(starts.originalSrc->clone().release(), kVid);
     columns->addColumn(column);
 
     auto* project = Project::make(qctx, nullptr, columns);

@@ -58,7 +58,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
     std::vector<std::string> propNames;
     for (auto* expr : varProps) {
         DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
-        propNames.emplace_back(*static_cast<const VariablePropertyExpression*>(expr)->prop());
+        propNames.emplace_back(static_cast<const VariablePropertyExpression*>(expr)->prop());
     }
     std::unordered_map<std::string, Expression*> rewriteMap;
     auto colNames = newAggNode->colNames();
@@ -79,13 +79,13 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
         if (e->kind() != Expression::Kind::kVarProperty) {
             return false;
         }
-        auto* propName = static_cast<const VariablePropertyExpression*>(e)->prop();
-        return rewriteMap[*propName];
+        auto& propName = static_cast<const VariablePropertyExpression*>(e)->prop();
+        return rewriteMap[propName];
     };
     auto rewriter = [&rewriteMap](const Expression* e) -> Expression* {
         DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
-        auto* propName = static_cast<const VariablePropertyExpression*>(e)->prop();
-        return rewriteMap[*propName]->clone().release();
+        auto& propName = static_cast<const VariablePropertyExpression*>(e)->prop();
+        return rewriteMap[propName]->clone().release();
     };
     auto* newCondition =
         graph::RewriteVisitor::transform(condition, std::move(matcher), std::move(rewriter));

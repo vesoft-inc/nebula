@@ -54,7 +54,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
             }
             if (!aggs.empty()) {
                 auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
-                projCols_->addColumn(new YieldColumn(colRewrited, new std::string(colOldName)));
+                projCols_->addColumn(new YieldColumn(colRewrited, colOldName));
                 projOutputColumnNames_.emplace_back(colOldName);
                 continue;
             }
@@ -74,16 +74,15 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         NG_RETURN_IF_ERROR(status);
         auto type = std::move(status).value();
 
-        projCols_->addColumn(new YieldColumn(
-            new VariablePropertyExpression(new std::string(), new std::string(colOldName)),
-            new std::string(colOldName)));
+        projCols_->addColumn(
+            new YieldColumn(new VariablePropertyExpression("", colOldName), colOldName));
 
         projOutputColumnNames_.emplace_back(colOldName);
         outputs_.emplace_back(colOldName, type);
         outputColumnNames_.emplace_back(colOldName);
 
-        if (col->alias() != nullptr) {
-            aliases_.emplace(*col->alias(), col);
+        if (!col->alias().empty()) {
+            aliases_.emplace(col->alias(), col);
         }
 
         ExpressionProps yieldProps;

@@ -92,7 +92,7 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
     auto* projNode = static_cast<const graph::Project*>(projGroupNode->node());
     std::vector<YieldColumn*> cols = projNode->columns()->columns();
     for (auto* col : cols) {
-        if (col->alias() || col->expr()->kind() != Expression::Kind::kVarProperty) {
+        if (!col->alias().empty() || col->expr()->kind() != Expression::Kind::kVarProperty) {
             return false;
         }
     }

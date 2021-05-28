@@ -33,19 +33,16 @@ void RewriteSymExprVisitor::visit(TypeCastingExpression *expr) {
 
 void RewriteSymExprVisitor::visit(LabelExpression *expr) {
     if (isEdge_) {
-        expr_ = std::make_unique<EdgePropertyExpression>(new std::string(sym_),
-                                                         new std::string(*expr->name()));
+        expr_ = std::make_unique<EdgePropertyExpression>(sym_, expr->name());
     } else {
-        expr_ = std::make_unique<SourcePropertyExpression>(new std::string(sym_),
-                                                           new std::string(*expr->name()));
+        expr_ = std::make_unique<SourcePropertyExpression>(sym_, expr->name());
     }
 }
 
 void RewriteSymExprVisitor::visit(LabelAttributeExpression *expr) {
     if (isEdge_) {
-        expr_ = std::make_unique<EdgePropertyExpression>(
-            new std::string(*expr->left()->name()),
-            new std::string(expr->right()->value().getStr()));
+        expr_ = std::make_unique<EdgePropertyExpression>(expr->left()->name(),
+                                                         expr->right()->value().getStr());
         hasWrongType_ = false;
     } else {
         hasWrongType_ = true;
@@ -143,8 +140,7 @@ void RewriteSymExprVisitor::visit(MapExpression *expr) {
     for (size_t i = 0; i < items.size(); ++i) {
         items[i].second->accept(this);
         if (expr_) {
-            auto key = std::make_unique<std::string>(*items[i].first);
-            expr->setItem(i, {std::move(key), std::move(expr_)});
+            expr->setItem(i, {items[i].first, std::move(expr_)});
         }
     }
 }

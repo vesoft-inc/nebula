@@ -51,7 +51,7 @@ bool MergeGetNbrsAndProjectRule::match(OptContext *ctx, const MatchedResult &mat
         return false;
     }
     auto inputPropExpr = static_cast<const InputPropertyExpression *>(srcExpr);
-    return columns.back() == *inputPropExpr->prop();
+    return columns.back() == inputPropExpr->prop();
 }
 
 StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(

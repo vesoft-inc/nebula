@@ -143,9 +143,9 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
             auto ipe = static_cast<const InputPropertyExpression *>(expr);
             // Get all props of input expression could NOT be a part of another expression. So
             // it's always a root of expression.
-            if (*ipe->prop() == "*") {
+            if (ipe->prop() == "*") {
                 for (auto &colDef : inputs_) {
-                    auto newExpr = new InputPropertyExpression(new std::string(colDef.name));
+                    auto newExpr = new InputPropertyExpression(colDef.name);
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 continue;
@@ -153,15 +153,14 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
         } else if (expr->kind() == Expression::Kind::kVarProperty) {
             auto vpe = static_cast<const VariablePropertyExpression *>(expr);
             // Get all props of variable expression is same as above input property expression.
-            if (*vpe->prop() == "*") {
-                auto var = DCHECK_NOTNULL(vpe->sym());
-                if (!vctx_->existVar(*var)) {
-                    return Status::SemanticError("variable `%s' not exists.", var->c_str());
+            if (vpe->prop() == "*") {
+                auto &var = vpe->sym();
+                if (!vctx_->existVar(var)) {
+                    return Status::SemanticError("variable `%s' not exists.", var.c_str());
                 }
-                auto &varColDefs = vctx_->getVar(*var);
+                auto &varColDefs = vctx_->getVar(var);
                 for (auto &colDef : varColDefs) {
-                    auto newExpr = new VariablePropertyExpression(new std::string(*var),
-                                                                  new std::string(colDef.name));
+                    auto newExpr = new VariablePropertyExpression(var, colDef.name);
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 continue;

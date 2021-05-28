@@ -106,15 +106,15 @@ Status LookupValidator::prepareYield() {
     newYieldColumns_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
     if (isEdge_) {
         // default columns
-        newYieldColumns_->addColumn(new YieldColumn(
-            new InputPropertyExpression(new std::string(kSrcVID)), new std::string(kSrcVID)));
-        newYieldColumns_->addColumn(new YieldColumn(
-            new InputPropertyExpression(new std::string(kDstVID)), new std::string(kDstVID)));
-        newYieldColumns_->addColumn(new YieldColumn(
-            new InputPropertyExpression(new std::string(kRanking)), new std::string(kRanking)));
+        newYieldColumns_->addColumn(
+            new YieldColumn(new InputPropertyExpression(kSrcVID), kSrcVID));
+        newYieldColumns_->addColumn(
+            new YieldColumn(new InputPropertyExpression(kDstVID), kDstVID));
+        newYieldColumns_->addColumn(
+            new YieldColumn(new InputPropertyExpression(kRanking), kRanking));
     } else {
-        newYieldColumns_->addColumn(new YieldColumn(
-            new InputPropertyExpression(new std::string(kVertexID)), new std::string(kVertexID)));
+        newYieldColumns_->addColumn(
+            new YieldColumn(new InputPropertyExpression(kVertexID), kVertexID));
     }
     auto columns = sentence->yieldClause()->columns();
     auto schema = isEdge_ ? qctx_->schemaMng()->getEdgeSchema(spaceId_, schemaId_)
@@ -127,18 +127,18 @@ Status LookupValidator::prepareYield() {
         // TODO(shylock) support more expr
         if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
             auto la = static_cast<LabelAttributeExpression*>(col->expr());
-            const std::string& schemaName = *la->left()->name();
+            const std::string& schemaName = la->left()->name();
             const auto& value = la->right()->value();
             const std::string& colName = value.getStr();
             if (isEdge_) {
-                newYieldColumns_->addColumn(new YieldColumn(new EdgePropertyExpression(
-                    new std::string(schemaName), new std::string(colName))));
+                newYieldColumns_->addColumn(
+                    new YieldColumn(new EdgePropertyExpression(schemaName, colName)));
             } else {
-                newYieldColumns_->addColumn(new YieldColumn(new TagPropertyExpression(
-                    new std::string(schemaName), new std::string(colName))));
+                newYieldColumns_->addColumn(
+                    new YieldColumn(new TagPropertyExpression(schemaName, colName)));
             }
-            if (col->alias() != nullptr) {
-                newYieldColumns_->back()->setAlias(new std::string(*col->alias()));
+            if (!col->alias().empty()) {
+                newYieldColumns_->back()->setAlias(col->alias());
             }
             if (schemaName != from_) {
                 return Status::SemanticError("Schema name error : %s", schemaName.c_str());
@@ -255,8 +255,8 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 
     auto left = expr->left();
     auto* la = static_cast<LabelAttributeExpression*>(left);
-    if (*la->left()->name() != from_) {
-        return Status::SemanticError("Schema name error : %s", la->left()->name()->c_str());
+    if (la->left()->name() != from_) {
+        return Status::SemanticError("Schema name error : %s", la->left()->name().c_str());
     }
 
     // fold constant expression
@@ -333,7 +333,7 @@ StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
         return Status::SemanticError("text search index not found : %s", tsName.c_str());
     }
     auto ftFields = tsi.value().second.get_fields();
-    auto prop = *tsExpr->arg()->prop();
+    auto prop = tsExpr->arg()->prop();
 
     auto iter = std::find(ftFields.begin(), ftFields.end(), prop);
     if (iter == ftFields.end()) {

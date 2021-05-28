@@ -54,7 +54,7 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
     auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     auto statProps = std::make_unique<std::vector<storage::cpp2::StatProp>>();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
-    auto* vids = pool->add(new InputPropertyExpression(new std::string("id")));
+    auto* vids = pool->add(new InputPropertyExpression("id"));
     auto* gn = GetNeighbors::make(
             qctx_.get(),
             nullptr,

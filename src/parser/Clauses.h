@@ -231,17 +231,13 @@ public:
 
 class YieldColumn final {
 public:
-    explicit YieldColumn(Expression *expr, std::string *alias = nullptr) {
+    explicit YieldColumn(Expression *expr, const std::string &alias = "") {
         expr_.reset(expr);
-        alias_.reset(alias);
+        alias_ = alias;
     }
 
     std::unique_ptr<YieldColumn> clone() const {
-        auto col = std::make_unique<YieldColumn>(expr_->clone().release());
-        if (alias_ != nullptr) {
-            col->setAlias(new std::string(*alias_));
-        }
-        return col;
+        return std::make_unique<YieldColumn>(expr_->clone().release(), alias_);
     }
 
     void setExpr(Expression* expr) {
@@ -252,19 +248,19 @@ public:
         return expr_.get();
     }
 
-    void setAlias(std::string* alias) {
-        alias_.reset(alias);
+    void setAlias(const std::string& alias) {
+        alias_ = alias;
     }
 
-    std::string* alias() const {
-        return alias_.get();
+    const std::string& alias() const {
+        return alias_;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<Expression>                 expr_;
-    std::unique_ptr<std::string>                alias_;
+    std::unique_ptr<Expression> expr_;
+    std::string alias_;
 };
 
 bool operator==(const YieldColumn &l, const YieldColumn &r);
