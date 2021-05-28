@@ -10,8 +10,8 @@
 namespace nebula {
 
 bool TextSearchArgument::operator==(const TextSearchArgument& rhs) const {
-    return *val_ == *rhs.val_ &&
-           *op_ == *rhs.op_ &&
+    return val_ == rhs.val_ &&
+           op_ == rhs.op_ &&
            fuzziness_ == rhs.fuzziness_ &&
            limit_ == rhs.limit_ &&
            timeout_ == rhs.timeout_;
@@ -20,15 +20,15 @@ bool TextSearchArgument::operator==(const TextSearchArgument& rhs) const {
 std::string TextSearchArgument::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf = *from_ + "." + *prop_ + ", ";
-    buf += "\"" + *val_ + "\"";
+    buf = from_ + "." + prop_ + ", ";
+    buf += "\"" + val_ + "\"";
     if (fuzziness_ == -1) {
         buf += ", AUTO, ";
-        buf += ((*op_ == "or") ? "OR" : "AND");
+        buf += ((op_ == "or") ? "OR" : "AND");
     } else if (fuzziness_ > -1) {
         buf += ", ";
         buf += folly::stringPrintf("%d, ", fuzziness_);
-        buf += ((*op_ == "or") ? "OR" : "AND");
+        buf += ((op_ == "or") ? "OR" : "AND");
     }
     if (limit_ != -1) {
         buf += folly::stringPrintf(", %d", limit_);

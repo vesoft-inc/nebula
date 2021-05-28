@@ -56,11 +56,11 @@ class FunctionCallExpression final : public Expression {
     friend class Expression;
 
 public:
-    FunctionCallExpression(std::string* name = nullptr,
-                           ArgumentList* args = new ArgumentList())
+    explicit FunctionCallExpression(const std::string& name = "",
+                                    ArgumentList* args = new ArgumentList())
         : Expression(Kind::kFunctionCall), name_(name), args_(args) {
-        if (name_ != nullptr) {
-            auto funcResult = FunctionManager::get(*name_, DCHECK_NOTNULL(args_)->numArgs());
+        if (!name_.empty()) {
+            auto funcResult = FunctionManager::get(name_, DCHECK_NOTNULL(args_)->numArgs());
             if (funcResult.ok()) {
                 func_ = std::move(funcResult).value();
             }
@@ -80,11 +80,11 @@ public:
         for (auto& arg : args_->args()) {
             arguments->addArgument(arg->clone());
         }
-        return std::make_unique<FunctionCallExpression>(new std::string(*name_), arguments);
+        return std::make_unique<FunctionCallExpression>(name_, arguments);
     }
 
-    const std::string* name() const {
-        return name_.get();
+    const std::string& name() const {
+        return name_;
     }
 
     const ArgumentList* args() const {
@@ -97,11 +97,10 @@ public:
 
 private:
     void writeTo(Encoder& encoder) const override;
-
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>                 name_;
-    std::unique_ptr<ArgumentList>                args_;
+    std::string name_;
+    std::unique_ptr<ArgumentList> args_;
 
     // runtime cache
     Value                                        result_;

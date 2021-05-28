@@ -10,12 +10,12 @@
 namespace nebula {
 
 const Value& LabelExpression::eval(ExpressionContext&) {
-    result_.setStr(*name_);
+    result_.setStr(name_);
     return result_;
 }
 
 std::string LabelExpression::toString() const {
-    return *name_;
+    return name_;
 }
 
 bool LabelExpression::operator==(const Expression& rhs) const {
@@ -23,7 +23,7 @@ bool LabelExpression::operator==(const Expression& rhs) const {
         return false;
     }
     const auto& expr = static_cast<const LabelExpression&>(rhs);
-    return *name_ == *(expr.name());
+    return name_ == expr.name();
 }
 
 
@@ -32,7 +32,7 @@ void LabelExpression::writeTo(Encoder& encoder) const {
     encoder << kind_;
 
     // name_
-    encoder << name_.get();
+    encoder << name_;
 }
 
 

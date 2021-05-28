@@ -16,7 +16,7 @@ bool PropertyExpression::operator==(const Expression& rhs) const {
     }
 
     const auto& r = static_cast<const PropertyExpression&>(rhs);
-    return *ref_ == *(r.ref_) && *sym_ == *(r.sym_) && *prop_ == *(r.prop_);
+    return ref_ == r.ref_ && sym_ == r.sym_ && prop_ == r.prop_;
 }
 
 
@@ -25,13 +25,13 @@ void PropertyExpression::writeTo(Encoder& encoder) const {
     encoder << kind_;
 
     // ref_
-    encoder << ref_.get();
+    encoder << ref_;
 
     // alias_
-    encoder << sym_.get();
+    encoder << sym_;
 
     // prop_
-    encoder << prop_.get();
+    encoder << prop_;
 }
 
 
@@ -53,7 +53,7 @@ const Value& PropertyExpression::eval(ExpressionContext& ctx) {
 }
 
 const Value& EdgePropertyExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(sym_, prop_);
     return result_;
 }
 
@@ -62,7 +62,7 @@ void EdgePropertyExpression::accept(ExprVisitor *visitor) {
 }
 
 const Value& TagPropertyExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getTagProp(*sym_, *prop_);
+    result_ = ctx.getTagProp(sym_, prop_);
     return result_;
 }
 
@@ -71,7 +71,7 @@ void TagPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& InputPropertyExpression::eval(ExpressionContext& ctx) {
-    return ctx.getInputProp(*prop_);
+    return ctx.getInputProp(prop_);
 }
 
 void InputPropertyExpression::accept(ExprVisitor* visitor) {
@@ -79,7 +79,7 @@ void InputPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& VariablePropertyExpression::eval(ExpressionContext& ctx) {
-    return ctx.getVarProp(*sym_, *prop_);
+    return ctx.getVarProp(sym_, prop_);
 }
 
 void VariablePropertyExpression::accept(ExprVisitor* visitor) {
@@ -87,7 +87,7 @@ void VariablePropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& SourcePropertyExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getSrcProp(*sym_, *prop_);
+    result_ = ctx.getSrcProp(sym_, prop_);
     return result_;
 }
 
@@ -96,7 +96,7 @@ void SourcePropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& DestPropertyExpression::eval(ExpressionContext& ctx) {
-    return ctx.getDstProp(*sym_, *prop_);
+    return ctx.getDstProp(sym_, prop_);
 }
 
 void DestPropertyExpression::accept(ExprVisitor* visitor) {
@@ -104,7 +104,7 @@ void DestPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& EdgeSrcIdExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(sym_, prop_);
     return result_;
 }
 
@@ -113,7 +113,7 @@ void EdgeSrcIdExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& EdgeTypeExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(sym_, prop_);
     return result_;
 }
 
@@ -122,7 +122,7 @@ void EdgeTypeExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& EdgeRankExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(sym_, prop_);
     return result_;
 }
 
@@ -131,7 +131,7 @@ void EdgeRankExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
-    result_ = ctx.getEdgeProp(*sym_, *prop_);
+    result_ = ctx.getEdgeProp(sym_, prop_);
     return result_;
 }
 
@@ -143,62 +143,17 @@ std::string PropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
 
-    if (ref_ != nullptr && !ref_->empty()) {
-        buf += *ref_;
+    if (!ref_.empty()) {
+        buf += ref_;
         buf += ".";
     }
 
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
+    if (!sym_.empty()) {
+        buf += sym_;
         buf += ".";
     }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string EdgePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string TagPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string InputPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (ref_ != nullptr && !ref_->empty()) {
-        buf += *ref_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
+    if (!prop_.empty()) {
+        buf += prop_;
     }
 
     return buf;
@@ -208,113 +163,15 @@ std::string VariablePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
 
-    if (ref_ != nullptr) {
-        buf += *ref_;
+    if (!ref_.empty()) {
+        buf += ref_;
     }
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
+    if (!sym_.empty()) {
+        buf += sym_;
         buf += ".";
     }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string SourcePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (ref_ != nullptr && !ref_->empty()) {
-        buf += *ref_;
-        buf += ".";
-    }
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string DestPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (ref_ != nullptr && !ref_->empty()) {
-        buf += *ref_;
-        buf += ".";
-    }
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string EdgeSrcIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string EdgeTypeExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string EdgeRankExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
-    }
-
-    return buf;
-}
-
-std::string EdgeDstIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-
-    if (sym_ != nullptr && !sym_->empty()) {
-        buf += *sym_;
-        buf += ".";
-    }
-    if (prop_ != nullptr) {
-        buf += *prop_;
+    if (!prop_.empty()) {
+        buf += prop_;
     }
 
     return buf;

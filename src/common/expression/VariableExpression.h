@@ -12,14 +12,11 @@
 namespace nebula {
 class VariableExpression final : public Expression {
 public:
-    explicit VariableExpression(std::string* var = nullptr, bool isInner = false)
-        : Expression(Kind::kVar) {
-        var_.reset(var);
-        isInner_ = isInner;
-    }
+    explicit VariableExpression(const std::string& var = "", bool isInner = false)
+        : Expression(Kind::kVar), isInner_(isInner), var_(var) {}
 
     const std::string& var() const {
-        return *var_.get();
+        return var_;
     }
 
     bool isInner() const {
@@ -40,16 +37,15 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VariableExpression>(new std::string(var()), isInner_);
+        return std::make_unique<VariableExpression>(var(), isInner_);
     }
 
 private:
     void writeTo(Encoder& encoder) const override;
-
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>                 var_;
-    bool                                         isInner_;
+    bool isInner_{false};
+    std::string var_;
 };
 
 /*
@@ -58,14 +54,13 @@ private:
  */
 class VersionedVariableExpression final : public Expression {
 public:
-    explicit VersionedVariableExpression(std::string* var = nullptr, Expression* version = nullptr)
-        : Expression(Kind::kVersionedVar) {
-        var_.reset(var);
+    explicit VersionedVariableExpression(const std::string& var = "", Expression* version = nullptr)
+        : Expression(Kind::kVersionedVar), var_(var) {
         version_.reset(version);
     }
 
     const std::string& var() const {
-        return *var_.get();
+        return var_;
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -88,8 +83,7 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VersionedVariableExpression>(new std::string(var()),
-                                                             version_->clone().release());
+        return std::make_unique<VersionedVariableExpression>(var(), version_->clone().release());
     }
 
 private:
@@ -101,10 +95,10 @@ private:
         LOG(FATAL) << "VersionedVairableExpression not support to decode.";
     }
 
-    std::unique_ptr<std::string>                 var_;
+    std::string var_;
     // 0 means the latest, -1 the previous one, and so on.
     // 1 means the eldest, 2 the second elder one, and so on.
-    std::unique_ptr<Expression>                  version_;
+    std::unique_ptr<Expression> version_;
 };
 }  // namespace nebula
 #endif

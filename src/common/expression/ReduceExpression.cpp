@@ -23,27 +23,27 @@ const Value& ReduceExpression::eval(ExpressionContext& ctx) {
     }
     auto& list = listVal.getList();
 
-    ctx.setVar(*accumulator_, initVal);
+    ctx.setVar(accumulator_, initVal);
     for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
-        ctx.setVar(*innerVar_, v);
+        ctx.setVar(innerVar_, v);
         auto& mappingVal = mapping_->eval(ctx);
-        ctx.setVar(*accumulator_, mappingVal);
+        ctx.setVar(accumulator_, mappingVal);
     }
 
-    result_ = ctx.getVar(*accumulator_);
+    result_ = ctx.getVar(accumulator_);
     return result_;
 }
 
 std::unique_ptr<Expression> ReduceExpression::clone() const {
     auto expr = std::make_unique<ReduceExpression>(
-        new std::string(*accumulator_),
+        accumulator_,
         initial_->clone().release(),
-        new std::string(*innerVar_),
+        innerVar_,
         collection_->clone().release(),
         mapping_ != nullptr ? mapping_->clone().release() : nullptr);
-    if (originString_ != nullptr) {
-        expr->setOriginString(new std::string(*originString_));
+    if (hasOriginString()) {
+        expr->setOriginString(originString_);
     }
     return expr;
 }
@@ -55,7 +55,7 @@ bool ReduceExpression::operator==(const Expression& rhs) const {
 
     const auto& expr = static_cast<const ReduceExpression&>(rhs);
 
-    if (*accumulator_ != *expr.accumulator_) {
+    if (accumulator_ != expr.accumulator_) {
         return false;
     }
 
@@ -63,7 +63,7 @@ bool ReduceExpression::operator==(const Expression& rhs) const {
         return false;
     }
 
-    if (*innerVar_ != *expr.innerVar_) {
+    if (innerVar_ != expr.innerVar_) {
         return false;
     }
 
@@ -81,13 +81,13 @@ void ReduceExpression::writeTo(Encoder& encoder) const {
     encoder << kind_;
     encoder << Value(hasOriginString());
 
-    encoder << accumulator_.get();
+    encoder << accumulator_;
     encoder << *initial_;
-    encoder << innerVar_.get();
+    encoder << innerVar_;
     encoder << *collection_;
     encoder << *mapping_;
     if (hasOriginString()) {
-        encoder << originString_.get();
+        encoder << originString_;
     }
 }
 
@@ -105,8 +105,8 @@ void ReduceExpression::resetFrom(Decoder& decoder) {
 }
 
 std::string ReduceExpression::toString() const {
-    if (originString_ != nullptr) {
-        return *originString_;
+    if (hasOriginString()) {
+        return originString_;
     } else {
         return makeString();
     }
@@ -118,11 +118,11 @@ std::string ReduceExpression::makeString() const {
 
     buf += "reduce";
     buf += "(";
-    buf += *accumulator_;
+    buf += accumulator_;
     buf += " = ";
     buf += initial_->toString();
     buf += ", ";
-    buf += *innerVar_;
+    buf += innerVar_;
     buf += " IN ";
     buf += collection_->toString();
     buf += " | ";

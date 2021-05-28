@@ -12,22 +12,19 @@
 #include "common/function/AggFunctionManager.h"
 
 namespace nebula {
+
 class AggregateExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit AggregateExpression(std::string* name = nullptr,
+    explicit AggregateExpression(const std::string& name = "",
                                  Expression* arg = nullptr,
                                  bool distinct = false)
-        : Expression(Kind::kAggregate) {
+        : Expression(Kind::kAggregate), name_(name), distinct_(distinct) {
         arg_.reset(arg);
-        name_.reset(name);
-        distinct_ = distinct;
-        if (name_) {
-            auto aggFuncResult = AggFunctionManager::get(*name_);
-            if (aggFuncResult.ok()) {
-                aggFunc_ = std::move(aggFuncResult).value();
-            }
+        auto aggFuncResult = AggFunctionManager::get(name_);
+        if (aggFuncResult.ok()) {
+            aggFunc_ = std::move(aggFuncResult).value();
         }
     }
 
@@ -43,12 +40,11 @@ public:
 
     std::unique_ptr<Expression> clone() const override {
         auto arg = arg_->clone();
-        return std::make_unique<AggregateExpression>(
-            new std::string(*name_), std::move(arg).release(), distinct_);
+        return std::make_unique<AggregateExpression>(name_, std::move(arg).release(), distinct_);
     }
 
-    const std::string* name() const {
-        return name_.get();
+    const std::string& name() const {
+        return name_;
     }
 
     const Expression* arg() const {
@@ -87,7 +83,7 @@ private:
     void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string> name_;
+    std::string name_;
     std::unique_ptr<Expression> arg_;
     bool distinct_{false};
     AggData* aggData_{nullptr};

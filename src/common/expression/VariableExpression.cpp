@@ -10,7 +10,7 @@
 
 namespace nebula {
 const Value& VariableExpression::eval(ExpressionContext& ctx) {
-    return ctx.getVar(*var_);
+    return ctx.getVar(var_);
 }
 
 void VariableExpression::accept(ExprVisitor* visitor) {
@@ -20,7 +20,7 @@ void VariableExpression::accept(ExprVisitor* visitor) {
 void VariableExpression::writeTo(Encoder& encoder) const {
     DCHECK(isInner_);
     encoder << kind_;
-    encoder << var_.get();
+    encoder << var_;
 }
 
 void VariableExpression::resetFrom(Decoder& decoder) {
@@ -35,29 +35,29 @@ const Value& VersionedVariableExpression::eval(ExpressionContext& ctx) {
             return Value::kNullBadType;
         }
         auto ver = version.getInt();
-        return ctx.getVersionedVar(*var_, ver);
+        return ctx.getVersionedVar(var_, ver);
     } else {
-        return ctx.getVar(*var_);
+        return ctx.getVar(var_);
     }
 }
 
 std::string VariableExpression::toString() const {
-    if (var_ == nullptr) {
+    if (var_.empty()) {
         return "";
     }
 
     std::stringstream out;
-    out << "$" << *var_;
+    out << "$" << var_;
     return out.str();
 }
 
 std::string VersionedVariableExpression::toString() const {
-    if (var_ == nullptr) {
+    if (var_.empty()) {
         return "";
     }
 
     std::stringstream out;
-    out << "$" << *var_;
+    out << "$" << var_;
     if (version_ != nullptr) {
         out << "{" << version_->toString() << "}";
     }

@@ -15,25 +15,15 @@ namespace nebula {
 
 class LabelExpression: public Expression {
 public:
-    explicit LabelExpression(std::string* name = nullptr)
-        : Expression(Kind::kLabel) {
-        if (name == nullptr) {
-            name_.reset(new std::string(""));
-        } else {
-            name_.reset(name);
-        }
-    }
-
-    explicit LabelExpression(std::string name)
-        : LabelExpression(new std::string(std::move(name))) {
-    }
+    explicit LabelExpression(const std::string& name = "")
+        : Expression(Kind::kLabel), name_(name) {}
 
     bool operator==(const Expression& rhs) const override;
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    const std::string *name() const {
-        return name_.get();
+    const std::string &name() const {
+        return name_;
     }
 
     std::string toString() const override;
@@ -41,16 +31,15 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<LabelExpression>(*name());
+        return std::make_unique<LabelExpression>(name());
     }
 
 protected:
     void writeTo(Encoder& encoder) const override;
-
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>    name_;
-    Value                           result_;
+    std::string name_;
+    Value result_;
 };
 
 }  // namespace nebula

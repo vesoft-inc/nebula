@@ -15,7 +15,7 @@ class UUIDExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit UUIDExpression(std::string* field = nullptr)
+    explicit UUIDExpression(const std::string& field = "")
         : Expression(Kind::kUUID)
         , field_(field) {}
 
@@ -28,16 +28,15 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<UUIDExpression>(new std::string(*field_));
+        return std::make_unique<UUIDExpression>(field_);
     }
 
 private:
     void writeTo(Encoder& encoder) const override;
-
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>                field_;
-    Value                                       result_;
+    std::string field_;
+    Value result_;
 };
 
 }   // namespace nebula

@@ -161,7 +161,7 @@ protected:
         std::string moveStr();
 
         Encoder& operator<<(Kind kind) noexcept;
-        Encoder& operator<<(const std::string* str) noexcept;
+        Encoder& operator<<(const std::string& str) noexcept;
         Encoder& operator<<(const Value& val) noexcept;
         Encoder& operator<<(size_t size) noexcept;
         Encoder& operator<<(Value::Type vType) noexcept;
@@ -178,7 +178,7 @@ protected:
         bool finished() const;
 
         Kind readKind() noexcept;
-        std::unique_ptr<std::string> readStr() noexcept;
+        std::string readStr() noexcept;
         Value readValue() noexcept;
         size_t readSize() noexcept;
         Value::Type readValueType() noexcept;

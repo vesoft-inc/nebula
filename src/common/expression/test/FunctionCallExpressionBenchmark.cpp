@@ -31,7 +31,7 @@ BENCHMARK_NAMED_PARAM_MULTI(funcCall, FunctionCallBM)
 int main(int argc, char** argv) {
     nebula::ArgumentList* args = new nebula::ArgumentList();
     args->addArgument(std::make_unique<nebula::ConstantExpression>(1));
-    nebula::expr.reset(new nebula::FunctionCallExpression(new std::string("abs"), args));
+    nebula::expr.reset(new nebula::FunctionCallExpression("abs", args));
 
     folly::init(&argc, &argv, true);
     folly::runBenchmarks();

@@ -14,36 +14,33 @@ namespace nebula {
 
 class TextSearchArgument final {
 public:
-    TextSearchArgument(std::string* from, std::string* prop, std::string* val) {
-        from_.reset(from);
-        prop_.reset(prop);
-        val_.reset(val);
-    }
+    TextSearchArgument(const std::string& from, const std::string& prop, const std::string& val)
+        : from_(from), prop_(prop), val_(val) {}
 
     ~TextSearchArgument() = default;
 
-    void setVal(std::string *val) {
-        val_.reset(val);
+    void setVal(const std::string &val) {
+        val_ = val;
     }
 
-    const std::string* from() {
-        return from_.get();
+    const std::string& from() {
+        return from_;
     }
 
-    const std::string* prop() {
-        return prop_.get();
+    const std::string& prop() {
+        return prop_;
     }
 
-    const std::string* val() const {
-        return val_.get();
+    const std::string& val() const {
+        return val_;
     }
 
-    void setOP(std::string *op) {
-        op_.reset(op);
+    void setOP(const std::string &op) {
+        op_ = op;
     }
 
-    const std::string* op() const {
-        return op_.get();
+    const std::string& op() const {
+        return op_;
     }
 
     void setFuzziness(int32_t fuzz) {
@@ -75,13 +72,13 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<std::string>                from_{nullptr};
-    std::unique_ptr<std::string>                prop_{nullptr};
-    std::unique_ptr<std::string>                val_{nullptr};
-    std::unique_ptr<std::string>                op_{nullptr};
-    int32_t                                     fuzziness_{-2};
-    int32_t                                     limit_{100};
-    int32_t                                     timeout_{200};
+    std::string from_;
+    std::string prop_;
+    std::string val_;
+    std::string op_;
+    int32_t fuzziness_{-2};
+    int32_t limit_{100};
+    int32_t timeout_{200};
 };
 
 class TextSearchExpression : public Expression {

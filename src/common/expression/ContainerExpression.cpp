@@ -164,7 +164,7 @@ std::string MapExpression::toString() const {
 
     buf += '{';
     for (auto &kv : items_) {
-        buf += *kv.first;
+        buf += kv.first;
         buf += ":";
         buf += kv.second->toString();
         buf += ",";
@@ -186,7 +186,7 @@ bool MapExpression::operator==(const Expression &rhs) const {
     }
 
     for (auto i = 0u; i < size(); i++) {
-        if (*items_[i].first != *map.items_[i].first) {
+        if (items_[i].first != map.items_[i].first) {
             return false;
         }
         if (*items_[i].second != *map.items_[i].second) {
@@ -204,7 +204,7 @@ const Value& MapExpression::eval(ExpressionContext &ctx) {
     map.reserve(size());
 
     for (auto &kv : items_) {
-        map.emplace(*kv.first, kv.second->eval(ctx));
+        map.emplace(kv.first, kv.second->eval(ctx));
     }
     result_.setMap(Map(std::move(map)));
 
@@ -216,7 +216,7 @@ void MapExpression::writeTo(Encoder &encoder) const {
     encoder << kind();
     encoder << size();
     for (auto &kv : items_) {
-        encoder << kv.first.get();
+        encoder << kv.first;
         encoder << *kv.second;
     }
 }
@@ -228,7 +228,7 @@ void MapExpression::resetFrom(Decoder &decoder) {
     for (auto i = 0u; i < size; i++) {
         auto str = decoder.readStr();
         auto expr = decoder.readExpression();
-        items_.emplace_back(std::move(str), std::move(expr));
+        items_.emplace_back(str, std::move(expr));
     }
 }
 

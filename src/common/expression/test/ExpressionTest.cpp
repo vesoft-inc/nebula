@@ -199,7 +199,7 @@ protected:
         for (const auto &i : args) {
             argList->addArgument(std::make_unique<ConstantExpression>(std::move(i)));
         }
-        FunctionCallExpression functionCall(new std::string(name), argList);
+        FunctionCallExpression functionCall(name, argList);
         auto eval = Expression::eval(&functionCall, gExpCtxt);
         // EXPECT_EQ(eval.type(), expected.type());
         EXPECT_EQ(eval, expected);
@@ -213,7 +213,7 @@ protected:
                      const char* expr,
                      std::vector<std::pair<std::string, Value>> inputVar,
                      const std::unordered_map<std::string, Value> &expected) {
-        auto agg = new std::string(name);
+        auto agg = name;
         auto func = std::make_unique<std::string>(expr);
         Expression* arg = nullptr;
         auto isConst = false;
@@ -233,7 +233,7 @@ protected:
             } else {
                 auto args = std::make_unique<ArgumentList>(1);
                 args->addArgument(std::make_unique<ConstantExpression>(row.second));
-                aggExpr.setArg(new FunctionCallExpression(new std::string(*func), args.release()));
+                aggExpr.setArg(new FunctionCallExpression(*func, args.release()));
             }
             aggExpr.setAggData(agg_data_map[row.first].get());
             auto eval = aggExpr.eval(gExpCtxt);
@@ -420,42 +420,42 @@ TEST_F(ExpressionTest, Constant) {
 TEST_F(ExpressionTest, GetProp) {
     {
         // e1.int
-        EdgePropertyExpression ep(new std::string("e1"), new std::string("int"));
+        EdgePropertyExpression ep("e1", "int");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // t1.int
-        TagPropertyExpression ep(new std::string("t1"), new std::string("int"));
+        TagPropertyExpression ep("t1", "int");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // $-.int
-        InputPropertyExpression ep(new std::string("int"));
+        InputPropertyExpression ep("int");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // $^.source.int
-        SourcePropertyExpression ep(new std::string("source"), new std::string("int"));
+        SourcePropertyExpression ep("source", "int");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // $$.dest.int
-        DestPropertyExpression ep(new std::string("dest"), new std::string("int"));
+        DestPropertyExpression ep("dest", "int");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // $var.float
-        VariablePropertyExpression ep(new std::string("var"), new std::string("float"));
+        VariablePropertyExpression ep("var", "float");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::FLOAT);
         EXPECT_EQ(eval, 1.1);
@@ -465,28 +465,28 @@ TEST_F(ExpressionTest, GetProp) {
 TEST_F(ExpressionTest, EdgeTest) {
     {
         // EdgeName._src
-        EdgeSrcIdExpression ep(new std::string("edge1"));
+        EdgeSrcIdExpression ep("edge1");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // EdgeName._type
-        EdgeTypeExpression ep(new std::string("edge1"));
+        EdgeTypeExpression ep("edge1");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // EdgeName._rank
-        EdgeRankExpression ep(new std::string("edge1"));
+        EdgeRankExpression ep("edge1");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
     }
     {
         // EdgeName._dst
-        EdgeDstIdExpression ep(new std::string("edge1"));
+        EdgeDstIdExpression ep("edge1");
         auto eval = Expression::eval(&ep, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
@@ -906,7 +906,7 @@ TEST_F(ExpressionTest, Arithmetics) {
                 new ArithmeticExpression(
                     Expression::Kind::kAdd,
                     new ConstantExpression(1), new ConstantExpression(2)),
-                new EdgePropertyExpression(new std::string("e1"), new std::string("int")));
+                new EdgePropertyExpression("e1", "int"));
         auto eval = Expression::eval(&add, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 4);
@@ -915,8 +915,8 @@ TEST_F(ExpressionTest, Arithmetics) {
         // e1.string16 + e1.string16
         ArithmeticExpression add(
                 Expression::Kind::kAdd,
-                new EdgePropertyExpression(new std::string("e1"), new std::string("string16")),
-                new EdgePropertyExpression(new std::string("e1"), new std::string("string16")));
+                new EdgePropertyExpression("e1", "string16"),
+                new EdgePropertyExpression("e1", "string16"));
         auto eval = Expression::eval(&add, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::STRING);
         EXPECT_EQ(eval, std::string(32, 'a'));
@@ -925,8 +925,8 @@ TEST_F(ExpressionTest, Arithmetics) {
         // $^.source.string16 + $$.dest.string16
         ArithmeticExpression add(
             Expression::Kind::kAdd,
-            new SourcePropertyExpression(new std::string("source"), new std::string("string16")),
-            new DestPropertyExpression(new std::string("dest"), new std::string("string16")));
+            new SourcePropertyExpression("source", "string16"),
+            new DestPropertyExpression("dest", "string16"));
         auto eval = Expression::eval(&add, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::STRING);
         EXPECT_EQ(eval, std::string(32, 'a'));
@@ -936,7 +936,7 @@ TEST_F(ExpressionTest, Arithmetics) {
         ArithmeticExpression minus(
             Expression::Kind::kMinus,
             new ConstantExpression(10),
-            new EdgePropertyExpression(new std::string("e1"), new std::string("int")));
+            new EdgePropertyExpression("e1", "int"));
         auto eval = Expression::eval(&minus, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 9);
@@ -946,7 +946,7 @@ TEST_F(ExpressionTest, Arithmetics) {
         ArithmeticExpression minus(
             Expression::Kind::kMinus,
             new ConstantExpression(10),
-            new SourcePropertyExpression(new std::string("source"), new std::string("int")));
+            new SourcePropertyExpression("source", "int"));
         auto eval = Expression::eval(&minus, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 9);
@@ -955,8 +955,8 @@ TEST_F(ExpressionTest, Arithmetics) {
         // e1.string128 - e1.string64
         ArithmeticExpression minus(
             Expression::Kind::kMinus,
-            new EdgePropertyExpression(new std::string("e1"), new std::string("string128")),
-            new EdgePropertyExpression(new std::string("e1"), new std::string("string64")));
+            new EdgePropertyExpression("e1", "string128"),
+            new EdgePropertyExpression("e1", "string64"));
         auto eval = Expression::eval(&minus, gExpCtxt);
         EXPECT_NE(eval.type(), Value::Type::STRING);
         EXPECT_NE(eval, std::string(64, 'a'));
@@ -965,8 +965,8 @@ TEST_F(ExpressionTest, Arithmetics) {
         // $^.source.srcProperty % $$.dest.dstProperty
         ArithmeticExpression mod(
             Expression::Kind::kMod,
-            new SourcePropertyExpression(new std::string("source"), new std::string("srcProperty")),
-            new DestPropertyExpression(new std::string("dest"), new std::string("dstProperty")));
+            new SourcePropertyExpression("source", "srcProperty"),
+            new DestPropertyExpression("dest", "dstProperty"));
         auto eval = Expression::eval(&mod, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 1);
@@ -978,7 +978,7 @@ TEST_F(ExpressionTest, Relation) {
         // e1.list == NULL
         RelationalExpression expr(
                 Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list")),
+                new EdgePropertyExpression("e1", "list"),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
@@ -987,7 +987,7 @@ TEST_F(ExpressionTest, Relation) {
         // e1.list_of_list == NULL
         RelationalExpression expr(
                 Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list_of_list")),
+                new EdgePropertyExpression("e1", "list_of_list"),
                 new ConstantExpression(Value(NullType::NaN)));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
@@ -996,8 +996,8 @@ TEST_F(ExpressionTest, Relation) {
         // e1.list == e1.list
         RelationalExpression expr(
                 Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list")),
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list")));
+                new EdgePropertyExpression("e1", "list"),
+                new EdgePropertyExpression("e1", "list"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::BOOL);
         EXPECT_EQ(eval, true);
@@ -1006,8 +1006,8 @@ TEST_F(ExpressionTest, Relation) {
         // e1.list_of_list == e1.list_of_list
         RelationalExpression expr(
                 Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list_of_list")),
-                new EdgePropertyExpression(new std::string("e1"), new std::string("list_of_list")));
+                new EdgePropertyExpression("e1", "list_of_list"),
+                new EdgePropertyExpression("e1", "list_of_list"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::BOOL);
         EXPECT_EQ(eval, true);
@@ -1301,7 +1301,7 @@ TEST_F(ExpressionTest, UnaryINCR) {
         // ++var_int
         UnaryExpression expr(
                 Expression::Kind::kUnaryIncr,
-                new VariableExpression(new std::string("var_int")));
+                new VariableExpression("var_int"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 2);
@@ -1311,7 +1311,7 @@ TEST_F(ExpressionTest, UnaryINCR) {
         UnaryExpression expr(
                 Expression::Kind::kUnaryIncr,
                 new VersionedVariableExpression(
-                    new std::string("versioned_var"),
+                    "versioned_var",
                     new ConstantExpression(0)));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
@@ -1498,7 +1498,7 @@ TEST_F(ExpressionTest, UnaryDECR) {
         // --var_int
         UnaryExpression expr(
                 Expression::Kind::kUnaryDecr,
-                new VariableExpression(new std::string("var_int")));
+                new VariableExpression("var_int"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 0);
@@ -1509,7 +1509,7 @@ TEST_F(ExpressionTest, VersionedVar) {
     {
         // versioned_var{0}
         VersionedVariableExpression expr(
-                new std::string("versioned_var"),
+                "versioned_var",
                 new ConstantExpression(0));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
@@ -1518,7 +1518,7 @@ TEST_F(ExpressionTest, VersionedVar) {
     {
         // versioned_var{0}
         VersionedVariableExpression expr(
-                new std::string("versioned_var"),
+                "versioned_var",
                 new ConstantExpression(-1));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
@@ -1527,7 +1527,7 @@ TEST_F(ExpressionTest, VersionedVar) {
     {
         // versioned_var{0}
         VersionedVariableExpression expr(
-                new std::string("versioned_var"),
+                "versioned_var",
                 new ConstantExpression(1));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
@@ -1536,10 +1536,10 @@ TEST_F(ExpressionTest, VersionedVar) {
     {
         // versioned_var{-cnt}
         VersionedVariableExpression expr(
-                new std::string("versioned_var"),
+                "versioned_var",
                 new UnaryExpression(
                     Expression::Kind::kUnaryNegate,
-                    new VariableExpression(new std::string("cnt"))));
+                    new VariableExpression("cnt")));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::INT);
         EXPECT_EQ(eval, 2);
@@ -1623,10 +1623,10 @@ TEST_F(ExpressionTest, toStringTest) {
         EXPECT_EQ(isNotEmpty.toString(), "__EMPTY__ IS NOT EMPTY");
     }
     {
-        VariableExpression var(new std::string("name"));
+        VariableExpression var("name");
         EXPECT_EQ(var.toString(), "$name");
 
-        VersionedVariableExpression versionVar(new std::string("name"), new ConstantExpression(1));
+        VersionedVariableExpression versionVar("name", new ConstantExpression(1));
         EXPECT_EQ(versionVar.toString(), "$name{1}");
     }
     {
@@ -1648,7 +1648,7 @@ TEST_F(ExpressionTest, FunctionCallToStringTest) {
         for (const auto &i : args_["pow"]) {
             argList->addArgument(std::make_unique<ConstantExpression>(std::move(i)));
         }
-        FunctionCallExpression ep(new std::string("pow"), argList);
+        FunctionCallExpression ep("pow", argList);
         EXPECT_EQ(ep.toString(), "pow(2,3)");
     }
     {
@@ -1656,7 +1656,7 @@ TEST_F(ExpressionTest, FunctionCallToStringTest) {
         for (const auto &i : args_["udf_is_in"]) {
             argList->addArgument(std::make_unique<ConstantExpression>(std::move(i)));
         }
-        FunctionCallExpression ep(new std::string("udf_is_in"), argList);
+        FunctionCallExpression ep("udf_is_in", argList);
         EXPECT_EQ(ep.toString(), "udf_is_in(4,1,2,8,4,3,1,0)");
     }
     {
@@ -1664,55 +1664,55 @@ TEST_F(ExpressionTest, FunctionCallToStringTest) {
         for (const auto &i : args_["neg_int"]) {
             argList->addArgument(std::make_unique<ConstantExpression>(std::move(i)));
         }
-        FunctionCallExpression ep(new std::string("abs"), argList);
+        FunctionCallExpression ep("abs", argList);
         EXPECT_EQ(ep.toString(), "abs(-1)");
     }
     {
-        FunctionCallExpression ep(new std::string("now"));
+        FunctionCallExpression ep("now");
         EXPECT_EQ(ep.toString(), "now()");
     }
 }
 
 TEST_F(ExpressionTest, PropertyToStringTest) {
     {
-        DestPropertyExpression ep(new std::string("like"),
-                                  new std::string("likeness"));
+        DestPropertyExpression ep("like",
+                                  "likeness");
         EXPECT_EQ(ep.toString(), "$$.like.likeness");
     }
     {
-        EdgePropertyExpression ep(new std::string("like"), new std::string("likeness"));
+        EdgePropertyExpression ep("like", "likeness");
         EXPECT_EQ(ep.toString(), "like.likeness");
     }
     {
-        InputPropertyExpression ep(new std::string("name"));
+        InputPropertyExpression ep("name");
         EXPECT_EQ(ep.toString(), "$-.name");
     }
     {
-        VariablePropertyExpression ep(new std::string("player"), new std::string("name"));
+        VariablePropertyExpression ep("player", "name");
         EXPECT_EQ(ep.toString(), "$player.name");
     }
     {
-        SourcePropertyExpression ep(new std::string("player"), new std::string("age"));
+        SourcePropertyExpression ep("player", "age");
         EXPECT_EQ(ep.toString(), "$^.player.age");
     }
     {
-        DestPropertyExpression ep(new std::string("player"), new std::string("age"));
+        DestPropertyExpression ep("player", "age");
         EXPECT_EQ(ep.toString(), "$$.player.age");
     }
     {
-        EdgeSrcIdExpression ep(new std::string("like"));
+        EdgeSrcIdExpression ep("like");
         EXPECT_EQ(ep.toString(), "like._src");
     }
     {
-        EdgeTypeExpression ep(new std::string("like"));
+        EdgeTypeExpression ep("like");
         EXPECT_EQ(ep.toString(), "like._type");
     }
     {
-        EdgeRankExpression ep(new std::string("like"));
+        EdgeRankExpression ep("like");
         EXPECT_EQ(ep.toString(), "like._rank");
     }
     {
-        EdgeDstIdExpression ep(new std::string("like"));
+        EdgeDstIdExpression ep("like");
         EXPECT_EQ(ep.toString(), "like._dst");
     }
 }
@@ -1738,17 +1738,17 @@ TEST_F(ExpressionTest, SetToString) {
 
 TEST_F(ExpressionTest, AggregateToString) {
     auto* arg = new ConstantExpression("$-.age");
-    auto* aggName = new std::string("COUNT");
+    auto* aggName = "COUNT";
     auto expr = std::make_unique<AggregateExpression>(aggName, arg, true);
     ASSERT_EQ("COUNT(distinct $-.age)", expr->toString());
 }
 
 TEST_F(ExpressionTest, MapTostring) {
     auto *items = new MapItemList();
-    (*items).add(new std::string("key1"), new ConstantExpression(12345))
-            .add(new std::string("key2"), new ConstantExpression(12345))
-            .add(new std::string("key3"), new ConstantExpression("Hello"))
-            .add(new std::string("key4"), new ConstantExpression(true));
+    (*items).add("key1", new ConstantExpression(12345))
+            .add("key2", new ConstantExpression(12345))
+            .add("key3", new ConstantExpression("Hello"))
+            .add("key4", new ConstantExpression(true));
     auto expr = std::make_unique<MapExpression>(items);
     auto expected = "{"
                         "key1:12345,"
@@ -1785,10 +1785,10 @@ TEST_F(ExpressionTest, SetEvaluate) {
 TEST_F(ExpressionTest, MapEvaluate) {
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto expr = std::make_unique<MapExpression>(items);
         auto expected = Value(Map({
                                     {"key1", 12345},
@@ -1800,11 +1800,11 @@ TEST_F(ExpressionTest, MapEvaluate) {
     }
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(false))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(false))
+                .add("key4", new ConstantExpression(true));
         auto expr = std::make_unique<MapExpression>(items);
         auto expected = Value(Map({
                                     {"key1", 12345},
@@ -1877,10 +1877,10 @@ TEST_F(ExpressionTest, InSet) {
 TEST_F(ExpressionTest, InMap) {
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelIn,
                                   new ConstantExpression("key1"),
@@ -1891,10 +1891,10 @@ TEST_F(ExpressionTest, InMap) {
     }
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelIn,
                                   new ConstantExpression("key5"),
@@ -1905,10 +1905,10 @@ TEST_F(ExpressionTest, InMap) {
     }
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelIn,
                                   new ConstantExpression(12345),
@@ -1980,10 +1980,10 @@ TEST_F(ExpressionTest, NotInSet) {
 TEST_F(ExpressionTest, NotInMap) {
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelNotIn,
                                   new ConstantExpression("key1"),
@@ -1994,10 +1994,10 @@ TEST_F(ExpressionTest, NotInMap) {
     }
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelNotIn,
                                   new ConstantExpression("key5"),
@@ -2008,10 +2008,10 @@ TEST_F(ExpressionTest, NotInMap) {
     }
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(12345))
-                .add(new std::string("key2"), new ConstantExpression(12345))
-                .add(new std::string("key3"), new ConstantExpression("Hello"))
-                .add(new std::string("key4"), new ConstantExpression(true));
+        (*items).add("key1", new ConstantExpression(12345))
+                .add("key2", new ConstantExpression(12345))
+                .add("key3", new ConstantExpression("Hello"))
+                .add("key4", new ConstantExpression(true));
         auto mapExpr = new MapExpression(items);
         RelationalExpression expr(Expression::Kind::kRelNotIn,
                                   new ConstantExpression(12345),
@@ -2310,9 +2310,9 @@ TEST_F(ExpressionTest, MapSubscript) {
     // {"key1":1,"key2":2, "key3":3}["key1"]
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(1))
-                .add(new std::string("key2"), new ConstantExpression(2))
-                .add(new std::string("key3"), new ConstantExpression(3));
+        (*items).add("key1", new ConstantExpression(1))
+                .add("key2", new ConstantExpression(2))
+                .add("key3", new ConstantExpression(3));
         auto *map = new MapExpression(items);
         auto *key = new ConstantExpression("key1");
         SubscriptExpression expr(map, key);
@@ -2323,9 +2323,9 @@ TEST_F(ExpressionTest, MapSubscript) {
     // {"key1":1,"key2":2, "key3":3}["key4"]
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(1))
-                .add(new std::string("key2"), new ConstantExpression(2))
-                .add(new std::string("key3"), new ConstantExpression(3));
+        (*items).add("key1", new ConstantExpression(1))
+                .add("key2", new ConstantExpression(2))
+                .add("key3", new ConstantExpression(3));
         auto *map = new MapExpression(items);
         auto *key = new ConstantExpression("key4");
         SubscriptExpression expr(map, key);
@@ -2336,9 +2336,9 @@ TEST_F(ExpressionTest, MapSubscript) {
     // {"key1":1,"key2":2, "key3":3}[0]
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(1))
-                .add(new std::string("key2"), new ConstantExpression(2))
-                .add(new std::string("key3"), new ConstantExpression(3));
+        (*items).add("key1", new ConstantExpression(1))
+                .add("key2", new ConstantExpression(2))
+                .add("key3", new ConstantExpression(3));
         auto *map = new MapExpression(items);
         auto *key = new ConstantExpression(0);
         SubscriptExpression expr(map, key);
@@ -2452,11 +2452,11 @@ TEST_F(ExpressionTest, MapAttribute) {
     // {"key1":1, "key2":2, "key3":3}.key1
     {
         auto *items = new MapItemList();
-        (*items).add(new std::string("key1"), new ConstantExpression(1))
-                .add(new std::string("key2"), new ConstantExpression(2))
-                .add(new std::string("key3"), new ConstantExpression(3));
+        (*items).add("key1", new ConstantExpression(1))
+                .add("key2", new ConstantExpression(2))
+                .add("key3", new ConstantExpression(3));
         auto *map = new MapExpression(items);
-        auto *key = new LabelExpression(new std::string("key1"));
+        auto *key = new LabelExpression("key1");
         AttributeExpression expr(map, key);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isInt());
@@ -2477,7 +2477,7 @@ TEST_F(ExpressionTest, EdgeAttribute) {
     };
     {
         auto *left = new ConstantExpression(Value(edge));
-        auto *right = new LabelExpression(new std::string("Rocky"));
+        auto *right = new LabelExpression("Rocky");
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2485,7 +2485,7 @@ TEST_F(ExpressionTest, EdgeAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(edge));
-        auto *right = new LabelExpression(new std::string(kType));
+        auto *right = new LabelExpression(kType);
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2493,7 +2493,7 @@ TEST_F(ExpressionTest, EdgeAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(edge));
-        auto *right = new LabelExpression(new std::string(kSrc));
+        auto *right = new LabelExpression(kSrc);
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2501,7 +2501,7 @@ TEST_F(ExpressionTest, EdgeAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(edge));
-        auto *right = new LabelExpression(new std::string(kDst));
+        auto *right = new LabelExpression(kDst);
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2509,7 +2509,7 @@ TEST_F(ExpressionTest, EdgeAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(edge));
-        auto *right = new LabelExpression(new std::string(kRank));
+        auto *right = new LabelExpression(kRank);
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isInt());
@@ -2532,7 +2532,7 @@ TEST_F(ExpressionTest, VertexAttribute) {
     };
     {
         auto *left = new ConstantExpression(Value(vertex));
-        auto *right = new LabelExpression(new std::string("Mull"));
+        auto *right = new LabelExpression("Mull");
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2540,7 +2540,7 @@ TEST_F(ExpressionTest, VertexAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(vertex));
-        auto *right = new LabelExpression(new std::string("Bip"));
+        auto *right = new LabelExpression("Bip");
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2548,7 +2548,7 @@ TEST_F(ExpressionTest, VertexAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(vertex));
-        auto *right = new LabelExpression(new std::string("Venus"));
+        auto *right = new LabelExpression("Venus");
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -2556,7 +2556,7 @@ TEST_F(ExpressionTest, VertexAttribute) {
     }
     {
         auto *left = new ConstantExpression(Value(vertex));
-        auto *right = new LabelExpression(new std::string("_vid"));
+        auto *right = new LabelExpression("_vid");
         AttributeExpression expr(left, right);
         auto value = Expression::eval(&expr, gExpCtxt);
         ASSERT_TRUE(value.isStr());
@@ -3527,12 +3527,12 @@ TEST_F(ExpressionTest, NotContainsToString) {
 }
 
 TEST_F(ExpressionTest, LabelExprToString) {
-    LabelExpression expr(new std::string("name"));
+    LabelExpression expr("name");
     ASSERT_EQ("name", expr.toString());
 }
 
 TEST_F(ExpressionTest, LabelEvaluate) {
-    LabelExpression expr(new std::string("name"));
+    LabelExpression expr("name");
     auto value = Expression::eval(&expr, gExpCtxt);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("name", value.getStr());
@@ -3769,24 +3769,24 @@ TEST_F(ExpressionTest, ListComprehensionExprToString) {
         argList->addArgument(std::make_unique<ConstantExpression>(1));
         argList->addArgument(std::make_unique<ConstantExpression>(5));
         ListComprehensionExpression expr(
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("range"), argList),
+            "n",
+            new FunctionCallExpression("range", argList),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new LabelExpression(new std::string("n")),
+                new LabelExpression("n"),
                 new ConstantExpression(2)));
         ASSERT_EQ("[n IN range(1,5) WHERE (n>=2)]", expr.toString());
     }
     {
         ArgumentList *argList = new ArgumentList();
-        argList->addArgument(std::make_unique<LabelExpression>(new std::string("p")));
+        argList->addArgument(std::make_unique<LabelExpression>("p"));
         ListComprehensionExpression expr(
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("nodes"), argList),
+            "n",
+            new FunctionCallExpression("nodes", argList),
             nullptr,
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new LabelAttributeExpression(new LabelExpression(new std::string("n")),
+                new LabelAttributeExpression(new LabelExpression("n"),
                                              new ConstantExpression("age")),
                 new ConstantExpression(10)));
         ASSERT_EQ("[n IN nodes(p) | (n.age+10)]", expr.toString());
@@ -3798,15 +3798,15 @@ TEST_F(ExpressionTest, ListComprehensionExprToString) {
             .add(new ConstantExpression(1))
             .add(new ConstantExpression(2));
         ListComprehensionExpression expr(
-            new std::string("n"),
+            "n",
             new ListExpression(listItems),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new LabelExpression(new std::string("n")),
+                new LabelExpression("n"),
                 new ConstantExpression(2)),
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new LabelExpression(new std::string("n")),
+                new LabelExpression("n"),
                 new ConstantExpression(10)));
         ASSERT_EQ("[n IN [0,1,2] WHERE (n>=2) | (n+10)]", expr.toString());
     }
@@ -3823,15 +3823,15 @@ TEST_F(ExpressionTest, ListComprehensionEvaluate) {
             .add(new ConstantExpression(4))
             .add(new ConstantExpression(5));
         ListComprehensionExpression expr(
-            new std::string("n"),
+            "n",
             new ListExpression(listItems),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new VariableExpression(new std::string("n")),
+                new VariableExpression("n"),
                 new ConstantExpression(2)),
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new VariableExpression(new std::string("n")),
+                new VariableExpression("n"),
                 new ConstantExpression(10)));
 
         auto value = Expression::eval(&expr, gExpCtxt);
@@ -3855,14 +3855,14 @@ TEST_F(ExpressionTest, ListComprehensionEvaluate) {
         gExpCtxt.setVar("p", path);
 
         ArgumentList *argList = new ArgumentList();
-        argList->addArgument(std::make_unique<VariableExpression>(new std::string("p")));
+        argList->addArgument(std::make_unique<VariableExpression>("p"));
         ListComprehensionExpression expr(
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("nodes"), argList),
+            "n",
+            new FunctionCallExpression("nodes", argList),
             nullptr,
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new AttributeExpression(new VariableExpression(new std::string("n")),
+                new AttributeExpression(new VariableExpression("n"),
                                         new ConstantExpression("age")),
                 new ConstantExpression(5)));
 
@@ -3883,12 +3883,12 @@ TEST_F(ExpressionTest, PredicateExprToString) {
         argList->addArgument(std::make_unique<ConstantExpression>(1));
         argList->addArgument(std::make_unique<ConstantExpression>(5));
         PredicateExpression expr(
-            new std::string("all"),
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("range"), argList),
+            "all",
+            "n",
+            new FunctionCallExpression("range", argList),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new LabelExpression(new std::string("n")),
+                new LabelExpression("n"),
                 new ConstantExpression(2)));
         ASSERT_EQ("all(n IN range(1,5) WHERE (n>=2))", expr.toString());
     }
@@ -3905,12 +3905,12 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
             .add(new ConstantExpression(4))
             .add(new ConstantExpression(5));
         PredicateExpression expr(
-            new std::string("all"),
-            new std::string("n"),
+            "all",
+            "n",
             new ListExpression(listItems),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new VariableExpression(new std::string("n")),
+                new VariableExpression("n"),
                 new ConstantExpression(2)));
 
         auto value = Expression::eval(&expr, gExpCtxt);
@@ -3929,14 +3929,14 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
         gExpCtxt.setVar("p", path);
 
         ArgumentList *argList = new ArgumentList();
-        argList->addArgument(std::make_unique<VariableExpression>(new std::string("p")));
+        argList->addArgument(std::make_unique<VariableExpression>("p"));
         PredicateExpression expr(
-            new std::string("any"),
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("nodes"), argList),
+            "any",
+            "n",
+            new FunctionCallExpression("nodes", argList),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new AttributeExpression(new VariableExpression(new std::string("n")),
+                new AttributeExpression(new VariableExpression("n"),
                                         new ConstantExpression("age")),
                 new ConstantExpression(19)));
 
@@ -3954,12 +3954,12 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
             .add(new ConstantExpression(4))
             .add(new ConstantExpression(5));
         PredicateExpression expr(
-            new std::string("single"),
-            new std::string("n"),
+            "single",
+            "n",
             new ListExpression(listItems),
             new RelationalExpression(
                 Expression::Kind::kRelEQ,
-                new VariableExpression(new std::string("n")),
+                new VariableExpression("n"),
                 new ConstantExpression(2)));
 
         auto value = Expression::eval(&expr, gExpCtxt);
@@ -3978,14 +3978,14 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
         gExpCtxt.setVar("p", path);
 
         ArgumentList *argList = new ArgumentList();
-        argList->addArgument(std::make_unique<VariableExpression>(new std::string("p")));
+        argList->addArgument(std::make_unique<VariableExpression>("p"));
         PredicateExpression expr(
-            new std::string("none"),
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("nodes"), argList),
+            "none",
+            "n",
+            new FunctionCallExpression("nodes", argList),
             new RelationalExpression(
                 Expression::Kind::kRelGE,
-                new AttributeExpression(new VariableExpression(new std::string("n")),
+                new AttributeExpression(new VariableExpression("n"),
                                         new ConstantExpression("age")),
                 new ConstantExpression(19)));
 
@@ -3996,12 +3996,12 @@ TEST_F(ExpressionTest, PredicateEvaluate) {
     {
         // single(n IN null WHERE n > 1)
         PredicateExpression expr(
-            new std::string("all"),
-            new std::string("n"),
+            "all",
+            "n",
             new ConstantExpression(Value(NullType::__NULL__)),
             new RelationalExpression(
                 Expression::Kind::kRelEQ,
-                new VariableExpression(new std::string("n")),
+                new VariableExpression("n"),
                 new ConstantExpression(1)));
 
         auto value = Expression::eval(&expr, gExpCtxt);
@@ -4016,16 +4016,16 @@ TEST_F(ExpressionTest, ReduceExprToString) {
         argList->addArgument(std::make_unique<ConstantExpression>(1));
         argList->addArgument(std::make_unique<ConstantExpression>(5));
         ReduceExpression expr(
-            new std::string("totalNum"),
+            "totalNum",
             new ArithmeticExpression(
                 Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("range"), argList),
+            "n",
+            new FunctionCallExpression("range", argList),
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new LabelExpression(new std::string("totalNum")),
+                new LabelExpression("totalNum"),
                 new ArithmeticExpression(Expression::Kind::kMultiply,
-                                         new LabelExpression(new std::string("n")),
+                                         new LabelExpression("n"),
                                          new ConstantExpression(2))));
         ASSERT_EQ("reduce(totalNum = (2*10), n IN range(1,5) | (totalNum+(n*2)))", expr.toString());
     }
@@ -4038,16 +4038,16 @@ TEST_F(ExpressionTest, ReduceEvaluate) {
         argList->addArgument(std::make_unique<ConstantExpression>(1));
         argList->addArgument(std::make_unique<ConstantExpression>(5));
         ReduceExpression expr(
-            new std::string("totalNum"),
+            "totalNum",
             new ArithmeticExpression(
                 Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
-            new std::string("n"),
-            new FunctionCallExpression(new std::string("range"), argList),
+            "n",
+            new FunctionCallExpression("range", argList),
             new ArithmeticExpression(
                 Expression::Kind::kAdd,
-                new VariableExpression(new std::string("totalNum")),
+                new VariableExpression("totalNum"),
                 new ArithmeticExpression(Expression::Kind::kMultiply,
-                                         new VariableExpression(new std::string("n")),
+                                         new VariableExpression("n"),
                                          new ConstantExpression(2))));
 
         auto value = Expression::eval(&expr, gExpCtxt);
@@ -4066,7 +4066,7 @@ TEST_F(ExpressionTest, TestExprClone) {
     auto aclone = aexpr.clone();
     ASSERT_EQ(*aclone, aexpr);
 
-    AggregateExpression aggExpr(new std::string("COUNT"), new ConstantExpression("$-.*"), true);
+    AggregateExpression aggExpr("COUNT", new ConstantExpression("$-.*"), true);
     ASSERT_EQ(aggExpr, *aggExpr.clone());
 
     EdgeExpression edgeExpr;
@@ -4075,26 +4075,26 @@ TEST_F(ExpressionTest, TestExprClone) {
     VertexExpression vertExpr;
     ASSERT_EQ(vertExpr, *vertExpr.clone());
 
-    LabelExpression labelExpr(new std::string("label"));
+    LabelExpression labelExpr("label");
     ASSERT_EQ(labelExpr, *labelExpr.clone());
 
     AttributeExpression attrExpr(new LabelExpression("label"), new LabelExpression("label"));
     ASSERT_EQ(attrExpr, *attrExpr.clone());
 
-    LabelAttributeExpression labelAttrExpr(new LabelExpression(new std::string("label")),
+    LabelAttributeExpression labelAttrExpr(new LabelExpression("label"),
                                            new ConstantExpression("prop"));
     ASSERT_EQ(labelAttrExpr, *labelAttrExpr.clone());
 
     TypeCastingExpression typeCastExpr(Value::Type::STRING, new ConstantExpression(100));
     ASSERT_EQ(typeCastExpr, *typeCastExpr.clone());
 
-    FunctionCallExpression fnCallExpr(new std::string("count"), new ArgumentList);
+    FunctionCallExpression fnCallExpr("count", new ArgumentList);
     ASSERT_EQ(fnCallExpr, *fnCallExpr.clone());
 
-    UUIDExpression uuidExpr(new std::string("hello"));
+    UUIDExpression uuidExpr("hello");
     ASSERT_EQ(uuidExpr, *uuidExpr.clone());
 
-    SubscriptExpression subExpr(new VariableExpression(new std::string("var")),
+    SubscriptExpression subExpr(new VariableExpression("var"),
                                 new ConstantExpression(0));
     ASSERT_EQ(subExpr, *subExpr.clone());
 
@@ -4107,41 +4107,41 @@ TEST_F(ExpressionTest, TestExprClone) {
     MapExpression mapExpr;
     ASSERT_EQ(mapExpr, *mapExpr.clone());
 
-    EdgePropertyExpression edgePropExpr(new std::string("edge"), new std::string("prop"));
+    EdgePropertyExpression edgePropExpr("edge", "prop");
     ASSERT_EQ(edgePropExpr, *edgePropExpr.clone());
 
-    TagPropertyExpression tagPropExpr(new std::string("tag"), new std::string("prop"));
+    TagPropertyExpression tagPropExpr("tag", "prop");
     ASSERT_EQ(tagPropExpr, *tagPropExpr.clone());
 
-    InputPropertyExpression inputPropExpr(new std::string("input"));
+    InputPropertyExpression inputPropExpr("input");
     ASSERT_EQ(inputPropExpr, *inputPropExpr.clone());
 
-    VariablePropertyExpression varPropExpr(new std::string("var"), new std::string("prop"));
+    VariablePropertyExpression varPropExpr("var", "prop");
     ASSERT_EQ(varPropExpr, *varPropExpr.clone());
 
-    SourcePropertyExpression srcPropExpr(new std::string("tag"), new std::string("prop"));
+    SourcePropertyExpression srcPropExpr("tag", "prop");
     ASSERT_EQ(srcPropExpr, *srcPropExpr.clone());
 
-    DestPropertyExpression dstPropExpr(new std::string("tag"), new std::string("prop"));
+    DestPropertyExpression dstPropExpr("tag", "prop");
     ASSERT_EQ(dstPropExpr, *dstPropExpr.clone());
 
-    EdgeSrcIdExpression edgeSrcIdExpr(new std::string("edge"));
+    EdgeSrcIdExpression edgeSrcIdExpr("edge");
     ASSERT_EQ(edgeSrcIdExpr, *edgeSrcIdExpr.clone());
 
-    EdgeTypeExpression edgeTypeExpr(new std::string("edge"));
+    EdgeTypeExpression edgeTypeExpr("edge");
     ASSERT_EQ(edgeTypeExpr, *edgeTypeExpr.clone());
 
-    EdgeRankExpression edgeRankExpr(new std::string("edge"));
+    EdgeRankExpression edgeRankExpr("edge");
     ASSERT_EQ(edgeRankExpr, *edgeRankExpr.clone());
 
-    EdgeDstIdExpression edgeDstIdExpr(new std::string("edge"));
+    EdgeDstIdExpression edgeDstIdExpr("edge");
     ASSERT_EQ(edgeDstIdExpr, *edgeDstIdExpr.clone());
 
-    VariableExpression varExpr(new std::string("VARNAME"));
+    VariableExpression varExpr("VARNAME");
     auto varExprClone = varExpr.clone();
     ASSERT_EQ(varExpr, *varExprClone);
 
-    VersionedVariableExpression verVarExpr(new std::string("VARNAME"), new ConstantExpression(0));
+    VersionedVariableExpression verVarExpr("VARNAME", new ConstantExpression(0));
     ASSERT_EQ(*verVarExpr.clone(), verVarExpr);
 
     auto *cases = new CaseList();
@@ -4152,22 +4152,19 @@ TEST_F(ExpressionTest, TestExprClone) {
     ASSERT_EQ(caseExpr, *caseExpr.clone());
 
     PathBuildExpression pathBuild;
-    pathBuild.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                            new std::string("path_src")))
-        .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                            new std::string("path_edge1")))
-        .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_v1")));
+    pathBuild.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"))
+        .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge1"))
+        .add(std::make_unique<VariablePropertyExpression>("var1", "path_v1"));
     ASSERT_EQ(pathBuild, *pathBuild.clone());
 
     ArgumentList *argList = new ArgumentList();
     argList->addArgument(std::make_unique<ConstantExpression>(1));
     argList->addArgument(std::make_unique<ConstantExpression>(5));
     ListComprehensionExpression lcExpr(
-        new std::string("n"),
-        new FunctionCallExpression(new std::string("range"), argList),
+        "n",
+        new FunctionCallExpression("range", argList),
         new RelationalExpression(Expression::Kind::kRelGE,
-                                 new LabelExpression(new std::string("n")),
+                                 new LabelExpression("n"),
                                  new ConstantExpression(2)));
     ASSERT_EQ(lcExpr, *lcExpr.clone());
 
@@ -4175,11 +4172,11 @@ TEST_F(ExpressionTest, TestExprClone) {
     argList->addArgument(std::make_unique<ConstantExpression>(1));
     argList->addArgument(std::make_unique<ConstantExpression>(5));
     PredicateExpression predExpr(
-        new std::string("all"),
-        new std::string("n"),
-        new FunctionCallExpression(new std::string("range"), argList),
+        "all",
+        "n",
+        new FunctionCallExpression("range", argList),
         new RelationalExpression(Expression::Kind::kRelGE,
-                                 new LabelExpression(new std::string("n")),
+                                 new LabelExpression("n"),
                                  new ConstantExpression(2)));
     ASSERT_EQ(predExpr, *predExpr.clone());
 
@@ -4187,15 +4184,15 @@ TEST_F(ExpressionTest, TestExprClone) {
     argList->addArgument(std::make_unique<ConstantExpression>(1));
     argList->addArgument(std::make_unique<ConstantExpression>(5));
     ReduceExpression reduceExpr(
-        new std::string("totalNum"),
+        "totalNum",
         new ArithmeticExpression(
             Expression::Kind::kMultiply, new ConstantExpression(2), new ConstantExpression(10)),
-        new std::string("n"),
-        new FunctionCallExpression(new std::string("range"), argList),
+        "n",
+        new FunctionCallExpression("range", argList),
         new ArithmeticExpression(Expression::Kind::kAdd,
-                                 new LabelExpression(new std::string("totalNum")),
+                                 new LabelExpression("totalNum"),
                                  new ArithmeticExpression(Expression::Kind::kMultiply,
-                                                          new LabelExpression(new std::string("n")),
+                                                          new LabelExpression("n"),
                                                           new ConstantExpression(2))));
     ASSERT_EQ(reduceExpr, *reduceExpr.clone());
 }
@@ -4203,12 +4200,9 @@ TEST_F(ExpressionTest, TestExprClone) {
 TEST_F(ExpressionTest, PathBuild) {
     {
         PathBuildExpression expr;
-        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_src")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_edge1")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_v1")));
+        expr.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge1"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_v1"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::PATH);
         Path expected;
@@ -4218,16 +4212,11 @@ TEST_F(ExpressionTest, PathBuild) {
     }
     {
         PathBuildExpression expr;
-        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_src")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_edge1")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_v1")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_edge2")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_v2")));
+        expr.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge1"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_v1"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge2"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_v2"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::PATH);
         Path expected;
@@ -4238,8 +4227,7 @@ TEST_F(ExpressionTest, PathBuild) {
     }
     {
         PathBuildExpression expr;
-        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_src")));
+        expr.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::PATH);
         Path expected;
@@ -4249,18 +4237,14 @@ TEST_F(ExpressionTest, PathBuild) {
     {
         PathBuildExpression expr;
 
-        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_src")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_edge1")));
+        expr.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge1"));
         auto eval = Expression::eval(&expr, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::PATH);
     }
 
     auto varPropExpr = [](const std::string &name) {
-        auto var1 = std::make_unique<std::string>("var1");
-        auto prop = std::make_unique<std::string>(name);
-        return std::make_unique<VariablePropertyExpression>(var1.release(), prop.release());
+        return std::make_unique<VariablePropertyExpression>("var1", name);
     };
 
     {
@@ -4325,12 +4309,9 @@ TEST_F(ExpressionTest, PathBuild) {
 TEST_F(ExpressionTest, PathBuildToString) {
     {
         PathBuildExpression expr;
-        expr.add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_src")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_edge1")))
-            .add(std::make_unique<VariablePropertyExpression>(new std::string("var1"),
-                                                              new std::string("path_v1")));
+        expr.add(std::make_unique<VariablePropertyExpression>("var1", "path_src"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_edge1"))
+            .add(std::make_unique<VariablePropertyExpression>("var1", "path_v1"));
         EXPECT_EQ(expr.toString(), "PathBuild[$var1.path_src,$var1.path_edge1,$var1.path_v1]");
     }
 }

@@ -15,7 +15,7 @@ bool UUIDExpression::operator==(const Expression& rhs) const {
     }
 
     const auto& r = static_cast<const UUIDExpression&>(rhs);
-    return *field_ == *(r.field_);
+    return field_ == r.field_;
 }
 
 
@@ -25,8 +25,8 @@ void UUIDExpression::writeTo(Encoder& encoder) const {
     encoder << kind_;
 
     // field_
-    CHECK(!!field_);
-    encoder << field_.get();
+    CHECK(!field_.empty());
+    encoder << field_;
 }
 
 
@@ -43,7 +43,7 @@ const Value& UUIDExpression::eval(ExpressionContext& ctx) {
 }
 
 std::string UUIDExpression::toString() const {
-    return folly::stringPrintf("uuid(\"%s\")", field_->c_str());
+    return folly::stringPrintf("uuid(\"%s\")", field_.c_str());
 }
 
 void UUIDExpression::accept(ExprVisitor* visitor) {

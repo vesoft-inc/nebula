@@ -27,9 +27,11 @@ BENCHMARK_NAMED_PARAM_MULTI(aggFuncCall, AggregateExpressionBM)
 
 }   // namespace nebula
 
+using nebula::AggregateExpression;
+using nebula::ConstantExpression;
+
 int main(int argc, char** argv) {
-    nebula::expr.reset(new nebula::AggregateExpression(
-        new std::string("avg"), new nebula::ConstantExpression(2), false));
+    nebula::expr.reset(new AggregateExpression("avg", new ConstantExpression(2), false));
     nebula::AggData aggData;
     nebula::expr->setAggData(&aggData);
 

@@ -39,7 +39,7 @@ public:
         items_.reserve(sz);
     }
 
-    MapItemList& add(std::string *key, Expression *value) {
+    MapItemList &add(const std::string &key, Expression *value) {
         items_.emplace_back(key, value);
         return *this;
     }
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    using Pair = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
+    using Pair = std::pair<std::string, std::unique_ptr<Expression>>;
     std::vector<Pair>                           items_;
 };
 
@@ -172,7 +172,7 @@ private:
 
 class MapExpression final : public Expression {
 public:
-    using Item = std::pair<std::unique_ptr<std::string>, std::unique_ptr<Expression>>;
+    using Item = std::pair<std::string, std::unique_ptr<Expression>>;
 
     MapExpression() : Expression(Kind::kMap) {
     }
@@ -214,7 +214,7 @@ public:
     std::unique_ptr<Expression> clone() const override {
         auto items = new MapItemList(items_.size());
         for (auto &item : items_) {
-            items->add(new std::string(*item.first), item.second->clone().release());
+            items->add(item.first, item.second->clone().release());
         }
         return std::make_unique<MapExpression>(items);
     }

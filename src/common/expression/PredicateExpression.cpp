@@ -49,11 +49,11 @@ const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
 }
 
 const Value& PredicateExpression::eval(ExpressionContext& ctx) {
-    if (*name_ == "exists") {
+    if (name_ == "exists") {
         return evalExists(ctx);
     }
     Type type;
-    auto iter = typeMap_.find(*name_);
+    auto iter = typeMap_.find(name_);
     if (iter != typeMap_.end()) {
         type = iter->second;
     } else {
@@ -77,7 +77,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
             result_ = true;
             for (size_t i = 0; i < list.size(); ++i) {
                 auto& v = list[i];
-                ctx.setVar(*innerVar_, v);
+                ctx.setVar(innerVar_, v);
                 auto& filterVal = filter_->eval(ctx);
                 if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
                     return Value::kNullBadType;
@@ -93,7 +93,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
             result_ = false;
             for (size_t i = 0; i < list.size(); ++i) {
                 auto& v = list[i];
-                ctx.setVar(*innerVar_, v);
+                ctx.setVar(innerVar_, v);
                 auto& filterVal = filter_->eval(ctx);
                 if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
                     return Value::kNullBadType;
@@ -109,7 +109,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
             result_ = false;
             for (size_t i = 0; i < list.size(); ++i) {
                 auto& v = list[i];
-                ctx.setVar(*innerVar_, v);
+                ctx.setVar(innerVar_, v);
                 auto& filterVal = filter_->eval(ctx);
                 if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
                     return Value::kNullBadType;
@@ -129,7 +129,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
             result_ = true;
             for (size_t i = 0; i < list.size(); ++i) {
                 auto& v = list[i];
-                ctx.setVar(*innerVar_, v);
+                ctx.setVar(innerVar_, v);
                 auto& filterVal = filter_->eval(ctx);
                 if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
                     return Value::kNullBadType;
@@ -155,7 +155,7 @@ bool PredicateExpression::operator==(const Expression& rhs) const {
 
     const auto& expr = static_cast<const PredicateExpression&>(rhs);
 
-    if (*name_ != *expr.name_) {
+    if (name_ != expr.name_) {
         return false;
     }
 
@@ -164,7 +164,7 @@ bool PredicateExpression::operator==(const Expression& rhs) const {
     }
 
     if (hasInnerVar()) {
-        if (*innerVar_ != *expr.innerVar_) {
+        if (innerVar_ != expr.innerVar_) {
             return false;
         }
     }
@@ -188,12 +188,12 @@ bool PredicateExpression::operator==(const Expression& rhs) const {
 
 std::unique_ptr<Expression> PredicateExpression::clone() const {
     auto expr = std::make_unique<PredicateExpression>(
-        new std::string(*name_),
-        innerVar_ == nullptr ? nullptr : new std::string(*innerVar_),
+        name_,
+        innerVar_,
         collection_->clone().release(),
         filter_ != nullptr ? filter_->clone().release() : nullptr);
-    if (originString_ != nullptr) {
-        expr->setOriginString(new std::string(*originString_));
+    if (hasOriginString()) {
+        expr->setOriginString(originString_);
     }
     return expr;
 }
@@ -204,16 +204,16 @@ void PredicateExpression::writeTo(Encoder& encoder) const {
     encoder << Value(hasFilter());
     encoder << Value(hasOriginString());
 
-    encoder << name_.get();
+    encoder << name_;
     if (hasInnerVar()) {
-        encoder << innerVar_.get();
+        encoder << innerVar_;
     }
     encoder << *collection_;
     if (hasFilter()) {
         encoder << *filter_;
     }
     if (hasOriginString()) {
-        encoder << originString_.get();
+        encoder << originString_;
     }
 }
 
@@ -236,8 +236,8 @@ void PredicateExpression::resetFrom(Decoder& decoder) {
 }
 
 std::string PredicateExpression::toString() const {
-    if (originString_ != nullptr) {
-        return *originString_;
+    if (hasOriginString()) {
+        return originString_;
     }
     return makeString();
 }
@@ -246,10 +246,10 @@ std::string PredicateExpression::makeString() const {
     std::string buf;
     buf.reserve(256);
 
-    buf += *name_;
+    buf += name_;
     buf += "(";
-    if (*name_ != "exists") {
-        buf += *innerVar_;
+    if (name_ != "exists") {
+        buf += innerVar_;
         buf += " IN ";
         buf += collection_->toString();
         buf += " WHERE ";

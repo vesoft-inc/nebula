@@ -59,11 +59,11 @@ Expression::Encoder& Expression::Encoder::operator<<(Kind kind) noexcept {
 }
 
 
-Expression::Encoder& Expression::Encoder::operator<<(const std::string* str) noexcept {
-    size_t sz = str ? str->size() : 0;
+Expression::Encoder& Expression::Encoder::operator<<(const std::string& str) noexcept {
+    size_t sz = str.size();
     buf_.append(reinterpret_cast<char*>(&sz), sizeof(size_t));
     if (sz > 0) {
-        buf_.append(str->data(), sz);
+        buf_.append(str.data(), sz);
     }
     return *this;
 }
@@ -124,23 +124,21 @@ Expression::Kind Expression::Decoder::readKind() noexcept {
 }
 
 
-std::unique_ptr<std::string> Expression::Decoder::readStr() noexcept {
+std::string Expression::Decoder::readStr() noexcept {
     CHECK_LE(ptr_ + sizeof(size_t), encoded_.end());
 
     size_t sz = 0;
     memcpy(reinterpret_cast<void*>(&sz), ptr_, sizeof(size_t));
     ptr_ += sizeof(size_t);
 
-    std::unique_ptr<std::string> str;
-    if (sz > 0) {
-        CHECK_LE(ptr_ + sz, encoded_.end());
-        str.reset(new std::string(ptr_, sz));
-    } else {
-        str.reset(new std::string());
+    if (sz == 0) {
+        return std::string();
     }
-    ptr_ += sz;
 
-    return str;
+    CHECK_LE(ptr_ + sz, encoded_.end());
+    auto ptr = ptr_;
+    ptr_ += sz;
+    return std::string(ptr, sz);
 }
 
 

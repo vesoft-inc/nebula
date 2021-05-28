@@ -32,85 +32,65 @@ public:
 
     const Value& eval(ExpressionContext& ctx) override;
 
-    const std::string *ref() const {
-        return ref_.get();
+    const std::string &ref() const {
+        return ref_;
     }
 
-    const std::string *sym() const {
-        return sym_.get();
+    const std::string &sym() const {
+        return sym_;
     }
 
-    const std::string *prop() const {
-        return prop_.get();
+    const std::string &prop() const {
+        return prop_;
     }
 
     std::string toString() const override;
 
 protected:
     PropertyExpression(Kind kind,
-                       std::string* ref,
-                       std::string* sym,
-                       std::string* prop)
-        : Expression(kind) {
-        ref_.reset(ref);
-        sym_.reset(sym);
-        prop_.reset(prop);
-    }
+                       const std::string& ref,
+                       const std::string& sym,
+                       const std::string& prop)
+        : Expression(kind), ref_(ref), sym_(sym), prop_(prop) {}
 
     void writeTo(Encoder& encoder) const override;
-
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string>    ref_;
-    std::unique_ptr<std::string>    sym_;
-    std::unique_ptr<std::string>    prop_;
+    std::string ref_;
+    std::string sym_;
+    std::string prop_;
 };
 
 // edge_name.any_prop_name
 class EdgePropertyExpression final : public PropertyExpression {
 public:
-    EdgePropertyExpression(std::string* edge = nullptr,
-                           std::string* prop = nullptr)
-        : PropertyExpression(Kind::kEdgeProperty,
-                             new std::string(""),
-                             edge,
-                             prop) {}
+    explicit EdgePropertyExpression(const std::string& edge = "", const std::string& prop = "")
+        : PropertyExpression(Kind::kEdgeProperty, "", edge, prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgePropertyExpression>(new std::string(*sym()),
-                                                        new std::string(*prop()));
+        return std::make_unique<EdgePropertyExpression>(sym(), prop());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
-
 
 // tag_name.any_prop_name
 class TagPropertyExpression final : public PropertyExpression {
 public:
-    TagPropertyExpression(std::string* tag = nullptr,
-                          std::string* prop = nullptr)
-        : PropertyExpression(Kind::kTagProperty,
-                             new std::string(""),
-                             tag,
-                             prop) {}
+    explicit TagPropertyExpression(const std::string& tag = "", const std::string& prop = "")
+        : PropertyExpression(Kind::kTagProperty, "", tag, prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<TagPropertyExpression>(new std::string(*sym()),
-                                                       new std::string(*prop()));
+        return std::make_unique<TagPropertyExpression>(sym(), prop());
     }
 
 private:
@@ -120,32 +100,23 @@ private:
 // $-.any_prop_name
 class InputPropertyExpression final : public PropertyExpression {
 public:
-    explicit InputPropertyExpression(std::string* prop = nullptr)
-        : PropertyExpression(Kind::kInputProperty,
-                             new std::string(kInputRef),
-                             new std::string(""),
-                             prop) {}
+    explicit InputPropertyExpression(const std::string& prop = "")
+        : PropertyExpression(Kind::kInputProperty, kInputRef, "", prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<InputPropertyExpression>(new std::string(*prop()));
+        return std::make_unique<InputPropertyExpression>(prop());
     }
 };
 
 // $VarName.any_prop_name
 class VariablePropertyExpression final : public PropertyExpression {
 public:
-    VariablePropertyExpression(std::string* var = nullptr,
-                               std::string* prop = nullptr)
-        : PropertyExpression(Kind::kVarProperty,
-                             new std::string(kVarRef),
-                             var,
-                             prop) {}
+    explicit VariablePropertyExpression(const std::string& var = "", const std::string& prop = "")
+        : PropertyExpression(Kind::kVarProperty, kVarRef, var, prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -154,148 +125,114 @@ public:
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VariablePropertyExpression>(new std::string(*sym()),
-                                                            new std::string(*prop()));
+        return std::make_unique<VariablePropertyExpression>(sym(), prop());
     }
 };
 
 // $^.TagName.any_prop_name
 class SourcePropertyExpression final : public PropertyExpression {
 public:
-    SourcePropertyExpression(std::string* tag = nullptr,
-                             std::string* prop = nullptr)
-        : PropertyExpression(Kind::kSrcProperty,
-                             new std::string(kSrcRef),
-                             tag,
-                             prop) {}
+    explicit SourcePropertyExpression(const std::string& tag = "", const std::string& prop = "")
+        : PropertyExpression(Kind::kSrcProperty, kSrcRef, tag, prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<SourcePropertyExpression>(new std::string(*sym()),
-                                                          new std::string(*prop()));
+        return std::make_unique<SourcePropertyExpression>(sym(), prop());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
 
 // $$.TagName.any_prop_name
 class DestPropertyExpression final : public PropertyExpression {
 public:
-    DestPropertyExpression(std::string* tag = nullptr,
-                           std::string* prop = nullptr)
-        : PropertyExpression(Kind::kDstProperty,
-                             new std::string(kDstRef),
-                             tag,
-                             prop) {}
+    explicit DestPropertyExpression(const std::string& tag = "", const std::string& prop = "")
+        : PropertyExpression(Kind::kDstProperty, kDstRef, tag, prop) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<DestPropertyExpression>(new std::string(*sym()),
-                                                        new std::string(*prop()));
+        return std::make_unique<DestPropertyExpression>(sym(), prop());
     }
 };
 
 // EdgeName._src
 class EdgeSrcIdExpression final : public PropertyExpression {
 public:
-    explicit EdgeSrcIdExpression(std::string* edge = nullptr)
-        : PropertyExpression(Kind::kEdgeSrc,
-                             new std::string(""),
-                             edge,
-                             new std::string(kSrc)) {}
+    explicit EdgeSrcIdExpression(const std::string& edge = "")
+        : PropertyExpression(Kind::kEdgeSrc, "", edge, kSrc) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeSrcIdExpression>(new std::string(*sym()));
+        return std::make_unique<EdgeSrcIdExpression>(sym());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
 
 // EdgeName._type
 class EdgeTypeExpression final : public PropertyExpression {
 public:
-    explicit EdgeTypeExpression(std::string* edge = nullptr)
-        : PropertyExpression(Kind::kEdgeType,
-                             new std::string(""),
-                             edge,
-                             new std::string(kType)) {}
+    explicit EdgeTypeExpression(const std::string& edge = "")
+        : PropertyExpression(Kind::kEdgeType, "", edge, kType) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeTypeExpression>(new std::string(*sym()));
+        return std::make_unique<EdgeTypeExpression>(sym());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
 
 // EdgeName._rank
 class EdgeRankExpression final : public PropertyExpression {
 public:
-    explicit EdgeRankExpression(std::string* edge = nullptr)
-        : PropertyExpression(Kind::kEdgeRank,
-                             new std::string(""),
-                             edge,
-                             new std::string(kRank)) {}
+    explicit EdgeRankExpression(const std::string& edge = "")
+        : PropertyExpression(Kind::kEdgeRank, "", edge, kRank) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeRankExpression>(new std::string(*sym()));
+        return std::make_unique<EdgeRankExpression>(sym());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
 
 // EdgeName._dst
 class EdgeDstIdExpression final : public PropertyExpression {
 public:
-    explicit EdgeDstIdExpression(std::string* edge = nullptr)
-        : PropertyExpression(Kind::kEdgeDst,
-                             new std::string(""),
-                             edge,
-                             new std::string(kDst)) {}
+    explicit EdgeDstIdExpression(const std::string& edge = "")
+        : PropertyExpression(Kind::kEdgeDst, "", edge, kDst) {}
 
     const Value& eval(ExpressionContext& ctx) override;
-
-    std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeDstIdExpression>(new std::string(*sym()));
+        return std::make_unique<EdgeDstIdExpression>(sym());
     }
 
 private:
-    Value                           result_;
+    Value result_;
 };
+
 }   // namespace nebula
 #endif

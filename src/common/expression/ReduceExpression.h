@@ -15,11 +15,11 @@ class ReduceExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit ReduceExpression(std::string* accumulator = nullptr,
-                                 Expression* initial = nullptr,
-                                 std::string* innerVar = nullptr,
-                                 Expression* collection = nullptr,
-                                 Expression* mapping = nullptr)
+    explicit ReduceExpression(const std::string& accumulator = "",
+                              Expression* initial = nullptr,
+                              const std::string& innerVar = "",
+                              Expression* collection = nullptr,
+                              Expression* mapping = nullptr)
         : Expression(Kind::kReduce),
           accumulator_(accumulator),
           initial_(initial),
@@ -37,12 +37,8 @@ public:
 
     std::unique_ptr<Expression> clone() const override;
 
-    const std::string* accumulator() const {
-        return accumulator_.get();
-    }
-
-    std::string* accumulator() {
-        return accumulator_.get();
+    const std::string& accumulator() const {
+        return accumulator_;
     }
 
     const Expression* initial() const {
@@ -53,12 +49,8 @@ public:
         return initial_.get();
     }
 
-    const std::string* innerVar() const {
-        return innerVar_.get();
-    }
-
-    std::string* innerVar() {
-        return innerVar_.get();
+    const std::string& innerVar() const {
+        return innerVar_;
     }
 
     const Expression* collection() const {
@@ -77,16 +69,16 @@ public:
         return mapping_.get();
     }
 
-    void setAccumulator(std::string* name) {
-        accumulator_.reset(name);
+    void setAccumulator(const std::string& name) {
+        accumulator_ = name;
     }
 
     void setInitial(Expression* expr) {
         initial_.reset(expr);
     }
 
-    void setInnerVar(std::string* name) {
-        innerVar_.reset(name);
+    void setInnerVar(const std::string& name) {
+        innerVar_ = name;
     }
 
     void setCollection(Expression* expr) {
@@ -97,14 +89,14 @@ public:
         mapping_.reset(expr);
     }
 
-    void setOriginString(std::string* s) {
-        originString_.reset(s);
+    void setOriginString(const std::string& s) {
+        originString_ = s;
     }
 
     std::string makeString() const;
 
     bool hasOriginString() const {
-        return originString_ != nullptr;
+        return !originString_.empty();
     }
 
 private:
@@ -112,12 +104,12 @@ private:
 
     void resetFrom(Decoder& decoder) override;
 
-    std::unique_ptr<std::string> accumulator_;
+    std::string accumulator_;
     std::unique_ptr<Expression> initial_;
-    std::unique_ptr<std::string> innerVar_;
+    std::string innerVar_;
     std::unique_ptr<Expression> collection_;
     std::unique_ptr<Expression> mapping_;
-    std::unique_ptr<std::string> originString_;
+    std::string originString_;
     Value result_;
 };
 
