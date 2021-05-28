@@ -35,6 +35,7 @@ option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_BUILD_STORAGE "Whether to build storage" OFF)
 option(ENABLE_MODULE_UPDATE "Automatically update module" OFF)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
+option(ENABLE_MODULE_FORCE_CHECKOUT "Whether checkout branch of module to same as graph." ON)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -68,6 +69,8 @@ if(NOT NEBULA_COMMON_SOURCE_DIR)
             ${NEBULA_COMMON_REPO_TAG}
         UPDATE
             ${ENABLE_MODULE_UPDATE}
+        CHECKOUT
+            ${ENABLE_MODULE_FORCE_CHECKOUT}
     )
     set(nebula_common_source_dir ${CMAKE_SOURCE_DIR}/modules/common)
     set(nebula_common_build_dir ${CMAKE_BINARY_DIR}/modules/common)
@@ -114,6 +117,8 @@ if(ENABLE_BUILD_STORAGE)
                 ${NEBULA_STORAGE_REPO_TAG}
             UPDATE
                 ${ENABLE_MODULE_UPDATE}
+            CHECKOUT
+                ${ENABLE_MODULE_FORCE_CHECKOUT}
         )
         set(nebula_storage_source_dir ${CMAKE_SOURCE_DIR}/modules/storage)
         set(nebula_storage_build_dir ${CMAKE_BINARY_DIR}/modules/storage)
