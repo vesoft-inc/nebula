@@ -224,16 +224,31 @@ std::pair<int64_t, int64_t> Listener::commitSnapshot(const std::vector<std::stri
                                                      LogID committedLogId,
                                                      TermID committedLogTerm,
                                                      bool finished) {
-    LOG(WARNING) << "Listener snapshot has not implemented yet";
-    UNUSED(committedLogId); UNUSED(committedLogTerm); UNUSED(finished);
+    VLOG(1) << idStr_ << "Listener is committing snapshot.";
     int64_t count = 0;
     int64_t size = 0;
+    std::vector<KV> data;
+    data.reserve(rows.size());
     for (const auto& row : rows) {
         count++;
         size += row.size();
-        // todo(doodle): could decode and apply
+        auto kv = decodeKV(row);
+        data.emplace_back(kv.first, kv.second);
     }
-    return {count, size};
+    if (!apply(data)) {
+        LOG(ERROR) << idStr_ << "Failed to apply data while committing snapshot.";
+        return std::make_pair(0, 0);
+    }
+    if (finished) {
+        CHECK(!raftLock_.try_lock());
+        lastId_ = committedLogId;
+        lastApplyLogId_ = committedLogId;
+        lastTerm_ = committedLogTerm;
+        persist(committedLogId, lastTerm_, lastApplyLogId_);
+        LOG(INFO) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
+        lastApplyTime_ = time::WallClock::fastNowInMilliSec();
+    }
+    return std::make_pair(count, size);
 }
 
 }  // namespace kvstore
