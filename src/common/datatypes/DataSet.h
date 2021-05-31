@@ -24,7 +24,7 @@ struct DataSet {
     std::vector<Row> rows;
 
     DataSet() = default;
-    explicit DataSet(std::vector<std::string>&& colNames_) : colNames(std::move(colNames_)) {}
+    explicit DataSet(std::vector<std::string> columns) : colNames(std::move(columns)) {}
     DataSet(const DataSet& ds) noexcept {
         colNames = ds.colNames;
         rows = ds.rows;
