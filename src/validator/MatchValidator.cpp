@@ -437,7 +437,7 @@ Status MatchValidator::validateWith(const WithClause *with,
     for (auto *col : with->columns()->columns()) {
         if (col->alias().empty()) {
             if (col->expr()->kind() == Expression::Kind::kLabel) {
-                col->setAlias(col->expr()->toString());
+                col->setAlias(col->toString());
             } else {
                 return Status::SemanticError("Expression in WITH must be aliased (use AS)");
             }
@@ -632,11 +632,7 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
         std::vector<std::string> inputColList;
         inputColList.reserve(yieldColumns->columns().size());
         for (auto *col : yieldColumns->columns()) {
-            if (!col->alias().empty()) {
-                inputColList.emplace_back(col->alias());
-            } else {
-                inputColList.emplace_back(col->expr()->toString());
-            }
+            inputColList.emplace_back(col->name());
         }
         std::unordered_map<std::string, size_t> inputColIndices;
         for (auto i = 0u; i < inputColList.size(); i++) {
@@ -722,11 +718,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
     if (!yieldCtx.hasAgg_) {
         for (auto &col : yieldCtx.yieldColumns->columns()) {
             yieldCtx.projCols_->addColumn(col->clone().release());
-            if (!col->alias().empty()) {
-                yieldCtx.projOutputColumnNames_.emplace_back(col->alias());
-            } else {
-                yieldCtx.projOutputColumnNames_.emplace_back(col->expr()->toString());
-            }
+            yieldCtx.projOutputColumnNames_.emplace_back(col->name());
         }
         return Status::OK();
     } else {

@@ -527,11 +527,7 @@ Status UpdateValidator::getReturnProps() {
     if (clause != nullptr) {
         auto yields = clause->columns();
         for (auto *col : yields) {
-            if (col->alias().empty()) {
-                yieldColNames_.emplace_back(col->expr()->toString());
-            } else {
-                yieldColNames_.emplace_back(col->alias());
-            }
+            yieldColNames_.emplace_back(col->name());
             std::string encodeStr;
             auto copyColExpr = col->expr()->clone();
             NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyColExpr.get(), name_, encodeStr));

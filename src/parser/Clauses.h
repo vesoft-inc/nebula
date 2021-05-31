@@ -256,6 +256,10 @@ public:
         return alias_;
     }
 
+    std::string name() const {
+        return alias_.empty() ? toString() : alias();
+    }
+
     std::string toString() const;
 
 private:

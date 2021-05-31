@@ -51,7 +51,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
         return ret;
     };
 
-    lc->setOriginString(lc->makeString());
+    lc->setOriginString(lc->toString());
     lc->setInnerVar(newVarName);
     if (lc->hasFilter()) {
         Expression *filter = lc->filter();
@@ -100,7 +100,7 @@ void ParserUtil::rewritePred(QueryContext *qctx,
         return ret;
     };
 
-    pred->setOriginString(pred->makeString());
+    pred->setOriginString(pred->toString());
     pred->setInnerVar(newVarName);
 
     auto *newFilter =
@@ -151,7 +151,7 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
         return ret;
     };
 
-    reduce->setOriginString(reduce->makeString());
+    reduce->setOriginString(reduce->toString());
     reduce->setAccumulator(newAccName);
     reduce->setInnerVar(newVarName);
 

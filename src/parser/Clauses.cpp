@@ -130,7 +130,7 @@ std::string WhenClause::toString() const {
 std::string YieldColumn::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += expr_->toString();
+    buf += expr_->rawString();
 
     if (!alias_.empty()) {
         buf += " AS ";
