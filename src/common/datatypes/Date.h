@@ -129,20 +129,45 @@ inline std::ostream &operator<<(std::ostream& os, const Time& d) {
 }
 
 struct DateTime {
-    int16_t year;
-    int8_t month;
-    int8_t day;
-    int8_t hour;
-    int8_t minute;
-    int8_t sec;
-    int32_t microsec;
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif  // defined(__GNUC__)
+    union {
+        struct {
+            int64_t year:16;
+            uint64_t month:4;
+            uint64_t day:5;
+            uint64_t hour:5;
+            uint64_t minute:6;
+            uint64_t sec:6;
+            uint64_t microsec:22;
+        };
+        uint64_t qword;
+    };
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif  // defined(__GNUC__)
 
     DateTime() : year{0}, month{1}, day{1}, hour{0}, minute{0}, sec{0}, microsec{0} {}
-    DateTime(int16_t y, int8_t m, int8_t d, int8_t h, int8_t min, int8_t s, int32_t us)
-        : year{y}, month{m}, day{d}, hour{h}, minute{min}, sec{s}, microsec{us} {}
-    explicit DateTime(const Date &date)
-        : year{date.year}, month{date.month}, day{date.day},
-          hour{0}, minute{0}, sec{0}, microsec{0} {}
+    DateTime(int16_t y, int8_t m, int8_t d, int8_t h, int8_t min, int8_t s, int32_t us) {
+        year = y;
+        month = m;
+        day = d;
+        hour = h;
+        minute = min;
+        sec = s;
+        microsec = us;
+    }
+    explicit DateTime(const Date &date) {
+        year = date.year;
+        month = date.month;
+        day = date.day;
+        hour = 0;
+        minute = 0;
+        sec = 0;
+        microsec = 0;
+    }
 
     void clear() {
         year = 0;

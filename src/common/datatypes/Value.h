@@ -331,7 +331,7 @@ private:
         bool                        bVal;
         int64_t                     iVal;
         double                      fVal;
-        std::string                 sVal;
+        std::unique_ptr<std::string>sVal;
         Date                        dVal;
         Time                        tVal;
         DateTime                    dtVal;
@@ -368,6 +368,7 @@ private:
     void setS(const std::string& v);
     void setS(std::string&& v);
     void setS(const char* v);
+    void setS(std::unique_ptr<std::string> v);
     // Date value
     void setD(const Date& v);
     void setD(Date&& v);
@@ -413,6 +414,8 @@ private:
     void setG(const DataSet& v);
     void setG(DataSet&& v);
 };
+
+static_assert(sizeof(Value) == 16UL);
 
 void swap(Value& a, Value& b);
 
