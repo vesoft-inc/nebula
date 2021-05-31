@@ -19,7 +19,8 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
         if (req.get_if_not_exists()) {
             code = cpp2::ErrorCode::SUCCEEDED;
         } else {
-            LOG(ERROR) << "Create User Failed : User " << account << " already existed!";
+            LOG(ERROR) << "Create User Failed : User " << account
+                       << " already existed!";
             code = cpp2::ErrorCode::E_EXISTED;
         }
         handleErrorCode(code);
@@ -28,10 +29,12 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::userKey(account), MetaServiceUtils::userVal(password));
+    data.emplace_back(MetaServiceUtils::userKey(account),
+                      MetaServiceUtils::userVal(password));
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
+
 
 void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
@@ -51,6 +54,7 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
+
 
 void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
@@ -89,6 +93,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     doSyncMultiRemoveAndUpdate({std::move(keys)});
 }
 
+
 void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     folly::SharedMutex::WriteHolder userHolder(LockUtils::userLock());
     folly::SharedMutex::ReadHolder spaceHolder(LockUtils::spaceLock());
@@ -97,9 +102,9 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     /**
      *  for cloud authority, need init a god user by this interface. the god user default grant to
      *  meta space (kDefaultSpaceId). so skip the space check.
-     *  Should be reject the grant operation and return a error
+     *  Should be reject the grant operation and return a error 
      *  when grant a user to GOD through graph layer.
-     */
+    */
     if (!(spaceId == kDefaultSpaceId && roleItem.get_role_type() == nebula::cpp2::RoleType::GOD)) {
         CHECK_SPACE_ID_AND_RETURN(spaceId);
     }
@@ -116,6 +121,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
+
 
 void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     folly::SharedMutex::WriteHolder userHolder(LockUtils::userLock());
@@ -138,7 +144,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
         return;
     }
     auto val = result.value();
-    const auto role = *reinterpret_cast<const nebula::cpp2::RoleType*>(val.c_str());
+    const auto role = *reinterpret_cast<const nebula::cpp2::RoleType *>(val.c_str());
     if (role != roleItem.get_role_type()) {
         handleErrorCode(cpp2::ErrorCode::E_IMPROPER_ROLE);
         onFinished();
@@ -147,6 +153,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncMultiRemoveAndUpdate({std::move(roleKey)});
 }
+
 
 void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
@@ -170,6 +177,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     handleErrorCode(cpp2::ErrorCode::SUCCEEDED);
     doSyncPutAndUpdate(std::move(data));
 }
+
 
 void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     UNUSED(req);
@@ -195,6 +203,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     onFinished();
 }
 
+
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     auto spaceId = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(spaceId);
@@ -216,7 +225,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
         nebula::cpp2::RoleItem role;
         role.set_user(std::move(account));
         role.set_space_id(spaceId);
-        role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType*>(val.begin()));
+        role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
         roles.emplace_back(role);
         iter->next();
     }
@@ -246,7 +255,7 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
             nebula::cpp2::RoleItem role;
             role.set_user(std::move(account));
             role.set_space_id(spaceId);
-            role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType*>(val.begin()));
+            role.set_role_type(*reinterpret_cast<const nebula::cpp2::RoleType *>(val.begin()));
             roles.emplace_back(role);
         }
         iter->next();
@@ -256,5 +265,5 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
     onFinished();
 }
 
-}   // namespace meta
-}   // namespace nebula
+}  // namespace meta
+}  // namespace nebula
