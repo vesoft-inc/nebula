@@ -264,13 +264,13 @@ public:
     }
 
     static std::string encodeDateTime(const nebula::DateTime& dt) {
-        auto year = folly::Endian::big16(dt.year);
-        auto month = folly::Endian::big8(dt.month);
-        auto day = folly::Endian::big8(dt.day);
-        auto hour = folly::Endian::big8(dt.hour);
-        auto minute = folly::Endian::big8(dt.minute);
-        auto sec = folly::Endian::big8(dt.sec);
-        auto microsec = folly::Endian::big32(dt.microsec);
+        auto year = folly::Endian::big16(static_cast<uint16_t>(dt.year));
+        auto month = folly::Endian::big8(static_cast<uint8_t>(dt.month));
+        auto day = folly::Endian::big8(static_cast<uint8_t>(dt.day));
+        auto hour = folly::Endian::big8(static_cast<uint8_t>(dt.hour));
+        auto minute = folly::Endian::big8(static_cast<uint8_t>(dt.minute));
+        auto sec = folly::Endian::big8(static_cast<uint8_t>(dt.sec));
+        auto microsec = folly::Endian::big32(static_cast<uint32_t>(dt.microsec));
         std::string buf;
         buf.reserve(sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5);
         buf.append(reinterpret_cast<const char*>(&year), sizeof(int16_t))

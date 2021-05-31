@@ -156,25 +156,39 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
         }
         case meta::cpp2::PropertyType::DATETIME: {
             DateTime dt;
-            memcpy(reinterpret_cast<void*>(&dt.year), &data_[offset], sizeof(int16_t));
-            memcpy(reinterpret_cast<void*>(&dt.month),
+            int16_t year;
+            int8_t month;
+            int8_t day;
+            int8_t hour;
+            int8_t minute;
+            int8_t sec;
+            int32_t microsec;
+            memcpy(reinterpret_cast<void*>(&year), &data_[offset], sizeof(int16_t));
+            memcpy(reinterpret_cast<void*>(&month),
                    &data_[offset + sizeof(int16_t)],
                    sizeof(int8_t));
-            memcpy(reinterpret_cast<void*>(&dt.day),
+            memcpy(reinterpret_cast<void*>(&day),
                    &data_[offset + sizeof(int16_t) + sizeof(int8_t)],
                    sizeof(int8_t));
-            memcpy(reinterpret_cast<void*>(&dt.hour),
+            memcpy(reinterpret_cast<void*>(&hour),
                    &data_[offset + sizeof(int16_t) + 2 * sizeof(int8_t)],
                    sizeof(int8_t));
-            memcpy(reinterpret_cast<void*>(&dt.minute),
+            memcpy(reinterpret_cast<void*>(&minute),
                    &data_[offset + sizeof(int16_t) + 3 * sizeof(int8_t)],
                    sizeof(int8_t));
-            memcpy(reinterpret_cast<void*>(&dt.sec),
+            memcpy(reinterpret_cast<void*>(&sec),
                    &data_[offset + sizeof(int16_t) + 4 * sizeof(int8_t)],
                    sizeof(int8_t));
-            memcpy(reinterpret_cast<void*>(&dt.microsec),
+            memcpy(reinterpret_cast<void*>(&microsec),
                    &data_[offset + sizeof(int16_t) + 5 * sizeof(int8_t)],
                    sizeof(int32_t));
+            dt.year = year;
+            dt.month = month;
+            dt.day = day;
+            dt.hour = hour;
+            dt.minute = minute;
+            dt.sec = sec;
+            dt.microsec = microsec;
             return dt;
         }
         case meta::cpp2::PropertyType::UNKNOWN:
