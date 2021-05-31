@@ -95,19 +95,19 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
         case Value::Type::TIME : {
             auto t = v.getTime();
             // Ignore the time zone.
-            if (t.microsec < std::numeric_limits<int32_t>::max()) {
+            if (t.microsec < 999999) {
                 t.microsec = t.microsec + 1;
             } else {
-                t.microsec = 1;
-                if (t.sec < 60) {
+                t.microsec = 0;
+                if (t.sec < 59) {
                     t.sec += 1;
                 } else {
-                    t.sec = 1;
-                    if (t.minute < 60) {
+                    t.sec = 0;
+                    if (t.minute < 59) {
                         t.minute += 1;
                     } else {
-                        t.minute = 1;
-                        if (t.hour < 24) {
+                        t.minute = 0;
+                        if (t.hour < 23) {
                             t.hour += 1;
                         } else {
                             return v.getTime();
@@ -120,22 +120,22 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
         case Value::Type::DATETIME : {
             auto dt = v.getDateTime();
             // Ignore the time zone.
-            if (dt.microsec < std::numeric_limits<int32_t>::max()) {
+            if (dt.microsec < 999999) {
                 dt.microsec = dt.microsec + 1;
             } else {
-                dt.microsec = 1;
-                if (dt.sec < 60) {
+                dt.microsec = 0;
+                if (dt.sec < 59) {
                     dt.sec += 1;
                 } else {
-                    dt.sec = 1;
-                    if (dt.minute < 60) {
+                    dt.sec = 0;
+                    if (dt.minute < 59) {
                         dt.minute += 1;
                     } else {
-                        dt.minute = 1;
-                        if (dt.hour < 24) {
+                        dt.minute = 0;
+                        if (dt.hour < 23) {
                             dt.hour += 1;
                         } else {
-                            dt.hour = 1;
+                            dt.hour = 0;
                             if (dt.day < 31) {
                                 dt.day += 1;
                             } else {
@@ -240,19 +240,19 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
                 return v.getTime();
             }
             auto t = v.getTime();
-            if (t.microsec > 1) {
+            if (t.microsec >= 1) {
                 t.microsec -= 1;
             } else {
-                t.microsec = std::numeric_limits<int32_t>::max();
-                if (t.sec > 1) {
+                t.microsec = 999999;
+                if (t.sec >= 1) {
                     t.sec -= 1;
                 } else {
-                    t.sec = 60;
-                    if (t.minute > 1) {
+                    t.sec = 59;
+                    if (t.minute >= 1) {
                         t.minute -= 1;
                     } else {
-                        t.minute = 60;
-                        if (t.hour > 1) {
+                        t.minute = 59;
+                        if (t.hour >= 1) {
                             t.hour -= 1;
                         } else {
                             return v.getTime();
@@ -267,22 +267,22 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
                 return v.getDateTime();
             }
             auto dt = v.getDateTime();
-            if (dt.microsec > 1) {
+            if (dt.microsec >= 1) {
                 dt.microsec -= 1;
             } else {
-                dt.microsec = std::numeric_limits<int32_t>::max();
-                if (dt.sec > 1) {
+                dt.microsec = 999999;
+                if (dt.sec >= 1) {
                     dt.sec -= 1;
                 } else {
-                    dt.sec = 60;
-                    if (dt.minute > 1) {
+                    dt.sec = 59;
+                    if (dt.minute >= 1) {
                         dt.minute -= 1;
                     } else {
-                        dt.minute = 60;
-                        if (dt.hour > 1) {
+                        dt.minute = 59;
+                        if (dt.hour >= 1) {
                             dt.hour -= 1;
                         } else {
-                            dt.hour = 24;
+                            dt.hour = 23;
                             if (dt.day > 1) {
                                 dt.day -= 1;
                             } else {
@@ -347,10 +347,10 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
         }
         case Value::Type::TIME: {
             Time dt;
-            dt.hour = 24;
-            dt.minute = 60;
-            dt.sec = 60;
-            dt.microsec = std::numeric_limits<int32_t>::max();
+            dt.hour = 23;
+            dt.minute = 59;
+            dt.sec = 59;
+            dt.microsec = 999999;
             return Value(dt);
         }
         case Value::Type::DATETIME: {
@@ -358,10 +358,10 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
             dt.year = std::numeric_limits<int16_t>::max();
             dt.month = 12;
             dt.day = 31;
-            dt.hour = 24;
-            dt.minute = 60;
-            dt.sec = 60;
-            dt.microsec = std::numeric_limits<int32_t>::max();
+            dt.hour = 23;
+            dt.minute = 59;
+            dt.sec = 59;
+            dt.microsec = 999999;
             return Value(dt);
         }
         case Value::Type::__EMPTY__:
