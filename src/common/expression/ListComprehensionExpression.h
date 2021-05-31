@@ -31,6 +31,10 @@ public:
 
     std::string toString() const override;
 
+    std::string rawString() const override {
+        return hasOriginString() ? originString_ : toString();
+    }
+
     void accept(ExprVisitor* visitor) override;
 
     std::unique_ptr<Expression> clone() const override;
@@ -90,8 +94,6 @@ public:
     void setOriginString(const std::string& s) {
         originString_ = s;
     }
-
-    std::string makeString() const;
 
     bool hasOriginString() const {
         return !originString_.empty();

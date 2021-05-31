@@ -236,13 +236,6 @@ void PredicateExpression::resetFrom(Decoder& decoder) {
 }
 
 std::string PredicateExpression::toString() const {
-    if (hasOriginString()) {
-        return originString_;
-    }
-    return makeString();
-}
-
-std::string PredicateExpression::makeString() const {
     std::string buf;
     buf.reserve(256);
 

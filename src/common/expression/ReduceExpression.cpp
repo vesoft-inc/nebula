@@ -105,14 +105,6 @@ void ReduceExpression::resetFrom(Decoder& decoder) {
 }
 
 std::string ReduceExpression::toString() const {
-    if (hasOriginString()) {
-        return originString_;
-    } else {
-        return makeString();
-    }
-}
-
-std::string ReduceExpression::makeString() const {
     std::string buf;
     buf.reserve(256);
 
