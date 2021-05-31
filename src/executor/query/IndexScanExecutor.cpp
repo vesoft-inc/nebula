@@ -60,9 +60,9 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
             state = Result::State::kPartialSuccess;
         }
     }
-    if (!node()->colNamesRef().empty()) {
-        DCHECK_EQ(node()->colNamesRef().size(), v.colNames.size());
-        v.colNames = node()->colNamesRef();
+    if (!node()->colNames().empty()) {
+        DCHECK_EQ(node()->colNames().size(), v.colNames.size());
+        v.colNames = node()->colNames();
     }
     VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
     return finish(ResultBuilder()

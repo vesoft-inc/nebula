@@ -257,7 +257,7 @@ Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClau
     auto& nodeInfos = matchClauseCtx->nodeInfos;
     auto& edgeInfos = matchClauseCtx->edgeInfos;
     auto input = plan.root;
-    const auto& inColNames = input->colNamesRef();
+    const auto& inColNames = input->colNames();
     auto columns = qctx->objPool()->add(new YieldColumns);
     std::vector<std::string> colNames;
 

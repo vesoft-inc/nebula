@@ -192,8 +192,7 @@ public:
     void setOutputVar(const std::string &var);
 
     const std::string& outputVar(size_t index = 0) const {
-        DCHECK_LT(index, outputVars_.size());
-        return outputVars_[index]->name;
+        return outputVarPtr(index)->name;
     }
 
     Variable* outputVarPtr(size_t index = 0) const {
@@ -205,28 +204,16 @@ public:
         return outputVars_;
     }
 
-    std::vector<std::string> colNames() const {
-        DCHECK(!outputVars_.empty());
-        return outputVars_[0]->colNames;
-    }
-
-    const std::vector<std::string>& colNamesRef() const {
-        DCHECK(!outputVars_.empty());
-        return outputVars_[0]->colNames;
+    const std::vector<std::string>& colNames() const {
+        return outputVarPtr(0)->colNames;
     }
 
     void setId(int64_t id) {
         id_ = id;
     }
 
-    void setColNames(std::vector<std::string>&& cols) {
-        DCHECK(!outputVars_.empty());
-        outputVars_[0]->colNames = std::move(cols);
-    }
-
-    void setColNames(const std::vector<std::string>& cols) {
-        DCHECK(!outputVars_.empty());
-        outputVars_[0]->colNames = cols;
+    void setColNames(std::vector<std::string> cols) {
+        outputVarPtr(0)->colNames = std::move(cols);
     }
 
     const PlanNode* dep(size_t index = 0) const {
@@ -421,4 +408,3 @@ protected:
 }  // namespace nebula
 
 #endif  // PLANNER_PLAN_PLANNODE_H_
-

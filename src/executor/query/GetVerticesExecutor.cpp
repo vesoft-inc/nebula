@@ -56,7 +56,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
         .thenValue([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
             addStats(rpcResp, otherStats_);
-            return handleResp(std::move(rpcResp), gv->colNamesRef());
+            return handleResp(std::move(rpcResp), gv->colNames());
         });
 }
 

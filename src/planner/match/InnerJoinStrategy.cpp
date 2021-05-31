@@ -20,19 +20,19 @@ PlanNode* InnerJoinStrategy::connect(const PlanNode* left, const PlanNode* right
 PlanNode* InnerJoinStrategy::joinDataSet(const PlanNode* left, const PlanNode* right) {
     Expression* buildExpr = nullptr;
     if (leftPos_ == JoinPos::kStart) {
-        auto& leftKey = left->colNamesRef().front();
+        auto& leftKey = left->colNames().front();
         buildExpr = MatchSolver::getStartVidInPath(leftKey);
     } else {
-        auto& leftKey = left->colNamesRef().back();
+        auto& leftKey = left->colNames().back();
         buildExpr = MatchSolver::getEndVidInPath(leftKey);
     }
 
     Expression* probeExpr = nullptr;
     if (rightPos_ == JoinPos::kStart) {
-        auto& rightKey = right->colNamesRef().front();
+        auto& rightKey = right->colNames().front();
         probeExpr = MatchSolver::getStartVidInPath(rightKey);
     } else {
-        auto& rightKey = right->colNamesRef().back();
+        auto& rightKey = right->colNames().back();
         probeExpr = MatchSolver::getEndVidInPath(rightKey);
     }
 
@@ -45,7 +45,7 @@ PlanNode* InnerJoinStrategy::joinDataSet(const PlanNode* left, const PlanNode* r
                                {buildExpr},
                                {probeExpr});
     std::vector<std::string> colNames = left->colNames();
-    const auto& rightColNames = right->colNamesRef();
+    const auto& rightColNames = right->colNames();
     colNames.insert(colNames.end(), rightColNames.begin(), rightColNames.end());
     join->setColNames(std::move(colNames));
     return join;

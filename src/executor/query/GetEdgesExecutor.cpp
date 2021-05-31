@@ -89,7 +89,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
         .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
             SCOPED_TIMER(&execTime_);
             addStats(rpcResp, otherStats_);
-            return handleResp(std::move(rpcResp), ge->colNamesRef());
+            return handleResp(std::move(rpcResp), ge->colNames());
         });
 }
 
