@@ -46,6 +46,8 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
             return value;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return Status::Error("Key Not Found");
+        case kvstore::ResultCode::ERR_LEADER_CHANGED:
+            return Status::LeaderChanged("Leader Changed");
         default:
             return Status::Error("Get Failed");
     }

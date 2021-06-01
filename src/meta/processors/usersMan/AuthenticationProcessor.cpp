@@ -186,8 +186,8 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     std::string prefix = "__users__";
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any users.";
-        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "List users fail.";
+        handleErrorCode(MetaCommon::to(ret));
         onFinished();
         return;
     }
