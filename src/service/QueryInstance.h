@@ -30,6 +30,11 @@ public:
 
     void execute();
 
+    QueryContext* qctx() const {
+        return qctx_.get();
+    }
+
+private:
     /**
      * If the whole execution was done, `onFinish' would be invoked.
      * All `onFinish' should do is to ask `executor_' to fill the `qctx()->rctx()->resp()',
@@ -43,11 +48,6 @@ public:
      */
     void onError(Status);
 
-    QueryContext* qctx() const {
-        return qctx_.get();
-    }
-
-private:
     Status validateAndOptimize();
     // return true if continue to execute
     bool explainOrContinue();
