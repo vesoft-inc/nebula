@@ -6,5 +6,5 @@
 nebula_add_library(
   scheduler_obj
   OBJECT
-  Scheduler.cpp
+  AsyncMsgNotifyBasedScheduler.cpp
   )

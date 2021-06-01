@@ -18,6 +18,7 @@
 #include "util/AstUtils.h"
 #include "util/ScopedTimer.h"
 #include "validator/Validator.h"
+#include "scheduler/AsyncMsgNotifyBasedScheduler.h"
 
 using nebula::opt::Optimizer;
 using nebula::opt::OptRule;
@@ -29,7 +30,7 @@ namespace graph {
 QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *optimizer) {
     qctx_ = std::move(qctx);
     optimizer_ = DCHECK_NOTNULL(optimizer);
-    scheduler_ = std::make_unique<Scheduler>(qctx_.get());
+    scheduler_ = std::make_unique<AsyncMsgNotifyBasedScheduler>(qctx_.get());
 }
 
 void QueryInstance::execute() {
