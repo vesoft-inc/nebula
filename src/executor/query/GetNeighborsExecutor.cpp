@@ -67,14 +67,17 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
             SCOPED_TIMER(&execTime_);
             auto& hostLatency = resp.hostLatency();
             for (size_t i = 0; i < hostLatency.size(); ++i) {
+                size_t size = 0u;
+                auto& result = resp.responses()[i];
+                if (result.vertices_ref().has_value()) {
+                    size = (*result.vertices_ref()).size();
+                }
                 auto& info = hostLatency[i];
                 otherStats_.emplace(
-                        folly::stringPrintf("%s exec/total/vertices",
-                                            std::get<0>(info).toString().c_str()),
-                        folly::stringPrintf("%d(us)/%d(us)/%lu,",
-                                            std::get<1>(info),
-                                            std::get<2>(info),
-                                            (*resp.responses()[i].vertices_ref()).size()));
+                    folly::stringPrintf("%s exec/total/vertices",
+                                        std::get<0>(info).toString().c_str()),
+                    folly::stringPrintf(
+                        "%d(us)/%d(us)/%lu,", std::get<1>(info), std::get<2>(info), size));
             }
             return handleResponse(resp);
         });
