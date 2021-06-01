@@ -128,6 +128,40 @@ public:
                 << " offset: " << info.offset << " length: " << info.length;
     }
 
+    // A callback function for RocksDB which will be called whenever a file flush
+    // operation finishes.
+    void OnFileFlushFinish(const rocksdb::FileOperationInfo& info) override {
+        VLOG(3) << "Flushing file finished: file path is " << info.path
+                << " offset: " << info.offset << " length: " << info.length;
+    }
+
+    // A callback function for RocksDB which will be called whenever a file sync
+    // operation finishes.
+    void OnFileSyncFinish(const rocksdb::FileOperationInfo& info) override {
+        VLOG(3) << "Syncing file finished: file path is " << info.path
+                << " offset: " << info.offset << " length: " << info.length;
+    }
+
+    // A callback function for RocksDB which will be called whenever a file
+    // rangeSync operation finishes.
+    void OnFileRangeSyncFinish(const rocksdb::FileOperationInfo& info) override {
+        VLOG(3) << "RangeSyncing file finished: file path is " << info.path
+                << " offset: " << info.offset << " length: " << info.length;
+    }
+
+    // A callback function for RocksDB which will be called whenever a file
+    // truncate operation finishes.
+    void OnFileTruncateFinish(const rocksdb::FileOperationInfo& info) override {
+        VLOG(3) << "Truncating file finished: file path is " << info.path
+                << " offset: " << info.offset << " length: " << info.length;
+    }
+
+    // A callback function for RocksDB which will be called whenever a file close
+    // operation finishes.
+    void OnFileCloseFinish(const rocksdb::FileOperationInfo& info) override {
+        VLOG(3) << "Closing file finished: file path is " << info.path;
+    }
+
     // A callback function for RocksDB which will be called just before
     // starting the automatic recovery process for recoverable background errors。
     void OnErrorRecoveryBegin(rocksdb::BackgroundErrorReason reason,
@@ -209,6 +243,8 @@ private:
                 return "ManualFlush";
             case rocksdb::FlushReason::kErrorRecovery:
                 return "ErrorRecovery";
+            case rocksdb::FlushReason::kErrorRecoveryRetryFlush:
+                return "ErrorRecoveryRetryFlush";
             default:
                 return "Unknown";
         }
@@ -224,6 +260,10 @@ private:
                 return "WriteCallback";
             case rocksdb::BackgroundErrorReason::kMemTable:
                 return "MemTable";
+            case rocksdb::BackgroundErrorReason::kManifestWrite:
+                return "ManifestWrite";
+            case rocksdb::BackgroundErrorReason::kFlushNoWAL:
+                return "FlushNoWAL";
             default:
                 return "Unknown";
         }
