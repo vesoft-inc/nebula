@@ -278,6 +278,10 @@ QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
             }
             return checkExp(ariExp->right(), returned, filtered, updated);
         }
+        case Expression::Kind::kIsNull:
+        case Expression::Kind::kIsNotNull:
+        case Expression::Kind::kIsEmpty:
+        case Expression::Kind::kIsNotEmpty:
         case Expression::Kind::kUnaryPlus:
         case Expression::Kind::kUnaryNegate:
         case Expression::Kind::kUnaryNot:
@@ -565,9 +569,16 @@ QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
         case Expression::Kind::kVarProperty:
         case Expression::Kind::kDstProperty:
         case Expression::Kind::kUUID:
-        case Expression::Kind::kVersionedVar:
-        default: {
-            LOG(INFO) << "Unimplemented expression type! kind = " << exp->kind();
+        case Expression::Kind::kPathBuild:
+        case Expression::Kind::kColumn:
+        case Expression::Kind::kTSPrefix:
+        case Expression::Kind::kTSWildcard:
+        case Expression::Kind::kTSRegexp:
+        case Expression::Kind::kTSFuzzy:
+        case Expression::Kind::kAggregate:
+        case Expression::Kind::kSubscriptRange:
+        case Expression::Kind::kVersionedVar: {
+            LOG(ERROR) << "Unimplemented expression type! kind = " << exp->kind();
             return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
         }
     }
