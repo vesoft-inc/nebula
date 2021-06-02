@@ -76,10 +76,10 @@ public:
                     const std::string& prefix,
                     std::unique_ptr<KVIterator>* iter) = 0;
 
-    // Get all results in range [start, end)
+    // Write a single record
     virtual nebula::cpp2::ErrorCode put(std::string key, std::string value) = 0;
 
-    // Get all results with 'prefix' str as prefix.
+    // Write a batch of records
     virtual nebula::cpp2::ErrorCode multiPut(std::vector<KV> keyValues) = 0;
 
     // Remove a single key
@@ -122,7 +122,7 @@ public:
 
     virtual nebula::cpp2::ErrorCode createCheckpoint(const std::string& name) = 0;
 
-    // fo meta
+    // For meta
     virtual ErrorOr<nebula::cpp2::ErrorCode, std::string>
     backupTable(const std::string& path,
                 const std::string& tablePrefix,

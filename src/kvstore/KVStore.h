@@ -42,9 +42,8 @@ struct KVOptions {
 
     // Custom MergeOperator used in rocksdb.merge method.
     std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
-    /**
-     * Custom CompactionFilter used in compaction.
-     * */
+
+    // Custom CompactionFilter used in compaction.
     std::unique_ptr<CompactionFilterFactoryBuilder> cffBuilder_{nullptr};
 };
 
@@ -68,8 +67,7 @@ public:
     virtual void stop() = 0;
 
     // Retrieve the current leader for the given partition. This
-    // is usually called when ERR_LEADER_CHANGED result code is
-    // returned
+    // is usually called when E_LEADER_CHANGED error code is returned.
     virtual ErrorOr<nebula::cpp2::ErrorCode, HostAddr>
     partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
