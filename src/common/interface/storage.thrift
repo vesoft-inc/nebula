@@ -737,9 +737,16 @@ struct RebuildIndexRequest {
 }
 
 struct CreateCPResp {
-    1: required ResponseCommon    result,
-    2: binary                     path,
-    3: common.PartitionBackupInfo partition_info,
+    1: required ResponseCommon      result,
+    2: list<common.CheckpointInfo>  info,
+}
+
+struct ListClusterInfoResp {
+    1: required ResponseCommon  result,
+    2: common.DirInfo           dir,
+}
+
+struct ListClusterInfoReq {
 }
 
 service StorageAdminService {
@@ -767,6 +774,8 @@ service StorageAdminService {
 
     AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
     AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
+
+    ListClusterInfoResp listClusterInfo(1: ListClusterInfoReq req);
 }
 
 

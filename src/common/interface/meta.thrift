@@ -968,16 +968,14 @@ struct GetStatisResp {
     3: StatisItem       statis,
 }
 
-struct CheckpointInfo {
+struct BackupInfo {
     1: common.HostAddr host,
-    2: binary          checkpoint_dir,
+    2: list<common.CheckpointInfo> info,
 }
 
 struct SpaceBackupInfo {
-    1: SpaceDesc                    space,
-    2: common.PartitionBackupInfo   partition_info,
-    // storage checkpoint directory name
-    3: list<CheckpointInfo>         cp_dirs,
+    1: SpaceDesc           space,
+    2: list<BackupInfo>    info,
 }
 
 struct BackupMeta {
@@ -987,6 +985,9 @@ struct BackupMeta {
     2: list<binary>                               meta_files,
     // backup
     3: binary                                     backup_name,
+    4: bool                                       full,
+    5: bool                                       include_system_space,
+    6: i64                                        create_time,
 }
 
 struct CreateBackupReq {
@@ -1121,6 +1122,24 @@ struct ReportTaskReq {
     4: optional StatisItem  statis
 }
 
+struct ListClusterInfoResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<common.HostAddr>    meta_servers,
+    4: list<common.NodeInfo>    storage_servers,
+}
+
+struct ListClusterInfoReq {
+}
+
+struct GetMetaDirInfoResp {
+    1: common.ErrorCode  code,
+    2: common.DirInfo    dir,
+}
+
+struct GetMetaDirInfoReq {
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -1225,4 +1244,7 @@ service MetaService {
     ExecResp removeSession(1: RemoveSessionReq req);
 
     ExecResp reportTaskFinish(1: ReportTaskReq req);
+
+    ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
+    GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 }

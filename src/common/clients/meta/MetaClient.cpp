@@ -786,6 +786,12 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("The space is not found when backup!");
         case nebula::cpp2::ErrorCode::E_RESTORE_FAILURE:
             return Status::Error("Restore failure!");
+        case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE:
+            return Status::Error("list cluster failure!");
+        case nebula::cpp2::ErrorCode::E_LIST_CLUSTER_GET_ABS_PATH_FAILURE:
+            return Status::Error("Failed to get the absolute path!");
+        case nebula::cpp2::ErrorCode::E_GET_META_DIR_FAILURE:
+            return Status::Error("Failed to get meta dir!");
         case nebula::cpp2::ErrorCode::E_INVALID_JOB:
             return Status::Error("No valid job!");
         case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
@@ -3695,4 +3701,3 @@ folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
 
 }  // namespace meta
 }  // namespace nebula
-
