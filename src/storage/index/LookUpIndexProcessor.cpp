@@ -31,7 +31,16 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     }
 
     /**
-     * step 3 : execute index scan.
+     * step 3 : setup scan pair by parts
+     */
+    if (!makeScanPairByParts(req.get_parts())) {
+        LOG(ERROR) << "Build Execution Plan Failed";
+        putResultCodes(cpp2::ErrorCode::E_INVALID_FILTER, req.get_parts());
+        return;
+    }
+
+    /**
+     * step 4 : execute index scan.
      */
     if (executor_ == nullptr) {
         for (auto partId : req.get_parts()) {
@@ -67,7 +76,7 @@ void LookUpIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
 
 
     /**
-     * step 4 : collect result.
+     * step 5 : collect result.
      */
     if (schema_ != nullptr) {
         decltype(resp_.schema) s;

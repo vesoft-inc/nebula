@@ -119,10 +119,9 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
 
 // TODO (sky) : String range scan was disabled graph layer. it is not support in storage layer.
 template <typename RESP>
-std::pair<std::string, std::string>
-IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
-    std::string beginStr = NebulaKeyUtils::indexPrefix(partId, indexId);
-    std::string endStr = NebulaKeyUtils::indexPrefix(partId, indexId);
+folly::Optional<std::pair<std::string, std::string>>
+IndexExecutor<RESP>::makeScanPair() {
+    std::string beginStr, endStr;
     const auto& fields = index_->get_fields();
     std::vector<int32_t> colsLen;
     for (const auto& field : fields) {
@@ -135,24 +134,31 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
         // index (c1 double)
         // where c1 > abs(1) , FunctionCallExpression->eval(abs(1))
         // should be cast type from int to double.
-        bool suc = true;
         if (item->second.beginBound_.rel_ != RelationType::kNull) {
-            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
-                                                      item->second.beginBound_.val_);
+            auto ret = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                           item->second.beginBound_.val_);
+            if (ret.has_value()) {
+                if (!ret.value().ok()) {
+                    return folly::none;
+                }
+                item->second.beginBound_.val_ = std::move(ret).value().value();
+            }
         }
-        if (suc == true && item->second.endBound_.rel_ != RelationType::kNull) {
-            suc = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
-                                                      item->second.endBound_.val_);
+        if (item->second.endBound_.rel_ != RelationType::kNull) {
+            auto ret = NebulaKeyUtils::checkAndCastVariant(field.get_type().type,
+                                                           item->second.endBound_.val_);
+            if (ret.has_value()) {
+                if (!ret.value().ok()) {
+                    return folly::none;
+                }
+                item->second.endBound_.val_ = std::move(ret).value().value();
+            }
         }
-        if (!suc) {
-            VLOG(1) << "Unknown VariantType";
-            return {};
-        }
-        auto pair = normalizeScanPair(field, (*item).second);
+        auto pair = normalizeScanPair(field, item->second);
         if (field.get_type().type == nebula::cpp2::SupportedType::STRING) {
             if (pair.first != pair.second) {
                 VLOG(1) << "String type field does not allow range scan : " << field.get_name();
-                return {};
+                return folly::none;
             }
             colsLen.emplace_back(pair.first.size());
         }
@@ -164,6 +170,23 @@ IndexExecutor<RESP>::makeScanPair(PartitionID partId, IndexID indexId) {
         endStr.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
     }
     return std::make_pair(beginStr, endStr);
+}
+
+template <typename RESP>
+bool IndexExecutor<RESP>::makeScanPairByParts(const std::vector<PartitionID>& parts) {
+    auto pair = makeScanPair();
+    if (pair == folly::none) {
+        return false;
+    }
+    auto indexId = index_->get_index_id();
+    for (auto part : parts) {
+        std::string beginStr = NebulaKeyUtils::indexPrefix(part, indexId);
+        std::string endStr = NebulaKeyUtils::indexPrefix(part, indexId);
+        beginStr.append(pair.value().first);
+        endStr.append(pair.value().second);
+        scanPairs_[part] = std::make_pair(std::move(beginStr), std::move(endStr));
+    }
+    return true;
 }
 
 template <typename RESP>
@@ -381,16 +404,12 @@ IndexExecutor<RESP>::executeExecutionPlanForVertex(
 }
 
 template <typename RESP>
-kvstore::ResultCode IndexExecutor<RESP>::getIndexKey(PartitionID part,
-                                                     std::vector<std::string>& keys) {
+kvstore::ResultCode
+IndexExecutor<RESP>::getIndexKey(PartitionID part, std::vector<std::string>& keys) {
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto pair = makeScanPair(part, index_->get_index_id());
-    if (pair.first.empty() || pair.second.empty()) {
-        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-    }
-    auto ret = (pair.first == pair.second)
-               ? this->doPrefix(spaceId_, part, pair.first, &iter)
-               : this->doRange(spaceId_, part, pair.first, pair.second, &iter);
+    auto ret = (scanPairs_[part].first == scanPairs_[part].second)
+        ? this->doPrefix(spaceId_, part, scanPairs_[part].first, &iter)
+        : this->doRange(spaceId_, part, scanPairs_[part].first, scanPairs_[part].second, &iter);
     if (ret != nebula::kvstore::SUCCEEDED) {
         return ret;
     }

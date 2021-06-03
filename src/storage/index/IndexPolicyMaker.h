@@ -114,6 +114,8 @@ protected:
     std::vector<OperatorItem>                operatorList_;
     // map<field_name, scan_item>
     std::map<std::string, ScanBound>         scanItems_;
+    // map<partId, scanPair>
+    std::map<PartitionID, std::pair<std::string, std::string>> scanPairs_{};
 };
 }  // namespace storage
 }  // namespace nebula

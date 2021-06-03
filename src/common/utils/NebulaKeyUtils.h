@@ -307,8 +307,9 @@ public:
         return "";
     }
 
-    static bool checkAndCastVariant(nebula::cpp2::SupportedType sType,
-                                    VariantType& v) {
+    static folly::Optional<OptVariantType>
+    checkAndCastVariant(nebula::cpp2::SupportedType sType, const VariantType& v) {
+        folly::Optional<OptVariantType> ret;
         nebula::cpp2::SupportedType type = nebula::cpp2::SupportedType::UNKNOWN;
         switch (v.which()) {
             case VAR_INT64: {
@@ -327,35 +328,40 @@ public:
                 type = nebula::cpp2::SupportedType::STRING;
                 break;
             }
-            default:
-                return false;
-        }
-        if (sType != type) {
-            switch (sType) {
-                case nebula::cpp2::SupportedType::INT:
-                case nebula::cpp2::SupportedType::TIMESTAMP: {
-                    v = Expression::toInt(v);
-                    break;
-                }
-                case nebula::cpp2::SupportedType::BOOL: {
-                    v = Expression::toBool(v);
-                    break;
-                }
-                case nebula::cpp2::SupportedType::FLOAT:
-                case nebula::cpp2::SupportedType::DOUBLE: {
-                    v = Expression::toDouble(v);
-                    break;
-                }
-                case nebula::cpp2::SupportedType::STRING: {
-                    v = Expression::toString(v);
-                    break;
-                }
-                default: {
-                    return false;
-                }
+            default: {
+                VLOG(1) << "Unknown VariantType";
+                ret.emplace(Status::NotSupported());
+                return ret;
             }
         }
-        return true;
+        if (sType == type) {
+            return ret;
+        }
+        switch (sType) {
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP: {
+                ret.emplace(Expression::toInt(v));
+                break;
+            }
+            case nebula::cpp2::SupportedType::BOOL: {
+                ret.emplace(Expression::toBool(v));
+                break;
+            }
+            case nebula::cpp2::SupportedType::FLOAT:
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                ret.emplace(Expression::toDouble(v));
+                break;
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                ret.emplace(Expression::toString(v));
+                break;
+            }
+            default: {
+                VLOG(1) << "Unknown VariantType";
+                ret.emplace(Status::NotSupported());
+            }
+        }
+        return ret;
     }
 
     static std::string encodeVariant(const VariantType& v)  {

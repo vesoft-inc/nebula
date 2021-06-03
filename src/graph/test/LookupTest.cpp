@@ -7,6 +7,8 @@
 #include "graph/test/LookupTestBase.h"
 #include "graph/LookupExecutor.h"
 
+DECLARE_bool(lookup_concurrently);
+
 namespace nebula {
 namespace graph {
 
@@ -1371,6 +1373,51 @@ TEST_F(LookupTest, VertexDistinctTest) {
             {"lookup_tag_1.col3"}
         };
         ASSERT_EQ(cols, *resp.get_column_names());
+    }
+}
+
+TEST_F(LookupTest, ConcurrentlyTest) {
+    FLAGS_lookup_concurrently = true;
+    {
+        cpp2::ExecutionResponse resp;
+        auto stmt = "CREATE SPACE test_space_200_part (partition_num=200, replica_factor=1)";
+        auto code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        stmt = "USE test_space_200_part";
+        code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        stmt = "CREATE TAG player(c_int INT, c_string STRING)";
+        code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        stmt = "CREATE TAG INDEX i1 ON player(c_int, c_string)";
+        code = client_->execute(stmt, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        sleep(FLAGS_heartbeat_interval_secs + 1);
+
+        std::vector<std::string> rows;
+        for (auto i = 1; i <= 200000; i++) {
+            rows.emplace_back(folly::stringPrintf("%d:(1, \"row\")", i));
+        }
+        {
+            std::string bulk = "INSERT VERTEX player(c_int, c_string) VALUES "
+                             + folly::join(",", rows);
+            code = client_->execute(bulk, resp);
+            ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "LOOKUP ON player WHERE player.c_int == \"1\" "
+                     "AND player.c_string == \"row\" | YIELD COUNT(*)";
+        auto ret = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, ret);
+        ASSERT_EQ(1, resp.get_rows()->size());
+        std::vector<std::tuple<int64_t>> expected = {{200000}};
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }   // namespace graph
