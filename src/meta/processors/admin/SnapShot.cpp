@@ -14,11 +14,7 @@
 
 namespace nebula {
 namespace meta {
-
-ErrorOr<nebula::cpp2::ErrorCode,
-        std::unordered_map<
-            GraphSpaceID,
-            std::pair<nebula::cpp2::PartitionBackupInfo, std::vector<cpp2::CheckpointInfo>>>>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>>>
 Snapshot::createSnapshot(const std::string& name) {
     auto retSpacesHostsRet = getSpacesHosts();
     if (!nebula::ok(retSpacesHostsRet)) {
@@ -29,10 +25,7 @@ Snapshot::createSnapshot(const std::string& name) {
         return retcode;
     }
     // This structure is used for the subsequent construction of the common.PartitionBackupInfo
-    std::unordered_map<
-        GraphSpaceID,
-        std::pair<nebula::cpp2::PartitionBackupInfo, std::vector<cpp2::CheckpointInfo>>>
-        info;
+    std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>> info;
 
     auto spacesHosts = nebula::value(retSpacesHostsRet);
     for (const auto& spaceHosts : spacesHosts) {
@@ -41,16 +34,12 @@ Snapshot::createSnapshot(const std::string& name) {
             if (!status.ok()) {
                 return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
             }
-            auto infoPair = status.value();
+            auto backupInfo = status.value();
             auto it = info.find(spaceHosts.first);
-            cpp2::CheckpointInfo cpInfo;
-            cpInfo.set_host(host);
-            cpInfo.set_checkpoint_dir(std::move(infoPair.first));
             if (it != info.cend()) {
-                it->second.second.emplace_back(std::move(cpInfo));
+                it->second.emplace_back(backupInfo);
             } else {
-                std::vector<cpp2::CheckpointInfo> cpV = {std::move(cpInfo)};
-                info[spaceHosts.first] = std::make_pair(std::move(infoPair.second), std::move(cpV));
+                info[spaceHosts.first] = {std::move(backupInfo)};
             }
         }
     }

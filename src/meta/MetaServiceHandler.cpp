@@ -68,6 +68,8 @@
 #include "meta/processors/zoneMan/UpdateGroupProcessor.h"
 #include "meta/processors/listenerMan/ListenerProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
+#include "meta/processors/admin/ListClusterInfoProcessor.h"
+#include "meta/processors/admin/GetMetaDirInfoProcessor.h"
 #include "meta/processors/sessionMan/SessionManagerProcessor.h"
 
 #define RETURN_FUTURE(processor) \
@@ -543,6 +545,19 @@ MetaServiceHandler::future_restoreMeta(const cpp2::RestoreMetaReq& req) {
 folly::Future<cpp2::GetStatisResp>
 MetaServiceHandler::future_getStatis(const cpp2::GetStatisReq &req) {
     auto* processor = GetStatisProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListClusterInfoResp> MetaServiceHandler::future_listCluster(
+    const cpp2::ListClusterInfoReq& req) {
+    auto* processor = ListClusterInfoProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetMetaDirInfoResp> MetaServiceHandler::future_getMetaDirInfo(
+    const cpp2::GetMetaDirInfoReq& req) {
+    auto* processor = GetMetaDirInfoProcessor::instance(kvstore_);
+
     RETURN_FUTURE(processor);
 }
 

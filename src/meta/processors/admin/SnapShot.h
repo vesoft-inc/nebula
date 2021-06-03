@@ -31,9 +31,7 @@ public:
     }
 
     ErrorOr<nebula::cpp2::ErrorCode,
-            std::unordered_map<
-                GraphSpaceID,
-                std::pair<nebula::cpp2::PartitionBackupInfo, std::vector<cpp2::CheckpointInfo>>>>
+            std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>>>
     createSnapshot(const std::string& name);
 
     nebula::cpp2::ErrorCode

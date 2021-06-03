@@ -7,36 +7,15 @@
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/SnapShot.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/jobMan/JobManager.h"
 
 namespace nebula {
 namespace meta {
 
-ErrorOr<nebula::cpp2::ErrorCode, bool> CreateSnapshotProcessor::isIndexRebuilding() {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    const auto& prefix = MetaServiceUtils::rebuildIndexStatusPrefix();
-    auto ret = doPrefix(prefix);
-    if (!nebula::ok(ret)) {
-        auto retCode = nebula::error(ret);
-        LOG(ERROR) << "Prefix index rebuilding state failed, result code: "
-                   << static_cast<int32_t>(retCode);;
-        return retCode;
-    }
-
-    auto iter = nebula::value(ret).get();
-    while (iter->valid()) {
-        if (iter->val() == "RUNNING") {
-            return true;
-        }
-        iter->next();
-    }
-
-    return false;
-}
-
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     // check the index rebuild. not allowed to create snapshot when index rebuilding.
-
-    auto result = isIndexRebuilding();
+    JobManager* jobMgr = JobManager::getInstance();
+    auto result = jobMgr->checkIndexJobRuning();
     if (!nebula::ok(result)) {
         handleErrorCode(nebula::error(result));
         onFinished();

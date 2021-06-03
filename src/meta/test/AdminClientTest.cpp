@@ -94,7 +94,9 @@ public:
         std::vector<storage::cpp2::PartitionResult> partRetCode;
         result.set_failed_parts(partRetCode);
         resp.set_result(result);
-        resp.set_path("snapshot_path");
+        nebula::cpp2::CheckpointInfo cpInfo;
+        cpInfo.set_path("snapshot_path");
+        resp.set_info({cpInfo});
         pro.setValue(std::move(resp));
         return f;
     }

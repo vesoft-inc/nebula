@@ -115,6 +115,10 @@ public:
         return !options_.listenerPath_.empty();
     }
 
+    std::vector<std::string> getDataRoot() const override {
+        return options_.dataPaths_;
+    }
+
     nebula::cpp2::ErrorCode
     get(GraphSpaceID spaceId,
         PartitionID partId,
@@ -234,8 +238,9 @@ public:
 
     nebula::cpp2::ErrorCode flush(GraphSpaceID spaceId) override;
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::pair<std::string, nebula::cpp2::PartitionBackupInfo>>
-    createCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+    ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> createCheckpoint(
+        GraphSpaceID spaceId,
+        const std::string& name) override;
 
     nebula::cpp2::ErrorCode
     dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;

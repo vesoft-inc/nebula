@@ -280,6 +280,11 @@ public:
     folly::Future<cpp2::ExecResp>
     future_reportTaskFinish(const cpp2::ReportTaskReq& req) override;
 
+    folly::Future<cpp2::ListClusterInfoResp>
+    future_listCluster(const cpp2::ListClusterInfoReq &req) override;
+
+    folly::Future<cpp2::GetMetaDirInfoResp>
+    future_getMetaDirInfo(const cpp2::GetMetaDirInfoReq &req) override;
     folly::Future<cpp2::CreateSessionResp>
     future_createSession(const cpp2::CreateSessionReq& req) override;
 

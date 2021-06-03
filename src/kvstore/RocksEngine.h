@@ -161,7 +161,8 @@ public:
 
     int32_t totalPartsNum() override;
 
-    nebula::cpp2::ErrorCode ingest(const std::vector<std::string>& files) override;
+    nebula::cpp2::ErrorCode ingest(const std::vector<std::string>& files,
+                                   bool verifyFileChecksum = false) override;
 
     nebula::cpp2::ErrorCode
     setOption(const std::string& configKey, const std::string& configValue) override;

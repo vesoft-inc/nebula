@@ -105,7 +105,8 @@ public:
     virtual int32_t totalPartsNum() = 0;
 
     // Ingest sst files
-    virtual nebula::cpp2::ErrorCode ingest(const std::vector<std::string>& files) = 0;
+    virtual nebula::cpp2::ErrorCode ingest(const std::vector<std::string>& files,
+                                           bool verifyFileChecksum = false) = 0;
 
     // Set Config Option
     virtual nebula::cpp2::ErrorCode

@@ -99,6 +99,8 @@ public:
     // Enter different priority queues according to the command type
     void enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd);
 
+    ErrorOr<nebula::cpp2::ErrorCode, bool> checkIndexJobRuning();
+
 private:
     JobManager() = default;
 
@@ -113,6 +115,8 @@ private:
     nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
     static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
+
+    static bool isRunningJob(const JobDescription& jobDesc);
 
     nebula::cpp2::ErrorCode removeExpiredJobs(std::vector<std::string>&& jobKeys);
 

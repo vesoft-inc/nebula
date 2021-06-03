@@ -11,6 +11,7 @@
 #include "storage/admin/SendBlockSignProcessor.h"
 #include "storage/admin/AdminTaskProcessor.h"
 #include "storage/admin/StopAdminTaskProcessor.h"
+#include "storage/admin/ListClusterInfoProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -95,6 +96,12 @@ StorageAdminServiceHandler::future_addAdminTask(const cpp2::AddAdminTaskRequest&
 folly::Future<cpp2::AdminExecResp>
 StorageAdminServiceHandler::future_stopAdminTask(const cpp2::StopAdminTaskRequest& req) {
     auto* processor = StopAdminTaskProcessor::instance(env_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListClusterInfoResp>
+StorageAdminServiceHandler::future_listClusterInfo(const cpp2::ListClusterInfoReq& req) {
+    auto* processor = ListClusterInfoProcessor::instance(env_);
     RETURN_FUTURE(processor);
 }
 

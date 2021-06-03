@@ -5,9 +5,10 @@
  */
 
 #include "meta/MetaServiceUtils.h"
-#include <boost/stacktrace.hpp>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <boost/stacktrace.hpp>
 #include "common/network/NetworkUtils.h"
 #include "processors/Common.h"
 
@@ -81,25 +82,27 @@ const std::string kSessionsTable = systemTableMaps.at("sessions").first;        
 
 const int kMaxIpAddrLen = 15;   // '255.255.255.255'
 
-bool backupTable(kvstore::KVStore* kvstore,
-                 const std::string& backupName,
-                 const std::string& tableName,
-                 std::vector<std::string>& files,
-                 std::function<bool(const folly::StringPiece& key)> filter) {
+namespace {
+nebula::cpp2::ErrorCode backupTable(kvstore::KVStore* kvstore,
+                                const std::string& backupName,
+                                const std::string& tableName,
+                                std::vector<std::string>& files,
+                                std::function<bool(const folly::StringPiece& key)> filter) {
     auto backupFilePath = kvstore->backupTable(kDefaultSpaceId, backupName, tableName, filter);
     if (!ok(backupFilePath)) {
         auto result = error(backupFilePath);
         if (result == nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE) {
-            return true;
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
-        return false;
+        return result;
     }
 
     files.insert(files.end(),
                  std::make_move_iterator(value(backupFilePath).begin()),
                  std::make_move_iterator(value(backupFilePath).end()));
-    return true;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+}   // namespace
 
 std::string MetaServiceUtils::lastUpdateTimeKey() {
     std::string key;
@@ -794,6 +797,10 @@ MetaServiceUtils::alterSchemaProp(std::vector<cpp2::ColumnDef>& cols,
     return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+std::string MetaServiceUtils::userPrefix() {
+    return kUsersTable;
+}
+
 std::string MetaServiceUtils::userKey(const std::string& account) {
     std::string key;
     key.reserve(kUsersTable.size() + account.size());
@@ -1020,8 +1027,7 @@ MetaServiceUtils::spaceFilter(const std::unordered_set<GraphSpaceID>& spaces,
     return sf;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
-MetaServiceUtils::backupIndexTable(
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::backupIndex(
     kvstore::KVStore* kvstore,
     const std::unordered_set<GraphSpaceID>& spaces,
     const std::string& backupName,
@@ -1031,12 +1037,15 @@ MetaServiceUtils::backupIndexTable(
         backupName,
         kIndexTable,
         [spaces, spaceName](const folly::StringPiece& key) -> bool {
-            if (spaces.empty() || spaceName == nullptr || spaceName->empty()) {
+            if (spaces.empty()) {
                 return false;
             }
 
             auto type = *reinterpret_cast<const EntryType*>(key.data() + kIndexTable.size());
             if (type == EntryType::SPACE) {
+                if (spaceName == nullptr) {
+                    return false;
+                }
                 auto sn = key.subpiece(kIndexTable.size() + sizeof(EntryType),
                                        key.size() - kIndexTable.size() - sizeof(EntryType))
                               .str();
@@ -1061,48 +1070,52 @@ MetaServiceUtils::backupIndexTable(
         });
 }
 
-folly::Optional<std::vector<std::string>> MetaServiceUtils::backup(
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::backupSpaces(
     kvstore::KVStore* kvstore,
     const std::unordered_set<GraphSpaceID>& spaces,
     const std::string& backupName,
     const std::vector<std::string>* spaceNames) {
     std::vector<std::string> files;
-    files.reserve(tableMaps.size() + systemTableMaps.size());
+    files.reserve(tableMaps.size());
 
     for (const auto& table : tableMaps) {
         if (table.second.second == nullptr) {
             LOG(INFO) << table.first << " table skipped";
             continue;
         }
-        if (!backupTable(kvstore,
-                         backupName,
-                         table.second.first,
-                         files,
-                         spaceFilter(spaces, table.second.second))) {
-            return folly::none;
+        auto result = backupTable(kvstore,
+                                  backupName,
+                                  table.second.first,
+                                  files,
+                                  spaceFilter(spaces, table.second.second));
+        if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            return result;
         }
         LOG(INFO) << table.first << " table backup successed";
     }
 
-    for (const auto& table : systemTableMaps) {
-        if (!table.second.second) {
-            LOG(INFO) << table.first << " table skipped";
-            continue;
+    if (spaceNames == nullptr) {
+        for (const auto& table : systemTableMaps) {
+            if (!table.second.second) {
+                LOG(INFO) << table.first << " table skipped";
+                continue;
+            }
+            auto result = backupTable(kvstore, backupName, table.second.first, files, nullptr);
+            if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                return result;
+            }
+            LOG(INFO) << table.first << " table backup successed";
         }
-        if (!backupTable(kvstore, backupName, table.second.first, files, nullptr)) {
-            return folly::none;
-        }
-        LOG(INFO) << table.first << " table backup successed";
     }
 
     // The mapping of space name and space id needs to be handled separately.
-    auto ret = backupIndexTable(kvstore, spaces, backupName, spaceNames);
+    auto ret = backupIndex(kvstore, spaces, backupName, spaceNames);
     if (!ok(ret)) {
         auto result = error(ret);
         if (result == nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE) {
             return files;
         }
-        return folly::none;
+        return result;
     }
 
     files.insert(files.end(),

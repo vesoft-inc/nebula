@@ -443,6 +443,14 @@ bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
     return duration > FLAGS_job_expired_secs;
 }
 
+bool JobManager::isRunningJob(const JobDescription& jobDesc) {
+    auto status = jobDesc.getStatus();
+    if (status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING) {
+        return true;
+    }
+    return false;
+}
+
 nebula::cpp2::ErrorCode
 JobManager::removeExpiredJobs(std::vector<std::string>&& expiredJobsAndTasks) {
     nebula::cpp2::ErrorCode ret;
@@ -573,6 +581,36 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobManager::getSpaceId(const std:
         return retCode;
     }
     return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkIndexJobRuning() {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Jobs Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        return retCode;
+    }
+
+    for (; iter->valid(); iter->next()) {
+        auto jobKey = iter->key();
+        if (JobDescription::isJobKey(jobKey)) {
+            auto optJobRet = JobDescription::makeJobDescription(jobKey, iter->val());
+            if (!nebula::ok(optJobRet)) {
+                continue;
+            }
+            auto jobDesc = nebula::value(optJobRet);
+            if (!isRunningJob(jobDesc)) {
+                continue;
+            }
+            auto cmd = jobDesc.getCmd();
+            if (cmd == cpp2::AdminCmd::REBUILD_TAG_INDEX ||
+                cmd == cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 }  // namespace meta

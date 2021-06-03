@@ -28,10 +28,8 @@ private:
 
     nebula::cpp2::ErrorCode cancelWriteBlocking();
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::unordered_set<GraphSpaceID>>
-    spaceNameToId(const std::vector<std::string>* backupSpaces);
-
-    ErrorOr<nebula::cpp2::ErrorCode, bool> isIndexRebuilding();
+    ErrorOr<nebula::cpp2::ErrorCode, std::unordered_set<GraphSpaceID>> spaceNameToId(
+        const std::vector<std::string>* backupSpaces);
 
 private:
     AdminClient* client_;

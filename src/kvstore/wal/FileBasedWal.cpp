@@ -613,19 +613,19 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
         return false;
     }
 
-    auto it = walFiles_.rbegin();
+    for (const auto& f : walFiles_) {
+        // Using the original wal file name.
+        auto targetFile =
+            fs::FileUtils::joinPath(newPath, folly::stringPrintf("%019ld.wal", f.first));
 
-    // Using the original wal file name.
-    auto targetFile = fs::FileUtils::joinPath(newPath,
-                                              folly::stringPrintf("%019ld.wal", it->first));
-
-    if (link(it->second->path(), targetFile.data()) != 0) {
-        LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()
-                  << " on " << newPath << ", error:" << strerror(errno);
-        return false;
+        if (link(f.second->path(), targetFile.data()) != 0) {
+            LOG(INFO) << idStr_ << "Create link failed for " << f.second->path() << " on "
+                      << newPath << ", error:" << strerror(errno);
+            return false;
+        }
+        LOG(INFO) << idStr_ << "Create link success for " << f.second->path() << " on " << newPath;
     }
-    LOG(INFO) << idStr_ << "Create link success for " << it->second->path()
-              << " on " << newPath;
+
     return true;
 }
 

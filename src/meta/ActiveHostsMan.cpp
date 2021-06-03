@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <thrift/lib/cpp/util/EnumUtils.h>
 #include "meta/ActiveHostsMan.h"
 #include <thrift/lib/cpp/util/EnumUtils.h>
 #include "meta/processors/Common.h"

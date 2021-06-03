@@ -352,10 +352,11 @@ int32_t RocksEngine::totalPartsNum() {
     return partsNum_;
 }
 
-nebula::cpp2::ErrorCode
-RocksEngine::ingest(const std::vector<std::string>& files) {
+nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& files,
+                                            bool verifyFileChecksum) {
     rocksdb::IngestExternalFileOptions options;
     options.move_files = FLAGS_move_files;
+    options.verify_file_checksum = verifyFileChecksum;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -487,6 +488,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
     }
 
     rocksdb::Options options;
+    options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
     rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
 
     std::unique_ptr<KVIterator> iter;
@@ -530,7 +532,15 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
         return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
     }
 
-    return backupPath;
+    if (backupPath[0] == '/') {
+        return backupPath;
+    }
+
+    auto result = nebula::fs::FileUtils::realPath(backupPath.c_str());
+    if (!result.ok()) {
+        return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
+    }
+    return result.value();
 }
 
 }   // namespace kvstore

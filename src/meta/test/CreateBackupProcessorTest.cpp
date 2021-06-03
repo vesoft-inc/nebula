@@ -10,6 +10,7 @@
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/test/TestUtils.h"
 #include "utils/Utils.h"
+#include "meta/processors/jobMan/JobManager.h"
 
 namespace nebula {
 namespace meta {
@@ -56,8 +57,10 @@ public:
         partitionInfo.set_info(std::move(info));
         result.set_failed_parts(partRetCode);
         resp.set_result(result);
-        resp.set_path("snapshot_path");
-        resp.set_partition_info(std::move(partitionInfo));
+        nebula::cpp2::CheckpointInfo cpInfo;
+        cpInfo.set_path("snapshot_path");
+        cpInfo.set_partition_info(std::move(partitionInfo));
+        resp.set_info({cpInfo});
         pro.setValue(std::move(resp));
         return f;
     }
@@ -160,6 +163,8 @@ TEST(ProcessorTest, CreateBackupTest) {
         cpp2::CreateBackupReq req;
         std::vector<std::string> spaces = {"test_space"};
         req.set_spaces(std::move(spaces));
+        JobManager* jobMgr = JobManager::getInstance();
+        ASSERT_TRUE(jobMgr->init(kv.get()));
         auto* processor = CreateBackupProcessor::instance(kv.get(), client.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -184,14 +189,27 @@ TEST(ProcessorTest, CreateBackupTest) {
 
         ASSERT_NE(it, metaFiles.cend());
 
+        it = std::find_if(metaFiles.cbegin(), metaFiles.cend(), [](auto const& m) {
+            auto name = m.substr(m.size() - sizeof("__users__.sst") + 1);
+
+            if (name == "__users__.sst") {
+                return true;
+            }
+            return false;
+        });
+        ASSERT_EQ(it, metaFiles.cend());
+
         ASSERT_EQ(1, meta.get_backup_info().size());
         for (auto s : meta.get_backup_info()) {
             ASSERT_EQ(1, s.first);
-            ASSERT_EQ(1, s.second.get_cp_dirs().size());
-            auto checkInfo = s.second.get_cp_dirs()[0];
-            ASSERT_EQ("snapshot_path", checkInfo.get_checkpoint_dir());
+            ASSERT_EQ(1, s.second.get_info().size());
+            ASSERT_EQ(1, s.second.get_info()[0].get_info().size());
 
-            auto partitionInfo = s.second.get_partition_info().get_info();
+            auto checkInfo = s.second.get_info()[0].get_info()[0];
+            ASSERT_EQ("snapshot_path", checkInfo.get_path());
+            ASSERT_TRUE(meta.get_full());
+            ASSERT_FALSE(meta.get_include_system_space());
+            auto partitionInfo = checkInfo.get_partition_info().get_info();
             ASSERT_EQ(partitionInfo.size(), 1);
             for (auto p : partitionInfo) {
                 ASSERT_EQ(p.first, 1);
@@ -200,6 +218,7 @@ TEST(ProcessorTest, CreateBackupTest) {
                 ASSERT_EQ(logInfo.get_term_id(), termId);
             }
         }
+        jobMgr->shutDown();
     }
 }
 }   // namespace meta
