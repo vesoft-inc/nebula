@@ -54,7 +54,9 @@ protected:
      **/
     cpp2::ErrorCode buildExecutionPlan(const std::string& filter);
 
-    std::pair<std::string, std::string> makeScanPair(PartitionID partId, IndexID indexId);
+    folly::Optional<std::pair<std::string, std::string>> makeScanPair();
+
+    bool makeScanPairByParts(const std::vector<PartitionID>& parts);
 
     std::pair<std::string, std::string>
     normalizeScanPair(const nebula::cpp2::ColumnDef& field, const ScanBound& item);
@@ -105,8 +107,7 @@ private:
     /**
     * Details Scan index key
     **/
-    kvstore::ResultCode getIndexKey(PartitionID part,
-                                    std::vector<std::string>& keys);
+    kvstore::ResultCode getIndexKey(PartitionID part, std::vector<std::string>& keys);
 
 protected:
     GraphSpaceID                           spaceId_;
