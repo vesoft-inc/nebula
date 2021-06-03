@@ -9,9 +9,8 @@
 #include <vector>
 
 #include <folly/Benchmark.h>
-#include <folly/Random.h>
-#include <folly/String.h>
 
+#include "common/base/Base.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Value.h"
 

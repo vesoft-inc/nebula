@@ -55,7 +55,14 @@
 #include <folly/String.h>
 #include <folly/Range.h>
 #include <folly/Hash.h>
+
+#if defined(__clang__) && defined(__aarch64__)
+#if FOLLY_HAVE_EXTRANDOM_SFMT19937
+#undef FOLLY_HAVE_EXTRANDOM_SFMT19937
+#endif
+#endif  // __clang__ && __aarch64__
 #include <folly/Random.h>
+
 #include <folly/Conv.h>
 #include <folly/Unicode.h>
 #include <folly/ThreadLocal.h>

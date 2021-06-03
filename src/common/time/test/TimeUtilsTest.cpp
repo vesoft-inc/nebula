@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <folly/Random.h>
 #include <gtest/gtest.h>
 
+#include "common/base/Base.h"
 #include "common/time/TimeUtils.h"
 
 namespace nebula {
