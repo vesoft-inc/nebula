@@ -23,35 +23,12 @@ DECLARE_string(meta_server_addrs);
 namespace nebula {
 namespace graph {
 
-Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
-    auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    if (!addrs.ok()) {
-        return addrs.status();
-    }
-
-    meta::MetaClientOptions options;
-    options.serviceName_ = "graph";
-    options.skipConfig_ = FLAGS_local_config;
-    options.role_ = meta::cpp2::HostRole::GRAPH;
-    auto hostName = FLAGS_local_ip != "" ? FLAGS_local_ip : network::NetworkUtils::getHostname();
-    options.localHost_ = HostAddr{hostName, FLAGS_port};
-    options.gitInfoSHA_ = gitInfoSha();
-    metaClient_ =
-        std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
-    // load data try 3 time
-    bool loadDataOk = metaClient_->waitForMetadReady(3);
-    if (!loadDataOk) {
-        // Resort to retrying in the background
-        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
-    }
-
-    schemaManager_ = meta::ServerBasedSchemaManager::create(metaClient_.get());
-    indexManager_ = meta::ServerBasedIndexManager::create(metaClient_.get());
-
-    // gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
-
-    storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor,
-                                                             metaClient_.get());
+Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
+                         meta::MetaClient* metaClient) {
+    metaClient_ = metaClient;
+    schemaManager_ = meta::ServerBasedSchemaManager::create(metaClient_);
+    indexManager_ = meta::ServerBasedIndexManager::create(metaClient_);
+    storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_);
     charsetInfo_ = CharsetInfo::instance();
 
     PlannersRegister::registPlanners();
@@ -70,7 +47,7 @@ void QueryEngine::execute(RequestContextPtr rctx) {
                                                schemaManager_.get(),
                                                indexManager_.get(),
                                                storage_.get(),
-                                               metaClient_.get(),
+                                               metaClient_,
                                                charsetInfo_);
     auto* instance = new QueryInstance(std::move(ectx), optimizer_.get());
     instance->execute();

@@ -160,6 +160,8 @@ public:
         kSignOutTSService,
         kDownload,
         kIngest,
+        kShowSessions,
+        kUpdateSession,
     };
 
     bool isQueryNode() const {

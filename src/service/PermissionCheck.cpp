@@ -31,9 +31,9 @@ namespace graph {
  */
 
 // static
-Status PermissionCheck::permissionCheck(Session *session,
-                                      Sentence* sentence,
-                                      GraphSpaceID targetSpace) {
+Status PermissionCheck::permissionCheck(ClientSession *session,
+                                        Sentence* sentence,
+                                        GraphSpaceID targetSpace) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -183,7 +183,8 @@ Status PermissionCheck::permissionCheck(Session *session,
         }
         case Sentence::Kind::kShowUsers:
         case Sentence::Kind::kShowSnapshots:
-        case Sentence::Kind::kShowTSClients: {
+        case Sentence::Kind::kShowTSClients:
+        case Sentence::Kind::kShowSessions: {
             /**
              * Only GOD role can be show.
              */

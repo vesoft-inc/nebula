@@ -191,6 +191,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
+%token KW_SESSIONS KW_SESSION
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -503,6 +504,8 @@ unreserved_keyword
     | KW_RESET              { $$ = new std::string("reset"); }
     | KW_PLAN               { $$ = new std::string("plan"); }
     | KW_COMMENT            { $$ = new std::string("comment"); }
+    | KW_SESSION            { $$ = new std::string("session"); }
+    | KW_SESSIONS           { $$ = new std::string("sessions"); }
     ;
 
 expression
@@ -2940,6 +2943,12 @@ show_sentence
     }
     | KW_SHOW KW_FULLTEXT KW_INDEXES {
         $$ = new ShowFTIndexesSentence();
+    }
+    | KW_SHOW KW_SESSIONS {
+        $$ = new ShowSessionsSentence();
+    }
+    | KW_SHOW KW_SESSION legal_integer {
+        $$ = new ShowSessionsSentence($3);
     }
     ;
 

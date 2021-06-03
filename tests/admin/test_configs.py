@@ -66,6 +66,9 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
             ['GRAPH', 'accept_partial_success', 'bool', 'MUTABLE', False],
             ['GRAPH', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.95],
+            ['GRAPH', 'session_idle_timeout_secs', 'int', 'MUTABLE', 0],
+            ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 10],
+            ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807]
         ]
         self.check_out_of_order_result(resp, expected_result)
 

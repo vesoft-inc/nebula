@@ -21,7 +21,7 @@ TEST_F(AdminValidatorTest, SpaceTest) {
     }
     {
         std::vector<PlanNode::Kind> expected = {
-            PK::kSwitchSpace, PK::kCreateSpace, PK::kStart
+            PK::kUpdateSession, PK::kSwitchSpace, PK::kCreateSpace, PK::kStart
         };
         ASSERT_TRUE(checkResult("CREATE SPACE TEST; USE TEST;", expected));
     }
@@ -40,6 +40,36 @@ TEST_F(AdminValidatorTest, ShowHosts) {
             PK::kShowHosts, PK::kDescSpace, PK::kStart
         };
         ASSERT_TRUE(checkResult("DESC SPACE TEST; SHOW HOSTS", expected));
+    }
+}
+
+TEST_F(AdminValidatorTest, TestParts) {
+    {
+        std::vector<PlanNode::Kind> expected = {
+            PK::kShowParts, PK::kStart
+        };
+        ASSERT_TRUE(checkResult("SHOW PARTS;", expected));
+    }
+    {
+        std::vector<PlanNode::Kind> expected = {
+            PK::kShowParts, PK::kShowParts, PK::kStart
+        };
+        ASSERT_TRUE(checkResult("SHOW PARTS; SHOW PART 3;", expected));
+    }
+}
+
+TEST_F(AdminValidatorTest, TestSessions) {
+    {
+        std::vector<PlanNode::Kind> expected = {
+            PK::kShowSessions, PK::kStart
+        };
+        ASSERT_TRUE(checkResult("SHOW SESSIONS;", expected));
+    }
+    {
+        std::vector<PlanNode::Kind> expected = {
+            PK::kShowSessions, PK::kStart
+        };
+        ASSERT_TRUE(checkResult("SHOW SESSION 1;", expected));
     }
 }
 

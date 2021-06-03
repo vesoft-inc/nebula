@@ -31,14 +31,17 @@ protected:
             qctx_->ectx()->setResult("input_gn", builder.finish());
         }
 
-        auto session = Session::create(0);
+        meta::cpp2::Session session;
+        session.set_session_id(0);
+        session.set_user_name("root");
+        auto clientSession = ClientSession::create(std::move(session), nullptr);
         SpaceInfo spaceInfo;
         spaceInfo.name = "test_space";
         spaceInfo.id = 1;
         spaceInfo.spaceDesc.set_space_name("test_space");
-        session->setSpace(std::move(spaceInfo));
+        clientSession->setSpace(std::move(spaceInfo));
         auto rctx = std::make_unique<RequestContext<ExecutionResponse>>();
-        rctx->setSession(std::move(session));
+        rctx->setSession(std::move(clientSession));
         qctx_->setRCtx(std::move(rctx));
     }
 

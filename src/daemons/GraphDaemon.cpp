@@ -89,15 +89,12 @@ int main(int argc, char *argv[]) {
     }
 
     // Get the IPv4 address the server will listen on
-    std::string localIP;
-    {
-        auto result = NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev);
-        if (!result.ok()) {
-            LOG(ERROR) << result.status();
-            return EXIT_FAILURE;
-        }
-        localIP = std::move(result).value();
+    if (FLAGS_local_ip.empty()) {
+        LOG(ERROR) << "local_ip is empty, need to config it through config file";
+        return EXIT_FAILURE;
     }
+    // TODO: Check the ip is valid
+    nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
 
     // Initialize the global timezone, it's only used for datetime type compute
     // won't affect the process timezone.
@@ -139,14 +136,14 @@ int main(int argc, char *argv[]) {
     gServer->setIOThreadPool(ioThreadPool);
 
     auto interface = std::make_shared<GraphService>();
-    status = interface->init(ioThreadPool);
+    status = interface->init(ioThreadPool, localhost);
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
+    gServer->setPort(localhost.port);
     gServer->setInterface(std::move(interface));
-    gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
@@ -160,7 +157,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localhost.host.c_str(), localhost.port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
@@ -168,7 +165,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localhost.host.c_str(), localhost.port);
 
     return EXIT_SUCCESS;
 }

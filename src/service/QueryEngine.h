@@ -33,22 +33,22 @@ public:
     QueryEngine() = default;
     ~QueryEngine() = default;
 
-    Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
+    Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
+                meta::MetaClient* metaClient);
 
     using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
     void execute(RequestContextPtr rctx);
 
     const meta::MetaClient* metaClient() const {
-        return metaClient_.get();
+        return metaClient_;
     }
 
 private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<meta::IndexManager>               indexManager_;
-    // std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::GraphStorageClient>      storage_;
-    std::unique_ptr<meta::MetaClient>                 metaClient_;
     std::unique_ptr<opt::Optimizer>                   optimizer_;
+    meta::MetaClient                                 *metaClient_;
     CharsetInfo*                                      charsetInfo_{nullptr};
 };
 

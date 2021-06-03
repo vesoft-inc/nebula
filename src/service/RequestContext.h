@@ -11,7 +11,7 @@
 #include "common/interface/gen-cpp2/GraphService.h"
 #include "common/cpp/helpers.h"
 #include "common/time/Duration.h"
-#include "service/Session.h"
+#include "session/ClientSession.h"
 
 /**
  * RequestContext holds context infos of a specific request from a client.
@@ -52,7 +52,7 @@ public:
         return promise_.getFuture();
     }
 
-    void setSession(std::shared_ptr<Session> session) {
+    void setSession(std::shared_ptr<ClientSession> session) {
         session_ = std::move(session);
         if (session_ != nullptr) {
             // keep the session active
@@ -60,7 +60,7 @@ public:
         }
     }
 
-    Session* session() const {
+    ClientSession* session() const {
         return session_.get();
     }
 
@@ -85,7 +85,7 @@ private:
     std::string                                 query_;
     Response                                    resp_;
     folly::Promise<Response>                    promise_;
-    std::shared_ptr<Session>                    session_;
+    std::shared_ptr<ClientSession>              session_;
     folly::Executor                            *runner_{nullptr};
 };
 

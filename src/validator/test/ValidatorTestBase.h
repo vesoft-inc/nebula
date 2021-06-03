@@ -30,7 +30,10 @@ namespace graph {
 class ValidatorTestBase : public ::testing::Test {
 protected:
     void SetUp() override {
-        session_ = Session::create(0);
+        meta::cpp2::Session session;
+        session.set_session_id(0);
+        session.set_user_name("root");
+        session_ = ClientSession::create(std::move(session), nullptr);
         SpaceInfo spaceInfo;
         spaceInfo.name = "test_space";
         spaceInfo.id = 1;
@@ -119,7 +122,7 @@ protected:
     static void bfsTraverse(const PlanNode* root, std::vector<PlanNode::Kind>& result);
 
 protected:
-    std::shared_ptr<Session>              session_;
+    std::shared_ptr<ClientSession>        session_;
     std::unique_ptr<MockSchemaManager>    schemaMng_;
     std::unique_ptr<MockIndexManager>     indexMng_{nullptr};
     std::unique_ptr<Sentence>             sentences_;

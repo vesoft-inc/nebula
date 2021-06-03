@@ -8,6 +8,7 @@
 #include "parser/TraverseSentences.h"
 #include "planner/plan/Logic.h"
 #include "planner/plan/Query.h"
+#include "planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
@@ -40,9 +41,13 @@ Status UseValidator::validateImpl() {
 }
 
 Status UseValidator::toPlan() {
-    auto reg = SwitchSpace::make(qctx_, nullptr, *spaceName_);
-    root_ = reg;
-    tail_ = root_;
+    // The input will be set by father validator later.
+    auto switchSpace = SwitchSpace::make(qctx_, nullptr, *spaceName_);
+    qctx_->rctx()->session()->updateSpaceName(*spaceName_);
+    auto session = qctx_->rctx()->session()->getSession();
+    auto update = UpdateSession::make(qctx_, switchSpace, std::move(session));
+    root_ = update;
+    tail_ = switchSpace;
     return Status::OK();
 }
 }  // namespace graph

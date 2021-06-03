@@ -47,6 +47,10 @@ DEFINE_string(auth_type, "password", "User login authentication type,"
 DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path");
 DEFINE_uint32(max_allowed_statements, 512, "Max allowed sequential statements");
 
+DEFINE_int64(max_allowed_connections,
+             std::numeric_limits<int64_t>::max(),
+             "Max connections of the whole cluster");
+
 DEFINE_bool(enable_optimizer, false, "Whether to enable optimizer");
 
 DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");

@@ -1317,6 +1317,56 @@ private:
     SignOutTSService(QueryContext* qctx, PlanNode* input)
         : SingleDependencyNode(qctx, Kind::kSignOutTSService, input) {}
 };
+
+class ShowSessions final : public SingleInputNode {
+public:
+    static ShowSessions* make(QueryContext* qctx,
+                              PlanNode* input,
+                              bool isSetSessionID,
+                              SessionID sessionId) {
+        return qctx->objPool()->add(new ShowSessions(qctx, input, isSetSessionID, sessionId));
+    }
+
+    bool isSetSessionID() const {
+        return isSetSessionID_;
+    }
+
+    SessionID getSessionId() const {
+        return sessionId_;
+    }
+
+private:
+    explicit ShowSessions(QueryContext* qctx,
+                          PlanNode* input,
+                          bool isSetSessionID,
+                          SessionID sessionId)
+        : SingleInputNode(qctx, Kind::kShowSessions, input) {
+            isSetSessionID_ = isSetSessionID;
+            sessionId_ = sessionId;
+        }
+
+private:
+    bool isSetSessionID_{false};
+    SessionID sessionId_{-1};
+};
+
+class UpdateSession final : public SingleInputNode {
+public:
+    static UpdateSession* make(QueryContext* qctx, PlanNode* input, meta::cpp2::Session session) {
+        return qctx->objPool()->add(new UpdateSession(qctx, input, std::move(session)));
+    }
+
+    const meta::cpp2::Session& getSession() const {
+        return session_;
+    }
+
+private:
+    explicit UpdateSession(QueryContext* qctx, PlanNode* input, meta::cpp2::Session session)
+        : SingleInputNode(qctx, Kind::kUpdateSession, input), session_(std::move(session)) {}
+
+private:
+    meta::cpp2::Session session_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_PLAN_ADMIN_H_

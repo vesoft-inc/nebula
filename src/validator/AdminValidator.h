@@ -313,6 +313,39 @@ private:
 
     Status toPlan() override;
 };
+
+class ShowSessionsValidator final : public Validator {
+public:
+    ShowSessionsValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
+
+private:
+    Status validateImpl() override {
+        return Status::OK();
+    }
+
+    Status toPlan() override;
+};
+
+class GetSessionValidator final : public Validator {
+public:
+    GetSessionValidator(Sentence* sentence, QueryContext* context)
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
+
+private:
+    Status validateImpl() override {
+        return Status::OK();
+    }
+
+    Status toPlan() override;
+
+private:
+    SessionID       sessionId_{0};
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // VALIDATOR_ADMINVALIDATOR_H_

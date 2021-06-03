@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 // static
-Status PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
+Status PermissionManager::canReadSpace(ClientSession *session, GraphSpaceID spaceId) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -36,7 +36,7 @@ Status PermissionManager::canReadSpace(Session *session, GraphSpaceID spaceId) {
 }
 
 // static
-Status PermissionManager::canReadSchemaOrData(Session *session) {
+Status PermissionManager::canReadSchemaOrData(ClientSession *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -65,7 +65,7 @@ Status PermissionManager::canReadSchemaOrData(Session *session) {
 }
 
 // static
-Status PermissionManager::canWriteSpace(Session *session) {
+Status PermissionManager::canWriteSpace(ClientSession *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -76,7 +76,7 @@ Status PermissionManager::canWriteSpace(Session *session) {
 }
 
 // static
-Status PermissionManager::canWriteSchema(Session *session) {
+Status PermissionManager::canWriteSchema(ClientSession *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -106,7 +106,7 @@ Status PermissionManager::canWriteSchema(Session *session) {
 }
 
 // static
-Status PermissionManager::canWriteUser(Session *session) {
+Status PermissionManager::canWriteUser(ClientSession *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -121,10 +121,10 @@ Status PermissionManager::canWriteUser(Session *session) {
     }
 }
 
-Status PermissionManager::canWriteRole(Session *session,
-                                     meta::cpp2::RoleType targetRole,
-                                     GraphSpaceID spaceId,
-                                     const std::string& targetUser) {
+Status PermissionManager::canWriteRole(ClientSession *session,
+                                       meta::cpp2::RoleType targetRole,
+                                       GraphSpaceID spaceId,
+                                       const std::string& targetUser) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }
@@ -167,7 +167,7 @@ Status PermissionManager::canWriteRole(Session *session,
 }
 
 // static
-Status PermissionManager::canWriteData(Session *session) {
+Status PermissionManager::canWriteData(ClientSession *session) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
     }

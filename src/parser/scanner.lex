@@ -42,6 +42,8 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
+
+
 %%
 
  /* Reserved keyword */
@@ -244,6 +246,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "RESET"                     { return TokenType::KW_RESET; }
 "PLAN"                      { return TokenType::KW_PLAN; }
 "COMMENT"                   { return TokenType::KW_COMMENT; }
+"SESSIONS"                  { return TokenType::KW_SESSIONS; }
+"SESSION"                   { return TokenType::KW_SESSION; }
+
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 

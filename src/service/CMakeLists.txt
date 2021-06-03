@@ -20,12 +20,6 @@ nebula_add_library(
 )
 
 nebula_add_library(
-    session_obj OBJECT
-    SessionManager.cpp
-    Session.cpp
-)
-
-nebula_add_library(
     graph_auth_obj OBJECT
     PermissionManager.cpp
     PermissionCheck.cpp
@@ -33,4 +27,3 @@ nebula_add_library(
     CloudAuthenticator.cpp
 )
 
-nebula_add_subdirectory(test)

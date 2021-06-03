@@ -687,6 +687,33 @@ public:
 
     std::string toString() const override;
 };
+
+class ShowSessionsSentence final : public Sentence {
+public:
+    ShowSessionsSentence() {
+        kind_ = Kind::kShowSessions;
+    }
+
+    explicit ShowSessionsSentence(SessionID sessionId) {
+        kind_ = Kind::kShowSessions;
+        sessionId_ = sessionId;
+        setSeesionId_ = true;
+    }
+
+    bool isSetSessionID() const {
+        return setSeesionId_;
+    }
+
+    SessionID getSessionID() const {
+        return sessionId_;
+    }
+
+    std::string toString() const override;
+
+private:
+    SessionID   sessionId_{0};
+    bool        setSeesionId_{false};
+};
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

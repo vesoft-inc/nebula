@@ -150,15 +150,22 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self, debug_log=True):
+    def start(self, debug_log=True, multi_graphd=False):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
         all_ports = [metad_ports[0]]
         command = ''
-        graph_port = 0
+        graph_ports = []
         server_ports = []
-        for server_name in ['metad', 'storaged', 'graphd']:
+        servers = []
+        if multi_graphd:
+            servers = ['metad', 'storaged', 'graphd', 'graphd1']
+            os.mkdir(self.work_dir + '/logs1')
+            os.mkdir(self.work_dir + '/pids1')
+        else:
+            servers = ['metad', 'storaged', 'graphd']
+        for server_name in servers:
             ports = []
             if server_name != 'metad':
                 while True:
@@ -170,17 +177,23 @@ class NebulaService(object):
             else:
                 ports = metad_ports
             server_ports.append(ports[0])
-            command = self._format_nebula_command(server_name,
+            new_name = server_name
+            if server_name == 'graphd1':
+                new_name = 'graphd'
+            command = self._format_nebula_command(new_name,
                                                   metad_ports[0],
                                                   ports,
                                                   debug_log)
+            if server_name == 'graphd1':
+                command += ' --log_dir=logs1'
+                command += ' --pid_file=pids1/nebula-graphd.pid'
             print("exec: " + command)
             p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
             p.wait()
             if p.returncode != 0:
                 print("error: " + bytes.decode(p.communicate()[0]))
-            else:
-                graph_port = ports[0]
+            elif server_name.find('graphd') != -1:
+                graph_ports.append(ports[0])
 
         # wait nebula start
         start_time = time.time()
@@ -192,7 +205,7 @@ class NebulaService(object):
 
         self._collect_pids()
 
-        return graph_port
+        return graph_ports[0]
 
     def _collect_pids(self):
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):

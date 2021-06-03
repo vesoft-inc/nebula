@@ -11,7 +11,7 @@
 #include "common/interface/gen-cpp2/GraphService.h"
 #include "service/Authenticator.h"
 #include "service/QueryEngine.h"
-#include "service/SessionManager.h"
+#include "session/SessionManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -25,7 +25,8 @@ public:
     GraphService() = default;
     ~GraphService() = default;
 
-    Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
+    Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
+                                const HostAddr &hostAddr);
 
     folly::Future<AuthResponse> future_authenticate(
         const std::string& username,
@@ -39,12 +40,12 @@ public:
     const char* getErrorStr(ErrorCode result);
 
 private:
-    void onHandle(RequestContext<AuthResponse>& ctx, ErrorCode code);
-
     bool auth(const std::string& username, const std::string& password);
 
     std::unique_ptr<SessionManager>             sessionManager_;
     std::unique_ptr<QueryEngine>                queryEngine_;
+    std::unique_ptr<meta::MetaClient>           metaClient_;
+    HostAddr                                    myAddr_;
 };
 
 }   // namespace graph

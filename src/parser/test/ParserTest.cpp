@@ -2766,6 +2766,20 @@ TEST(Parser, FullTextServiceTest) {
         auto result = parse(query);
         ASSERT_FALSE(result.ok());
     }
+    {
+        GQLParser parser;
+        std::string query = "SHOW SESSIONS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "SHOW SESSIONS");
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW SESSION 123";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "SHOW SESSION 123");
+    }
 }
 
 TEST(Parser, JobTest) {

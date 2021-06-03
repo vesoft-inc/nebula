@@ -361,4 +361,12 @@ std::string SignInTextServiceSentence::toString() const {
 std::string SignOutTextServiceSentence::toString() const {
     return "SIGN OUT TEXT SERVICE";
 }
+
+std::string ShowSessionsSentence::toString() const {
+    if (isSetSessionID()) {
+        return folly::stringPrintf("SHOW SESSION %ld", sessionId_);
+    }
+    return "SHOW SESSIONS";
+}
+
 }   // namespace nebula

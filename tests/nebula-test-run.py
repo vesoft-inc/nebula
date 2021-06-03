@@ -40,12 +40,16 @@ def init_parser():
                           dest='cmd',
                           default='',
                           help='start or stop command')
+    opt_parser.add_option('--multi_graphd',
+                          dest='multi_graphd',
+                          default='',
+                          help='Support multi graphds')
     return opt_parser
 
 
 def start_nebula(nb, configs):
     nb.install()
-    port = nb.start()
+    port = nb.start(multi_graphd=configs.multi_graphd)
 
     # Load csv data
     pool = get_conn_pool("localhost", port)

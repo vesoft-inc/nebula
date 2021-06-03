@@ -41,4 +41,8 @@ DECLARE_double(system_memory_high_watermark_ratio);
 // optimizer
 DECLARE_bool(enable_optimizer);
 
+DECLARE_int64(max_allowed_connections);
+
+DECLARE_string(local_ip);
+
 #endif   // GRAPH_GRAPHFLAGS_H_

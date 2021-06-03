@@ -11,7 +11,6 @@
 #include "common/clients/storage/StorageClientBase.h"
 #include "context/QueryContext.h"
 #include "executor/Executor.h"
-#include "service/Session.h"
 
 namespace nebula {
 

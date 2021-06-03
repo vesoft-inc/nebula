@@ -18,7 +18,7 @@ class PermissionCheck final {
 public:
     PermissionCheck() = delete;
 
-    static Status permissionCheck(Session *session,
+    static Status permissionCheck(ClientSession *session,
                                   Sentence* sentence,
                                   GraphSpaceID targetSpace = -1);
 };

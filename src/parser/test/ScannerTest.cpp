@@ -491,6 +491,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("end", TokenType::KW_END),
         CHECK_SEMANTIC_TYPE("REDUCE", TokenType::KW_REDUCE),
         CHECK_SEMANTIC_TYPE("reduce", TokenType::KW_REDUCE),
+        CHECK_SEMANTIC_TYPE("SESSIONS", TokenType::KW_SESSIONS),
+        CHECK_SEMANTIC_TYPE("Sessions", TokenType::KW_SESSIONS),
+        CHECK_SEMANTIC_TYPE("sessions", TokenType::KW_SESSIONS),
+        CHECK_SEMANTIC_TYPE("SESSION", TokenType::KW_SESSION),
+        CHECK_SEMANTIC_TYPE("Session", TokenType::KW_SESSION),
+        CHECK_SEMANTIC_TYPE("session", TokenType::KW_SESSION),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

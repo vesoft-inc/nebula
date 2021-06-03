@@ -52,6 +52,7 @@
 #include "executor/algo/ProduceAllPathsExecutor.h"
 #include "executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "executor/algo/SubgraphExecutor.h"
+#include "executor/admin/SessionExecutor.h"
 #include "executor/logic/LoopExecutor.h"
 #include "executor/logic/PassThroughExecutor.h"
 #include "executor/logic/SelectExecutor.h"
@@ -487,6 +488,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         }
         case PlanNode::Kind::kIngest: {
             return pool->add(new IngestExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kShowSessions:  {
+            return pool->add(new ShowSessionsExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kUpdateSession:  {
+            return pool->add(new UpdateSessionExecutor(node, qctx));
         }
         case PlanNode::Kind::kUnknown: {
             LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
