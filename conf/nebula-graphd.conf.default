@@ -9,6 +9,8 @@
 --default_charset=utf8
 # The defaule collate when a space is created
 --default_collate=utf8_bin
+# Whether to use the configuration obtained from the configuration file
+--local_config=true
 
 ########## logging ##########
 # The directory to host logging files

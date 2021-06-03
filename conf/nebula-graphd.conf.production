@@ -7,6 +7,8 @@
 --enable_optimizer=true
 # Heartbeat interval of communication between meta client and graphd service
 --heartbeat_interval_secs=10
+# Whether to use the configuration obtained from the configuration file
+--local_config=true
 
 ########## logging ##########
 # The directory to host logging files
