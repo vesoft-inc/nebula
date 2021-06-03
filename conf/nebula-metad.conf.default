@@ -36,6 +36,8 @@
 --ws_http_port=19559
 # HTTP2 service port
 --ws_h2_port=19560
+# Port to listen on Storage with HTTP protocol, it corresponds to ws_http_port in storage's configuration file
+--ws_storage_http_port=19779
 
 ########## storage ##########
 # Root data path, here should be only single path for metad

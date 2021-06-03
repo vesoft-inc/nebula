@@ -3,6 +3,8 @@
 --daemonize=true
 # The file to host the process id
 --pid_file=pids/nebula-storaged.pid
+# Whether to use the configuration obtained from the configuration file
+--local_config=true
 
 ########## logging ##########
 # The directory to host logging files
