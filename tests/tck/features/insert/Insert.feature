@@ -34,6 +34,44 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX person(name, age) VALUES "Tom":("Tom", 22)
       """
     Then the execution should be successful
+    # insert vretex with default property names
+    When executing query:
+      """
+      INSERT VERTEX person VALUES "Tom":("Tom", 18);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(name, age), interest(name) VALUES "Tom":("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person, interest(name) VALUES "Tom":("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(name, age), interest VALUES "Tom":("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(age), interest(name) VALUES "Tom":(18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person, interest VALUES "Tom":("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON * "Tom"
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vertices_                                                      |
+      | ("Tom":person{name:"Tom", age:18}:interest{name:"basketball"}) |
     # insert vertex wrong type value
     When executing query:
       """

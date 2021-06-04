@@ -31,6 +31,44 @@ Feature: Insert int vid of vertex and edge
 
   Scenario: insert vertex and edge test
     Given wait 3 seconds
+    # insert vretex with default property names
+    When executing query:
+      """
+      INSERT VERTEX person VALUES hash("Tom"):("Tom", 18);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(name, age), interest(name) VALUES hash("Tom"):("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person, interest(name) VALUES hash("Tom"):("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(name, age), interest VALUES hash("Tom"):("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person(age), interest(name) VALUES hash("Tom"):(18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX person, interest VALUES hash("Tom"):("Tom", 18, "basketball");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON * hash("Tom") YIELD person.name, person.age, interest.name
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID | person.name | person.age | interest.name |
+      | "Tom"    | "Tom"       | 18         | "basketball"  |
     # insert vertex wrong type value
     When executing query:
       """

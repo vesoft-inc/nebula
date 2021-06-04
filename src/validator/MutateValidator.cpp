@@ -62,11 +62,12 @@ Status InsertVerticesValidator::check() {
 
         std::vector<std::string> names;
         if (item->isDefaultPropNames()) {
-            propSize_ = schema->getNumFields();
-            for (size_t i = 0; i < propSize_; ++i) {
+            size_t numFields = schema->getNumFields();
+            for (size_t i = 0; i < numFields; ++i) {
                 const char* propName = schema->getFieldName(i);
                 names.emplace_back(propName);
             }
+            propSize_ += numFields;
         } else {
             auto props = item->properties();
             // Check prop name is in schema
