@@ -28,7 +28,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
     // Prepare
     std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
     std::vector<HostAddr> addresses;
-    for (int32_t i = 0; i < 12; i++) {
+    for (int32_t i = 0; i < 13; i++) {
        addresses.emplace_back(std::to_string(i), i);
     }
     TestUtils::registerHB(kv.get(), addresses);
@@ -39,8 +39,8 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(12, (*resp.hosts_ref()).size());
-        for (auto i = 0; i < 12; i++) {
+        ASSERT_EQ(13, (*resp.hosts_ref()).size());
+        for (auto i = 0; i < 13; i++) {
             ASSERT_EQ(std::to_string(i), (*resp.hosts_ref())[i].get_hostAddr().host);
             ASSERT_EQ(i, (*resp.hosts_ref())[i].get_hostAddr().port);
             ASSERT_EQ(cpp2::HostStatus::ONLINE, (*resp.hosts_ref())[i].get_status());
@@ -200,13 +200,25 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
     {
         cpp2::AddHostIntoZoneReq req;
         req.set_zone_name("zone_0");
-        HostAddr node{"3", 3};
+        HostAddr node{"12", 12};
         req.set_node(std::move(node));
         auto* processor = AddHostIntoZoneProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Add host into zone overlap with another zone
+    {
+        cpp2::AddHostIntoZoneReq req;
+        req.set_zone_name("zone_0");
+        HostAddr node{"3", 3};
+        req.set_node(std::move(node));
+        auto* processor = AddHostIntoZoneProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     // Add host into zone which zone is not exist
     {
@@ -224,7 +236,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
     {
         cpp2::AddHostIntoZoneReq req;
         req.set_zone_name("zone_0");
-        HostAddr node{"3", 3};
+        HostAddr node{"0", 0};
         req.set_node(std::move(node));
         auto* processor = AddHostIntoZoneProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -248,7 +260,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
     {
         cpp2::DropHostFromZoneReq req;
         req.set_zone_name("zone_0");
-        HostAddr node{"3", 3};
+        HostAddr node{"12", 12};
         req.set_node(std::move(node));
         auto* processor = DropHostFromZoneProcessor::instance(kv.get());
         auto f = processor->getFuture();

@@ -40,12 +40,29 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
 
     auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
     auto host = req.get_node();
-    auto iter = std::find(hosts.begin(), hosts.end(), host);
-    if (iter != hosts.end()) {
-        LOG(ERROR) << "Host " << host << " already exist in the zone " << zoneName;
-        handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+    // check this host not exist in all zones
+    const auto& prefix = MetaServiceUtils::zonePrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
         onFinished();
         return;
+    }
+
+    auto iter = nebula::value(iterRet).get();
+    while (iter->valid()) {
+        auto name = MetaServiceUtils::parseZoneName(iter->key());
+        auto zoneHosts = MetaServiceUtils::parseZoneHosts(iter->val());
+        auto hostIter = std::find(zoneHosts.begin(), zoneHosts.end(), host);
+        if (hostIter != zoneHosts.end()) {
+            LOG(ERROR) << "Host overlap found in zone " << name;
+            handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+            onFinished();
+            return;
+        }
+        iter->next();
     }
 
     auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);

@@ -102,8 +102,8 @@ AddZoneProcessor::checkHostNotOverlap(const std::vector<HostAddr>& nodes) {
         LOG(ERROR) << "Get zones failed, error: " << apache::thrift::util::enumNameSafe(retCode);
         return retCode;
     }
-    auto iter = nebula::value(iterRet).get();
 
+    auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
         auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
         auto hosts = MetaServiceUtils::parseZoneHosts(iter->val());

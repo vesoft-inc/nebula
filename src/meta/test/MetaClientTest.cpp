@@ -1227,7 +1227,7 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     auto* kv = cluster.metaKV_.get();
     auto* client = cluster.metaClient_.get();
     std::vector<HostAddr> hosts;
-    for (int32_t i = 0; i < 12; i++) {
+    for (int32_t i = 0; i < 13; i++) {
         hosts.emplace_back(std::to_string(i), i);
     }
     TestUtils::createSomeHosts(kv, std::move(hosts));
@@ -1296,9 +1296,15 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     }
     // Add host into zone
     {
-        HostAddr node("3", 3);
+        HostAddr node("12", 12);
         auto result = client->addHostIntoZone(node, "zone_0").get();
         ASSERT_TRUE(result.ok());
+    }
+    // Add host into zone overlap with another zone
+    {
+        HostAddr node("3", 3);
+        auto result = client->addHostIntoZone(node, "zone_0").get();
+        ASSERT_FALSE(result.ok());
     }
     // Add host into zone which zone is not exist
     {
@@ -1308,7 +1314,7 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     }
     // Add host into zone which the node have existed
     {
-        HostAddr node("3", 3);
+        HostAddr node("0", 0);
         auto result = client->addHostIntoZone(node, "zone_0").get();
         ASSERT_FALSE(result.ok());
     }
@@ -1320,7 +1326,7 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     }
     // Drop host from zone
     {
-        HostAddr node("3", 3);
+        HostAddr node("12", 12);
         auto result = client->dropHostFromZone(node, "zone_0").get();
         ASSERT_TRUE(result.ok());
     }
