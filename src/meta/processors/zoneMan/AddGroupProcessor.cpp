@@ -28,6 +28,34 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
         return;
     }
 
+    // check the zone existed
+    const auto& prefix = MetaServiceUtils::zonePrefix();
+    auto iterRet = doPrefix(prefix);
+    if (!nebula::ok(iterRet)) {
+        auto retCode = nebula::error(iterRet);
+        LOG(ERROR) << "Get zones failed: " << apache::thrift::util::enumNameSafe(retCode);
+        handleErrorCode(retCode);
+        onFinished();
+        return;
+    }
+
+    auto iter = nebula::value(iterRet).get();
+    std::vector<std::string> zones;
+    while (iter->valid()) {
+        auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
+        zones.emplace_back(std::move(zoneName));
+        iter->next();
+    }
+
+    for (auto name = zoneNames.begin(); name != zoneNames.end(); name++) {
+        if (std::find(zones.begin(), zones.end(), *name) == zones.end()) {
+            LOG(ERROR) << "Zone: " << *name << " not existed";
+            handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
+            onFinished();
+            return;
+        }
+    }
+
     auto retCode = checkGroupRedundancy(zoneNames);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(retCode);

@@ -304,6 +304,19 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
+    // Add Group which zone not exist
+    {
+        LOG(INFO) << "Add Group which zone not exist";
+        cpp2::AddGroupReq req;
+        req.set_group_name("group_zone_not_exist");
+        std::vector<std::string> zones = {"zone_0", "zone_1", "zone_4"};
+        req.set_zone_names(std::move(zones));
+        auto* processor = AddGroupProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+    }
     // Group already existed
     {
         cpp2::AddGroupReq req;
