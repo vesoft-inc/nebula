@@ -23,8 +23,6 @@ ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                                const AllLeaders* allLeaders) {
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
-                      HostInfo::encodeV2(info));
     std::vector<std::string> leaderKeys;
     std::vector<int64_t> terms;
     if (allLeaders != nullptr) {
@@ -63,6 +61,13 @@ ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
             data.emplace_back(std::make_pair(leaderKeys[i], std::move(val)));
         }
     }
+    // indicate whether any leader info is updated
+    bool hasUpdate = false;
+    if (!data.empty()) {
+        hasUpdate = true;
+    }
+    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
+                      HostInfo::encodeV2(info));
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     folly::Baton<true, std::atomic> baton;
@@ -73,6 +78,12 @@ ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
         baton.post();
     });
     baton.wait();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+    }
+    if (hasUpdate) {
+        ret = LastUpdateTimeMan::update(kv, time::WallClock::fastNowInMilliSec());
+    }
     return ret;
 }
 

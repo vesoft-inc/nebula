@@ -79,7 +79,7 @@ struct TossEnvironment {
 
         bool leaderLoaded = false;
         while (!leaderLoaded) {
-            auto statusOrLeaderMap = mClient_->loadLeader();
+            auto statusOrLeaderMap = mClient_->getLeaderInfo();
             if (!statusOrLeaderMap.ok()) {
                 LOG(FATAL) << "mClient_->loadLeader() failed!!!!!!";
             }
