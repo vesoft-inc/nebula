@@ -89,8 +89,8 @@ using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string
 struct LeaderInfo {
     // get leader host via spaceId and partId
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaderMap_;
-    // leader index of all peers
-    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, size_t> leaderIndex_;
+    // index of picked host in all peers
+    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, size_t> pickedIndex_;
 };
 
 using IndexStatus = std::tuple<std::string, std::string, std::string>;
@@ -568,6 +568,14 @@ public:
 
     StatusOr<std::vector<HostAddr>> getStorageHosts() const;
 
+    StatusOr<HostAddr> getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId);
+
+    void updateStorageLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
+
+    void invalidStorageLeader(GraphSpaceID spaceId, PartitionID partId);
+
+    StatusOr<LeaderInfo> getLeaderInfo();
+
     folly::Future<StatusOr<bool>>
     addZone(std::string zoneName, std::vector<HostAddr> nodes);
 
@@ -605,8 +613,6 @@ public:
     listGroups();
 
     Status refreshCache();
-
-    StatusOr<LeaderInfo> loadLeader();
 
     folly::Future<StatusOr<cpp2::StatisItem>>
     getStatis(GraphSpaceID spaceId);
@@ -655,6 +661,9 @@ protected:
     bool loadFulltextClients();
 
     bool loadFulltextIndexes();
+
+    void loadLeader(const std::vector<cpp2::HostItem>& hostItems,
+                    const SpaceNameIdMap& spaceIndexByName);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -713,10 +722,15 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+    // leaderIdsLock_ is used to protect leaderIds_
     std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
     folly::RWSpinLock     leaderIdsLock_;
     int64_t               localLastUpdateTime_{0};
     int64_t               metadLastUpdateTime_{0};
+
+    // leadersLock_ is used to protect leadersInfo
+    folly::RWSpinLock     leadersLock_;
+    LeaderInfo            leadersInfo_;
 
     LocalCache localCache_;
     std::vector<HostAddr> addrs_;

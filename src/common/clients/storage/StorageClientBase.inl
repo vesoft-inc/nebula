@@ -89,82 +89,31 @@ StorageClientBase<ClientType>::~StorageClientBase() {
     }
 }
 
-
-template<typename ClientType>
-void StorageClientBase<ClientType>::loadLeader() const {
-    if (loadLeaderBefore_) {
-        return;
-    }
-    bool expected = false;
-    if (isLoadingLeader_.compare_exchange_strong(expected, true)) {
-        CHECK(metaClient_ != nullptr);
-        auto status = metaClient_->loadLeader();
-        if (status.ok()) {
-            folly::RWSpinLock::WriteHolder wh(leadersLock_);
-            auto info = status.value();
-            leaders_ = std::move(info.leaderMap_);
-            leaderIndex_ = std::move(info.leaderIndex_);
-            loadLeaderBefore_ = true;
-        }
-        isLoadingLeader_ = false;
-    }
-}
-
-
 template<typename ClientType>
 StatusOr<HostAddr>
 StorageClientBase<ClientType>::getLeader(GraphSpaceID spaceId, PartitionID partId) const {
-    loadLeader();
-    auto part = std::make_pair(spaceId, partId);
-    {
-        folly::RWSpinLock::ReadHolder rh(leadersLock_);
-        auto it = leaders_.find(part);
-        if (it != leaders_.end()) {
-            return it->second;
-        }
-    }
-    {
-        auto metaStatus = getPartHosts(spaceId, partId);
-        if (!metaStatus.ok()) {
-            return metaStatus.status();
-        }
-        auto partHosts = metaStatus.value();
-
-        folly::RWSpinLock::WriteHolder wh(leadersLock_);
-        VLOG(1) << "No leader exists. Choose one in round-robin.";
-        auto index = (leaderIndex_[part] + 1) % partHosts.hosts_.size();
-        auto picked = partHosts.hosts_[index];
-        leaders_[part] = picked;
-        leaderIndex_[part] = index;
-        return picked;
-    }
+    return metaClient_->getStorageLeaderFromCache(spaceId, partId);
 }
 
 template<typename ClientType>
 void StorageClientBase<ClientType>::updateLeader(GraphSpaceID spaceId,
                                                  PartitionID partId,
                                                  const HostAddr& leader) {
-    LOG(INFO) << "Update the leader for [" << spaceId << ", " << partId << "] to " << leader;
-    folly::RWSpinLock::WriteHolder wh(leadersLock_);
-    leaders_[std::make_pair(spaceId, partId)] = leader;
+    metaClient_->updateStorageLeader(spaceId, partId, leader);
 }
 
 
 template<typename ClientType>
 void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
                                                   PartitionID partId) {
-    LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
-    folly::RWSpinLock::WriteHolder wh(leadersLock_);
-    leaders_.erase(std::make_pair(spaceId, partId));
+    metaClient_->invalidStorageLeader(spaceId, partId);
 }
 
 template<typename ClientType>
 void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
                                                   std::vector<PartitionID> &partsId) {
-    folly::RWSpinLock::WriteHolder wh(leadersLock_);
     for (const auto &partId : partsId) {
-        LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
-        leaders_.erase(std::make_pair(spaceId, partId));
+        invalidLeader(spaceId, partId);
     }
 }
 

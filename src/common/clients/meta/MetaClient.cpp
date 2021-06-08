@@ -270,6 +270,9 @@ bool MetaClient::loadData() {
         [] (auto &hostItem) -> HostAddr {
             return *hostItem.hostAddr_ref();
         });
+
+    loadLeader(hostItems, spaceIndexByName_);
+
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
@@ -2303,6 +2306,58 @@ MetaClient::getEdgeIndexesFromCache(GraphSpaceID spaceId) {
     }
 }
 
+StatusOr<HostAddr>
+MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    {
+        folly::RWSpinLock::ReadHolder holder(leadersLock_);
+        auto iter = leadersInfo_.leaderMap_.find({spaceId, partId});
+        if (iter != leadersInfo_.leaderMap_.end()) {
+            return iter->second;
+        }
+    }
+    {
+        // no leader found, pick one in round-robin
+        auto partHostsRet = getPartHostsFromCache(spaceId, partId);
+        if (!partHostsRet.ok()) {
+            return partHostsRet.status();
+        }
+        auto partHosts = partHostsRet.value();
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        VLOG(1) << "No leader exists. Choose one in round-robin.";
+        auto index = (leadersInfo_.pickedIndex_[{spaceId, partId}] + 1) % partHosts.hosts_.size();
+        auto picked = partHosts.hosts_[index];
+        leadersInfo_.leaderMap_[{spaceId, partId}] = picked;
+        leadersInfo_.pickedIndex_[{spaceId, partId}] = index;
+        return picked;
+    }
+}
+
+void MetaClient::updateStorageLeader(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     const HostAddr& leader) {
+    VLOG(1) << "Update the leader for [" << spaceId << ", " << partId << "] to " << leader;
+    folly::RWSpinLock::WriteHolder holder(leadersLock_);
+    leadersInfo_.leaderMap_[{spaceId, partId}] = leader;
+}
+
+void MetaClient::invalidStorageLeader(GraphSpaceID spaceId,
+                                      PartitionID partId) {
+    VLOG(1) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
+    folly::RWSpinLock::WriteHolder holder(leadersLock_);
+    leadersInfo_.leaderMap_.erase({spaceId, partId});
+}
+
+StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(leadersLock_);
+    return leadersInfo_;
+}
 
 const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
@@ -3104,27 +3159,18 @@ Status MetaClient::refreshCache() {
 }
 
 
-StatusOr<LeaderInfo> MetaClient::loadLeader() {
-    // Return error if has not loadData before
-    if (!ready_) {
-        return Status::Error("Not ready!");
-    }
-
-    auto ret = listHosts().get();
-    if (!ret.ok()) {
-        return Status::Error("List hosts failed");
-    }
-
+void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
+                            const SpaceNameIdMap& spaceIndexByName) {
     LeaderInfo leaderInfo;
-    auto hostItems = std::move(ret).value();
     for (auto& item : hostItems) {
         for (auto& spaceEntry : item.get_leader_parts()) {
             auto spaceName = spaceEntry.first;
-            auto status = getSpaceIdByNameFromCache(spaceName);
-            if (!status.ok()) {
+            // ready_ is still false, can't read from cache
+            auto iter = spaceIndexByName.find(spaceName);
+            if (iter == spaceIndexByName.end()) {
                 continue;
             }
-            auto spaceId = status.value();
+            auto spaceId = iter->second;
             for (const auto& partId : spaceEntry.second) {
                 leaderInfo.leaderMap_[{spaceId, partId}] = item.get_hostAddr();
                 auto partHosts = getPartHostsFromCache(spaceId, partId);
@@ -3138,14 +3184,19 @@ StatusOr<LeaderInfo> MetaClient::loadLeader() {
                         }
                     }
                 }
-                leaderInfo.leaderIndex_[{spaceId, partId}] = leaderIndex;
+                leaderInfo.pickedIndex_[{spaceId, partId}] = leaderIndex;
             }
         }
         LOG(INFO) << "Load leader of " << item.get_hostAddr()
                   << " in " << item.get_leader_parts().size() << " space";
     }
-    LOG(INFO) << "Load leader ok";
-    return leaderInfo;
+    {
+        // todo(doodle): in worst case, storage and meta isolated, so graph may get a outdate
+        // leader info. The problem could be solved if leader term are cached as well.
+        LOG(INFO) << "Load leader ok";
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        leadersInfo_ = std::move(leaderInfo);
+    }
 }
 
 folly::Future<StatusOr<bool>>
