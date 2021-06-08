@@ -44,6 +44,12 @@ TEST(Value, Arithmetics) {
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ(3L, v.getInt());
 
+        // overflow
+        v = Value(INT64_MAX) + 1;
+        EXPECT_EQ(Value::kNullOverflow, v);
+        v = Value(INT64_MIN) + -1;
+        EXPECT_EQ(Value::kNullOverflow, v);
+
         v = vFloat1 + vFloat2;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
         EXPECT_DOUBLE_EQ(5.81, v.getFloat());
@@ -122,6 +128,12 @@ TEST(Value, Arithmetics) {
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ(-1L, v.getInt());
 
+        // overflow
+        v = Value(INT64_MAX) - -1;
+        EXPECT_EQ(Value::kNullOverflow, v);
+        v = Value(INT64_MIN) - 1;
+        EXPECT_EQ(Value::kNullOverflow, v);
+
         v = vFloat1 - vFloat2;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
         EXPECT_DOUBLE_EQ(0.47, v.getFloat());
@@ -144,6 +156,17 @@ TEST(Value, Arithmetics) {
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ((vInt2.getInt() * vInt2.getInt()), v.getInt());
 
+        // overflow
+        v = Value(INT64_MAX) * 2;
+        EXPECT_EQ(Value::kNullOverflow, v);
+        // edge case -1 * MIN  =>  overflow
+        v = Value(INT64_MIN) * -1;
+        EXPECT_EQ(Value::kNullOverflow, v);
+        v = -1 * Value(INT64_MIN);
+        EXPECT_EQ(Value::kNullOverflow, v);
+        v = Value(INT64_MIN) * 2;
+        EXPECT_EQ(Value::kNullOverflow, v);
+
         v = vInt2 * vFloat1;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
         EXPECT_EQ((vInt2.getInt() * vFloat1.getFloat()), v.getFloat());
@@ -162,6 +185,10 @@ TEST(Value, Arithmetics) {
         Value v = vInt2 / vInt2;
         EXPECT_EQ(Value::Type::INT, v.type());
         EXPECT_EQ((vInt2.getInt() / vInt2.getInt()), v.getInt());
+
+        // overflow
+        v = Value(INT64_MIN) / -1;
+        EXPECT_EQ(Value::kNullOverflow, v);
 
         v = vInt2 / vFloat1;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
@@ -214,6 +241,10 @@ TEST(Value, Arithmetics) {
         v = -vFloat1;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
         EXPECT_DOUBLE_EQ(-3.14, v.getFloat());
+
+        // Overflow
+        v = -Value(INT64_MIN);
+        EXPECT_EQ(Value::kNullOverflow, v);
 
         v = !vBool1;
         EXPECT_EQ(Value::Type::BOOL, v.type());

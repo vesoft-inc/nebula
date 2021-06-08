@@ -1928,7 +1928,13 @@ Value operator+(const Value& lhs, const Value& rhs) {
         case Value::Type::INT: {
             switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return lhs.getInt() + rhs.getInt();
+                    int64_t lVal = lhs.getInt();
+                    int64_t rVal = rhs.getInt();
+                    int64_t sum;
+                    if (__builtin_add_overflow(lVal, rVal, &sum)) {
+                        return Value::kNullOverflow;
+                    }
+                    return sum;
                 }
                 case Value::Type::FLOAT: {
                     return lhs.getInt() + rhs.getFloat();
@@ -2176,7 +2182,13 @@ Value operator-(const Value& lhs, const Value& rhs) {
         case Value::Type::INT: {
             switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return lhs.getInt() - rhs.getInt();
+                    int64_t lVal = lhs.getInt();
+                    int64_t rVal = rhs.getInt();
+                    int64_t res;
+                    if (__builtin_sub_overflow(lVal, rVal, &res)) {
+                        return Value::kNullOverflow;
+                    }
+                    return res;
                 }
                 case Value::Type::FLOAT: {
                     return lhs.getInt() - rhs.getFloat();
@@ -2231,7 +2243,17 @@ Value operator*(const Value& lhs, const Value& rhs) {
         case Value::Type::INT: {
             switch (rhs.type()) {
                 case Value::Type::INT: {
-                    return lhs.getInt() * rhs.getInt();
+                    int64_t lVal = lhs.getInt();
+                    int64_t rVal = rhs.getInt();
+                    // -1 * min causes overflow
+                    if ((lVal == -1 && rVal == INT64_MIN) || (rVal == -1 && lVal == INT64_MIN)) {
+                        return Value::kNullOverflow;
+                    }
+                    int64_t res;
+                    if (__builtin_mul_overflow(lVal, rVal, &res)) {
+                        return Value::kNullOverflow;
+                    }
+                    return res;
                 }
                 case Value::Type::FLOAT: {
                     return lhs.getInt() * rhs.getFloat();
@@ -2274,11 +2296,15 @@ Value operator/(const Value& lhs, const Value& rhs) {
             switch (rhs.type()) {
                 case Value::Type::INT: {
                     int64_t denom = rhs.getInt();
-                    if (denom != 0) {
-                        return lhs.getInt() / denom;
-                    } else {
+                    if (denom == 0) {
                         return Value::kNullDivByZero;
                     }
+                    int64_t lVal = lhs.getInt();
+                    // INT_MIN/-1 causes overflow
+                    if (lVal == INT64_MIN && denom == -1) {
+                        return Value::kNullOverflow;
+                    }
+                    return lVal / denom;
                 }
                 case Value::Type::FLOAT: {
                     double denom = rhs.getFloat();
@@ -2390,7 +2416,11 @@ Value operator-(const Value& rhs) {
 
     switch (rhs.type()) {
         case Value::Type::INT: {
-            auto val = -rhs.getInt();
+            int64_t rVal = rhs.getInt();
+            if (rVal == INT64_MIN) {
+                return Value::kNullOverflow;
+            }
+            auto val = -rVal;
             return val;
         }
         case Value::Type::FLOAT: {
