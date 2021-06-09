@@ -857,6 +857,12 @@ TEST_F(ExpressionTest, FunctionCallTest) {
         STEP("2", "edge", 1, 1);
         TEST_FUNCTION(hasSameEdgeInPath, {path}, false);
     }
+    // Check function
+    {
+        FunctionCallExpression expr("TimE");
+        EXPECT_TRUE(expr.isFunc("time"));
+        EXPECT_FALSE(expr.isFunc("time_"));
+    }
 }
 
 TEST_F(ExpressionTest, Arithmetics) {

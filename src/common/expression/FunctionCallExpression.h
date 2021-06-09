@@ -7,6 +7,8 @@
 #ifndef COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 #define COMMON_EXPRESSION_FUNCTIONCALLEXPRESSION_H_
 
+#include <boost/algorithm/string.hpp>
+
 #include "common/function/FunctionManager.h"
 #include "common/expression/Expression.h"
 
@@ -85,6 +87,10 @@ public:
 
     const std::string& name() const {
         return name_;
+    }
+
+    bool isFunc(const std::string &name) const {
+        return boost::iequals(name, name_);
     }
 
     const ArgumentList* args() const {
