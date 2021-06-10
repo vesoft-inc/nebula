@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include "common/conf/Configuration.h"
 #include "kvstore/RocksEngineConfig.h"
-#include "kvstore/EventListner.h"
+#include "kvstore/EventListener.h"
 #include <rocksdb/db.h>
 #include <rocksdb/cache.h>
 #include <rocksdb/convenience.h>

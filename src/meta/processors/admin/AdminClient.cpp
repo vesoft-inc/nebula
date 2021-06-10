@@ -216,17 +216,15 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                       MetaServiceUtils::partVal(peers));
-    part->asyncMultiPut(std::move(data), [] (nebula::cpp2::ErrorCode) {});
-    part->sync([this, p = std::move(pro)] (nebula::cpp2::ErrorCode code) mutable {
-        // To avoid dead lock, we call future callback in ioThreadPool_
-        folly::via(ioThreadPool_.get(), [code, p = std::move(p)] () mutable {
+    part->asyncMultiPut(
+        std::move(data), [p = std::move(pro)](nebula::cpp2::ErrorCode code) mutable {
             if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 p.setValue(Status::OK());
             } else {
-                p.setValue(Status::Error("Access kv failed, code: %d", static_cast<int32_t>(code)));
+                p.setValue(Status::Error("Access kv failed, code: %s",
+                                         apache::thrift::util::enumNameSafe(code).c_str()));
             }
         });
-    });
     return f;
 }
 

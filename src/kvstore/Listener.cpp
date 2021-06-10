@@ -26,9 +26,10 @@ Listener::Listener(GraphSpaceID spaceId,
                    std::shared_ptr<folly::Executor> handlers,
                    std::shared_ptr<raftex::SnapshotManager> snapshotMan,
                    std::shared_ptr<RaftClient> clientMan,
+                   std::shared_ptr<DiskManager> diskMan,
                    meta::SchemaManager* schemaMan)
     : RaftPart(FLAGS_cluster_id, spaceId, partId, localAddr, walPath,
-               ioPool, workers, handlers, snapshotMan, clientMan)
+               ioPool, workers, handlers, snapshotMan, clientMan, diskMan)
     , schemaMan_(schemaMan) {
 }
 

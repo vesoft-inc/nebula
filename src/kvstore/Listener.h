@@ -97,6 +97,7 @@ public:
              std::shared_ptr<folly::Executor> handlers,
              std::shared_ptr<raftex::SnapshotManager> snapshotMan,
              std::shared_ptr<RaftClient> clientMan,
+             std::shared_ptr<DiskManager> diskMan,
              meta::SchemaManager* schemaMan);
 
     // Initialize listener, all Listener must call this method

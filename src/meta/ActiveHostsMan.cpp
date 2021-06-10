@@ -243,7 +243,6 @@ LastUpdateTimeMan::update(kvstore::KVStore* kv, const int64_t timeInMilliSec) {
         baton.post();
     });
     baton.wait();
-    ret = kv->sync(kDefaultSpaceId, kDefaultPartId);
     return ret;
 }
 

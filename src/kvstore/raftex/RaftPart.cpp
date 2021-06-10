@@ -42,6 +42,7 @@ using nebula::network::NetworkUtils;
 using nebula::thrift::ThriftClientManager;
 using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalPolicy;
+using nebula::wal::FileBasedWalInfo;
 
 using OpProcessor = folly::Function<folly::Optional<std::string>(AtomicOp op)>;
 
@@ -208,7 +209,8 @@ RaftPart::RaftPart(
            std::shared_ptr<thread::GenericThreadPool> workers,
            std::shared_ptr<folly::Executor> executor,
            std::shared_ptr<SnapshotManager> snapshotMan,
-           std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan)
+           std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
+           std::shared_ptr<kvstore::DiskManager> diskMan)
         : idStr_{folly::stringPrintf("[Port: %d, Space: %d, Part: %d] ",
                                      localAddr.port, spaceId, partId)}
         , clusterId_{clusterId}
@@ -223,23 +225,24 @@ RaftPart::RaftPart(
         , executor_(executor)
         , snapshot_(snapshotMan)
         , clientMan_(clientMan)
+        , diskMan_(diskMan)
         , weight_(1) {
     FileBasedWalPolicy policy;
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.sync = FLAGS_wal_sync;
-    wal_ = FileBasedWal::getWal(walRoot,
-                                idStr_,
-                                policy,
-                                [this] (LogID logId,
-                                        TermID logTermId,
-                                        ClusterID logClusterId,
-                                        const std::string& log) {
-                                    return this->preProcessLog(logId,
-                                                               logTermId,
-                                                               logClusterId,
-                                                               log);
-                                });
+    FileBasedWalInfo info;
+    info.idStr_ = idStr_;
+    info.spaceId_ = spaceId_;
+    info.partId_ = partId_;
+    wal_ = FileBasedWal::getWal(
+        walRoot,
+        std::move(info),
+        std::move(policy),
+        [this] (LogID logId, TermID logTermId, ClusterID logClusterId, const std::string& log) {
+            return this->preProcessLog(logId, logTermId, logClusterId, log);
+        },
+        diskMan);
     logs_.reserve(FLAGS_max_batch_size);
     CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
@@ -753,7 +756,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
         // Step 1: Write WAL
         SlowOpTracker tracker;
         if (!wal_->appendLogs(iter)) {
-            LOG(ERROR) << idStr_ << "Failed to write into WAL";
+            LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write into WAL";
             res = AppendLogResult::E_WAL_FAILURE;
             break;
         }
@@ -1584,7 +1587,7 @@ void RaftPart::processAppendLogRequest(
             resp.set_last_log_term(lastLogTerm_);
             resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            LOG(ERROR) << idStr_ << "Failed to append logs to WAL";
+            LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to append logs to WAL";
             resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
         }
         return;
@@ -1672,7 +1675,7 @@ void RaftPart::processAppendLogRequest(
         resp.set_last_log_id(lastLogId_);
         resp.set_last_log_term(lastLogTerm_);
     } else {
-        LOG(ERROR) << idStr_ << "Failed to append logs to WAL";
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to append logs to WAL";
         resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
         return;
     }

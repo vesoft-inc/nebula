@@ -14,6 +14,7 @@
 #include "kvstore/wal/Wal.h"
 #include "kvstore/wal/WalFileInfo.h"
 #include "kvstore/wal/AtomicLogBuffer.h"
+#include "kvstore/DiskManager.h"
 
 namespace nebula {
 namespace wal {
@@ -30,6 +31,11 @@ struct FileBasedWalPolicy {
     bool sync = false;
 };
 
+struct FileBasedWalInfo {
+    std::string idStr_;
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
+};
 
 using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::string& log)>;
 
@@ -47,9 +53,10 @@ public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
         const folly::StringPiece dir,
-        const std::string& idStr,
+        FileBasedWalInfo info,
         FileBasedWalPolicy policy,
-        PreProcessor preProcessor);
+        PreProcessor preProcessor,
+        std::shared_ptr<kvstore::DiskManager> diskMan = nullptr);
 
     virtual ~FileBasedWal();
 
@@ -129,9 +136,10 @@ private:
     // Callers **SHOULD NEVER** use this constructor directly
     // Callers should use static method getWal() instead
     FileBasedWal(const folly::StringPiece dir,
-                 const std::string& idStr,
+                 FileBasedWalInfo info,
                  FileBasedWalPolicy policy,
-                 PreProcessor preProcessor);
+                 PreProcessor preProcessor,
+                 std::shared_ptr<kvstore::DiskManager> diskMan);
 
     // Scan all WAL files
     void scanAllWalFiles();
@@ -162,6 +170,8 @@ private:
      **************************************/
     const std::string dir_;
     std::string idStr_;
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
 
     std::atomic<bool> stopped_{false};
 
@@ -185,6 +195,8 @@ private:
     std::shared_ptr<AtomicLogBuffer> logBuffer_;
 
     PreProcessor preProcessor_;
+
+    std::shared_ptr<kvstore::DiskManager> diskMan_;
 
     folly::RWSpinLock rollbackLock_;
 };

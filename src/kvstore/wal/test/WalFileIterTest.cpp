@@ -17,11 +17,12 @@ using nebula::fs::FileUtils;
 using nebula::fs::TempDir;
 
 TEST(WalFileIter, SimpleReadTest) {
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -50,12 +51,13 @@ TEST(WalFileIter, SimpleReadTest) {
 }
 
 TEST(WalFileIter, MultiFilesReadTest) {
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024;
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;

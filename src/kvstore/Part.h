@@ -32,7 +32,8 @@ public:
          std::shared_ptr<thread::GenericThreadPool> workers,
          std::shared_ptr<folly::Executor> handlers,
          std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-         std::shared_ptr<RaftClient> clientMan);
+         std::shared_ptr<RaftClient> clientMan,
+         std::shared_ptr<DiskManager> diskMan);
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";

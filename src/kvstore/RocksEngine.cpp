@@ -315,8 +315,11 @@ void RocksEngine::addPart(PartitionID partId) {
 void RocksEngine::removePart(PartitionID partId) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
-    auto status = db_->Delete(options, partKey(partId));
-    if (status.ok()) {
+    std::vector<std::string> sysKeysToDelete;
+    sysKeysToDelete.emplace_back(partKey(partId));
+    sysKeysToDelete.emplace_back(NebulaKeyUtils::systemCommitKey(partId));
+    auto code = multiRemove(sysKeysToDelete);
+    if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         partsNum_--;
         CHECK_GE(partsNum_, 0);
     }

@@ -19,6 +19,7 @@
 #include "kvstore/Listener.h"
 #include "kvstore/ListenerFactory.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/DiskManager.h"
 #include "kvstore/raftex/SnapshotManager.h"
 #include "utils/Utils.h"
 
@@ -49,6 +50,7 @@ class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
     FRIEND_TEST(NebulaStoreTest, CheckpointTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
     friend class ListenerBasicTest;
 
 public:
@@ -330,6 +332,8 @@ private:
 
     int32_t getSpaceVidLen(GraphSpaceID spaceId);
 
+    void removeSpaceDir(const std::string& dir);
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock                                                    lock_;
@@ -337,7 +341,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceListenerInfo>> spaceListeners_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor>                         ioPool_;
-    std::shared_ptr<thread::GenericWorker>                               cleanWalWorker_;
+    std::shared_ptr<thread::GenericWorker>                               storeWorker_;
     std::shared_ptr<thread::GenericThreadPool>                           bgWorkers_;
     HostAddr                                                             storeSvcAddr_;
     std::shared_ptr<folly::Executor>                                     workers_;
@@ -347,6 +351,7 @@ private:
     std::shared_ptr<raftex::RaftexService>                               raftService_;
     std::shared_ptr<raftex::SnapshotManager>                             snapshot_;
     std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
+    std::shared_ptr<DiskManager> diskMan_;
 };
 
 }   // namespace kvstore

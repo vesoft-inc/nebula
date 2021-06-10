@@ -34,7 +34,7 @@ public:
                   std::shared_ptr<folly::Executor> handlers,
                   meta::SchemaManager* schemaMan)
         : Listener(spaceId, partId, localAddr, walPath,
-                   ioPool, workers, handlers, nullptr, nullptr, schemaMan) {
+                   ioPool, workers, handlers, nullptr, nullptr, nullptr, schemaMan) {
     }
 
     std::vector<KV> data() {

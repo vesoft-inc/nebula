@@ -29,22 +29,27 @@ using nebula::fs::FileUtils;
 // static
 std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
-        const std::string& idStr,
+        FileBasedWalInfo info,
         FileBasedWalPolicy policy,
-        PreProcessor preProcessor) {
-    return std::shared_ptr<FileBasedWal>(
-        new FileBasedWal(dir, idStr, std::move(policy), std::move(preProcessor)));
+        PreProcessor preProcessor,
+        std::shared_ptr<kvstore::DiskManager> diskMan) {
+    return std::shared_ptr<FileBasedWal>(new FileBasedWal(
+        dir, std::move(info), std::move(policy), std::move(preProcessor), diskMan));
 }
 
 
 FileBasedWal::FileBasedWal(const folly::StringPiece dir,
-                           const std::string& idStr,
+                           FileBasedWalInfo walInfo,
                            FileBasedWalPolicy policy,
-                           PreProcessor preProcessor)
+                           PreProcessor preProcessor,
+                           std::shared_ptr<kvstore::DiskManager> diskMan)
         : dir_(dir.toString())
-        , idStr_(idStr)
+        , idStr_(walInfo.idStr_)
+        , spaceId_(walInfo.spaceId_)
+        , partId_(walInfo.partId_)
         , policy_(std::move(policy))
-        , preProcessor_(std::move(preProcessor)) {
+        , preProcessor_(std::move(preProcessor))
+        , diskMan_(diskMan) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
         if (!FileUtils::makeDir(dir_)) {
@@ -563,6 +568,10 @@ bool FileBasedWal::appendLog(LogID id,
                              TermID term,
                              ClusterID cluster,
                              std::string msg) {
+    if (diskMan_ && !diskMan_->hasEnoughSpace(spaceId_, partId_)) {
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to appendLogs because of no more space";
+        return false;
+    }
     if (!appendLogInternal(id, term, cluster, std::move(msg))) {
         LOG(ERROR) << "Failed to append log for logId " << id;
         return false;
@@ -572,6 +581,10 @@ bool FileBasedWal::appendLog(LogID id,
 
 
 bool FileBasedWal::appendLogs(LogIterator& iter) {
+    if (diskMan_ && !diskMan_->hasEnoughSpace(spaceId_, partId_)) {
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to appendLogs because of no more space";
+        return false;
+    }
     for (; iter.valid(); ++iter) {
         if (!appendLogInternal(iter.logId(),
                                iter.logTerm(),

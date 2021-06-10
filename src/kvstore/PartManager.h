@@ -109,6 +109,7 @@ class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, CheckpointTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
     FRIEND_TEST(NebulaStoreTest, AtomicOpBatchTest);
+    FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
     friend class ListenerBasicTest;
 
 public:

@@ -1,6 +1,7 @@
 set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:common_raftex_thrift_obj>
     $<TARGET_OBJECTS:common_base_obj>
     $<TARGET_OBJECTS:common_datatypes_obj>

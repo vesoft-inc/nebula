@@ -5,10 +5,12 @@ nebula_add_test(
         FileBasedWalTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:disk_man_obj>
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_thread_obj>
         $<TARGET_OBJECTS:common_fs_obj>
         $<TARGET_OBJECTS:common_time_obj>
+        $<TARGET_OBJECTS:common_thread_obj>
     LIBRARIES
         gtest
 )
@@ -21,9 +23,11 @@ nebula_add_test(
         InMemoryLogBuffer.cpp
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:disk_man_obj>
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_fs_obj>
         $<TARGET_OBJECTS:common_time_obj>
+        $<TARGET_OBJECTS:common_thread_obj>
     LIBRARIES
         gtest
 )
@@ -59,10 +63,12 @@ nebula_add_test(
         WalFileIterTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:disk_man_obj>
         $<TARGET_OBJECTS:common_base_obj>
         $<TARGET_OBJECTS:common_thread_obj>
         $<TARGET_OBJECTS:common_fs_obj>
         $<TARGET_OBJECTS:common_time_obj>
+        $<TARGET_OBJECTS:common_thread_obj>
     LIBRARIES
         gtest
 )

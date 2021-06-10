@@ -20,6 +20,7 @@
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
+DECLARE_bool(auto_remove_invalid_space);
 const int32_t kDefaultVidLen = 8;
 using nebula::meta::PartHosts;
 
@@ -895,6 +896,60 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         std::sort(expected.begin(), expected.end());
         EXPECT_EQ(expected, result);
     }
+}
+
+TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
+    auto partMan = std::make_unique<MemPartManager>();
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+    // GraphSpaceID =>  {PartitionIDs}
+    // 1 => {0, 1, 2, 3, 4, 5}
+    // 2 => {0, 1, 2, 3, 4, 5}
+    for (auto spaceId = 1; spaceId <= 2; spaceId++) {
+        for (auto partId = 1; partId <= 6; partId++) {
+            partMan->partsMap_[spaceId][partId] = PartHosts();
+        }
+    }
+
+    fs::TempDir disk1("/tmp/nebula_store_test.XXXXXX");
+    fs::TempDir disk2("/tmp/nebula_store_test.XXXXXX");
+
+    KVOptions options;
+    options.dataPaths_ = {disk1.path(), disk2.path()};
+    options.partMan_ = std::move(partMan);
+    HostAddr local = {"", 0};
+    auto store = std::make_unique<NebulaStore>(std::move(options),
+                                               ioThreadPool,
+                                               local,
+                                               getHandlers());
+    store->init();
+    sleep(1);
+    EXPECT_EQ(2, store->spaces_.size());
+
+    auto space1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), 1);
+    auto space2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), 2);
+    CHECK(std::filesystem::exists(space1));
+    CHECK(std::filesystem::exists(space2));
+
+    FLAGS_auto_remove_invalid_space = true;
+    // remove space1, when the flag is true, the directory will be removed
+    for (auto partId = 1; partId <= 6; partId++) {
+        store->removePart(1, partId);
+    }
+    store->removeSpace(1, false);
+    EXPECT_EQ(1, store->spaces_.size());
+    CHECK(!std::filesystem::exists(space1));
+    CHECK(std::filesystem::exists(space2));
+
+    FLAGS_auto_remove_invalid_space = false;
+    // remove space2, when the flag is false, the directory won't be removed
+    for (auto partId = 1; partId <= 6; partId++) {
+        store->removePart(2, partId);
+    }
+    store->removeSpace(2, false);
+    EXPECT_EQ(0, store->spaces_.size());
+    CHECK(!std::filesystem::exists(space1));
+    CHECK(std::filesystem::exists(space2));
 }
 
 }  // namespace kvstore

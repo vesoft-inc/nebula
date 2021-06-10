@@ -2,6 +2,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:common_meta_obj>
@@ -107,6 +108,20 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        disk_man_test
+    SOURCES
+        DiskManagerTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
 
 nebula_add_test(
     NAME

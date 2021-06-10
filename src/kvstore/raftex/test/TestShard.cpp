@@ -144,7 +144,8 @@ TestShard::TestShard(size_t idx,
                    workers,
                    handlersPool,
                    snapshotMan,
-                   getClientMan())
+                   getClientMan(),
+                   nullptr)
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)

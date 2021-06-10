@@ -37,11 +37,12 @@ static const char* kLongMsg =
 
 
 TEST(FileBasedWal, AppendLogs) {
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -59,7 +60,7 @@ TEST(FileBasedWal, AppendLogs) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
-                               "",
+                               info,
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -82,13 +83,14 @@ TEST(FileBasedWal, AppendLogs) {
 TEST(FileBasedWal, CacheOverflow) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -111,7 +113,7 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
-                               "",
+                               info,
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -134,13 +136,14 @@ TEST(FileBasedWal, CacheOverflow) {
 TEST(FileBasedWal, Rollback) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -211,13 +214,14 @@ TEST(FileBasedWal, Rollback) {
 TEST(FileBasedWal, RollbackThenReopen) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -243,7 +247,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
-                               "",
+                               info,
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -265,13 +269,14 @@ TEST(FileBasedWal, RollbackThenReopen) {
 TEST(FileBasedWal, RollbackToZero) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -306,13 +311,14 @@ TEST(FileBasedWal, RollbackToZero) {
 TEST(FileBasedWal, BackAndForth) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     policy.bufferSize = 1024L * 1024L;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -350,11 +356,12 @@ TEST(FileBasedWal, BackAndForth) {
 TEST(FileBasedWal, TTLTest) {
     FLAGS_wal_ttl = 3;
     TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.bufferSize = 128;
     policy.fileSize = 1024;
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -382,7 +389,7 @@ TEST(FileBasedWal, TTLTest) {
     {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -413,7 +420,7 @@ TEST(FileBasedWal, TTLTest) {
     {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -434,12 +441,13 @@ TEST(FileBasedWal, TTLTest) {
 }
 
 TEST(FileBasedWal, CheckLastWalTest) {
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -470,7 +478,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -497,7 +505,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -516,7 +524,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -536,7 +544,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
-                                   "",
+                                   info,
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -547,10 +555,11 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
 TEST(FileBasedWal, LinkTest) {
     TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024 * 512;
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -581,10 +590,11 @@ TEST(FileBasedWal, LinkTest) {
 
 TEST(FileBasedWal, CleanWalBeforeIdTest) {
     TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalInfo info;
     FileBasedWalPolicy policy;
     policy.fileSize = 1024 * 10;
     auto wal = FileBasedWal::getWal(walDir.path(),
-                                    "",
+                                    info,
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
