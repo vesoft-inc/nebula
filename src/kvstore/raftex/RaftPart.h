@@ -235,6 +235,9 @@ public:
 
     std::pair<LogID, TermID> lastLogInfo() const;
 
+    // Reset the part, clean up all data and WALs.
+    void reset();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(
@@ -304,11 +307,8 @@ protected:
                                                        TermID committedLogTerm,
                                                        bool finished) = 0;
 
-    // Clean up all data about current part in storage.
+    // Clean up extra data about the part, usually related to state machine
     virtual void cleanup() = 0;
-
-    // Reset the part, clean up all data and WALs.
-    void reset();
 
     void addPeer(const HostAddr& peer);
 

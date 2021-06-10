@@ -78,14 +78,9 @@ public:
     }
 
     // clean up all data about this part.
-    void reset() {
-        LOG(INFO) << idStr_ << "Clean up all wals";
-        wal()->reset();
-        auto res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
-        if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
-                         << static_cast<int32_t>(res);
-        }
+    void resetPart() {
+        std::lock_guard<std::mutex> g(raftLock_);
+        reset();
     }
 
 private:
@@ -116,15 +111,11 @@ private:
     putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
 
     void cleanup() override {
-        LOG(INFO) << idStr_ << "Clean up all data, just reset the committedLogId!";
-        auto batch = engine_->startBatchWrite();
-        if (nebula::cpp2::ErrorCode::SUCCEEDED != putCommitMsg(batch.get(), 0, 0)) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
-            return;
-        }
-        if (nebula::cpp2::ErrorCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
-            return;
+        LOG(INFO) << idStr_ << "Clean rocksdb commit key";
+        auto res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+        if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
+                         << static_cast<int32_t>(res);
         }
         return;
     }

@@ -82,7 +82,7 @@ derived class.
     // persist last commit log id/term and lastApplyId
     bool persist(LogID, TermID, LogID)
 
-    // extra cleanup work, will be invoked when listener is about to be removed
+    // extra cleanup work, will be invoked when listener is about to be removed, or raft is reseted
     virtual void cleanup() = 0
 */
 
@@ -106,17 +106,19 @@ public:
     // Stop listener
     void stop() override;
 
-    int64_t logGapInMs() {
-        return lastCommitTime_ - lastApplyTime_;
-    }
-
     LogID getApplyId() {
         return lastApplyLogId_;
     }
 
-    void reset() {
-        LOG(INFO) << idStr_ << "Clean up all wals";
-        wal_->reset();
+    void cleanup() override {
+        leaderCommitId_ = 0;
+        lastApplyLogId_ = 0;
+        persist(0, 0, lastApplyLogId_);
+    }
+
+    void resetListener() {
+        std::lock_guard<std::mutex> g(raftLock_);
+        reset();
     }
 
 protected:
@@ -172,11 +174,8 @@ protected:
     void doApply();
 
 protected:
-    // lastId_ and lastTerm_ is same as committedLogId_ and term_
-    LogID lastId_ = -1;
-    TermID lastTerm_ = -1;
+    LogID leaderCommitId_ = 0;
     LogID lastApplyLogId_ = 0;
-    int64_t lastCommitTime_ = 0;
     int64_t lastApplyTime_ = 0;
     std::set<HostAddr> peers_;
     meta::SchemaManager* schemaMan_{nullptr};

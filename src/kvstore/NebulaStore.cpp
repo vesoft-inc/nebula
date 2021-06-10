@@ -425,7 +425,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
             CHECK_NOTNULL(e);
             raftService_->removePartition(partIt->second);
             diskMan_->removePartFromPath(spaceId, partId, e->getDataRoot());
-            partIt->second->reset();
+            partIt->second->resetPart();
             spaceIt->second->parts_.erase(partId);
             e->removePart(partId);
         }
@@ -499,7 +499,7 @@ void NebulaStore::removeListener(GraphSpaceID spaceId,
             auto listener = partIt->second.find(type);
             if (listener != partIt->second.end()) {
                 raftService_->removePartition(listener->second);
-                listener->second->reset();
+                listener->second->resetListener();
                 partIt->second.erase(type);
                 LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
                           << " of [Space: " << spaceId << ", Part: " << partId << "] is removed";
