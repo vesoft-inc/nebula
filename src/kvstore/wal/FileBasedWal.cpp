@@ -792,5 +792,14 @@ size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) 
     return count;
 }
 
+TermID FileBasedWal::getLogTerm(LogID id) {
+    TermID term = -1;
+    auto walIter = std::make_unique<FileBasedWalIterator>(shared_from_this(), id, id);
+    if (walIter->valid()) {
+        term = walIter->logTerm();
+    }
+    walIter.reset();
+    return term;
+}
 }  // namespace wal
 }  // namespace nebula
