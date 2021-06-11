@@ -94,14 +94,14 @@ public:
     // Returns the total space in bytes occupied by the fields_
     size_t size() const noexcept override;
 
-    int64_t getFieldIndex(const folly::StringPiece name) const override;
+    int64_t getFieldIndex(const std::string& name) const override;
     const char* getFieldName(int64_t index) const override;
 
     cpp2::PropertyType getFieldType(int64_t index) const override;
-    cpp2::PropertyType getFieldType(const folly::StringPiece name) const override;
+    cpp2::PropertyType getFieldType(const std::string& name) const override;
 
     const SchemaProviderIf::Field* field(int64_t index) const override;
-    const SchemaProviderIf::Field* field(const folly::StringPiece name) const override;
+    const SchemaProviderIf::Field* field(const std::string& name) const override;
 
     void addField(folly::StringPiece name,
                   cpp2::PropertyType type,

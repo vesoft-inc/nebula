@@ -108,15 +108,14 @@ public:
     // persisted on the disk
     virtual size_t size() const noexcept = 0;
 
-    virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
+    virtual int64_t getFieldIndex(const std::string& name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
     virtual cpp2::PropertyType getFieldType(int64_t index) const = 0;
-    virtual cpp2::PropertyType getFieldType(const folly::StringPiece name)
-        const = 0;
+    virtual cpp2::PropertyType getFieldType(const std::string& name) const = 0;
 
     virtual const Field* field(int64_t index) const = 0;
-    virtual const Field* field(const folly::StringPiece name) const = 0;
+    virtual const Field* field(const std::string& name) const = 0;
 
     /******************************************
      *

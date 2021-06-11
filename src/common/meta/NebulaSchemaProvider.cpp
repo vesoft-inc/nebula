@@ -35,8 +35,8 @@ size_t NebulaSchemaProvider::size() const noexcept {
 }
 
 
-int64_t NebulaSchemaProvider::getFieldIndex(const folly::StringPiece name) const {
-    auto it = fieldNameIndex_.find(name.toString());
+int64_t NebulaSchemaProvider::getFieldIndex(const std::string& name) const {
+    auto it = fieldNameIndex_.find(name);
     if (it == fieldNameIndex_.end()) {
         // Not found
         return -1;
@@ -66,11 +66,11 @@ cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
 }
 
 
-cpp2::PropertyType NebulaSchemaProvider::getFieldType(const folly::StringPiece name)
+cpp2::PropertyType NebulaSchemaProvider::getFieldType(const std::string& name)
         const {
-    auto it = fieldNameIndex_.find(name.toString());
+    auto it = fieldNameIndex_.find(name);
     if (UNLIKELY(fieldNameIndex_.end() == it)) {
-        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        LOG(ERROR) << "Unknown field \"" << name << "\"";
         return cpp2::PropertyType::UNKNOWN;
     }
 
@@ -93,10 +93,10 @@ const SchemaProviderIf::Field* NebulaSchemaProvider::field(int64_t index) const 
 
 
 const SchemaProviderIf::Field* NebulaSchemaProvider::field(
-        const folly::StringPiece name) const {
-    auto it = fieldNameIndex_.find(name.toString());
+        const std::string& name) const {
+    auto it = fieldNameIndex_.find(name);
     if (it == fieldNameIndex_.end()) {
-        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
+        VLOG(2) << "Unknown field \"" << name << "\"";
         return nullptr;
     }
 
