@@ -320,6 +320,71 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
     }
 }
 
+TEST_F(FindPathValidatorTest, PathWithFilter) {
+    {
+        std::string query =
+            "FIND ALL PATH FROM \"1\" TO \"2\" OVER like WHERE like.likeness > 30 UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kLoop,
+            PK::kProject,
+            PK::kConjunctPath,
+            PK::kProject,
+            PK::kProduceAllPaths,
+            PK::kProduceAllPaths,
+            PK::kStart,
+            PK::kFilter,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like WHERE like.likeness "
+                            "> 30 UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kLoop,
+            PK::kStart,
+            PK::kConjunctPath,
+            PK::kBFSShortest,
+            PK::kBFSShortest,
+            PK::kFilter,
+            PK::kFilter,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+    {
+        std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\", \"3\" OVER like WHERE "
+                            "like.likeness > 30 UPTO 5 STEPS";
+        std::vector<PlanNode::Kind> expected = {
+            PK::kDataCollect,
+            PK::kLoop,
+            PK::kCartesianProduct,
+            PK::kConjunctPath,
+            PK::kProject,
+            PK::kProduceSemiShortestPath,
+            PK::kProduceSemiShortestPath,
+            PK::kProject,
+            PK::kFilter,
+            PK::kFilter,
+            PK::kStart,
+            PK::kGetNeighbors,
+            PK::kGetNeighbors,
+            PK::kPassThrough,
+            PK::kStart,
+        };
+        EXPECT_TRUE(checkResult(query, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
 

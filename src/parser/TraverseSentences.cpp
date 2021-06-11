@@ -197,13 +197,13 @@ std::string FindPathSentence::toString() const {
         buf += over_->toString();
         buf += " ";
     }
+    if (where_ != nullptr) {
+        buf += where_->toString();
+        buf += " ";
+    }
     if (step_ != nullptr) {
         buf += "UPTO ";
         buf += step_->toString();
-        buf += " ";
-    }
-    if (where_ != nullptr) {
-        buf += where_->toString();
         buf += " ";
     }
     return buf;

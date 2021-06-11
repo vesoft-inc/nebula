@@ -178,3 +178,28 @@ Feature: NoLoop Path
       | path                                                                                                                                                                                                                                                                                      |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})> |
+
+  Scenario: NOLOOP Path WITH FILTER
+    When executing query:
+      """
+      FIND NOLOOP PATH WITH PROP FROM "Tim Duncan" TO "Tony Parker" OVER like BIDIRECT WHERE like.likeness > 95 UPTO 3 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                                                                                                                  |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})-[:like@0 {likeness: 99}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
+    When executing query:
+      """
+      FIND NOLOOP PATH WITH PROP FROM "Tim Duncan" TO "Tony Parker", "Spurs" OVER like, serve WHERE serve.start_year > 1990 OR like.likeness is EMPTY UPTO 3 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                        |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
+    When executing query:
+      """
+      $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
+      FIND NOLOOP PATH WITH PROP FROM $a.src TO $a.dst OVER like WHERE like.likeness > 90 UPTO 3 STEPS
+      | ORDER BY $-.path | LIMIT 5
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                          |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})> |

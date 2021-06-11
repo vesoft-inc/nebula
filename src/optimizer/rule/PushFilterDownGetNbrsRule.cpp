@@ -30,7 +30,8 @@ std::unique_ptr<OptRule> PushFilterDownGetNbrsRule::kInstance =
     std::unique_ptr<PushFilterDownGetNbrsRule>(new PushFilterDownGetNbrsRule());
 
 PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() {
-    RuleSet::QueryRules().addRule(this);
+    // There is a problem with the push-down of the storage layer filtering
+    // RuleSet::QueryRules().addRule(this);
 }
 
 const Pattern &PushFilterDownGetNbrsRule::pattern() const {

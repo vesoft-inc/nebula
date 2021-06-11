@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "context/ast/AstContext.h"
+#include "visitor/DeducePropsVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -42,6 +43,7 @@ struct PathContext final : AstContext {
     Starts          to;
     StepClause      steps;
     Over            over;
+    Expression*     filter{nullptr};
 
     /*
     * find path from A to B OR find path from $-.src to $-.dst
@@ -70,6 +72,7 @@ struct PathContext final : AstContext {
     // just for pipe sentence,
     // store the result of the previous sentence
     std::string     inputVarName;
+    ExpressionProps exprProps;
 };
 
 }  // namespace graph

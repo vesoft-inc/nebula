@@ -748,9 +748,6 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
         case Iterator::Kind::kGetNeighbors:
             os << "get neighbors";
             break;
-        case Iterator::Kind::kJoin:
-            os << "join";
-            break;
         case Iterator::Kind::kProp:
             os << "Prop";
             break;

@@ -36,6 +36,7 @@ GetNeighbors::EdgeProps PathPlanner::buildEdgeProps(bool reverse) {
 void PathPlanner::doBuildEdgeProps(GetNeighbors::EdgeProps& edgeProps,
                                    bool reverse,
                                    bool isInEdge) {
+    const auto& exprProps = pathCtx_->exprProps;
     for (const auto& e : pathCtx_->over.edgeTypes) {
         storage::cpp2::EdgeProp ep;
         if (reverse == isInEdge) {
@@ -43,7 +44,16 @@ void PathPlanner::doBuildEdgeProps(GetNeighbors::EdgeProps& edgeProps,
         } else {
             ep.set_type(-e);
         }
-        ep.set_props({kDst, kType, kRank});
+        const auto& found = exprProps.edgeProps().find(e);
+        if (found == exprProps.edgeProps().end()) {
+            ep.set_props({kDst, kType, kRank});
+        } else {
+            std::set<std::string> props(found->second.begin(), found->second.end());
+            props.emplace(kDst);
+            props.emplace(kType);
+            props.emplace(kRank);
+            ep.set_props(std::vector<std::string>(props.begin(), props.end()));
+        }
         edgeProps->emplace_back(std::move(ep));
     }
 }
@@ -214,7 +224,14 @@ PlanNode* PathPlanner::singlePairPath(PlanNode* dep, bool reverse) {
     gn->setInputVar(vidsVar);
     gn->setDedup();
 
-    auto* path = BFSShortestPath::make(qctx, gn);
+    PlanNode* pathDep = gn;
+    if (pathCtx_->filter != nullptr) {
+        auto* filterExpr = qctx->objPool()->add(pathCtx_->filter->clone().release());
+        auto* filter = Filter::make(qctx, gn, filterExpr);
+        pathDep = filter;
+    }
+
+    auto* path = BFSShortestPath::make(qctx, pathDep);
     path->setOutputVar(vidsVar);
     path->setColNames({kVid, kEdgeStr});
 
@@ -264,7 +281,14 @@ PlanNode* PathPlanner::allPairPath(PlanNode* dep, bool reverse) {
     gn->setInputVar(vidsVar);
     gn->setDedup();
 
-    auto* path = ProduceAllPaths::make(qctx, gn);
+    PlanNode* pathDep = gn;
+    if (pathCtx_->filter != nullptr) {
+        auto* filterExpr = qctx->objPool()->add(pathCtx_->filter->clone().release());
+        auto* filter = Filter::make(qctx, gn, filterExpr);
+        pathDep = filter;
+    }
+
+    auto* path = ProduceAllPaths::make(qctx, pathDep);
     path->setOutputVar(vidsVar);
     path->setColNames({kVid, kPathStr});
     return path;
@@ -309,7 +333,14 @@ PlanNode* PathPlanner::multiPairPath(PlanNode* dep, bool reverse) {
     gn->setInputVar(vidsVar);
     gn->setDedup();
 
-    auto* path = ProduceSemiShortestPath::make(qctx, gn);
+    PlanNode* pathDep = gn;
+    if (pathCtx_->filter != nullptr) {
+        auto* filterExpr = qctx->objPool()->add(pathCtx_->filter->clone().release());
+        auto* filter = Filter::make(qctx, gn, filterExpr);
+        pathDep = filter;
+    }
+
+    auto* path = ProduceSemiShortestPath::make(qctx, pathDep);
     path->setOutputVar(vidsVar);
     path->setColNames({kDst, kSrc, kCostStr, kPathStr});
 

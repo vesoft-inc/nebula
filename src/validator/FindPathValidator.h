@@ -26,6 +26,8 @@ private:
         return pathCtx_.get();
     }
 
+    Status validateWhere(WhereClause* where);
+
 private:
     std::unique_ptr<PathContext> pathCtx_;
 };

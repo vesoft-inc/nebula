@@ -39,7 +39,6 @@ public:
         kDefault,
         kGetNeighbors,
         kSequential,
-        kJoin,
         kProp,
     };
 
@@ -101,10 +100,6 @@ public:
 
     bool isSequentialIter() const {
         return kind_ == Kind::kSequential;
-    }
-
-    bool isJoinIter() const {
-        return kind_ == Kind::kJoin;
     }
 
     bool isPropIter() const {
@@ -270,9 +265,9 @@ public:
     // Its unique based on the GN interface dedup
     List getEdges();
 
+    // only return currentEdge, not currentRow, for test
     const Row* row() const override {
-        DCHECK(false);
-        return nullptr;
+        return currentEdge_;
     }
 
 private:
