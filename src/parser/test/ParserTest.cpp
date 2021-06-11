@@ -1965,12 +1965,11 @@ TEST(Parser, ErrorMsg) {
         ASSERT_EQ(error, result.status().toString());
     }
     // min integer bound checking
-    // TODO(shylock) out of range int64_t
-    // {
-        // std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-9223372036854775808) ";
-        // auto result = parse(query);
-        // ASSERT_TRUE(result.ok()) << result.status();
-    // }
+    {
+        std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-9223372036854775808) ";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-(1+9223372036854775808)) ";
         auto result = parse(query);
@@ -2016,12 +2015,11 @@ TEST(Parser, ErrorMsg) {
         ASSERT_EQ(error, result.status().toString());
     }
     // min hex integer bound
-    // TODO(shylock) out of range int64_t
-    // {
-        // std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-0x8000000000000000) ";
-        // auto result = parse(query);
-        // ASSERT_TRUE(result.ok()) << result.status();
-    // }
+    {
+        std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-0x8000000000000000) ";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-0x8000000000000001) ";
         auto result = parse(query);
@@ -2062,12 +2060,11 @@ TEST(Parser, ErrorMsg) {
         ASSERT_EQ(error, result.status().toString());
     }
     // min oct integer bound
-    // TODO(shylock) out of range int64_t
-    // {
-        // std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-01000000000000000000000)";
-        // auto result = parse(query);
-        // ASSERT_TRUE(result.ok()) << result.status().toString();
-    // }
+    {
+        std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-01000000000000000000000)";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status().toString();
+    }
     {
         std::string query = "INSERT VERTEX person(id) VALUES \"100\":(-01000000000000000000001) ";
         auto result = parse(query);

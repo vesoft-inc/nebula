@@ -325,70 +325,64 @@ Feature: Yield Sentence
       """
     Then a SemanticError should be raised at runtime: `$-.abc', not exist prop `abc'
 
-  @skip
   Scenario: CalculateOverflow
     When executing query:
       """
       YIELD 9223372036854775807+1
       """
-    Then a ExecutionError should be raised at runtime: Out of range 9223372036854775807 + 1
+    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807-2
       """
-    Then a ExecutionError should be raised at runtime: Out of range -9223372036854775807 - 2
+    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807-2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807+-2
       """
-    Then a ExecutionError should be raised at runtime: Out of range -9223372036854775807 + -2
-    When executing query:
-      """
-      YIELD 1-(-9223372036854775807)
-      """
-    Then a ExecutionError should be raised at runtime: Out of range 1 - -9223372036854775807
+    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807+-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*2
       """
-    Then a ExecutionError should be raised at runtime: Out of range 9223372036854775807 * 2
+    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: Out of range -9223372036854775807 * -2
+    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: Out of range 9223372036854775807 * -2
-    When executing query:
-      """
-      YIELD -9223372036854775807*2
-      """
-    Then a ExecutionError should be raised at runtime: Out of range -9223372036854775807 * 2
+    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 1/0
       """
-    Then a ExecutionError should be raised at runtime: Division by zero
+    Then a ExecutionError should be raised at runtime: / by zero
     When executing query:
       """
       YIELD 2%0
       """
-    Then a ExecutionError should be raised at runtime: Division by zero
+    Then a ExecutionError should be raised at runtime: / by zero
     When executing query:
       """
-      YIELD -9223372036854775808*1
+      YIELD -9223372036854775808
       """
     Then the result should be, in any order, with relax comparison:
-      | (-(-9223372036854775808)*1) |
-      | -9223372036854775808        |
+      | -9223372036854775808 |
+      | -9223372036854775808 |
+    When executing query:
+      """
+      YIELD --9223372036854775808
+      """
+    Then a ExecutionError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775809
       """
-    Then a ExecutionError should be raised at runtime: Out of range: near `9223372036854775809'
+    Then a SyntaxError should be raised at runtime: Out of range: near `9223372036854775809'
     When executing query:
       """
       YIELD 9223372036854775807

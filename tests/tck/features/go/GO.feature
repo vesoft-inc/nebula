@@ -17,6 +17,16 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
+      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > 9223372036854775807+1
+      """
+    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    When executing query:
+      """
+      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > -9223372036854775808-1
+      """
+    Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
+    When executing query:
+      """
       GO FROM "Tim Duncan" OVER like YIELD $^.player.name as name, $^.player.age as age
       """
     Then the result should be, in any order, with relax comparison:

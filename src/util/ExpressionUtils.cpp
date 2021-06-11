@@ -159,24 +159,30 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
 
 // rewrite Agg to VarProp
 Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
-        auto matcher = [](const Expression* e) -> bool {
-            return e->kind() == Expression::Kind::kAggregate;
-        };
-        auto rewriter = [](const Expression *e) -> Expression * {
-            return new VariablePropertyExpression("", e->toString());
-        };
+    auto matcher = [](const Expression *e) -> bool {
+        return e->kind() == Expression::Kind::kAggregate;
+    };
+    auto rewriter = [](const Expression *e) -> Expression * {
+        return new VariablePropertyExpression("", e->toString());
+    };
 
-        return RewriteVisitor::transform(expr,
-                                         std::move(matcher),
-                                         std::move(rewriter));
-    }
+    return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
 
-Expression *ExpressionUtils::foldConstantExpr(const Expression *expr, ObjectPool *objPool) {
+StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr,
+                                                         ObjectPool *objPool) {
     auto newExpr = expr->clone();
     FoldConstantExprVisitor visitor;
     newExpr->accept(&visitor);
+    if (!visitor.ok()) {
+        return std::move(visitor).status();
+    }
     if (visitor.canBeFolded()) {
-        return objPool->add(visitor.fold(newExpr.get()));
+        auto foldedExpr = visitor.fold(newExpr.get());
+        if (!visitor.ok()) {
+            return std::move(visitor).status();
+        }
+        return objPool->add(foldedExpr);
     }
     return objPool->add(newExpr.release());
 }
@@ -329,12 +335,14 @@ Expression *ExpressionUtils::rewriteRelExprHelper(
     return rewriteRelExprHelper(root, relRightOperandExpr);
 }
 
-Expression *ExpressionUtils::filterTransform(const Expression *filter, ObjectPool *pool) {
+StatusOr<Expression*> ExpressionUtils::filterTransform(const Expression *filter, ObjectPool *pool) {
     auto rewrittenExpr = const_cast<Expression *>(filter);
     // Rewrite relational expression
     rewrittenExpr = rewriteRelExpr(rewrittenExpr, pool);
     // Fold constant expression
-    rewrittenExpr = foldConstantExpr(rewrittenExpr, pool);
+    auto constantFoldRes = foldConstantExpr(rewrittenExpr, pool);
+    NG_RETURN_IF_ERROR(constantFoldRes);
+    rewrittenExpr = constantFoldRes.value();
     // Reduce Unary expression
     rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr, pool);
     return rewrittenExpr;

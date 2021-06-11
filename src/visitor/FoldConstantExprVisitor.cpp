@@ -9,7 +9,7 @@
 #include "visitor/FoldConstantExprVisitor.h"
 
 #include "context/QueryExpressionContext.h"
-
+#include "util/ExpressionUtils.h"
 namespace nebula {
 namespace graph {
 
@@ -23,6 +23,7 @@ void FoldConstantExprVisitor::visit(UnaryExpression *expr) {
         expr->operand()->accept(this);
         if (canBeFolded_) {
             expr->setOperand(fold(expr->operand()));
+            if (!ok()) return;
         }
     } else {
         canBeFolded_ = expr->kind() == Expression::Kind::kUnaryNegate ||
@@ -35,6 +36,7 @@ void FoldConstantExprVisitor::visit(TypeCastingExpression *expr) {
         expr->operand()->accept(this);
         if (canBeFolded_) {
             expr->setOperand(fold(expr->operand()));
+            if (!ok()) return;
         }
     }
 }
@@ -76,6 +78,7 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
         operand->accept(this);
         if (canBeFolded_) {
             auto *newExpr = fold(operand);
+            if (!ok()) return;
             expr->setOperand(i, newExpr);
             /*
             if (newExpr->value().isBool()) {
@@ -103,6 +106,7 @@ void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
             arg->accept(this);
             if (canBeFolded_) {
                 arg.reset(fold(arg.get()));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }
@@ -124,6 +128,7 @@ void FoldConstantExprVisitor::visit(AggregateExpression *expr) {
         expr->arg()->accept(this);
         if (canBeFolded_) {
             expr->setArg(fold(expr->arg()));
+            if (!ok()) return;
         }
     }
 }
@@ -156,6 +161,7 @@ void FoldConstantExprVisitor::visit(ListExpression *expr) {
         item->accept(this);
         if (canBeFolded_) {
             expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -174,6 +180,7 @@ void FoldConstantExprVisitor::visit(SetExpression *expr) {
         item->accept(this);
         if (canBeFolded_) {
             expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -193,6 +200,7 @@ void FoldConstantExprVisitor::visit(MapExpression *expr) {
         item->accept(this);
         if (canBeFolded_) {
             auto val = std::unique_ptr<Expression>(fold(item));
+            if (!ok()) return;
             expr->setItem(i, std::make_pair(pair.first, std::move(val)));
         } else {
             canBeFolded = false;
@@ -208,6 +216,7 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
         expr->condition()->accept(this);
         if (canBeFolded_) {
             expr->setCondition(fold(expr->condition()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -216,6 +225,7 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
         expr->defaultResult()->accept(this);
         if (canBeFolded_) {
             expr->setDefault(fold(expr->defaultResult()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -228,6 +238,7 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
             when->accept(this);
             if (canBeFolded_) {
                 expr->setWhen(i, fold(when));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }
@@ -236,6 +247,7 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
             then->accept(this);
             if (canBeFolded_) {
                 expr->setThen(i, fold(then));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }
@@ -318,6 +330,7 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
         leftCanBeFolded = canBeFolded_;
         if (leftCanBeFolded) {
             expr->setLeft(fold(expr->left()));
+            if (!ok()) return;
         }
     }
     if (!isConstant(expr->right())) {
@@ -325,14 +338,32 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
         rightCanBeFolded = canBeFolded_;
         if (rightCanBeFolded) {
             expr->setRight(fold(expr->right()));
+            if (!ok()) return;
         }
     }
     canBeFolded_ = leftCanBeFolded && rightCanBeFolded;
 }
 
-Expression *FoldConstantExprVisitor::fold(Expression *expr) const {
+Expression *FoldConstantExprVisitor::fold(Expression *expr) {
     QueryExpressionContext ctx;
     auto value = expr->eval(ctx(nullptr));
+    if (value.type() == Value::Type::NULLVALUE) {
+        switch (value.getNull()) {
+            case NullType::DIV_BY_ZERO:
+                canBeFolded_ = false;
+                status_ = Status::Error("/ by zero");
+                break;
+            case NullType::ERR_OVERFLOW:
+                canBeFolded_ = false;
+                status_ = Status::Error("result of %s cannot be represented as an integer",
+                                        expr->toString().c_str());
+                break;
+            default:
+                break;
+        }
+    } else {
+        status_ = Status::OK();
+    }
     return new ConstantExpression(std::move(value));
 }
 
@@ -350,6 +381,7 @@ void FoldConstantExprVisitor::visit(PathBuildExpression *expr) {
             continue;
         }
         expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+        if (!ok()) return;
     }
     canBeFolded_ = canBeFolded;
 }
@@ -360,6 +392,7 @@ void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
         expr->collection()->accept(this);
         if (canBeFolded_) {
             expr->setCollection(fold(expr->collection()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -368,6 +401,7 @@ void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
         expr->filter()->accept(this);
         if (canBeFolded_) {
             expr->setFilter(fold(expr->filter()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -376,6 +410,7 @@ void FoldConstantExprVisitor::visit(ListComprehensionExpression *expr) {
         expr->mapping()->accept(this);
         if (canBeFolded_) {
             expr->setMapping(fold(expr->mapping()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -389,6 +424,7 @@ void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
         expr->collection()->accept(this);
         if (canBeFolded_) {
             expr->setCollection(fold(expr->collection()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -398,6 +434,7 @@ void FoldConstantExprVisitor::visit(PredicateExpression *expr) {
             expr->filter()->accept(this);
             if (canBeFolded_) {
                 expr->setFilter(fold(expr->filter()));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }
@@ -412,6 +449,7 @@ void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
         expr->initial()->accept(this);
         if (canBeFolded_) {
             expr->setInitial(fold(expr->initial()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -420,6 +458,7 @@ void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
         expr->collection()->accept(this);
         if (canBeFolded_) {
             expr->setCollection(fold(expr->collection()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -428,6 +467,7 @@ void FoldConstantExprVisitor::visit(ReduceExpression *expr) {
         expr->mapping()->accept(this);
         if (canBeFolded_) {
             expr->setMapping(fold(expr->mapping()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -441,6 +481,7 @@ void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
         expr->list()->accept(this);
         if (canBeFolded_) {
             expr->setList(fold(expr->list()));
+            if (!ok()) return;
         } else {
             canBeFolded = false;
         }
@@ -450,6 +491,7 @@ void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
             expr->lo()->accept(this);
             if (canBeFolded_) {
                 expr->setLo(fold(expr->lo()));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }
@@ -460,6 +502,7 @@ void FoldConstantExprVisitor::visit(SubscriptRangeExpression *expr) {
             expr->hi()->accept(this);
             if (canBeFolded_) {
                 expr->setHi(fold(expr->hi()));
+                if (!ok()) return;
             } else {
                 canBeFolded = false;
             }

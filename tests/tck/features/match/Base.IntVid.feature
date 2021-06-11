@@ -56,6 +56,16 @@ Feature: Basic match
       | 'Ray Allen'     | 43  |
       | 'David West'    | 38  |
       | 'Tracy McGrady' | 39  |
+    When executing query:
+      """
+      MATCH (v:player) where v.age > 9223372036854775807+1  return v
+      """
+    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    When executing query:
+      """
+      MATCH (v:player) where v.age > -9223372036854775808-1  return v
+      """
+    Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
 
   Scenario: Une step
     When executing query:

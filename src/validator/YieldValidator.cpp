@@ -12,7 +12,6 @@
 #include "parser/TraverseSentences.h"
 #include "planner/plan/Query.h"
 #include "util/ExpressionUtils.h"
-#include "visitor/FoldConstantExprVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -71,9 +70,11 @@ Status YieldValidator::validateImpl() {
 Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     columns_->addColumn(column);
 
-    auto expr = column->expr();
-    DCHECK(expr != nullptr);
+    auto pool = qctx()->objPool();
+    auto colExpr = column->expr();
+    DCHECK(colExpr != nullptr);
 
+    auto expr = pool->add(colExpr->clone().release());
     NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
 
     auto status = deduceExprType(expr);
@@ -84,12 +85,10 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     outputColumnNames_.emplace_back(name);
 
     // Constant expression folding must be after type deduction
-    FoldConstantExprVisitor visitor;
-    expr->accept(&visitor);
-    if (visitor.canBeFolded()) {
-        column->setExpr(visitor.fold(expr));
-    }
-
+    auto foldedExpr = ExpressionUtils::foldConstantExpr(expr, pool);
+    NG_RETURN_IF_ERROR(foldedExpr);
+    auto foldedExprCopy = std::move(foldedExpr).value()->clone();
+    column->setExpr(foldedExprCopy.release());
     outputs_.emplace_back(name, type);
     return Status::OK();
 }
@@ -181,8 +180,9 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
     if (filter != nullptr) {
         NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
         auto pool = qctx_->objPool();
-        auto newFilter = ExpressionUtils::foldConstantExpr(filter, pool);
-        filterCondition_ = newFilter;
+        auto foldRes = ExpressionUtils::foldConstantExpr(filter, pool);
+        NG_RETURN_IF_ERROR(foldRes);
+        filterCondition_ = foldRes.value();
     }
     return Status::OK();
 }

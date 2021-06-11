@@ -280,7 +280,9 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
     auto pool = whereClauseCtx.qctx->objPool();
-    whereClauseCtx.filter = ExpressionUtils::filterTransform(filter, pool);
+    auto transformRes =  ExpressionUtils::filterTransform(filter, pool);
+    NG_RETURN_IF_ERROR(transformRes);
+    whereClauseCtx.filter = transformRes.value();
 
     auto typeStatus = deduceExprType(whereClauseCtx.filter);
     NG_RETURN_IF_ERROR(typeStatus);

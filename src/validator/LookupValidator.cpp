@@ -261,7 +261,9 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 
     // fold constant expression
     auto pool = qctx_->objPool();
-    expr = static_cast<RelationalExpression*>(ExpressionUtils::foldConstantExpr(expr, pool));
+    auto foldRes = ExpressionUtils::foldConstantExpr(expr, pool);
+    NG_RETURN_IF_ERROR(foldRes);
+    expr = static_cast<RelationalExpression*>(foldRes.value());
     DCHECK_EQ(expr->left()->kind(), Expression::Kind::kLabelAttribute);
 
     std::string prop = la->right()->value().getStr();

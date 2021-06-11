@@ -59,6 +59,14 @@ public:
         return hasUnaryMinus_;
     }
 
+    void setIsIntMin(bool v) {
+        isIntMin_ = v;
+    }
+
+    bool isIntMin() const {
+        return isIntMin_;
+    }
+
 protected:
     // Called when YY_INPUT is invoked
     int LexerInput(char *buf, int maxSize) override {
@@ -89,7 +97,7 @@ protected:
     }
 
     using TokenType = nebula::GraphParser::token;
-    auto parseDecimal() const {
+    auto parseDecimal() {
         try {
             folly::StringPiece text(yytext, yyleng);
             uint64_t val = folly::to<uint64_t>(text);
@@ -99,7 +107,9 @@ protected:
             if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
                 throw GraphParser::syntax_error(*yylloc, "Out of range:");
             }
-            // TODO for min of int64_t will overflow
+            if (val == MAX_ABS_INTEGER && hasUnaryMinus()) {
+                setIsIntMin(true);
+            }
             yylval->intval = val;
         } catch (...) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
@@ -117,7 +127,7 @@ protected:
         return TokenType::DOUBLE;
     }
 
-    auto parseHex() const {
+    auto parseHex() {
         if (yyleng > 18) {
             auto i = 2;
             while (i < yyleng && yytext[i] == '0') {
@@ -135,12 +145,14 @@ protected:
         if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
         }
-        // TODO for min of int64_t will overflow
+        if (val == MAX_ABS_INTEGER && hasUnaryMinus()) {
+            setIsIntMin(true);
+        }
         yylval->intval = static_cast<int64_t>(val);
         return TokenType::INTEGER;
     }
 
-    auto parseOct() const {
+    auto parseOct() {
         if (yyleng > 22) {
             auto i = 1;
             while (i < yyleng && yytext[i] == '0') {
@@ -159,7 +171,9 @@ protected:
         if (val == MAX_ABS_INTEGER && !hasUnaryMinus()) {
             throw GraphParser::syntax_error(*yylloc, "Out of range:");
         }
-        // TODO for min of int64_t will overflow
+        if (val == MAX_ABS_INTEGER && hasUnaryMinus()) {
+            setIsIntMin(true);
+        }
         yylval->intval = static_cast<int64_t>(val);
         return TokenType::INTEGER;
     }
@@ -169,6 +183,7 @@ private:
     int yylex() override;
 
     bool                                hasUnaryMinus_{false};
+    bool                                isIntMin_{false};
     nebula::GraphParser::semantic_type *yylval{nullptr};
     nebula::GraphParser::location_type *yylloc{nullptr};
     std::unique_ptr<char[]>             sbuf_{nullptr};

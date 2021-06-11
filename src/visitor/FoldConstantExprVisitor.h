@@ -8,6 +8,7 @@
 #define VISITOR_FOLDCONSTANTEXPRVISITOR_H_
 
 #include "common/expression/ExprVisitor.h"
+// #include "common/base/Status.h"
 
 namespace nebula {
 namespace graph {
@@ -20,6 +21,14 @@ public:
 
     bool isConstant(Expression *expr) const {
         return expr->kind() == Expression::Kind::kConstant;
+    }
+
+    bool ok() const {
+        return status_.ok();
+    }
+
+    Status status() && {
+        return std::move(status_);
     }
 
     void visit(ConstantExpression *expr) override;
@@ -74,10 +83,11 @@ public:
     void visit(SubscriptRangeExpression *expr) override;
 
     void visitBinaryExpr(BinaryExpression *expr);
-    Expression *fold(Expression *expr) const;
+    Expression *fold(Expression *expr);
 
 private:
     bool canBeFolded_{false};
+    Status status_;
 };
 
 }   // namespace graph

@@ -655,7 +655,7 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG bad_null_default_value(name string DEFAULT "N/A", age int DEFAULT 1%0)
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: / by zero
     # test alter tag with wrong type default value of string when add
     When executing query:
       """
