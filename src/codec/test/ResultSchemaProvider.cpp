@@ -99,8 +99,8 @@ size_t ResultSchemaProvider::size() const noexcept {
 }
 
 
-int64_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name) const {
-    uint64_t hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
+int64_t ResultSchemaProvider::getFieldIndex(const std::string& name) const {
+    uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
     auto iter = nameIndex_.find(hash);
     if (iter == nameIndex_.end()) {
         return -1;
@@ -126,7 +126,7 @@ PropertyType ResultSchemaProvider::getFieldType(int64_t index) const {
 }
 
 
-PropertyType ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
+PropertyType ResultSchemaProvider::getFieldType(const std::string& name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
         return PropertyType::UNKNOWN;
@@ -145,7 +145,7 @@ const meta::SchemaProviderIf::Field* ResultSchemaProvider::field(int64_t index)
 
 
 const meta::SchemaProviderIf::Field* ResultSchemaProvider::field(
-        const folly::StringPiece name) const {
+        const std::string& name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
         return nullptr;

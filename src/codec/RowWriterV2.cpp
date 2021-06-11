@@ -223,7 +223,7 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
 }
 
 
-WriteResult RowWriterV2::setValue(folly::StringPiece name, const Value& val) noexcept {
+WriteResult RowWriterV2::setValue(const std::string &name, const Value& val) noexcept {
     CHECK(!finished_) << "You have called finish()";
     int64_t index = schema_->getFieldIndex(name);
     return setValue(index, val);
@@ -248,7 +248,7 @@ WriteResult RowWriterV2::setNull(ssize_t index) noexcept {
 }
 
 
-WriteResult RowWriterV2::setNull(folly::StringPiece name) noexcept {
+WriteResult RowWriterV2::setNull(const std::string& name) noexcept {
     CHECK(!finished_) << "You have called finish()";
     int64_t index = schema_->getFieldIndex(name);
     return setNull(index);

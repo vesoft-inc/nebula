@@ -129,7 +129,7 @@ public:
 
     // Data write
     template<typename T>
-    WriteResult set(folly::StringPiece name, T&& v) noexcept {
+    WriteResult set(const std::string &name, T&& v) noexcept {
         CHECK(!finished_) << "You have called finish()";
         int64_t index = schema_->getFieldIndex(name);
         if (index >= 0) {
@@ -140,10 +140,10 @@ public:
     }
 
     WriteResult setValue(ssize_t index, const Value& val) noexcept;
-    WriteResult setValue(folly::StringPiece name, const Value& val) noexcept;
+    WriteResult setValue(const std::string &name, const Value& val) noexcept;
 
     WriteResult setNull(ssize_t index) noexcept;
-    WriteResult setNull(folly::StringPiece name) noexcept;
+    WriteResult setNull(const std::string &name) noexcept;
 
 private:
     const meta::SchemaProviderIf* schema_;
