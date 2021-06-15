@@ -382,6 +382,7 @@ enum ErrorCode {
     // task manager failed
     E_INVALID_TASK_PARA               = -3051,
     E_USER_CANCEL                     = -3052,
+    E_TASK_EXECUTION_FAILED           = -3053,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
