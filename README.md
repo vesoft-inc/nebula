@@ -67,7 +67,7 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 Contributions are warmly welcomed and greatly appreciated. And here are a few ways you can contribute:
 
 * Start by some [issues](https://github.com/vesoft-inc/nebula-graph/issues)
-* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/manual-EN/4.contributions/how-to-contribute/).
+* Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/master/15.contribution/how-to-contribute/).
 
 ## Licensing
 

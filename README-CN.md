@@ -74,7 +74,7 @@ Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，�
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
 
 * 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula-graph/issues)
-* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)
+* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/master/15.contribution/how-to-contribute/)
 
 ## 许可证
 
