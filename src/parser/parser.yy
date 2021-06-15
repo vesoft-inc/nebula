@@ -2024,8 +2024,8 @@ both_in_out_clause
     | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
-    : KW_GET KW_SUBGRAPH step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {
-        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7);
+    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {
+        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8);
     }
 
 use_sentence

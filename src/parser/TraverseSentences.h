@@ -423,10 +423,10 @@ private:
 
 class FindPathSentence final : public Sentence {
 public:
-    FindPathSentence(bool isShortest, bool withProperites, bool noLoop) {
+    FindPathSentence(bool isShortest, bool withProp, bool noLoop) {
         kind_ = Kind::kFindPath;
         isShortest_ = isShortest;
-        withProperites_ = withProperites;
+        withProp_ = withProp;
         noLoop_ = noLoop;
     }
 
@@ -474,8 +474,8 @@ public:
         return isShortest_;
     }
 
-    bool withProperites() const {
-        return withProperites_;
+    bool withProp() const {
+        return withProp_;
     }
 
     bool noLoop() const {
@@ -486,7 +486,7 @@ public:
 
 private:
     bool                            isShortest_;
-    bool                            withProperites_;
+    bool                            withProp_;
     bool                            noLoop_;
     std::unique_ptr<FromClause>     from_;
     std::unique_ptr<ToClause>       to_;
@@ -597,12 +597,14 @@ private:
 
 class GetSubgraphSentence final : public Sentence {
 public:
-    GetSubgraphSentence(StepClause* step,
+    GetSubgraphSentence(bool withProp,
+                        StepClause* step,
                         FromClause* from,
                         InBoundClause* in,
                         OutBoundClause* out,
                         BothInOutClause* both) {
         kind_ = Kind::kGetSubgraph;
+        withProp_ = withProp;
         step_.reset(step);
         from_.reset(from);
         in_.reset(in);
@@ -612,6 +614,10 @@ public:
 
     StepClause* step() const {
         return step_.get();
+    }
+
+    bool withProp() const {
+        return withProp_;
     }
 
     FromClause* from() const {
@@ -633,6 +639,7 @@ public:
     std::string toString() const override;
 
 private:
+    bool                                withProp_;
     std::unique_ptr<StepClause>         step_;
     std::unique_ptr<FromClause>         from_;
     std::unique_ptr<InBoundClause>      in_;

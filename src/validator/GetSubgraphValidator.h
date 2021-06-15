@@ -32,7 +32,7 @@ private:
 
     Status zeroStep(PlanNode* depend, const std::string& inputVar);
 
-    StatusOr<std::vector<storage::cpp2::VertexProp>> buildVertexProp();
+    StatusOr<GetNeighbors::VertexProps> buildVertexProp();
 
     StatusOr<std::vector<storage::cpp2::EdgeProp>> fillEdgeProp(
         const std::unordered_set<EdgeType> &edges);
@@ -41,6 +41,7 @@ private:
 
 private:
     std::unordered_set<EdgeType>                edgeTypes_;
+    bool                                        withProp_{false};
 };
 }  // namespace graph
 }  // namespace nebula

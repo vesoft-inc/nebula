@@ -33,7 +33,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query = "GET SUBGRAPH 3 STEPS FROM \"1\"";
+        std::string query = "GET SUBGRAPH WITH PROP 3 STEPS FROM \"1\"";
         std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
@@ -45,7 +45,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query = "GET SUBGRAPH FROM \"1\" BOTH like";
+        std::string query = "GET SUBGRAPH  WITH PROP FROM \"1\" BOTH like";
         std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
@@ -57,7 +57,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query = "GET SUBGRAPH FROM \"1\", \"2\" IN like";
+        std::string query = "GET SUBGRAPH WITH PROP FROM \"1\", \"2\" IN like";
         std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
@@ -73,7 +73,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
 TEST_F(GetSubgraphValidatorTest, Input) {
     {
         std::string query =
-            "GO FROM \"1\" OVER like YIELD like._src AS src | GET SUBGRAPH FROM $-.src";
+            "GO FROM \"1\" OVER like YIELD like._src AS src | GET SUBGRAPH WITH PROP FROM $-.src";
         std::vector<PlanNode::Kind> expected = {
             PK::kDataCollect,
             PK::kLoop,
@@ -115,7 +115,7 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query = "GET SUBGRAPH 0 STEPS FROM \"1\", \"2\", \"3\"";
+        std::string query = "GET SUBGRAPH WITH PROP 0 STEPS FROM \"1\", \"2\", \"3\"";
         std::vector<PlanNode::Kind> expected = {
             PK::kAggregate,
             PK::kGetVertices,
@@ -124,8 +124,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query =
-            "GO FROM \"1\" OVER like YIELD like._src AS src | GET SUBGRAPH 0 STEPS FROM $-.src";
+        std::string query = "GO FROM \"1\" OVER like YIELD like._src AS src | GET SUBGRAPH WITH "
+                            "PROP 0 STEPS FROM $-.src";
         std::vector<PlanNode::Kind> expected = {
             PK::kAggregate,
             PK::kGetVertices,
@@ -138,8 +138,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         EXPECT_TRUE(checkResult(query, expected));
     }
     {
-        std::string query =
-            "$a = GO FROM \"1\" OVER like YIELD like._src AS src; GET SUBGRAPH 0 STEPS FROM $a.src";
+        std::string query = "$a = GO FROM \"1\" OVER like YIELD like._src AS src; GET SUBGRAPH "
+                            "WITH PROP 0 STEPS FROM $a.src";
         std::vector<PlanNode::Kind> expected = {
             PK::kAggregate,
             PK::kGetVertices,
@@ -155,18 +155,18 @@ TEST_F(GetSubgraphValidatorTest, Input) {
 
 TEST_F(GetSubgraphValidatorTest, RefNotExist) {
     {
-        std::string query = "GET SUBGRAPH FROM $-.id";
+        std::string query = "GET SUBGRAPH WITH PROP FROM $-.id";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()), "SemanticError: `$-.id', not exist prop `id'");
     }
     {
-        std::string query = "GET SUBGRAPH FROM $a.id";
+        std::string query = "GET SUBGRAPH WITH PROP FROM $a.id";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()), "SemanticError: `$a.id', not exist variable `a'");
     }
     {
         std::string query =
-            "GO FROM \"1\" OVER like YIELD $$.person.age AS id | GET SUBGRAPH FROM $-.id";
+            "GO FROM \"1\" OVER like YIELD $$.person.age AS id | GET SUBGRAPH WITH PROP FROM $-.id";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()),
                   "SemanticError: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'");
@@ -179,8 +179,8 @@ TEST_F(GetSubgraphValidatorTest, RefNotExist) {
                   "SemanticError: `$a.ID', the srcs should be type of FIXED_STRING, but was`INT'");
     }
     {
-        std::string query =
-            "$a = GO FROM \"1\" OVER like YIELD like._src AS src; GET SUBGRAPH FROM $b.src";
+        std::string query = "$a = GO FROM \"1\" OVER like YIELD like._src AS src; GET SUBGRAPH "
+                            "WITH PROP FROM $b.src";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()), "SemanticError: `$b.src', not exist variable `b'");
     }
@@ -192,7 +192,7 @@ TEST_F(GetSubgraphValidatorTest, RefNotExist) {
     }
     {
         std::string query = "$a = GO FROM \"1\" OVER like YIELD like._dst AS id, like._src AS id; "
-                            "GET SUBGRAPH FROM $a.id";
+                            "GET SUBGRAPH WITH PROP FROM $a.id";
         auto result = checkResult(query);
         EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
     }

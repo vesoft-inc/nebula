@@ -17,7 +17,7 @@ Status FindPathValidator::validateImpl() {
     pathCtx_ = getContext<PathContext>();
     pathCtx_->isShortest = fpSentence->isShortest();
     pathCtx_->noLoop = fpSentence->noLoop();
-    pathCtx_->withProp = fpSentence->withProperites();
+    pathCtx_->withProp = fpSentence->withProp();
     pathCtx_->inputVarName = inputVarName_;
 
     NG_RETURN_IF_ERROR(validateStarts(fpSentence->from(), pathCtx_->from));
