@@ -523,7 +523,12 @@ public:
                 if (this->exeResult_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
                     return folly::none;
                 }
-                return this->updateAndWriteBack(partId, edgeKey);
+                auto batch = this->updateAndWriteBack(partId, edgeKey);
+                if (batch == folly::none) {
+                    // There is an error in updateAndWriteBack
+                    this->exeResult_ = nebula::cpp2::ErrorCode::E_INVALID_DATA;
+                }
+                return batch;
             } else {
                 // If filter out, StorageExpressionContext is set in filterNode
                 return folly::none;

@@ -1435,6 +1435,81 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     EXPECT_EQ("Tim Duncan", val.getStr());
 }
 
+
+// upsert/update field type and value does not match test, failed
+TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
+    fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto parts = cluster.getTotalParts();
+
+    GraphSpaceID spaceId = 1;
+    TagID tagId = 1;
+    auto status = env->schemaMan_->getSpaceVidLen(spaceId);
+    ASSERT_TRUE(status.ok());
+    auto spaceVidLen = status.value();
+
+    EXPECT_TRUE(mockVertexData(env, parts, spaceVidLen));
+
+    LOG(INFO) << "Build UpdateVertexRequest...";
+    cpp2::UpdateVertexRequest req;
+
+    req.set_space_id(spaceId);
+    auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
+    VertexID vertexId("Tim Duncan");
+    req.set_part_id(partId);
+    req.set_vertex_id(vertexId);
+    req.set_tag_id(tagId);
+
+    LOG(INFO) << "Build updated props...";
+    std::vector<cpp2::UpdatedProp> updatedProps;
+
+    // string: player.country_ = 2011(value int)
+    cpp2::UpdatedProp uProp1;
+    uProp1.set_name("country");
+    ConstantExpression uVal1(2011L);
+    uProp1.set_value(Expression::encode(uVal1));
+    updatedProps.emplace_back(uProp1);
+    req.set_updated_props(std::move(updatedProps));
+
+
+    LOG(INFO) << "Build yield...";
+    // Return player props: name, age, country
+    std::vector<std::string> tmpProps;
+    SourcePropertyExpression sourcePropExp1("1", "name");
+    tmpProps.emplace_back(Expression::encode(sourcePropExp1));
+
+    addTagPropInKey(tmpProps);
+
+    req.set_return_props(std::move(tmpProps));
+    req.set_insertable(true);
+
+    LOG(INFO) << "Test UpdateVertexRequest...";
+    auto* processor = UpdateVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
+
+
+    // get player from kvstore directly
+    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+    EXPECT_TRUE(iter && iter->valid());
+
+    auto reader = RowReaderWrapper::getTagPropReader(env->schemaMan_, spaceId, tagId, iter->val());
+    auto val = reader->getValueByName("name");
+    EXPECT_EQ("Tim Duncan", val.getStr());
+    val = reader->getValueByName("country");
+    EXPECT_EQ("America", val.getStr());
+}
+
+
 }  // namespace storage
 }  // namespace nebula
 
