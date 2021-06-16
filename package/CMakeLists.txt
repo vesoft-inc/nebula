@@ -133,6 +133,7 @@ install(
     FILES
         ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged.conf.default
         ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged.conf.production
+        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged-listener.conf.production
     PERMISSIONS
         OWNER_READ
         GROUP_READ
