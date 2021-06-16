@@ -119,12 +119,14 @@ private:
  */
 template<typename ClientType>
 class StorageClientBase {
+public:
+    StatusOr<HostAddr> getLeader(GraphSpaceID spaceId, PartitionID partId) const;
+
 protected:
     StorageClientBase(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                       meta::MetaClient* metaClient);
     virtual ~StorageClientBase();
 
-    StatusOr<HostAddr> getLeader(GraphSpaceID spaceId, PartitionID partId) const;
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
     void invalidLeader(GraphSpaceID spaceId, PartitionID partId);
     void invalidLeader(GraphSpaceID spaceId, std::vector<PartitionID> &partsId);
@@ -231,6 +233,14 @@ protected:
     }
 
     std::vector<PartitionID> getReqPartsId(const cpp2::GetValueRequest &req) const {
+        return {req.get_part_id()};
+    }
+
+    std::vector<PartitionID> getReqPartsId(const cpp2::ScanEdgeRequest &req) const {
+        return {req.get_part_id()};
+    }
+
+    std::vector<PartitionID> getReqPartsId(const cpp2::ScanVertexRequest &req) const {
         return {req.get_part_id()};
     }
 

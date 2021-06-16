@@ -7,7 +7,8 @@
 #ifndef COMMON_DATATYPES_HOSTADDR_H_
 #define COMMON_DATATYPES_HOSTADDR_H_
 
-#include "common/base/Base.h"
+#include <sstream>
+
 #include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
