@@ -51,7 +51,7 @@ Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
     }
     if (isEdge_ && reader_ != nullptr) {
         if (edgeName != name_) {
-            return Value::kNullValue;
+            return Value::kEmpty;
         }
         if (prop == kSrc) {
             auto srcId = NebulaKeyUtils::getSrcId(vIdLen_, key_);
@@ -81,7 +81,7 @@ Value StorageExpressionContext::getEdgeProp(const std::string& edgeName,
     } else {
         auto iter = edgeFilters_.find(std::make_pair(edgeName, prop));
         if (iter == edgeFilters_.end()) {
-            return Value::kNullValue;
+            return Value::kEmpty;
         }
         VLOG(1) << "Hit srcProp filter for edge " << edgeName << ", prop " << prop;
         return iter->second;
@@ -92,7 +92,7 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
                                            const std::string& prop) const {
     if (!isEdge_ && reader_ != nullptr) {
         if (tagName != name_) {
-            return Value::kNullValue;
+            return Value::kEmpty;
         }
         if (prop == kVid) {
             auto vId = NebulaKeyUtils::getVertexId(vIdLen_, key_);
@@ -111,7 +111,7 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
     } else {
         auto iter = tagFilters_.find(std::make_pair(tagName, prop));
         if (iter == tagFilters_.end()) {
-            return Value::kNullValue;
+            return Value::kEmpty;
         }
         VLOG(1) << "Hit srcProp filter for tag " << tagName << ", prop " << prop;
         return iter->second;
