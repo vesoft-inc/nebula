@@ -271,7 +271,7 @@ Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
     extractAndDedupVidColumn(qctx, initialExpr, plan.root, inputVar, plan);
     auto srcExpr = ExpressionUtils::inputPropExpr(kVid);
     // [Get vertices]
-    auto props = SchemaUtil::getAllVertexProp(qctx, space);
+    auto props = SchemaUtil::getAllVertexProp(qctx, space, true);
     NG_RETURN_IF_ERROR(props);
     auto gv = GetVertices::make(qctx,
                                 plan.root,

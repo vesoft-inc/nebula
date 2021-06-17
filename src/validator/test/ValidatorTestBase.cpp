@@ -150,7 +150,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
                         l->outputVar().c_str(), r->outputVar().c_str());
             }
             // props
-            if (lGE->props() != rGE->props()) {
+            if (*lGE->props() != *rGE->props()) {
                 return Status::Error(
                     "%s.props_ != %s.props_", l->outputVar().c_str(), r->outputVar().c_str());
             }

@@ -18,10 +18,8 @@
  * All query-related nodes would be put in this file,
  * and they are derived from PlanNode.
  */
-
 namespace nebula {
 namespace graph {
-
 /**
  * Now we hava four kind of exploration nodes:
  *  GetNeighbors,
@@ -98,16 +96,16 @@ protected:
     std::vector<storage::cpp2::OrderBy> orderBy_;
 };
 
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using EdgeProp = nebula::storage::cpp2::EdgeProp;
+using StatProp = nebula::storage::cpp2::StatProp;
+using Expr = nebula::storage::cpp2::Expr;
+using Direction = nebula::storage::cpp2::EdgeDirection;
 /**
  * Get neighbors' property
  */
 class GetNeighbors final : public Explore {
 public:
-    using VertexProps = std::unique_ptr<std::vector<storage::cpp2::VertexProp>>;
-    using EdgeProps = std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>;
-    using StatProps = std::unique_ptr<std::vector<storage::cpp2::StatProp>>;
-    using Exprs = std::unique_ptr<std::vector<storage::cpp2::Expr>>;
-
     static GetNeighbors* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
         return qctx->objPool()->add(new GetNeighbors(qctx, input, space));
     }
@@ -117,11 +115,11 @@ public:
                               GraphSpaceID space,
                               Expression* src,
                               std::vector<EdgeType> edgeTypes,
-                              storage::cpp2::EdgeDirection edgeDirection,
-                              VertexProps&& vertexProps,
-                              EdgeProps&& edgeProps,
-                              StatProps&& statProps,
-                              Exprs&& exprs,
+                              Direction edgeDirection,
+                              std::unique_ptr<std::vector<VertexProp>>&& vertexProps,
+                              std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
+                              std::unique_ptr<std::vector<StatProp>>&& statProps,
+                              std::unique_ptr<std::vector<Expr>>&& exprs,
                               bool dedup = false,
                               bool random = false,
                               std::vector<storage::cpp2::OrderBy> orderBy = {},
@@ -155,19 +153,19 @@ public:
         return edgeTypes_;
     }
 
-    const std::vector<storage::cpp2::VertexProp>* vertexProps() const {
+    const std::vector<VertexProp>* vertexProps() const {
         return vertexProps_.get();
     }
 
-    const std::vector<storage::cpp2::EdgeProp>* edgeProps() const {
+    const std::vector<EdgeProp>* edgeProps() const {
         return edgeProps_.get();
     }
 
-    const std::vector<storage::cpp2::StatProp>* statProps() const {
+    const std::vector<StatProp>* statProps() const {
         return statProps_.get();
     }
 
-    const std::vector<storage::cpp2::Expr>* exprs() const {
+    const std::vector<Expr>* exprs() const {
         return exprs_.get();
     }
 
@@ -179,7 +177,7 @@ public:
         src_ = src;
     }
 
-    void setEdgeDirection(storage::cpp2::EdgeDirection direction) {
+    void setEdgeDirection(Direction direction) {
         edgeDirection_ = direction;
     }
 
@@ -187,19 +185,19 @@ public:
         edgeTypes_ = std::move(edgeTypes);
     }
 
-    void setVertexProps(VertexProps vertexProps) {
+    void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
         vertexProps_ = std::move(vertexProps);
     }
 
-    void setEdgeProps(EdgeProps edgeProps) {
+    void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
         edgeProps_ = std::move(edgeProps);
     }
 
-    void setStatProps(StatProps statProps) {
+    void setStatProps(std::unique_ptr<std::vector<StatProp>> statProps) {
         statProps_ = std::move(statProps);
     }
 
-    void setExprs(Exprs exprs) {
+    void setExprs(std::unique_ptr<std::vector<Expr>> exprs) {
         exprs_ = std::move(exprs);
     }
 
@@ -220,14 +218,14 @@ private:
 private:
     void cloneMembers(const GetNeighbors&);
 
-    Expression*                                  src_{nullptr};
-    std::vector<EdgeType>                        edgeTypes_;
-    storage::cpp2::EdgeDirection edgeDirection_{storage::cpp2::EdgeDirection::OUT_EDGE};
-    VertexProps                                  vertexProps_;
-    EdgeProps                                    edgeProps_;
-    StatProps                                    statProps_;
-    Exprs                                        exprs_;
-    bool                                         random_{false};
+    Expression*                              src_{nullptr};
+    std::vector<EdgeType>                    edgeTypes_;
+    storage::cpp2::EdgeDirection             edgeDirection_{Direction::OUT_EDGE};
+    std::unique_ptr<std::vector<VertexProp>> vertexProps_;
+    std::unique_ptr<std::vector<EdgeProp>>   edgeProps_;
+    std::unique_ptr<std::vector<StatProp>>   statProps_;
+    std::unique_ptr<std::vector<Expr>>       exprs_;
+    bool                                     random_{false};
 };
 
 /**
@@ -239,8 +237,8 @@ public:
                              PlanNode* input,
                              GraphSpaceID space,
                              Expression* src = nullptr,
-                             std::vector<storage::cpp2::VertexProp> props = {},
-                             std::vector<storage::cpp2::Expr>       exprs = {},
+                             std::unique_ptr<std::vector<VertexProp>>&& props = nullptr,
+                             std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                              bool dedup = false,
                              std::vector<storage::cpp2::OrderBy> orderBy = {},
                              int64_t limit = std::numeric_limits<int64_t>::max(),
@@ -266,14 +264,21 @@ public:
         src_ = src;
     }
 
-    const std::vector<storage::cpp2::VertexProp>& props() const {
-        return props_;
+    const std::vector<VertexProp>* props() const {
+        return props_.get();
     }
 
-    const std::vector<storage::cpp2::Expr>& exprs() const {
-        return exprs_;
+    const std::vector<Expr>* exprs() const {
+        return exprs_.get();
     }
 
+    void setVertexProps(std::unique_ptr<std::vector<VertexProp>> props) {
+        props_ = std::move(props);
+    }
+
+    void setExprs(std::unique_ptr<std::vector<Expr>> exprs) {
+        exprs_ = std::move(exprs);
+    }
 
     PlanNode* clone() const override;
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -283,8 +288,8 @@ private:
                 PlanNode* input,
                 GraphSpaceID space,
                 Expression* src,
-                std::vector<storage::cpp2::VertexProp> props,
-                std::vector<storage::cpp2::Expr>       exprs,
+                std::unique_ptr<std::vector<VertexProp>>&& props,
+                std::unique_ptr<std::vector<Expr>>&& exprs,
                 bool dedup,
                 std::vector<storage::cpp2::OrderBy> orderBy,
                 int64_t limit,
@@ -299,17 +304,17 @@ private:
                   std::move(orderBy)),
           src_(src),
           props_(std::move(props)),
-          exprs_(std::move(exprs)) { }
+          exprs_(std::move(exprs)) {}
 
     void cloneMembers(const GetVertices&);
 
 private:
     // vertices may be parsing from runtime.
-    Expression*                              src_{nullptr};
+    Expression*                                src_{nullptr};
     // props of the vertex
-    std::vector<storage::cpp2::VertexProp>   props_;
+    std::unique_ptr<std::vector<VertexProp>>   props_;
     // expression to get
-    std::vector<storage::cpp2::Expr>         exprs_;
+    std::unique_ptr<std::vector<Expr>>         exprs_;
 };
 
 /**
@@ -324,8 +329,8 @@ public:
                           Expression* type = nullptr,
                           Expression* ranking = nullptr,
                           Expression* dst = nullptr,
-                          std::vector<storage::cpp2::EdgeProp> props = {},
-                          std::vector<storage::cpp2::Expr> exprs = {},
+                          std::unique_ptr<std::vector<EdgeProp>>&& props = nullptr,
+                          std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                           bool dedup = false,
                           int64_t limit = std::numeric_limits<int64_t>::max(),
                           std::vector<storage::cpp2::OrderBy> orderBy = {},
@@ -362,12 +367,20 @@ public:
         return dst_;
     }
 
-    const std::vector<storage::cpp2::EdgeProp>& props() const {
-        return props_;
+    const std::vector<EdgeProp>* props() const {
+        return props_.get();
     }
 
-    const std::vector<storage::cpp2::Expr>& exprs() const {
-        return exprs_;
+    const std::vector<Expr>* exprs() const {
+        return exprs_.get();
+    }
+
+    void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> props) {
+        props_ = std::move(props);
+    }
+
+    void setExprs(std::unique_ptr<std::vector<Expr>> exprs) {
+        exprs_ = std::move(exprs);
     }
 
     PlanNode* clone() const override;
@@ -381,8 +394,8 @@ private:
              Expression* type,
              Expression* ranking,
              Expression* dst,
-             std::vector<storage::cpp2::EdgeProp> props,
-             std::vector<storage::cpp2::Expr>     exprs,
+             std::unique_ptr<std::vector<EdgeProp>>&& props,
+             std::unique_ptr<std::vector<Expr>>&& exprs,
              bool dedup,
              int64_t limit,
              std::vector<storage::cpp2::OrderBy> orderBy,
@@ -400,7 +413,7 @@ private:
           ranking_(ranking),
           dst_(dst),
           props_(std::move(props)),
-          exprs_(std::move(exprs)) { }
+          exprs_(std::move(exprs)) {}
 
     void cloneMembers(const GetEdges&);
 
@@ -411,9 +424,9 @@ private:
     Expression*                              ranking_{nullptr};
     Expression*                              dst_{nullptr};
     // props of edge to get
-    std::vector<storage::cpp2::EdgeProp>     props_;
+    std::unique_ptr<std::vector<EdgeProp>>   props_;
     // expression to show
-    std::vector<storage::cpp2::Expr>         exprs_;
+    std::unique_ptr<std::vector<Expr>>       exprs_;
 };
 
 /**

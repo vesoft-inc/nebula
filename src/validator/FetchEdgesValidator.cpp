@@ -20,6 +20,8 @@ namespace graph {
 };
 
 Status FetchEdgesValidator::validateImpl() {
+    props_ = std::make_unique<std::vector<EdgeProp>>();
+    exprs_ = std::make_unique<std::vector<Expr>>();
     NG_RETURN_IF_ERROR(check());
     NG_RETURN_IF_ERROR(prepareEdges());
     NG_RETURN_IF_ERROR(prepareProperties());
@@ -211,7 +213,7 @@ Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield)
         // TODO(shylock) think about the push-down expr
     }
     prop.set_props(std::move(propsName));
-    props_.emplace_back(std::move(prop));
+    props_->emplace_back(std::move(prop));
     return Status::OK();
 }
 
@@ -242,7 +244,7 @@ Status FetchEdgesValidator::preparePropertiesWithoutYield() {
         geColNames_.emplace_back(edgeTypeName_ + "." + schema_->getFieldName(i));
     }
     prop.set_props(std::move(propNames));
-    props_.emplace_back(std::move(prop));
+    props_->emplace_back(std::move(prop));
     return Status::OK();
 }
 

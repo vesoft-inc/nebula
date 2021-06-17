@@ -15,6 +15,7 @@
 #include "planner/plan/Logic.h"
 #include "planner/plan/Query.h"
 #include "planner/plan/Algo.h"
+#include "util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {
@@ -103,85 +104,32 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
     return Status::OK();
 }
 
-StatusOr<GetNeighbors::EdgeProps> GetSubgraphValidator::buildEdgeProps() {
+StatusOr<std::unique_ptr<std::vector<EdgeProp>>> GetSubgraphValidator::buildEdgeProps() {
     if (edgeTypes_.empty()) {
-        auto allEdgePropResult = buildAllEdgeProp();
-        NG_RETURN_IF_ERROR(allEdgePropResult);
-        return std::make_unique<std::vector<storage::cpp2::EdgeProp>>(
-            std::move(allEdgePropResult).value());
-    }
-    auto edgePropResult = fillEdgeProp(edgeTypes_);
-    NG_RETURN_IF_ERROR(edgePropResult);
-    return std::make_unique<std::vector<storage::cpp2::EdgeProp>>(
-        std::move(edgePropResult).value());
-}
-
-StatusOr<std::vector<storage::cpp2::EdgeProp>> GetSubgraphValidator::fillEdgeProp(
-    const std::unordered_set<EdgeType>& edges) {
-    // list all edge properties
-    std::vector<storage::cpp2::EdgeProp> eProps;
-    for (const auto edge : edges) {
-        auto edgeSchema = qctx()->schemaMng()->getEdgeSchema(space_.id, std::abs(edge));
-        if (edgeSchema == nullptr) {
-            return Status::SemanticError("Not exist edge `%d' in space `%d'.", edge, space_.id);
+        const auto allEdgesSchema = qctx_->schemaMng()->getAllLatestVerEdgeSchema(space_.id);
+        NG_RETURN_IF_ERROR(allEdgesSchema);
+        const auto allEdges = std::move(allEdgesSchema).value();
+        for (const auto& edge : allEdges) {
+            edgeTypes_.emplace(edge.first);
+            edgeTypes_.emplace(-edge.first);
         }
-        storage::cpp2::EdgeProp eProp;
-        eProp.set_type(edge);
-        std::vector<std::string> props{kSrc, kType, kRank, kDst};
-        if (withProp_) {
-            for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-                props.emplace_back(edgeSchema->getFieldName(i));
-            }
-        }
-        eProp.set_props(std::move(props));
-        eProps.emplace_back(std::move(eProp));
     }
-    return eProps;
-}
-
-StatusOr<std::vector<storage::cpp2::EdgeProp>> GetSubgraphValidator::buildAllEdgeProp() {
-    // list all edge properties
-    std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> edgesSchema;
-    const auto allEdgesResult = qctx()->schemaMng()->getAllVerEdgeSchema(space_.id);
-    NG_RETURN_IF_ERROR(allEdgesResult);
-    const auto allEdges = std::move(allEdgesResult).value();
-    for (const auto& edge : allEdges) {
-        edgesSchema.emplace(edge.first, edge.second.back());
-    }
-    std::vector<storage::cpp2::EdgeProp> eProps;
-    for (const auto& edgeSchema : edgesSchema) {
-        storage::cpp2::EdgeProp eProp;
-        storage::cpp2::EdgeProp rEProp;
-        eProp.set_type(edgeSchema.first);
-        rEProp.set_type(-edgeSchema.first);
-        std::vector<std::string> props{kSrc, kType, kRank, kDst};
-        if (withProp_) {
-            for (std::size_t i = 0; i < edgeSchema.second->getNumFields(); ++i) {
-                props.emplace_back(edgeSchema.second->getFieldName(i));
-            }
-        }
-        eProp.set_props(props);
-        rEProp.set_props(std::move(props));
-        eProps.emplace_back(std::move(eProp));
-        eProps.emplace_back(std::move(rEProp));
-    }
-    return eProps;
+    std::vector<EdgeType> edgeTypes(edgeTypes_.begin(), edgeTypes_.end());
+    auto edgeProps = SchemaUtil::getEdgeProps(qctx_, space_, std::move(edgeTypes), withProp_);
+    NG_RETURN_IF_ERROR(edgeProps);
+    return edgeProps;
 }
 
 Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& inputVar) {
     auto& space = vctx_->whichSpace();
-    std::vector<storage::cpp2::Expr> exprs;
-    std::vector<storage::cpp2::VertexProp> vertexProps;
-    if (withProp_) {
-        auto vertexPropsResult = buildVertexProp();
-        NG_RETURN_IF_ERROR(vertexPropsResult);
-        vertexProps = *vertexPropsResult.value();
-    }
-   auto* getVertex = GetVertices::make(qctx_,
+    std::unique_ptr<std::vector<Expr>> exprs;
+    auto vertexProps = SchemaUtil::getAllVertexProp(qctx_, space, withProp_);
+    NG_RETURN_IF_ERROR(vertexProps);
+    auto* getVertex = GetVertices::make(qctx_,
                                         depend,
                                         space.id,
                                         from_.src,
-                                        std::move(vertexProps),
+                                        std::move(vertexProps).value(),
                                         std::move(exprs),
                                         true);
     getVertex->setInputVar(inputVar);
@@ -219,15 +167,14 @@ Status GetSubgraphValidator::toPlan() {
         return zeroStep(loopDep == nullptr ? bodyStart : loopDep, startVidsVar);
     }
 
-    auto vertexPropsResult = buildVertexProp();
-    NG_RETURN_IF_ERROR(vertexPropsResult);
+    auto vertexProps = SchemaUtil::getAllVertexProp(qctx_, space, withProp_);
+    NG_RETURN_IF_ERROR(vertexProps);
+    auto edgeProps = buildEdgeProps();
+    NG_RETURN_IF_ERROR(edgeProps);
     auto* gn = GetNeighbors::make(qctx_, bodyStart, space.id);
     gn->setSrc(from_.src);
-    gn->setVertexProps(std::move(vertexPropsResult).value());
-    auto edgePropsResult = buildEdgeProps();
-    NG_RETURN_IF_ERROR(edgePropsResult);
-    gn->setEdgeProps(
-        std::make_unique<std::vector<storage::cpp2::EdgeProp>>(*edgePropsResult.value()));
+    gn->setVertexProps(std::move(vertexProps).value());
+    gn->setEdgeProps(std::move(edgeProps).value());
     gn->setInputVar(startVidsVar);
 
     auto oneMoreStepOutput = vctx_->anonVarGen()->getVar();
@@ -247,30 +194,5 @@ Status GetSubgraphValidator::toPlan() {
     tail_ = projectStartVid_ != nullptr ? projectStartVid_ : loop;
     return Status::OK();
 }
-
-StatusOr<GetNeighbors::VertexProps> GetSubgraphValidator::buildVertexProp() {
-    // list all tag properties
-    GetNeighbors::VertexProps vertexProps;
-    vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
-    std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema;
-    const auto allTagsResult = qctx()->schemaMng()->getAllLatestVerTagSchema(space_.id);
-    NG_RETURN_IF_ERROR(allTagsResult);
-    const auto allTags = std::move(allTagsResult).value();
-    for (const auto& tag : allTags) {
-        tagsSchema.emplace(tag.first, tag.second);
-    }
-    for (const auto& tagSchema : tagsSchema) {
-        storage::cpp2::VertexProp vProp;
-        vProp.set_tag(tagSchema.first);
-        std::vector<std::string> props;
-        for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
-            props.emplace_back(tagSchema.second->getFieldName(i));
-        }
-        vProp.set_props(std::move(props));
-        vertexProps->emplace_back(std::move(vProp));
-    }
-    return vertexProps;
-}
-
 }   // namespace graph
 }   // namespace nebula

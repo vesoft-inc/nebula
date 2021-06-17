@@ -16,6 +16,8 @@ namespace graph {
 
 class FetchEdgesValidator final : public Validator {
 public:
+    using EdgeProp = nebula::storage::cpp2::EdgeProp;
+    using Expr = nebula::storage::cpp2::Expr;
     FetchEdgesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
 private:
@@ -64,8 +66,8 @@ private:
     std::string edgeTypeName_;
     EdgeType edgeType_{0};
     std::shared_ptr<const meta::SchemaProviderIf> schema_;
-    std::vector<storage::cpp2::EdgeProp> props_;
-    std::vector<storage::cpp2::Expr> exprs_;
+    std::unique_ptr<std::vector<EdgeProp>> props_;
+    std::unique_ptr<std::vector<Expr>>     exprs_;
     bool dedup_{false};
     int64_t limit_{std::numeric_limits<int64_t>::max()};
     std::vector<storage::cpp2::OrderBy> orderBy_{};

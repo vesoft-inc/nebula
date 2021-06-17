@@ -17,6 +17,7 @@ namespace graph {
 
 class PathPlanner final : public Planner {
 public:
+    using EdgeProp = nebula::storage::cpp2::EdgeProp;
     static std::unique_ptr<PathPlanner> make() {
         return std::unique_ptr<PathPlanner>(new PathPlanner());
     }
@@ -49,9 +50,11 @@ private:
     PlanNode* buildEdgePlan(PlanNode* dep, const std::string& input);
 
 private:
-    GetNeighbors::EdgeProps buildEdgeProps(bool reverse);
+    std::unique_ptr<std::vector<EdgeProp>> buildEdgeProps(bool reverse);
 
-    void doBuildEdgeProps(GetNeighbors::EdgeProps& edgeProps, bool reverse, bool isInEdge);
+    void doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeProps,
+                          bool reverse,
+                          bool isInEdge);
 
     void buildStart(Starts& starts, std::string& startVidsVar, bool reverse);
 

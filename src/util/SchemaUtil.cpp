@@ -312,51 +312,56 @@ bool SchemaUtil::isValidVid(const Value &value) {
     return value.isStr() || value.isInt();
 }
 
-StatusOr<std::vector<storage::cpp2::VertexProp>>
-SchemaUtil::getAllVertexProp(QueryContext *qctx, const SpaceInfo &space) {
+StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>>
+SchemaUtil::getAllVertexProp(QueryContext *qctx, const SpaceInfo &space, bool withProp) {
     // Get all tags in the space
     const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
     NG_RETURN_IF_ERROR(allTagsResult);
     // allTags: std::unordered_map<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
     const auto allTags = std::move(allTagsResult).value();
 
-    std::vector<storage::cpp2::VertexProp> props;
-    props.reserve(allTags.size());
+    auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+    vertexProps->reserve(allTags.size());
     // Retrieve prop names of each tag and append "_tag" to the name list to query empty tags
     for (const auto &tag : allTags) {
         // tag: pair<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>>
         std::vector<std::string> propNames;
+        if (withProp) {
+            const auto tagSchema = tag.second;   // nebulaSchemaProvider
+            for (size_t i = 0; i < tagSchema->getNumFields(); i++) {
+                const auto propName = tagSchema->getFieldName(i);
+                propNames.emplace_back(propName);
+            }
+        }
         storage::cpp2::VertexProp vProp;
-
         const auto tagId = tag.first;
         vProp.set_tag(tagId);
-        const auto tagSchema = tag.second;   // nebulaSchemaProvider
-        for (size_t i = 0; i < tagSchema->getNumFields(); i++) {
-            const auto propName = tagSchema->getFieldName(i);
-            propNames.emplace_back(propName);
-        }
         propNames.emplace_back(nebula::kTag);   // "_tag"
         vProp.set_props(std::move(propNames));
-        props.emplace_back(std::move(vProp));
+        vertexProps->emplace_back(std::move(vProp));
     }
-    return props;
+    return vertexProps;
 }
 
-StatusOr<std::vector<storage::cpp2::EdgeProp>> SchemaUtil::getEdgeProp(
+StatusOr<std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>> SchemaUtil::getEdgeProps(
     QueryContext *qctx,
     const SpaceInfo &space,
-    const std::vector<EdgeType> &edgeTypes) {
-    std::vector<storage::cpp2::EdgeProp> edgeProps;
-    for (const auto& edgeType : edgeTypes) {
+    const std::vector<EdgeType> &edgeTypes,
+    bool withProp) {
+    auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
+    edgeProps->reserve(edgeTypes.size());
+    for (const auto &edgeType : edgeTypes) {
         std::vector<std::string> propNames = {kSrc, kType, kRank, kDst};
-        auto edgeSchema = qctx->schemaMng()->getEdgeSchema(space.id, edgeType);
-        for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-            propNames.emplace_back(edgeSchema->getFieldName(i));
+        if (withProp) {
+            auto edgeSchema = qctx->schemaMng()->getEdgeSchema(space.id, std::abs(edgeType));
+            for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+                propNames.emplace_back(edgeSchema->getFieldName(i));
+            }
         }
         storage::cpp2::EdgeProp prop;
         prop.set_type(edgeType);
         prop.set_props(std::move(propNames));
-        edgeProps.emplace_back(std::move(prop));
+        edgeProps->emplace_back(std::move(prop));
     }
     return edgeProps;
 }

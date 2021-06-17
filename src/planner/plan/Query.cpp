@@ -95,12 +95,11 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
     }
 }
 
-
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
     auto desc = Explore::explain();
     addDescription("src", src_ ? src_->toString() : "", desc.get());
-    addDescription("props", folly::toJson(util::toJson(props_)), desc.get());
-    addDescription("exprs", folly::toJson(util::toJson(exprs_)), desc.get());
+    addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+    addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
     return desc;
 }
 
@@ -115,21 +114,17 @@ void GetVertices::cloneMembers(const GetVertices& gv) {
 
     src_ = qctx_->objPool()->add(gv.src()->clone().release());
 
-    std::vector<storage::cpp2::VertexProp> props;
-    const auto& gvProps = gv.props();
-    props.reserve(gvProps.size());
-    for (const auto& prop : gvProps) {
-        props.emplace_back(prop);
+    if (gv.props_) {
+        auto vertexProps = *gv.props_;
+        auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(std::move(vertexProps));
+        setVertexProps(std::move(vertexPropsPtr));
     }
-    props_ = std::move(props);
 
-    std::vector<storage::cpp2::Expr> exprs;
-    const auto& gvExprs = gv.exprs();
-    exprs.reserve(gvExprs.size());
-    for (const auto& expr : gvExprs) {
-        exprs.emplace_back(expr);
+    if (gv.exprs_) {
+        auto exprs = *gv.exprs_;
+        auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+        setExprs(std::move(exprsPtr));
     }
-    exprs_ = std::move(exprs);
 }
 
 
@@ -139,8 +134,8 @@ std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
     addDescription("type", util::toJson(type_), desc.get());
     addDescription("ranking", ranking_ ? ranking_->toString() : "", desc.get());
     addDescription("dst", dst_ ? dst_->toString() : "", desc.get());
-    addDescription("props", folly::toJson(util::toJson(props_)), desc.get());
-    addDescription("exprs", folly::toJson(util::toJson(exprs_)), desc.get());
+    addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+    addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
     return desc;
 }
 
@@ -158,21 +153,17 @@ void GetEdges::cloneMembers(const GetEdges& ge) {
     ranking_ = qctx_->objPool()->add(ge.ranking()->clone().release());
     dst_ = qctx_->objPool()->add(ge.dst()->clone().release());
 
-    std::vector<storage::cpp2::EdgeProp> props;
-    const auto& geProps = ge.props();
-    props.reserve(geProps.size());
-    for (const auto& prop : geProps) {
-        props.emplace_back(prop);
+    if (ge.props_) {
+        auto edgeProps = *ge.props_;
+        auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+        setEdgeProps(std::move(edgePropsPtr));
     }
-    props_ = std::move(props);
 
-    std::vector<storage::cpp2::Expr> exprs;
-    const auto& geExprs = ge.exprs();
-    exprs.reserve(geExprs.size());
-    for (const auto& expr : geExprs) {
-        exprs.emplace_back(expr);
+    if (ge.exprs_) {
+        auto exprs = *ge.exprs_;
+        auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+        setExprs(std::move(exprsPtr));
     }
-    exprs_ = std::move(exprs);
 }
 
 

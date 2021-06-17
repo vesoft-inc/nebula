@@ -15,6 +15,8 @@ namespace graph {
 static constexpr char VertexID[] = "VertexID";
 
 Status FetchVerticesValidator::validateImpl() {
+    props_ = std::make_unique<std::vector<VertexProp>>();
+    exprs_ = std::make_unique<std::vector<Expr>>();
     NG_RETURN_IF_ERROR(check());
     NG_RETURN_IF_ERROR(prepareVertices());
     NG_RETURN_IF_ERROR(prepareProperties());
@@ -189,7 +191,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
             gvColNames_.emplace_back(tagNameId.first + "." + prop.toString());
         }
         vProp.set_props(std::move(propNames));
-        props_.emplace_back(std::move(vProp));
+        props_->emplace_back(std::move(vProp));
     }
 
     // insert the reserved properties expression be compatible with 1.0
@@ -205,7 +207,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 }
 
 Status FetchVerticesValidator::preparePropertiesWithoutYield() {
-    props_.clear();
+    props_->clear();
     outputs_.emplace_back("vertices_", Value::Type::VERTEX);
     gvColNames_.emplace_back(nebula::kVid);
     for (const auto &tagSchema : tagsSchema_) {
@@ -224,7 +226,7 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
         gvColNames_.emplace_back(tagName + "._tag");
         propNames.emplace_back(nebula::kTag);   // "_tag"
         vProp.set_props(std::move(propNames));
-        props_.emplace_back(std::move(vProp));
+        props_->emplace_back(std::move(vProp));
     }
     return Status::OK();
 }

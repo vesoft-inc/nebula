@@ -22,6 +22,8 @@ class QueryContext;
 struct SpaceInfo;
 class SchemaUtil final {
 public:
+    using VertexProp = nebula::storage::cpp2::VertexProp;
+    using EdgeProp = nebula::storage::cpp2::EdgeProp;
     SchemaUtil() = delete;
 
 public:
@@ -59,12 +61,17 @@ public:
     static bool isValidVid(const Value& value);
 
     // Fetch all tags in the space and retrieve props from tags
-    static StatusOr<std::vector<storage::cpp2::VertexProp>>
-    getAllVertexProp(QueryContext* qctx, const SpaceInfo& space);
+    // only take _tag when withProp is false
+    static StatusOr<std::unique_ptr<std::vector<VertexProp>>>
+    getAllVertexProp(QueryContext* qctx, const SpaceInfo& space, bool withProp);
 
     // retrieve prop from specific edgetypes
-    static StatusOr<std::vector<storage::cpp2::EdgeProp>>
-    getEdgeProp(QueryContext* qctx, const SpaceInfo& space, const std::vector<EdgeType>& edgeTypes);
+    // only take _src _dst _type _rank when withProp is false
+    static StatusOr<std::unique_ptr<std::vector<EdgeProp>>> getEdgeProps(
+        QueryContext* qctx,
+        const SpaceInfo& space,
+        const std::vector<EdgeType>& edgeTypes,
+        bool withProp);
 };
 
 }  // namespace graph
