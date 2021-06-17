@@ -205,6 +205,12 @@ void IndexScan::cloneMembers(const IndexScan &g) {
     isEmptyResultSet_ = g.isEmptyResultSet();
 }
 
+Filter::Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
+    : SingleInputNode(qctx, Kind::kFilter, input) {
+    condition_ = condition;
+    needStableFilter_ = needStableFilter;
+    copyInputColNames(input);
+}
 
 std::unique_ptr<PlanNodeDescription> Filter::explain() const {
     auto desc = SingleInputNode::explain();
@@ -263,6 +269,12 @@ void Minus::cloneMembers(const Minus& f) {
     SetOp::cloneMembers(f);
 }
 
+Project::Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
+    : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) {
+    if (cols_ != nullptr) {
+        setColNames(cols_->names());
+    }
+}
 
 std::unique_ptr<PlanNodeDescription> Project::explain() const {
     auto desc = SingleInputNode::explain();
@@ -436,6 +448,9 @@ void SwitchSpace::cloneMembers(const SwitchSpace &l) {
     SingleInputNode::cloneMembers(l);
 }
 
+Dedup::Dedup(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kDedup, input) {
+    copyInputColNames(input);
+}
 
 PlanNode* Dedup::clone() const {
     auto* newDedup = Dedup::make(qctx_, nullptr);

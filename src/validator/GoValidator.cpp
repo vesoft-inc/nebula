@@ -89,9 +89,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
         for (auto& e : over_.allEdges) {
             auto* col = new YieldColumn(new EdgeDstIdExpression(e));
             newCols->addColumn(col);
-            auto colName = deduceColName(col);
-            colNames_.emplace_back(colName);
-            outputs_.emplace_back(colName, vidType_);
+            outputs_.emplace_back(col->name(), vidType_);
             NG_RETURN_IF_ERROR(deduceProps(col->expr(), exprProps_));
         }
 
@@ -106,13 +104,11 @@ Status GoValidator::validateYield(YieldClause* yield) {
                 return Status::SemanticError("`%s', not support aggregate function in go sentence.",
                                              col->toString().c_str());
             }
-            auto colName = deduceColName(col);
-            colNames_.emplace_back(colName);
             // check input var expression
             auto typeStatus = deduceExprType(colExpr);
             NG_RETURN_IF_ERROR(typeStatus);
             auto type = typeStatus.value();
-            outputs_.emplace_back(colName, type);
+            outputs_.emplace_back(col->name(), type);
 
             NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
         }
@@ -131,7 +127,7 @@ Status GoValidator::toPlan() {
     if (!steps_.isMToN()) {
         if (steps_.steps() == 0) {
             auto* passThrough = PassThroughNode::make(qctx_, nullptr);
-            passThrough->setColNames(std::move(colNames_));
+            passThrough->setColNames(getOutColNames());
             tail_ = passThrough;
             root_ = tail_;
             return Status::OK();
@@ -181,21 +177,12 @@ Status GoValidator::oneStep(PlanNode* dependencyForGn,
     }
 
     if (filter_ != nullptr) {
-        auto* filterNode = Filter::make(
-            qctx_, dependencyForProjectResult, newFilter_ != nullptr ? newFilter_ : filter_);
-        filterNode->setInputVar(dependencyForProjectResult->outputVar());
-        filterNode->setColNames(dependencyForProjectResult->colNames());
-        dependencyForProjectResult = filterNode;
+        dependencyForProjectResult = Filter::make(qctx_, dependencyForProjectResult, filter());
     }
-    auto* projectResult = Project::make(
-        qctx_, dependencyForProjectResult, newYieldCols_ != nullptr ? newYieldCols_ : yields_);
-    projectResult->setInputVar(dependencyForProjectResult->outputVar());
-    projectResult->setColNames(std::vector<std::string>(colNames_));
+    auto* projectResult = Project::make(qctx_, dependencyForProjectResult, yields());
+    projectResult->setColNames(getOutColNames());
     if (distinct_) {
-        Dedup* dedupNode = Dedup::make(qctx_, projectResult);
-        dedupNode->setInputVar(projectResult->outputVar());
-        dedupNode->setColNames(std::move(colNames_));
-        root_ = dedupNode;
+        root_ = Dedup::make(qctx_, projectResult);
     } else {
         root_ = projectResult;
     }
@@ -339,33 +326,24 @@ Status GoValidator::buildMToNPlan() {
     }
 
     if (filter_ != nullptr) {
-        auto* filterNode = Filter::make(
-            qctx_, dependencyForProjectResult, newFilter_ != nullptr ? newFilter_ : filter_);
+        auto* filterNode = Filter::make(qctx_, dependencyForProjectResult, filter());
         if (dependencyForProjectResult == dedupDstVids ||
             dependencyForProjectResult == dedupSrcDstVids) {
             filterNode->setInputVar(gn->outputVar());
-        } else {
-            filterNode->setInputVar(dependencyForProjectResult->outputVar());
         }
-        filterNode->setColNames(dependencyForProjectResult->colNames());
         dependencyForProjectResult = filterNode;
     }
 
-    SingleInputNode* projectResult = Project::make(
-        qctx_, dependencyForProjectResult, newYieldCols_ != nullptr ? newYieldCols_ : yields_);
+    SingleInputNode* projectResult = Project::make(qctx_, dependencyForProjectResult, yields());
     if (dependencyForProjectResult == dedupDstVids ||
         dependencyForProjectResult == dedupSrcDstVids) {
         projectResult->setInputVar(gn->outputVar());
-    } else {
-        projectResult->setInputVar(dependencyForProjectResult->outputVar());
     }
-    projectResult->setColNames(std::vector<std::string>(colNames_));
+    projectResult->setColNames(getOutColNames());
 
     SingleInputNode* dedupNode = nullptr;
     if (distinct_) {
         dedupNode = Dedup::make(qctx_, projectResult);
-        dedupNode->setInputVar(projectResult->outputVar());
-        dedupNode->setColNames(std::move(colNames_));
     }
 
     PlanNode *body = dedupNode == nullptr ? projectResult : dedupNode;
@@ -419,7 +397,6 @@ PlanNode* GoValidator::buildProjectSrcEdgePropsForGN(std::string gnVar, PlanNode
 
     auto* project = Project::make(qctx_, dependency, srcAndEdgePropCols_);
     project->setInputVar(gnVar);
-    project->setColNames(deduceColNames(srcAndEdgePropCols_));
     VLOG(1) << project->outputVar();
 
     return project;
@@ -435,7 +412,6 @@ PlanNode* GoValidator::buildJoinDstProps(PlanNode* projectSrcDstProps) {
                                                                  joinDstVidColName_);
     auto* getDstVertices =
         GetVertices::make(qctx_, projectSrcDstProps, space_.id, vids, buildDstVertexProps(), {});
-    getDstVertices->setInputVar(projectSrcDstProps->outputVar());
     getDstVertices->setDedup();
 
     auto vidColName = vctx_->anonColGen()->getCol();
@@ -443,8 +419,6 @@ PlanNode* GoValidator::buildJoinDstProps(PlanNode* projectSrcDstProps) {
         new VariablePropertyExpression(getDstVertices->outputVar(), kVid), vidColName);
     dstPropCols_->addColumn(vidCol);
     auto* project = Project::make(qctx_, getDstVertices, dstPropCols_);
-    project->setInputVar(getDstVertices->outputVar());
-    project->setColNames(deduceColNames(dstPropCols_));
 
     auto* joinHashKey = objPool->makeAndAdd<VariablePropertyExpression>(
         projectSrcDstProps->outputVar(), joinDstVidColName_);
@@ -551,12 +525,9 @@ PlanNode* GoValidator::traceToStartVid(PlanNode* projectLeftVarForJoin, PlanNode
     column = new YieldColumn(new InputPropertyExpression(kVid), dstVidColName_);
     columns->addColumn(column);
     auto* projectJoin = Project::make(qctx_, join, columns);
-    projectJoin->setInputVar(join->outputVar());
-    projectJoin->setColNames(deduceColNames(columns));
     VLOG(1) << projectJoin->outputVar();
 
     auto* dedup = Dedup::make(qctx_, projectJoin);
-    dedup->setInputVar(projectJoin->outputVar());
     dedup->setOutputVar(projectLeftVarForJoin->outputVar());
     dedup->setColNames(projectJoin->colNames());
     return dedup;
@@ -575,12 +546,8 @@ PlanNode* GoValidator::buildLeftVarForTraceJoin(PlanNode* dedupStartVid) {
     auto* projectLeftVarForJoin = Project::make(qctx_, dedupStartVid, columns);
     projectLeftVarForJoin->setInputVar(from_.fromType == kPipe ? inputVarName_
                                                                : from_.userDefinedVarName);
-    projectLeftVarForJoin->setColNames(deduceColNames(columns));
 
-    auto* dedup = Dedup::make(qctx_, projectLeftVarForJoin);
-    dedup->setInputVar(projectLeftVarForJoin->outputVar());
-    dedup->setColNames(projectLeftVarForJoin->colNames());
-    return dedup;
+    return Dedup::make(qctx_, projectLeftVarForJoin);
 }
 
 Status GoValidator::buildOneStepPlan() {
@@ -805,13 +772,9 @@ PlanNode* GoValidator::projectSrcDstVidsFromGN(PlanNode* dep, PlanNode* gn) {
 
     project = Project::make(qctx_, dep, columns);
     project->setInputVar(gn->outputVar());
-    project->setColNames(deduceColNames(columns));
     VLOG(1) << project->outputVar();
 
-    auto* dedupSrcDstVids = Dedup::make(qctx_, project);
-    dedupSrcDstVids->setInputVar(project->outputVar());
-    dedupSrcDstVids->setColNames(project->colNames());
-    return dedupSrcDstVids;
+    return Dedup::make(qctx_, project);
 }
 }   // namespace graph
 }   // namespace nebula

@@ -349,6 +349,15 @@ std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind) {
     return os;
 }
 
+SingleInputNode::SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep)
+    : SingleDependencyNode(qctx, kind, dep) {
+    if (dep != nullptr) {
+        readVariable(dep->outputVarPtr());
+    } else {
+        inputVars_.emplace_back(nullptr);
+    }
+}
+
 std::unique_ptr<PlanNodeDescription> SingleDependencyNode::explain() const {
     auto desc = PlanNode::explain();
     DCHECK(desc->dependencies == nullptr);

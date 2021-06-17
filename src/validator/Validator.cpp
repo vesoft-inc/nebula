@@ -282,6 +282,15 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
     return Status::OK();
 }
 
+std::vector<std::string> Validator::getOutColNames() const {
+    std::vector<std::string> colNames;
+    colNames.reserve(outputs_.size());
+    for (const auto& col : outputs_) {
+        colNames.emplace_back(col.name);
+    }
+    return colNames;
+}
+
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
     DCHECK(node != nullptr);
     DCHECK(appended != nullptr);
@@ -339,18 +348,6 @@ Status Validator::validate() {
 
 bool Validator::spaceChosen() {
     return vctx_->spaceChosen();
-}
-
-std::vector<std::string> Validator::deduceColNames(const YieldColumns* cols) const {
-    std::vector<std::string> colNames;
-    for (auto col : cols->columns()) {
-        colNames.emplace_back(deduceColName(col));
-    }
-    return colNames;
-}
-
-std::string Validator::deduceColName(const YieldColumn* col) const {
-    return col->name();
 }
 
 StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {

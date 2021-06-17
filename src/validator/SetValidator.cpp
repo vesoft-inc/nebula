@@ -45,10 +45,7 @@ Status SetValidator::toPlan() {
             bNode = Union::make(qctx_, lRoot, rRoot);
             bNode->setColNames(std::move(colNames));
             if (setSentence->distinct()) {
-                auto dedup = Dedup::make(qctx_, bNode);
-                dedup->setInputVar(bNode->outputVar());
-                dedup->setColNames(bNode->colNames());
-                root_ = dedup;
+                root_ = Dedup::make(qctx_, bNode);
             } else {
                 root_ = bNode;
             }
@@ -56,13 +53,13 @@ Status SetValidator::toPlan() {
         }
         case SetSentence::Operator::INTERSECT: {
             bNode = Intersect::make(qctx_, lRoot, rRoot);
-            bNode->setColNames(std::move(colNames));
+            bNode->setColNames(colNames);
             root_ = bNode;
             break;
         }
         case SetSentence::Operator::MINUS: {
             bNode = Minus::make(qctx_, lRoot, rRoot);
-            bNode->setColNames(std::move(colNames));
+            bNode->setColNames(colNames);
             root_ = bNode;
             break;
         }

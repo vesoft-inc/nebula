@@ -63,6 +63,8 @@ public:
         outputs_ = outputCols;
     }
 
+    std::vector<std::string> getOutColNames() const;
+
     ColsDef inputCols() const {
         return inputs_;
     }
@@ -139,10 +141,6 @@ protected:
     virtual AstContext* getAstContext() {
         return nullptr;
     }
-
-    std::vector<std::string> deduceColNames(const YieldColumns* cols) const;
-
-    std::string deduceColName(const YieldColumn* col) const;
 
     StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 

@@ -62,7 +62,6 @@ private:
     std::string                       from_;
     std::vector<nebula::plugin::HttpClient> tsClients_;
     std::vector<std::string>          idxScanColNames_;
-    std::vector<std::string>          colNames_;
     bool                              withProject_{false};
     bool                              dedup_{false};
     YieldColumns                     *newYieldColumns_{nullptr};

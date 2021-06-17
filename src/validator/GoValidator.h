@@ -68,9 +68,16 @@ private:
     PlanNode* projectSrcDstVidsFromGN(PlanNode* dep, PlanNode* gn);
 
 private:
+    YieldColumns* yields() const {
+        return newYieldCols_ ? newYieldCols_ : yields_;
+    }
+
+    Expression* filter() const {
+        return newFilter_ ? newFilter_ : filter_;
+    }
+
     Over over_;
     Expression* filter_{nullptr};
-    std::vector<std::string> colNames_;
     YieldColumns* yields_{nullptr};
     bool distinct_{false};
 

@@ -54,7 +54,6 @@ private:
     bool withYield_{false};
     // outputs
     std::vector<std::string> gvColNames_;
-    std::vector<std::string> colNames_;
     // new yield to inject reserved properties for compatible with 1.0
     YieldColumns* newYieldColumns_{nullptr};
     // input

@@ -371,8 +371,6 @@ Status DeleteVerticesValidator::toPlan() {
                                      spaceId_,
                                      std::move(edgeKeyRefs_));
 
-    deNode->setInputVar(getNeighbors->outputVar());
-
     auto *dvNode = DeleteVertices::make(qctx_,
                                         deNode,
                                         spaceId_,

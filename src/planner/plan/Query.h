@@ -555,12 +555,7 @@ public:
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
-    Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
-      : SingleInputNode(qctx, Kind::kFilter, input) {
-        condition_ = condition;
-        needStableFilter_ = needStableFilter;
-    }
-
+    Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter);
     void cloneMembers(const Filter&);
 
 private:
@@ -658,8 +653,7 @@ public:
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
 private:
-    Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
-      : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) { }
+    Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols);
 
     void cloneMembers(const Project&);
 
@@ -923,10 +917,7 @@ public:
     PlanNode* clone() const override;
 
 private:
-    Dedup(QueryContext* qctx,
-          PlanNode* input)
-        : SingleInputNode(qctx, Kind::kDedup, input) {
-    }
+    Dedup(QueryContext* qctx, PlanNode* input);
 
     void cloneMembers(const Dedup&);
 };

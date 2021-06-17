@@ -148,9 +148,9 @@ PlanNode* PathPlanner::allPairStartVidDataSet(PlanNode* dep, const std::string& 
     columns->addColumn(path);
 
     auto* project = Project::make(pathCtx_->qctx, dep, columns);
-    project->setColNames({kVid, kPathStr});
     project->setInputVar(inputVar);
     project->setOutputVar(inputVar);
+    project->setColNames({kVid, kPathStr});
 
     return project;
 }

@@ -81,9 +81,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     NG_RETURN_IF_ERROR(status);
     auto type = std::move(status).value();
 
-    auto name = deduceColName(column);
-    outputColumnNames_.emplace_back(name);
-
+    auto name = column->name();
     // Constant expression folding must be after type deduction
     auto foldedExpr = ExpressionUtils::foldConstantExpr(expr, pool);
     NG_RETURN_IF_ERROR(foldedExpr);
@@ -96,7 +94,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 void YieldValidator::genConstantExprValues() {
     constantExprVar_ = vctx_->anonVarGen()->getVar();
     DataSet ds;
-    ds.colNames = outputColumnNames_;
+    ds.colNames = getOutColNames();
     QueryExpressionContext ctx;
     Row row;
     for (auto &column : columns_->columns()) {
@@ -233,9 +231,8 @@ Status YieldValidator::toPlan() {
         }
     } else {
         dedupDep = Project::make(qctx_, filter, columns_);
-        dedupDep->setColNames(std::move(outputColumnNames_));
+        dedupDep->setColNames(getOutColNames());
         if (filter != nullptr) {
-            dedupDep->setInputVar(filter->outputVar());
             tail_ = filter;
         } else {
             tail_ = dedupDep;
@@ -247,10 +244,7 @@ Status YieldValidator::toPlan() {
     }
 
     if (yield->yield()->isDistinct()) {
-        auto dedup = Dedup::make(qctx_, dedupDep);
-        dedup->setColNames(dedupDep->colNames());
-        dedup->setInputVar(dedupDep->outputVar());
-        root_ = dedup;
+        root_ = Dedup::make(qctx_, dedupDep);
     } else {
         root_ = dedupDep;
     }

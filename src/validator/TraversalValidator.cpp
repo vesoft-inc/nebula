@@ -130,12 +130,9 @@ PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::stri
     columns->addColumn(column);
 
     project = Project::make(qctx_, gn, columns);
-    project->setInputVar(gn->outputVar());
-    project->setColNames(deduceColNames(columns));
     VLOG(1) << project->outputVar();
 
     auto* dedupDstVids = Dedup::make(qctx_, project);
-    dedupDstVids->setInputVar(project->outputVar());
     dedupDstVids->setOutputVar(outputVar);
     dedupDstVids->setColNames(project->colNames());
     return dedupDstVids;
@@ -166,13 +163,10 @@ PlanNode* TraversalValidator::buildRuntimeInput(Starts& starts, PlanNode*& proje
     if (starts.fromType == kVariable) {
         project->setInputVar(starts.userDefinedVarName);
     }
-    project->setColNames({kVid});
     VLOG(1) << project->outputVar() << " input: " << project->inputVar();
     starts.src = pool->add(new InputPropertyExpression(kVid));
 
     auto* dedupVids = Dedup::make(qctx_, project);
-    dedupVids->setInputVar(project->outputVar());
-    dedupVids->setColNames(project->colNames());
 
     projectStartVid = project;
     return dedupVids;

@@ -37,7 +37,6 @@ private:
 
     bool needGenProject_{false};
     std::vector<std::string> outputColumnNames_;
-    std::vector<std::string> projOutputColumnNames_;
 
     // used to generate Project node when there is an internally nested aggregateExpression
     YieldColumns *projCols_;

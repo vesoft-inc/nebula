@@ -39,17 +39,11 @@ Status LookupValidator::toPlan() {
     PlanNode* current = is;
 
     if (withProject_) {
-        auto* projectNode = Project::make(qctx_, current, newYieldColumns_);
-        projectNode->setInputVar(current->outputVar());
-        projectNode->setColNames(colNames_);
-        current = projectNode;
+        current = Project::make(qctx_, current, newYieldColumns_);
     }
 
     if (dedup_) {
-        auto* dedupNode = Dedup::make(qctx_, current);
-        dedupNode->setInputVar(current->outputVar());
-        dedupNode->setColNames(colNames_);
-        current = dedupNode;
+        current = Dedup::make(qctx_, current);
 
         // the framework will add data collect to collect the result
         // if the result is required
@@ -80,21 +74,17 @@ Status LookupValidator::prepareYield() {
     if (isEdge_) {
         returnCols_->emplace_back(kSrc);
         idxScanColNames_.emplace_back(kSrcVID);
-        colNames_.emplace_back(idxScanColNames_.back());
-        outputs_.emplace_back(colNames_.back(), vidType_);
+        outputs_.emplace_back(idxScanColNames_.back(), vidType_);
         returnCols_->emplace_back(kDst);
         idxScanColNames_.emplace_back(kDstVID);
-        colNames_.emplace_back(idxScanColNames_.back());
-        outputs_.emplace_back(colNames_.back(), vidType_);
+        outputs_.emplace_back(idxScanColNames_.back(), vidType_);
         returnCols_->emplace_back(kRank);
         idxScanColNames_.emplace_back(kRanking);
-        colNames_.emplace_back(idxScanColNames_.back());
-        outputs_.emplace_back(colNames_.back(), Value::Type::INT);
+        outputs_.emplace_back(idxScanColNames_.back(), Value::Type::INT);
     } else {
         returnCols_->emplace_back(kVid);
         idxScanColNames_.emplace_back(kVertexID);
-        colNames_.emplace_back(idxScanColNames_.back());
-        outputs_.emplace_back(colNames_.back(), vidType_);
+        outputs_.emplace_back(idxScanColNames_.back(), vidType_);
     }
     if (sentence->yieldClause() == nullptr) {
         return Status::OK();
@@ -150,11 +140,11 @@ Status LookupValidator::prepareYield() {
             }
             returnCols_->emplace_back(colName);
             idxScanColNames_.emplace_back(from_ + "." + colName);
-            colNames_.emplace_back(deduceColName(newYieldColumns_->back()));
-            outputs_.emplace_back(colNames_.back(), SchemaUtil::propTypeToValueType(ret));
+            auto column = newYieldColumns_->back()->name();
+            outputs_.emplace_back(column, SchemaUtil::propTypeToValueType(ret));
         } else {
-            return Status::SemanticError("Yield clauses are not supported : %s",
-                                         col->expr()->toString().c_str());
+            return Status::SemanticError("Yield clauses are not supported: %s",
+                                         col->toString().c_str());
         }
     }
     return Status::OK();

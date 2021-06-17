@@ -665,7 +665,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
     DCHECK(!cols.empty());
     for (auto *col : cols) {
         auto *colExpr = col->expr();
-        auto colOldName = deduceColName(col);
+        auto colOldName = col->name();
         if (colExpr->kind() != Expression::Kind::kAggregate) {
             auto collectAggCol = colExpr->clone();
             auto aggs =
@@ -858,7 +858,7 @@ Status MatchValidator::checkAlias(
 
 Status MatchValidator::buildOutputs(const YieldColumns *yields) {
     for (auto *col : yields->columns()) {
-        auto colName = deduceColName(col);
+        auto colName = col->name();
         auto typeStatus = deduceExprType(col->expr());
         NG_RETURN_IF_ERROR(typeStatus);
         auto type = typeStatus.value();

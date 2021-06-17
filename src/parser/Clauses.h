@@ -286,6 +286,15 @@ public:
         return result;
     }
 
+    std::vector<std::string> names() const {
+        std::vector<std::string> names;
+        names.reserve(columns_.size());
+        for (auto &col : columns_) {
+            names.emplace_back(col->name());
+        }
+        return names;
+    }
+
     size_t size() const {
         return columns_.size();
     }

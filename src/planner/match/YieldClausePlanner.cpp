@@ -75,11 +75,7 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
     }
 
     if (yctx->distinct) {
-        auto root = subplan.root;
-        auto* dedup = Dedup::make(yctx->qctx, root);
-        dedup->setInputVar(root->outputVar());
-        dedup->setColNames(root->colNames());
-        subplan.root = dedup;
+        subplan.root = Dedup::make(yctx->qctx, subplan.root);
     }
 
     return Status::OK();

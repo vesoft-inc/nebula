@@ -45,7 +45,6 @@ private:
 
 private:
     YieldColumns *columns_{nullptr};
-    std::vector<std::string> outputColumnNames_;
     std::string constantExprVar_;
     std::string userDefinedVarName_;
     Expression *filterCondition_{nullptr};
