@@ -104,7 +104,8 @@ folly::Future<Status> DropSpaceExecutor::execute() {
         auto ftIndexesRet = qctx()->getMetaClient()->getFTIndexBySpaceFromCache(spaceIdRet.value());
         NG_RETURN_IF_ERROR(ftIndexesRet);
         auto map = std::move(ftIndexesRet).value();
-        transform(map.begin(), map.end(), ftIndexes.begin(), [](auto pair) { return pair.first; });
+        auto get = [] (const auto &ptr) { return ptr.first; };
+        std::transform(map.begin(), map.end(), std::back_inserter(ftIndexes), get);
     } else {
         LOG(WARNING) << "Get space ID failed when prepare text index: " << dsNode->getSpaceName();
     }
