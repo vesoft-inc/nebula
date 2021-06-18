@@ -414,13 +414,13 @@ TEST_F(FunctionManagerTest, functionCall) {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({"2020-09-15"});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 9, 15))));
+        EXPECT_EQ(res, Value(Date(2020, 9, 15)));
     }
     {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 12}, {"day", 31}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 12, 31))));
+        EXPECT_EQ(res, Value(Date(2020, 12, 31)));
     }
     // leap year February days
     {
@@ -428,7 +428,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 2}, {"day", 29}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2020, 2, 29))));
+        EXPECT_EQ(res, Value(Date(2020, 2, 29)));
     }
     {
         // 2021 is not leap
@@ -442,7 +442,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 1}, {"day", 31}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(2021, 1, 31))));
+        EXPECT_EQ(res, Value(Date(2021, 1, 31)));
     }
     {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
@@ -456,16 +456,14 @@ TEST_F(FunctionManagerTest, functionCall) {
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::min()},
                                                   {"month", 1}, {"day", 1}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(std::numeric_limits<int16_t>::min(),
-                                                             1, 1))));
+        EXPECT_EQ(res, Value(Date(std::numeric_limits<int16_t>::min(), 1, 1)));
     }
     {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
         auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::max()},
                                                   {"month", 12}, {"day", 31}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateToUTC(Date(std::numeric_limits<int16_t>::max(),
-                                                             12, 31))));
+        EXPECT_EQ(res, Value(Date(std::numeric_limits<int16_t>::max(), 12, 31)));
     }
     // year
     {

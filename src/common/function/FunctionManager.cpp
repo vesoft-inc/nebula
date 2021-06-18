@@ -1487,13 +1487,13 @@ FunctionManager::FunctionManager() {
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
-                        return time::TimeUtils::dateToUTC(result.value());
+                        return result.value();
                     } else if (args[0].isMap()) {
                         auto result = time::TimeUtils::dateFromMap(args[0].getMap());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
-                        return time::TimeUtils::dateToUTC(result.value());
+                        return result.value();
                     } else {
                         return Value::kNullBadType;
                     }

@@ -103,12 +103,13 @@ public:
         return unixSecondsToDateTime(dateTimeToUnixSeconds(dateTime) + offsetSeconds);
     }
 
+    // utc + offset = local
     static DateTime dateTimeToUTC(const DateTime &dateTime) {
-        return dateTimeShift(dateTime, getGlobalTimezone().utcOffsetSecs());
+        return dateTimeShift(dateTime, -getGlobalTimezone().utcOffsetSecs());
     }
 
     static DateTime utcToDateTime(const DateTime &dateTime) {
-        return dateTimeShift(dateTime, -getGlobalTimezone().utcOffsetSecs());
+        return dateTimeShift(dateTime, getGlobalTimezone().utcOffsetSecs());
     }
 
     static StatusOr<DateTime> localDateTime() {
@@ -163,14 +164,6 @@ public:
             return date;
         }
         return unixSecondsToDate(dateToUnixSeconds(date) + offsetSeconds);
-    }
-
-    static Date dateToUTC(const Date &date) {
-        return dateShift(date, getGlobalTimezone().utcOffsetSecs());
-    }
-
-    static Date utcToDate(const Date &date) {
-        return dateShift(date, -getGlobalTimezone().utcOffsetSecs());
     }
 
     static StatusOr<Date> localDate() {
@@ -234,8 +227,9 @@ public:
         return unixSecondsToTime(timeToSeconds(time) + offsetSeconds);
     }
 
+    // utc + offset = local
     static Time timeToUTC(const Time &time) {
-        return timeShift(time, getGlobalTimezone().utcOffsetSecs());
+        return timeShift(time, -getGlobalTimezone().utcOffsetSecs());
     }
 
     static Time utcToTime(const Time &time) {
