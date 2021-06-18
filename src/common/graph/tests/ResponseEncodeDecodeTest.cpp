@@ -24,6 +24,11 @@ TEST(ResponseEncodDecodeTest, Basic) {
         resps.emplace_back(AuthResponse{ErrorCode::E_DISCONNECTED,
                                         std::make_unique<int64_t>(1),
                                         std::make_unique<std::string>("Error Test.")});
+        resps.emplace_back(AuthResponse{ErrorCode::E_DISCONNECTED,
+                                        std::make_unique<int64_t>(1),
+                                        std::make_unique<std::string>("Error Test."),
+                                        std::make_unique<int32_t>(233),
+                                        std::make_unique<std::string>("time zone")});
         for (const auto &resp : resps) {
             std::string buf;
             buf.reserve(128);

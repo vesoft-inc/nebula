@@ -65,12 +65,20 @@ struct AuthResponse {
         if (!checkPointer(sessionId.get(), rhs.sessionId.get())) {
             return false;
         }
-        return checkPointer(errorMsg.get(), rhs.errorMsg.get());
+        if (!checkPointer(errorMsg.get(), rhs.errorMsg.get())) {
+            return false;
+        }
+        if (!checkPointer(timeZoneOffsetSeconds.get(), rhs.timeZoneOffsetSeconds.get())) {
+            return false;
+        }
+        return checkPointer(timeZoneName.get(), timeZoneName.get());
     }
 
     ErrorCode errorCode{ErrorCode::SUCCEEDED};
     std::unique_ptr<int64_t> sessionId{nullptr};
     std::unique_ptr<std::string> errorMsg{nullptr};
+    std::unique_ptr<int32_t> timeZoneOffsetSeconds{nullptr};
+    std::unique_ptr<std::string> timeZoneName{nullptr};
 };
 
 

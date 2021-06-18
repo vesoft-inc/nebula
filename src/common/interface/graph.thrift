@@ -94,6 +94,8 @@ struct AuthResponse {
     1: required common.ErrorCode   error_code;
     2: optional binary             error_msg;
     3: optional i64                session_id;
+    4: optional i32                time_zone_offset_seconds;
+    5: optional binary             time_zone_name;
 } (cpp.type = "nebula::AuthResponse")
 
 
