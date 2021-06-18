@@ -15,6 +15,7 @@
 #include "service/PasswordAuthenticator.h"
 #include "service/CloudAuthenticator.h"
 #include "stats/StatsDef.h"
+#include "common/time/TimeUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -96,6 +97,10 @@ folly::Future<AuthResponse> GraphService::future_authenticate(
         }
         ctx->setSession(sessionPtr);
         ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
+        ctx->resp().timeZoneOffsetSeconds.reset(
+            new int32_t(time::TimeUtils::getGlobalTimezone().utcOffsetSecs()));
+        ctx->resp().timeZoneName.reset(
+            new std::string(time::TimeUtils::getGlobalTimezone().stdZoneName()));
         return ctx->finish();
     };
 
@@ -187,8 +192,6 @@ const char* GraphService::getErrorStr(ErrorCode result) {
      **********************/
     return "Unknown error";
 }
-
-
 
 bool GraphService::auth(const std::string& username, const std::string& password) {
     if (!FLAGS_enable_authorize) {
