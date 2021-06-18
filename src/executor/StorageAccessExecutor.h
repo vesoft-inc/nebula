@@ -68,7 +68,7 @@ protected:
                 return Status::Error(std::move(error));
             }
             case nebula::cpp2::ErrorCode::E_INVALID_VID: {
-                std::string error = "Storage Error: The VID must be a 64-bit interger"
+                std::string error = "Storage Error: The VID must be a 64-bit integer"
                                     " or a string fitting space vertex id length limit.";
                 return Status::Error(std::move(error));
             }
