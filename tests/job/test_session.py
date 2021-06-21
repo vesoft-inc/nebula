@@ -32,8 +32,6 @@ class TestSession(NebulaTestSuite):
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        time.sleep(3)
-
         resp = self.execute('SHOW HOSTS GRAPH')
         self.check_resp_succeeded(resp)
         assert not resp.is_empty()
@@ -43,8 +41,16 @@ class TestSession(NebulaTestSuite):
         self.addr_host2 = resp.row_values(1)[0].as_string()
         self.addr_port2 = resp.row_values(1)[1].as_int()
 
+        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 1')
+        self.check_resp_succeeded(resp)
+        time.sleep(3)
+
     @classmethod
     def cleanup(self):
+        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 10')
+        self.check_resp_succeeded(resp)
+        time.sleep(3)
+
         session = self.client_pool.get_session('root', 'nebula')
         resp = session.execute('DROP USER session_user')
         self.check_resp_succeeded(resp)
@@ -112,19 +118,15 @@ class TestSession(NebulaTestSuite):
         # 5: test expired session
         resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 5')
         self.check_resp_succeeded(resp)
-        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 1')
-        self.check_resp_succeeded(resp)
         time.sleep(3)
-        resp = self.execute('SHOW SPACES;')
-        self.check_resp_succeeded(resp)
-        time.sleep(3)
-        resp = self.execute('SHOW SESSION {}'.format(session_id))
-        time.sleep(3)
+        # to wait for session expires
+        for i in range(3):
+            resp = self.execute('SHOW SPACES;')
+            self.check_resp_succeeded(resp)
+            time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
         resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 0')
-        self.check_resp_succeeded(resp)
-        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 10')
         self.check_resp_succeeded(resp)
         time.sleep(3)
 

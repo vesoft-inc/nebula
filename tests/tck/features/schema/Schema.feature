@@ -533,6 +533,7 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | VertexID | t.name | t.age | t.description |
       | "1"      | "N/A"  | -1    | "some one"    |
+    And wait 3 seconds
     # insert without default prop, failed
     When executing query:
       """
