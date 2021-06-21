@@ -13,10 +13,9 @@ class MaintainValidatorTest : public ValidatorTestBase {
 };
 
 TEST_F(MaintainValidatorTest, SpaceTest) {
-    std::vector<PlanNode::Kind> expected = {
-        PK::kDescSpace, PK::kCreateSpace, PK::kStart
-    };
-    ASSERT_TRUE(checkResult("CREATE SPACE TEST; DESC SPACE TEST;", expected));
+    std::vector<PlanNode::Kind> expected = {PK::kDescSpace, PK::kCreateSpace, PK::kStart};
+    ASSERT_TRUE(
+        checkResult("CREATE SPACE TEST(vid_type = fixed_string(2)); DESC SPACE TEST;", expected));
 }
 
 TEST_F(MaintainValidatorTest, TagTest) {

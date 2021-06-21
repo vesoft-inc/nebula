@@ -148,7 +148,7 @@ Feature: User & privilege Test
   Scenario: Grant privilege
     When executing query:
       """
-      CREATE SPACE IF NOT EXISTS user_tmp_space(partition_num=1, replica_factor=1)
+      CREATE SPACE IF NOT EXISTS user_tmp_space(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))
       """
     Then the execution should be successful
     And wait 10 seconds
@@ -226,7 +226,7 @@ Feature: User & privilege Test
   Scenario: Revoke role
     When executing query:
       """
-      CREATE SPACE IF NOT EXISTS user_tmp_space_3(partition_num=1, replica_factor=1)
+      CREATE SPACE IF NOT EXISTS user_tmp_space_3(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))
       """
     Then the execution should be successful
     And wait 10 seconds

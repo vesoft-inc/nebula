@@ -149,7 +149,7 @@ class TestSession(NebulaTestSuite):
         assert resp.error_code == ttypes.ErrorCode.SUCCEEDED
         session_id = resp.session_id
 
-        resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1);USE aSpace;')
+        resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
         time.sleep(3)
         resp = conn1.execute(session_id, 'CREATE TAG IF NOT EXISTS a();')

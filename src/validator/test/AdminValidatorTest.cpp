@@ -14,16 +14,15 @@ class AdminValidatorTest : public ValidatorTestBase {
 
 TEST_F(AdminValidatorTest, SpaceTest) {
     {
-        std::vector<PlanNode::Kind> expected = {
-            PK::kDescSpace, PK::kCreateSpace, PK::kStart
-        };
-        ASSERT_TRUE(checkResult("CREATE SPACE TEST; DESC SPACE TEST;", expected));
+        std::vector<PlanNode::Kind> expected = {PK::kDescSpace, PK::kCreateSpace, PK::kStart};
+        ASSERT_TRUE(checkResult("CREATE SPACE TEST(vid_type = fixed_string(2)); DESC SPACE TEST;",
+                                expected));
     }
     {
         std::vector<PlanNode::Kind> expected = {
-            PK::kUpdateSession, PK::kSwitchSpace, PK::kCreateSpace, PK::kStart
-        };
-        ASSERT_TRUE(checkResult("CREATE SPACE TEST; USE TEST;", expected));
+            PK::kUpdateSession, PK::kSwitchSpace, PK::kCreateSpace, PK::kStart};
+        ASSERT_TRUE(
+            checkResult("CREATE SPACE TEST(vid_type = fixed_string(2)); USE TEST;", expected));
     }
 }
 

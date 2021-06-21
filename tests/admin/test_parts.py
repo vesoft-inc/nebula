@@ -19,7 +19,7 @@ class TestParts(NebulaTestSuite):
 
     @classmethod
     def prepare(self):
-        resp = self.client.execute('CREATE SPACE space_show_parts(partition_num=5); '
+        resp = self.client.execute('CREATE SPACE space_show_parts(partition_num=5, vid_type=FIXED_STRING(8));'
                                    'USE space_show_parts;')
         self.check_resp_succeeded(resp)
 

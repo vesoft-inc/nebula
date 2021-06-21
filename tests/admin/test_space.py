@@ -18,7 +18,7 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_failed(resp)
 
         # with default options
-        resp = self.client.execute('CREATE SPACE space_with_default_options')
+        resp = self.client.execute('CREATE SPACE space_with_default_options (vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('CREATE SPACE space_on_default_group on default')
@@ -35,7 +35,7 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # create space succeeded
-        resp = self.client.execute('CREATE SPACE default_space(partition_num=9, replica_factor=1)')
+        resp = self.client.execute('CREATE SPACE default_space(partition_num=9, replica_factor=1, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         # show spaces
@@ -91,7 +91,7 @@ class TestSpace(NebulaTestSuite):
 
     def test_charset_collate(self):
         resp = self.client.execute('CREATE SPACE space_charset_collate (partition_num=9, '
-                                   'replica_factor=1, charset=utf8, collate=utf8_bin)')
+                                   'replica_factor=1, charset=utf8, collate=utf8_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('DESC SPACE space_charset_collate')
@@ -104,7 +104,7 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('CREATE SPACE space_charset (partition_num=9, '
-                                   'replica_factor=1, charset=utf8)')
+                                   'replica_factor=1, charset=utf8, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('DESC SPACE space_charset')
@@ -117,7 +117,7 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('CREATE SPACE space_collate (partition_num=9, '
-                                   'replica_factor=1, collate=utf8_bin)')
+                                   'replica_factor=1, collate=utf8_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('DESC SPACE space_collate')
@@ -131,30 +131,30 @@ class TestSpace(NebulaTestSuite):
 
         # not supported collate
         resp = self.client.execute('CREATE SPACE space_charset_collate_nomatch (partition_num=9, '
-                                   'replica_factor=1, charset = utf8, collate=gbk_bin)')
+                                   'replica_factor=1, charset = utf8, collate=gbk_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_failed(resp)
 
         # not supported charset
         resp = self.client.execute('CREATE SPACE space_charset_collate_nomatch (partition_num=9, '
-                                   'replica_factor=1, charset = gbk, collate=utf8_bin)')
+                                   'replica_factor=1, charset = gbk, collate=utf8_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_failed(resp)
 
         # not supported charset
         resp = self.client.execute('CREATE SPACE space_illegal_charset (partition_num=9, '
-                                   'replica_factor=1, charset = gbk)')
+                                   'replica_factor=1, charset = gbk, vid_type=FIXED_STRING(8))')
         self.check_resp_failed(resp)
 
         # not supported collate
         resp = self.client.execute('CREATE SPACE space_illegal_collate (partition_num=9, '
-                                   'replica_factor=1, collate = gbk_bin)')
+                                   'replica_factor=1, collate = gbk_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_failed(resp)
 
         resp = self.client.execute('CREATE SPACE space_illegal_collate (partition_num=9, '
-                                   'replica_factor=1, collate = gbk_bin)')
+                                   'replica_factor=1, collate = gbk_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_failed(resp)
 
         resp = self.client.execute('CREATE SPACE space_capital (partition_num=9, '
-                                   'replica_factor=1, charset=UTF8, collate=UTF8_bin)')
+                                   'replica_factor=1, charset=UTF8, collate=UTF8_bin, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         resp = self.client.execute('DESC SPACE space_capital')
@@ -174,7 +174,7 @@ class TestSpace(NebulaTestSuite):
 
         # exist but success
         resp = self.client.execute('CREATE SPACE IF NOT EXISTS default_space')
-        self.check_resp_succeeded(resp)
+        self.check_resp_failed(resp)
 
         # not exist but success
         resp = self.client.execute('DROP SPACE IF EXISTS not_exist_space')
@@ -185,7 +185,7 @@ class TestSpace(NebulaTestSuite):
         self.check_resp_failed(resp)
 
         resp = self.client.execute('CREATE SPACE exist_space')
-        self.check_resp_succeeded(resp)
+        self.check_resp_failed(resp)
 
         resp = self.client.execute('DROP SPACE IF EXISTS exist_space')
         self.check_resp_succeeded(resp)

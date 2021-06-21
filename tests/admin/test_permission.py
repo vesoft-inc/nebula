@@ -83,7 +83,7 @@ class TestPermission(NebulaTestSuite):
         self.release_nebula_client(client)
 
         # test root user password and use space.
-        query = 'CREATE SPACE test_permission_space(partition_num=1, replica_factor=1)'
+        query = 'CREATE SPACE test_permission_space(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
@@ -116,7 +116,7 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_user_write(self):
-        query = 'CREATE SPACE space1(partition_num=1, replica_factor=1)'
+        query = 'CREATE SPACE space1(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
@@ -173,7 +173,7 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_schema_and_data(self):
-        query = 'CREATE SPACE space2(partition_num=1, replica_factor=1)'
+        query = 'CREATE SPACE space2(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
@@ -638,7 +638,7 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # use space test
-        query = "CREATE SPACE space3(partition_num=1, replica_factor=1)";
+        query = "CREATE SPACE space3(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))";
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
@@ -669,7 +669,7 @@ class TestPermission(NebulaTestSuite):
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
         assert ret
 
-        query = 'CREATE SPACE space4(partition_num=1, replica_factor=1)'
+        query = 'CREATE SPACE space4(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
@@ -732,7 +732,7 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_show_roles(self):
-        query = 'CREATE SPACE space5(partition_num=1, replica_factor=1)'
+        query = 'CREATE SPACE space5(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)

@@ -8,7 +8,7 @@ Feature: Schema Comment
     Given an empty graph
     When executing query:
       """
-      CREATE SPACE <space_name> comment = '<space_comment>';
+      CREATE SPACE <space_name> (vid_type=FIXED_STRING(8)) comment = '<space_comment>';
       """
     Then the execution should be successful
     When try to execute query:
@@ -40,7 +40,7 @@ Feature: Schema Comment
     Given an empty graph
     When executing query:
       """
-      CREATE SPACE test_comment_not_set;
+      CREATE SPACE test_comment_not_set (vid_type=FIXED_STRING(8));
       """
     Then the execution should be successful
     When try to execute query:
@@ -67,7 +67,7 @@ Feature: Schema Comment
     Given an empty graph
     When executing query:
       """
-      CREATE SPACE test_comment_empty comment = '';
+      CREATE SPACE test_comment_empty (vid_type=FIXED_STRING(8)) comment = '';
       """
     Then the execution should be successful
     When try to execute query:

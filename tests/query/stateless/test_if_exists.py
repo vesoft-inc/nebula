@@ -25,10 +25,10 @@ class TestDropSpaceIfExists(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('CREATE SPACE shakespaces(partition_num=1024)')
+        resp = self.execute('CREATE SPACE shakespaces(partition_num=1024, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024)')
+        resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         cmd = 'drop space shakespaces'
@@ -39,7 +39,7 @@ class TestDropSpaceIfExists(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024)')
+        resp = self.execute('CREATE SPACE IF NOT EXISTS shakespaces(partition_num=1024, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
 
         time.sleep(self.delay)

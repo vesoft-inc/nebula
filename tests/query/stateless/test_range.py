@@ -20,7 +20,7 @@ class TestRangeChecking(NebulaTestSuite):
     @classmethod
     def prepare(self):
         resp = self.execute(
-            'CREATE SPACE test_range_checking(partition_num={partition_num}, replica_factor={replica_factor})'
+            'CREATE SPACE test_range_checking(partition_num={partition_num}, replica_factor={replica_factor}, vid_type=FIXED_STRING(8))'
             .format(partition_num=self.partition_num,
                     replica_factor=self.replica_factor))
         self.check_resp_succeeded(resp)

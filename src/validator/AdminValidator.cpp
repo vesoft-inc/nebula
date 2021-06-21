@@ -27,6 +27,10 @@ Status CreateSpaceValidator::validateImpl() {
     StatusOr<std::string> retStatusOr;
     std::string result;
     auto* charsetInfo = qctx_->getCharsetInfo();
+    auto *spaceOpts = sentence->spaceOpts();
+    if (!spaceOpts || !spaceOpts->hasVidType()) {
+        return Status::SemanticError("space vid_type must be specified explicitly");
+    }
     for (auto &item : sentence->getOpts()) {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM: {

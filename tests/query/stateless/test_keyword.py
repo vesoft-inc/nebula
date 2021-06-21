@@ -21,7 +21,7 @@ class TestReservedKeyword(NebulaTestSuite):
     # some reversed keywords are moved to unreversed keywords, and vice versa in #1922
     def test_keywords1(self):
         resp = self.execute(
-            'CREATE SPACE IF NOT EXISTS test(partition_num=1024)')
+            'CREATE SPACE IF NOT EXISTS test(partition_num=1024, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
@@ -302,7 +302,7 @@ class TestReservedKeyword(NebulaTestSuite):
 
     def test_keywords2(self):
         resp = self.execute(
-            'CREATE SPACE IF NOT EXISTS test(partition_num=1024)')
+            'CREATE SPACE IF NOT EXISTS test(partition_num=1024, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
@@ -902,7 +902,7 @@ class TestReservedKeyword(NebulaTestSuite):
 
     def test_keywords3(self):
         resp = self.execute(
-            'CREATE SPACE IF NOT EXISTS test(partition_num=10)')
+            'CREATE SPACE IF NOT EXISTS test (partition_num=10, vid_type=FIXED_STRING(8))')
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 

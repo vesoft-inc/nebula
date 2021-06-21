@@ -15,7 +15,7 @@ class TestSchema(NebulaTestSuite):
     @classmethod
     def prepare(self):
         resp = self.execute(
-            'CREATE SPACE IF NOT EXISTS schema_space(partition_num={partition_num}, replica_factor={replica_factor})'
+            'CREATE SPACE IF NOT EXISTS schema_space(partition_num={partition_num}, replica_factor={replica_factor}, vid_type=FIXED_STRING(8))'
             .format(partition_num=self.partition_num,
                     replica_factor=self.replica_factor))
         self.check_resp_succeeded(resp)
