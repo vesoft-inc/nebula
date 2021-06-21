@@ -97,6 +97,8 @@ protected:
 
     folly::Executor *runner() const;
 
+    void drop();
+
     // Store the result of this executor to execution context
     Status finish(Result &&result);
     // Store the default result which not used for later executor

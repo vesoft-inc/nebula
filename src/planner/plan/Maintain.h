@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 // which would make them in a single and big execution plan
-class CreateSchemaNode : public SingleInputNode {
+class CreateSchemaNode : public SingleDependencyNode {
 protected:
     CreateSchemaNode(QueryContext* qctx,
                      PlanNode* input,
@@ -22,7 +22,7 @@ protected:
                      std::string name,
                      meta::cpp2::Schema schema,
                      bool ifNotExists)
-        : SingleInputNode(qctx, kind, input),
+        : SingleDependencyNode(qctx, kind, input),
           name_(std::move(name)),
           schema_(std::move(schema)),
           ifNotExists_(ifNotExists) {}
@@ -98,7 +98,7 @@ private:
                            ifNotExists) {}
 };
 
-class AlterSchemaNode : public SingleInputNode {
+class AlterSchemaNode : public SingleDependencyNode {
 protected:
     AlterSchemaNode(QueryContext* qctx,
                     Kind kind,
@@ -107,7 +107,7 @@ protected:
                     std::string name,
                     std::vector<meta::cpp2::AlterSchemaItem> items,
                     meta::cpp2::SchemaProp schemaProp)
-        : SingleInputNode(qctx, kind, input),
+        : SingleDependencyNode(qctx, kind, input),
           space_(space),
           name_(std::move(name)),
           schemaItems_(std::move(items)),
@@ -195,10 +195,10 @@ private:
                           std::move(schemaProp)) {}
 };
 
-class DescSchemaNode : public SingleInputNode {
+class DescSchemaNode : public SingleDependencyNode {
 protected:
     DescSchemaNode(QueryContext* qctx, PlanNode* input, Kind kind, std::string name)
-        : SingleInputNode(qctx, kind, input), name_(std::move(name)) {}
+        : SingleDependencyNode(qctx, kind, input), name_(std::move(name)) {}
 
 public:
     const std::string& getName() const {
@@ -255,17 +255,18 @@ private:
         : DescSchemaNode(qctx, input, Kind::kShowCreateEdge, std::move(name)) {}
 };
 
-class ShowTags final : public SingleInputNode {
+class ShowTags final : public SingleDependencyNode {
 public:
     static ShowTags* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowTags(qctx, input));
     }
 
 private:
-    ShowTags(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kShowTags, input) {}
+    ShowTags(QueryContext* qctx, PlanNode* input)
+        : SingleDependencyNode(qctx, Kind::kShowTags, input) {}
 };
 
-class ShowEdges final : public SingleInputNode {
+class ShowEdges final : public SingleDependencyNode {
 public:
     static ShowEdges* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowEdges(qctx, input));
@@ -273,13 +274,13 @@ public:
 
 private:
     ShowEdges(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowEdges, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowEdges, input) {}
 };
 
-class DropSchemaNode : public SingleInputNode {
+class DropSchemaNode : public SingleDependencyNode {
 protected:
     DropSchemaNode(QueryContext* qctx, Kind kind, PlanNode* input, std::string name, bool ifExists)
-        : SingleInputNode(qctx, kind, input), name_(std::move(name)), ifExists_(ifExists) {}
+        : SingleDependencyNode(qctx, kind, input), name_(std::move(name)), ifExists_(ifExists) {}
 
 public:
     const std::string& getName() const {
@@ -319,7 +320,7 @@ private:
         : DropSchemaNode(qctx, Kind::kDropEdge, input, std::move(name), ifExists) {}
 };
 
-class CreateIndexNode : public SingleInputNode {
+class CreateIndexNode : public SingleDependencyNode {
 protected:
     CreateIndexNode(QueryContext* qctx,
                     PlanNode* input,
@@ -329,7 +330,7 @@ protected:
                     std::vector<meta::cpp2::IndexFieldDef> fields,
                     bool ifNotExists,
                     const std::string *comment)
-        : SingleInputNode(qctx, kind, input),
+        : SingleDependencyNode(qctx, kind, input),
           schemaName_(std::move(schemaName)),
           indexName_(std::move(indexName)),
           fields_(std::move(fields)),
@@ -439,10 +440,10 @@ private:
                           comment) {}
 };
 
-class DescIndexNode : public SingleInputNode {
+class DescIndexNode : public SingleDependencyNode {
 protected:
     DescIndexNode(QueryContext* qctx, PlanNode* input, Kind kind, std::string indexName)
-        : SingleInputNode(qctx, kind, input), indexName_(std::move(indexName)) {}
+        : SingleDependencyNode(qctx, kind, input), indexName_(std::move(indexName)) {}
 
 public:
     const std::string& getIndexName() const {
@@ -477,14 +478,14 @@ private:
         : DescIndexNode(qctx, input, Kind::kDescEdgeIndex, std::move(indexName)) {}
 };
 
-class DropIndexNode : public SingleInputNode {
+class DropIndexNode : public SingleDependencyNode {
 protected:
     DropIndexNode(QueryContext* qctx,
                   Kind kind,
                   PlanNode* input,
                   std::string indexName,
                   bool ifExists)
-        : SingleInputNode(qctx, kind, input),
+        : SingleDependencyNode(qctx, kind, input),
           indexName_(std::move(indexName)),
           ifExists_(ifExists) {}
 
@@ -554,7 +555,7 @@ private:
         : DescIndexNode(qctx, input, Kind::kShowCreateEdgeIndex, std::move(indexName)) {}
 };
 
-class ShowTagIndexes final : public SingleInputNode {
+class ShowTagIndexes final : public SingleDependencyNode {
 public:
     static ShowTagIndexes* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowTagIndexes(qctx, input));
@@ -562,10 +563,10 @@ public:
 
 private:
     ShowTagIndexes(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowTagIndexes, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowTagIndexes, input) {}
 };
 
-class ShowEdgeIndexes final : public SingleInputNode {
+class ShowEdgeIndexes final : public SingleDependencyNode {
 public:
     static ShowEdgeIndexes* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowEdgeIndexes(qctx, input));
@@ -573,10 +574,10 @@ public:
 
 private:
     ShowEdgeIndexes(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowEdgeIndexes, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowEdgeIndexes, input) {}
 };
 
-class ShowTagIndexStatus final : public SingleInputNode {
+class ShowTagIndexStatus final : public SingleDependencyNode {
 public:
     static ShowTagIndexStatus* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowTagIndexStatus(qctx, input));
@@ -584,10 +585,10 @@ public:
 
 private:
     ShowTagIndexStatus(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowTagIndexStatus, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowTagIndexStatus, input) {}
 };
 
-class ShowEdgeIndexStatus final : public SingleInputNode {
+class ShowEdgeIndexStatus final : public SingleDependencyNode {
 public:
     static ShowEdgeIndexStatus* make(QueryContext* qctx, PlanNode* input) {
         return qctx->objPool()->add(new ShowEdgeIndexStatus(qctx, input));
@@ -595,7 +596,7 @@ public:
 
 private:
     ShowEdgeIndexStatus(QueryContext* qctx, PlanNode* input)
-        : SingleInputNode(qctx, Kind::kShowEdgeIndexStatus, input) {}
+        : SingleDependencyNode(qctx, Kind::kShowEdgeIndexStatus, input) {}
 };
 
 class CreateFTIndexNode : public SingleInputNode {

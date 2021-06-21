@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 std::unique_ptr<PlanNodeDescription> CreateSchemaNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("name", name_, desc.get());
     addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
     addDescription("schema", folly::toJson(util::toJson(schema_)), desc.get());
@@ -22,7 +22,7 @@ std::unique_ptr<PlanNodeDescription> CreateSchemaNode::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> AlterSchemaNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("space", folly::to<std::string>(space_), desc.get());
     addDescription("name", name_, desc.get());
     addDescription("schemaItems", folly::toJson(util::toJson(schemaItems_)), desc.get());
@@ -31,20 +31,20 @@ std::unique_ptr<PlanNodeDescription> AlterSchemaNode::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> DescSchemaNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("name", name_, desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DropSchemaNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("name", name_, desc.get());
     addDescription("ifExists", util::toJson(ifExists_), desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> CreateIndexNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("schemaName", schemaName_, desc.get());
     addDescription("indexName", indexName_, desc.get());
     std::vector<std::string> fields;
@@ -57,13 +57,13 @@ std::unique_ptr<PlanNodeDescription> CreateIndexNode::explain() const {
 }
 
 std::unique_ptr<PlanNodeDescription> DescIndexNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("indexName", indexName_, desc.get());
     return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DropIndexNode::explain() const {
-    auto desc = SingleInputNode::explain();
+    auto desc = SingleDependencyNode::explain();
     addDescription("indexName", indexName_, desc.get());
     addDescription("ifExists", util::toJson(ifExists_), desc.get());
     return desc;

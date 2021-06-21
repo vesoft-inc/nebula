@@ -22,6 +22,8 @@ public:
     Status checkInputDataSets();
     std::unique_ptr<Iterator> getLeftInputDataIter() const;
     std::unique_ptr<Iterator> getRightInputDataIter() const;
+    Result getLeftInputData() const;
+    Result getRightInputData() const;
 
 protected:
     SetExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)

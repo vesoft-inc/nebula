@@ -67,5 +67,15 @@ std::unique_ptr<Iterator> SetExecutor::getRightInputDataIter() const {
     return ectx_->getResult(right).iter();
 }
 
+Result SetExecutor::getLeftInputData() const {
+    auto left = asNode<SetOp>(node())->leftInputVar();
+    return ectx_->getResult(left);
+}
+
+Result SetExecutor::getRightInputData() const {
+    auto right = asNode<SetOp>(node())->rightInputVar();
+    return ectx_->getResult(right);
+}
+
 }   // namespace graph
 }   // namespace nebula

@@ -15,9 +15,10 @@ folly::Future<Status> LimitExecutor::execute() {
     SCOPED_TIMER(&execTime_);
 
     auto* limit = asNode<Limit>(node());
-    auto iter = ectx_->getResult(limit->inputVar()).iter();
+    Result result = ectx_->getResult(limit->inputVar());
+    auto* iter = result.iterRef();
     ResultBuilder builder;
-    builder.value(iter->valuePtr());
+    builder.value(result.valuePtr());
     auto offset = limit->offset();
     auto count = limit->count();
     auto size = iter->size();
@@ -30,7 +31,7 @@ folly::Future<Status> LimitExecutor::execute() {
                size <= static_cast<size_t>(offset + count)) {
         iter->eraseRange(0, offset);
     }
-    builder.iter(std::move(iter));
+    builder.iter(std::move(result).iter());
     return finish(builder.finish());
 }
 

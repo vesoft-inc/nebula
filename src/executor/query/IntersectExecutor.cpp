@@ -20,15 +20,16 @@ folly::Future<Status> IntersectExecutor::execute() {
 
     NG_RETURN_IF_ERROR(checkInputDataSets());
 
-    auto lIter = getLeftInputDataIter();
-    auto rIter = getRightInputDataIter();
+    auto left = getLeftInputData();
+    auto right = getRightInputData();
 
     std::unordered_set<const Row *> hashSet;
-    for (; rIter->valid(); rIter->next()) {
-        hashSet.insert(rIter->row());
+    for (; right.iterRef()->valid(); right.iterRef()->next()) {
+        hashSet.insert(right.iterRef()->row());
         // TODO: should test duplicate rows
     }
 
+    auto* lIter = left.iterRef();
     ResultBuilder builder;
     if (hashSet.empty()) {
         auto value = lIter->valuePtr();
@@ -47,7 +48,7 @@ folly::Future<Status> IntersectExecutor::execute() {
         }
     }
 
-    builder.value(lIter->valuePtr()).iter(std::move(lIter));
+    builder.value(left.valuePtr()).iter(std::move(left).iter());
     return finish(builder.finish());
 }
 

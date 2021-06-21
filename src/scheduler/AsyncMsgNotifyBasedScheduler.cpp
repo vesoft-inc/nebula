@@ -6,6 +6,8 @@
 
 #include "scheduler/AsyncMsgNotifyBasedScheduler.h"
 
+DECLARE_bool(enable_lifetime_optimize);
+
 namespace nebula {
 namespace graph {
 AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) : Scheduler() {
@@ -13,6 +15,10 @@ AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) :
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
+    if (FLAGS_enable_lifetime_optimize) {
+        qctx_->plan()->root()->outputVarPtr()->setLastUser(-1);  // special for root
+        analyzeLifetime(qctx_->plan()->root());
+    }
     auto executor = Executor::create(qctx_->plan()->root(), qctx_);
     return doSchedule(executor);
 }

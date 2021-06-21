@@ -14,11 +14,12 @@ namespace graph {
 folly::Future<Status> TopNExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto* topn = asNode<TopN>(node());
-    auto iter = ectx_->getResult(topn->inputVar()).iter();
+    Result result = ectx_->getResult(topn->inputVar());
+    auto* iter = result.iterRef();
     if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal error: nullptr iterator in topn executor");
     }
-    if (UNLIKELY(!iter->isSequentialIter())) {
+    if (UNLIKELY(!result.iter()->isSequentialIter())) {
         std::stringstream ss;
         ss << "Internal error: Sort executor does not supported " << iter->kind();
         LOG(ERROR) << ss.str();
@@ -58,12 +59,13 @@ folly::Future<Status> TopNExecutor::execute() {
     }
     if (heapSize_ == 0) {
         iter->clear();
-        return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
+        return finish(ResultBuilder()
+            .value(result.valuePtr()).iter(std::move(result).iter()).finish());
     }
 
-    executeTopN<SequentialIter>(iter.get());
+    executeTopN<SequentialIter>(iter);
     iter->eraseRange(maxCount_, size);
-    return finish(ResultBuilder().value(iter->valuePtr()).iter(std::move(iter)).finish());
+    return finish(ResultBuilder().value(result.valuePtr()).iter(std::move(result).iter()).finish());
 }
 
 template<typename U>

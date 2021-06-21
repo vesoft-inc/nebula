@@ -15,19 +15,19 @@ folly::Future<Status> DedupExecutor::execute() {
     SCOPED_TIMER(&execTime_);
     auto* dedup = asNode<Dedup>(node());
     DCHECK(!dedup->inputVar().empty());
-    auto iter = ectx_->getResult(dedup->inputVar()).iter();
+    Result result = ectx_->getResult(dedup->inputVar());
+    auto* iter = result.iterRef();
 
     if (UNLIKELY(iter == nullptr)) {
         return Status::Error("Internal Error: iterator is nullptr");
     }
 
     if (UNLIKELY(iter->isGetNeighborsIter())) {
-        auto e = Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
+        auto e = Status::Error("Invalid iterator kind, %d",
+                               static_cast<uint16_t>(iter->kind()));
         LOG(ERROR) << e;
         return e;
     }
-    ResultBuilder builder;
-    builder.value(iter->valuePtr());
     std::unordered_set<const Row*> unique;
     unique.reserve(iter->size());
     while (iter->valid()) {
@@ -38,8 +38,7 @@ folly::Future<Status> DedupExecutor::execute() {
         }
     }
     iter->reset();
-    builder.iter(std::move(iter));
-    return finish(builder.finish());
+    return finish(std::move(result));
 }
 
 }   // namespace graph
