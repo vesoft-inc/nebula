@@ -35,6 +35,7 @@ public:
 
     const Value& eval(ExpressionContext&) override {
         LOG(FATAL) << "LabelAttributeExpression has to be rewritten";
+        return Value::kNullBadData;
     }
 
     void accept(ExprVisitor *visitor) override;

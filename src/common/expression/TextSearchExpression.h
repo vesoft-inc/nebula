@@ -82,8 +82,6 @@ private:
 };
 
 class TextSearchExpression : public Expression {
-    friend class Expression;
-
 public:
     TextSearchExpression(Kind kind, TextSearchArgument* arg)
         : Expression(kind) {
@@ -94,6 +92,7 @@ public:
 
     const Value& eval(ExpressionContext&) override {
         LOG(FATAL) << "TextSearchExpression has to be rewritten";
+        return Value::kNullBadData;
     }
 
     void accept(ExprVisitor*) override {
