@@ -25,6 +25,7 @@ Status GoValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateOver(goSentence->overClause(), goCtx_->over));
     NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
     NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
+    NG_RETURN_IF_ERROR(validateTruncate(goSentence->truncateClause()));
 
     const auto& exprProps = goCtx_->exprProps;
     if (!exprProps.inputProps().empty() && goCtx_->from.fromType != kPipe) {
@@ -75,6 +76,45 @@ Status GoValidator::validateWhere(WhereClause* where) {
     NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps));
     goCtx_->filter = filter;
     return Status::OK();
+}
+
+Status GoValidator::validateTruncate(TruncateClause* truncate) {
+    if (truncate == nullptr) {
+        return Status::OK();
+    }
+    goCtx_->random = truncate->isSample();
+    auto* tExpr = truncate->truncate();
+    if (tExpr->kind() != Expression::Kind::kList) {
+        return Status::SemanticError("`%s' type must be LIST", tExpr->toString().c_str());
+    }
+    const auto& steps = goCtx_->steps;
+    // lenght of list must be equal to N step
+    uint32_t totalSteps = steps.isMToN() ? steps.nSteps() : steps.steps();
+    if (static_cast<const ListExpression*>(tExpr)->size() != totalSteps) {
+        return Status::SemanticError(
+            "`%s' length must be equal to %d", tExpr->toString().c_str(), totalSteps);
+    }
+    // check if value of list is non-integer
+    auto existNonInteger = [](const Expression* expr) -> bool {
+        if (expr->kind() != Expression::Kind::kConstant &&
+            expr->kind() != Expression::Kind::kList) {
+            return true;
+        }
+        if (expr->kind() == Expression::Kind::kConstant) {
+            auto& val = static_cast<const ConstantExpression*>(expr)->value();
+            if (!val.isInt()) {
+                return true;
+            }
+        }
+        return false;
+    };
+    FindVisitor visitor(existNonInteger);
+    tExpr->accept(&visitor);
+    auto res = visitor.results();
+    if (res.size() == 1) {
+        return Status::SemanticError("`%s' must be INT", res.front()->toString().c_str());
+    }
+    return Status::SemanticError("not implement it");
 }
 
 Status GoValidator::validateYield(YieldClause* yield) {

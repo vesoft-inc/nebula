@@ -86,6 +86,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
+    nebula::TruncateClause                 *truncate_clause;
     nebula::VertexTagList                  *vertex_tag_list;
     nebula::VertexTagItem                  *vertex_tag_item;
     nebula::PropertyList                   *prop_list;
@@ -168,7 +169,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
-%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_ASCENDING KW_DESCENDING
+%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP
@@ -243,6 +244,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <where_clause> where_clause
 %type <lookup_where_clause> lookup_where_clause
 %type <when_clause> when_clause
+%type <truncate_clause> truncate_clause
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
@@ -506,6 +508,7 @@ unreserved_keyword
     | KW_COMMENT            { $$ = new std::string("comment"); }
     | KW_SESSION            { $$ = new std::string("session"); }
     | KW_SESSIONS           { $$ = new std::string("sessions"); }
+    | KW_SAMPLE             { $$ = new std::string("sample"); }
     ;
 
 expression
@@ -1170,13 +1173,21 @@ map_item_list
     }
     ;
 
+truncate_clause
+    : %empty {
+        $$ = nullptr;
+    }
+    | KW_SAMPLE expression {
+        $$ = new TruncateClause($2, true);
+    }
+    | KW_LIMIT expression {
+        $$ = new TruncateClause($2, false);
+    }
+    ;
+
 go_sentence
-    : KW_GO step_clause from_clause over_clause where_clause yield_clause {
-        auto go = new GoSentence();
-        go->setStepClause($2);
-        go->setFromClause($3);
-        go->setOverClause($4);
-        go->setWhereClause($5);
+    : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
+        auto go = new GoSentence($2, $3, $4, $5, $7);
         if ($6 == nullptr) {
             auto *cols = new YieldColumns();
             if (!$4->isOverAll()) {

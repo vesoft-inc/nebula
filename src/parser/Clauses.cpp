@@ -111,6 +111,18 @@ std::string OverClause::toString() const {
     return buf;
 }
 
+std::string TruncateClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    if (isSample_) {
+        buf += "SAMPLE ";
+    } else {
+        buf += "LIMIT ";
+    }
+    buf += truncate_->toString();
+    return buf;
+}
+
 std::string WhereClause::toString() const {
     std::string buf;
     buf.reserve(256);

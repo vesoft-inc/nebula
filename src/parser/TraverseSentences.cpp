@@ -33,7 +33,10 @@ std::string GoSentence::toString() const {
         buf += " ";
         buf += yieldClause_->toString();
     }
-
+    if (truncateClause_ != nullptr) {
+        buf += " ";
+        buf += truncateClause_->toString();
+    }
     return buf;
 }
 

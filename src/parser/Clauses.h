@@ -198,6 +198,32 @@ private:
     bool                                          isOverAll_{false};
 };
 
+class TruncateClause {
+public:
+    TruncateClause(Expression* expr, bool isSample) {
+        truncate_.reset(expr);
+        isSample_ = isSample;
+    }
+
+    Expression* truncate() const {
+        return truncate_.get();
+    }
+
+    std::unique_ptr<TruncateClause> clone() const {
+        return std::make_unique<TruncateClause>(truncate_->clone().release(), isSample_);
+    }
+
+    bool isSample() const {
+        return isSample_;
+    }
+
+    std::string toString() const;
+
+private:
+    bool isSample_{false};
+    std::unique_ptr<Expression> truncate_;
+};
+
 class WhereClause {
 public:
     explicit WhereClause(Expression *filter) {

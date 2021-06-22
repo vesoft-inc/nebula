@@ -82,6 +82,8 @@ struct GoContext final : AstContext {
     Expression*                 filter{nullptr};
     YieldColumns*               yieldExpr;
     bool                        distinct{false};
+    // true: sample, false: limit
+    bool                        random{false};
     std::vector<std::string>    colNames;
 
     std::string                 vidsVar;

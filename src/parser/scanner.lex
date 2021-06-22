@@ -248,7 +248,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "COMMENT"                   { return TokenType::KW_COMMENT; }
 "SESSIONS"                  { return TokenType::KW_SESSIONS; }
 "SESSION"                   { return TokenType::KW_SESSION; }
-
+"SAMPLE"                    { return TokenType::KW_SAMPLE; }
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 

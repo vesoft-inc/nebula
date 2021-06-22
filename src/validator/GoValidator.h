@@ -32,6 +32,8 @@ private:
 
     Status validateYield(YieldClause* yield);
 
+    Status validateTruncate(TruncateClause* truncate);
+
     Status buildColumns();
 
     void extractPropExprs(const Expression* expr);
