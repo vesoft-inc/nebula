@@ -43,7 +43,7 @@ Status TraversalValidator::validateStarts(const VerticesClause* clause, Starts& 
             starts.userDefinedVarName = propExpr->sym();
             userDefinedVarNameList_.emplace(starts.userDefinedVarName);
         }
-        starts.firstBeginningSrcVidColName = propExpr->prop();
+        starts.runtimeVidName = propExpr->prop();
     } else {
         auto vidList = clause->vidList();
         QueryExpressionContext ctx;

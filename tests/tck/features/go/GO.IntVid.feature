@@ -1,4 +1,4 @@
-# Copyright (c) 2020 vesoft inc. All rights reserved.
+# Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -22,6 +22,7 @@ Feature: IntegerVid Go  Sentence
     Then the result should be, in any order, with relax comparison:
       | name         | age |
       | "Tim Duncan" | 42  |
+      | "Tim Duncan" | 42  |
     When executing query:
       """
       GO FROM hash("Tim Duncan"), hash("Tony Parker") OVER like YIELD $^.player.name as name, $^.player.age as age
@@ -29,6 +30,9 @@ Feature: IntegerVid Go  Sentence
     Then the result should be, in any order, with relax comparison:
       | name          | age |
       | "Tim Duncan"  | 42  |
+      | "Tim Duncan"  | 42  |
+      | "Tony Parker" | 36  |
+      | "Tony Parker" | 36  |
       | "Tony Parker" | 36  |
     When executing query:
       """

@@ -22,6 +22,8 @@ private:
     static void registMatch();
 
     static void registPath();
+
+    static void registGo();
 };
 }  // namespace graph
 }  // namespace nebula

@@ -13,28 +13,34 @@ Feature: Push Filter down LeftJoin rule
       LOOKUP ON player WHERE player.name=='Tim Duncan'
       | YIELD $-.VertexID AS vid
       |  GO FROM $-.vid OVER like BIDIRECT
-      WHERE any(x in split($^.player.name, ' ') WHERE x contains 'Ti')
-      YIELD $^.player.name, like._dst AS vid
-      | GO FROM $-.vid OVER like BIDIRECT WHERE any(x in split($^.player.name, ' ') WHERE x contains 'Ti')
-      YIELD $^.player.name
+      WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')
+      YIELD $$.player.name, like._dst AS vid
+      | GO FROM $-.vid OVER like BIDIRECT WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')
+      YIELD $$.player.name
       """
     Then the result should be, in any order:
-      | $^.player.name   |
-      | "Tiago Splitter" |
+      | $$.player.name |
+      | "Tim Duncan"   |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 16 | Project      | 26           |               |
-      | 26 | LeftJoin     | 25           |               |
-      | 25 | Filter       | 13           |               |
-      | 13 | Project      | 22           |               |
-      | 22 | GetNeighbors | 9            |               |
-      | 9  | Project      | 24           |               |
-      | 24 | LeftJoin     | 23           |               |
-      | 23 | Filter       | 6            |               |
-      | 6  | Project      | 21           |               |
-      | 21 | GetNeighbors | 2            |               |
-      | 2  | Project      | 17           |               |
-      | 17 | IndexScan    | 0            |               |
+      | 22 | Project      | 21           |               |
+      | 21 | Filter       | 20           |               |
+      | 20 | InnerJoin    | 19           |               |
+      | 19 | LeftJoin     | 18           |               |
+      | 18 | Project      | 17           |               |
+      | 17 | GetVertices  | 16           |               |
+      | 16 | Project      | 28           |               |
+      | 28 | GetNeighbors | 12           |               |
+      | 12 | Project      | 11           |               |
+      | 11 | Filter       | 10           |               |
+      | 10 | InnerJoin    | 9            |               |
+      | 9  | LeftJoin     | 8            |               |
+      | 8  | Project      | 7            |               |
+      | 7  | GetVertices  | 6            |               |
+      | 6  | Project      | 27           |               |
+      | 27 | GetNeighbors | 2            |               |
+      | 2  | Project      | 23           |               |
+      | 23 | IndexScan    | 0            |               |
       | 0  | Start        |              |               |
     When profiling query:
       """

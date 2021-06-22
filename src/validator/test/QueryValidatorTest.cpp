@@ -60,7 +60,7 @@ TEST_F(QueryValidatorTest, GoZeroStep) {
                             "| GO FROM $-.id OVER serve";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -155,8 +155,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "id | GO 2 STEPS FROM $-.id OVER like";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kLoop,
@@ -165,7 +165,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -184,7 +184,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "| GO 1 STEPS FROM $-.id OVER like";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -204,7 +204,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         std::string query = "YIELD \"1\" AS id | GO FROM $-.id OVER like";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -219,7 +219,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "id | GO 1 STEPS FROM $-.id OVER like YIELD $-.id, like._dst";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -237,7 +237,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
             PK::kFilter,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -257,7 +257,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kDedup,
             PK::kProject,
             PK::kFilter,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -273,8 +273,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "id | GO 2 STEPS FROM $-.id OVER like YIELD $-.id, like._dst";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kLoop,
@@ -283,7 +283,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -304,8 +304,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
             PK::kFilter,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kLoop,
@@ -314,7 +314,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -337,8 +337,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kDedup,
             PK::kProject,
             PK::kFilter,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kLoop,
@@ -347,7 +347,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -368,7 +368,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "$$.person.name";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -395,7 +395,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kDataCollect,
             PK::kDedup,
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -420,7 +420,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "YIELD $-.name, $^.person.name, $$.person.name";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -441,8 +441,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                             "$$.person.name";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -454,7 +454,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -481,8 +481,8 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kDataCollect,
             PK::kDedup,
             PK::kProject,
-            PK::kLeftJoin,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -494,7 +494,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
             PK::kProject,
             PK::kProject,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kDedup,
             PK::kProject,
@@ -534,7 +534,7 @@ TEST_F(QueryValidatorTest, GoWithVariable) {
                             "YIELD $var.name, $^.person.name, $$.person.name";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kLeftJoin,
             PK::kProject,
             PK::kGetVertices,
@@ -771,7 +771,7 @@ TEST_F(QueryValidatorTest, GoOneStep) {
                             "| GO FROM $-.id OVER like";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -835,13 +835,13 @@ TEST_F(QueryValidatorTest, OutputToAPipe) {
             "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
         std::vector<PlanNode::Kind> expected = {
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
             PK::kProject,
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kDedup,
@@ -985,9 +985,9 @@ TEST_F(QueryValidatorTest, GoMToN) {
             PK::kDedup,
             PK::kProject,
             PK::kProject,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kDedup,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kProject,
             PK::kProject,
             PK::kProject,
@@ -995,7 +995,7 @@ TEST_F(QueryValidatorTest, GoMToN) {
             PK::kGetNeighbors,
             PK::kProject,
             PK::kStart,
-            PK::kLeftJoin,
+            PK::kInnerJoin,
             PK::kDedup,
             PK::kProject,
             PK::kDedup,

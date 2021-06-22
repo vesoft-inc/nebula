@@ -37,4 +37,5 @@ nebula_add_library(
     plan/Mutate.cpp
     plan/Maintain.cpp
     ngql/PathPlanner.cpp
+    ngql/GoPlanner.cpp
 )

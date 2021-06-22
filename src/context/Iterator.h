@@ -113,8 +113,8 @@ public:
 
     template <typename Iter>
     const Value& getColumnByIndex(int32_t index, Iter iter) const {
-        auto size = iter->size();
-        if (static_cast<size_t>(std::abs(index)) >= size) {
+        int32_t size = static_cast<int32_t>(iter->size());
+        if ((index > 0 && index >= size) || (index < 0 && -index > size)) {
             return Value::kNullBadType;
         }
         return iter->operator[]((size + index) % size);

@@ -43,15 +43,38 @@ SubPlan QueryUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
     if (starts.fromType == kVariable) {
         project->setInputVar(starts.userDefinedVarName);
     }
-    project->setColNames({kVid});
+    starts.src = pool->add(new InputPropertyExpression(kVid));
 
     auto* dedup = Dedup::make(qctx, project);
-    dedup->setColNames({kVid});
 
     SubPlan subPlan;
     subPlan.root = dedup;
     subPlan.tail = project;
     return subPlan;
+}
+
+// static
+SubPlan QueryUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
+    SubPlan subPlan;
+    if (!starts.vids.empty() && starts.originalSrc == nullptr) {
+        buildConstantInput(qctx, starts, vidsVar);
+    } else {
+        subPlan = buildRuntimeInput(qctx, starts);
+        vidsVar = subPlan.root->outputVar();
+    }
+    return subPlan;
+}
+
+PlanNode* QueryUtil::extractDstFromGN(QueryContext* qctx, PlanNode* gn, const std::string& output) {
+    auto* columns = qctx->objPool()->add(new YieldColumns());
+    auto* column = new YieldColumn(new EdgePropertyExpression("*", kDst), kVid);
+    columns->addColumn(column);
+
+    auto* project = Project::make(qctx, gn, columns);
+
+    auto* dedup = Dedup::make(qctx, project);
+    dedup->setOutputVar(output);
+    return dedup;
 }
 
 }  // namespace graph
