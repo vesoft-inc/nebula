@@ -24,6 +24,9 @@ Status CreateSpaceValidator::validateImpl() {
     ifNotExist_ = sentence->isIfNotExist();
     auto status = Status::OK();
     spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
+    if (sentence->groupName()) {
+        spaceDesc_.set_group_name(std::move(*(sentence->groupName())));
+    }
     StatusOr<std::string> retStatusOr;
     std::string result;
     auto* charsetInfo = qctx_->getCharsetInfo();
