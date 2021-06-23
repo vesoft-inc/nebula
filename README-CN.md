@@ -20,6 +20,14 @@
   </a>
 </p>
 
+## 关于这个 Repo
+
+当前 Repo(https://github.com/vesoft-inc/nebula) 是 Nebula Graph 的旧版本（v1.x）仓库。
+
+从新版本（v2.x）开始，Nebula Graph 的代码被分到了三个仓库中： [nebula-graph](https://github.com/vesoft-inc/nebula-graph)，[nebula-common](https://github.com/vesoft-inc/nebula-common) 和 [nebula-storage](https://github.com/vesoft-inc/nebula-storage)。
+
+我们推荐您从访问 [nebula-graph](https://github.com/vesoft-inc/nebula-graph) 开始，您可以在该仓库内直接下载 release 版本。
+
 # Nebula Graph 是什么
 
 **Nebula Graph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
@@ -43,11 +51,18 @@
 
 ## 快速使用
 
-请查看[快速使用手册](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)，开始使用 **Nebula Graph**。
+请查看[快速入门](https://docs.nebula-graph.com.cn/master/2.quick-start/1.quick-start-workflow/)，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)，[rpm/deb 包](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose/blob/master/README_zh-CN.md) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，除了参考文档，您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 如果您遇到任何问题，请前往 Nebula Graph [官方论坛](https://discuss.nebula-graph.com.cn) 提问。
+
+>**注意**
+>
+>如果您想使用旧版（v1.x）Nebula Graph，可以参考如下链接：
+>- [Getting started](https://docs.nebula-graph.com.cn/1.2.1/manual-CN/1.overview/2.quick-start/1.get-started/)
+>- [installing source code](https://docs.nebula-graph.com.cn/1.2.1/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)
+>- [rpm/deb packages](https://docs.nebula-graph.com.cn/1.2.1/manual-CN/3.build-develop-and-administration/2.install/1.install-with-rpm-deb/)
 
 ## 文档
 
@@ -81,7 +96,7 @@
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
 
 * 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
-* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/manual-CN/4.contributions/how-to-contribute/)
+* 贡献代码，详情请参见 [如何贡献](https://github.com/vesoft-inc/nebula-community/blob/master/Contributors/how-to-contribute.md)
 * 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
 
 ## 获取帮助 & 联系方式
