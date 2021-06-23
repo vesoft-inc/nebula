@@ -23,6 +23,7 @@ DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal
 DEFINE_bool(auto_remove_invalid_space, false, "whether remove data of invalid space when restart");
 
 DECLARE_bool(rocksdb_disable_wal);
+DECLARE_int32(rocksdb_backup_interval_secs);
 DECLARE_int32(wal_ttl);
 
 namespace nebula {
@@ -69,6 +70,8 @@ bool NebulaStore::init() {
     }
 
     storeWorker_->addDelayTask(FLAGS_clean_wal_interval_secs * 1000, &NebulaStore::cleanWAL, this);
+    storeWorker_->addRepeatTask(
+        FLAGS_rocksdb_backup_interval_secs * 1000, &NebulaStore::backup, this);
     LOG(INFO) << "Register handler...";
     options_.partMan_->registerHandler(this);
     return true;
@@ -103,7 +106,7 @@ void NebulaStore::loadPartFromDataPath() {
                 KVEngine* enginePtr = nullptr;
                 {
                     folly::RWSpinLock::WriteHolder wh(&lock_);
-                    auto engine = newEngine(spaceId, path);
+                    auto engine = newEngine(spaceId, path, options_.walPath_);
                     auto spaceIt = this->spaces_.find(spaceId);
                     if (spaceIt == this->spaces_.end()) {
                         LOG(INFO) << "Load space " << spaceId << " from disk";
@@ -223,14 +226,16 @@ void NebulaStore::stop() {
 }
 
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
-                                                 const std::string& path) {
+                                                 const std::string& dataPath,
+                                                 const std::string& walPath) {
     if (FLAGS_engine_type == "rocksdb") {
         std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
         if (options_.cffBuilder_ != nullptr) {
             cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
         }
         auto vIdLen = getSpaceVidLen(spaceId);
-        return std::make_unique<RocksEngine>(spaceId, vIdLen, path, options_.mergeOp_, cfFactory);
+        return std::make_unique<RocksEngine>(
+            spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         return nullptr;
@@ -262,7 +267,8 @@ void NebulaStore::addSpace(GraphSpaceID spaceId, bool isListener) {
         LOG(INFO) << "Create data space " << spaceId;
         this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
         for (auto& path : options_.dataPaths_) {
-            this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path));
+            this->spaces_[spaceId]->engines_.emplace_back(
+                newEngine(spaceId, path, options_.walPath_));
         }
     } else {
         // listener don't need engine for now
@@ -276,7 +282,8 @@ void NebulaStore::addSpace(GraphSpaceID spaceId, bool isListener) {
 }
 
 int32_t NebulaStore::getSpaceVidLen(GraphSpaceID spaceId) {
-    int vIdLen = 8;  // default value
+    // todo(doodle): the default value may make prefix bloom filter invalid
+    int vIdLen = 8;
     if (options_.schemaMan_) {
         auto stVidLen = options_.schemaMan_->getSpaceVidLen(spaceId);
         if (stVidLen.ok()) {
@@ -918,7 +925,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> NebulaStore:
                 return error(ret);
             }
             auto walPath = folly::stringPrintf(
-                "%s/checkpoints/%s/wal/%d", engine->getDataRoot(), name.c_str(), part);
+                "%s/checkpoints/%s/wal/%d", engine->getWalRoot(), name.c_str(), part);
             auto p = nebula::value(ret);
             if (!p->linkCurrentWAL(walPath.data())) {
                 return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
@@ -1087,6 +1094,18 @@ void NebulaStore::cleanWAL() {
             }
         }
     }
+}
+
+nebula::cpp2::ErrorCode NebulaStore::backup() {
+    for (const auto& spaceEntry : spaces_) {
+        for (const auto& engine : spaceEntry.second->engines_) {
+            auto code = engine->backup();
+            if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                return code;
+            }
+        }
+    }
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>

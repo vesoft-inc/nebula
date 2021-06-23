@@ -244,6 +244,8 @@ public:
         GraphSpaceID spaceId,
         const std::string& name) override;
 
+    nebula::cpp2::ErrorCode backup();
+
     nebula::cpp2::ErrorCode
     dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
@@ -310,7 +312,9 @@ private:
                            const std::unordered_map<std::string, std::string>& options,
                            bool isDbOption) override;
 
-    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
+    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId,
+                                        const std::string& dataPath,
+                                        const std::string& walPath);
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,

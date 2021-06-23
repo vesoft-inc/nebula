@@ -80,7 +80,7 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
     rocksdb::Options options;
     FLAGS_rocksdb_db_options = R"({"stats_dump_period_sec":"aaaaaa"})";
 
-    rocksdb::Status s = initRocksdbOptions(options);
+    rocksdb::Status s = initRocksdbOptions(options, 1);
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
     EXPECT_EQ("Invalid argument: Error parsing stats_dump_period_sec:stoull",
               s.ToString());
@@ -93,7 +93,7 @@ TEST(RocksEngineConfigTest, StatisticsConfigTest) {
     {
         FLAGS_enable_rocksdb_statistics = false;
         rocksdb::Options options;
-        auto status = initRocksdbOptions(options);
+        auto status = initRocksdbOptions(options, 1);
         ASSERT_TRUE(status.ok()) << status.ToString();
         ASSERT_EQ(nullptr, getDBStatistics());
     }
@@ -102,7 +102,7 @@ TEST(RocksEngineConfigTest, StatisticsConfigTest) {
         FLAGS_enable_rocksdb_statistics = true;
         FLAGS_rocksdb_stats_level = "kExceptTimers";
         rocksdb::Options options;
-        auto status = initRocksdbOptions(options);
+        auto status = initRocksdbOptions(options, 1);
         ASSERT_TRUE(status.ok()) << status.ToString();
         std::shared_ptr<rocksdb::Statistics> stats = getDBStatistics();
         ASSERT_EQ(rocksdb::StatsLevel::kExceptTimers, stats->get_stats_level());
@@ -114,7 +114,7 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
         FLAGS_rocksdb_compression = "lz4";
         FLAGS_rocksdb_compression_per_level = "no:no::mp3::zstd";
         rocksdb::Options options;
-        auto status = initRocksdbOptions(options);
+        auto status = initRocksdbOptions(options, 1);
         ASSERT_EQ(rocksdb::Status::kInvalidArgument, status.code());
     }
 
@@ -122,7 +122,7 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
         FLAGS_rocksdb_compression = "lz4";
         FLAGS_rocksdb_compression_per_level = "no:no::snappy::zstd";
         rocksdb::Options options;
-        auto status = initRocksdbOptions(options);
+        auto status = initRocksdbOptions(options, 1);
         ASSERT_TRUE(status.ok()) << status.ToString();
         ASSERT_EQ(rocksdb::kLZ4Compression, options.compression);
         ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);
@@ -145,7 +145,7 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
         FLAGS_rocksdb_compression = "snappy";
         FLAGS_rocksdb_compression_per_level = "no:snappy:lz4:lz4hc:zstd:zlib:bzip2";
         rocksdb::Options options;
-        auto status = initRocksdbOptions(options);
+        auto status = initRocksdbOptions(options, 1);
         ASSERT_TRUE(status.ok()) << status.ToString();
         ASSERT_EQ(rocksdb::kSnappyCompression, options.compression);
         ASSERT_EQ(rocksdb::kNoCompression, options.compression_per_level[0]);

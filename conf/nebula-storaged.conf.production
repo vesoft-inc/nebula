@@ -97,9 +97,6 @@
 --enable_rocksdb_prefix_filtering=false
 # Whether or not to enable the whole key filtering.
 --enable_rocksdb_whole_key_filtering=true
-# The prefix length for each key to use as the filter value.
-# can be 12 bytes(PartitionId + VertexID), or 16 bytes(PartitionId + VertexID + TagID/EdgeType).
---rocksdb_filtering_prefix_length=12
 
 ############### misc ####################
 --max_handlers_per_req=1

@@ -8,8 +8,11 @@
 #include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include <rocksdb/table.h>
 #include <folly/lang/Bits.h>
 #include "kvstore/RocksEngine.h"
+#include "kvstore/RocksEngineConfig.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace kvstore {
@@ -287,6 +290,84 @@ TEST(RocksEngineTest, BackupRestoreTable) {
         num++;
     }
     EXPECT_EQ(num, 5);
+}
+
+TEST(RocksEngineTest, BackupRestoreWithoutData) {
+    fs::TempDir dataPath("/tmp/rocks_engine_test_data_path.XXXXXX");
+    fs::TempDir rocksdbWalPath("/tmp/rocks_engine_test_rocksdb_wal_path.XXXXXX");
+    fs::TempDir backupPath("/tmp/rocks_engine_test_backup_path.XXXXXX");
+    FLAGS_rocksdb_table_format = "PlainTable";
+    FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
+    FLAGS_rocksdb_backup_dir = backupPath.path();
+
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
+
+    LOG(INFO) << "Stop the engine and remove data";
+    // release the engine and mock machine reboot by removing the data
+    engine.reset();
+    CHECK(fs::FileUtils::remove(dataPath.path(), true));
+
+    LOG(INFO) << "Start recover";
+    // reopen the engine, and it will try to restore from the previous backup
+    engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
+
+    FLAGS_rocksdb_table_format = "BlockBasedTable";
+    FLAGS_rocksdb_wal_dir = "";
+    FLAGS_rocksdb_backup_dir = "";
+}
+
+TEST(RocksEngineTest, BackupRestoreWithData) {
+    fs::TempDir dataPath("/tmp/rocks_engine_test_data_path.XXXXXX");
+    fs::TempDir rocksdbWalPath("/tmp/rocks_engine_test_rocksdb_wal_path.XXXXXX");
+    fs::TempDir backupPath("/tmp/rocks_engine_test_backup_path.XXXXXX");
+    FLAGS_rocksdb_table_format = "PlainTable";
+    FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
+    FLAGS_rocksdb_backup_dir = backupPath.path();
+
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
+    PartitionID partId = 1;
+
+    auto checkData = [&] {
+        std::string prefix = NebulaKeyUtils::vertexPrefix(kDefaultVIdLen, partId, "vertex");
+        std::unique_ptr<KVIterator> iter;
+        auto code = engine->prefix(prefix, &iter);
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        int32_t num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        EXPECT_EQ(num, 10);
+
+        std::string value;
+        code = engine->get(NebulaKeyUtils::systemCommitKey(partId), &value);
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ("123", value);
+    };
+
+    LOG(INFO) << "Write some data";
+    std::vector<KV> data;
+    for (auto tagId = 0; tagId < 10; tagId++) {
+        data.emplace_back(NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "vertex", tagId),
+                          folly::stringPrintf("val_%d", tagId));
+    }
+    data.emplace_back(NebulaKeyUtils::systemCommitKey(partId), "123");
+    engine->multiPut(std::move(data));
+
+    checkData();
+    LOG(INFO) << "Stop the engine and remove data";
+    // release the engine and mock machine reboot by removing the data
+    engine.reset();
+    CHECK(fs::FileUtils::remove(dataPath.path(), true));
+
+    LOG(INFO) << "Start recover";
+    // reopen the engine, and it will try to restore from the previous backup
+    engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
+    checkData();
+
+    FLAGS_rocksdb_table_format = "BlockBasedTable";
+    FLAGS_rocksdb_wal_dir = "";
+    FLAGS_rocksdb_backup_dir = "";
 }
 
 }  // namespace kvstore

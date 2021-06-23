@@ -576,8 +576,11 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
     auto* env = cluster.storageEnv_.get();
     auto totalParts = cluster.getTotalParts();
     ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
 
     GraphSpaceID spaceId = 1;
+    TagID player = 1;
+    EdgeType serve = 101;
     auto status = env->schemaMan_->getSpaceVidLen(spaceId);
     auto vIdLen = status.value();
     std::vector<VertexID> vertices = {"Tim Duncan", "Not Existed"};
@@ -585,14 +588,37 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
     for (const auto& vId : vertices) {
         PartitionID partId = (hash(vId) % totalParts) + 1;
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId);
+        auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
     }
 
-    std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
-    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
-    ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
+    {
+        std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
+        ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+        ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
+        ASSERT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+        statistics->Reset();
+        ASSERT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+        ASSERT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
+        ASSERT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    }
+
+    for (const auto& vId : vertices) {
+        PartitionID partId = (hash(vId) % totalParts) + 1;
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto prefix = NebulaKeyUtils::edgePrefix(vIdLen, partId, vId, serve);
+        auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
+        ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+    }
+
+    {
+        std::shared_ptr<rocksdb::Statistics> statistics = kvstore::getDBStatistics();
+        ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_CHECKED), 0);
+        ASSERT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_PREFIX_USEFUL), 0);
+        ASSERT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    }
+
     FLAGS_enable_rocksdb_statistics = false;
     FLAGS_enable_rocksdb_prefix_filtering = false;
 }

@@ -28,6 +28,7 @@ public:
     StorageServer(HostAddr localHost,
                   std::vector<HostAddr> metaAddrs,
                   std::vector<std::string> dataPaths,
+                  std::string walPath = "",
                   std::string listenerPath = "");
 
     ~StorageServer();
@@ -79,6 +80,7 @@ private:
     HostAddr localHost_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
+    std::string walPath_;
     std::string listenerPath_;
 
     AdminTaskManager* taskMgr_{nullptr};

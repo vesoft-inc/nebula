@@ -34,6 +34,8 @@ struct KVOptions {
     // otherwise it would mix up the data on disk.
     std::vector<std::string> dataPaths_;
 
+    std::string walPath_;
+
     // Path for listener, only wal is stored, the structure would be spaceId/partId/wal
     std::string listenerPath_;
 

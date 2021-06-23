@@ -80,11 +80,19 @@ public:
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          int32_t vIdLen,
                          const std::string& dataPath,
+                         const std::string& walPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory,
                          bool readonly)
     : KVEngine(spaceId)
+    , spaceId_(spaceId)
     , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
+    // set wal path as dataPath by default
+    if (walPath.empty()) {
+        walPath_ = folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId);
+    } else {
+        walPath_ = folly::stringPrintf("%s/nebula/%d", walPath.c_str(), spaceId);
+    }
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         if (readonly) {
@@ -100,10 +108,12 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         LOG(FATAL) << path << " is not directory";
     }
 
+    openBackupEngine(spaceId);
+
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
-    rocksdb::Status status = initRocksdbOptions(options, vIdLen);
-    CHECK(status.ok());
+    rocksdb::Status status = initRocksdbOptions(options, spaceId, vIdLen);
+    CHECK(status.ok()) << status.ToString();
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
     }
@@ -120,6 +130,8 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     db_.reset(db);
     partsNum_ = allParts().size();
     LOG(INFO) << "open rocksdb on " << path;
+
+    backup();
 }
 
 void RocksEngine::stop() {
@@ -418,6 +430,66 @@ nebula::cpp2::ErrorCode RocksEngine::flush() {
     } else {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return nebula::cpp2::ErrorCode::E_UNKNOWN;
+    }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::backup() {
+    if (!backupDb_) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
+    LOG(INFO) << "begin to backup space " << spaceId_ << " on path " << backupPath_;
+    bool flushBeforeBackup = true;
+    auto status = backupDb_->CreateNewBackup(db_.get(), flushBeforeBackup);
+    if (status.ok()) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "backup failed: " << status.ToString();
+        return nebula::cpp2::ErrorCode::E_BACKUP_FAILED;
+    }
+}
+
+void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
+    // If backup dir is not empty, set backup related options
+    if (FLAGS_rocksdb_table_format == "PlainTable" && !FLAGS_rocksdb_backup_dir.empty()) {
+        backupPath_ =
+            folly::stringPrintf("%s/rocksdb_backup/%d", FLAGS_rocksdb_backup_dir.c_str(), spaceId);
+        if (FileUtils::fileType(backupPath_.c_str()) == FileType::NOTEXIST) {
+            if (!FileUtils::makeDir(backupPath_)) {
+                LOG(FATAL) << "makeDir " << backupPath_ << " failed";
+            }
+        }
+        rocksdb::BackupEngine* backupDb;
+        rocksdb::BackupableDBOptions backupOptions(backupPath_);
+        backupOptions.backup_log_files = false;
+        auto status =
+            rocksdb::BackupEngine::Open(rocksdb::Env::Default(), backupOptions, &backupDb);
+        CHECK(status.ok()) << status.ToString();
+        backupDb_.reset(backupDb);
+        LOG(INFO) << "open plain table backup engine on " << backupPath_;
+
+        std::string dataPath = folly::stringPrintf("%s/data", dataPath_.c_str());
+        auto walDir = dataPath;
+        if (!FLAGS_rocksdb_wal_dir.empty()) {
+            walDir =
+                folly::stringPrintf("%s/rocksdb_wal/%d", FLAGS_rocksdb_wal_dir.c_str(), spaceId);
+        } else {
+            LOG(WARNING) << "rocksdb wal is stored with data";
+        }
+
+        rocksdb::RestoreOptions restoreOptions;
+        restoreOptions.keep_log_files = true;
+        status = backupDb_->RestoreDBFromLatestBackup(dataPath, walDir, restoreOptions);
+        LOG(INFO) << "try to restore from backup path " << backupPath_;
+        if (status.IsNotFound()) {
+            LOG(WARNING) << "no valid backup found";
+            return;
+        } else if (!status.ok()) {
+            LOG(FATAL) << status.ToString();
+        }
+        LOG(INFO) << "restore from latest backup succesfully"
+                  << ", backup path " << backupPath_
+                  << ", wal path " << walDir
+                  << ", data path " << dataPath;
     }
 }
 

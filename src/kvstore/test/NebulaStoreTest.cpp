@@ -16,6 +16,7 @@
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
+#include "kvstore/RocksEngineConfig.h"
 #include "kvstore/LogEncoder.h"
 #include "meta/ActiveHostsMan.h"
 
@@ -950,6 +951,90 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
     EXPECT_EQ(0, store->spaces_.size());
     CHECK(!std::filesystem::exists(space1));
     CHECK(std::filesystem::exists(space2));
+}
+
+TEST(NebulaStoreTest, BackupRestoreTest) {
+    GraphSpaceID spaceId = 1;
+    PartitionID partId = 1;
+    size_t vIdLen = kDefaultVidLen;
+
+    fs::TempDir dataPath("/tmp/nebula_store_test_data_path.XXXXXX");
+    fs::TempDir walPath("/tmp/nebula_store_test_wal_path.XXXXXX");
+    fs::TempDir rocksdbWalPath("/tmp/nebula_store_test_rocksdb_wal_path.XXXXXX");
+    fs::TempDir backupPath("/tmp/nebula_store_test_backup_path.XXXXXX");
+    FLAGS_rocksdb_table_format = "PlainTable";
+    FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
+    FLAGS_rocksdb_backup_dir = backupPath.path();
+
+    auto waitLeader = [] (const std::unique_ptr<NebulaStore>& store) {
+        while (true) {
+            int32_t leaderCount = 0;
+            std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> leaderIds;
+            leaderCount += store->allLeader(leaderIds);
+            if (leaderCount == 1) {
+                break;
+            }
+            usleep(100000);
+        }
+    };
+
+    auto test = [&] (bool insertData) {
+        auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        std::vector<std::string> paths;
+        paths.emplace_back(dataPath.path());
+        auto partMan = std::make_unique<MemPartManager>();
+        partMan->partsMap_[spaceId][partId] = PartHosts();
+
+        KVOptions options;
+        options.dataPaths_ = paths;
+        options.walPath_ = walPath.path();
+        options.partMan_ = std::move(partMan);
+        HostAddr local = {"", 0};
+        auto store = std::make_unique<NebulaStore>(std::move(options),
+                                                   ioThreadPool,
+                                                   local,
+                                                   getHandlers());
+        store->init();
+        waitLeader(store);
+
+        if (insertData) {
+            std::vector<KV> data;
+            for (auto tagId = 0; tagId < 10; tagId++) {
+                data.emplace_back(NebulaKeyUtils::vertexKey(vIdLen, partId, "vertex", tagId),
+                                  folly::stringPrintf("val_%d", tagId));
+            }
+            folly::Baton<true, std::atomic> baton;
+            store->asyncMultiPut(spaceId, partId, std::move(data), [&] (cpp2::ErrorCode code) {
+                EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+                baton.post();
+            });
+            baton.wait();
+        }
+
+        {
+            std::string prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, "vertex");
+            std::unique_ptr<KVIterator> iter;
+            auto code = store->prefix(spaceId, partId, prefix, &iter);
+            EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+            int32_t num = 0;
+            while (iter->valid()) {
+                num++;
+                iter->next();
+            }
+            EXPECT_EQ(num, 10);
+        }
+    };
+
+    // open rocksdb and write something
+    test(true);
+    // remove the data path to mock machine reboot
+    CHECK(fs::FileUtils::remove(dataPath.path(), true));
+    // recover from backup and check data
+    test(false);
+
+    FLAGS_rocksdb_table_format = "BlockBasedTable";
+    FLAGS_rocksdb_wal_dir = "";
+    FLAGS_rocksdb_backup_dir = "";
 }
 
 }  // namespace kvstore

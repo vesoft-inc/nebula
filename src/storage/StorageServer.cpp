@@ -41,10 +41,12 @@ namespace storage {
 StorageServer::StorageServer(HostAddr localHost,
                              std::vector<HostAddr> metaAddrs,
                              std::vector<std::string> dataPaths,
+                             std::string walPath,
                              std::string listenerPath)
     : localHost_(localHost)
     , metaAddrs_(std::move(metaAddrs))
     , dataPaths_(std::move(dataPaths))
+    , walPath_(std::move(walPath))
     , listenerPath_(std::move(listenerPath)) {}
 
 StorageServer::~StorageServer() {
@@ -54,6 +56,7 @@ StorageServer::~StorageServer() {
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     kvstore::KVOptions options;
     options.dataPaths_ = dataPaths_;
+    options.walPath_ = walPath_;
     options.listenerPath_ = listenerPath_;
     options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                                 localHost_,
