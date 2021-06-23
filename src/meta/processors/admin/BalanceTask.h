@@ -118,8 +118,8 @@ private:
     AdminClient* client_ = nullptr;
     Status       status_ = Status::START;
     Result       ret_ = Result::IN_PROGRESS;
-    int64_t      startTimeMs_ = 0;
-    int64_t      endTimeMs_ = 0;
+    int64_t      startTime_ = 0;
+    int64_t      endTime_ = 0;
     std::function<void()> onFinished_;
     std::function<void()> onError_;
 };

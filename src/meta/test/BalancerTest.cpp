@@ -423,10 +423,10 @@ TEST(BalanceTest, NormalTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -506,10 +506,10 @@ TEST(BalanceTest, SpecifyHostTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -602,10 +602,10 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -694,10 +694,10 @@ TEST(BalanceTest, MockReplaceMachineTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -783,10 +783,10 @@ TEST(BalanceTest, SingleReplicaTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -881,10 +881,10 @@ TEST(BalanceTest, RecoveryTest) {
                 ASSERT_EQ(BalanceTask::Status::CATCH_UP_DATA, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::FAILED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -936,10 +936,10 @@ TEST(BalanceTest, RecoveryTest) {
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::INVALID, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
-                ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
-                ASSERT_GT(task.endTimeMs_, 0);
+                task.startTime_ = std::get<2>(tup);
+                ASSERT_GT(task.startTime_, 0);
+                task.endTime_ = std::get<3>(tup);
+                ASSERT_GT(task.endTime_, 0);
             }
             num++;
             iter->next();
@@ -1019,8 +1019,8 @@ TEST(BalanceTest, StopBalanceDataTest) {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.startTime_ = std::get<2>(tup);
+                task.endTime_ = std::get<3>(tup);
 
                 if (task.status_ == BalanceTask::Status::END) {
                     taskEnded++;
@@ -1054,8 +1054,8 @@ TEST(BalanceTest, StopBalanceDataTest) {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.startTime_ = std::get<2>(tup);
+                task.endTime_ = std::get<3>(tup);
                 if (task.status_ == BalanceTask::Status::END) {
                     ++taskEnded;
                 } else if (task.status_ == BalanceTask::Status::START) {
