@@ -170,7 +170,7 @@ void BalanceTask::invoke() {
                     LOG(ERROR) << taskIdStr_ << " Update meta failed, status " << resp;
                     ret_ = BalanceTaskResult::FAILED;
                 } else {
-                    LOG(INFO) << "Update meta succeeded!";
+                    LOG(INFO) << taskIdStr_ << " Update meta succeeded!";
                     status_ = BalanceTaskStatus::REMOVE_PART_ON_SRC;
                 }
                 invoke();

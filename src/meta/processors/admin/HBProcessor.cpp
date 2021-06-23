@@ -43,8 +43,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
        }
     }
 
-    VLOG(3) << "Receive heartbeat from " << host
-            << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
+    LOG(INFO) << "Receive heartbeat from " << host
+              << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
     if (req.get_role() == cpp2::HostRole::STORAGE) {
         ClusterID peerCluserId = req.get_cluster_id();
         if (peerCluserId == 0) {

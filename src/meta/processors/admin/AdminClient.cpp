@@ -207,23 +207,21 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         peers.emplace_back(dst);
     }
 
-    auto partRet = kv_->part(kDefaultSpaceId, kDefaultPartId);
-    CHECK(ok(partRet));
-    auto part = nebula::value(partRet);
-
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                       MetaServiceUtils::partVal(peers));
-    part->asyncMultiPut(
-        std::move(data), [p = std::move(pro)](nebula::cpp2::ErrorCode code) mutable {
-            if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-                p.setValue(Status::OK());
-            } else {
-                p.setValue(Status::Error("Access kv failed, code: %s",
-                                         apache::thrift::util::enumNameSafe(code).c_str()));
-            }
+    kv_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+        [this, p = std::move(pro)] (nebula::cpp2::ErrorCode code) mutable {
+            folly::via(ioThreadPool_.get(), [code, p = std::move(p)]() mutable {
+                if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+                    p.setValue(Status::OK());
+                } else {
+                    p.setValue(Status::Error("Access kv failed, code: %s",
+                                             apache::thrift::util::enumNameSafe(code).c_str()));
+                }
+            });
         });
     return f;
 }

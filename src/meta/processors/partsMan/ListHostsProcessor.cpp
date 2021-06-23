@@ -180,8 +180,8 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
     std::vector<std::string> removeLeadersKey;
     for (; iter->valid(); iter->next()) {
         auto spaceIdAndPartId = MetaServiceUtils::parseLeaderKeyV3(iter->key());
-        LOG(INFO) << "show hosts: space = " << spaceIdAndPartId.first
-                  << ", part = " << spaceIdAndPartId.second;
+        VLOG(1) << "show hosts: space = " << spaceIdAndPartId.first
+                << ", part = " << spaceIdAndPartId.second;
         // If the space in the leader key don't exist, remove leader key
         auto spaceId = spaceIdAndPartId.first;
         auto spaceIter = spaceIdNameMap_.find(spaceId);
