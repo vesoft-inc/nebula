@@ -3,11 +3,12 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-.PHONY: fmt check init init-all clean test tck up down
+.PHONY: fmt check init init-all clean test tck fail up down
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 CURR_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 gherkin_fmt = ~/.local/bin/reformat-gherkin
+PY_VERSION = $(shell python3 --version | cut -f2 -d' ' | cut -f2 -d'.')
 
 RM_DIR ?= true
 TEST_DIR ?= $(CURR_DIR)
@@ -24,6 +25,7 @@ install-nebula-py: install-deps
 	rm -rf $(CURR_DIR)/nebula-python
 
 gherkin-fmt: install-deps
+	@if [[ $(PY_VERSION) -lt 7 ]]; then echo 'Python version must >= 3.7'; exit 1; fi
 	pip3 install --user poetry
 	git clone --branch master https://github.com/OneContainer/reformat-gherkin $(CURR_DIR)/reformat-gherkin
 	cd $(CURR_DIR)/reformat-gherkin && python3 -m poetry build
@@ -54,6 +56,9 @@ test:
 
 tck:
 	cd $(CURR_DIR) && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
+
+fail:
+	cd $(CURR_DIR) && python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
 
 report:
 	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json

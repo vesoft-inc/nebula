@@ -543,7 +543,6 @@ def p_error(p):
 
 
 lexer = lex.lex()
-parser = yacc.yacc()
 functions = {}
 
 
@@ -562,6 +561,10 @@ def register_function(name, func):
 
 
 register_function('hash', murmurhash2)
+
+
+parser = yacc.yacc()
+
 
 def parse(s):
     return parser.parse(s)

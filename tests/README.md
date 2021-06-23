@@ -9,7 +9,7 @@ First of all, change directory to the root of `nebula-graph`, and build the whol
 
 ### Init environment
 
-Nebula Test framework depends on some thirdparty libraries, such as [nebula-python](https://github.com/vesoft-inc/nebula-python), [reformat-gherkin](https://github.com/OneContainer/reformat-gherkin), pytest, [pytest-bdd](https://pytest-bdd.readthedocs.io/en/latest/) and so on.
+Nebula Test framework depends on python3(>=3.7) and some thirdparty libraries, such as [nebula-python](https://github.com/vesoft-inc/nebula-python), [reformat-gherkin](https://github.com/OneContainer/reformat-gherkin), pytest, [pytest-bdd](https://pytest-bdd.readthedocs.io/en/latest/) and so on.
 
 So you should install all these dependencies before running test cases by:
 
@@ -65,6 +65,12 @@ You can use following commands to only rerun the test cases if they failed:
 
 ```shell
 $ pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded .
+```
+
+or
+
+```shell
+$ make fail
 ```
 
 `gherkin-terminal-reporter` options will print the pytest report prettily.
@@ -156,7 +162,7 @@ Each feature file is composed of different scenarios which split test units into
 
 The table in `Then` step must have the first header line even if there's no data rows.
 
-`Background` is the common steps of different scenarios. Scenarios will be executed in parallel. 
+`Background` is the common steps of different scenarios. Scenarios will be executed in parallel.
 
 Note that for cases that contain execution plans, it is mandatory to fill the `id` column.
 
