@@ -91,6 +91,7 @@ struct AppendLogRequest {
     8: TermID       last_log_term_sent;
     9: LogID        last_log_id_sent;
 
+    // [deprecated]: heartbeat is moved to a separate interface
     //
     // Fields 10 to 11 are used for LogAppend.
     //
@@ -132,6 +133,34 @@ struct SendSnapshotRequest {
     11: bool         done;
 }
 
+struct HeartbeatRequest {
+    //
+    // Fields 1 - 9 are common for both log appendent and heartbeat
+    //
+    // last_log_term_sent and last_log_id_sent are the term and log id
+    // for the last log being sent
+    //
+    1: GraphSpaceID space;              // Graphspace ID
+    2: PartitionID  part;               // Partition ID
+    3: TermID       current_term;       // Current term
+    4: LogID        last_log_id;        // Last received log id
+    5: LogID        committed_log_id;   // Last committed Log ID
+    6: string       leader_addr;        // The leader's address
+    7: Port         leader_port;        // The leader's Port
+    8: TermID       last_log_term_sent;
+    9: LogID        last_log_id_sent;
+}
+
+struct HeartbeatResponse {
+    1: ErrorCode    error_code;
+    2: TermID       current_term;
+    3: string       leader_addr;
+    4: Port         leader_port;
+    5: LogID        committed_log_id;
+    6: LogID        last_log_id;
+    7: TermID       last_log_term;
+}
+
 struct SendSnapshotResponse {
     1: ErrorCode    error_code;
 }
@@ -139,5 +168,6 @@ struct SendSnapshotResponse {
 service RaftexService {
     AskForVoteResponse askForVote(1: AskForVoteRequest req);
     AppendLogResponse appendLog(1: AppendLogRequest req);
-    SendSnapshotResponse  sendSnapshot(1: SendSnapshotRequest req);
+    SendSnapshotResponse sendSnapshot(1: SendSnapshotRequest req);
+    HeartbeatResponse heartbeat(1: HeartbeatRequest req) (thread = 'eb');
 }

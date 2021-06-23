@@ -347,6 +347,8 @@ enum ErrorCode {
     E_ATOMIC_OP_FAILED                = -3009,
     E_DATA_CONFLICT_ERROR             = -3010, // data conflict, for index write without toss.
 
+    E_WRITE_STALLED                   = -3011,
+
     // meta failures
     E_IMPROPER_DATA_TYPE              = -3021,
     E_INVALID_SPACEVIDLEN             = -3022,

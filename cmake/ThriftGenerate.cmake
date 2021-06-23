@@ -81,7 +81,7 @@ add_custom_command(
   OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
-    --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
+    --gen "mstch_cpp2:include_prefix=${include_prefix},stack_arguments"
     --gen "py"
     --gen "js:node:"
     --gen "csharp"
