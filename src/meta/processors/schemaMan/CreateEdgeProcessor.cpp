@@ -17,11 +17,11 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     {
         // if there is an tag of the same name
         // TODO: there exists race condition, we should address it in the future
-        folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
         auto conflictRet = getTagId(spaceId, edgeName);
         if (nebula::ok(conflictRet)) {
             LOG(ERROR) << "Failed to create edge `" << edgeName
-                       << "': some edge with the same name already exists.";
+                       << "': some tag with the same name already exists.";
             resp_.set_id(to(nebula::value(conflictRet), EntryType::EDGE));
             handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
             onFinished();
