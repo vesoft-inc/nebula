@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
 #include <gtest/gtest.h>
-#include "common/function/FunctionManager.h"
+
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
-#include "common/datatypes/Set.h"
-#include "common/datatypes/DataSet.h"
-#include "common/time/TimeUtils.h"
-#include "common/datatypes/Vertex.h"
-#include "common/datatypes/Edge.h"
 #include "common/datatypes/Path.h"
+#include "common/datatypes/Set.h"
+#include "common/datatypes/Vertex.h"
+#include "common/function/FunctionManager.h"
+#include "common/time/TimeUtils.h"
 
 namespace nebula {
 
@@ -24,18 +24,62 @@ public:
     void TearDown() override {}
 
 protected:
-    void testFunction(const char *expr, const std::vector<Value> &args, Value expect) {
+    ::testing::AssertionResult testFunction(const char *expr,
+                                            const std::vector<Value> &args,
+                                            Value expect) {
+        auto argsRef = genArgsRef(args);
         auto result = FunctionManager::get(expr, args.size());
-        ASSERT_TRUE(result.ok());
-        auto res = result.value()(args);
-        EXPECT_EQ(res.type(), expect.type()) << "function return type check failed: " << expr;
-        EXPECT_EQ(res, expect) << "function return value check failed: " << expr;
+        if (!result.ok()) {
+            return ::testing::AssertionFailure()
+                   << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+        }
+        auto res = result.value()(argsRef);
+        if (res.type() != expect.type()) {
+            return ::testing::AssertionFailure() << "function return type check failed: " << expr;
+        }
+        if (res != expect) {
+            return ::testing::AssertionFailure() << "function return value check failed: " << expr;
+        }
+        return ::testing::AssertionSuccess();
     }
 
-    Path createPath(const Value& src, const std::vector<Value>& steps) {
+    ::testing::AssertionResult testFunction(const char *expr,
+                                            const std::vector<Value> &args,
+                                            Value::Type expectType) {
+        auto argsRef = genArgsRef(args);
+        auto result = FunctionManager::get(expr, args.size());
+        if (!result.ok()) {
+            return ::testing::AssertionFailure()
+                   << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+        }
+        auto res = result.value()(argsRef);
+        if (res.type() != expectType) {
+            return ::testing::AssertionFailure() << "function return type check failed: " << expr;
+        }
+        return ::testing::AssertionSuccess();
+    }
+
+    ::testing::AssertionResult testFunction(const char *expr, const std::vector<Value> &args) {
+        std::vector<FunctionManager::ArgType> argsRef;
+        argsRef.insert(argsRef.end(), args.begin(), args.end());
+        auto result = FunctionManager::get(expr, args.size());
+        if (!result.ok()) {
+            return ::testing::AssertionFailure()
+                   << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+        }
+        return ::testing::AssertionSuccess();
+    }
+
+    std::vector<FunctionManager::ArgType> genArgsRef(const std::vector<Value> &args) {
+        std::vector<FunctionManager::ArgType> argsRef;
+        argsRef.insert(argsRef.end(), args.begin(), args.end());
+        return argsRef;
+    }
+
+    Path createPath(const Value &src, const std::vector<Value> &steps) {
         Path path;
         path.src = Vertex(src, {});
-        for (auto& i : steps) {
+        for (auto &i : steps) {
             path.steps.emplace_back(Step(Vertex(i, {}), 1, "edge1", 0, {}));
         }
         return path;
@@ -79,13 +123,13 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"pad", {"abcdefghijkl", 16, "123"}},
     {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}},
     {"date", {Date(1984, 10, 11)}},
-    {"datetime", {DateTime(1984, 10, 11, 12, 31, 14,  341)}},
+    {"datetime", {DateTime(1984, 10, 11, 12, 31, 14, 341)}},
     {"edge", {Edge("1", "2", -1, "e1", 0, {{"e1", 1}, {"e2", 2}})}},
 };
 
-#define TEST_FUNCTION(expr, args, expected)                                                        \
+#define TEST_FUNCTION(expr, ...)                                                                   \
     do {                                                                                           \
-        testFunction(#expr, args, expected);                                                       \
+        EXPECT_TRUE(testFunction(#expr, __VA_ARGS__));                                             \
     } while (0);
 
 TEST_F(FunctionManagerTest, testNull) {
@@ -201,9 +245,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(cbrt, args_["int"], std::cbrt(4));
         TEST_FUNCTION(cbrt, args_["float"], std::cbrt(1.1));
     }
-    {
-        TEST_FUNCTION(hypot, args_["two"], std::hypot(2, 4));
-    }
+    { TEST_FUNCTION(hypot, args_["two"], std::hypot(2, 4)); }
     {
         TEST_FUNCTION(sign, args_["int"], 1);
         TEST_FUNCTION(sign, args_["neg_int"], -1);
@@ -291,66 +333,50 @@ TEST_F(FunctionManagerTest, functionCall) {
         TEST_FUNCTION(toInteger, {"false "}, Value::kNullValue);
         TEST_FUNCTION(toInteger, {Value::kNullValue}, Value::kNullValue);
     }
-    {
-        auto result = FunctionManager::get("rand32", args_["rand"].size());
-        ASSERT_TRUE(result.ok());
-        result.value()(args_["rand"]);
-    }
-    {
-        auto result = FunctionManager::get("rand32", args_["empty"].size());
-        ASSERT_TRUE(result.ok());
-        result.value()(args_["empty"]);
-    }
-    {
-        auto result = FunctionManager::get("now", args_["empty"].size());
-        ASSERT_TRUE(result.ok());
-        result.value()(args_["empty"]);
-    }
-    {
-        auto result = FunctionManager::get("hash", args_["string"].size());
-        ASSERT_TRUE(result.ok());
-        result.value()(args_["string"]);
-    }
+    { TEST_FUNCTION(rand32, args_["rand"]); }
+    { TEST_FUNCTION(rand32, args_["empty"]); }
+    { TEST_FUNCTION(now, args_["empty"]); }
+    { TEST_FUNCTION(hash, args_["string"]); }
     {
         auto result = FunctionManager::get("hash", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"Hello"});
+        auto res = std::move(result).value()(genArgsRef({"Hello"}));
         EXPECT_EQ(res, 2275118702903107253);
     }
     {
         auto result = FunctionManager::get("hash", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({3.14159265});
+        auto res = std::move(result).value()(genArgsRef({3.14159265}));
         EXPECT_EQ(res, -8359970742410469755);
     }
     {
         auto result = FunctionManager::get("hash", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({1234567890});
+        auto res = std::move(result).value()(genArgsRef({1234567890}));
         EXPECT_EQ(res, 1234567890);
     }
     {
         auto result = FunctionManager::get("hash", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({true});
+        auto res = std::move(result).value()(genArgsRef({true}));
         EXPECT_EQ(res, 1);
     }
     {
         auto result = FunctionManager::get("hash", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({false});
+        auto res = std::move(result).value()(genArgsRef({false}));
         EXPECT_EQ(res, 0);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({List({123})});
+        auto res = std::move(result).value()(genArgsRef({List({123})}));
         EXPECT_EQ(res, 1);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Set({123})});
+        auto res = std::move(result).value()(genArgsRef({Set({123})}));
         EXPECT_EQ(res, 1);
     }
     {
@@ -358,7 +384,7 @@ TEST_F(FunctionManagerTest, functionCall) {
         ds.rows.emplace_back(Row({123}));
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({std::move(ds)});
+        auto res = std::move(result).value()(genArgsRef({std::move(ds)}));
         EXPECT_EQ(res, 1);
     }
     {
@@ -366,31 +392,31 @@ TEST_F(FunctionManagerTest, functionCall) {
         map.kvs.emplace("123", 456);
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({std::move(map)});
+        auto res = std::move(result).value()(genArgsRef({std::move(map)}));
         EXPECT_EQ(res, 1);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"123"});
+        auto res = std::move(result).value()(genArgsRef({"123"}));
         EXPECT_EQ(res, 3);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Value::kNullValue});
+        auto res = std::move(result).value()(genArgsRef({Value::kNullValue}));
         EXPECT_EQ(res, Value::kNullValue);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Value::kEmpty});
+        auto res = std::move(result).value()(genArgsRef({Value::kEmpty}));
         EXPECT_EQ(res, Value::kEmpty);
     }
     {
         auto result = FunctionManager::get("size", 1);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({true});
+        auto res = std::move(result).value()(genArgsRef({true}));
         EXPECT_EQ(res, Value::kNullBadType);
     }
     // current time
@@ -401,402 +427,306 @@ TEST_F(FunctionManagerTest, functionCall) {
     {
         auto result = FunctionManager::get("date", kCurrentTimeParaNumber);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({});
+        auto res = std::move(result).value()(genArgsRef({}));
         EXPECT_EQ(res.type(), Value::Type::DATE);
     }
     {
         auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
         ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({true});
+        auto res = std::move(result).value()(genArgsRef({true}));
         EXPECT_EQ(res, Value::kNullBadType);
     }
+    { TEST_FUNCTION(date, {"2020-09-15"}, Value(Date(2020, 9, 15))); }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"2020-09-15"});
-        EXPECT_EQ(res, Value(Date(2020, 9, 15)));
-    }
-    {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 12}, {"day", 31}})});
-        EXPECT_EQ(res, Value(Date(2020, 12, 31)));
+        TEST_FUNCTION(
+            date, {Map({{"year", 2020}, {"month", 12}, {"day", 31}})}, Value(Date(2020, 12, 31)));
     }
     // leap year February days
     {
         // 2020 is leap
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2020}, {"month", 2}, {"day", 29}})});
-        EXPECT_EQ(res, Value(Date(2020, 2, 29)));
+        TEST_FUNCTION(
+            date, {Map({{"year", 2020}, {"month", 2}, {"day", 29}})}, Value(Date(2020, 2, 29)));
     }
     {
         // 2021 is not leap
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 2}, {"day", 29}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", 2021}, {"month", 2}, {"day", 29}})}, Value::kNullBadData);
     }
     // month different days
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 1}, {"day", 31}})});
-        EXPECT_EQ(res, Value(Date(2021, 1, 31)));
+        TEST_FUNCTION(
+            date, {Map({{"year", 2021}, {"month", 1}, {"day", 31}})}, Value(Date(2021, 1, 31)));
     }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2021}, {"month", 4}, {"day", 31}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", 2021}, {"month", 4}, {"day", 31}})}, Value::kNullBadData);
     }
     // range [(−32,768, 1, 1), (32,767, 12, 31)]
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::min()},
-                                                  {"month", 1}, {"day", 1}})});
-        EXPECT_EQ(res, Value(Date(std::numeric_limits<int16_t>::min(), 1, 1)));
+        TEST_FUNCTION(
+            date,
+            {Map({{"year", std::numeric_limits<int16_t>::min()}, {"month", 1}, {"day", 1}})},
+            Value(Date(std::numeric_limits<int16_t>::min(), 1, 1)));
     }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", std::numeric_limits<int16_t>::max()},
-                                                  {"month", 12}, {"day", 31}})});
-        EXPECT_EQ(res, Value(Date(std::numeric_limits<int16_t>::max(), 12, 31)));
+        TEST_FUNCTION(
+            date,
+            {Map({{"year", std::numeric_limits<int16_t>::max()}, {"month", 12}, {"day", 31}})},
+            Value(Date(std::numeric_limits<int16_t>::max(), 12, 31)));
     }
     // year
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", -32769}, {"month", 12}, {"day", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", -32769}, {"month", 12}, {"day", 15}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32768}, {"month", 12}, {"day", 31}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", 32768}, {"month", 12}, {"day", 31}})}, Value::kNullBadData);
     }
     // month
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", -32768}, {"month", 13}, {"day", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", -32768}, {"month", 13}, {"day", 15}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767}, {"month", 0}, {"day", 31}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", 32767}, {"month", 0}, {"day", 31}})}, Value::kNullBadData);
     }
     // day
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", -32768}, {"month", 11}, {"day", 0}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", -32768}, {"month", 11}, {"day", 0}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("date", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767}, {"month", 1}, {"day", 32}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            date, {Map({{"year", 32767}, {"month", 1}, {"day", 32}})}, Value::kNullBadData);
     }
     // time
+    { TEST_FUNCTION(time, {}, Value::Type::TIME); }
+    { TEST_FUNCTION(time, {true}, Value::kNullBadType); }
+    { TEST_FUNCTION(time, {"20:09:15"}, Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0)))); }
     {
-        auto result = FunctionManager::get("time", kCurrentTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({});
-        EXPECT_EQ(res.type(), Value::Type::TIME);
-    }
-    {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({true});
-        EXPECT_EQ(res, Value::kNullBadType);
-    }
-    {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"20:09:15"});
-        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
-    }
-    {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 20}, {"minute", 9}, {"second", 15}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
+        TEST_FUNCTION(time,
+                      {Map({{"hour", 20}, {"minute", 9}, {"second", 15}})},
+                      Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
     }
     // range [(0, 0, 0, 0), (23, 59, 59, 999999)]
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 0}, {"minute", 0}, {"second", 0}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(0, 0, 0, 0))));
+        TEST_FUNCTION(time,
+                      {Map({{"hour", 0}, {"minute", 0}, {"second", 0}})},
+                      Value(time::TimeUtils::timeToUTC(Time(0, 0, 0, 0))));
     }
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", 59}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::timeToUTC(Time(23, 59, 59, 0))));
+        TEST_FUNCTION(time,
+                      {Map({{"hour", 23}, {"minute", 59}, {"second", 59}})},
+                      Value(time::TimeUtils::timeToUTC(Time(23, 59, 59, 0))));
     }
     // hour
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", -1}, {"minute", 9}, {"second", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", -1}, {"minute", 9}, {"second", 15}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 24}, {"minute", 9}, {"second", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", 24}, {"minute", 9}, {"second", 15}})}, Value::kNullBadData);
     }
     // minute
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", -1}, {"second", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", 23}, {"minute", -1}, {"second", 15}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 60}, {"second", 15}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", 23}, {"minute", 60}, {"second", 15}})}, Value::kNullBadData);
     }
     // second
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", -1}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", 23}, {"minute", 59}, {"second", -1}})}, Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("time", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"hour", 23}, {"minute", 59}, {"second", 60}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(
+            time, {Map({{"hour", 23}, {"minute", 59}, {"second", 60}})}, Value::kNullBadData);
     }
     // datetime
+    { TEST_FUNCTION(datetime, {}, Value::Type::DATETIME); }
+    { TEST_FUNCTION(datetime, {true}, Value::kNullBadType); }
     {
-        auto result = FunctionManager::get("datetime", kCurrentTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({});
-        EXPECT_EQ(res.type(), Value::Type::DATETIME);
+        TEST_FUNCTION(datetime,
+                      {"2020-09-15T20:09:15"},
+                      Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({true});
-        EXPECT_EQ(res, Value::kNullBadType);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 2020},
+                            {"month", 9},
+                            {"day", 15},
+                            {"hour", 20},
+                            {"minute", 9},
+                            {"second", 15}})},
+                      Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"2020-09-15T20:09:15"});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
-    }
-    {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2020},
-                                                   {"month", 9},
-                                                   {"day", 15},
-                                                   {"hour", 20},
-                                                   {"minute", 9},
-                                                   {"second", 15}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
-    }
-    {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 2020},
-                                                   {"month", 9},
-                                                   {"day", 15},
-                                                   {"hour", 20},
-                                                   {"minute", 9},
-                                                   {"second", 15}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 2020},
+                            {"month", 9},
+                            {"day", 15},
+                            {"hour", 20},
+                            {"minute", 9},
+                            {"second", 15}})},
+                      Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
     }
     // range [(−32,768, 1, 1, 0, 0, 0, 0), (32,767, 12, 31, 23, 59, 59, 999999)]
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", -32768},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 0},
-                                                   {"minute", 0},
-                                                   {"second", 0}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(-32768, 1, 1, 0, 0, 0, 0))));
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", -32768},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 0},
+                            {"minute", 0},
+                            {"second", 0}})},
+                      Value(time::TimeUtils::dateTimeToUTC(DateTime(-32768, 1, 1, 0, 0, 0, 0))));
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 12},
-                                                   {"day", 31},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value(time::TimeUtils::dateTimeToUTC(DateTime(32767,
-                                                                     12, 31, 23, 59, 59, 0))));
+        TEST_FUNCTION(
+            datetime,
+            {Map({{"year", 32767},
+                  {"month", 12},
+                  {"day", 31},
+                  {"hour", 23},
+                  {"minute", 59},
+                  {"second", 59}})},
+            Value(time::TimeUtils::dateTimeToUTC(DateTime(32767, 12, 31, 23, 59, 59, 0))));
     }
     // year
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 3276700},
-                                                   {"month", 12},
-                                                   {"day", 31},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 3276700},
+                            {"month", 12},
+                            {"day", 31},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", -3276700},
-                                                   {"month", 12},
-                                                   {"day", 31},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", -3276700},
+                            {"month", 12},
+                            {"day", 31},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     // month
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 13},
-                                                   {"day", 31},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 13},
+                            {"day", 31},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 0},
-                                                   {"day", 31},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 0},
+                            {"day", 31},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     // day
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 32},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 32},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 0},
-                                                   {"hour", 23},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 0},
+                            {"hour", 23},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     // hour
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 24},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 24},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", -1},
-                                                   {"minute", 59},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", -1},
+                            {"minute", 59},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     // minute
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 1},
-                                                   {"minute", 60},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 1},
+                            {"minute", 60},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 1},
-                                                   {"minute", -1},
-                                                   {"second", 59}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 1},
+                            {"minute", -1},
+                            {"second", 59}})},
+                      Value::kNullBadData);
     }
     // second
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 1},
-                                                   {"minute", 1},
-                                                   {"second", -1}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 1},
+                            {"minute", 1},
+                            {"second", -1}})},
+                      Value::kNullBadData);
     }
     {
-        auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({Map({{"year", 32767},
-                                                   {"month", 1},
-                                                   {"day", 1},
-                                                   {"hour", 1},
-                                                   {"minute", 1},
-                                                   {"second", 60}})});
-        EXPECT_EQ(res, Value::kNullBadData);
+        TEST_FUNCTION(datetime,
+                      {Map({{"year", 32767},
+                            {"month", 1},
+                            {"day", 1},
+                            {"hour", 1},
+                            {"minute", 1},
+                            {"second", 60}})},
+                      Value::kNullBadData);
     }
     // timestamp
-    {
-        auto result = FunctionManager::get("timestamp", 1);
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({"2020-10-10T10:00:00"});
-        EXPECT_EQ(res, 1602324000);
-    }
-    {
-        auto result = FunctionManager::get("timestamp", {});
-        ASSERT_TRUE(result.ok());
-        auto res = std::move(result).value()({});
-        EXPECT_EQ(res.type(), Value::Type::INT);
-    }
+    { TEST_FUNCTION(timestamp, {"2020-10-10T10:00:00"}, 1602324000); }
+    { TEST_FUNCTION(timestamp, {}, Value::Type::INT); }
     {
         TEST_FUNCTION(e, args_["empty"], M_E);
         TEST_FUNCTION(pi, args_["empty"], M_PI);
@@ -812,20 +742,20 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result = FunctionManager::getReturnType("bit_and",
-                                                    {Value::Type::INT, Value::Type::INT});
+        auto result =
+            FunctionManager::getReturnType("bit_and", {Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result = FunctionManager::getReturnType("bit_or",
-                                                    {Value::Type::INT, Value::Type::INT});
+        auto result =
+            FunctionManager::getReturnType("bit_or", {Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result = FunctionManager::getReturnType("bit_xor",
-                                                    {Value::Type::INT, Value::Type::INT});
+        auto result =
+            FunctionManager::getReturnType("bit_xor", {Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
@@ -948,32 +878,27 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.value(), Value::Type::FLOAT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("cos", {Value::Type::FLOAT});
+        auto result = FunctionManager::getReturnType("cos", {Value::Type::FLOAT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::FLOAT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("sin", {Value::Type::INT});
+        auto result = FunctionManager::getReturnType("sin", {Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::FLOAT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("asin", {Value::Type::INT});
+        auto result = FunctionManager::getReturnType("asin", {Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::FLOAT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("acos", {Value::Type::FLOAT});
+        auto result = FunctionManager::getReturnType("acos", {Value::Type::FLOAT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::FLOAT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("acos", {Value::Type::STRING});
+        auto result = FunctionManager::getReturnType("acos", {Value::Type::STRING});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
@@ -1061,15 +986,15 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.value(), Value::Type::STRING);
     }
     {
-        auto result = FunctionManager::getReturnType("replace",
-                    {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
+        auto result = FunctionManager::getReturnType(
+            "replace", {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::STRING);
     }
     {
-        auto result = FunctionManager::getReturnType("replace",
-                    {Value::Type::STRING, Value::Type::STRING,
-                    Value::Type::STRING, Value::Type::STRING});
+        auto result = FunctionManager::getReturnType(
+            "replace",
+            {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
@@ -1084,26 +1009,26 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result = FunctionManager::getReturnType("split",
-            {Value::Type::STRING, Value::Type::STRING});
+        auto result =
+            FunctionManager::getReturnType("split", {Value::Type::STRING, Value::Type::STRING});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::LIST);
     }
     {
-        auto result = FunctionManager::getReturnType("split",
-            {Value::Type::STRING, Value::Type::INT});
+        auto result =
+            FunctionManager::getReturnType("split", {Value::Type::STRING, Value::Type::INT});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result = FunctionManager::getReturnType("substring",
-            {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
+        auto result = FunctionManager::getReturnType(
+            "substring", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::STRING);
     }
     {
-        auto result = FunctionManager::getReturnType("substring",
-            {Value::Type::STRING, Value::Type::INT});
+        auto result =
+            FunctionManager::getReturnType("substring", {Value::Type::STRING, Value::Type::INT});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::STRING);
     }
@@ -1238,131 +1163,110 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result =
-            FunctionManager::getReturnType("noexist", {Value::Type::INT});
+        auto result = FunctionManager::getReturnType("noexist", {Value::Type::INT});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Function `noexist' not defined");
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::STRING});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::STRING});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::LIST});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::LIST});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::MAP});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::MAP});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::SET});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::SET});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::DATASET});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::DATASET});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::INT);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::__EMPTY__});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::__EMPTY__});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::__EMPTY__);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::NULLVALUE});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::NULLVALUE});
         ASSERT_TRUE(result.ok());
         EXPECT_EQ(result.value(), Value::Type::NULLVALUE);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("size", {Value::Type::BOOL});
+        auto result = FunctionManager::getReturnType("size", {Value::Type::BOOL});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     // time
     {
-        auto result =
-            FunctionManager::getReturnType("time", {Value::Type::BOOL});
+        auto result = FunctionManager::getReturnType("time", {Value::Type::BOOL});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result =
-            FunctionManager::getReturnType("time", {});
+        auto result = FunctionManager::getReturnType("time", {});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::TIME);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("time", {Value::Type::STRING});
+        auto result = FunctionManager::getReturnType("time", {Value::Type::STRING});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::TIME);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("time", {Value::Type::MAP});
+        auto result = FunctionManager::getReturnType("time", {Value::Type::MAP});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::TIME);
     }
     // date
     {
-        auto result =
-            FunctionManager::getReturnType("date", {Value::Type::INT});
+        auto result = FunctionManager::getReturnType("date", {Value::Type::INT});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result =
-            FunctionManager::getReturnType("date", {});
+        auto result = FunctionManager::getReturnType("date", {});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATE);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("date", {Value::Type::STRING});
+        auto result = FunctionManager::getReturnType("date", {Value::Type::STRING});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATE);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("date", {Value::Type::MAP});
+        auto result = FunctionManager::getReturnType("date", {Value::Type::MAP});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATE);
     }
     // datetime
     {
-        auto result =
-            FunctionManager::getReturnType("datetime", {Value::Type::FLOAT});
+        auto result = FunctionManager::getReturnType("datetime", {Value::Type::FLOAT});
         ASSERT_FALSE(result.ok());
         EXPECT_EQ(result.status().toString(), "Parameter's type error");
     }
     {
-        auto result =
-            FunctionManager::getReturnType("datetime", {});
+        auto result = FunctionManager::getReturnType("datetime", {});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATETIME);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("datetime", {Value::Type::STRING});
+        auto result = FunctionManager::getReturnType("datetime", {Value::Type::STRING});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATETIME);
     }
     {
-        auto result =
-            FunctionManager::getReturnType("datetime", {Value::Type::MAP});
+        auto result = FunctionManager::getReturnType("datetime", {Value::Type::MAP});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(result.value(), Value::Type::DATETIME);
     }
@@ -1492,9 +1396,8 @@ TEST_F(FunctionManagerTest, returnType) {
         EXPECT_EQ(Value::Type::LIST, result.value());
     }
     {
-        auto result =
-            FunctionManager::getReturnType("range",
-            {Value::Type::INT, Value::Type::INT, Value::Type::INT});
+        auto result = FunctionManager::getReturnType(
+            "range", {Value::Type::INT, Value::Type::INT, Value::Type::INT});
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(Value::Type::LIST, result.value());
     }
@@ -1570,49 +1473,54 @@ TEST_F(FunctionManagerTest, SchemaReleated) {
         {"p4", false},
     };
 
-#define TEST_SCHEMA_FUNCTION(fun, arg, expected)        \
-    do {                                                \
-        auto result = FunctionManager::get(fun, 1);     \
-        ASSERT_TRUE(result.ok()) << result.status();    \
-        EXPECT_EQ(expected, result.value()({arg}));     \
+#define TEST_SCHEMA_FUNCTION(fun, arg, expected)                                                   \
+    do {                                                                                           \
+        auto result = FunctionManager::get(fun, 1);                                                \
+        ASSERT_TRUE(result.ok()) << result.status();                                               \
+        EXPECT_EQ(expected, result.value()(genArgsRef({arg})));                                    \
     } while (false)
-
 
     TEST_SCHEMA_FUNCTION("id", vertex, "vid");
     TEST_SCHEMA_FUNCTION("tags", vertex, Value(List({"tag1", "tag2"})));
     TEST_SCHEMA_FUNCTION("labels", vertex, Value(List({"tag1", "tag2"})));
-    TEST_SCHEMA_FUNCTION("properties", vertex, Value(Map({
-                    {"p1", 123},
-                    {"p2", "123"},
-                    {"p3", true},
-                    {"p4", false},
-                    {"p5", "123"},
-                    {"p6", true},
-                    {"p7", false},
-                    })));
+    TEST_SCHEMA_FUNCTION("properties",
+                         vertex,
+                         Value(Map({
+                             {"p1", 123},
+                             {"p2", "123"},
+                             {"p3", true},
+                             {"p4", false},
+                             {"p5", "123"},
+                             {"p6", true},
+                             {"p7", false},
+                         })));
     TEST_SCHEMA_FUNCTION("type", edge, Value("type"));
     TEST_SCHEMA_FUNCTION("typeid", edge, Value(1));
     TEST_SCHEMA_FUNCTION("src", edge, Value("src"));
     TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
     TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
-    TEST_SCHEMA_FUNCTION("properties", edge, Value(Map({
-                    {"p1", 123},
-                    {"p2", 456},
-                    {"p3", true},
-                    {"p4", false},
-                    })));
+    TEST_SCHEMA_FUNCTION("properties",
+                         edge,
+                         Value(Map({
+                             {"p1", 123},
+                             {"p2", 456},
+                             {"p3", true},
+                             {"p4", false},
+                         })));
     TEST_SCHEMA_FUNCTION("id", vertex1, 0);
     TEST_SCHEMA_FUNCTION("tags", vertex1, Value(List({"tag1"})));
     TEST_SCHEMA_FUNCTION("labels", vertex1, Value(List({"tag1"})));
     TEST_SCHEMA_FUNCTION("src", edge1, 0);
     TEST_SCHEMA_FUNCTION("dst", edge1, 1);
     TEST_SCHEMA_FUNCTION("rank", edge1, Value(123));
-    TEST_SCHEMA_FUNCTION("properties", edge1, Value(Map({
-                    {"p1", 123},
-                    {"p2", 456},
-                    {"p3", true},
-                    {"p4", false},
-                    })));
+    TEST_SCHEMA_FUNCTION("properties",
+                         edge1,
+                         Value(Map({
+                             {"p1", 123},
+                             {"p2", 456},
+                             {"p3", true},
+                             {"p4", false},
+                         })));
     // Reverse edge
     TEST_SCHEMA_FUNCTION("src", edge2, 1);
     TEST_SCHEMA_FUNCTION("dst", edge2, 0);
@@ -1725,9 +1633,9 @@ TEST_F(FunctionManagerTest, ListFunctionTest) {
         TEST_FUNCTION(nodes, args, List({v1, v2, v3}));
     }
     {
-       // reverse([2020, "Tony Parker", NULL 19])
-       std::vector<Value> args = {List({2020, "Tony Parker", Value::kNullValue, 19})};
-       TEST_FUNCTION(reverse, args, List({19, Value::kNullValue, "Tony Parker", 2020}));
+        // reverse([2020, "Tony Parker", NULL 19])
+        std::vector<Value> args = {List({2020, "Tony Parker", Value::kNullValue, 19})};
+        TEST_FUNCTION(reverse, args, List({19, Value::kNullValue, "Tony Parker", 2020}));
     }
     {
         // tail([1, 3, 5, NULL, 4]
@@ -1740,7 +1648,7 @@ TEST_F(FunctionManagerTest, ListFunctionTest) {
 
         Path path;
         path.src = Vertex("0", {});
-        std::vector<Value>args = {path};
+        std::vector<Value> args = {path};
         List expected;
         TEST_FUNCTION(relationships, args, expected);
 
@@ -1750,9 +1658,12 @@ TEST_F(FunctionManagerTest, ListFunctionTest) {
         }
         args[0] = path;
         for (auto i = 0; i < 3; ++i) {
-            expected.values.emplace_back(
-                Edge(folly::to<std::string>(i), folly::to<std::string>(i + 1), 1, "like", 0,
-                     {{"likeness", (i + 51)}}));
+            expected.values.emplace_back(Edge(folly::to<std::string>(i),
+                                              folly::to<std::string>(i + 1),
+                                              1,
+                                              "like",
+                                              0,
+                                              {{"likeness", (i + 51)}}));
         }
         TEST_FUNCTION(relationships, args, expected);
     }
@@ -1903,12 +1814,10 @@ TEST_F(FunctionManagerTest, DataSetRowCol) {
     }
     // ok
     {
-        TEST_FUNCTION(dataSetRowCol,
-                      std::vector<Value>({datasetValue, Value(0), Value(0)}),
-                      Value(1));
-        TEST_FUNCTION(dataSetRowCol,
-                      std::vector<Value>({datasetValue, Value(1), Value(2)}),
-                      Value("456"));
+        TEST_FUNCTION(
+            dataSetRowCol, std::vector<Value>({datasetValue, Value(0), Value(0)}), Value(1));
+        TEST_FUNCTION(
+            dataSetRowCol, std::vector<Value>({datasetValue, Value(1), Value(2)}), Value("456"));
     }
 }
 
@@ -1925,8 +1834,8 @@ int main(int argc, char **argv) {
     }
 
     DLOG(INFO) << "Timezone: " << nebula::time::TimeUtils::getGlobalTimezone().stdZoneName();
-    DLOG(INFO) << "Timezone offset: " <<
-        nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
+    DLOG(INFO) << "Timezone offset: "
+               << nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
 
     return RUN_ALL_TESTS();
 }

@@ -31,7 +31,8 @@ struct TypeSignature {
 
 class FunctionManager final {
 public:
-    using Function = std::function<Value(const std::vector<Value>&)>;
+    using ArgType = std::reference_wrapper<const Value>;
+    using Function = std::function<Value(const std::vector<ArgType>&)>;
 
     /**
      * To obtain a function named `func', with the actual arity.

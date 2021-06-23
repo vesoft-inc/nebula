@@ -74,9 +74,9 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
 }
 
 const Value& FunctionCallExpression::eval(ExpressionContext& ctx) {
-    std::vector<Value> parameter;
+    std::vector<std::reference_wrapper<const Value>> parameter;
     for (const auto& arg : DCHECK_NOTNULL(args_)->args()) {
-        parameter.emplace_back(std::move(arg->eval(ctx)));
+        parameter.emplace_back(arg->eval(ctx));
     }
     result_ = DCHECK_NOTNULL(func_)(parameter);
     return result_;

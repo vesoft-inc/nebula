@@ -273,15 +273,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::abs(args[0].getInt());
+                    return std::abs(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::abs(args[0].getFloat());
+                    return std::abs(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -295,7 +295,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            return args[0] & args[1];
+            return args[0].get() & args[1].get();
         };
     }
     {
@@ -304,7 +304,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            return args[0] | args[1];
+            return args[0].get() | args[1].get();
         };
     }
     {
@@ -313,7 +313,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            return args[0] ^ args[1];
+            return args[0].get() ^ args[1].get();
         };
     }
     {
@@ -323,15 +323,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::floor(args[0].getInt());
+                    return std::floor(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::floor(args[0].getFloat());
+                    return std::floor(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -346,15 +346,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::ceil(args[0].getInt());
+                    return std::ceil(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::ceil(args[0].getFloat());
+                    return std::ceil(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -369,15 +369,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::round(args[0].getInt());
+                    return std::round(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::round(args[0].getFloat());
+                    return std::round(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -392,19 +392,19 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    auto val = args[0].getInt();
+                    auto val = args[0].get().getInt();
                     if (val < 0) {
                         return Value::kNullValue;
                     }
                     return std::sqrt(val);
                 }
                 case Value::Type::FLOAT: {
-                    auto val = args[0].getFloat();
+                    auto val = args[0].get().getFloat();
                     if (val < 0) {
                         return Value::kNullValue;
                     }
@@ -423,15 +423,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::cbrt(args[0].getInt());
+                    return std::cbrt(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::cbrt(args[0].getFloat());
+                    return std::cbrt(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -446,9 +446,9 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isNumeric() && args[1].isNumeric()) {
-                auto x = args[0].isInt() ? args[0].getInt() : args[0].getFloat();
-                auto y = args[1].isInt() ? args[1].getInt() : args[1].getFloat();
+            if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
+                auto x = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
+                auto y = args[1].get().isInt() ? args[1].get().getInt() : args[1].get().getFloat();
                 return std::hypot(x, y);
             }
             return Value::kNullBadType;
@@ -461,11 +461,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isNumeric() && args[1].isNumeric()) {
-                auto base = args[0].isInt() ? args[0].getInt() : args[0].getFloat();
-                auto exp = args[1].isInt() ? args[1].getInt() : args[1].getFloat();
+            if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
+                auto base = args[0].get().isInt() ?
+                    args[0].get().getInt() :
+                    args[0].get().getFloat();
+                auto exp = args[1].get().isInt() ?
+                    args[1].get().getInt() :
+                    args[1].get().getFloat();
                 auto val = std::pow(base, exp);
-                if (args[0].isInt() && args[1].isInt()) {
+                if (args[0].get().isInt() && args[1].get().isInt()) {
                     return static_cast<int64_t>(val);
                 }
                 return val;
@@ -491,15 +495,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::exp(args[0].getInt());
+                    return std::exp(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::exp(args[0].getFloat());
+                    return std::exp(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -514,15 +518,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::exp2(args[0].getInt());
+                    return std::exp2(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::exp2(args[0].getFloat());
+                    return std::exp2(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -537,19 +541,19 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    auto val = args[0].getInt();
+                    auto val = args[0].get().getInt();
                     if (val == 0) {
                         return Value::kNullValue;
                     }
                     return std::log(val);
                 }
                 case Value::Type::FLOAT: {
-                    auto val = args[0].getFloat();
+                    auto val = args[0].get().getFloat();
                     if (val >= -kEpsilon && val <= kEpsilon) {
                         return Value::kNullValue;
                     }
@@ -568,19 +572,19 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    auto val = args[0].getInt();
+                    auto val = args[0].get().getInt();
                     if (val == 0) {
                         return Value::kNullValue;
                     }
                     return std::log2(val);
                 }
                 case Value::Type::FLOAT: {
-                    auto val = args[0].getFloat();
+                    auto val = args[0].get().getFloat();
                     if (val >= -kEpsilon && val <= kEpsilon) {
                         return Value::kNullValue;
                     }
@@ -599,19 +603,19 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    auto val = args[0].getInt();
+                    auto val = args[0].get().getInt();
                     if (val == 0) {
                         return Value::kNullValue;
                     }
                     return std::log10(val);
                 }
                 case Value::Type::FLOAT: {
-                    auto val = args[0].getFloat();
+                    auto val = args[0].get().getFloat();
                     if (val >= -kEpsilon && val <= kEpsilon) {
                         return Value::kNullValue;
                     }
@@ -641,13 +645,13 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT:
                 case Value::Type::FLOAT: {
-                    return (args[0] * M_PI) / 180;
+                    return (args[0].get() * M_PI) / 180;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -662,15 +666,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::sin(args[0].getInt());
+                    return std::sin(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::sin(args[0].getFloat());
+                    return std::sin(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -684,15 +688,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::asin(args[0].getInt());
+                    return std::asin(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::asin(args[0].getFloat());
+                    return std::asin(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -706,15 +710,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::cos(args[0].getInt());
+                    return std::cos(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::cos(args[0].getFloat());
+                    return std::cos(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -728,15 +732,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::acos(args[0].getInt());
+                    return std::acos(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::acos(args[0].getFloat());
+                    return std::acos(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -750,15 +754,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::tan(args[0].getInt());
+                    return std::tan(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::tan(args[0].getFloat());
+                    return std::tan(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -772,15 +776,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    return std::atan(args[0].getInt());
+                    return std::atan(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    return std::atan(args[0].getFloat());
+                    return std::atan(args[0].get().getFloat());
                 }
                 default: {
                     return Value::kNullBadType;
@@ -794,16 +798,16 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::INT: {
-                    auto val = args[0].getInt();
+                    auto val = args[0].get().getInt();
                     return val > 0 ? 1 : val < 0 ? -1 : 0;
                 }
                 case Value::Type::FLOAT: {
-                    auto val = args[0].getFloat();
+                    auto val = args[0].get().getFloat();
                     return val > 0 ? 1 : val < 0 ? -1 : 0;
                 }
                 default: {
@@ -833,8 +837,8 @@ FunctionManager::FunctionManager() {
                 auto value = folly::Random::rand32();
                 return static_cast<int64_t>(static_cast<int32_t>(value));
             } else if (args.size() == 1UL) {
-                if (args[0].isInt()) {
-                    auto max = args[0].getInt();
+                if (args[0].get().isInt()) {
+                    auto max = args[0].get().getInt();
                     if (max < 0 || max > std::numeric_limits<uint32_t>::max()) {
                         return Value::kNullBadData;
                     }
@@ -844,9 +848,9 @@ FunctionManager::FunctionManager() {
                 return Value::kNullBadType;
             }
             DCHECK_EQ(2UL, args.size());
-            if (args[0].isInt() && args[1].isInt()) {
-                auto min = args[0].getInt();
-                auto max = args[1].getInt();
+            if (args[0].get().isInt() && args[1].get().isInt()) {
+                auto min = args[0].get().getInt();
+                auto max = args[1].get().getInt();
                 if (max < 0 || min < 0 || max > std::numeric_limits<uint32_t>::max() ||
                     min > std::numeric_limits<uint32_t>::max()) {
                     return Value::kNullBadData;
@@ -869,8 +873,8 @@ FunctionManager::FunctionManager() {
             if (args.empty()) {
                 return static_cast<int64_t>(folly::Random::rand64());
             } else if (args.size() == 1UL) {
-                if (args[0].isInt()) {
-                    auto max = args[0].getInt();
+                if (args[0].get().isInt()) {
+                    auto max = args[0].get().getInt();
                     if (max < 0) {
                         return Value::kNullBadData;
                     }
@@ -879,9 +883,9 @@ FunctionManager::FunctionManager() {
                 return Value::kNullBadType;
             }
             DCHECK_EQ(2UL, args.size());
-            if (args[0].isInt() && args[1].isInt()) {
-                auto min = args[0].getInt();
-                auto max = args[1].getInt();
+            if (args[0].get().isInt() && args[1].get().isInt()) {
+                auto min = args[0].get().getInt();
+                auto max = args[1].get().getInt();
                 if (max < 0 || min < 0 || min >= max) {
                     return Value::kNullBadData;
                 }
@@ -907,9 +911,9 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isStr() && args[1].isStr()) {
+            if (args[0].get().isStr() && args[1].get().isStr()) {
                 return static_cast<int64_t>(
-                    ::strcasecmp(args[0].getStr().c_str(), args[1].getStr().c_str()));
+                    ::strcasecmp(args[0].get().getStr().c_str(), args[1].get().getStr().c_str()));
             }
             return Value::kNullBadType;
         };
@@ -920,12 +924,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string value(args[0].getStr());
+                    std::string value(args[0].get().getStr());
                     folly::toLowerAscii(value);
                     return value;
                 }
@@ -942,12 +946,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string value(args[0].getStr());
+                    std::string value(args[0].get().getStr());
                     std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
                         return std::toupper(c);
                     });
@@ -966,16 +970,16 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    auto value = args[0].getStr();
+                    auto value = args[0].get().getStr();
                     return static_cast<int64_t>(value.length());
                 }
                 case Value::Type::PATH: {
-                    auto path = args[0].getPath();
+                    auto path = args[0].get().getPath();
                     return static_cast<int64_t>(path.steps.size());
                 }
                 default: {
@@ -990,12 +994,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string value(args[0].getStr());
+                    std::string value(args[0].get().getStr());
                     return folly::trimWhitespace(value).toString();
                 }
                 default: {
@@ -1010,12 +1014,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string value(args[0].getStr());
+                    std::string value(args[0].get().getStr());
                     return folly::ltrimWhitespace(value).toString();
                 }
                 default: {
@@ -1030,12 +1034,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string value(args[0].getStr());
+                    std::string value(args[0].get().getStr());
                     return folly::rtrimWhitespace(value).toString();
                 }
                 default: {
@@ -1050,21 +1054,21 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    if (args[1].isNull() || !args[1].isInt()) {
+                    if (args[1].get().isNull() || !args[1].get().isInt()) {
                         // opencypher raise an error
                         return Value::kNullBadType;
                     }
-                    auto len = args[1].getInt();
+                    auto len = args[1].get().getInt();
                     if (len < 0) {
                         // opencypher raise an error
                         return Value::kNullBadType;
                     }
-                    return args[0].getStr().substr(0, len);
+                    return args[0].get().getStr().substr(0, len);
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1078,17 +1082,17 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    if (args[1].isNull() || !args[1].isInt()) {
+                    if (args[1].get().isNull() || !args[1].get().isInt()) {
                         // opencypher raise an error
                         return Value::kNullBadType;
                     }
-                    auto& value = args[0].getStr();
-                    auto len = args[1].getInt();
+                    auto& value = args[0].get().getStr();
+                    auto len = args[1].get().getInt();
                     if (len < 0) {
                         // opencypher raise an error
                         return Value::kNullBadType;
@@ -1110,13 +1114,13 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isNull() || args[1].isNull() || args[2].isNull()) {
+            if (args[0].get().isNull() || args[1].get().isNull() || args[2].get().isNull()) {
                 return Value::kNullValue;
             }
-            if (args[0].isStr() && args[1].isStr() && args[2].isStr()) {
-                std::string origStr(args[0].getStr());
-                std::string search(args[1].getStr());
-                std::string newStr(args[2].getStr());
+            if (args[0].get().isStr() && args[1].get().isStr() && args[2].get().isStr()) {
+                std::string origStr(args[0].get().getStr());
+                std::string search(args[1].get().getStr());
+                std::string newStr(args[2].get().getStr());
                 return boost::replace_all_copy(origStr, search, newStr);
             }
             return Value::kNullBadType;
@@ -1128,17 +1132,17 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    std::string origStr(args[0].getStr());
+                    std::string origStr(args[0].get().getStr());
                     std::reverse(origStr.begin(), origStr.end());
                     return origStr;
                 }
                 case Value::Type::LIST: {
-                    auto& list = args[0].getList();
+                    auto& list = args[0].get().getList();
                     List result(list.values);
                     std::reverse(result.values.begin(), result.values.end());
                     return result;
@@ -1155,19 +1159,19 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::STRING: {
-                    if (args[1].isNull()) {
+                    if (args[1].get().isNull()) {
                         return Value::kNullValue;
                     }
-                    if (!args[1].isStr()) {
+                    if (!args[1].get().isStr()) {
                         return Value::kNullBadType;
                     }
-                    std::string origStr(args[0].getStr());
-                    std::string delim(args[1].getStr());
+                    std::string origStr(args[0].get().getStr());
+                    std::string delim(args[1].get().getStr());
                     List res;
                     std::vector<folly::StringPiece> substrings;
                     folly::split<folly::StringPiece>(delim, origStr, substrings);
@@ -1188,14 +1192,14 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-             switch (args[0].type()) {
+             switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE:
                     return Value::kNullValue;
                 case Value::Type::INT: {
-                    return folly::to<std::string>(args[0].getInt());
+                    return folly::to<std::string>(args[0].get().getInt());
                 }
                 case Value::Type::FLOAT: {
-                    auto str = folly::to<std::string>(args[0].getFloat());
+                    auto str = folly::to<std::string>(args[0].get().getFloat());
                     std::size_t found = str.find('.');
                     if (found == std::string::npos) {
                         str += ".0";
@@ -1203,22 +1207,22 @@ FunctionManager::FunctionManager() {
                     return str;
                 }
                 case Value::Type::BOOL: {
-                    return args[0].getBool() ? "true" : "false";
+                    return args[0].get().getBool() ? "true" : "false";
                 }
                 case Value::Type::STRING: {
-                    return args[0].getStr();
+                    return args[0].get().getStr();
                 }
                 case Value::Type::DATE: {
-                    return args[0].getDate().toString();
+                    return args[0].get().getDate().toString();
                 }
                 case Value::Type::TIME: {
-                    return args[0].getTime().toString();
+                    return args[0].get().getTime().toString();
                 }
                 case Value::Type::DATETIME: {
-                    return args[0].getDateTime().toString();
+                    return args[0].get().getDateTime().toString();
                 }
                 default:
-                    LOG(ERROR) << "toString has not been implemented for " << args[0].type();
+                    LOG(ERROR) << "toString has not been implemented for " << args[0].get().type();
                     return Value::kNullBadType;
             }
         };
@@ -1229,7 +1233,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-             return Value(args[0]).toBool();
+             return Value(args[0].get()).toBool();
         };
     }
     {
@@ -1238,7 +1242,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-             return Value(args[0]).toFloat();
+             return Value(args[0].get()).toFloat();
         };
     }
     {
@@ -1247,7 +1251,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-             return Value(args[0]).toInt();
+             return Value(args[0].get()).toInt();
         };
     }
     {
@@ -1256,15 +1260,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isStr() && args[1].isInt() && args[2].isStr()) {
-                auto value = args[0].getStr();
-                auto size = args[1].getInt();
+            if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
+                auto value = args[0].get().getStr();
+                auto size = args[1].get().getInt();
                 if (size < 0) {
                     return std::string("");
                 } else if (size < static_cast<int64_t>(value.size())) {
                     return value.substr(0, static_cast<int32_t>(size));
                 } else {
-                    auto extra = args[2].getStr();
+                    auto extra = args[2].get().getStr();
                     size -= value.size();
                     std::stringstream stream;
                     while (size > static_cast<int64_t>(extra.size())) {
@@ -1285,16 +1289,16 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (args[0].isStr() && args[1].isInt() && args[2].isStr()) {
-                auto value = args[0].getStr();
-                if (args[1].getInt() < 0) {
+            if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
+                auto value = args[0].get().getStr();
+                if (args[1].get().getInt() < 0) {
                     return "";
                 }
-                size_t size = args[1].getInt();
+                size_t size = args[1].get().getInt();
                 if (size < value.size()) {
                     return value.substr(0, static_cast<int32_t>(size));
                 } else {
-                    auto extra = args[2].getStr();
+                    auto extra = args[2].get().getStr();
                     std::stringstream stream;
                     stream << value;
                     size -= value.size();
@@ -1316,17 +1320,19 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             auto argSize = args.size();
-            if (args[0].isNull()) {
+            if (args[0].get().isNull()) {
                 return Value::kNullValue;
             }
-            if (!args[0].isStr() || !args[1].isInt() || (argSize == 3 && !args[2].isInt())) {
+            if (!args[0].get().isStr() ||
+                !args[1].get().isInt() ||
+                (argSize == 3 && !args[2].get().isInt())) {
                 return Value::kNullBadType;
             }
-            auto value = args[0].getStr();
-            auto start = args[1].getInt();
+            auto value = args[0].get().getStr();
+            auto start = args[1].get().getInt();
             auto length = 0;
             if (argSize == 3) {
-                length = args[2].getInt();
+                length = args[2].get().getInt();
             } else {
                 length = static_cast<size_t>(start) >= value.size()
                              ? 0
@@ -1349,7 +1355,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE:
                 case Value::Type::__EMPTY__:
                 case Value::Type::INT:
@@ -1362,10 +1368,10 @@ FunctionManager::FunctionManager() {
                 case Value::Type::EDGE:
                 case Value::Type::PATH:
                 case Value::Type::LIST: {
-                    return static_cast<int64_t>(std::hash<nebula::Value>()(args[0]));
+                    return static_cast<int64_t>(std::hash<nebula::Value>()(args[0].get()));
                 }
                 default:
-                    LOG(ERROR) << "Hash has not been implemented for " << args[0].type();
+                    LOG(ERROR) << "Hash has not been implemented for " << args[0].get().type();
                     return Value::kNullBadType;
             }
         };
@@ -1376,7 +1382,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = INT64_MAX;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            return std::find(args.begin() + 1, args.end(), args[0]) != args.end();
+            return std::find(args.begin() + 1, args.end(), args[0].get()) != args.end();
         };
     }
     {
@@ -1412,10 +1418,13 @@ FunctionManager::FunctionManager() {
             auto mid = args.size() / 2;
             double s1 = 0, s2 = 0, s3 = 0;
             for (decltype(args.size()) i = 0; i < mid; ++i) {
-                if (args[i].isNumeric() && args[i + mid].isNumeric()) {
-                    auto xi = args[i].isInt() ? args[i].getInt() : args[i].getFloat();
-                    auto yi =
-                        args[i + mid].isInt() ? args[i + mid].getInt() : args[i + mid].getFloat();
+                if (args[i].get().isNumeric() && args[i + mid].get().isNumeric()) {
+                    auto xi = args[i].get().isInt() ?
+                        args[i].get().getInt() :
+                        args[i].get().getFloat();
+                    auto yi = args[i + mid].get().isInt() ?
+                        args[i + mid].get().getInt() :
+                        args[i + mid].get().getFloat();
                     s1 += (xi * yi);
                     s2 += (xi * xi);
                     s3 += (yi * yi);
@@ -1436,21 +1445,21 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE:
                     return Value::kNullValue;
                 case Value::Type::__EMPTY__:
                     return Value::kEmpty;
                 case Value::Type::STRING:
-                    return static_cast<int64_t>(args[0].getStr().size());
+                    return static_cast<int64_t>(args[0].get().getStr().size());
                 case Value::Type::LIST:
-                    return static_cast<int64_t>(args[0].getList().size());
+                    return static_cast<int64_t>(args[0].get().getList().size());
                 case Value::Type::MAP:
-                    return static_cast<int64_t>(args[0].getMap().size());
+                    return static_cast<int64_t>(args[0].get().getMap().size());
                 case Value::Type::SET:
-                    return static_cast<int64_t>(args[0].getSet().size());
+                    return static_cast<int64_t>(args[0].get().getSet().size());
                 case Value::Type::DATASET:
-                    return static_cast<int64_t>(args[0].getDataSet().size());
+                    return static_cast<int64_t>(args[0].get().getDataSet().size());
                 case Value::Type::INT:
                 case Value::Type::FLOAT:
                 case Value::Type::BOOL:
@@ -1460,7 +1469,7 @@ FunctionManager::FunctionManager() {
                 case Value::Type::EDGE:
                 case Value::Type::PATH:
                 default:
-                    LOG(ERROR) << "size() has not been implemented for " << args[0].type();
+                    LOG(ERROR) << "size() has not been implemented for " << args[0].get().type();
                     return Value::kNullBadType;
             }
         };
@@ -1482,14 +1491,14 @@ FunctionManager::FunctionManager() {
                     return Value(std::move(result).value());
                 }
                 case 1: {
-                    if (args[0].isStr()) {
-                        auto result = time::TimeUtils::parseDate(args[0].getStr());
+                    if (args[0].get().isStr()) {
+                        auto result = time::TimeUtils::parseDate(args[0].get().getStr());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
                         return result.value();
-                    } else if (args[0].isMap()) {
-                        auto result = time::TimeUtils::dateFromMap(args[0].getMap());
+                    } else if (args[0].get().isMap()) {
+                        auto result = time::TimeUtils::dateFromMap(args[0].get().getMap());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
@@ -1520,14 +1529,14 @@ FunctionManager::FunctionManager() {
                     return Value(std::move(result).value());
                 }
                 case 1: {
-                    if (args[0].isStr()) {
-                        auto result = time::TimeUtils::parseTime(args[0].getStr());
+                    if (args[0].get().isStr()) {
+                        auto result = time::TimeUtils::parseTime(args[0].get().getStr());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
                         return time::TimeUtils::timeToUTC(result.value());
-                    } else if (args[0].isMap()) {
-                        auto result = time::TimeUtils::timeFromMap(args[0].getMap());
+                    } else if (args[0].get().isMap()) {
+                        auto result = time::TimeUtils::timeFromMap(args[0].get().getMap());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
@@ -1558,14 +1567,14 @@ FunctionManager::FunctionManager() {
                     return Value(std::move(result).value());
                 }
                 case 1: {
-                    if (args[0].isStr()) {
-                        auto result = time::TimeUtils::parseDateTime(args[0].getStr());
+                    if (args[0].get().isStr()) {
+                        auto result = time::TimeUtils::parseDateTime(args[0].get().getStr());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
                         return time::TimeUtils::dateTimeToUTC(result.value());
-                    } else if (args[0].isMap()) {
-                        auto result = time::TimeUtils::dateTimeFromMap(args[0].getMap());
+                    } else if (args[0].get().isMap()) {
+                        auto result = time::TimeUtils::dateTimeFromMap(args[0].get().getMap());
                         if (!result.ok()) {
                             return Value::kNullBadData;
                         }
@@ -1588,7 +1597,7 @@ FunctionManager::FunctionManager() {
             if (args.size() == 0) {
                 return time::WallClock::fastNowInSec();
             }
-            auto status = time::TimeUtils::toTimestamp(args[0]);
+            auto status = time::TimeUtils::toTimestamp(args[0].get());
             if (!status.ok()) {
                 return Value::kNullBadData;
             }
@@ -1601,18 +1610,18 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (!args[0].isInt() || !args[1].isInt()) {
+            if (!args[0].get().isInt() || !args[1].get().isInt()) {
                 return Value::kNullBadType;
             }
 
-            int64_t start = args[0].getInt();
-            int64_t end = args[1].getInt();
+            int64_t start = args[0].get().getInt();
+            int64_t end = args[1].get().getInt();
             int64_t step = 1;
             if (args.size() == 3) {
-                if (!args[2].isInt()) {
+                if (!args[2].get().isInt()) {
                     return Value::kNullBadType;
                 }
-                step = args[2].getInt();
+                step = args[2].get().getInt();
             }
             if (step == 0) {
                 return Value::kNullBadData;
@@ -1631,12 +1640,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::VERTEX: {
-                    return args[0].getVertex().vid;
+                    return args[0].get().getVertex().vid;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1650,13 +1659,13 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::VERTEX: {
                     List tags;
-                    for (auto& tag : args[0].getVertex().tags) {
+                    for (auto& tag : args[0].get().getVertex().tags) {
                         tags.emplace_back(tag.name);
                     }
                     return tags;
@@ -1674,24 +1683,24 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::VERTEX: {
                     Map props;
-                    for (auto& tag : args[0].getVertex().tags) {
+                    for (auto& tag : args[0].get().getVertex().tags) {
                         props.kvs.insert(tag.props.cbegin(), tag.props.cend());
                     }
                     return Value(std::move(props));
                 }
                 case Value::Type::EDGE: {
                     Map props;
-                    props.kvs = args[0].getEdge().props;
+                    props.kvs = args[0].get().getEdge().props;
                     return Value(std::move(props));
                 }
                 case Value::Type::MAP: {
-                    return args[0];
+                    return args[0].get();
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1705,12 +1714,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return args[0].getEdge().name;
+                    return args[0].get().getEdge().name;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1724,12 +1733,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return args[0].getEdge().type;
+                    return args[0].get().getEdge().type;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1743,12 +1752,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    const auto &edge = args[0].getEdge();
+                    const auto &edge = args[0].get().getEdge();
                     return edge.type > 0 ? edge.src : edge.dst;
                 }
                 default: {
@@ -1763,12 +1772,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    const auto &edge = args[0].getEdge();
+                    const auto &edge = args[0].get().getEdge();
                     return edge.type > 0 ? edge.dst : edge.src;
                 }
                 default: {
@@ -1783,12 +1792,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return args[0].getEdge().ranking;
+                    return args[0].get().getEdge().ranking;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1802,15 +1811,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return Vertex(args[0].getEdge().src, {});
+                    return Vertex(args[0].get().getEdge().src, {});
                 }
                 case Value::Type::PATH: {
-                    return args[0].getPath().src;
+                    return args[0].get().getPath().src;
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1824,15 +1833,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::EDGE: {
-                    return Vertex(args[0].getEdge().dst, {});
+                    return Vertex(args[0].get().getEdge().dst, {});
                 }
                 case Value::Type::PATH: {
-                    auto &path = args[0].getPath();
+                    auto &path = args[0].get().getPath();
                     if (path.steps.empty()) {
                         return path.src;
                     }
@@ -1850,12 +1859,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::LIST: {
-                    return args[0].getList().values.front();
+                    return args[0].get().getList().values.front();
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1869,12 +1878,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::LIST: {
-                    return args[0].getList().values.back();
+                    return args[0].get().getList().values.back();
                 }
                 default: {
                     return Value::kNullBadType;
@@ -1888,12 +1897,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::LIST: {
-                    auto &list = args[0].getList();
+                    auto &list = args[0].get().getList();
                     if (list.values.empty()) {
                         return Value::kNullValue;
                     }
@@ -1917,12 +1926,12 @@ FunctionManager::FunctionManager() {
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
             std::set<std::string> tmp;
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::VERTEX: {
-                    for (auto& tag : args[0].getVertex().tags) {
+                    for (auto& tag : args[0].get().getVertex().tags) {
                         for (auto& prop : tag.props) {
                             tmp.emplace(prop.first);
                         }
@@ -1930,13 +1939,13 @@ FunctionManager::FunctionManager() {
                     break;
                 }
                 case Value::Type::EDGE: {
-                    for (auto& prop : args[0].getEdge().props) {
+                    for (auto& prop : args[0].get().getEdge().props) {
                         tmp.emplace(prop.first);
                     }
                     break;
                 }
                 case Value::Type::MAP: {
-                    for (auto& kv : args[0].getMap().kvs) {
+                    for (auto& kv : args[0].get().getMap().kvs) {
                         tmp.emplace(kv.first);
                     }
                     break;
@@ -1956,12 +1965,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::PATH: {
-                    auto &path = args[0].getPath();
+                    auto &path = args[0].get().getPath();
                     List result;
                     result.emplace_back(path.src);
                     for (auto &step : path.steps) {
@@ -1981,12 +1990,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::LIST: {
-                    auto& list = args[0].getList();
+                    auto& list = args[0].get().getList();
                     if (list.empty()) {
                         return List();
                     }
@@ -2004,12 +2013,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            switch (args[0].type()) {
+            switch (args[0].get().type()) {
                 case Value::Type::NULLVALUE: {
                     return Value::kNullValue;
                 }
                 case Value::Type::PATH: {
-                    auto &path = args[0].getPath();
+                    auto &path = args[0].get().getPath();
                     List result;
                     auto src = path.src.vid;
                     for (size_t i = 0; i < path.steps.size(); ++i) {
@@ -2038,10 +2047,10 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (!args[0].isPath()) {
+            if (!args[0].get().isPath()) {
                 return Value::kNullBadType;
             }
-            auto &path = args[0].getPath();
+            auto &path = args[0].get().getPath();
             return path.hasDuplicateEdges();
         };
     }
@@ -2051,10 +2060,10 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (!args[0].isPath()) {
+            if (!args[0].get().isPath()) {
                 return Value::kNullBadType;
             }
-            auto &path = args[0].getPath();
+            auto &path = args[0].get().getPath();
             return path.hasDuplicateVertices();
         };
     }
@@ -2064,10 +2073,10 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (!args[0].isPath()) {
+            if (!args[0].get().isPath()) {
                 return Value::kNullBadType;
             }
-            auto path = args[0].getPath();
+            auto path = args[0].get().getPath();
             path.reverse();
             return path;
         };
@@ -2078,18 +2087,20 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 3;
         attr.isPure_ = true;
         attr.body_ = [](const auto &args) -> Value {
-            if (!args[0].isDataSet() || !args[1].isInt() || !(args[2].isInt() || args[2].isStr())) {
+            if (!args[0].get().isDataSet() ||
+                !args[1].get().isInt() || !(args[2].get().isInt() || args[2].get().isStr())) {
                 return Value::kNullBadType;
             }
-            const auto &ds = args[0].getDataSet();
+            const auto &ds = args[0].get().getDataSet();
             if (ds.rowSize() < 1 || ds.colSize() < 1) {
                 return Value::kNullBadData;
             }
             const auto &colNames = ds.colNames;
-            int64_t rowIndex = args[1].getInt();
-            int64_t colIndex = args[2].isInt() ? args[2].getInt() :
+            int64_t rowIndex = args[1].get().getInt();
+            int64_t colIndex = args[2].get().isInt() ? args[2].get().getInt() :
                     std::distance(colNames.begin(),
-                                  std::find(colNames.begin(), colNames.end(), args[2].getStr()));
+                                  std::find(colNames.begin(),
+                                    colNames.end(), args[2].get().getStr()));
             if (rowIndex < 0 || colIndex < 0) {
                 return Value::kNullBadData;
             }
