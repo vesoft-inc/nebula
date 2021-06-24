@@ -29,8 +29,12 @@ public:
         return (info_->freeram * info_->mem_unit) >> 10;
     }
 
+    uint64_t bufferInKB() const {
+        return (info_->bufferram * info_->mem_unit) >> 10;
+    }
+
     uint64_t usedInKB() const {
-        return totalInKB() - freeInKB();
+        return totalInKB() - freeInKB() - bufferInKB();
     }
 
     bool hitsHighWatermark(float ratio = 0.8f) const {
