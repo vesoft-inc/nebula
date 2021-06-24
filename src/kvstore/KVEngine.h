@@ -49,10 +49,10 @@ public:
 
     virtual std::unique_ptr<WriteBatch> startBatchWrite() = 0;
 
-    virtual nebula::cpp2::ErrorCode
-    commitBatchWrite(std::unique_ptr<WriteBatch> batch,
-                     bool disableWAL = true,
-                     bool sync = false) = 0;
+    virtual nebula::cpp2::ErrorCode commitBatchWrite(std::unique_ptr<WriteBatch> batch,
+                                                     bool disableWAL,
+                                                     bool sync,
+                                                     bool wait) = 0;
 
     // Read a single key
     virtual nebula::cpp2::ErrorCode get(const std::string& key, std::string* value) = 0;

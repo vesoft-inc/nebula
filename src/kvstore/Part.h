@@ -95,7 +95,7 @@ private:
 
     void onDiscoverNewLeader(HostAddr nLeader) override;
 
-    bool commitLogs(std::unique_ptr<LogIterator> iter) override;
+    cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
 
     bool preProcessLog(LogID logId,
                        TermID termId,
@@ -110,15 +110,7 @@ private:
     nebula::cpp2::ErrorCode
     putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
 
-    void cleanup() override {
-        LOG(INFO) << idStr_ << "Clean rocksdb commit key";
-        auto res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
-        if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
-                         << static_cast<int32_t>(res);
-        }
-        return;
-    }
+    void cleanup() override;
 
     nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 

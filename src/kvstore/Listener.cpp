@@ -113,7 +113,7 @@ bool Listener::preProcessLog(LogID logId,
     return true;
 }
 
-bool Listener::commitLogs(std::unique_ptr<LogIterator> iter) {
+cpp2::ErrorCode Listener::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
     LogID lastId = -1;
     while (iter->valid()) {
         lastId = iter->logId();
@@ -122,7 +122,7 @@ bool Listener::commitLogs(std::unique_ptr<LogIterator> iter) {
     if (lastId > 0) {
         leaderCommitId_ = lastId;
     }
-    return true;
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 void Listener::doApply() {

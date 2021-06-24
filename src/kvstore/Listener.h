@@ -52,7 +52,7 @@ derived class.
 
     // For listener, we just return true directly. Another background thread trigger the actual
     // apply work, and do it in worker thread, and update lastApplyLogId_
-    bool commitLogs(std::unique_ptr<LogIterator> iter)
+    cpp2::Errorcode commitLogs(std::unique_ptr<LogIterator> iter, bool)
 
     // For most of the listeners, just return true is enough. However, if listener need to be aware
     // of membership change, some log type of wal need to be pre-processed, could do it here.
@@ -154,7 +154,7 @@ protected:
 
     // For listener, we just return true directly. Another background thread trigger the actual
     // apply work, and do it in worker thread, and update lastApplyLogId_
-    bool commitLogs(std::unique_ptr<LogIterator>) override;
+    cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator>, bool) override;
 
     // For most of the listeners, just return true is enough. However, if listener need to be aware
     // of membership change, some log type of wal need to be pre-processed, could do it here.

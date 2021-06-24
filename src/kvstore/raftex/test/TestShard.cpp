@@ -165,7 +165,7 @@ void TestShard::onElected(TermID term) {
 }
 
 
-bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
+nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
     LogID firstId = -1;
     LogID lastId = -1;
     int32_t commitLogsNum = 0;
@@ -211,7 +211,7 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     if (commitLogsNum > 0) {
         commitTimes_++;
     }
-    return true;
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::string>& data,

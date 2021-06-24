@@ -228,6 +228,21 @@ void RaftexService::sendSnapshot(
     part->processSendSnapshotRequest(req, resp);
 }
 
+void RaftexService::async_eb_heartbeat(
+        std::unique_ptr<apache::thrift::HandlerCallback<cpp2::HeartbeatResponse>> callback,
+        const cpp2::HeartbeatRequest& req) {
+    cpp2::HeartbeatResponse resp;
+    auto part = findPart(req.get_space(), req.get_part());
+    if (!part) {
+        // Not found
+        resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+        callback->result(resp);
+        return;
+    }
+    part->processHeartbeatRequest(req, resp);
+    callback->result(resp);
+}
+
 }  // namespace raftex
 }  // namespace nebula
 

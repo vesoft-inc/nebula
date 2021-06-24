@@ -49,6 +49,10 @@ public:
         cpp2::SendSnapshotResponse& resp,
         const cpp2::SendSnapshotRequest& req) override;
 
+    void async_eb_heartbeat(
+        std::unique_ptr<apache::thrift::HandlerCallback<cpp2::HeartbeatResponse>> callback,
+        const cpp2::HeartbeatRequest& req) override;
+
     void addPartition(std::shared_ptr<RaftPart> part);
     void removePartition(std::shared_ptr<RaftPart> part);
 

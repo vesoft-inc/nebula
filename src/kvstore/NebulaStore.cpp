@@ -540,15 +540,17 @@ void NebulaStore::checkRemoteListeners(GraphSpaceID spaceId,
 void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
                                     const std::unordered_map<std::string, std::string>& options,
                                     bool isDbOption) {
-    if (isDbOption) {
-        for (const auto& kv : options) {
-            setDBOption(spaceId, kv.first, kv.second);
+    storeWorker_->addTask([this, spaceId, opts = options, isDbOption] {
+        if (isDbOption) {
+            for (const auto& kv : opts) {
+                setDBOption(spaceId, kv.first, kv.second);
+            }
+        } else {
+            for (const auto& kv : opts) {
+                setOption(spaceId, kv.first, kv.second);
+            }
         }
-    } else {
-        for (const auto& kv : options) {
-            setOption(spaceId, kv.first, kv.second);
-        }
-    }
+    });
 }
 
 void NebulaStore::removeSpaceDir(const std::string& dir) {

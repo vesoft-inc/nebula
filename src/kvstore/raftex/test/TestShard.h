@@ -80,7 +80,7 @@ public:
     void onElected(TermID term) override;
     void onDiscoverNewLeader(HostAddr) override {}
 
-    bool commitLogs(std::unique_ptr<LogIterator> iter) override;
+    nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
 
     bool preProcessLog(LogID,
                        TermID,

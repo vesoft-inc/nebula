@@ -149,14 +149,18 @@ std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
 nebula::cpp2::ErrorCode
 RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch,
                               bool disableWAL,
-                              bool sync) {
+                              bool sync,
+                              bool wait) {
     rocksdb::WriteOptions options;
     options.disableWAL = disableWAL;
     options.sync = sync;
+    options.no_slowdown = !wait;
     auto* b = static_cast<RocksWriteBatch*>(batch.get());
     rocksdb::Status status = db_->Write(options, b->data());
     if (status.ok()) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else if (!wait && status.IsIncomplete()) {
+        return nebula::cpp2::ErrorCode::E_WRITE_STALLED;
     }
     LOG(ERROR) << "Write into rocksdb failed because of " << status.ToString();
     return nebula::cpp2::ErrorCode::E_UNKNOWN;

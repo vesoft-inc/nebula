@@ -121,7 +121,8 @@ public:
     nebula::cpp2::ErrorCode
     commitBatchWrite(std::unique_ptr<WriteBatch> batch,
                      bool disableWAL,
-                     bool sync) override;
+                     bool sync,
+                     bool wait) override;
 
     /*********************
      * Data retrieval

@@ -88,6 +88,14 @@ public:
         TermID lastLogTermSent,     // The last log term being sent
         LogID lastLogIdSent);       // The last log id being sent
 
+    folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(
+        folly::EventBase* eb,
+        TermID term,
+        LogID latestLogId,
+        LogID commitLogId,
+        TermID lastLogTerm,
+        LogID lastLogId);
+
     const HostAddr& address() const {
         return addr_;
     }
@@ -102,6 +110,10 @@ private:
     void appendLogsInternal(
         folly::EventBase* eb,
         std::shared_ptr<cpp2::AppendLogRequest> req);
+
+    folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
+        folly::EventBase* eb,
+        std::shared_ptr<cpp2::HeartbeatRequest> req);
 
     std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
 
