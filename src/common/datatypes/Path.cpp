@@ -43,6 +43,7 @@ bool Path::hasDuplicateVertices() const {
         return false;
     }
     std::unordered_set<Value> uniqueVid;
+    uniqueVid.reserve(steps.size() + 1);
     uniqueVid.emplace(src.vid);
     for (const auto& step : steps) {
         auto ret = uniqueVid.emplace(step.dst.vid);
@@ -59,13 +60,17 @@ bool Path::hasDuplicateEdges() const {
     }
     using Key = std::tuple<Value, Value, EdgeType, EdgeRanking>;
     std::unordered_set<Key> uniqueSet;
+    uniqueSet.reserve(steps.size());
     auto srcVid = src.vid;
     for (const auto& step : steps) {
         const auto& dstVid = step.dst.vid;
-        const auto& edgeSrc = step.type > 0 ? srcVid : dstVid;
-        const auto& edgeDst = step.type > 0 ? dstVid : srcVid;
-        auto key = std::make_tuple(edgeSrc, edgeDst, std::abs(step.type), step.ranking);
-        if (!uniqueSet.emplace(std::move(key)).second) {
+        bool ret = true;
+        if (step.type > 0) {
+            ret = uniqueSet.emplace(srcVid, dstVid, step.type, step.ranking).second;
+        } else {
+            ret = uniqueSet.emplace(dstVid, srcVid, -step.type, step.ranking).second;
+        }
+        if (!ret) {
             return true;
         }
         srcVid = dstVid;

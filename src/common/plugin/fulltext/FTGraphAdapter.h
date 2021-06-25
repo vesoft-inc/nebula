@@ -8,6 +8,7 @@
 #define COMMON_PLUGIN_FULLTEXT_G_ADAPTER_H_
 
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"
 #include "common/plugin/fulltext/FTUtils.h"
 
 namespace nebula {
