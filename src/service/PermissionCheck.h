@@ -20,6 +20,7 @@ public:
 
     static Status permissionCheck(ClientSession *session,
                                   Sentence* sentence,
+                                  ValidateContext *vctx,
                                   GraphSpaceID targetSpace = -1);
 };
 }  // namespace graph

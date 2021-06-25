@@ -125,7 +125,8 @@ protected:
     // Do all permission checking in validator except which need execute
     // TODO(shylock) do all permission which don't need execute in here
     virtual Status checkPermission() {
-        return PermissionCheck::permissionCheck(qctx_->rctx()->session(), sentence_, space_.id);
+        return PermissionCheck::permissionCheck(
+                qctx_->rctx()->session(), sentence_, qctx_->vctx(), space_.id);
     }
 
     /**

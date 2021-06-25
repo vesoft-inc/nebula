@@ -33,6 +33,7 @@ namespace graph {
 // static
 Status PermissionCheck::permissionCheck(ClientSession *session,
                                         Sentence* sentence,
+                                        ValidateContext *vctx,
                                         GraphSpaceID targetSpace) {
     if (!FLAGS_enable_authorize) {
         return Status::OK();
@@ -92,7 +93,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
         case Sentence::Kind::kDropFTIndex:
         case Sentence::Kind::kAddListener:
         case Sentence::Kind::kRemoveListener: {
-            return PermissionManager::canWriteSchema(session);
+            return PermissionManager::canWriteSchema(session, vctx);
         }
         case Sentence::Kind::kCreateUser:
         case Sentence::Kind::kDropUser:
@@ -115,7 +116,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
         case Sentence::Kind::kUpdateEdge :
         case Sentence::Kind::kDeleteVertices :
         case Sentence::Kind::kDeleteEdges : {
-            return PermissionManager::canWriteData(session);
+            return PermissionManager::canWriteData(session, vctx);
         }
         case Sentence::Kind::kDescribeTag:
         case Sentence::Kind::kDescribeEdge:
@@ -136,7 +137,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
         case Sentence::Kind::kLimit:
         case Sentence::Kind::kGroupBy:
         case Sentence::Kind::kReturn: {
-            return PermissionManager::canReadSchemaOrData(session);
+            return PermissionManager::canReadSchemaOrData(session, vctx);
         }
         case Sentence::Kind::kShowParts:
         case Sentence::Kind::kShowTags:

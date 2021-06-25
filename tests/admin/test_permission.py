@@ -352,14 +352,22 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
+        # dba use the not exist space to create tag
+        query = 'USE not_exist_space;CREATE TAG t11(t_c int);'
+        resp = self.dbaClient.execute(query)
+        self.check_resp_failed(resp)
+        resp.space_name() == ''
+
         # dba write schema test
-        query = 'USE space2'
+        query = 'USE space2;CREATE TAG t1(t_c int);'
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = "CREATE TAG t1(t_c int)";
+        # dba use the not exist space to create tag
+        query = 'USE not_exist_space;CREATE TAG t11(t_c int);'
         resp = self.dbaClient.execute(query)
-        self.check_resp_succeeded(resp)
+        self.check_resp_failed(resp)
+        resp.space_name() == 'space2'
 
         query = "CREATE EDGE e1(e_c int)";
         resp = self.dbaClient.execute(query)
