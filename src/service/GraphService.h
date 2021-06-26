@@ -37,8 +37,6 @@ public:
     folly::Future<ExecutionResponse>
     future_execute(int64_t sessionId, const std::string& stmt) override;
 
-    const char* getErrorStr(ErrorCode result);
-
 private:
     bool auth(const std::string& username, const std::string& password);
 
