@@ -206,7 +206,8 @@ class TestSession(NebulaTestSuite):
         try:
             conn = Connection()
             conn.open(self.addr_host1, self.addr_port1, 3000)
-            session_id = conn.authenticate(self.user, self.password)
+            auth_result = conn.authenticate(self.user, self.password)
+            session_id = auth_result.get_session_id()
             conn.signout(session_id)
         except Exception as e:
             assert False, e.message

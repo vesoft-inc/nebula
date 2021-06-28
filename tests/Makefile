@@ -21,7 +21,9 @@ install-deps:
 
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
-	cd $(CURR_DIR)/nebula-python && python3 setup.py install --user
+	cd $(CURR_DIR)/nebula-python \
+		&& pip3 install --user -r requirements.txt -i $(PYPI_MIRROR) \
+		&& python3 setup.py install --user
 	rm -rf $(CURR_DIR)/nebula-python
 
 gherkin-fmt: install-deps
