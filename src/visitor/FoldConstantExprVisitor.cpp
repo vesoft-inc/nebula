@@ -74,7 +74,7 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
     auto foldable = true;
     // auto shortCircuit = false;
     for (auto i = 0u; i < operands.size(); i++) {
-        auto *operand = operands[i].get();
+        auto *operand = operands[i];
         operand->accept(this);
         if (canBeFolded_) {
             auto *newExpr = fold(operand);
@@ -102,10 +102,10 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
 void FoldConstantExprVisitor::visit(FunctionCallExpression *expr) {
     bool canBeFolded = true;
     for (auto &arg : expr->args()->args()) {
-        if (!isConstant(arg.get())) {
+        if (!isConstant(arg)) {
             arg->accept(this);
             if (canBeFolded_) {
-                arg.reset(fold(arg.get()));
+                arg = fold(arg);
                 if (!ok()) return;
             } else {
                 canBeFolded = false;
@@ -154,13 +154,13 @@ void FoldConstantExprVisitor::visit(ListExpression *expr) {
     auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
-        auto item = items[i].get();
+        auto item = items[i];
         if (isConstant(item)) {
             continue;
         }
         item->accept(this);
         if (canBeFolded_) {
-            expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+            expr->setItem(i, fold(item));
             if (!ok()) return;
         } else {
             canBeFolded = false;
@@ -173,13 +173,13 @@ void FoldConstantExprVisitor::visit(SetExpression *expr) {
     auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
-        auto item = items[i].get();
+        auto item = items[i];
         if (isConstant(item)) {
             continue;
         }
         item->accept(this);
         if (canBeFolded_) {
-            expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+            expr->setItem(i, fold(item));
             if (!ok()) return;
         } else {
             canBeFolded = false;
@@ -193,13 +193,13 @@ void FoldConstantExprVisitor::visit(MapExpression *expr) {
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
         auto &pair = items[i];
-        auto item = const_cast<Expression *>(pair.second.get());
+        auto item = const_cast<Expression *>(pair.second);
         if (isConstant(item)) {
             continue;
         }
         item->accept(this);
         if (canBeFolded_) {
-            auto val = std::unique_ptr<Expression>(fold(item));
+            auto val = fold(item);
             if (!ok()) return;
             expr->setItem(i, std::make_pair(pair.first, std::move(val)));
         } else {
@@ -232,8 +232,8 @@ void FoldConstantExprVisitor::visit(CaseExpression *expr) {
     }
     auto &cases = expr->cases();
     for (size_t i = 0; i < cases.size(); ++i) {
-        auto when = cases[i].when.get();
-        auto then = cases[i].then.get();
+        auto when = cases[i].when;
+        auto then = cases[i].then;
         if (!isConstant(when)) {
             when->accept(this);
             if (canBeFolded_) {
@@ -364,14 +364,14 @@ Expression *FoldConstantExprVisitor::fold(Expression *expr) {
     } else {
         status_ = Status::OK();
     }
-    return new ConstantExpression(std::move(value));
+    return ConstantExpression::make(pool_, value);
 }
 
 void FoldConstantExprVisitor::visit(PathBuildExpression *expr) {
     auto &items = expr->items();
     bool canBeFolded = true;
     for (size_t i = 0; i < items.size(); ++i) {
-        auto item = items[i].get();
+        auto item = items[i];
         if (isConstant(item)) {
             continue;
         }
@@ -380,7 +380,7 @@ void FoldConstantExprVisitor::visit(PathBuildExpression *expr) {
             canBeFolded = false;
             continue;
         }
-        expr->setItem(i, std::unique_ptr<Expression>{fold(item)});
+        expr->setItem(i, fold(item));
         if (!ok()) return;
     }
     canBeFolded_ = canBeFolded;

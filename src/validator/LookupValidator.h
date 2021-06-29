@@ -44,7 +44,7 @@ private:
 
     StatusOr<std::string> checkTSExpr(Expression* expr);
 
-    std::unique_ptr<Expression> reverseRelKind(RelationalExpression* expr);
+    Expression* reverseRelKind(RelationalExpression* expr);
 
 private:
     static constexpr char kSrcVID[] = "SrcVID";

@@ -125,8 +125,9 @@ Status TraversalValidator::validateStep(const StepClause* clause, StepClause& st
 
 PlanNode* TraversalValidator::projectDstVidsFromGN(PlanNode* gn, const std::string& outputVar) {
     Project* project = nullptr;
-    auto* columns = qctx_->objPool()->add(new YieldColumns());
-    auto* column = new YieldColumn(new EdgePropertyExpression("*", kDst), kVid);
+    auto pool = qctx_->objPool();
+    auto* columns = pool->add(new YieldColumns());
+    auto* column = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), kVid);
     columns->addColumn(column);
 
     project = Project::make(qctx_, gn, columns);
@@ -149,14 +150,14 @@ void TraversalValidator::buildConstantInput(Starts& starts, std::string& startVi
     }
     qctx_->ectx()->setResult(startVidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
 
-    starts.src = new VariablePropertyExpression(startVidsVar, kVid);
-    qctx_->objPool()->add(starts.src);
+    auto pool = qctx_->objPool();
+    starts.src = VariablePropertyExpression::make(pool, startVidsVar, kVid);
 }
 
 PlanNode* TraversalValidator::buildRuntimeInput(Starts& starts, PlanNode*& projectStartVid) {
     auto pool = qctx_->objPool();
     auto* columns = pool->add(new YieldColumns());
-    auto* column = new YieldColumn(starts.originalSrc->clone().release(), kVid);
+    auto* column = new YieldColumn(starts.originalSrc->clone(), kVid);
     columns->addColumn(column);
 
     auto* project = Project::make(qctx_, nullptr, columns);
@@ -164,7 +165,7 @@ PlanNode* TraversalValidator::buildRuntimeInput(Starts& starts, PlanNode*& proje
         project->setInputVar(starts.userDefinedVarName);
     }
     VLOG(1) << project->outputVar() << " input: " << project->inputVar();
-    starts.src = pool->add(new InputPropertyExpression(kVid));
+    starts.src = InputPropertyExpression::make(pool, kVid);
 
     auto* dedupVids = Dedup::make(qctx_, project);
 
@@ -175,24 +176,27 @@ PlanNode* TraversalValidator::buildRuntimeInput(Starts& starts, PlanNode*& proje
 Expression* TraversalValidator::buildNStepLoopCondition(uint32_t steps) const {
     VLOG(1) << "steps: " << steps;
     // ++loopSteps{0} <= steps
+    auto* pool = qctx_->objPool();
     qctx_->ectx()->setValue(loopSteps_, 0);
-    return new RelationalExpression(
-        Expression::Kind::kRelLE,
-        new UnaryExpression(Expression::Kind::kUnaryIncr, new VariableExpression(loopSteps_)),
-        new ConstantExpression(static_cast<int32_t>(steps)));
+    return RelationalExpression::makeLE(
+        pool,
+        UnaryExpression::makeIncr(pool, VariableExpression::make(pool, loopSteps_)),
+        ConstantExpression::make(pool, static_cast<int32_t>(steps)));
 }
 
 // $var == empty || size($var) != 0
-Expression* TraversalValidator::buildExpandEndCondition(const std::string &lastStepResult) const {
-    auto* eqEmpty = ExpressionUtils::Eq(new VariableExpression(lastStepResult),
-                                        new ConstantExpression(Value()));
+Expression* TraversalValidator::buildExpandEndCondition(const std::string& lastStepResult) const {
+    auto* pool = qctx_->objPool();
+    auto* eqEmpty =
+        RelationalExpression::makeEQ(pool,
+                                     VariableExpression::make(pool, lastStepResult),
+                                     ConstantExpression::make(qctx_->objPool(), Value()));
 
-    auto* args = new ArgumentList();
-    args->addArgument(std::make_unique<VariableExpression>(lastStepResult));
-    auto* neZero = new RelationalExpression(Expression::Kind::kRelNE,
-                                            new FunctionCallExpression("size", args),
-                                            new ConstantExpression(0));
-    return ExpressionUtils::Or(eqEmpty, neZero);
+    auto* args = ArgumentList::make(pool);
+    args->addArgument(VariableExpression::make(pool, lastStepResult));
+    auto* neZero = RelationalExpression::makeNE(
+        pool, FunctionCallExpression::make(pool, "size", args), ConstantExpression::make(pool, 0));
+    return LogicalExpression::makeOr(pool, eqEmpty, neZero);
 }
 
 }  // namespace graph

@@ -39,8 +39,8 @@ void RewriteVisitor::visit(FunctionCallExpression *expr) {
     }
 
     for (auto &arg : expr->args()->args()) {
-        if (matcher_(arg.get())) {
-            arg.reset(rewriter_(arg.get()));
+        if (matcher_(arg)) {
+            arg = rewriter_(arg);
         } else {
             arg->accept(this);
         }
@@ -66,8 +66,8 @@ void RewriteVisitor::visit(LogicalExpression *expr) {
     }
 
     for (auto &operand : expr->operands()) {
-        if (matcher_(operand.get())) {
-            const_cast<std::unique_ptr<Expression> &>(operand).reset(rewriter_(operand.get()));
+        if (matcher_(operand)) {
+            const_cast<Expression* &>(operand) = rewriter_(operand);
         } else {
             operand->accept(this);
         }
@@ -81,8 +81,8 @@ void RewriteVisitor::visit(ListExpression *expr) {
 
     auto &items = expr->items();
     for (auto &item : items) {
-        if (matcher_(item.get())) {
-            const_cast<std::unique_ptr<Expression> &>(item).reset(rewriter_(item.get()));
+        if (matcher_(item)) {
+            const_cast<Expression* &>(item) = rewriter_(item);
         } else {
             item->accept(this);
         }
@@ -96,8 +96,8 @@ void RewriteVisitor::visit(SetExpression *expr) {
 
     auto &items = expr->items();
     for (auto &item : items) {
-        if (matcher_(item.get())) {
-            const_cast<std::unique_ptr<Expression> &>(item).reset(rewriter_(item.get()));
+        if (matcher_(item)) {
+            const_cast<Expression* &>(item) = rewriter_(item);
         } else {
             item->accept(this);
         }
@@ -112,8 +112,8 @@ void RewriteVisitor::visit(MapExpression *expr) {
     auto &items = expr->items();
     for (auto &pair : items) {
         auto &item = pair.second;
-        if (matcher_(item.get())) {
-            const_cast<std::unique_ptr<Expression> &>(item).reset(rewriter_(item.get()));
+        if (matcher_(item)) {
+            const_cast<Expression* &>(item) = rewriter_(item);
         } else {
             item->accept(this);
         }
@@ -141,8 +141,8 @@ void RewriteVisitor::visit(CaseExpression *expr) {
     }
     auto &cases = expr->cases();
     for (size_t i = 0; i < cases.size(); ++i) {
-        auto when = cases[i].when.get();
-        auto then = cases[i].then.get();
+        auto when = cases[i].when;
+        auto then = cases[i].then;
         if (matcher_(when)) {
             expr->setWhen(i, rewriter_(when));
         } else {
@@ -230,8 +230,8 @@ void RewriteVisitor::visit(PathBuildExpression *expr) {
 
     auto &items = expr->items();
     for (auto &item : items) {
-        if (matcher_(item.get())) {
-            const_cast<std::unique_ptr<Expression> &>(item).reset(rewriter_(item.get()));
+        if (matcher_(item)) {
+            const_cast<Expression* &>(item) = rewriter_(item);
         } else {
             item->accept(this);
         }
@@ -327,7 +327,7 @@ Expression *RewriteVisitor::transform(const Expression *expr, Matcher matcher, R
         RewriteVisitor visitor(std::move(matcher), std::move(rewriter));
         auto exprCopy = expr->clone();
         exprCopy->accept(&visitor);
-        return exprCopy.release();
+        return exprCopy;
     }
 }
 
@@ -343,7 +343,7 @@ Expression *RewriteVisitor::transform(
             std::move(matcher), std::move(rewriter), std::move(needVisitedTypes));
         auto exprCopy = expr->clone();
         exprCopy->accept(&visitor);
-        return exprCopy.release();
+        return exprCopy;
     }
 }
 }   // namespace graph

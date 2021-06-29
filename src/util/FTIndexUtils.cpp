@@ -76,8 +76,12 @@ FTIndexUtils::dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClien
     return Status::Error("drop fulltext index failed : %s", index.c_str());
 }
 
-StatusOr<std::string> FTIndexUtils::rewriteTSFilter(bool isEdge, Expression* expr,
-const std::string& index, const std::vector<nebula::plugin::HttpClient>& tsClients) {
+StatusOr<std::string> FTIndexUtils::rewriteTSFilter(
+    ObjectPool* pool,
+    bool isEdge,
+    Expression* expr,
+    const std::string& index,
+    const std::vector<nebula::plugin::HttpClient>& tsClients) {
     auto vRet = textSearch(expr, index, tsClients);
     if (!vRet.ok()) {
         return Status::SemanticError("Text search error.");
@@ -88,26 +92,26 @@ const std::string& index, const std::vector<nebula::plugin::HttpClient>& tsClien
 
     std::vector<std::string> values;
     auto tsExpr = static_cast<TextSearchExpression*>(expr);
-    std::vector<std::unique_ptr<Expression>> rels;
+    std::vector<Expression*> rels;
     for (const auto& row : vRet.value()) {
-        std::unique_ptr<RelationalExpression> r;
+        RelationalExpression* relExpr = nullptr;
         if (isEdge) {
-            r = std::make_unique<RelationalExpression>(
-                Expression::Kind::kRelEQ,
-                new EdgePropertyExpression(tsExpr->arg()->from(), tsExpr->arg()->prop()),
-                new ConstantExpression(Value(row)));
+            relExpr = RelationalExpression::makeEQ(
+                pool,
+                EdgePropertyExpression::make(pool, tsExpr->arg()->from(), tsExpr->arg()->prop()),
+                ConstantExpression::make(pool, Value(row)));
         } else {
-            r = std::make_unique<RelationalExpression>(
-                Expression::Kind::kRelEQ,
-                new TagPropertyExpression(tsExpr->arg()->from(), tsExpr->arg()->prop()),
-                new ConstantExpression(Value(row)));
+            relExpr = RelationalExpression::makeEQ(
+                pool,
+                TagPropertyExpression::make(pool, tsExpr->arg()->from(), tsExpr->arg()->prop()),
+                ConstantExpression::make(pool, Value(row)));
         }
-        rels.emplace_back(std::move(r));
+        rels.emplace_back(std::move(relExpr));
     }
     if (rels.size() == 1) {
         return rels[0]->encode();
     }
-    auto newExpr = ExpressionUtils::pushOrs(rels);
+    auto newExpr = ExpressionUtils::pushOrs(pool, rels);
     return newExpr->encode();
 }
 

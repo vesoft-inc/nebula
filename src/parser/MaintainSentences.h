@@ -21,13 +21,13 @@ std::ostream& operator<<(std::ostream& os, meta::cpp2::PropertyType type);
 
 class ColumnProperty final {
 public:
-    using Value = std::variant<bool, std::unique_ptr<Expression>, std::unique_ptr<std::string>>;
+    using Value = std::variant<bool, Expression*, std::unique_ptr<std::string>>;
 
     explicit ColumnProperty(bool nullable = true)
         : v_(nullable) {}
 
     explicit ColumnProperty(Expression *defaultValue = nullptr)
-        : v_(std::unique_ptr<Expression>(defaultValue)) {}
+        : v_(defaultValue) {}
 
     explicit ColumnProperty(std::string *comment = nullptr)
         : v_(std::unique_ptr<std::string>(comment)) {}
@@ -42,12 +42,12 @@ public:
     }
 
     bool isDefaultValue() const {
-        return std::holds_alternative<std::unique_ptr<Expression>>(v_);
+        return std::holds_alternative<Expression*>(v_);
     }
 
     const auto* defaultValue() const {
         DCHECK(isDefaultValue());
-        return std::get<std::unique_ptr<Expression>>(v_).get();
+        return std::get<Expression*>(v_);
     }
 
     bool isComment() const {

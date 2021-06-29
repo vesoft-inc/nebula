@@ -419,7 +419,7 @@ public:
     ConfigRowItem(meta::cpp2::ConfigModule module, std::string* name, Expression* value) {
         module_ = module;
         name_.reset(name);
-        value_.reset(value);
+        value_ = value;
     }
 
     ConfigRowItem(meta::cpp2::ConfigModule module, std::string* name) {
@@ -442,7 +442,7 @@ public:
     }
 
     Expression* getValue() const {
-        return value_.get();
+        return value_;
     }
 
     const UpdateList* getUpdateItems() const {
@@ -454,7 +454,7 @@ public:
 private:
     meta::cpp2::ConfigModule        module_;
     std::unique_ptr<std::string>    name_;
-    std::unique_ptr<Expression>     value_;
+    Expression*                     value_{nullptr};
     std::unique_ptr<UpdateList>     updateItems_;
 };
 

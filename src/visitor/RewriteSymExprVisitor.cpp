@@ -9,44 +9,46 @@
 namespace nebula {
 namespace graph {
 
-RewriteSymExprVisitor::RewriteSymExprVisitor(const std::string &sym, bool isEdge)
-    : sym_(sym), isEdge_(isEdge) {}
+RewriteSymExprVisitor::RewriteSymExprVisitor(ObjectPool *objPool,
+                                             const std::string &sym,
+                                             bool isEdge)
+    : pool_(objPool), sym_(sym), isEdge_(isEdge) {}
 
 void RewriteSymExprVisitor::visit(ConstantExpression *expr) {
     UNUSED(expr);
-    expr_.reset();
+    expr_ = nullptr;
 }
 
 void RewriteSymExprVisitor::visit(UnaryExpression *expr) {
     expr->operand()->accept(this);
     if (expr_) {
-        expr->setOperand(expr_.release());
+        expr->setOperand(expr_);
     }
 }
 
 void RewriteSymExprVisitor::visit(TypeCastingExpression *expr) {
     expr->operand()->accept(this);
     if (expr_) {
-        expr->setOperand(expr_.release());
+        expr->setOperand(expr_);
     }
 }
 
 void RewriteSymExprVisitor::visit(LabelExpression *expr) {
     if (isEdge_) {
-        expr_ = std::make_unique<EdgePropertyExpression>(sym_, expr->name());
+        expr_ = EdgePropertyExpression::make(pool_, sym_, expr->name());
     } else {
-        expr_ = std::make_unique<SourcePropertyExpression>(sym_, expr->name());
+        expr_ = SourcePropertyExpression::make(pool_, sym_, expr->name());
     }
 }
 
 void RewriteSymExprVisitor::visit(LabelAttributeExpression *expr) {
     if (isEdge_) {
-        expr_ = std::make_unique<EdgePropertyExpression>(expr->left()->name(),
-                                                         expr->right()->value().getStr());
+        expr_ = EdgePropertyExpression::make(
+            pool_, expr->left()->name(), expr->right()->value().getStr());
         hasWrongType_ = false;
     } else {
         hasWrongType_ = true;
-        expr_.reset();
+        expr_ = nullptr;
     }
 }
 
@@ -73,7 +75,7 @@ void RewriteSymExprVisitor::visit(LogicalExpression *expr) {
     for (auto i = 0u; i < operands.size(); i++) {
         operands[i]->accept(this);
         if (expr_) {
-            expr->setOperand(i, expr_.release());
+            expr->setOperand(i, expr_);
         }
     }
 }
@@ -94,7 +96,7 @@ void RewriteSymExprVisitor::visit(AggregateExpression *expr) {
     auto* arg = expr->arg();
     arg->accept(this);
     if (expr_) {
-        expr->setArg(std::move(expr_).release());
+        expr->setArg(std::move(expr_));
     }
 }
 
@@ -202,43 +204,43 @@ void RewriteSymExprVisitor::visit(EdgeDstIdExpression *expr) {
 
 void RewriteSymExprVisitor::visit(VertexExpression *expr) {
     UNUSED(expr);
-    expr_.reset();
+    expr_ = nullptr;
 }
 
 void RewriteSymExprVisitor::visit(EdgeExpression *expr) {
     UNUSED(expr);
-    expr_.reset();
+    expr_ = nullptr;
 }
 
 void RewriteSymExprVisitor::visit(ColumnExpression *expr) {
     UNUSED(expr);
-    expr_.reset();
+    expr_ = nullptr;
 }
 
 void RewriteSymExprVisitor::visit(CaseExpression *expr) {
     if (expr->hasCondition()) {
         expr->condition()->accept(this);
         if (expr_) {
-            expr->setCondition(expr_.release());
+            expr->setCondition(expr_);
         }
     }
     if (expr->hasDefault()) {
         expr->defaultResult()->accept(this);
         if (expr_) {
-            expr->setDefault(expr_.release());
+            expr->setDefault(expr_);
         }
     }
     auto &cases = expr->cases();
     for (size_t i = 0; i < cases.size(); ++i) {
-        auto when = cases[i].when.get();
-        auto then = cases[i].then.get();
+        auto when = cases[i].when;
+        auto then = cases[i].then;
         when->accept(this);
         if (expr_) {
-            expr->setWhen(i, expr_.release());
+            expr->setWhen(i, expr_);
         }
         then->accept(this);
         if (expr_) {
-            expr->setThen(i, expr_.release());
+            expr->setThen(i, expr_);
         }
     }
 }
@@ -246,11 +248,11 @@ void RewriteSymExprVisitor::visit(CaseExpression *expr) {
 void RewriteSymExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
     expr->left()->accept(this);
     if (expr_) {
-        expr->setLeft(expr_.release());
+        expr->setLeft(expr_);
     }
     expr->right()->accept(this);
     if (expr_) {
-        expr->setRight(expr_.release());
+        expr->setRight(expr_);
     }
 }
 
@@ -267,18 +269,18 @@ void RewriteSymExprVisitor::visit(PathBuildExpression *expr) {
 void RewriteSymExprVisitor::visit(ListComprehensionExpression *expr) {
     expr->collection()->accept(this);
     if (expr_) {
-        expr->setCollection(expr_.release());
+        expr->setCollection(expr_);
     }
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
         if (expr_) {
-            expr->setFilter(expr_.release());
+            expr->setFilter(expr_);
         }
     }
     if (expr->hasMapping()) {
         expr->mapping()->accept(this);
         if (expr_) {
-            expr->setMapping(expr_.release());
+            expr->setMapping(expr_);
         }
     }
 }
@@ -286,12 +288,12 @@ void RewriteSymExprVisitor::visit(ListComprehensionExpression *expr) {
 void RewriteSymExprVisitor::visit(PredicateExpression *expr) {
     expr->collection()->accept(this);
     if (expr_) {
-        expr->setCollection(expr_.release());
+        expr->setCollection(expr_);
     }
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
         if (expr_) {
-            expr->setFilter(expr_.release());
+            expr->setFilter(expr_);
         }
     }
 }
@@ -299,33 +301,33 @@ void RewriteSymExprVisitor::visit(PredicateExpression *expr) {
 void RewriteSymExprVisitor::visit(ReduceExpression *expr) {
     expr->initial()->accept(this);
     if (expr_) {
-        expr->setInitial(expr_.release());
+        expr->setInitial(expr_);
     }
     expr->collection()->accept(this);
     if (expr_) {
-        expr->setCollection(expr_.release());
+        expr->setCollection(expr_);
     }
     expr->mapping()->accept(this);
     if (expr_) {
-        expr->setMapping(expr_.release());
+        expr->setMapping(expr_);
     }
 }
 
 void RewriteSymExprVisitor::visit(SubscriptRangeExpression *expr) {
     expr->list()->accept(this);
     if (expr_) {
-        expr->setList(expr_.release());
+        expr->setList(expr_);
     }
     if (expr->lo() != nullptr) {
         expr->lo()->accept(this);
         if (expr_) {
-            expr->setLo(expr_.release());
+            expr->setLo(expr_);
         }
     }
     if (expr->hi() != nullptr) {
         expr->hi()->accept(this);
         if (expr_) {
-            expr->setHi(expr_.release());
+            expr->setHi(expr_);
         }
     }
 }

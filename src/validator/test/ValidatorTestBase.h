@@ -47,13 +47,14 @@ protected:
 
     StatusOr<QueryContext*> validate(const std::string& query) {
         VLOG(1) << "query: " << query;
-        auto result = GQLParser().parse(query);
+        auto qctx = buildContext();
+        auto result = GQLParser(qctx).parse(query);
         if (!result.ok()) {
             return std::move(result).status();
         }
-        NG_RETURN_IF_ERROR(AstUtils::reprAstCheck(*result.value()));
+        NG_RETURN_IF_ERROR(AstUtils::reprAstCheck(*result.value(), qctx));
+
         auto sentences = pool_->add(std::move(result).value().release());
-        auto qctx = buildContext();
         NG_RETURN_IF_ERROR(Validator::validate(sentences, qctx));
         return qctx;
     }

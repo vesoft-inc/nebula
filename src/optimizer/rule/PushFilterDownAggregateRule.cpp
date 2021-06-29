@@ -36,7 +36,6 @@ const Pattern& PushFilterDownAggregateRule::pattern() const {
 StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
     OptContext* octx,
     const MatchedResult& matched) const {
-    auto qctx = octx->qctx();
     auto* filterGroupNode = matched.node;
     auto* oldFilterNode = filterGroupNode->node();
     auto deps = matched.dependencies;
@@ -85,11 +84,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
     auto rewriter = [&rewriteMap](const Expression* e) -> Expression* {
         DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
         auto& propName = static_cast<const VariablePropertyExpression*>(e)->prop();
-        return rewriteMap[propName]->clone().release();
+        return rewriteMap[propName]->clone();
     };
     auto* newCondition =
         graph::RewriteVisitor::transform(condition, std::move(matcher), std::move(rewriter));
-    qctx->objPool()->add(newCondition);
     newFilterNode->setCondition(newCondition);
 
     // Exchange planNode

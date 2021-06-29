@@ -93,13 +93,13 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
             canBePushed = canBePushed || canBePushed_;
         }
         if (canBePushed) {
-            auto remainedExpr = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd);
+            auto remainedExpr = LogicalExpression::makeAnd(pool_);
             for (auto i = 0u; i < operands.size(); i++) {
                 if (flags[i]) {
                     continue;
                 }
-                remainedExpr->addOperand(operands[i]->clone().release());
-                expr->setOperand(i, new ConstantExpression(true));
+                remainedExpr->addOperand(operands[i]->clone());
+                expr->setOperand(i, ConstantExpression::make(pool_, true));
             }
             if (remainedExpr->operands().size() > 0) {
                 remainedExpr_ = std::move(remainedExpr);

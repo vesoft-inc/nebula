@@ -226,22 +226,19 @@ private:
 
 class OrderFactor final {
 public:
-    enum OrderType : uint8_t {
-        ASCEND,
-        DESCEND
-    };
+    enum OrderType : uint8_t { ASCEND, DESCEND };
 
-    OrderFactor(Expression *expr, OrderType op) {
-        expr_.reset(expr);
+    OrderFactor(Expression* expr, OrderType op) {
+        expr_ = expr;
         orderType_ = op;
     }
 
     Expression* expr() {
-        return expr_.get();
+        return expr_;
     }
 
-    void setExpr(Expression *expr) {
-        expr_.reset(expr);
+    void setExpr(Expression* expr) {
+        expr_ = expr;
     }
 
     OrderType orderType() {
@@ -251,8 +248,8 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<Expression>                 expr_;
-    OrderType                                   orderType_;
+    Expression* expr_{nullptr};
+    OrderType orderType_;
 };
 
 class OrderFactors final {

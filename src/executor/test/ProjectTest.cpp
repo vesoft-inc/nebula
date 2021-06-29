@@ -52,7 +52,7 @@ protected:
 
 TEST_F(ProjectTest, Project1Col) {
     std::string input = "input_project";
-    auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid");
+    auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid", qctx_.get());
 
     auto* project = Project::make(qctx_.get(), start_, yieldColumns);
     project->setInputVar(input);
@@ -77,8 +77,8 @@ TEST_F(ProjectTest, Project1Col) {
 
 TEST_F(ProjectTest, Project2Col) {
     std::string input = "input_project";
-    auto yieldColumns = getYieldColumns(
-            "YIELD $input_project.vid AS vid, $input_project.col2 AS num");
+    auto yieldColumns =
+        getYieldColumns("YIELD $input_project.vid AS vid, $input_project.col2 AS num", qctx_.get());
     auto* project = Project::make(qctx_.get(), start_, yieldColumns);
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid", "num"});
@@ -103,7 +103,7 @@ TEST_F(ProjectTest, Project2Col) {
 
 TEST_F(ProjectTest, EmptyInput) {
     std::string input = "empty";
-    auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid");
+    auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid", qctx_.get());
     auto* project = Project::make(qctx_.get(), start_, std::move(yieldColumns));
     project->setInputVar(input);
     project->setColNames(std::vector<std::string>{"vid"});

@@ -70,11 +70,11 @@ Status YieldValidator::validateImpl() {
 Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     columns_->addColumn(column);
 
-    auto pool = qctx()->objPool();
+    auto* pool = qctx()->objPool();
     auto colExpr = column->expr();
     DCHECK(colExpr != nullptr);
 
-    auto expr = pool->add(colExpr->clone().release());
+    auto expr = colExpr->clone();
     NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
 
     auto status = deduceExprType(expr);
@@ -83,10 +83,10 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
     auto name = column->name();
     // Constant expression folding must be after type deduction
-    auto foldedExpr = ExpressionUtils::foldConstantExpr(expr, pool);
+    auto foldedExpr = ExpressionUtils::foldConstantExpr(pool, expr);
     NG_RETURN_IF_ERROR(foldedExpr);
     auto foldedExprCopy = std::move(foldedExpr).value()->clone();
-    column->setExpr(foldedExprCopy.release());
+    column->setExpr(foldedExprCopy);
     outputs_.emplace_back(name, type);
     return Status::OK();
 }
@@ -131,7 +131,8 @@ Status YieldValidator::validateImplicitGroupBy() {
 
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
     auto columns = clause->columns();
-    columns_ = qctx_->objPool()->add(new YieldColumns);
+    auto *pool = qctx_->objPool();
+    columns_ = pool->add(new YieldColumns);
     for (auto column : columns) {
         auto expr = DCHECK_NOTNULL(column->expr());
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(expr));
@@ -142,7 +143,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
             // it's always a root of expression.
             if (ipe->prop() == "*") {
                 for (auto &colDef : inputs_) {
-                    auto newExpr = new InputPropertyExpression(colDef.name);
+                    auto newExpr = InputPropertyExpression::make(pool, colDef.name);
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 continue;
@@ -157,7 +158,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
                 }
                 auto &varColDefs = vctx_->getVar(var);
                 for (auto &colDef : varColDefs) {
-                    auto newExpr = new VariablePropertyExpression(var, colDef.name);
+                    auto newExpr = VariablePropertyExpression::make(pool, var, colDef.name);
                     NG_RETURN_IF_ERROR(makeOutputColumn(new YieldColumn(newExpr)));
                 }
                 continue;
@@ -178,7 +179,7 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
     if (filter != nullptr) {
         NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
         auto pool = qctx_->objPool();
-        auto foldRes = ExpressionUtils::foldConstantExpr(filter, pool);
+        auto foldRes = ExpressionUtils::foldConstantExpr(pool, filter);
         NG_RETURN_IF_ERROR(foldRes);
         filterCondition_ = foldRes.value();
     }

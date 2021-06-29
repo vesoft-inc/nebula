@@ -13,7 +13,7 @@
 namespace nebula {
 namespace graph {
 class AggregateTest : public testing::Test {
-   protected:
+protected:
     static void SetUpTestCase() {
         // ======================
         // | col1 | col2 | col3 |
@@ -40,6 +40,8 @@ class AggregateTest : public testing::Test {
         // ----------------------
         input_ = std::make_unique<std::string>("input_agg");
         qctx_ = std::make_unique<QueryContext>();
+        pool_ = qctx_->objPool();
+
         DataSet ds;
         ds.colNames = {"col1", "col2", "col3"};
         for (auto i = 0; i < 10; ++i) {
@@ -64,10 +66,12 @@ class AggregateTest : public testing::Test {
 protected:
     static std::unique_ptr<QueryContext> qctx_;
     static std::unique_ptr<std::string> input_;
+    static ObjectPool* pool_;
 };
 
 std::unique_ptr<QueryContext> AggregateTest::qctx_;
 std::unique_ptr<std::string> AggregateTest::input_;
+ObjectPool* AggregateTest::pool_;
 
 struct RowCmp {
     bool operator()(const Row& lhs, const Row& rhs) {
@@ -83,94 +87,93 @@ struct RowCmp {
     }
 };
 
-#define TEST_AGG_1(FUN, COL, DISTINCT)                                      \
-    std::vector<Expression*> groupKeys;                                     \
-    std::vector<Expression*> groupItems;                                    \
-    auto expr = std::make_unique<InputPropertyExpression>("col1");          \
-    AggregateExpression item((FUN), expr.release(), DISTINCT);              \
-    groupItems.emplace_back(&item);                                         \
-    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
-                                std::move(groupItems));                     \
-    agg->setInputVar(*input_);                                              \
-    agg->setColNames(std::vector<std::string>{COL});                        \
-                                                                            \
-    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());    \
-    auto future = aggExe->execute();                                        \
-    auto status = std::move(future).get();                                  \
-    EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
-    EXPECT_EQ(result.value().getDataSet(), expected);                       \
+#define TEST_AGG_1(FUN, COL, DISTINCT)                                                             \
+    std::vector<Expression*> groupKeys;                                                            \
+    std::vector<Expression*> groupItems;                                                           \
+    auto expr = InputPropertyExpression::make(pool_, "col1");                                      \
+    auto item = AggregateExpression::make(pool_, (FUN), expr, DISTINCT);                           \
+    groupItems.emplace_back(item);                                                                 \
+    auto* agg =                                                                                    \
+        Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));        \
+    agg->setInputVar(*input_);                                                                     \
+    agg->setColNames(std::vector<std::string>{COL});                                               \
+                                                                                                   \
+    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());                           \
+    auto future = aggExe->execute();                                                               \
+    auto status = std::move(future).get();                                                         \
+    EXPECT_TRUE(status.ok());                                                                      \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());                                     \
+    EXPECT_EQ(result.value().getDataSet(), expected);                                              \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 
-#define TEST_AGG_2(FUN, COL, DISTINCT)                                      \
-    std::vector<Expression*> groupKeys;                                     \
-    std::vector<Expression*> groupItems;                                    \
-    auto expr1 = std::make_unique<InputPropertyExpression>("col2");         \
-    auto expr2 = expr1->clone();                                            \
-    groupKeys.emplace_back(expr1.get());                                    \
-    AggregateExpression item((FUN), expr2.release(), DISTINCT);             \
-    groupItems.emplace_back(&item);                                         \
-    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
-                                std::move(groupItems));                     \
-    agg->setInputVar(*input_);                                              \
-    agg->setColNames(std::vector<std::string>{COL});                        \
-                                                                            \
-    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());    \
-    auto future = aggExe->execute();                                        \
-    auto status = std::move(future).get();                                  \
-    EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
-    DataSet sortedDs = result.value().getDataSet();                         \
-    std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());        \
-    EXPECT_EQ(sortedDs, expected);                                          \
+#define TEST_AGG_2(FUN, COL, DISTINCT)                                                             \
+    std::vector<Expression*> groupKeys;                                                            \
+    std::vector<Expression*> groupItems;                                                           \
+    auto expr1 = InputPropertyExpression::make(pool_, "col2");                                     \
+    auto expr2 = expr1->clone();                                                                   \
+    groupKeys.emplace_back(expr1);                                                                 \
+    auto item = AggregateExpression::make(pool_, (FUN), expr2, DISTINCT);                          \
+    groupItems.emplace_back(item);                                                                 \
+    auto* agg =                                                                                    \
+        Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));        \
+    agg->setInputVar(*input_);                                                                     \
+    agg->setColNames(std::vector<std::string>{COL});                                               \
+                                                                                                   \
+    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());                           \
+    auto future = aggExe->execute();                                                               \
+    auto status = std::move(future).get();                                                         \
+    EXPECT_TRUE(status.ok());                                                                      \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());                                     \
+    DataSet sortedDs = result.value().getDataSet();                                                \
+    std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());                               \
+    EXPECT_EQ(sortedDs, expected);                                                                 \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 
-#define TEST_AGG_3(FUN, COL, DISTINCT)                                      \
-    std::vector<Expression*> groupKeys;                                     \
-    std::vector<Expression*> groupItems;                                    \
-    auto expr1 = std::make_unique<InputPropertyExpression>("col2");         \
-    auto expr2 = expr1->clone();                                            \
-    groupKeys.emplace_back(expr1.get());                                    \
-    AggregateExpression item("", expr2.release(), false);                   \
-    groupItems.emplace_back(&item);                                         \
-    auto expr3 = std::make_unique<InputPropertyExpression>("col3");         \
-    groupKeys.emplace_back(expr3.get());                                    \
-    AggregateExpression item1((FUN), expr3.release(), DISTINCT);            \
-    groupItems.emplace_back(&item1);                                        \
-    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
-                                std::move(groupItems));                     \
-    agg->setInputVar(*input_);                                              \
-    agg->setColNames(std::vector<std::string>{"col2", COL});                \
-                                                                            \
-    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());    \
-    auto future = aggExe->execute();                                        \
-    auto status = std::move(future).get();                                  \
-    EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
-    DataSet sortedDs = result.value().getDataSet();                         \
-    std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());        \
-    EXPECT_EQ(sortedDs, expected);                                          \
+#define TEST_AGG_3(FUN, COL, DISTINCT)                                                             \
+    std::vector<Expression*> groupKeys;                                                            \
+    std::vector<Expression*> groupItems;                                                           \
+    auto expr1 = InputPropertyExpression::make(pool_, "col2");                                     \
+    auto expr2 = expr1->clone();                                                                   \
+    groupKeys.emplace_back(expr1);                                                                 \
+    auto item = AggregateExpression::make(pool_, "", expr2, false);                                \
+    groupItems.emplace_back(item);                                                                 \
+    auto expr3 = InputPropertyExpression::make(pool_, "col3");                                     \
+    groupKeys.emplace_back(expr3);                                                                 \
+    auto item1 = AggregateExpression::make(pool_, (FUN), expr3, DISTINCT);                         \
+    groupItems.emplace_back(item1);                                                               \
+    auto* agg =                                                                                    \
+        Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));        \
+    agg->setInputVar(*input_);                                                                     \
+    agg->setColNames(std::vector<std::string>{"col2", COL});                                       \
+                                                                                                   \
+    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());                           \
+    auto future = aggExe->execute();                                                               \
+    auto status = std::move(future).get();                                                         \
+    EXPECT_TRUE(status.ok());                                                                      \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());                                     \
+    DataSet sortedDs = result.value().getDataSet();                                                \
+    std::sort(sortedDs.rows.begin(), sortedDs.rows.end(), RowCmp());                               \
+    EXPECT_EQ(sortedDs, expected);                                                                 \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
 
-#define TEST_AGG_4(FUN, COL, DISTINCT)                                      \
-    std::vector<Expression*> groupKeys;                                     \
-    std::vector<Expression*> groupItems;                                    \
-    auto expr = std::make_unique<ConstantExpression>(1);                    \
-    AggregateExpression item((FUN), expr.release(), DISTINCT); \
-    groupItems.emplace_back(&item);                                         \
-    auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), \
-                                std::move(groupItems));                     \
-    agg->setInputVar(*input_);                                              \
-    agg->setColNames(std::vector<std::string>{COL});                        \
-                                                                            \
-    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());    \
-    auto future = aggExe->execute();                                        \
-    auto status = std::move(future).get();                                  \
-    EXPECT_TRUE(status.ok());                                               \
-    auto& result = qctx_->ectx()->getResult(agg->outputVar());              \
-    EXPECT_EQ(result.value().getDataSet(), expected);                       \
+#define TEST_AGG_4(FUN, COL, DISTINCT)                                                             \
+    std::vector<Expression*> groupKeys;                                                            \
+    std::vector<Expression*> groupItems;                                                           \
+    auto expr = ConstantExpression::make(pool_, 1);                                                \
+    auto item = AggregateExpression::make(pool_, (FUN), expr, DISTINCT);                           \
+    groupItems.emplace_back(item);                                                                 \
+    auto* agg =                                                                                    \
+        Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));        \
+    agg->setInputVar(*input_);                                                                     \
+    agg->setColNames(std::vector<std::string>{COL});                                               \
+                                                                                                   \
+    auto aggExe = std::make_unique<AggregateExecutor>(agg, qctx_.get());                           \
+    auto future = aggExe->execute();                                                               \
+    auto status = std::move(future).get();                                                         \
+    EXPECT_TRUE(status.ok());                                                                      \
+    auto& result = qctx_->ectx()->getResult(agg->outputVar());                                     \
+    EXPECT_EQ(result.value().getDataSet(), expected);                                              \
     EXPECT_EQ(result.state(), Result::State::kSuccess);
-
 
 TEST_F(AggregateTest, Group) {
     {
@@ -300,13 +303,13 @@ TEST_F(AggregateTest, Collect) {
         // items = collect(col1)
         std::vector<Expression*> groupKeys;
         std::vector<Expression*> groupItems;
-        auto expr1 = std::make_unique<InputPropertyExpression>("col1");
+        auto expr1 = InputPropertyExpression::make(pool_, "col1");
         auto expr2 = expr1->clone();
-        groupKeys.emplace_back(expr1.get());
-        AggregateExpression item("COLLECT", expr2.release(), false);
-        groupItems.emplace_back(std::move(&item));
-        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
-                                    std::move(groupItems));
+        groupKeys.emplace_back(expr1);
+        auto item = AggregateExpression::make(pool_, "COLLECT", expr2, false);
+        groupItems.emplace_back(item);
+        auto* agg =
+            Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});
 
@@ -407,11 +410,11 @@ TEST_F(AggregateTest, Collect) {
         // items = collect(distinct col1)
         std::vector<Expression*> groupKeys;
         std::vector<Expression*> groupItems;
-        auto expr = std::make_unique<InputPropertyExpression>("col1");
-        AggregateExpression item("COLLECT", expr.release(), true);
-        groupItems.emplace_back(std::move(&item));
-        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
-                                    std::move(groupItems));
+        auto expr = InputPropertyExpression::make(pool_, "col1");
+        auto item = AggregateExpression::make(pool_, "COLLECT", expr, true);
+        groupItems.emplace_back(item);
+        auto* agg =
+            Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});
 
@@ -467,12 +470,12 @@ TEST_F(AggregateTest, Collect) {
         // items = collect(distinct col1)
         std::vector<Expression*> groupKeys;
         std::vector<Expression*> groupItems;
-        auto expr1 = std::make_unique<InputPropertyExpression>("col1");
+        auto expr1 = InputPropertyExpression::make(pool_, "col1");
         auto expr2 = expr1->clone();
-        AggregateExpression item("COLLECT", expr2.release(), true);
-        groupItems.emplace_back(std::move(&item));
-        auto* agg = Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys),
-                                    std::move(groupItems));
+        auto item = AggregateExpression::make(pool_, "COLLECT", expr2, true);
+        groupItems.emplace_back(item);
+        auto* agg =
+            Aggregate::make(qctx_.get(), nullptr, std::move(groupKeys), std::move(groupItems));
         agg->setInputVar(*input_);
         agg->setColNames(std::vector<std::string>{"list"});
 
@@ -532,7 +535,7 @@ TEST_F(AggregateTest, Collect) {
         // key = col2, col3
         // items = col2, collect(distinct col3)
 
-       TEST_AGG_3("COLLECT", "list", true)
+        TEST_AGG_3("COLLECT", "list", true)
     }
     {
         // ====================================
@@ -797,7 +800,7 @@ TEST_F(AggregateTest, Sum) {
 
         // key = col2
         // items = sum(col2)
-       TEST_AGG_2("SUM", "sum", false)
+        TEST_AGG_2("SUM", "sum", false)
     }
     {
         // ================
@@ -2182,5 +2185,5 @@ TEST_F(AggregateTest, BitXor) {
         TEST_AGG_4("BIT_XOR", "bit_xor", true)
     }
 }
-}  // namespace graph
-}  // namespace nebula
+}   // namespace graph
+}   // namespace nebula

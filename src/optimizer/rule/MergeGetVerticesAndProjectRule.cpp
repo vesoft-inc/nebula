@@ -64,8 +64,7 @@ StatusOr<OptRule::TransformResult> MergeGetVerticesAndProjectRule::transform(
     auto project = static_cast<const Project *>(optProj->node());
     auto newGV = static_cast<GetVertices *>(gv->clone());
     auto column = project->columns()->back();
-    auto qctx = ctx->qctx();
-    auto srcExpr = qctx->objPool()->add(column->expr()->clone().release());
+    auto srcExpr = column->expr()->clone();
     newGV->setSrc(srcExpr);
     newGV->setInputVar(project->inputVar());
     auto newOptGV = OptGroupNode::create(ctx, newGV, optGV->group());

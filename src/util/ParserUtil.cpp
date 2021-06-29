@@ -23,29 +23,32 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
                            const std::string &oldVarName) {
     const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
     qctx->ectx()->setValue(newVarName, Value());
+    auto *pool = qctx->objPool();
 
     auto matcher = [](const Expression *expr) -> bool {
         return expr->kind() == Expression::Kind::kLabel ||
                expr->kind() == Expression::Kind::kLabelAttribute;
     };
-    auto rewriter = [&oldVarName, &newVarName](const Expression *expr) {
+
+    auto rewriter = [&, pool, newVarName](const Expression *expr) {
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
             if (label->name() == oldVarName) {
-                ret = new VariableExpression(newVarName, true);
+                ret = VariableExpression::make(pool, newVarName, true);
             } else {
-                ret = label->clone().release();
+                ret = label->clone();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
             if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(new VariableExpression(newVarName, true),
-                                              new ConstantExpression(value));
+                ret = AttributeExpression::make(pool,
+                                                VariableExpression::make(pool, newVarName, true),
+                                                ConstantExpression::make(pool, value));
             } else {
-                ret = la->clone().release();
+                ret = la->clone();
             }
         }
         return ret;
@@ -72,29 +75,32 @@ void ParserUtil::rewritePred(QueryContext *qctx,
                              const std::string &oldVarName) {
     const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
     qctx->ectx()->setValue(newVarName, Value());
+    auto *pool = qctx->objPool();
 
     auto matcher = [](const Expression *expr) -> bool {
         return expr->kind() == Expression::Kind::kLabel ||
                expr->kind() == Expression::Kind::kLabelAttribute;
     };
-    auto rewriter = [&oldVarName, &newVarName](const Expression *expr) {
+
+    auto rewriter = [&](const Expression *expr) {
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
             if (label->name() == oldVarName) {
-                ret = new VariableExpression(newVarName, true);
+                ret = VariableExpression::make(pool, newVarName, true);
             } else {
-                ret = label->clone().release();
+                ret = label->clone();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
             if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(new VariableExpression(newVarName, true),
-                                              new ConstantExpression(value));
+                ret = AttributeExpression::make(pool,
+                                                VariableExpression::make(pool, newVarName, true),
+                                                ConstantExpression::make(pool, value));
             } else {
-                ret = la->clone().release();
+                ret = la->clone();
             }
         }
         return ret;
@@ -117,35 +123,38 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
     qctx->ectx()->setValue(newAccName, Value());
     const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
     qctx->ectx()->setValue(newVarName, Value());
+    auto *pool = qctx->objPool();
 
     auto matcher = [](const Expression *expr) -> bool {
         return expr->kind() == Expression::Kind::kLabel ||
                expr->kind() == Expression::Kind::kLabelAttribute;
     };
-    auto rewriter = [oldAccName, newAccName, oldVarName, newVarName](const Expression *expr) {
+    auto rewriter = [&](const Expression *expr) {
         Expression *ret = nullptr;
         if (expr->kind() == Expression::Kind::kLabel) {
             auto *label = static_cast<const LabelExpression *>(expr);
             if (label->name() == oldAccName) {
-                ret = new VariableExpression(newAccName, true);
+                ret = VariableExpression::make(pool, newAccName, true);
             } else if (label->name() == oldVarName) {
-                ret = new VariableExpression(newVarName, true);
+                ret = VariableExpression::make(pool, newVarName, true);
             } else {
-                ret = label->clone().release();
+                ret = label->clone();
             }
         } else {
             DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
             auto *la = static_cast<const LabelAttributeExpression *>(expr);
             if (la->left()->name() == oldAccName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(new VariableExpression(newAccName, true),
-                                              new ConstantExpression(value));
+                ret = AttributeExpression::make(pool,
+                                                VariableExpression::make(pool, newAccName, true),
+                                                ConstantExpression::make(pool, value));
             } else if (la->left()->name() == oldVarName) {
                 const auto &value = la->right()->value();
-                ret = new AttributeExpression(new VariableExpression(newVarName, true),
-                                              new ConstantExpression(value));
+                ret = AttributeExpression::make(pool,
+                                                VariableExpression::make(pool, newVarName, true),
+                                                ConstantExpression::make(pool, value));
             } else {
-                ret = la->clone().release();
+                ret = la->clone();
             }
         }
         return ret;

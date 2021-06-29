@@ -11,15 +11,31 @@
 
 namespace nebula {
 
-static StatusOr<std::unique_ptr<Sentence>> parse(const std::string &query) {
-    GQLParser parser;
-    auto result = parser.parse(query);
-    NG_RETURN_IF_ERROR(result);
-    NG_RETURN_IF_ERROR(graph::AstUtils::reprAstCheck(*result.value()));
-    return result;
-}
+using graph::QueryContext;
+class ParserTest : public ::testing::Test {
+public:
+    void SetUp() override {
+        qctx_ = std::make_unique<graph::QueryContext>();
+    }
+    void TearDown() override {
+        qctx_.reset();
+    }
 
-TEST(Parser, TestSchemaCreation) {
+protected:
+    StatusOr<std::unique_ptr<Sentence>> parse(const std::string& query) {
+        auto* qctx = qctx_.get();
+        GQLParser parser(qctx);
+        auto result = parser.parse(query);
+        NG_RETURN_IF_ERROR(result);
+        NG_RETURN_IF_ERROR(graph::AstUtils::reprAstCheck(*result.value(), qctx));
+        return result;
+    }
+
+protected:
+    std::unique_ptr<QueryContext> qctx_;
+};
+
+TEST_F(ParserTest, TestSchemaCreation) {
     // All type
     {
         std::string query = "CREATE TAG person(name STRING, age INT8, count INT16, "
@@ -78,7 +94,7 @@ TEST(Parser, TestSchemaCreation) {
     }
 }
 
-TEST(Parser, Go) {
+TEST_F(ParserTest, Go) {
     {
         std::string query = "GO FROM \"1\" OVER friend";
         auto result = parse(query);
@@ -155,7 +171,7 @@ TEST(Parser, Go) {
     }
 }
 
-TEST(Parser, SpaceOperation) {
+TEST_F(ParserTest, SpaceOperation) {
     {
         std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
         auto result = parse(query);
@@ -259,7 +275,7 @@ TEST(Parser, SpaceOperation) {
     }
 }
 
-TEST(Parser, TagOperation) {
+TEST_F(ParserTest, TagOperation) {
     {
         std::string query = "CREATE TAG person(name string, age int, "
                             "married bool, salary double)";
@@ -347,7 +363,7 @@ TEST(Parser, TagOperation) {
     }
 }
 
-TEST(Parser, EdgeOperation) {
+TEST_F(ParserTest, EdgeOperation) {
     {
         std::string query = "CREATE EDGE e1(name string, age int, "
                             "married bool, salary double)";
@@ -429,7 +445,7 @@ TEST(Parser, EdgeOperation) {
     }
 }
 // Column space format test, expected SyntaxError
-TEST(Parser, ColumnSpacesTest) {
+TEST_F(ParserTest, ColumnSpacesTest) {
     {
         std::string query = "CREATE TAG person(name, age, married bool)";
         auto result = parse(query);
@@ -490,7 +506,7 @@ TEST(Parser, ColumnSpacesTest) {
     }
 }
 
-TEST(Parser, IndexOperation) {
+TEST_F(ParserTest, IndexOperation) {
     {
         std::string query = "CREATE TAG INDEX empty_field_index ON person()";
         auto result = parse(query);
@@ -626,7 +642,7 @@ TEST(Parser, IndexOperation) {
     }
 }
 
-TEST(Parser, Set) {
+TEST_F(ParserTest, Set) {
     {
         std::string query = "GO FROM \"1\" OVER friend INTERSECT "
                             "GO FROM \"2\" OVER friend";
@@ -677,7 +693,7 @@ TEST(Parser, Set) {
     }
 }
 
-TEST(Parser, Pipe) {
+TEST_F(ParserTest, Pipe) {
     {
         std::string query = "GO FROM \"1\" OVER friend | "
                             "GO FROM \"2\" OVER friend | "
@@ -694,7 +710,7 @@ TEST(Parser, Pipe) {
     }
 }
 
-TEST(Parser, InsertVertex) {
+TEST_F(ParserTest, InsertVertex) {
     {
         std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
                             "VALUES \"Tom\":(\"Tom\", 30, true, 3.14, 1551331900)";
@@ -780,7 +796,7 @@ TEST(Parser, InsertVertex) {
     }
 }
 
-TEST(Parser, UpdateVertex) {
+TEST_F(ParserTest, UpdateVertex) {
     {
         std::string query = "UPDATE VERTEX \"12345\" "
                             "SET person.name=\"Tome\", person.age=30, "
@@ -863,7 +879,7 @@ TEST(Parser, UpdateVertex) {
     }
 }
 
-TEST(Parser, InsertEdge) {
+TEST_F(ParserTest, InsertEdge) {
     {
         std::string query = "INSERT EDGE transfer(amount, time_) "
                             "VALUES \"12345\"->\"54321\":(3.75, 1537408527)";
@@ -924,7 +940,7 @@ TEST(Parser, InsertEdge) {
     }
 }
 
-TEST(Parser, UpdateEdge) {
+TEST_F(ParserTest, UpdateEdge) {
     {
         std::string query = "UPDATE EDGE \"12345\" -> \"54321\" OF transfer "
                             "SET amount=3.14, time_=1537408527";
@@ -986,7 +1002,7 @@ TEST(Parser, UpdateEdge) {
     }
 }
 
-TEST(Parser, DeleteVertex) {
+TEST_F(ParserTest, DeleteVertex) {
     {
         std::string query = "DELETE VERTEX \"12345\"";
         auto result = parse(query);
@@ -1025,7 +1041,7 @@ TEST(Parser, DeleteVertex) {
     }
 }
 
-TEST(Parser, DeleteEdge) {
+TEST_F(ParserTest, DeleteEdge) {
     {
         std::string query = "DELETE EDGE transfer \"12345\" -> \"5432\"";
         auto result = parse(query);
@@ -1053,7 +1069,7 @@ TEST(Parser, DeleteEdge) {
     }
 }
 
-TEST(Parser, FetchVertex) {
+TEST_F(ParserTest, FetchVertex) {
     {
         std::string query = "FETCH PROP ON person \"1\"";
         auto result = parse(query);
@@ -1153,7 +1169,7 @@ TEST(Parser, FetchVertex) {
     }
 }
 
-TEST(Parser, FetchEdge) {
+TEST_F(ParserTest, FetchEdge) {
     {
         std::string query = "FETCH PROP ON transfer \"12345\" -> \"54321\"";
         auto result = parse(query);
@@ -1193,7 +1209,7 @@ TEST(Parser, FetchEdge) {
     }
 }
 
-TEST(Parser, Lookup) {
+TEST_F(ParserTest, Lookup) {
     {
         std::string query = "LOOKUP ON person";
         auto result = parse(query);
@@ -1222,7 +1238,7 @@ TEST(Parser, Lookup) {
     }
 }
 
-TEST(Parser, subgraph) {
+TEST_F(ParserTest, subgraph) {
     {
         std::string query = "GET SUBGRAPH FROM \"TOM\"";
         auto result = parse(query);
@@ -1275,7 +1291,7 @@ TEST(Parser, subgraph) {
     }
 }
 
-TEST(Parser, AdminOperation) {
+TEST_F(ParserTest, AdminOperation) {
     {
         std::string query = "SHOW HOSTS";
         auto result = parse(query);
@@ -1383,7 +1399,7 @@ TEST(Parser, AdminOperation) {
     }
 }
 
-TEST(Parser, UserOperation) {
+TEST_F(ParserTest, UserOperation) {
     {
         std::string query = "CREATE USER user1";
         auto result = parse(query);
@@ -1495,7 +1511,7 @@ TEST(Parser, UserOperation) {
     }
 }
 
-TEST(Parser, UnreservedKeywords) {
+TEST_F(ParserTest, UnreservedKeywords) {
     {
         std::string query = "CREATE TAG tag1(space string, spaces string, "
                             "email string, password string, roles string, uuid int, "
@@ -1552,7 +1568,7 @@ TEST(Parser, UnreservedKeywords) {
     }
 }
 
-TEST(Parser, Annotation) {
+TEST_F(ParserTest, Annotation) {
     {
         std::string query = "show spaces /* test comment....";
         auto result = parse(query);
@@ -1595,7 +1611,7 @@ TEST(Parser, Annotation) {
     }
 }
 
-TEST(Parser, DownloadAndIngest) {
+TEST_F(ParserTest, DownloadAndIngest) {
     {
         std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"";
         auto result = parse(query);
@@ -1608,7 +1624,7 @@ TEST(Parser, DownloadAndIngest) {
     }
 }
 
-TEST(Parser, Agg) {
+TEST_F(ParserTest, Agg) {
     {
         std::string query = "ORDER BY $-.id";
         auto result = parse(query);
@@ -1658,7 +1674,7 @@ TEST(Parser, Agg) {
     }
 }
 
-TEST(Parser, ReentrantRecoveryFromFailure) {
+TEST_F(ParserTest, ReentrantRecoveryFromFailure) {
     {
         std::string query = "USE dumy tag_name";
         ASSERT_FALSE(parse(query).ok());
@@ -1670,7 +1686,7 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
-TEST(Parser, IllegalCharacter) {
+TEST_F(ParserTest, IllegalCharacter) {
     {
         std::string query = "USE space；";
         ASSERT_FALSE(parse(query).ok());
@@ -1681,7 +1697,7 @@ TEST(Parser, IllegalCharacter) {
     }
 }
 
-TEST(Parser, Distinct) {
+TEST_F(ParserTest, Distinct) {
     {
         std::string query = "GO FROM \"1\" OVER friend "
                             "YIELD DISTINCT friend.name as name, friend.age as age";
@@ -1704,7 +1720,7 @@ TEST(Parser, Distinct) {
     }
 }
 
-TEST(Parser, ConfigOperation) {
+TEST_F(ParserTest, ConfigOperation) {
     {
         std::string query = "SHOW CONFIGS";
         auto result = parse(query);
@@ -1765,7 +1781,7 @@ TEST(Parser, ConfigOperation) {
     }
 }
 
-TEST(Parser, BalanceOperation) {
+TEST_F(ParserTest, BalanceOperation) {
     {
         std::string query = "BALANCE LEADER";
         auto result = parse(query);
@@ -1803,7 +1819,7 @@ TEST(Parser, BalanceOperation) {
     }
 }
 
-TEST(Parser, CrashByFuzzer) {
+TEST_F(ParserTest, CrashByFuzzer) {
     {
         std::string query = ";YIELD\nI41( ,1)GEGE.INGEST";
         auto result = parse(query);
@@ -1811,7 +1827,7 @@ TEST(Parser, CrashByFuzzer) {
     }
 }
 
-TEST(Parser, FindPath) {
+TEST_F(ParserTest, FindPath) {
     {
         std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like";
         auto result = parse(query);
@@ -1834,7 +1850,7 @@ TEST(Parser, FindPath) {
     }
 }
 
-TEST(Parser, Limit) {
+TEST_F(ParserTest, Limit) {
     {
         std::string query = "GO FROM \"1\" OVER work | LIMIT 1";
         auto result = parse(query);
@@ -1858,7 +1874,7 @@ TEST(Parser, Limit) {
     }
 }
 
-TEST(Parser, GroupBy) {
+TEST_F(ParserTest, GroupBy) {
     // All fun succeed
     {
         std::string query = "GO FROM \"1\" OVER work "
@@ -1948,7 +1964,7 @@ TEST(Parser, GroupBy) {
     }
 }
 
-TEST(Parser, ErrorMsg) {
+TEST_F(ParserTest, ErrorMsg) {
     {
         std::string query = "CREATE SPACE " + std::string(4097, 'A');
         auto result = parse(query);
@@ -2099,7 +2115,7 @@ TEST(Parser, ErrorMsg) {
     }
 }
 
-TEST(Parser, UseReservedKeyword) {
+TEST_F(ParserTest, UseReservedKeyword) {
     {
         std::string query = "CREATE TAG tag()";
         auto result = parse(query);
@@ -2130,7 +2146,7 @@ TEST(Parser, UseReservedKeyword) {
     }
 }
 
-TEST(Parser, TypeCast) {
+TEST_F(ParserTest, TypeCast) {
     {
         std::string query = "YIELD (INT)\"123\"";
         auto result = parse(query);
@@ -2218,7 +2234,7 @@ TEST(Parser, TypeCast) {
     }
 }
 
-TEST(Parser, Match) {
+TEST_F(ParserTest, Match) {
     {
         std::string query = "MATCH () -- () RETURN *";
         auto result = parse(query);
@@ -2441,7 +2457,7 @@ TEST(Parser, Match) {
     }
 }
 
-TEST(Parser, MatchErrorCheck) {
+TEST_F(ParserTest, MatchErrorCheck) {
     {
         std::string query = "MATCH (v:player) WHERE count(v)>1 RETURN v";
         auto result = parse(query);
@@ -2452,7 +2468,7 @@ TEST(Parser, MatchErrorCheck) {
     }
 }
 
-TEST(Parser, MatchMultipleTags) {
+TEST_F(ParserTest, MatchMultipleTags) {
     {
         std::string query = "MATCH (a:person:player) --> (b) RETURN *";
         auto result = parse(query);
@@ -2482,7 +2498,7 @@ TEST(Parser, MatchMultipleTags) {
     }
 }
 
-TEST(Parser, MatchListSubscriptRange) {
+TEST_F(ParserTest, MatchListSubscriptRange) {
     {
         std::string query = "WITH [0, 1, 2] AS list RETURN list[0..] AS l";
         auto result = parse(query);
@@ -2500,7 +2516,7 @@ TEST(Parser, MatchListSubscriptRange) {
     }
 }
 
-TEST(Parser, Zone) {
+TEST_F(ParserTest, Zone) {
     {
         std::string query = "SHOW GROUPS";
         auto result = parse(query);
@@ -2573,7 +2589,7 @@ TEST(Parser, Zone) {
     }
 }
 
-TEST(Parser, FullText) {
+TEST_F(ParserTest, FullText) {
     {
         std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\")";
         auto result = parse(query);
@@ -2711,7 +2727,7 @@ TEST(Parser, FullText) {
     }
 }
 
-TEST(Parser, FullTextServiceTest) {
+TEST_F(ParserTest, FullTextServiceTest) {
     {
         std::string query = "ADD LISTENER ELASTICSEARCH 127.0.0.1:12000";
         auto result = parse(query);
@@ -2764,23 +2780,23 @@ TEST(Parser, FullTextServiceTest) {
         ASSERT_FALSE(result.ok());
     }
     {
-        GQLParser parser;
+        // GQLParser parser(qctx.get());
         std::string query = "SHOW SESSIONS";
-        auto result = parser.parse(query);
+        auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ(result.value()->toString(), "SHOW SESSIONS");
     }
     {
-        GQLParser parser;
+        // GQLParser parser(qctx.get());
         std::string query = "SHOW SESSION 123";
-        auto result = parser.parse(query);
+        auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ(result.value()->toString(), "SHOW SESSION 123");
     }
 }
 
-TEST(Parser, JobTest) {
-    auto checkTest = [] (const std::string& query, const std::string expectedStr) {
+TEST_F(ParserTest, JobTest) {
+    auto checkTest = [&, this] (const std::string& query, const std::string expectedStr) {
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << query << ":" << result.status();
         ASSERT_EQ(result.value()->toString(), expectedStr);

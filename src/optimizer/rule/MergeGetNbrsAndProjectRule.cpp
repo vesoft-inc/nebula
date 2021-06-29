@@ -63,10 +63,9 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
     DCHECK_EQ(optProj->node()->kind(), PlanNode::Kind::kProject);
     auto gn = static_cast<const GetNeighbors *>(optGN->node());
     auto project = static_cast<const Project *>(optProj->node());
-    auto qctx = ctx->qctx();
     auto newGN = static_cast<GetNeighbors *>(gn->clone());
     auto column = project->columns()->back();
-    auto srcExpr = qctx->objPool()->add(column->expr()->clone().release());
+    auto srcExpr = column->expr()->clone();
     newGN->setSrc(srcExpr);
     newGN->setInputVar(project->inputVar());
     auto newOptGV = OptGroupNode::create(ctx, newGN, optGN->group());

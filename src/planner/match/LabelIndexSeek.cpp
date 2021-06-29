@@ -88,10 +88,11 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
     // This if-block is a patch for or-filter-embeding to avoid OOM,
     // and it should be converted to an `optRule` after the match validator is refactored
     auto& whereCtx = matchClauseCtx->where;
+    auto* pool = matchClauseCtx->qctx->objPool();
     if (whereCtx && whereCtx->filter) {
         auto* filter = whereCtx->filter;
         const auto& nodeAlias = nodeCtx->info->alias;
-        auto* objPool = matchClauseCtx->qctx->objPool();
+
         if (filter->kind() == Expression::Kind::kLogicalOr) {
             auto labelExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
             bool labelMatched = true;
@@ -106,7 +107,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
                 auto flattenFilter = ExpressionUtils::flattenInnerLogicalExpr(filter);
                 DCHECK_EQ(flattenFilter->kind(), Expression::Kind::kLogicalOr);
                 auto& filterItems =
-                    static_cast<LogicalExpression*>(flattenFilter.get())->operands();
+                    static_cast<LogicalExpression*>(flattenFilter)->operands();
                 auto canBeEmbeded = [](Expression::Kind k) -> bool {
                     return k == Expression::Kind::kRelEQ || k == Expression::Kind::kRelLT ||
                            k == Expression::Kind::kRelLE || k == Expression::Kind::kRelGT ||
@@ -120,8 +121,8 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
                     }
                 }
                 if (canBeEmbeded2IndexScan) {
-                    auto* srcFilter = objPool->add(
-                        ExpressionUtils::rewriteLabelAttr2TagProp(flattenFilter.get()));
+                    auto* srcFilter =
+                        ExpressionUtils::rewriteLabelAttr2TagProp(pool, flattenFilter);
                     storage::cpp2::IndexQueryContext ctx;
                     ctx.set_filter(Expression::encode(*srcFilter));
                     auto context =
@@ -134,7 +135,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
         }
     }
     // initialize start expression in project node
-    nodeCtx->initialExpr.reset(ExpressionUtils::newVarPropExpr(kVid));
+    nodeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
     return plan;
 }
 
@@ -165,7 +166,9 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
             columnsName.emplace_back(kDst);
             break;
     }
-    auto scan = IndexScan::make(matchClauseCtx->qctx,
+
+    auto* qctx = matchClauseCtx->qctx;
+    auto scan = IndexScan::make(qctx,
                                 nullptr,
                                 matchClauseCtx->space.id,
                                 std::move(contexts),
@@ -176,26 +179,25 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     plan.tail = scan;
     plan.root = scan;
 
+    auto* pool = qctx->objPool();
     if (edgeCtx->scanInfo.direction == MatchEdge::Direction::BOTH) {
         // merge the src,dst to one column
-        auto *yieldColumns = matchClauseCtx->qctx->objPool()->makeAndAdd<YieldColumns>();
-        auto *exprList = new ExpressionList();
-        exprList->add(new ColumnExpression(0));  // src
-        exprList->add(new ColumnExpression(1));  // dst
-        yieldColumns->addColumn(new YieldColumn(new ListExpression(exprList)));
-        auto *project = Project::make(matchClauseCtx->qctx,
-                                      scan,
-                                      yieldColumns);
+        auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+        auto* exprList = ExpressionList::make(pool);
+        exprList->add(ColumnExpression::make(pool, 0));   // src
+        exprList->add(ColumnExpression::make(pool, 1));   // dst
+        yieldColumns->addColumn(new YieldColumn(ListExpression::make(pool, exprList)));
+        auto* project = Project::make(qctx, scan, yieldColumns);
         project->setColNames({kVid});
 
-        auto* unwindExpr = matchClauseCtx->qctx->objPool()->add(new ColumnExpression(0));
+        auto* unwindExpr = ColumnExpression::make(pool, 0);
         auto* unwind = Unwind::make(matchClauseCtx->qctx, project, unwindExpr, kVid);
         unwind->setColNames({"vidList", kVid});
         plan.root = unwind;
     }
 
     // initialize start expression in project node
-    edgeCtx->initialExpr.reset(ExpressionUtils::newVarPropExpr(kVid));
+    edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
     return plan;
 }
 

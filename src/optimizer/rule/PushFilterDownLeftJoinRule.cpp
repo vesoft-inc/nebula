@@ -71,9 +71,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
         }
         return true;
     };
-    std::unique_ptr<Expression> filterPicked;
-    std::unique_ptr<Expression> filterUnpicked;
-    graph::ExpressionUtils::splitFilter(condition, picker, &filterPicked, &filterUnpicked);
+    Expression* filterPicked = nullptr;
+    Expression* filterUnpicked = nullptr;
+    graph::ExpressionUtils::splitFilter(objPool, condition, picker, &filterPicked, &filterUnpicked);
 
     if (!filterPicked) {
         return TransformResult::noTransform();
@@ -83,8 +83,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     auto* newLeftFilterNode = graph::Filter::make(
         octx->qctx(),
         const_cast<graph::PlanNode*>(oldLeftJoinNode->dep()),
-        objPool->add(
-            graph::ExpressionUtils::rewriteInnerVar(filterPicked.get(), leftVar.first).release()));
+        graph::ExpressionUtils::rewriteInnerVar(objPool, filterPicked, leftVar.first));
     newLeftFilterNode->setInputVar(leftVar.first);
     newLeftFilterNode->setColNames(leftVarColNames);
     auto newFilterGroup = OptGroup::create(octx);
@@ -100,8 +99,8 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     const std::vector<Expression*>& hashKeys = oldLeftJoinNode->hashKeys();
     std::vector<Expression*> newHashKeys;
     for (auto* k : hashKeys) {
-        newHashKeys.emplace_back(objPool->add(
-            graph::ExpressionUtils::rewriteInnerVar(k, newLeftFilterOutputVar).release()));
+        newHashKeys.emplace_back(
+            graph::ExpressionUtils::rewriteInnerVar(objPool, k, newLeftFilterOutputVar));
     }
     newLeftJoinNode->setHashKeys(newHashKeys);
 
@@ -110,7 +109,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     if (filterUnpicked) {
         auto* newAboveFilterNode = graph::Filter::make(octx->qctx(), newLeftJoinNode);
         newAboveFilterNode->setOutputVar(oldFilterNode->outputVar());
-        newAboveFilterNode->setCondition(objPool->add(filterUnpicked.release()));
+        newAboveFilterNode->setCondition(filterUnpicked);
         auto newAboveFilterGroupNode =
             OptGroupNode::create(octx, newAboveFilterNode, filterGroupNode->group());
 
@@ -127,7 +126,6 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
         newLeftJoinGroupNode->setDeps({newFilterGroup});
         result.newGroupNodes.emplace_back(newLeftJoinGroupNode);
     }
-
     return result;
 }
 

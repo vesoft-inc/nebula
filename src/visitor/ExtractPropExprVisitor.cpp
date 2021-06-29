@@ -102,7 +102,7 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
     auto found = propExprColMap_.find(propExpr->toString());
     if (found == propExprColMap_.end()) {
         auto newExpr = propExpr->clone();
-        auto col = new YieldColumn(newExpr.release(), expr->prop());
+        auto col = new YieldColumn(newExpr, expr->prop());
         propExprColMap_.emplace(propExpr->toString(), col);
         inputPropCols_->addColumn(col);
     }
@@ -154,7 +154,7 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
     auto found = propExprColMap_.find(propExpr->toString());
     if (found == propExprColMap_.end()) {
         auto newExpr = propExpr->clone();
-        auto col = new YieldColumn(newExpr.release(), vctx_->anonColGen()->getCol());
+        auto col = new YieldColumn(newExpr, vctx_->anonColGen()->getCol());
         propExprColMap_.emplace(propExpr->toString(), col);
         srcAndEdgePropCols_->addColumn(col);
     }
@@ -192,7 +192,7 @@ void ExtractPropExprVisitor::visit(DestPropertyExpression* expr) {
     auto found = propExprColMap_.find(expr->toString());
     if (found == propExprColMap_.end()) {
         auto newExpr = expr->clone();
-        auto col = new YieldColumn(newExpr.release(), vctx_->anonColGen()->getCol());
+        auto col = new YieldColumn(newExpr, vctx_->anonColGen()->getCol());
         propExprColMap_.emplace(expr->toString(), col);
         dstPropCols_->addColumn(col);
     }

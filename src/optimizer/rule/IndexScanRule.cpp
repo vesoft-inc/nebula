@@ -45,7 +45,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
     } else {
         FilterItems items;
         ScanKind kind;
-        NG_RETURN_IF_ERROR(analyzeExpression(filter.get(), &items, &kind, isEdge(groupNode)));
+        NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, isEdge(groupNode)));
         NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
     }
 
@@ -302,11 +302,10 @@ GraphSpaceID IndexScanRule::spaceId(const OptGroupNode *groupNode) const {
     return in->space();
 }
 
-std::unique_ptr<Expression>
-IndexScanRule::filterExpr(const OptGroupNode *groupNode) const {
-    auto in = static_cast<const IndexScan *>(groupNode->node());
+Expression* IndexScanRule::filterExpr(const OptGroupNode* groupNode) const {
+    auto in = static_cast<const IndexScan*>(groupNode->node());
     auto qct = in->queryContext();
-    // The initial IndexScan plan node has only zeor or one queryContext.
+    // The initial IndexScan plan node has only zero or one queryContext.
     // TODO(yee): Move this condition to match interface
     if (qct == nullptr) {
         return nullptr;
@@ -316,7 +315,8 @@ IndexScanRule::filterExpr(const OptGroupNode *groupNode) const {
         LOG(ERROR) << "Index Scan plan node error";
         return nullptr;
     }
-    return Expression::decode(qct->begin()->get_filter());
+    auto* pool = in->qctx()->objPool();
+    return Expression::decode(pool, qct->begin()->get_filter());
 }
 
 Status IndexScanRule::analyzeExpression(Expression* expr,

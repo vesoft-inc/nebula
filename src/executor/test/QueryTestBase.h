@@ -128,8 +128,8 @@ protected:
         }
     }
 
-    YieldSentence* getYieldSentence(const std::string &query) {
-        auto ret = GQLParser().parse(query);
+    YieldSentence* getYieldSentence(const std::string& query, QueryContext* qctx) {
+        auto ret = GQLParser(qctx).parse(query);
         CHECK(ret.ok()) << ret.status();
         sentences_ = std::move(ret).value();
         CHECK_EQ(sentences_->kind(), Sentence::Kind::kSequential);
@@ -139,20 +139,19 @@ protected:
         return static_cast<YieldSentence*>(sens[0]);
     }
 
-    YieldColumns* getYieldColumns(const std::string &query) {
-        auto yieldSentence = getYieldSentence(query);
+    YieldColumns* getYieldColumns(const std::string& query, QueryContext* qctx) {
+        auto yieldSentence = getYieldSentence(query, qctx);
         CHECK(yieldSentence);
         return yieldSentence->yieldColumns();
     }
 
-    Expression* getYieldFilter(const std::string &query) {
-        auto yieldSentence = getYieldSentence(query);
+    Expression* getYieldFilter(const std::string& query, QueryContext* qctx) {
+        auto yieldSentence = getYieldSentence(query, qctx);
         CHECK(yieldSentence);
         auto where = yieldSentence->where();
         CHECK(where);
         return where->filter();
     }
-
 
 protected:
     std::unique_ptr<QueryContext>         qctx_;

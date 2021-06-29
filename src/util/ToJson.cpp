@@ -89,7 +89,8 @@ folly::dynamic toJson(const meta::cpp2::ColumnDef &column) {
     }
     if (column.default_value_ref().has_value()) {
         graph::QueryExpressionContext ctx;
-        auto value = Expression::decode(*column.default_value_ref());
+        ObjectPool tempPool;
+        auto value = Expression::decode(&tempPool, *column.default_value_ref());
         obj.insert("defaultValue", value->toString());
     }
     return obj;
@@ -245,7 +246,9 @@ folly::dynamic toJson(const storage::cpp2::Expr &expr) {
 folly::dynamic toJson(const storage::cpp2::IndexQueryContext &iqc) {
     folly::dynamic obj = folly::dynamic::object();
     obj.insert("index_id", iqc.get_index_id());
-    auto filter = iqc.get_filter().empty() ? "" : Expression::decode(iqc.get_filter())->toString();
+    ObjectPool tempPool;
+    auto filter =
+        iqc.get_filter().empty() ? "" : Expression::decode(&tempPool, iqc.get_filter())->toString();
     obj.insert("filter", filter);
     obj.insert("columnHints", toJson(iqc.get_column_hints()));
     return obj;

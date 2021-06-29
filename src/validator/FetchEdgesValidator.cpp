@@ -66,7 +66,8 @@ Status FetchEdgesValidator::toPlan() {
         }
     } else {
         auto *columns = qctx_->objPool()->add(new YieldColumns());
-        columns->addColumn(new YieldColumn(new EdgeExpression(), "edges_"));
+        auto *pool = qctx_->objPool();
+        columns->addColumn(new YieldColumn(EdgeExpression::make(pool), "edges_"));
         current = Project::make(qctx_, current, columns);
     }
     root_ = current;
@@ -164,10 +165,11 @@ Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield)
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType_);
     // insert the reserved properties expression be compatible with 1.0
+    auto *pool = qctx_->objPool();
     auto *newYieldColumns = new YieldColumns();
-    newYieldColumns->addColumn(new YieldColumn(new EdgeSrcIdExpression(edgeTypeName_)));
-    newYieldColumns->addColumn(new YieldColumn(new EdgeDstIdExpression(edgeTypeName_)));
-    newYieldColumns->addColumn(new YieldColumn(new EdgeRankExpression(edgeTypeName_)));
+    newYieldColumns->addColumn(new YieldColumn(EdgeSrcIdExpression::make(pool, edgeTypeName_)));
+    newYieldColumns->addColumn(new YieldColumn(EdgeDstIdExpression::make(pool, edgeTypeName_)));
+    newYieldColumns->addColumn(new YieldColumn(EdgeRankExpression::make(pool, edgeTypeName_)));
     for (auto col : yield->columns()) {
         newYieldColumns->addColumn(col->clone().release());
     }
@@ -180,7 +182,7 @@ Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield)
     propsName.reserve(newYield_->columns().size());
     dedup_ = newYield_->isDistinct();
     for (auto col : newYield_->columns()) {
-        col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
+        col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, col->expr()));
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
         const auto *invalidExpr = findInvalidYieldExpression(col->expr());
         if (invalidExpr != nullptr) {
@@ -263,17 +265,17 @@ std::string FetchEdgesValidator::buildConstantInput() {
     auto input = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(edgeKeys_))).finish());
 
-    src_ = pool->makeAndAdd<VariablePropertyExpression>(input, kSrc);
-    type_ = pool->makeAndAdd<ConstantExpression>(edgeType_);
-    rank_ = pool->makeAndAdd<VariablePropertyExpression>(input, kRank);
-    dst_ = pool->makeAndAdd<VariablePropertyExpression>(input, kDst);
+    src_ = VariablePropertyExpression::make(pool, input, kSrc);
+    type_ = ConstantExpression::make(pool, edgeType_);
+    rank_ = VariablePropertyExpression::make(pool, input, kRank);
+    dst_ = VariablePropertyExpression::make(pool, input, kDst);
     return input;
 }
 
 std::string FetchEdgesValidator::buildRuntimeInput() {
     auto pool = qctx_->objPool();
     src_ = DCHECK_NOTNULL(srcRef_);
-    type_ = pool->makeAndAdd<ConstantExpression>(edgeType_);
+    type_ = ConstantExpression::make(pool, edgeType_);
     rank_ = DCHECK_NOTNULL(rankRef_);
     dst_ = DCHECK_NOTNULL(dstRef_);
     return inputVar_;
@@ -282,11 +284,11 @@ std::string FetchEdgesValidator::buildRuntimeInput() {
 Expression *FetchEdgesValidator::emptyEdgeKeyFilter() {
     // _src != empty && _dst != empty && _rank != empty
     DCHECK_GE(geColNames_.size(), 3);
-    auto *srcNotEmptyExpr = notEmpty(new EdgeSrcIdExpression(edgeTypeName_));
-    auto *dstNotEmptyExpr = notEmpty(new EdgeDstIdExpression(edgeTypeName_));
-    auto *rankNotEmptyExpr = notEmpty(new EdgeRankExpression(edgeTypeName_));
-    auto *edgeKeyNotEmptyExpr =
-        qctx_->objPool()->add(lgAnd(srcNotEmptyExpr, lgAnd(dstNotEmptyExpr, rankNotEmptyExpr)));
+    auto *pool = qctx_->objPool();
+    auto *srcNotEmptyExpr = notEmpty(EdgeSrcIdExpression::make(pool, edgeTypeName_));
+    auto *dstNotEmptyExpr = notEmpty(EdgeDstIdExpression::make(pool, edgeTypeName_));
+    auto *rankNotEmptyExpr = notEmpty(EdgeRankExpression::make(pool, edgeTypeName_));
+    auto *edgeKeyNotEmptyExpr = lgAnd(srcNotEmptyExpr, lgAnd(dstNotEmptyExpr, rankNotEmptyExpr));
     return edgeKeyNotEmptyExpr;
 }
 

@@ -83,7 +83,9 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
             columnsName.emplace_back(kDst);
             break;
     }
-    auto scan = IndexScan::make(matchClauseCtx->qctx,
+
+    auto* qctx = matchClauseCtx->qctx;
+    auto scan = IndexScan::make(qctx,
                                 nullptr,
                                 matchClauseCtx->space.id,
                                 std::move(contexts),
@@ -94,26 +96,25 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     plan.tail = scan;
     plan.root = scan;
 
+    auto* pool = qctx->objPool();
     if (edgeCtx->scanInfo.direction == MatchEdge::Direction::BOTH) {
         // merge the src,dst to one column
-        auto *yieldColumns = matchClauseCtx->qctx->objPool()->makeAndAdd<YieldColumns>();
-        auto *exprList = new ExpressionList();
-        exprList->add(new ColumnExpression(0));  // src
-        exprList->add(new ColumnExpression(1));  // dst
-        yieldColumns->addColumn(new YieldColumn(new ListExpression(exprList)));
-        auto *project = Project::make(matchClauseCtx->qctx,
-                                      scan,
-                                      yieldColumns);
+        auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+        auto* exprList = ExpressionList::make(pool);
+        exprList->add(ColumnExpression::make(pool, 0));   // src
+        exprList->add(ColumnExpression::make(pool, 1));   // dst
+        yieldColumns->addColumn(new YieldColumn(ListExpression::make(pool, exprList)));
+        auto* project = Project::make(qctx, scan, yieldColumns);
         project->setColNames({kVid});
 
-        auto* unwindExpr = matchClauseCtx->qctx->objPool()->add(new ColumnExpression(0));
-        auto* unwind = Unwind::make(matchClauseCtx->qctx, project, unwindExpr, kVid);
+        auto* unwindExpr = ColumnExpression::make(pool, 0);
+        auto* unwind = Unwind::make(qctx, project, unwindExpr, kVid);
         unwind->setColNames({"vidList", kVid});
         plan.root = unwind;
     }
 
     // initialize start expression in project edge
-    edgeCtx->initialExpr = std::unique_ptr<Expression>(ExpressionUtils::newVarPropExpr(kVid));
+    edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
     return plan;
 }
 
@@ -181,7 +182,8 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
     plan.root = scan;
 
     // initialize start expression in project node
-    nodeCtx->initialExpr = std::unique_ptr<Expression>(ExpressionUtils::newVarPropExpr(kVid));
+    auto* pool = matchClauseCtx->qctx->objPool();
+    nodeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
     return plan;
 }
 

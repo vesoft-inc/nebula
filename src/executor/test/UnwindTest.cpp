@@ -19,12 +19,13 @@ class UnwindTest : public QueryTestBase {
 protected:
     void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
+        pool_ = qctx_->objPool();
         start_ = StartNode::make(qctx_.get());
     }
 
     void testUnwind(std::vector<Value> l) {
-        auto list = std::make_unique<ConstantExpression>(List(l));
-        auto* unwind = Unwind::make(qctx_.get(), start_, list.get(), "items");
+        auto list = ConstantExpression::make(pool_, List(l));
+        auto* unwind = Unwind::make(qctx_.get(), start_, list, "items");
         unwind->setColNames(std::vector<std::string>{"items"});
 
         auto unwExe = Executor::create(unwind, qctx_.get());
@@ -46,6 +47,7 @@ protected:
 
 protected:
     std::unique_ptr<QueryContext> qctx_;
+    ObjectPool* pool_;
     StartNode* start_;
 };
 

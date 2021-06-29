@@ -56,22 +56,24 @@ public:
 
     static bool isEvaluableExpr(const Expression* expr);
 
-    static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
+    static Expression* rewriteLabelAttr2TagProp(ObjectPool* pool, const Expression* expr);
 
-    static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr);
+    static Expression* rewriteLabelAttr2EdgeProp(ObjectPool* pool, const Expression* expr);
 
-    static Expression* rewriteAgg2VarProp(const Expression* expr);
+    static Expression* rewriteAgg2VarProp(ObjectPool* pool, const Expression* expr);
 
-    static std::unique_ptr<Expression> rewriteInnerVar(const Expression* expr,
-                                                       std::string newVar);
+    static Expression* rewriteInnerVar(ObjectPool* pool,
+                                       const Expression* expr,
+                                       std::string newVar);
 
     // Rewrite relational expression, gather evaluable expressions to one side
     static Expression* rewriteRelExpr(const Expression* expr, ObjectPool* pool);
-    static Expression* rewriteRelExprHelper(const Expression* expr,
-                                            std::unique_ptr<Expression>& relRightOperandExpr);
+    static Expression* rewriteRelExprHelper(ObjectPool* pool,
+                                            const Expression* expr,
+                                            Expression*& relRightOperandExpr);
 
     // Clone and fold constant expression
-    static StatusOr<Expression*> foldConstantExpr(const Expression* expr, ObjectPool* objPool);
+    static StatusOr<Expression*> foldConstantExpr(ObjectPool* objPool, const Expression* expr);
 
     // Clone and reduce unaryNot expression
     static Expression* reduceUnaryNotExpr(const Expression* expr, ObjectPool* pool);
@@ -80,10 +82,10 @@ public:
     static StatusOr<Expression*> filterTransform(const Expression* expr, ObjectPool* objPool);
 
     // Negate the given logical expr: (A && B) -> (!A || !B)
-    static std::unique_ptr<LogicalExpression> reverseLogicalExpr(LogicalExpression* expr);
+    static LogicalExpression* reverseLogicalExpr(ObjectPool* pool, LogicalExpression* expr);
 
     // Negate the given relational expr: (A > B) -> (A <= B)
-    static std::unique_ptr<RelationalExpression> reverseRelExpr(RelationalExpression* expr);
+    static RelationalExpression* reverseRelExpr(ObjectPool* pool, RelationalExpression* expr);
 
     // Return the negation of the given relational kind
     static Expression::Kind getNegatedRelExprKind(const Expression::Kind kind);
@@ -97,72 +99,54 @@ public:
     static void pullAnds(Expression* expr);
 
     static void pullAndsImpl(LogicalExpression* expr,
-                             std::vector<std::unique_ptr<Expression>>& operands);
+                             std::vector<Expression*>& operands);
 
     static void pullOrs(Expression* expr);
     static void pullOrsImpl(LogicalExpression* expr,
-                            std::vector<std::unique_ptr<Expression>>& operands);
+                            std::vector<Expression*>& operands);
 
-    static VariablePropertyExpression* newVarPropExpr(const std::string& prop,
-                                                      const std::string& var = "");
+    static Expression* pushOrs(ObjectPool* pool, const std::vector<Expression*>& rels);
 
-    static std::unique_ptr<InputPropertyExpression> inputPropExpr(const std::string& prop);
+    static Expression* pushAnds(ObjectPool* pool, const std::vector<Expression*>& rels);
 
-    static std::unique_ptr<Expression> pushOrs(
-        const std::vector<std::unique_ptr<Expression>>& rels);
+    static Expression* pushImpl(ObjectPool* pool,
+                                Expression::Kind kind,
+                                const std::vector<Expression*>& rels);
 
-    static std::unique_ptr<Expression> pushAnds(
-        const std::vector<std::unique_ptr<Expression>>& rels);
+    static Expression* flattenInnerLogicalAndExpr(const Expression* expr);
 
-    static std::unique_ptr<Expression> pushImpl(
-        Expression::Kind kind,
-        const std::vector<std::unique_ptr<Expression>>& rels);
+    static Expression* flattenInnerLogicalOrExpr(const Expression* expr);
 
-    static std::unique_ptr<Expression> flattenInnerLogicalAndExpr(const Expression* expr);
+    static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
-    static std::unique_ptr<Expression> flattenInnerLogicalOrExpr(const Expression* expr);
-
-    static std::unique_ptr<Expression> flattenInnerLogicalExpr(const Expression* expr);
-
-    static void splitFilter(const Expression* expr,
+    static void splitFilter(ObjectPool* pool,
+                            const Expression* expr,
                             std::function<bool(const Expression*)> picker,
-                            std::unique_ptr<Expression>* filterPicked,
-                            std::unique_ptr<Expression>* filterUnpicked);
+                            Expression** filterPicked,
+                            Expression** filterUnpicked);
 
-    static std::unique_ptr<Expression> expandExpr(const Expression* expr);
+    static Expression* expandExpr(ObjectPool* pool, const Expression* expr);
 
-    static std::unique_ptr<Expression> expandImplAnd(const Expression* expr);
+    static Expression* expandImplAnd(ObjectPool* pool, const Expression* expr);
 
-    static std::vector<std::unique_ptr<Expression>> expandImplOr(const Expression* expr);
+    static std::vector<Expression*> expandImplOr(const Expression* expr);
 
     static Status checkAggExpr(const AggregateExpression* aggExpr);
 
     static bool findInnerRandFunction(const Expression *expr);
 
-    static Expression* And(Expression *l, Expression* r) {
-        return new LogicalExpression(Expression::Kind::kLogicalAnd, l, r);
-    }
-
-    static Expression* Or(Expression* l, Expression *r) {
-        return new LogicalExpression(Expression::Kind::kLogicalOr, l, r);
-    }
-
-    static Expression* Eq(Expression* l, Expression *r) {
-        return new RelationalExpression(Expression::Kind::kRelEQ, l, r);
-    }
-
     // loop condition
     // ++loopSteps <= steps
-    static std::unique_ptr<Expression> stepCondition(const std::string& loopStep, uint32_t steps);
+    static Expression* stepCondition(ObjectPool* pool, const std::string& loopStep, uint32_t steps);
 
     // size(var) == 0
-    static std::unique_ptr<Expression> zeroCondition(const std::string& var);
+    static Expression* zeroCondition(ObjectPool* pool, const std::string& var);
 
     // size(var) != 0
-    static std::unique_ptr<Expression> neZeroCondition(const std::string& var);
+    static Expression* neZeroCondition(ObjectPool* pool, const std::string& var);
 
     // var == value
-    static std::unique_ptr<Expression> equalCondition(const std::string& var, const Value& value);
+    static Expression* equalCondition(ObjectPool* pool, const std::string& var, const Value& value);
 };
 
 }   // namespace graph

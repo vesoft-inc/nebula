@@ -65,7 +65,8 @@ std::pair<std::string, Expression *> VertexIdSeek::listToAnnoVarVid(QueryContext
 
     qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
 
-    auto *src = new VariablePropertyExpression(input, kVid);
+    auto* pool = qctx->objPool();
+    auto *src = VariablePropertyExpression::make(pool, input, kVid);
     return std::pair<std::string, Expression *>(input, src);
 }
 
@@ -78,7 +79,8 @@ std::pair<std::string, Expression *> VertexIdSeek::constToAnnoVarVid(QueryContex
 
     qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
 
-    auto *src = new VariablePropertyExpression(input, kVid);
+    auto* pool = qctx->objPool();
+    auto *src = VariablePropertyExpression::make(pool, input, kVid);
     return std::pair<std::string, Expression *>(input, src);
 }
 
@@ -96,7 +98,7 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext *nodeCtx) {
     plan.root = passThrough;
     plan.tail = passThrough;
 
-    nodeCtx->initialExpr = std::unique_ptr<Expression>(vidsResult.second);
+    nodeCtx->initialExpr = vidsResult.second;
     return plan;
 }
 

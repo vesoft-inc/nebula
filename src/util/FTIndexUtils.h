@@ -38,7 +38,7 @@ public:
                 const std::string& index);
 
     static
-    StatusOr<std::string> rewriteTSFilter(bool isEdge, Expression* expr,
+    StatusOr<std::string> rewriteTSFilter(ObjectPool* pool, bool isEdge, Expression* expr,
         const std::string& index, const std::vector<nebula::plugin::HttpClient>& tsClients);
 
     static

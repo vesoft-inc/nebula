@@ -26,24 +26,23 @@ void QueryUtil::buildConstantInput(QueryContext *qctx, Starts& starts, std::stri
         ds.rows.emplace_back(std::move(row));
     }
     qctx->ectx()->setResult(vidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
-
+    auto* pool = qctx->objPool();
     // If possible, use column numbers in preference to column names,
-    starts.src = new ColumnExpression(0);
-    qctx->objPool()->add(starts.src);
+    starts.src = ColumnExpression::make(pool, 0);
 }
 
 // static
 SubPlan QueryUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
     auto pool = qctx->objPool();
     auto* columns = pool->add(new YieldColumns());
-    auto* column = new YieldColumn(starts.originalSrc->clone().release(), kVid);
+    auto* column = new YieldColumn(starts.originalSrc->clone(), kVid);
     columns->addColumn(column);
 
     auto* project = Project::make(qctx, nullptr, columns);
     if (starts.fromType == kVariable) {
         project->setInputVar(starts.userDefinedVarName);
     }
-    starts.src = pool->add(new InputPropertyExpression(kVid));
+    starts.src = InputPropertyExpression::make(pool, kVid);
 
     auto* dedup = Dedup::make(qctx, project);
 
@@ -66,8 +65,9 @@ SubPlan QueryUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& v
 }
 
 PlanNode* QueryUtil::extractDstFromGN(QueryContext* qctx, PlanNode* gn, const std::string& output) {
-    auto* columns = qctx->objPool()->add(new YieldColumns());
-    auto* column = new YieldColumn(new EdgePropertyExpression("*", kDst), kVid);
+    auto pool = qctx->objPool();
+    auto* columns = pool->add(new YieldColumns());
+    auto* column = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), kVid);
     columns->addColumn(column);
 
     auto* project = Project::make(qctx, gn, columns);

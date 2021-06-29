@@ -82,13 +82,16 @@ std::unique_ptr<GoPlanner::VertexProps> GoPlanner::buildVertexProps(
 
 // ++loopSteps{0} < steps  && (var is Empty OR size(var) != 0)
 Expression* GoPlanner::loopCondition(uint32_t steps, const std::string& var) {
-    auto loopSteps = goCtx_->qctx->vctx()->anonVarGen()->getVar();
-    goCtx_->qctx->ectx()->setValue(loopSteps, 0);
-    auto step = ExpressionUtils::stepCondition(loopSteps, steps);
-    auto empty = ExpressionUtils::equalCondition(var, Value::kEmpty);
-    auto neZero = ExpressionUtils::neZeroCondition(var);
-    auto* earlyEnd = ExpressionUtils::Or(empty.release(), neZero.release());
-    return ExpressionUtils::And(step.release(), earlyEnd);
+    auto* qctx = goCtx_->qctx;
+    auto* pool = qctx->objPool();
+
+    auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
+    qctx->ectx()->setValue(loopSteps, 0);
+    auto step = ExpressionUtils::stepCondition(pool, loopSteps, steps);
+    auto empty = ExpressionUtils::equalCondition(pool, var, Value::kEmpty);
+    auto neZero = ExpressionUtils::neZeroCondition(pool, var);
+    auto* earlyEnd = LogicalExpression::makeOr(pool, empty, neZero);
+    return LogicalExpression::makeAnd(pool, step, earlyEnd);
 }
 
 /*
@@ -98,15 +101,17 @@ Expression* GoPlanner::loopCondition(uint32_t steps, const std::string& var) {
  */
 PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input) {
     auto& srcEdgePropsExpr = goCtx_->srcEdgePropsExpr;
+    auto* pool = goCtx_->qctx->objPool();
+
     if (goCtx_->joinInput) {
         // extract vid from gn
-        auto* expr = new YieldColumn(new ColumnExpression(VID_INDEX), kVid);
+        auto* expr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), kVid);
         srcEdgePropsExpr->addColumn(expr);
     }
 
     if (goCtx_->joinDst) {
         // extract dst from gn
-        auto* expr = new YieldColumn(new EdgePropertyExpression("*", kDst), "JOIN_DST_VID");
+        auto* expr = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), "JOIN_DST_VID");
         srcEdgePropsExpr->addColumn(expr);
     }
 
@@ -122,12 +127,13 @@ PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string&
  */
 PlanNode* GoPlanner::extractSrcDstFromGN(PlanNode* dep, const std::string& input) {
     auto qctx = goCtx_->qctx;
-    auto* columns = qctx->objPool()->add(new YieldColumns());
+    auto* pool = qctx->objPool();
+    auto* columns = pool->add(new YieldColumns());
 
     goCtx_->srcVidColName = qctx->vctx()->anonColGen()->getCol();
-    auto* vidExpr = new YieldColumn(new ColumnExpression(VID_INDEX), goCtx_->srcVidColName);
+    auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), goCtx_->srcVidColName);
     columns->addColumn(vidExpr);
-    auto* dstExpr = new YieldColumn(new EdgePropertyExpression("*", kDst), "TRACK_DST_VID");
+    auto* dstExpr = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), "TRACK_DST_VID");
     columns->addColumn(dstExpr);
 
     auto* project = Project::make(qctx, dep, columns);
@@ -149,11 +155,11 @@ PlanNode* GoPlanner::extractVidFromRuntimeInput(PlanNode* dep) {
     const auto& from = goCtx_->from;
 
     auto* columns = qctx->objPool()->add(new YieldColumns());
-    auto* vidExpr = new YieldColumn(from.originalSrc->clone().release(), from.runtimeVidName);
+    auto* vidExpr = new YieldColumn(from.originalSrc->clone(), from.runtimeVidName);
     columns->addColumn(vidExpr);
 
     goCtx_->dstVidColName = qctx->vctx()->anonColGen()->getCol();
-    auto* dstExpr = new YieldColumn(from.originalSrc->clone().release(), goCtx_->dstVidColName);
+    auto* dstExpr = new YieldColumn(from.originalSrc->clone(), goCtx_->dstVidColName);
     columns->addColumn(dstExpr);
 
     auto* project = Project::make(qctx, dep, columns);
@@ -173,11 +179,12 @@ PlanNode* GoPlanner::extractVidFromRuntimeInput(PlanNode* dep) {
  */
 PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
     auto qctx = goCtx_->qctx;
+    auto* pool = qctx->objPool();
 
-    auto* hashKey = new VariablePropertyExpression(left->outputVar(), goCtx_->dstVidColName);
-    qctx->objPool()->add(hashKey);
-    auto* probeKey = new VariablePropertyExpression(right->outputVar(), goCtx_->srcVidColName);
-    qctx->objPool()->add(probeKey);
+    auto* hashKey =
+        VariablePropertyExpression::make(pool, left->outputVar(), goCtx_->dstVidColName);
+    auto* probeKey =
+        VariablePropertyExpression::make(pool, right->outputVar(), goCtx_->srcVidColName);
 
     auto* join = InnerJoin::make(qctx,
                                  right,
@@ -190,12 +197,12 @@ PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
     join->setColNames(std::move(colNames));
 
     // extract runtimeVid  & dst from join result
-    auto* columns = qctx->objPool()->add(new YieldColumns());
+    auto* columns = pool->add(new YieldColumns());
     auto& vidName = goCtx_->from.runtimeVidName;
-    auto* vidExpr = new YieldColumn(new InputPropertyExpression(vidName), vidName);
+    auto* vidExpr = new YieldColumn(InputPropertyExpression::make(pool, vidName), vidName);
     columns->addColumn(vidExpr);
-    auto* dstExpr =
-        new YieldColumn(new InputPropertyExpression("TRACK_DST_VID"), goCtx_->dstVidColName);
+    auto* dstExpr = new YieldColumn(InputPropertyExpression::make(pool, "TRACK_DST_VID"),
+                                    goCtx_->dstVidColName);
     columns->addColumn(dstExpr);
 
     auto* project = Project::make(qctx, join, columns);
@@ -210,9 +217,10 @@ PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
  */
 PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
     auto qctx = goCtx_->qctx;
+    auto* pool = qctx->objPool();
 
     // dst is the last column, columnName is "JOIN_DST_VID"
-    auto* dstExpr = qctx->objPool()->add(new ColumnExpression(LAST_COL_INDEX));
+    auto* dstExpr = ColumnExpression::make(pool, LAST_COL_INDEX);
     auto* getVertex = GetVertices::make(qctx,
                                         dep,
                                         goCtx_->space.id,
@@ -223,15 +231,15 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 
     auto& dstPropsExpr = goCtx_->dstPropsExpr;
     // extract dst's prop
-    auto* vidExpr = new YieldColumn(new ColumnExpression(VID_INDEX), "DST_VID");
+    auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "DST_VID");
     dstPropsExpr->addColumn(vidExpr);
 
     // extract dst's prop, vid is the last column
     auto* project = Project::make(qctx, getVertex, dstPropsExpr);
 
     // dep's colName "JOIN_DST_VID"  join getVertex's colName "DST_VID"
-    auto* hashKey = qctx->objPool()->add(dstExpr->clone().release());
-    auto* probeKey = qctx->objPool()->add(new ColumnExpression(LAST_COL_INDEX));
+    auto* hashKey = dstExpr->clone();
+    auto* probeKey = ColumnExpression::make(pool, LAST_COL_INDEX);
     auto* join = LeftJoin::make(qctx,
                                 project,
                                 {dep->outputVar(), ExecutionContext::kLatestVersion},
@@ -253,10 +261,10 @@ PlanNode* GoPlanner::buildJoinInputPlan(PlanNode* dep) {
     auto qctx = goCtx_->qctx;
     const auto& from = goCtx_->from;
     const auto& steps = goCtx_->steps;
+    auto* pool = qctx->objPool();
 
     const auto& vidName = (!steps.isMToN() && steps.steps() == 1) ? kVid : from.runtimeVidName;
-    auto* hashKey = new VariablePropertyExpression(dep->outputVar(), vidName);
-    qctx->objPool()->add(hashKey);
+    auto* hashKey = VariablePropertyExpression::make(pool, dep->outputVar(), vidName);
     auto* probeKey = from.originalSrc;
     std::string probeName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
 
@@ -282,11 +290,11 @@ PlanNode* GoPlanner::buildJoinInputPlan(PlanNode* dep) {
  */
 PlanNode* GoPlanner::lastStepJoinInput(PlanNode* left, PlanNode* right) {
     auto qctx = goCtx_->qctx;
+    auto* pool = qctx->objPool();
 
-    auto* hashKey = new VariablePropertyExpression(left->outputVar(), goCtx_->dstVidColName);
-    auto* probeKey = new VariablePropertyExpression(right->outputVar(), kVid);
-    qctx->objPool()->add(hashKey);
-    qctx->objPool()->add(probeKey);
+    auto* hashKey =
+        VariablePropertyExpression::make(pool, left->outputVar(), goCtx_->dstVidColName);
+    auto* probeKey = VariablePropertyExpression::make(pool, right->outputVar(), kVid);
 
     const auto& leftVersion = goCtx_->steps.isMToN() ? ExecutionContext::kPreviousOneVersion
                                                      : ExecutionContext::kLatestVersion;
@@ -399,7 +407,6 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
     }
 
     auto* condition = loopCondition(goCtx_->steps.steps() - 1, gn->outputVar());
-    qctx->objPool()->add(condition);
     auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
 
     auto* root = lastStep(loop, loopBody == getDst ? nullptr : loopBody);
@@ -458,7 +465,6 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     }
 
     auto* condition = loopCondition(goCtx_->steps.nSteps(), gn->outputVar());
-    qctx->objPool()->add(condition);
     auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
 
     auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMToN);

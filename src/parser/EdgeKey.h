@@ -23,17 +23,17 @@ class Expression;
 class EdgeKey final {
 public:
     EdgeKey(Expression *srcid, Expression *dstid, int64_t rank) {
-        srcid_.reset(srcid);
-        dstid_.reset(dstid);
+        srcid_ = srcid;
+        dstid_ = dstid;
         rank_ = rank;
     }
 
     Expression *srcid() const {
-        return srcid_.get();
+        return srcid_;
     }
 
     Expression *dstid() const {
-        return dstid_.get();
+        return dstid_;
     }
 
     int64_t rank() {
@@ -43,8 +43,8 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<Expression> srcid_;
-    std::unique_ptr<Expression> dstid_;
+    Expression* srcid_{nullptr};
+    Expression* dstid_{nullptr};
     EdgeRanking rank_;
 };
 
@@ -73,30 +73,30 @@ private:
 class EdgeKeyRef final {
 public:
     EdgeKeyRef(Expression *srcid, Expression *dstid, Expression *rank, bool isInputExpr = true) {
-        srcid_.reset(srcid);
-        dstid_.reset(dstid);
-        rank_.reset(rank);
+        srcid_ = srcid;
+        dstid_ = dstid;
+        rank_ = rank;
         isInputExpr_ = isInputExpr;
     }
 
     Expression *srcid() const {
-        return srcid_.get();
+        return srcid_;
     }
 
     Expression *dstid() const {
-        return dstid_.get();
+        return dstid_;
     }
 
     Expression *rank() const {
-        return rank_.get();
+        return rank_;
     }
 
     Expression *type() const {
-        return type_.get();
+        return type_;
     }
 
     void setType(Expression *type) {
-        type_.reset(type);
+        type_ = type;
     }
 
     bool isInputExpr() const {
@@ -106,10 +106,10 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<Expression> srcid_;
-    std::unique_ptr<Expression> dstid_;
-    std::unique_ptr<Expression> rank_;
-    std::unique_ptr<Expression> type_;
+    Expression *srcid_{nullptr};
+    Expression *dstid_{nullptr};
+    Expression *rank_{nullptr};
+    Expression *type_{nullptr};
     std::unordered_set<std::string> uniqVar_;
     bool isInputExpr_;
 };

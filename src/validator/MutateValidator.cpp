@@ -307,9 +307,8 @@ std::string DeleteVerticesValidator::buildVIds() {
         ds.rows.emplace_back(std::move(row));
     }
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
-
-    auto *vIds = new VariablePropertyExpression(input, kVid);
-    qctx_->objPool()->add(vIds);
+    auto *pool = qctx_->objPool();
+    auto *vIds = VariablePropertyExpression::make(pool, input, kVid);
     vidRef_ = vIds;
     return input;
 }
@@ -328,11 +327,12 @@ Status DeleteVerticesValidator::toPlan() {
     // make edgeRefs and edgeProp
     auto index = 0u;
     DCHECK(edgeTypes_.size() == edgeNames_.size());
+    auto *pool = qctx_->objPool();
     for (auto &name : edgeNames_) {
-        auto *edgeKeyRef = new EdgeKeyRef(new EdgeSrcIdExpression(name),
-                                          new EdgeDstIdExpression(name),
-                                          new EdgeRankExpression(name));
-        edgeKeyRef->setType(new EdgeTypeExpression(name));
+        auto *edgeKeyRef = new EdgeKeyRef(EdgeSrcIdExpression::make(pool, name),
+                                          EdgeDstIdExpression::make(pool, name),
+                                          EdgeRankExpression::make(pool, name));
+        edgeKeyRef->setType(EdgeTypeExpression::make(pool, name));
         qctx_->objPool()->add(edgeKeyRef);
         edgeKeyRefs_.emplace_back(edgeKeyRef);
 
@@ -388,9 +388,10 @@ Status DeleteEdgesValidator::validateImpl() {
     auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId, *sentence->edge());
     NG_RETURN_IF_ERROR(edgeStatus);
     auto edgeType = edgeStatus.value();
+    auto *pool = qctx_->objPool();
     if (sentence->isRef()) {
         edgeKeyRefs_.emplace_back(sentence->edgeKeyRef());
-        (*edgeKeyRefs_.begin())->setType(new ConstantExpression(edgeType));
+        (*edgeKeyRefs_.begin())->setType(ConstantExpression::make(pool, edgeType));
         NG_RETURN_IF_ERROR(checkInput());
     } else {
         return buildEdgeKeyRef(sentence->edgeKeys()->keys(), edgeType);
@@ -421,11 +422,11 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey*> &edgeKe
         ds.emplace_back(std::move(row));
     }
     qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).finish());
-
-    auto *srcIdExpr = new InputPropertyExpression(kSrc);
-    auto *typeExpr = new InputPropertyExpression(kType);
-    auto *rankExpr = new InputPropertyExpression(kRank);
-    auto *dstIdExpr = new InputPropertyExpression(kDst);
+    auto *pool = qctx_->objPool();
+    auto *srcIdExpr = InputPropertyExpression::make(pool, kSrc);
+    auto *typeExpr = InputPropertyExpression::make(pool, kType);
+    auto *rankExpr = InputPropertyExpression::make(pool, kRank);
+    auto *dstIdExpr = InputPropertyExpression::make(pool, kDst);
     auto* edgeKeyRef = new EdgeKeyRef(srcIdExpr, dstIdExpr, rankExpr);
     edgeKeyRef->setType(typeExpr);
     qctx_->objPool()->add(edgeKeyRef);
@@ -498,15 +499,15 @@ Status UpdateValidator::getCondition() {
     if (clause && clause->filter()) {
         auto filter = clause->filter()->clone();
         bool hasWrongType = false;
-        auto symExpr = rewriteSymExpr(filter.get(), name_, hasWrongType, isEdge_);
+        auto symExpr = rewriteSymExpr(filter, name_, hasWrongType, isEdge_);
         if (hasWrongType) {
             return Status::SemanticError("Has wrong expr in `%s'",
                                          filter->toString().c_str());
         }
         if (symExpr != nullptr) {
-            filter.reset(symExpr.release());
+            filter = symExpr;
         }
-        auto typeStatus = deduceExprType(filter.get());
+        auto typeStatus = deduceExprType(filter);
         NG_RETURN_IF_ERROR(typeStatus);
         auto type = typeStatus.value();
         if (type != Value::Type::BOOL
@@ -529,7 +530,7 @@ Status UpdateValidator::getReturnProps() {
             yieldColNames_.emplace_back(col->name());
             std::string encodeStr;
             auto copyColExpr = col->expr()->clone();
-            NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyColExpr.get(), name_, encodeStr));
+            NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyColExpr, name_, encodeStr));
             returnProps_.emplace_back(std::move(encodeStr));
         }
     }
@@ -565,7 +566,7 @@ Status UpdateValidator::getUpdateProps() {
         }
         std::string encodeStr;
         auto copyValueExpr = valueExpr->clone();
-        NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr.get(), symName, encodeStr));
+        NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr, symName, encodeStr));
         updatedProp.set_value(std::move(encodeStr));
         updatedProp.set_name(fieldName);
         updatedProps_.emplace_back(std::move(updatedProp));
@@ -601,11 +602,11 @@ Status UpdateValidator::checkAndResetSymExpr(Expression* inExpr,
 }
 
 // rewrite the expr which has kSymProperty expr to toExpr
-std::unique_ptr<Expression> UpdateValidator::rewriteSymExpr(Expression *expr,
-                                                            const std::string &sym,
-                                                            bool &hasWrongType,
-                                                            bool isEdge) {
-    RewriteSymExprVisitor visitor(sym, isEdge);
+Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
+                                            const std::string &sym,
+                                            bool &hasWrongType,
+                                            bool isEdge) {
+    RewriteSymExprVisitor visitor(qctx_->objPool(), sym, isEdge);
     expr->accept(&visitor);
     hasWrongType = visitor.hasWrongType();
     return std::move(visitor).expr();

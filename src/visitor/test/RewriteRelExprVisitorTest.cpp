@@ -13,66 +13,49 @@
 
 namespace nebula {
 namespace graph {
-class RewriteRelExprVisitorTest : public ValidatorTestBase {
-public:
-    void TearDown() override {
-        pool.clear();
-    }
-
-protected:
-    ObjectPool pool;
-};
+class RewriteRelExprVisitorTest : public ValidatorTestBase {};
 
 TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExpr) {
     // (label + 1 < 40)  =>  (label < 40 - 1)
     {
-        auto expr =
-            pool.add(ltExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected =
-            pool.add(ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(1))));
+        auto expr = ltExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (1 + label < 40)  =>  (label < 40 - 1)
     {
-        auto expr =
-            pool.add(ltExpr(addExpr(constantExpr(1), laExpr("v", "age")), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected =
-            pool.add(ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(1))));
+        auto expr = ltExpr(addExpr(constantExpr(1), laExpr("v", "age")), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (-1 + label < 40)  =>  (label < 40 - (-1))
     {
-        auto expr =
-            pool.add(ltExpr(addExpr(constantExpr(-1), laExpr("v", "age")), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected =
-            pool.add(ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(-1))));
+        auto expr = ltExpr(addExpr(constantExpr(-1), laExpr("v", "age")), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(-1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label1 + label2 < 40)  =>  (label1 + label2 < 40) Unchaged
     // TODO: replace list with set in object pool and avoid copy
     {
-        auto expr =
-            pool.add(ltExpr(addExpr(laExpr("v", "age"), laExpr("v2", "age2")), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
+        auto expr = ltExpr(addExpr(laExpr("v", "age"), laExpr("v2", "age2")), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
         auto expected = expr;
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label * 2 < 40)  =>  (2*label < 40) Unchanged
     {
-        auto expr =
-            pool.add(ltExpr(multiplyExpr(laExpr("v", "age"), constantExpr(2)), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
+        auto expr = ltExpr(multiplyExpr(laExpr("v", "age"), constantExpr(2)), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
         auto expected = expr;
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label / 3 < 40)  =>  (label / 3 < 40) Unchanged
     {
-        auto expr =
-            pool.add(ltExpr(divideExpr(laExpr("v", "age"), constantExpr(3)), constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
+        auto expr = ltExpr(divideExpr(laExpr("v", "age"), constantExpr(3)), constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
         auto expected = expr;
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
@@ -81,57 +64,55 @@ TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExpr) {
 TEST_F(RewriteRelExprVisitorTest, TestNestedArithmeticalExpr) {
     // (label + 1 + 2 < 40)  =>  (label < 40 - 2 - 1)
     {
-        auto expr =
-            pool.add(ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
-                            constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(
+        auto expr = ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
+                           constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected =
             ltExpr(laExpr("v", "age"),
-                   minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1))));
+                   minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label + 1 - 2 < 40)  =>  (label < 40 + 2 - 1)
     {
-        auto expr = pool.add(
-            ltExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
-                   constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(
+        auto expr = ltExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
+                           constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected =
             ltExpr(laExpr("v", "age"),
-                   minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1))));
+                   minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label + 1 - 2 + 3 < 40)  =>  (label < 40 - 3 + 2 - 1)
     {
-        auto expr = pool.add(
+        auto expr =
             ltExpr(addExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                            constantExpr(3)),
-                   constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(
+                   constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected =
             ltExpr(laExpr("v", "age"),
                    minusExpr(addExpr(minusExpr(constantExpr(40), constantExpr(3)), constantExpr(2)),
-                             constantExpr(1))));
+                             constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (2 * label + 1 < 40)  =>  (2*label < 40 - 1) Partial rewrite
     {
-        auto expr = pool.add(
+        auto expr =
             ltExpr(addExpr(multiplyExpr(constantExpr(2), laExpr("v", "age")), constantExpr(1)),
-                   constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(ltExpr(multiplyExpr(constantExpr(2), laExpr("v", "age")),
-                                        minusExpr(constantExpr(40), constantExpr(1))));
+                   constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = ltExpr(multiplyExpr(constantExpr(2), laExpr("v", "age")),
+                               minusExpr(constantExpr(40), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (label / 3 - 1 < 40)  =>  (label / 3 < 40 + 1) Partial rewrite
     {
-        auto expr = pool.add(
+        auto expr =
             ltExpr(minusExpr(divideExpr(laExpr("v", "age"), constantExpr(3)), constantExpr(1)),
-                   constantExpr(40)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(ltExpr(divideExpr(laExpr("v", "age"), constantExpr(3)),
-                                        addExpr(constantExpr(40), constantExpr(1))));
+                   constantExpr(40));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = ltExpr(divideExpr(laExpr("v", "age"), constantExpr(3)),
+                               addExpr(constantExpr(40), constantExpr(1)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
 }
@@ -139,42 +120,39 @@ TEST_F(RewriteRelExprVisitorTest, TestNestedArithmeticalExpr) {
 TEST_F(RewriteRelExprVisitorTest, TestReduceBoolNullExpr) {
     // (v.age > 40 == true)  => (v.age > 40)
     {
-        auto expr =
-            pool.add(eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)), constantExpr(true)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(gtExpr(laExpr("v", "age"), constantExpr(40)));
+        auto expr = eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)), constantExpr(true));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = gtExpr(laExpr("v", "age"), constantExpr(40));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (v.age > 40 == false)  => !(v.age > 40)
     {
-        auto expr =
-            pool.add(eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)), constantExpr(false)));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(notExpr(gtExpr(laExpr("v", "age"), constantExpr(40))));
+        auto expr = eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)), constantExpr(false));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = notExpr(gtExpr(laExpr("v", "age"), constantExpr(40)));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (v.age > 40 == null)  => (null)
     {
-        auto expr = pool.add(eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)),
-                                    constantExpr(Value(NullType::__NULL__))));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(constantExpr(Value(NullType::__NULL__)));
+        auto expr = eqExpr(gtExpr(laExpr("v", "age"), constantExpr(40)),
+                           constantExpr(Value(NullType::__NULL__)));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = constantExpr(Value(NullType::__NULL__));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (v.age <= null)  =>  (null)
     {
-        auto expr = pool.add(leExpr(laExpr("v", "age"), constantExpr(Value(NullType::__NULL__))));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(constantExpr(Value(NullType::__NULL__)));
+        auto expr = leExpr(laExpr("v", "age"), constantExpr(Value(NullType::__NULL__)));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = constantExpr(Value(NullType::__NULL__));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
     // (v.age + 10 > null)  =>  (null)
     {
-        auto expr =
-            pool.add(gtExpr(addExpr(laExpr("v", "age"), constantExpr(10)),
-                     constantExpr(Value(NullType::__NULL__))));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(constantExpr(Value(NullType::__NULL__)));
+        auto expr = gtExpr(addExpr(laExpr("v", "age"), constantExpr(10)),
+                           constantExpr(Value(NullType::__NULL__)));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = constantExpr(Value(NullType::__NULL__));
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
 }
@@ -183,19 +161,19 @@ TEST_F(RewriteRelExprVisitorTest, TestLogicalExpr) {
     // (label + 1 + 2 < 40) AND (label + 1 - 2 + 3 < 40)  =>
     // (label < 40 - 2 - 1) AND (label < 40 - 3 + 2 - 1)
     {
-        auto expr = pool.add(andExpr(
+        auto expr = andExpr(
             ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                    constantExpr(40)),
             ltExpr(addExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                            constantExpr(3)),
-                   constantExpr(40))));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(andExpr(
+                   constantExpr(40)));
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = andExpr(
             ltExpr(laExpr("v", "age"),
                    minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1))),
             ltExpr(laExpr("v", "age"),
                    minusExpr(addExpr(minusExpr(constantExpr(40), constantExpr(3)), constantExpr(2)),
-                             constantExpr(1)))));
+                             constantExpr(1))));
 
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
@@ -206,17 +184,17 @@ TEST_F(RewriteRelExprVisitorTest, TestContainer) {
     {
         // [(label + 1 + 2 < 40), (label + 1 - 2 < 40)]  =>
         // [(label < 40 - 2 - 1), (label < 40 + 2 - 1)]
-        auto expr = pool.add(listExpr(
+        auto expr = listExpr(
             {ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                     constantExpr(40)),
              ltExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
-                    constantExpr(40))}));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(listExpr(
+                    constantExpr(40))});
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = listExpr(
             {ltExpr(laExpr("v", "age"),
                     minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1))),
              ltExpr(laExpr("v", "age"),
-                    minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))}));
+                    minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))});
 
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
@@ -224,17 +202,17 @@ TEST_F(RewriteRelExprVisitorTest, TestContainer) {
     {
         // {(label + 1 + 2 < 40), (label + 1 - 2 < 40)}  =>
         // {(label < 40 - 2 - 1), (label < 40 + 2 - 1)}
-        auto expr = pool.add(setExpr(
+        auto expr = setExpr(
             {ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                     constantExpr(40)),
              ltExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
-                    constantExpr(40))}));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(setExpr(
+                    constantExpr(40))});
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = setExpr(
             {ltExpr(laExpr("v", "age"),
                     minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1))),
              ltExpr(laExpr("v", "age"),
-                    minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))}));
+                    minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))});
 
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
@@ -242,21 +220,21 @@ TEST_F(RewriteRelExprVisitorTest, TestContainer) {
     {
         // {"k1":(label + 1 + 2 < 40), "k2":(label + 1 - 2 < 40)} =>
         // {"k1":(label < 40 - 2 - 1), "k2":(label < 40 + 2 - 1)}
-        auto expr = pool.add(mapExpr(
+        auto expr = mapExpr(
             {{"k1",
               ltExpr(addExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
                      constantExpr(40))},
              {"k2",
               ltExpr(minusExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(2)),
-                     constantExpr(40))}}));
-        auto res = ExpressionUtils::rewriteRelExpr(expr, &pool);
-        auto expected = pool.add(mapExpr(
+                     constantExpr(40))}});
+        auto res = ExpressionUtils::rewriteRelExpr(expr, pool);
+        auto expected = mapExpr(
             {{"k1",
               ltExpr(laExpr("v", "age"),
                      minusExpr(minusExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))},
              {"k2",
               ltExpr(laExpr("v", "age"),
-                     minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))}}));
+                     minusExpr(addExpr(constantExpr(40), constantExpr(2)), constantExpr(1)))}});
         ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
     }
 }

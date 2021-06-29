@@ -16,7 +16,7 @@
 namespace nebula {
 
 class MatchStepRange;
-
+class ObjectPool;
 namespace graph {
 class MatchValidator final : public TraversalValidator {
 public:
@@ -59,11 +59,8 @@ private:
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
                                         const MapExpression *map,
                                         const std::string &label = "") const;
-    StatusOr<Expression*> makeSubFilterWithoutSave(const std::string &alias,
-                                                   const MapExpression *map,
-                                                   const std::string &label = "") const;
 
-    static Expression* andConnect(Expression *left, Expression *right);
+    static Expression* andConnect(ObjectPool* pool, Expression *left, Expression *right);
 
     template <typename T>
     T* saveObject(T *obj) const {

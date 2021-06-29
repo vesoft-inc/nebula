@@ -31,7 +31,7 @@ public:
                                 meta::cpp2::Schema &schema);
 
     static std::shared_ptr<const meta::NebulaSchemaProvider>
-    generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema &schema);
+    generateSchemaProvider(ObjectPool* pool, const SchemaVer ver, const meta::cpp2::Schema& schema);
 
     static Status setTTLDuration(SchemaPropItem* schemaProp, meta::cpp2::Schema& schema);
 

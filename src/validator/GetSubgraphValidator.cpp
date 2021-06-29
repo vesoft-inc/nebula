@@ -135,14 +135,11 @@ Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& input
     getVertex->setInputVar(inputVar);
 
     auto var = vctx_->anonVarGen()->getVar();
-    auto* column = new VertexExpression();
-    auto* func = new AggregateExpression("COLLECT", column, false);
-    qctx_->objPool()->add(func);
-    auto* collectVertex =
-        Aggregate::make(qctx_,
-                        getVertex,
-                        {},
-                        {func});
+    auto* pool = qctx_->objPool();
+    auto* column = VertexExpression::make(pool);
+    auto* func = AggregateExpression::make(pool, "COLLECT", column, false);
+
+    auto* collectVertex = Aggregate::make(qctx_, getVertex, {}, {func});
     collectVertex->setColNames({"_vertices"});
 
     root_ = collectVertex;
@@ -183,7 +180,6 @@ Status GetSubgraphValidator::toPlan() {
     subgraph->setColNames({nebula::kVid});
 
     auto* loopCondition = buildExpandCondition(gn->outputVar(), steps_.steps() + 1);
-    qctx_->objPool()->add(loopCondition);
     auto* loop = Loop::make(qctx_, loopDep, subgraph, loopCondition);
 
     auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kSubgraph);

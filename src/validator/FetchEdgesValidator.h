@@ -40,13 +40,15 @@ private:
     std::string buildRuntimeInput();
 
     Expression* notEmpty(Expression* expr) {
-        return new RelationalExpression(
-            Expression::Kind::kRelNE, new ConstantExpression(Value::kEmpty), DCHECK_NOTNULL(expr));
+        return RelationalExpression::makeNE(
+            qctx_->objPool(),
+            ConstantExpression::make(qctx_->objPool(), Value::kEmpty),
+            DCHECK_NOTNULL(expr));
     }
 
     Expression* lgAnd(Expression* left, Expression* right) {
-        return new LogicalExpression(
-            Expression::Kind::kLogicalAnd, DCHECK_NOTNULL(left), DCHECK_NOTNULL(right));
+        return LogicalExpression::makeAnd(
+            qctx_->objPool(), DCHECK_NOTNULL(left), DCHECK_NOTNULL(right));
     }
 
     Expression* emptyEdgeKeyFilter();

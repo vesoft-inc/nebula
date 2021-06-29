@@ -64,11 +64,16 @@ private:
                                    size_t startIndex,
                                    SubPlan& plan);
 
-    YieldColumn* buildVertexColumn(const std::string& colName, const std::string& alias) const;
+    YieldColumn* buildVertexColumn(MatchClauseContext* matchClauseCtx,
+                                   const std::string& colName,
+                                   const std::string& alias) const;
 
-    YieldColumn* buildEdgeColumn(const std::string& colName, EdgeInfo& edge) const;
+    YieldColumn* buildEdgeColumn(MatchClauseContext* matchClauseCtx,
+                                 const std::string& colName,
+                                 EdgeInfo& edge) const;
 
-    YieldColumn* buildPathColumn(const std::string& alias,
+    YieldColumn* buildPathColumn(MatchClauseContext* matchClauseCtx,
+                                 const std::string& alias,
                                  size_t startIndex,
                                  const std::vector<std::string> colNames,
                                  size_t nodeInfoSize) const;
@@ -76,7 +81,7 @@ private:
     Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
 
 private:
-    std::unique_ptr<Expression> initialExpr_;
+    Expression* initialExpr_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

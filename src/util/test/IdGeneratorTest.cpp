@@ -12,19 +12,21 @@
 namespace nebula {
 namespace graph {
 TEST(IdGeneratorTest, gen) {
+    // Use the current id as the start id
+    const int64_t curId = EPIdGenerator::instance().id() + 1;
     nebula::concurrent::Barrier bar(3);
     std::vector<int64_t> ids1;
-    auto t1 = std::thread([&ids1, &bar] () {
+    auto t1 = std::thread([&ids1, &bar, &curId]() {
         for (auto i = 0; i < 5; ++i) {
-            ids1.emplace_back(EPIdGenerator::instance().id());
+            ids1.emplace_back(EPIdGenerator::instance().id() - curId);
         }
         bar.wait();
     });
 
     std::vector<int64_t> ids2;
-    auto t2 = std::thread([&ids2, &bar] () {
+    auto t2 = std::thread([&ids2, &bar, &curId]() {
         for (auto i = 0; i < 5; ++i) {
-            ids2.emplace_back(EPIdGenerator::instance().id());
+            ids2.emplace_back(EPIdGenerator::instance().id() - curId);
         }
         bar.wait();
     });

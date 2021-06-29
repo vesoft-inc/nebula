@@ -149,12 +149,13 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
     auto &nodeInfos = matchClauseCtx.nodeInfos;
     auto &edgeInfos = matchClauseCtx.edgeInfos;
 
-    auto pathBuild = std::make_unique<PathBuildExpression>();
+    auto *pool = qctx_->objPool();
+    auto pathBuild = PathBuildExpression::make(pool);
     for (size_t i = 0; i < edgeInfos.size(); ++i) {
-        pathBuild->add(std::make_unique<VariablePropertyExpression>("", nodeInfos[i].alias));
-        pathBuild->add(std::make_unique<VariablePropertyExpression>("", edgeInfos[i].alias));
+        pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos[i].alias));
+        pathBuild->add(VariablePropertyExpression::make(pool, "", edgeInfos[i].alias));
     }
-    pathBuild->add(std::make_unique<VariablePropertyExpression>("", nodeInfos.back().alias));
+    pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos.back().alias));
     matchClauseCtx.pathBuild = std::move(pathBuild);
     return Status::OK();
 }
@@ -164,6 +165,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
                                      std::unordered_map<std::string, AliasType> &aliases) const {
     auto *sm = qctx_->schemaMng();
     auto steps = path->steps();
+    auto *pool = qctx_->objPool();
     nodeInfos.resize(steps + 1);
 
     for (auto i = 0u; i <= steps; i++) {
@@ -194,18 +196,17 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
         }
         Expression *filter = nullptr;
         if (props != nullptr) {
-            auto result = makeSubFilterWithoutSave(alias, props);
+            auto result = makeSubFilter(alias, props);
             NG_RETURN_IF_ERROR(result);
             filter = result.value();
         } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
             const auto &labels = node->labels()->labels();
             for (const auto &label : labels) {
-                auto result = makeSubFilterWithoutSave(alias, label->props(), *label->label());
+                auto result = makeSubFilter(alias, label->props(), *label->label());
                 NG_RETURN_IF_ERROR(result);
-                filter = andConnect(filter, result.value());
+                filter = andConnect(pool, filter, result.value());
             }
         }
-        saveObject(filter);
         nodeInfos[i].anonymous = anonymous;
         nodeInfos[i].alias = alias;
         nodeInfos[i].props = props;
@@ -310,9 +311,10 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
     }
     // `RETURN *': return all named nodes or edges
     YieldColumns *columns = nullptr;
+    auto *pool = qctx_->objPool();
     if (ret->isAll()) {
-        auto makeColumn = [](const std::string &name) {
-            auto *expr = new LabelExpression(name);
+        auto makeColumn = [&pool](const std::string &name) {
+            auto *expr = LabelExpression::make(pool, name);
             return new YieldColumn(expr, name);
         };
         if (kind == CypherClauseKind::kMatch) {
@@ -478,7 +480,7 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
         return Status::SemanticError("Expression in UNWIND must be aliased (use AS)");
     }
     unwindCtx.alias = unwindClause->alias();
-    unwindCtx.unwindExpr = unwindCtx.qctx->objPool()->add(unwindClause->expr()->clone().release());
+    unwindCtx.unwindExpr = unwindClause->expr()->clone();
 
     auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
     for (auto *labelExpr : labelExprs) {
@@ -501,22 +503,15 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
 StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
                                                      const MapExpression *map,
                                                      const std::string &label) const {
-    auto result = makeSubFilterWithoutSave(alias, map, label);
-    NG_RETURN_IF_ERROR(result);
-    return saveObject(result.value());
-}
-
-StatusOr<Expression *> MatchValidator::makeSubFilterWithoutSave(const std::string &alias,
-                                                                const MapExpression *map,
-                                                                const std::string &label) const {
+    auto *pool = qctx_->objPool();
     // Node has tag without property
     if (!label.empty() && map == nullptr) {
-        auto *left = new ConstantExpression(label);
+        auto *left = ConstantExpression::make(pool, label);
 
-        auto *args = new ArgumentList();
-        args->addArgument(std::make_unique<LabelExpression>(alias));
-        auto *right = new FunctionCallExpression("tags", args);
-        Expression *root = new RelationalExpression(Expression::Kind::kRelIn, left, right);
+        auto *args = ArgumentList::make(pool);
+        args->addArgument(LabelExpression::make(pool, alias));
+        auto *right = FunctionCallExpression::make(pool, "tags", args);
+        Expression *root = RelationalExpression::makeIn(pool, left, right);
 
         return root;
     }
@@ -530,36 +525,39 @@ StatusOr<Expression *> MatchValidator::makeSubFilterWithoutSave(const std::strin
         return Status::SemanticError("Props must be constant: `%s'",
                                      items[0].second->toString().c_str());
     }
-    Expression *root = new RelationalExpression(
-        Expression::Kind::kRelEQ,
-        new LabelAttributeExpression(new LabelExpression(alias),
-                                     new ConstantExpression(items[0].first)),
-        items[0].second->clone().release());
+    Expression *root = RelationalExpression::makeEQ(
+        pool,
+        LabelAttributeExpression::make(pool,
+                                       LabelExpression::make(pool, alias),
+                                       ConstantExpression::make(pool, items[0].first)),
+        items[0].second->clone());
     for (auto i = 1u; i < items.size(); i++) {
         if (items[i].second->kind() != Expression::Kind::kConstant) {
             return Status::SemanticError("Props must be constant: `%s'",
                                          items[i].second->toString().c_str());
         }
         auto *left = root;
-        auto *right = new RelationalExpression(
-            Expression::Kind::kRelEQ,
-            new LabelAttributeExpression(new LabelExpression(alias),
-                                         new ConstantExpression(items[i].first)),
-            items[i].second->clone().release());
-        root = new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
+        auto *right = RelationalExpression::makeEQ(
+            pool,
+            LabelAttributeExpression::make(pool,
+                                           LabelExpression::make(pool, alias),
+                                           ConstantExpression::make(pool, items[i].first)),
+            items[i].second->clone());
+        root = LogicalExpression::makeAnd(pool, left, right);
     }
-
     return root;
 }
 
-/*static*/ Expression *MatchValidator::andConnect(Expression *left, Expression *right) {
+/*static*/ Expression *MatchValidator::andConnect(ObjectPool *pool,
+                                                  Expression *left,
+                                                  Expression *right) {
     if (left == nullptr) {
         return right;
     }
     if (right == nullptr) {
         return left;
     }
-    return new LogicalExpression(Expression::Kind::kLogicalAnd, left, right);
+    return LogicalExpression::makeAnd(pool, left, right);
 }
 
 Status MatchValidator::combineAliases(
@@ -576,11 +574,12 @@ Status MatchValidator::combineAliases(
 
 Status MatchValidator::combineYieldColumns(YieldColumns *yieldColumns,
                                            YieldColumns *prevYieldColumns) const {
+    auto *pool = qctx_->objPool();
     const auto &prevColumns = prevYieldColumns->columns();
     for (auto &column : prevColumns) {
         DCHECK(!column->alias().empty());
-        auto *newColumn =
-            new YieldColumn(new VariablePropertyExpression("", column->alias()), column->alias());
+        auto *newColumn = new YieldColumn(
+            VariablePropertyExpression::make(pool, "", column->alias()), column->alias());
         yieldColumns->addColumn(newColumn);
     }
 
@@ -662,6 +661,8 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
 
 Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
     auto cols = yieldCtx.yieldColumns->columns();
+    auto *pool = qctx_->objPool();
+
     DCHECK(!cols.empty());
     for (auto *col : cols) {
         auto *colExpr = col->expr();
@@ -669,7 +670,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         if (colExpr->kind() != Expression::Kind::kAggregate) {
             auto collectAggCol = colExpr->clone();
             auto aggs =
-                ExpressionUtils::collectAll(collectAggCol.get(), {Expression::Kind::kAggregate});
+                ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
             for (auto *agg : aggs) {
                 DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
                 if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(agg))
@@ -678,14 +679,13 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
                                                  colExpr->toString().c_str());
                 }
 
-                yieldCtx.groupItems_.emplace_back(
-                    yieldCtx.qctx->objPool()->add(agg->clone().release()));
+                yieldCtx.groupItems_.emplace_back(agg->clone());
 
                 yieldCtx.needGenProject_ = true;
                 yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
             }
             if (!aggs.empty()) {
-                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(pool, colExpr);
                 yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
                 yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
                 continue;
@@ -702,7 +702,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.groupItems_.emplace_back(colExpr);
 
         yieldCtx.projCols_->addColumn(
-            new YieldColumn(new VariablePropertyExpression("", colOldName), colOldName));
+            new YieldColumn(VariablePropertyExpression::make(pool, "", colOldName), colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         yieldCtx.aggOutputColumnNames_.emplace_back(colOldName);
     }

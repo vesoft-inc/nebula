@@ -15,14 +15,14 @@ namespace graph {
 
 class ExtractFilterExprVisitor final : public ExprVisitorImpl {
 public:
-    ExtractFilterExprVisitor() = default;
+    explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
 
     bool ok() const override {
         return canBePushed_;
     }
 
-    std::unique_ptr<Expression> remainedExpr() && {
-        return std::move(remainedExpr_);
+    Expression* remainedExpr() {
+        return remainedExpr_;
     }
 
 private:
@@ -49,8 +49,10 @@ private:
     void visit(ColumnExpression *) override;
     void visit(SubscriptRangeExpression *) override;
 
+private:
+    ObjectPool *pool_;
     bool canBePushed_{true};
-    std::unique_ptr<Expression> remainedExpr_;
+    Expression* remainedExpr_{nullptr};
 };
 
 }   // namespace graph

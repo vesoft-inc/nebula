@@ -20,8 +20,7 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
     auto* wctx = static_cast<WhereClauseContext*>(ctx);
     if (wctx->filter) {
         SubPlan wherePlan;
-        auto* newFilter = MatchSolver::doRewrite(*wctx->aliasesUsed, wctx->filter);
-        wctx->qctx->objPool()->add(newFilter);
+        auto* newFilter = MatchSolver::doRewrite(wctx->qctx, *wctx->aliasesUsed, wctx->filter);
         wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, true);
         wherePlan.tail = wherePlan.root;
 

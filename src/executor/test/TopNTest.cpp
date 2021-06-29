@@ -39,7 +39,7 @@ class TopNTest : public QueryTestBase {};
             sentence = "YIELD $-.v_age AS age";                                                    \
             colNames.emplace_back("age");                                                          \
         }                                                                                          \
-        auto yieldSentence = getYieldSentence(sentence);                                           \
+        auto yieldSentence = getYieldSentence(sentence, qctx_.get());                              \
         auto* project = Project::make(qctx_.get(), start, yieldSentence->yieldColumns());          \
         project->setInputVar(topnNode->outputVar());                                               \
         project->setColNames(std::move(colNames));                                                 \

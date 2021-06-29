@@ -40,6 +40,7 @@ StatusOr<OptRule::TransformResult> CombineFilterRule::transform(
     const auto& deps = matched.dependencies;
     const auto* filterGroup = filterGroupNode->group();
     auto* qctx = octx->qctx();
+    auto* pool = qctx->objPool();
 
     TransformResult result;
     result.eraseAll = true;
@@ -50,9 +51,7 @@ StatusOr<OptRule::TransformResult> CombineFilterRule::transform(
         auto* newFilter = static_cast<graph::Filter*>(filterBelow->clone());
         const auto* conditionBelow = newFilter->condition();
         auto* conditionCombine =
-            qctx->objPool()->add(new LogicalExpression(Expression::Kind::kLogicalAnd,
-                                                       conditionAbove->clone().release(),
-                                                       conditionBelow->clone().release()));
+            LogicalExpression::makeAnd(pool, conditionAbove->clone(), conditionBelow->clone());
         newFilter->setCondition(conditionCombine);
         newFilter->setOutputVar(filterAbove->outputVar());
         auto* newGroupNode = OptGroupNode::create(octx, newFilter, filterGroup);

@@ -32,14 +32,15 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         return Status::SemanticError("Yield cols is Empty");
     }
 
-    projCols_ = qctx_->objPool()->add(new YieldColumns);
+    auto* pool = qctx_->objPool();
+    projCols_ = pool->add(new YieldColumns);
     for (auto* col : columns) {
         auto colOldName = col->name();
         auto* colExpr = col->expr();
         if (col->expr()->kind() != Expression::Kind::kAggregate) {
             auto collectAggCol = colExpr->clone();
             auto aggs =
-                ExpressionUtils::collectAll(collectAggCol.get(), {Expression::Kind::kAggregate});
+                ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
             for (auto* agg : aggs) {
                 DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
                 if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression*>(agg))
@@ -48,12 +49,12 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
                                                  colExpr->toString().c_str());
                 }
 
-                groupItems_.emplace_back(qctx_->objPool()->add(agg->clone().release()));
+                groupItems_.emplace_back(agg->clone());
                 needGenProject_ = true;
                 outputColumnNames_.emplace_back(agg->toString());
             }
             if (!aggs.empty()) {
-                auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+                auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(pool, colExpr);
                 projCols_->addColumn(new YieldColumn(colRewrited, colOldName));
                 continue;
             }
@@ -74,7 +75,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         auto type = std::move(status).value();
 
         projCols_->addColumn(
-            new YieldColumn(new VariablePropertyExpression("", colOldName), colOldName));
+            new YieldColumn(VariablePropertyExpression::make(pool, "", colOldName), colOldName));
 
         outputs_.emplace_back(colOldName, type);
         outputColumnNames_.emplace_back(colOldName);

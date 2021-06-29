@@ -142,7 +142,7 @@ private:
 
     GraphSpaceID spaceId(const OptGroupNode *groupNode) const;
 
-    std::unique_ptr<Expression> filterExpr(const OptGroupNode *groupNode) const;
+    Expression* filterExpr(const OptGroupNode *groupNode) const;
 
     Status analyzeExpression(Expression* expr, FilterItems* items,
                              ScanKind* kind, bool isEdge) const;

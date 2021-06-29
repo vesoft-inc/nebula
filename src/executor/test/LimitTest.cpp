@@ -31,7 +31,7 @@ class LimitTest : public QueryTestBase {
         auto& limitResult = qctx_->ectx()->getResult(limitNode->outputVar());                      \
         EXPECT_EQ(limitResult.state(), Result::State::kSuccess);                                   \
         auto yieldSentence =                                                                       \
-            getYieldSentence("YIELD $-.v_name AS name, $-.e_start_year AS start");                 \
+            getYieldSentence("YIELD $-.v_name AS name, $-.e_start_year AS start", qctx_.get());    \
         auto columns = yieldSentence->columns();                                                   \
         auto* project = Project::make(qctx_.get(), limitNode, yieldSentence->yieldColumns());      \
         project->setInputVar(limitNode->outputVar());                                              \

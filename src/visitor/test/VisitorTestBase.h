@@ -17,161 +17,169 @@ namespace nebula {
 namespace graph {
 
 class ValidatorTestBase : public ::testing::Test {
+    void SetUp() override {
+        pool_ = std::make_unique<ObjectPool>();
+        pool = pool_.get();
+    }
+
 protected:
-    static ConstantExpression *constantExpr(Value value) {
-        return new ConstantExpression(std::move(value));
+    ConstantExpression *constantExpr(Value value) {
+        return ConstantExpression::make(pool, std::move(value));
     }
 
-    static ArithmeticExpression *addExpr(Expression *lhs, Expression *rhs) {
-        return new ArithmeticExpression(Expression::Kind::kAdd, lhs, rhs);
+    ArithmeticExpression *addExpr(Expression *lhs, Expression *rhs) {
+        return ArithmeticExpression::makeAdd(pool, lhs, rhs);
     }
 
-    static ArithmeticExpression *minusExpr(Expression *lhs, Expression *rhs) {
-        return new ArithmeticExpression(Expression::Kind::kMinus, lhs, rhs);
+    ArithmeticExpression *minusExpr(Expression *lhs, Expression *rhs) {
+        return ArithmeticExpression::makeMinus(pool, lhs, rhs);
     }
 
-    static ArithmeticExpression *multiplyExpr(Expression *lhs, Expression *rhs) {
-        return new ArithmeticExpression(Expression::Kind::kMultiply, lhs, rhs);
+    ArithmeticExpression *multiplyExpr(Expression *lhs, Expression *rhs) {
+        return ArithmeticExpression::makeMultiply(pool, lhs, rhs);
     }
 
-    static ArithmeticExpression *divideExpr(Expression *lhs, Expression *rhs) {
-        return new ArithmeticExpression(Expression::Kind::kDivision, lhs, rhs);
+    ArithmeticExpression *divideExpr(Expression *lhs, Expression *rhs) {
+        return ArithmeticExpression::makeDivision(pool, lhs, rhs);
     }
 
-    static RelationalExpression *eqExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelEQ, lhs, rhs);
+    RelationalExpression *eqExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeEQ(pool, lhs, rhs);
     }
 
-    static RelationalExpression *neExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelNE, lhs, rhs);
+    RelationalExpression *neExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeNE(pool, lhs, rhs);
     }
 
-    static RelationalExpression *ltExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelLT, lhs, rhs);
+    RelationalExpression *ltExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeLT(pool, lhs, rhs);
     }
 
-    static RelationalExpression *leExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelLE, lhs, rhs);
+    RelationalExpression *leExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeLE(pool, lhs, rhs);
     }
 
-    static RelationalExpression *gtExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelGT, lhs, rhs);
+    RelationalExpression *gtExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeGT(pool, lhs, rhs);
     }
 
-    static RelationalExpression *geExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelGE, lhs, rhs);
+    RelationalExpression *geExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeGE(pool, lhs, rhs);
     }
 
-    static RelationalExpression *inExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelIn, lhs, rhs);
+    RelationalExpression *inExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeIn(pool, lhs, rhs);
     }
 
-    static RelationalExpression *notInExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kRelNotIn, lhs, rhs);
+    RelationalExpression *notInExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeNotIn(pool, lhs, rhs);
     }
 
-    static RelationalExpression *containsExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kContains, lhs, rhs);
+    RelationalExpression *containsExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeContains(pool, lhs, rhs);
     }
 
-    static RelationalExpression *notContainsExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kNotContains, lhs, rhs);
+    RelationalExpression *notContainsExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeNotContains(pool, lhs, rhs);
     }
 
-    static RelationalExpression *startsWithExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kStartsWith, lhs, rhs);
+    RelationalExpression *startsWithExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeStartsWith(pool, lhs, rhs);
     }
 
-    static RelationalExpression *notStartsWithExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kNotStartsWith, lhs, rhs);
+    RelationalExpression *notStartsWithExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeNotStartsWith(pool, lhs, rhs);
     }
 
-    static RelationalExpression *endsWithExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kEndsWith, lhs, rhs);
+    RelationalExpression *endsWithExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeEndsWith(pool, lhs, rhs);
     }
 
-    static RelationalExpression *notEndsWithExpr(Expression *lhs, Expression *rhs) {
-        return new RelationalExpression(Expression::Kind::kNotEndsWith, lhs, rhs);
+    RelationalExpression *notEndsWithExpr(Expression *lhs, Expression *rhs) {
+        return RelationalExpression::makeNotEndsWith(pool, lhs, rhs);
     }
 
-    static TypeCastingExpression *castExpr(Type type, Expression *expr) {
-        return new TypeCastingExpression(type, expr);
+    TypeCastingExpression *castExpr(Type type, Expression *expr) {
+        return TypeCastingExpression::make(pool, type, expr);
     }
 
-    static UnaryExpression *notExpr(Expression *expr) {
-        return new UnaryExpression(Expression::Kind::kUnaryNot, expr);
+    UnaryExpression *notExpr(Expression *expr) {
+        return UnaryExpression::makeNot(pool, expr);
     }
 
-    static LogicalExpression *andExpr(Expression *lhs, Expression *rhs) {
-        return new LogicalExpression(Expression::Kind::kLogicalAnd, lhs, rhs);
+    LogicalExpression *andExpr(Expression *lhs, Expression *rhs) {
+        return LogicalExpression::makeAnd(pool, lhs, rhs);
     }
 
-    static LogicalExpression *orExpr(Expression *lhs, Expression *rhs) {
-        return new LogicalExpression(Expression::Kind::kLogicalOr, lhs, rhs);
+    LogicalExpression *orExpr(Expression *lhs, Expression *rhs) {
+        return LogicalExpression::makeOr(pool, lhs, rhs);
     }
 
-    static ListExpression *listExpr(std::initializer_list<Expression *> exprs) {
-        auto exprList = new ExpressionList;
+    ListExpression *listExpr(std::initializer_list<Expression *> exprs) {
+        auto exprList = ExpressionList::make(pool);
         for (auto expr : exprs) {
             exprList->add(expr);
         }
-        return new ListExpression(exprList);
+        return ListExpression::make(pool, exprList);
     }
 
-    static SetExpression *setExpr(std::initializer_list<Expression *> exprs) {
-        auto exprList = new ExpressionList;
+    SetExpression *setExpr(std::initializer_list<Expression *> exprs) {
+        auto exprList = ExpressionList::make(pool);
         for (auto expr : exprs) {
             exprList->add(expr);
         }
-        return new SetExpression(exprList);
+        return SetExpression::make(pool, exprList);
     }
 
-    static MapExpression *mapExpr(
-        std::initializer_list<std::pair<std::string, Expression *>> exprs) {
-        auto mapItemList = new MapItemList;
+    MapExpression *mapExpr(std::initializer_list<std::pair<std::string, Expression *>> exprs) {
+        auto mapItemList = MapItemList::make(pool);
         for (auto expr : exprs) {
             mapItemList->add(expr.first, expr.second);
         }
-        return new MapExpression(mapItemList);
+        return MapExpression::make(pool, mapItemList);
     }
 
-    static SubscriptExpression *subExpr(Expression *lhs, Expression *rhs) {
-        return new SubscriptExpression(lhs, rhs);
+    SubscriptExpression *subExpr(Expression *lhs, Expression *rhs) {
+        return SubscriptExpression::make(pool, lhs, rhs);
     }
 
-    static FunctionCallExpression *fnExpr(std::string fn,
-                                          std::initializer_list<Expression *> args) {
-        auto argsList = new ArgumentList;
+    FunctionCallExpression *fnExpr(std::string fn, std::initializer_list<Expression *> args) {
+        auto argsList = ArgumentList::make(pool);
         for (auto arg : args) {
-            argsList->addArgument(std::unique_ptr<Expression>(arg));
+            argsList->addArgument(arg);
         }
-        return new FunctionCallExpression(std::move(fn), argsList);
+        return FunctionCallExpression::make(pool, std::move(fn), argsList);
     }
 
-    static VariableExpression *varExpr(const std::string &name) {
-        return new VariableExpression(name);
+    VariableExpression *varExpr(const std::string &name) {
+        return VariableExpression::make(pool, name);
     }
 
-    static CaseExpression *caseExpr(Expression *cond,
-                                    Expression *defaltResult,
-                                    Expression *when,
-                                    Expression *then) {
-        auto caseList = new CaseList;
+    CaseExpression *caseExpr(Expression *cond,
+                             Expression *defaltResult,
+                             Expression *when,
+                             Expression *then) {
+        auto caseList = CaseList::make(pool);
         caseList->add(when, then);
-        auto expr = new CaseExpression(caseList);
+        auto expr = CaseExpression::make(pool, caseList);
         expr->setCondition(cond);
         expr->setDefault(defaltResult);
         return expr;
     }
 
-    static LabelExpression *labelExpr(const std::string &name) {
-        return new LabelExpression(name);
+    LabelExpression *labelExpr(const std::string &name) {
+        return LabelExpression::make(pool, name);
     }
 
-    static LabelAttributeExpression *laExpr(const std::string &name, Value value) {
-        return new LabelAttributeExpression(new LabelExpression(name),
-                                            new ConstantExpression(std::move(value)));
+    LabelAttributeExpression *laExpr(const std::string &name, Value value) {
+        return LabelAttributeExpression::make(pool,
+                                              LabelExpression::make(pool, name),
+                                              ConstantExpression::make(pool, std::move(value)));
     }
+
+protected:
+    std::unique_ptr<ObjectPool> pool_;
+    ObjectPool *pool;
 };
 
 }   // namespace graph

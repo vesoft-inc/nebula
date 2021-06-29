@@ -47,20 +47,20 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     auto gnGroupNode = matched.dependencies.front().node;
     auto filter = static_cast<const Filter *>(filterGroupNode->node());
     auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
-
+    auto qctx = ctx->qctx();
+    auto pool = qctx->objPool();
     auto condition = filter->condition()->clone();
-    graph::ExtractFilterExprVisitor visitor;
+
+    graph::ExtractFilterExprVisitor visitor(pool);
     condition->accept(&visitor);
     if (!visitor.ok()) {
         return TransformResult::noTransform();
     }
 
-    auto qctx = ctx->qctx();
-    auto pool = qctx->objPool();
     auto remainedExpr = std::move(visitor).remainedExpr();
     OptGroupNode *newFilterGroupNode = nullptr;
     if (remainedExpr != nullptr) {
-        auto newFilter = Filter::make(qctx, nullptr, pool->add(remainedExpr.release()));
+        auto newFilter = Filter::make(qctx, nullptr, remainedExpr);
         newFilter->setOutputVar(filter->outputVar());
         newFilter->setInputVar(filter->inputVar());
         newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
@@ -68,10 +68,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
 
     auto newGNFilter = condition->encode();
     if (!gn->filter().empty()) {
-        auto filterExpr = Expression::decode(gn->filter());
-        LogicalExpression logicExpr(
-            Expression::Kind::kLogicalAnd, condition.release(), filterExpr.release());
-        newGNFilter = logicExpr.encode();
+        auto filterExpr = Expression::decode(pool, gn->filter());
+        auto logicExpr = LogicalExpression::makeAnd(pool, condition, filterExpr);
+        newGNFilter = logicExpr->encode();
     }
 
     auto newGN = static_cast<GetNeighbors *>(gn->clone());

@@ -39,9 +39,10 @@ protected:
 
     Expression* buildExpandEndCondition(const std::string &lastStepResult) const;
 
-    Expression* buildExpandCondition(const std::string &lastStepResult, uint32_t steps) {
-        return ExpressionUtils::And(buildNStepLoopCondition(steps),
-                                    buildExpandEndCondition(lastStepResult));
+    Expression* buildExpandCondition(const std::string& lastStepResult, uint32_t steps) {
+        return LogicalExpression::makeAnd(qctx_->objPool(),
+                                          buildNStepLoopCondition(steps),
+                                          buildExpandEndCondition(lastStepResult));
     }
 
 protected:

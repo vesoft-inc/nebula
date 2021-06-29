@@ -18,10 +18,12 @@ class AssignExecutorTest : public testing::Test {
 protected:
     void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
+        pool_ = qctx_->objPool();
     }
 
 protected:
     std::unique_ptr<QueryContext> qctx_;
+    ObjectPool* pool_;
 };
 
 TEST_F(AssignExecutorTest, SingleExpression) {
@@ -29,7 +31,7 @@ TEST_F(AssignExecutorTest, SingleExpression) {
         std::string varName = "intVar";
         int val = 13;
         qctx_->symTable()->newVariable(varName);
-        auto* expr = new ConstantExpression(val);
+        auto* expr = ConstantExpression::make(pool_, val);
 
         auto* assign = Assign::make(qctx_.get(), nullptr);
         assign->assignVar(varName, expr);
@@ -46,7 +48,7 @@ TEST_F(AssignExecutorTest, SingleExpression) {
         std::string varName = "floatVar";
         float val = 1.234563726090;
         qctx_->symTable()->newVariable(varName);
-        auto* expr = new ConstantExpression(val);
+        auto* expr = ConstantExpression::make(pool_, val);
 
         auto* assign = Assign::make(qctx_.get(), nullptr);
         assign->assignVar(varName, expr);
@@ -63,7 +65,7 @@ TEST_F(AssignExecutorTest, SingleExpression) {
         std::string varName = "stringVar";
         std::string val = "hello world";
         qctx_->symTable()->newVariable(varName);
-        auto* expr = new ConstantExpression(val);
+        auto* expr = ConstantExpression::make(pool_, val);
 
         auto* assign = Assign::make(qctx_.get(), nullptr);
         assign->assignVar(varName, expr);
@@ -87,9 +89,9 @@ TEST_F(AssignExecutorTest, MultiExpression) {
     qctx_->symTable()->newVariable(stringVar);
     auto* assign = Assign::make(qctx_.get(), nullptr);
 
-    assign->assignVar(intVar, new ConstantExpression(1));
-    assign->assignVar(floatVar, new ConstantExpression(3.2425787));
-    assign->assignVar(stringVar, new ConstantExpression("hello"));
+    assign->assignVar(intVar, ConstantExpression::make(pool_, 1));
+    assign->assignVar(floatVar, ConstantExpression::make(pool_, 3.2425787));
+    assign->assignVar(stringVar, ConstantExpression::make(pool_, "hello"));
 
     auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());
     auto future = assignExe->execute();
@@ -120,7 +122,7 @@ TEST_F(AssignExecutorTest, VariableExpression) {
     {
         // var1 = 13
         int val = 13;
-        auto* expr = new ConstantExpression(val);
+        auto* expr = ConstantExpression::make(pool_, val);
         auto* assign = Assign::make(qctx_.get(), nullptr);
         assign->assignVar(varName1, expr);
         auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());
@@ -132,8 +134,8 @@ TEST_F(AssignExecutorTest, VariableExpression) {
         EXPECT_EQ(result.getInt(), val);
     }
 
-    auto* addExpr = new ArithmeticExpression(
-        Expression::Kind::kAdd, new VariableExpression(varName1), new ConstantExpression(7));
+    auto* addExpr = ArithmeticExpression::makeAdd(
+        pool_, VariableExpression::make(pool_, varName1), ConstantExpression::make(pool_, 7));
     auto* assign = Assign::make(qctx_.get(), nullptr);
     assign->assignVar(varName, addExpr);
     auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());
@@ -155,7 +157,7 @@ TEST_F(AssignExecutorTest, VariableExpression1) {
     {
         // var1 = 13
         int val = 13;
-        auto* expr = new ConstantExpression(val);
+        auto* expr = ConstantExpression::make(pool_, val);
         auto* assign = Assign::make(qctx_.get(), nullptr);
         assign->assignVar(varName1, expr);
         auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());
@@ -167,8 +169,7 @@ TEST_F(AssignExecutorTest, VariableExpression1) {
         EXPECT_EQ(result.getInt(), val);
     }
     // var = var1++
-    auto* addExpr =
-        new UnaryExpression(Expression::Kind::kUnaryIncr, new VariableExpression(varName1));
+    auto* addExpr = UnaryExpression::makeIncr(pool_, VariableExpression::make(pool_, varName1));
     auto* assign = Assign::make(qctx_.get(), nullptr);
     assign->assignVar(varName, addExpr);
     auto assignExe = std::make_unique<AssignExecutor>(assign, qctx_.get());

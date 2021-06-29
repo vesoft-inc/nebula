@@ -701,7 +701,7 @@ private:
     void cloneMembers(const Unwind&);
 
 private:
-    Expression* unwindExpr_;
+    Expression* unwindExpr_{nullptr};
     std::string alias_;
 };
 
@@ -1149,7 +1149,7 @@ public:
         return qctx->objPool()->add(new Assign(qctx, input));
     }
 
-    const std::vector<std::pair<std::string, std::unique_ptr<Expression>>>& items() const {
+    const std::vector<std::pair<std::string, Expression*>>& items() const {
         return items_;
     }
 
@@ -1169,7 +1169,7 @@ private:
     void cloneMembers(const Assign&);
 
 private:
-    std::vector<std::pair<std::string, std::unique_ptr<Expression>>> items_;
+    std::vector<std::pair<std::string, Expression*>> items_;
 };
 
 /**

@@ -136,12 +136,12 @@ protected:
 private:
     Status checkAndResetSymExpr(Expression* inExpr,
                                 const std::string& symName,
-                                std::string &encodeStr);
+                                std::string& encodeStr);
 
-    std::unique_ptr<Expression> rewriteSymExpr(Expression* expr,
-                                               const std::string &sym,
-                                               bool &hasWrongType,
-                                               bool isEdge = false);
+    Expression* rewriteSymExpr(Expression* expr,
+                               const std::string& sym,
+                               bool& hasWrongType,
+                               bool isEdge = false);
 
 protected:
     UpdateBaseSentence                                 *sentence_;

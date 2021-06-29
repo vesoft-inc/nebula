@@ -55,20 +55,22 @@ Status SchemaUtil::validateProps(const std::vector<SchemaPropItem*> &schemaProps
 }
 
 // static
-std::shared_ptr<const meta::NebulaSchemaProvider>
-SchemaUtil::generateSchemaProvider(const SchemaVer ver, const meta::cpp2::Schema &schema) {
+std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProvider(
+    ObjectPool *pool,
+    const SchemaVer ver,
+    const meta::cpp2::Schema &schema) {
     auto schemaPtr = std::make_shared<meta::NebulaSchemaProvider>(ver);
     for (auto col : schema.get_columns()) {
         bool hasDef = col.default_value_ref().has_value();
-        std::unique_ptr<Expression> defaultValueExpr;
+        Expression* defaultValueExpr = nullptr;
         if (hasDef) {
-            defaultValueExpr = Expression::decode(*col.default_value_ref());
+            defaultValueExpr = Expression::decode(pool, *col.default_value_ref());
         }
         schemaPtr->addField(col.get_name(),
                             col.get_type().get_type(),
                             col.type.type_length_ref().value_or(0),
                             col.nullable_ref().value_or(false),
-                            hasDef ? defaultValueExpr.release() : nullptr);
+                            hasDef ? defaultValueExpr : nullptr);
     }
     return schemaPtr;
 }
@@ -160,8 +162,10 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
         auto nullable = col.nullable_ref().has_value() ? *col.nullable_ref() : false;
         row.values.emplace_back(nullable ? "YES" : "NO");
         auto defaultValue = Value::kEmpty;
+        ObjectPool tempPool;
+
         if (col.default_value_ref().has_value()) {
-            auto expr = Expression::decode(*col.default_value_ref());
+            auto expr = Expression::decode(&tempPool, *col.default_value_ref());
             if (expr == nullptr) {
                 LOG(ERROR) << "Internal error: Wrong default value expression.";
                 defaultValue = Value();
@@ -169,7 +173,7 @@ StatusOr<DataSet> SchemaUtil::toDescSchema(const meta::cpp2::Schema &schema) {
             }
             if (expr->kind() == Expression::Kind::kConstant) {
                 QueryExpressionContext ctx;
-                defaultValue = Expression::eval(expr.get(), ctx(nullptr));
+                defaultValue = Expression::eval(expr, ctx(nullptr));
             } else {
                 defaultValue = Value(expr->toString());
             }
@@ -198,8 +202,10 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
         dataSet.colNames = {"Edge", "Create Edge"};
         createStr = "CREATE EDGE `" + name + "` (\n";
     }
+
     Row row;
     row.emplace_back(name);
+    ObjectPool tempPool;
     for (auto &col : schema.get_columns()) {
         createStr += " `" + col.get_name() + "`";
         createStr += " " + typeToString(col);
@@ -212,7 +218,7 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
 
         if (col.default_value_ref().has_value()) {
             auto encodeStr = *col.default_value_ref();
-            auto expr = Expression::decode(encodeStr);
+            auto expr = Expression::decode(&tempPool, encodeStr);
             if (expr == nullptr) {
                 LOG(ERROR) << "Internal error: the default value is wrong expression.";
                 continue;

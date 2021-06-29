@@ -49,7 +49,7 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
                 auto *defaultValueExpr = property->defaultValue();
                 auto pool = qctx()->objPool();
                 // some expression is evaluable but not pure so only fold instead of eval here
-                auto foldRes = ExpressionUtils::foldConstantExpr(defaultValueExpr, pool);
+                auto foldRes = ExpressionUtils::foldConstantExpr(pool, defaultValueExpr);
                 NG_RETURN_IF_ERROR(foldRes);
                 column.set_default_value(foldRes.value()->encode());
             } else if (property->isComment()) {
@@ -79,7 +79,8 @@ Status CreateTagValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
     NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
     // Save the schema in validateContext
-    auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+    auto pool = qctx_->objPool();
+    auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema_);
     vctx_->addSchema(name_, schemaPro);
     return Status::OK();
 }
@@ -107,7 +108,8 @@ Status CreateEdgeValidator::validateImpl() {
     NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
     NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
     // Save the schema in validateContext
-    auto schemaPro = SchemaUtil::generateSchemaProvider(0, schema_);
+    auto pool = qctx_->objPool();
+    auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema_);
     vctx_->addSchema(name_, schemaPro);
     return Status::OK();
 }

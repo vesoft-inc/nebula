@@ -52,8 +52,9 @@ Status FetchVerticesValidator::toPlan() {
             // if the result is required
         }
     } else {
-        auto *columns = qctx_->objPool()->add(new YieldColumns());
-        columns->addColumn(new YieldColumn(new VertexExpression(), "vertices_"));
+        auto *pool = qctx_->objPool();
+        auto *columns = pool->add(new YieldColumns());
+        columns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
         current = Project::make(qctx_, current, columns);
     }
     root_ = current;
@@ -149,8 +150,10 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     dedup_ = yield->isDistinct();
     ExpressionProps exprProps;
     DeducePropsVisitor deducePropsVisitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
+
+    auto* pool = qctx_->objPool();
     for (auto col : yield->columns()) {
-        col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
+        col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(pool, col->expr()));
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
         col->expr()->accept(&deducePropsVisitor);
         if (!deducePropsVisitor.ok()) {
@@ -199,7 +202,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
     newYieldColumns_ = qctx_->objPool()->add(new YieldColumns());
     // note eval vid by input expression
     newYieldColumns_->addColumn(
-        new YieldColumn(new InputPropertyExpression(nebula::kVid), VertexID));
+        new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID));
     for (auto col : yield->columns()) {
         newYieldColumns_->addColumn(col->clone().release());
     }
@@ -235,7 +238,9 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
 std::string FetchVerticesValidator::buildConstantInput() {
     auto input = vctx_->anonVarGen()->getVar();
     qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).finish());
-    src_ = qctx_->objPool()->makeAndAdd<VariablePropertyExpression>(input, kVid);
+
+    auto *pool = qctx_->objPool();
+    src_ = VariablePropertyExpression::make(pool, input, kVid);
     return input;
 }
 

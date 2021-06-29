@@ -23,7 +23,8 @@ std::unique_ptr<PlanNodeDescription> Explore::explain() const {
     addDescription("space", folly::to<std::string>(space_), desc.get());
     addDescription("dedup", util::toJson(dedup_), desc.get());
     addDescription("limit", folly::to<std::string>(limit_), desc.get());
-    auto filter = filter_.empty() ? filter_ : Expression::decode(filter_)->toString();
+    auto filter =
+        filter_.empty() ? filter_ : Expression::decode(qctx_->objPool(), filter_)->toString();
     addDescription("filter", filter, desc.get());
     addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
     return desc;
@@ -66,7 +67,7 @@ PlanNode* GetNeighbors::clone() const {
 void GetNeighbors::cloneMembers(const GetNeighbors& g) {
     Explore::cloneMembers(g);
 
-    setSrc(qctx_->objPool()->add(g.src_->clone().release()));
+    setSrc(g.src_->clone());
     setEdgeTypes(g.edgeTypes_);
     setEdgeDirection(g.edgeDirection_);
     setRandom(g.random_);
@@ -112,7 +113,7 @@ PlanNode* GetVertices::clone() const {
 void GetVertices::cloneMembers(const GetVertices& gv) {
     Explore::cloneMembers(gv);
 
-    src_ = qctx_->objPool()->add(gv.src()->clone().release());
+    src_ = gv.src()->clone();
 
     if (gv.props_) {
         auto vertexProps = *gv.props_;
@@ -148,10 +149,10 @@ PlanNode* GetEdges::clone() const {
 void GetEdges::cloneMembers(const GetEdges& ge) {
     Explore::cloneMembers(ge);
 
-    src_ = qctx_->objPool()->add(ge.src()->clone().release());
-    type_ = qctx_->objPool()->add(ge.type()->clone().release());
-    ranking_ = qctx_->objPool()->add(ge.ranking()->clone().release());
-    dst_ = qctx_->objPool()->add(ge.dst()->clone().release());
+    src_ = ge.src()->clone();
+    type_ = ge.type()->clone();
+    ranking_ = ge.ranking()->clone();
+    dst_ = ge.dst()->clone();
 
     if (ge.props_) {
         auto edgeProps = *ge.props_;
@@ -218,7 +219,7 @@ PlanNode* Filter::clone() const {
 void Filter::cloneMembers(const Filter& f) {
     SingleInputNode::cloneMembers(f);
 
-    condition_ = qctx_->objPool()->add(f.condition()->clone().release());
+    condition_ = f.condition()->clone();
     needStableFilter_ = f.needStableFilter();
 }
 
@@ -312,7 +313,7 @@ PlanNode* Unwind::clone() const {
 void Unwind::cloneMembers(const Unwind &p) {
     SingleInputNode::cloneMembers(p);
 
-    unwindExpr_ = qctx_->objPool()->add(p.unwindExpr()->clone().release());
+    unwindExpr_ = p.unwindExpr()->clone();
     alias_ = p.alias();
 }
 
@@ -413,10 +414,10 @@ void Aggregate::cloneMembers(const Aggregate& agg) {
     std::vector<Expression*> gKeys;
     std::vector<Expression*> gItems;
     for (auto* expr : agg.groupKeys()) {
-        gKeys.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+        gKeys.emplace_back(expr->clone());
     }
     for (auto* expr : agg.groupItems()) {
-        gItems.emplace_back(qctx_->objPool()->add(expr->clone().release()));
+        gItems.emplace_back(expr->clone());
     }
     groupKeys_ = std::move(gKeys);
     groupItems_ = std::move(gItems);
@@ -522,13 +523,13 @@ void Join::cloneMembers(const Join& j) {
 
     std::vector<Expression*> hKeys;
     for (auto* item : j.hashKeys()) {
-        hKeys.emplace_back(qctx_->objPool()->add(item->clone().release()));
+        hKeys.emplace_back(item->clone());
     }
     hashKeys_ = std::move(hKeys);
 
     std::vector<Expression*> pKeys;
     for (auto* item : j.probeKeys()) {
-        pKeys.emplace_back(qctx_->objPool()->add(item->clone().release()));
+        pKeys.emplace_back(item->clone());
     }
     probeKeys_ = std::move(pKeys);
 }
@@ -604,8 +605,8 @@ PlanNode* Assign::clone() const {
 void Assign::cloneMembers(const Assign& f) {
     SingleInputNode::cloneMembers(f);
 
-    for (const std::pair<std::string, std::unique_ptr<Expression>>& item : f.items()) {
-        std::pair<std::string, std::unique_ptr<Expression>> newItem;
+    for (const std::pair<std::string, Expression*>& item : f.items()) {
+        std::pair<std::string, Expression*> newItem;
         newItem.first = item.first;
         newItem.second = item.second->clone();
         items_.emplace_back(std::move(newItem));

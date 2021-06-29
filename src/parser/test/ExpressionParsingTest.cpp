@@ -11,17 +11,24 @@
 
 namespace nebula {
 
+using graph::QueryContext;
 
 class ExpressionParsingTest : public ::testing::Test {
+    void SetUp() override {
+        qctx_ = std::make_unique<QueryContext>();
+        pool = qctx_->objPool();
+    }
+
 protected:
-    template <typename T, typename...Args>
-    static T* make(Args&&...args) {
-        return new T(std::forward<Args>(args)...);
+    template <typename T, typename... Args>
+    T *make(Args &&...args) {
+        return T::make(pool, std::forward<Args>(args)...);
     }
 
     const Expression* parse(std::string expr) {
         std::string query = "GO FROM '1' OVER * WHERE " + expr;
-        GQLParser parser;
+
+        GQLParser parser(qctx_.get());
         auto result = parser.parse(std::move(query));
         CHECK(result.ok()) << result.status();
         stmt_ = std::move(result).value();
@@ -58,8 +65,8 @@ protected:
 
         // verify
         for (auto i = 0u; i < items.size(); i++) {
-            auto *parsed = items[i].get();
-            auto *expected = items_[i].second.get();
+            auto *parsed = items[i];
+            auto *expected = items_[i].second;
             ASSERT_EQ(*parsed, *expected) << "Expression: " << items_[i].first
                                           << ", Expected: " << expected->toString()
                                           << ", Actual:   " << parsed->toString();
@@ -68,187 +75,188 @@ protected:
 
 protected:
     using Kind = Expression::Kind;
-    using Item = std::pair<std::string, std::unique_ptr<Expression>>;
+    using Item = std::pair<std::string, Expression*>;
     std::vector<Item>                       items_;
     std::unique_ptr<Sentence>               stmt_;
-    const Expression                       *expr_;
+    const Expression                        *expr_;
+    std::unique_ptr<QueryContext>           qctx_;
+    ObjectPool                              *pool;
 };
-
 
 TEST_F(ExpressionParsingTest, Associativity) {
     Expression * ast = nullptr;
 
-    ast = make<ArithmeticExpression>(Kind::kAdd,
-                                     make<ArithmeticExpression>(Kind::kAdd,
+    ast = ArithmeticExpression::makeAdd(pool,
+                                     ArithmeticExpression::makeAdd(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 + 2 + 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
-                                     make<ArithmeticExpression>(Kind::kMinus,
+    ast = ArithmeticExpression::makeMinus(pool,
+                                     ArithmeticExpression::makeMinus(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 - 2 - 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
-                                     make<ArithmeticExpression>(Kind::kAdd,
+    ast = ArithmeticExpression::makeMinus(pool,
+                                     ArithmeticExpression::makeAdd(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 + 2 - 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kAdd,
-                                     make<ArithmeticExpression>(Kind::kMinus,
+    ast = ArithmeticExpression::makeAdd(pool,
+                                     ArithmeticExpression::makeMinus(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 - 2 + 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMultiply,
-                                     make<ArithmeticExpression>(Kind::kMultiply,
+    ast = ArithmeticExpression::makeMultiply(pool,
+                                     ArithmeticExpression::makeMultiply(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 * 2 * 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kDivision,
-                                     make<ArithmeticExpression>(Kind::kDivision,
+    ast = ArithmeticExpression::makeDivision(pool,
+                                     ArithmeticExpression::makeDivision(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 / 2 / 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMod,
-                                     make<ArithmeticExpression>(Kind::kMod,
+    ast = ArithmeticExpression::makeMod(pool,
+                                     ArithmeticExpression::makeMod(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 % 2 % 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kDivision,
-                                     make<ArithmeticExpression>(Kind::kMultiply,
+    ast = ArithmeticExpression::makeDivision(pool,
+                                     ArithmeticExpression::makeMultiply(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 * 2 / 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMod,
-                                     make<ArithmeticExpression>(Kind::kMultiply,
+    ast = ArithmeticExpression::makeMod(pool,
+                                     ArithmeticExpression::makeMultiply(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 * 2 % 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMultiply,
-                                     make<ArithmeticExpression>(Kind::kDivision,
+    ast = ArithmeticExpression::makeMultiply(pool,
+                                     ArithmeticExpression::makeDivision(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 / 2 * 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMod,
-                                     make<ArithmeticExpression>(Kind::kDivision,
+    ast = ArithmeticExpression::makeMod(pool,
+                                     ArithmeticExpression::makeDivision(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 / 2 % 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMultiply,
-                                     make<ArithmeticExpression>(Kind::kMod,
+    ast = ArithmeticExpression::makeMultiply(pool,
+                                     ArithmeticExpression::makeMod(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 % 2 * 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kDivision,
-                                     make<ArithmeticExpression>(Kind::kMod,
+    ast = ArithmeticExpression::makeDivision(pool,
+                                     ArithmeticExpression::makeMod(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 % 2 / 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelEQ,
-                                     make<RelationalExpression>(Kind::kRelEQ,
+    ast = RelationalExpression::makeEQ(pool,
+                                     RelationalExpression::makeEQ(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 == 2 == 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelNE,
-                                     make<RelationalExpression>(Kind::kRelNE,
+    ast = RelationalExpression::makeNE(pool,
+                                     RelationalExpression::makeNE(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 != 2 != 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelLT,
-                                     make<RelationalExpression>(Kind::kRelLT,
+    ast = RelationalExpression::makeLT(pool,
+                                     RelationalExpression::makeLT(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 < 2 < 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelLE,
-                                     make<RelationalExpression>(Kind::kRelLE,
+    ast = RelationalExpression::makeLE(pool,
+                                     RelationalExpression::makeLE(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 <= 2 <= 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelGT,
-                                     make<RelationalExpression>(Kind::kRelGT,
+    ast = RelationalExpression::makeGT(pool,
+                                     RelationalExpression::makeGT(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 > 2 > 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelGE,
-                                     make<RelationalExpression>(Kind::kRelGE,
+    ast = RelationalExpression::makeGE(pool,
+                                     RelationalExpression::makeGE(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
                                      make<ConstantExpression>(3));
     add("1 >= 2 >= 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelIn,
-                                     make<RelationalExpression>(Kind::kRelIn,
+    ast = RelationalExpression::makeIn(pool,
+                                     RelationalExpression::makeIn(pool,
                                          make<LabelExpression>("a"),
                                          make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
     add("a IN b IN c", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelNotIn,
-                                     make<RelationalExpression>(Kind::kRelNotIn,
+    ast = RelationalExpression::makeNotIn(pool,
+                                     RelationalExpression::makeNotIn(pool,
                                          make<LabelExpression>("a"),
                                          make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
     add("a NOT IN b NOT IN c", ast);
 
-    ast = make<RelationalExpression>(Kind::kContains,
-                                     make<RelationalExpression>(Kind::kContains,
+    ast = RelationalExpression::makeContains(pool,
+                                     RelationalExpression::makeContains(pool,
                                          make<LabelExpression>("a"),
                                          make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
     add("a CONTAINS b CONTAINS c", ast);
 
     /*
-    ast = make<RelationalExpression>(Kind::kRelNotContains,
-                                     make<RelationalExpression>(Kind::kRelNotContains,
+    ast = RelationalExpression::makeNotContains(pool,
+                                     RelationalExpression::makeNotContains(pool,
                                         make<LabelExpression>("a"),
                                         make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
     add("1 NOT CONTAINS 2 NOT CONTAINS 3", ast);
     */
-    ast = make<RelationalExpression>(Kind::kStartsWith,
-                                     make<RelationalExpression>(Kind::kStartsWith,
+    ast = RelationalExpression::makeStartsWith(pool,
+                                     RelationalExpression::makeStartsWith(pool,
                                          make<LabelExpression>("a"),
                                          make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
     add("a STARTS WITH b STARTS WITH c", ast);
 
-    ast = make<RelationalExpression>(Kind::kEndsWith,
-                                     make<RelationalExpression>(Kind::kEndsWith,
+    ast = RelationalExpression::makeEndsWith(pool,
+                                     RelationalExpression::makeEndsWith(pool,
                                          make<LabelExpression>("a"),
                                          make<LabelExpression>("b")),
                                      make<LabelExpression>("c"));
@@ -266,36 +274,36 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                     make<ConstantExpression>("c"));
     add("a.b.c", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalAnd,
-                                  make<LogicalExpression>(Kind::kLogicalAnd,
+    ast = LogicalExpression::makeAnd(pool,
+                                  LogicalExpression::makeAnd(pool,
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
     add("a AND b AND c", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalAnd,
-                                  make<LogicalExpression>(Kind::kLogicalAnd,
+    ast = LogicalExpression::makeAnd(pool,
+                                  LogicalExpression::makeAnd(pool,
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
     add("a AND b AND c", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalOr,
-                                  make<LogicalExpression>(Kind::kLogicalOr,
+    ast = LogicalExpression::makeOr(pool,
+                                  LogicalExpression::makeOr(pool,
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
     add("a OR b OR c", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalOr,
-                                  make<LogicalExpression>(Kind::kLogicalOr,
+    ast = LogicalExpression::makeOr(pool,
+                                  LogicalExpression::makeOr(pool,
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
     add("a OR b OR c", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalXor,
-                                  make<LogicalExpression>(Kind::kLogicalXor,
+    ast = LogicalExpression::makeXor(pool,
+                                  LogicalExpression::makeXor(pool,
                                       make<LabelExpression>("a"),
                                       make<LabelExpression>("b")),
                                   make<LabelExpression>("c"));
@@ -306,16 +314,16 @@ TEST_F(ExpressionParsingTest, Associativity) {
                                           make<ConstantExpression>(3.14)));
     add("(int)(double)3.14", ast);
 
-    ast = make<UnaryExpression>(Kind::kUnaryNot,
-                                make<UnaryExpression>(Kind::kUnaryNot,
+    ast = UnaryExpression::makeNot(pool,
+                                UnaryExpression::makeNot(pool,
                                     make<ConstantExpression>(false)));
     add("!!false", ast);
 
-    auto cases = new CaseList();
+    auto cases = CaseList::make(pool);
     cases->add(make<ConstantExpression>(3), make<ConstantExpression>(4));
     ast = make<CaseExpression>(cases);
     static_cast<CaseExpression*>(ast)->setCondition(make<LabelExpression>("a"));
-    auto cases2 = new CaseList();
+    auto cases2 = CaseList::make(pool);
     cases2->add(make<ConstantExpression>(5), make<ConstantExpression>(6));
     auto ast2 = make<CaseExpression>(cases2);
     ast2->setCondition(make<LabelExpression>("b"));
@@ -330,102 +338,102 @@ TEST_F(ExpressionParsingTest, Associativity) {
 TEST_F(ExpressionParsingTest, Precedence) {
     Expression *ast = nullptr;
 
-    ast = make<ArithmeticExpression>(Kind::kAdd,
+    ast = ArithmeticExpression::makeAdd(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kMultiply,
+                                     ArithmeticExpression::makeMultiply(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 + 2 * 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
+    ast = ArithmeticExpression::makeMinus(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kMultiply,
+                                     ArithmeticExpression::makeMultiply(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 - 2 * 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kAdd,
+    ast = ArithmeticExpression::makeAdd(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kDivision,
+                                     ArithmeticExpression::makeDivision(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 + 2 / 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
+    ast = ArithmeticExpression::makeMinus(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kDivision,
+                                     ArithmeticExpression::makeDivision(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 - 2 / 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kAdd,
+    ast = ArithmeticExpression::makeAdd(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kMod,
+                                     ArithmeticExpression::makeMod(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 + 2 % 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
+    ast = ArithmeticExpression::makeMinus(pool,
                                      make<ConstantExpression>(1),
-                                     make<ArithmeticExpression>(Kind::kMod,
+                                     ArithmeticExpression::makeMod(pool,
                                          make<ConstantExpression>(2),
                                          make<ConstantExpression>(3)));
     add("1 - 2 % 3", ast);
 
-    ast = make<RelationalExpression>(Kind::kRelLT,
-                                     make<ArithmeticExpression>(Kind::kAdd,
+    ast = RelationalExpression::makeLT(pool,
+                                     ArithmeticExpression::makeAdd(pool,
                                          make<ConstantExpression>(1),
                                          make<ConstantExpression>(2)),
-                                     make<ArithmeticExpression>(Kind::kAdd,
+                                     ArithmeticExpression::makeAdd(pool,
                                          make<ConstantExpression>(3),
                                          make<ConstantExpression>(4)));
     add("1 + 2 < 3 + 4", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalOr,
-                                  make<UnaryExpression>(Kind::kUnaryPlus,
+    ast = LogicalExpression::makeOr(pool,
+                                  UnaryExpression::makePlus(pool,
                                       make<ConstantExpression>(1)),
-                                  make<LogicalExpression>(Kind::kLogicalAnd,
-                                      make<RelationalExpression>(Kind::kRelNE,
+                                  LogicalExpression::makeAnd(pool,
+                                      RelationalExpression::makeNE(pool,
                                           make<ConstantExpression>(1),
-                                          make<ArithmeticExpression>(Kind::kMinus,
+                                          ArithmeticExpression::makeMinus(pool,
                                               make<ConstantExpression>(2),
                                               make<ConstantExpression>(1))),
-                                      make<RelationalExpression>(Kind::kRelEQ,
+                                      RelationalExpression::makeEQ(pool,
                                           make<ConstantExpression>(3),
                                           make<ConstantExpression>(4))));
     add("+1 OR 1 != 2 - 1 AND 3 == 4", ast);
 
-    ast = make<UnaryExpression>(Kind::kUnaryNot,
-            make<RelationalExpression>(Kind::kRelLT,
-                make<ArithmeticExpression>(Kind::kAdd,
+    ast = UnaryExpression::makeNot(pool,
+            RelationalExpression::makeLT(pool,
+                ArithmeticExpression::makeAdd(pool,
                     make<ConstantExpression>(1),
                     make<ConstantExpression>(2)),
                 make<ConstantExpression>(3)));
     add("NOT 1 + 2 < 3", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalAnd,
-            make<UnaryExpression>(Kind::kUnaryNot,
-                make<RelationalExpression>(Kind::kRelLT,
-                    make<ArithmeticExpression>(Kind::kAdd,
+    ast = LogicalExpression::makeAnd(pool,
+            UnaryExpression::makeNot(pool,
+                RelationalExpression::makeLT(pool,
+                    ArithmeticExpression::makeAdd(pool,
                         make<ConstantExpression>(1),
                         make<ConstantExpression>(2)),
                     make<ConstantExpression>(3))),
-            make<UnaryExpression>(Kind::kUnaryNot,
-                make<RelationalExpression>(Kind::kRelLT,
-                    make<ArithmeticExpression>(Kind::kAdd,
+            UnaryExpression::makeNot(pool,
+                RelationalExpression::makeLT(pool,
+                    ArithmeticExpression::makeAdd(pool,
                         make<ConstantExpression>(1),
                         make<ConstantExpression>(2)),
                     make<ConstantExpression>(3))));
     add("NOT 1 + 2 < 3 AND NOT 1 + 2 < 3", ast);
 
-    ast = make<ArithmeticExpression>(Kind::kMinus,
-                                     make<ArithmeticExpression>(Kind::kMultiply,
-                                         make<UnaryExpression>(Kind::kUnaryNot,
+    ast = ArithmeticExpression::makeMinus(pool,
+                                     ArithmeticExpression::makeMultiply(pool,
+                                         UnaryExpression::makeNot(pool,
                                              make<ConstantExpression>(true)),
-                                         make<UnaryExpression>(Kind::kUnaryNegate,
+                                         UnaryExpression::makeNegate(pool,
                                              make<ConstantExpression>(1))),
-                                     make<UnaryExpression>(Kind::kUnaryNot,
-                                         make<UnaryExpression>(Kind::kUnaryNot,
+                                     UnaryExpression::makeNot(pool,
+                                         UnaryExpression::makeNot(pool,
                                              make<ConstantExpression>(false))));
     add("!true * -1 - NOT NOT false", ast);
 
@@ -438,9 +446,9 @@ TEST_F(ExpressionParsingTest, Precedence) {
             make<ConstantExpression>("m"));
     add("$var[0]['1'].m", ast);
 
-    ast = make<LogicalExpression>(Kind::kLogicalXor,
-                                  make<UnaryExpression>(Kind::kUnaryNot,
-                                      make<ArithmeticExpression>(Kind::kMultiply,
+    ast = LogicalExpression::makeXor(pool,
+                                  UnaryExpression::makeNot(pool,
+                                      ArithmeticExpression::makeMultiply(pool,
                                           make<AttributeExpression>(
                                               make<LabelAttributeExpression>(
                                                   make<LabelExpression>("a"),
@@ -453,10 +461,10 @@ TEST_F(ExpressionParsingTest, Precedence) {
                                                   make<ConstantExpression>("q")),
                                               make<LabelExpression>("r")),
                                           make<LabelExpression>("s")))),
-                                  make<RelationalExpression>(Kind::kRelIn,
+                                  RelationalExpression::makeIn(pool,
                                       make<InputPropertyExpression>("m"),
                                       make<ListExpression>(
-                                          &(*(new ExpressionList))
+                                          &(*(ExpressionList::make(pool)))
                                           .add(make<ConstantExpression>(1))
                                           .add(make<ConstantExpression>(2))
                                           .add(make<ConstantExpression>(3)))));

@@ -16,9 +16,9 @@ class AstUtils final {
 public:
     explicit AstUtils(...) = delete;
 
-    static Status reprAstCheck(const Sentence& origin) {
+    static Status reprAstCheck(const Sentence& origin, QueryContext* qctx) {
         auto toString = origin.toString();
-        auto copyResult = GQLParser().parse(toString);
+        auto copyResult = GQLParser(qctx).parse(toString);
         if (!copyResult.ok()) {
             return Status::Error("The repr sentence `%s' can't be parsed, error: `%s'.",
                                  toString.c_str(),

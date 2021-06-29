@@ -20,10 +20,12 @@ class LogicExecutorsTest : public testing::Test {
 protected:
     void SetUp() override {
         qctx_ = std::make_unique<QueryContext>();
+        pool_ = qctx_->objPool();
     }
 
 protected:
     std::unique_ptr<QueryContext> qctx_;
+    ObjectPool* pool_;
 };
 
 TEST_F(LogicExecutorsTest, Start) {
@@ -38,13 +40,14 @@ TEST_F(LogicExecutorsTest, Loop) {
     std::string counter = "counter";
     qctx_->ectx()->setValue(counter, 0);
     // ++counter{0} <= 5
-    auto condition = std::make_unique<RelationalExpression>(
-        Expression::Kind::kRelLE,
-        new UnaryExpression(Expression::Kind::kUnaryIncr,
-                            new VersionedVariableExpression(counter, new ConstantExpression(0))),
-        new ConstantExpression(static_cast<int32_t>(5)));
+    auto condition = RelationalExpression::makeLE(
+        pool_,
+        UnaryExpression::makeIncr(
+            pool_,
+            VersionedVariableExpression::make(pool_, counter, ConstantExpression::make(pool_, 0))),
+        ConstantExpression::make(pool_, static_cast<int32_t>(5)));
     auto* start = StartNode::make(qctx_.get());
-    auto* loop = Loop::make(qctx_.get(), start, start, condition.get());
+    auto* loop = Loop::make(qctx_.get(), start, start, condition);
     auto loopExe = Executor::create(loop, qctx_.get());
     for (size_t i = 0; i < 5; ++i) {
         auto f = loopExe->execute();
@@ -68,8 +71,8 @@ TEST_F(LogicExecutorsTest, Loop) {
 TEST_F(LogicExecutorsTest, Select) {
     {
         auto* start = StartNode::make(qctx_.get());
-        auto condition = std::make_unique<ConstantExpression>(true);
-        auto* select = Select::make(qctx_.get(), start, start, start, condition.get());
+        auto condition = ConstantExpression::make(pool_, true);
+        auto* select = Select::make(qctx_.get(), start, start, start, condition);
 
         auto selectExe = Executor::create(select, qctx_.get());
 
@@ -83,8 +86,8 @@ TEST_F(LogicExecutorsTest, Select) {
     }
     {
         auto* start = StartNode::make(qctx_.get());
-        auto condition = std::make_unique<ConstantExpression>(false);
-        auto* select = Select::make(qctx_.get(), start, start, start, condition.get());
+        auto condition = ConstantExpression::make(pool_, false);
+        auto* select = Select::make(qctx_.get(), start, start, start, condition);
 
         auto selectExe = Executor::create(select, qctx_.get());
 
