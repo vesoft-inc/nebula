@@ -675,8 +675,9 @@ void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
         if (!ok()) {
             return;
         }
-        if (type_ != Value::Type::INT) {
+        if (type_ != Value::Type::INT && type_ != Value::Type::NULLVALUE) {
             status_ = Status::SemanticError("Expect integer type for subscript range bound.");
+            return;
         }
     }
 
@@ -685,8 +686,9 @@ void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
         if (!ok()) {
             return;
         }
-        if (type_ != Value::Type::INT) {
+        if (type_ != Value::Type::INT && type_ != Value::Type::NULLVALUE) {
             status_ = Status::SemanticError("Expect integer type for subscript range bound.");
+            return;
         }
     }
     type_ = Value::Type::LIST;
