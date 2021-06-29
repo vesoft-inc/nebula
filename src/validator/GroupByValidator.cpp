@@ -43,15 +43,11 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
                 ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
             for (auto* agg : aggs) {
                 DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
-                if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression*>(agg))
-                         .ok()) {
-                    return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
-                                                 colExpr->toString().c_str());
-                }
-
+                NG_RETURN_IF_ERROR(
+                    ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression*>(agg)));
+                aggOutputColNames_.emplace_back(agg->toString());
                 groupItems_.emplace_back(agg->clone());
                 needGenProject_ = true;
-                outputColumnNames_.emplace_back(agg->toString());
             }
             if (!aggs.empty()) {
                 auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(pool, colExpr);
@@ -69,23 +65,14 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         }
 
         groupItems_.emplace_back(colExpr);
-
-        auto status = deduceExprType(colExpr);
-        NG_RETURN_IF_ERROR(status);
-        auto type = std::move(status).value();
+        aggOutputColNames_.emplace_back(colOldName);
 
         projCols_->addColumn(
             new YieldColumn(VariablePropertyExpression::make(pool, "", colOldName), colOldName));
 
-        outputs_.emplace_back(colOldName, type);
-        outputColumnNames_.emplace_back(colOldName);
-
-        if (!col->alias().empty()) {
-            aliases_.emplace(col->alias(), col);
-        }
-
         ExpressionProps yieldProps;
         NG_RETURN_IF_ERROR(deduceProps(colExpr, yieldProps));
+        // TODO: refactor exprProps_ related logic
         exprProps_.unionProps(std::move(yieldProps));
     }
 
@@ -132,7 +119,7 @@ Status GroupByValidator::validateGroup(const GroupClause* groupClause) {
 
 Status GroupByValidator::toPlan() {
     auto* groupBy = Aggregate::make(qctx_, nullptr, std::move(groupKeys_), std::move(groupItems_));
-    groupBy->setColNames(outputColumnNames_);
+    groupBy->setColNames(aggOutputColNames_);
     if (needGenProject_) {
         // rewrite Expr which has inner aggExpr and push it up to Project.
         root_ = Project::make(qctx_, groupBy, projCols_);
@@ -144,6 +131,13 @@ Status GroupByValidator::toPlan() {
 }
 
 Status GroupByValidator::groupClauseSemanticCheck() {
+    // deduce group items and build outputs_
+    DCHECK_EQ(aggOutputColNames_.size(), groupItems_.size());
+    for (auto i = 0u; i < groupItems_.size(); ++i) {
+        auto type = deduceExprType(groupItems_[i]);
+        NG_RETURN_IF_ERROR(type);
+        outputs_.emplace_back(aggOutputColNames_[i], std::move(type).value());
+    }
     // check exprProps
     if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty()) {
         return Status::SemanticError("Only support input and variable in GroupBy sentence.");
