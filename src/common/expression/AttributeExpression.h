@@ -14,9 +14,15 @@ namespace nebula {
 // <expr>.label
 class AttributeExpression final : public BinaryExpression {
 public:
-    explicit AttributeExpression(Expression *lhs = nullptr,
-                                 Expression *rhs = nullptr)
-        : BinaryExpression(Kind::kAttribute, lhs, rhs) {}
+    AttributeExpression& operator=(const AttributeExpression& rhs) = delete;
+    AttributeExpression& operator=(AttributeExpression&&) = delete;
+
+    static AttributeExpression *make(ObjectPool *pool,
+                                     Expression *lhs = nullptr,
+                                     Expression *rhs = nullptr) {
+        DCHECK(!!pool);
+        return pool->add(new AttributeExpression(pool, lhs, rhs));
+    }
 
     const Value& eval(ExpressionContext &ctx) override;
 
@@ -24,10 +30,15 @@ public:
 
     std::string toString() const override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<AttributeExpression>(left()->clone().release(),
-                                                     right()->clone().release());
+    Expression* clone() const override {
+        return AttributeExpression::make(pool_, left()->clone(), right()->clone());
     }
+
+private:
+    explicit AttributeExpression(ObjectPool *pool,
+                                 Expression *lhs = nullptr,
+                                 Expression *rhs = nullptr)
+        : BinaryExpression(pool, Kind::kAttribute, lhs, rhs) {}
 
 private:
     Value                       result_;

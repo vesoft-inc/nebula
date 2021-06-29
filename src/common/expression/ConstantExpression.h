@@ -16,9 +16,13 @@ class ConstantExpression : public Expression {
     friend class Expression;
 
 public:
-    explicit ConstantExpression(Value v = Value(NullType::__NULL__))
-        : Expression(Kind::kConstant)
-        , val_(std::move(v)) {}
+    ConstantExpression& operator=(const ConstantExpression& rhs) = delete;
+    ConstantExpression& operator=(ConstantExpression&&) = delete;
+
+    static ConstantExpression* make(ObjectPool* pool, Value v = Value(NullType::__NULL__)) {
+        DCHECK(!!pool);
+        return pool->add(new ConstantExpression(pool, v));
+    }
 
     bool operator==(const Expression& rhs) const override;
 
@@ -39,15 +43,18 @@ public:
 
     std::string toString() const override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<ConstantExpression>(val_);
+    Expression* clone() const override {
+        return ConstantExpression::make(pool_, val_);
     }
 
 private:
-    void writeTo(Encoder& encoder) const override;
+    explicit ConstantExpression(ObjectPool* pool, Value v = Value(NullType::__NULL__))
+        : Expression(pool, Kind::kConstant), val_(std::move(v)) {}
 
+    void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
+private:
     Value val_;
 };
 

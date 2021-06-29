@@ -31,13 +31,12 @@ void BinaryExpression::writeTo(Encoder& encoder) const {
     encoder << *rhs_;
 }
 
-
 void BinaryExpression::resetFrom(Decoder& decoder) {
     // Read lhs_
-    lhs_ = decoder.readExpression();
+    lhs_ = decoder.readExpression(pool_);
     CHECK(!!lhs_);
     // Read rhs_
-    rhs_ = decoder.readExpression();
+    rhs_ = decoder.readExpression(pool_);
     CHECK(!!rhs_);
 }
 

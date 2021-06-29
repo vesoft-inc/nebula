@@ -19,14 +19,17 @@ namespace nebula {
  */
 class VertexExpression final : public Expression {
 public:
-    VertexExpression() : Expression(Kind::kVertex) {}
+    static VertexExpression *make(ObjectPool *pool) {
+        DCHECK(!!pool);
+        return pool->add(new VertexExpression(pool));
+    }
 
-    const Value& eval(ExpressionContext &ctx) override;
+    const Value &eval(ExpressionContext &ctx) override;
 
     void accept(ExprVisitor *visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VertexExpression>();
+    Expression* clone() const override {
+        return VertexExpression::make(pool_);
     }
 
     std::string toString() const override {
@@ -38,11 +41,13 @@ public:
     }
 
 private:
+    explicit VertexExpression(ObjectPool *pool) : Expression(pool, Kind::kVertex) {}
+
     void writeTo(Encoder &encoder) const override {
         encoder << kind();
     }
 
-    void resetFrom(Decoder&) override {}
+    void resetFrom(Decoder &) override {}
 
 private:
     Value                                   result_;

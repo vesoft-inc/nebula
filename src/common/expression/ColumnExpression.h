@@ -17,22 +17,30 @@ namespace nebula {
  */
 class ColumnExpression final : public Expression {
 public:
-    explicit ColumnExpression(int32_t index = 0) : Expression(Kind::kColumn), index_(index) {}
+    ColumnExpression& operator=(const ColumnExpression& rhs) = delete;
+    ColumnExpression& operator=(ColumnExpression&&) = delete;
 
-    const Value& eval(ExpressionContext &ctx) override;
+    static ColumnExpression* make(ObjectPool* pool, int32_t index = 0) {
+        return pool->add(new ColumnExpression(pool, index));
+    }
 
-    void accept(ExprVisitor *visitor) override;
+    const Value& eval(ExpressionContext& ctx) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<ColumnExpression>(index_);
+    void accept(ExprVisitor* visitor) override;
+
+    Expression* clone() const override {
+        return ColumnExpression::make(pool_, index_);
     }
 
     std::string toString() const override;
 
-    bool operator==(const Expression &expr) const override;
+    bool operator==(const Expression& expr) const override;
 
 private:
-    void writeTo(Encoder &encoder) const override;
+    explicit ColumnExpression(ObjectPool* pool, int32_t index = 0)
+        : Expression(pool, Kind::kColumn), index_(index) {}
+
+    void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder&) override;
 

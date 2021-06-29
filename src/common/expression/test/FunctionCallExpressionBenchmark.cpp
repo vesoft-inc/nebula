@@ -6,19 +6,20 @@
 
 #include <folly/Benchmark.h>
 #include <memory>
+#include "common/base/ObjectPool.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
 
 nebula::ExpressionContextMock gExpCtxt;
-
+nebula::ObjectPool pool;
 namespace nebula {
 
-static std::unique_ptr<FunctionCallExpression> expr = nullptr;
+static FunctionCallExpression* expr = nullptr;
 
 size_t funcCall(size_t iters) {
     for (size_t i = 0; i < iters; ++i) {
-        Value eval = Expression::eval(expr.get(), gExpCtxt);
+        Value eval = Expression::eval(expr, gExpCtxt);
         folly::doNotOptimizeAway(eval);
     }
     return iters;
@@ -29,9 +30,9 @@ BENCHMARK_NAMED_PARAM_MULTI(funcCall, FunctionCallBM)
 }   // namespace nebula
 
 int main(int argc, char** argv) {
-    nebula::ArgumentList* args = new nebula::ArgumentList();
-    args->addArgument(std::make_unique<nebula::ConstantExpression>(1));
-    nebula::expr.reset(new nebula::FunctionCallExpression("abs", args));
+    nebula::ArgumentList* args = nebula::ArgumentList::make(&pool);
+    args->addArgument(nebula::ConstantExpression::make(&pool, 1));
+    nebula::expr = nebula::FunctionCallExpression::make(&pool, "abs", args);
 
     folly::init(&argc, &argv, true);
     folly::runBenchmarks();

@@ -12,12 +12,40 @@
 namespace nebula {
 class LogicalExpression final : public Expression {
 public:
-    explicit LogicalExpression(Kind kind) : Expression(kind) {}
+    LogicalExpression& operator=(const LogicalExpression& rhs) = delete;
+    LogicalExpression& operator=(LogicalExpression&&) = delete;
 
-    LogicalExpression(Kind kind, Expression* lhs, Expression* rhs)
-        : Expression(kind) {
-        operands_.emplace_back(lhs);
-        operands_.emplace_back(rhs);
+    static LogicalExpression* makeAnd(ObjectPool* pool,
+                                      Expression* lhs = nullptr,
+                                      Expression* rhs = nullptr) {
+        DCHECK(!!pool);
+        return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalAnd, lhs, rhs))
+                            : pool->add(new LogicalExpression(pool, Kind::kLogicalAnd));
+    }
+
+    static LogicalExpression* makeOr(ObjectPool* pool,
+                                     Expression* lhs = nullptr,
+                                     Expression* rhs = nullptr) {
+        DCHECK(!!pool);
+        return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalOr, lhs, rhs))
+                            : pool->add(new LogicalExpression(pool, Kind::kLogicalOr));
+    }
+
+    static LogicalExpression* makeXor(ObjectPool* pool,
+                                      Expression* lhs = nullptr,
+                                      Expression* rhs = nullptr) {
+        DCHECK(!!pool);
+        return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalXor, lhs, rhs))
+                            : pool->add(new LogicalExpression(pool, Kind::kLogicalXor));
+    }
+
+    static LogicalExpression* makeKind(ObjectPool* pool,
+                                       Kind kind,
+                                       Expression* lhs = nullptr,
+                                       Expression* rhs = nullptr) {
+        DCHECK(!!pool);
+        return (lhs && rhs) ? pool->add(new LogicalExpression(pool, kind, lhs, rhs))
+                            : pool->add(new LogicalExpression(pool, kind));
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -26,13 +54,13 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        auto copy = std::make_unique<LogicalExpression>(kind());
+    Expression* clone() const override {
+        auto copy = new LogicalExpression(pool_, kind());
         copy->operands_.resize(operands_.size());
         for (auto i = 0u; i < operands_.size(); i++) {
             copy->operands_[i] = operands_[i]->clone();
         }
-        return copy;
+        return pool_->add(copy);
     }
 
     bool operator==(const Expression &rhs) const override;
@@ -46,11 +74,11 @@ public:
     }
 
     auto* operand(size_t index) {
-        return operands_[index].get();
+        return operands_[index];
     }
 
     const auto* operand(size_t index) const {
-        return operands_[index].get();
+        return operands_[index];
     }
 
     void addOperand(Expression *expr) {
@@ -59,11 +87,11 @@ public:
 
     void setOperand(size_t i, Expression *operand) {
         DCHECK_LT(i, operands_.size());
-        operands_[i].reset(operand);
+        operands_[i] = operand;
     }
 
-    void setOperands(std::vector<std::unique_ptr<Expression>> operands) {
-        operands_ = std::move(operands);
+    void setOperands(std::vector<Expression*> operands) {
+        operands_ = operands;
     }
 
     bool isLogicalExpr() const override {
@@ -71,15 +99,23 @@ public:
     }
 
 private:
-    void writeTo(Encoder &encoder) const override;
-    void resetFrom(Decoder &decoder) override;
-    const Value& evalAnd(ExpressionContext &ctx);
-    const Value& evalOr(ExpressionContext &ctx);
-    const Value& evalXor(ExpressionContext &ctx);
+    explicit LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
+
+    LogicalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+        : Expression(pool, kind) {
+        operands_.emplace_back(lhs);
+        operands_.emplace_back(rhs);
+    }
+
+    void writeTo(Encoder& encoder) const override;
+    void resetFrom(Decoder& decoder) override;
+    const Value& evalAnd(ExpressionContext& ctx);
+    const Value& evalOr(ExpressionContext& ctx);
+    const Value& evalXor(ExpressionContext& ctx);
 
 private:
-    Value                                       result_;
-    std::vector<std::unique_ptr<Expression>>    operands_;
+    Value                       result_;
+    std::vector<Expression*>    operands_;
 };
 
 }   // namespace nebula

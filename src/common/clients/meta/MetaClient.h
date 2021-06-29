@@ -66,6 +66,8 @@ struct SpaceInfoCache {
     Indexes tagIndexes_;
     Indexes edgeIndexes_;
     Listeners listeners_;
+    // objPool used to decode when adding field
+    ObjectPool pool_;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;

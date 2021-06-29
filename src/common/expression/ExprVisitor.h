@@ -7,6 +7,7 @@
 #ifndef EXPRESSION_EXPRVISITOR_H_
 #define EXPRESSION_EXPRVISITOR_H_
 
+#include "common/base/ObjectPool.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/CaseExpression.h"

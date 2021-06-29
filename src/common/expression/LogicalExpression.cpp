@@ -149,7 +149,7 @@ void LogicalExpression::resetFrom(Decoder &decoder) {
     auto size = decoder.readSize();
     operands_.resize(size);
     for (auto i = 0u; i < size; i++) {
-        operands_[i] = decoder.readExpression();
+        operands_[i] = decoder.readExpression(pool_);
     }
 }
 

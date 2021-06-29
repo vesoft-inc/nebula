@@ -15,17 +15,16 @@ class ReduceExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit ReduceExpression(const std::string& accumulator = "",
-                              Expression* initial = nullptr,
-                              const std::string& innerVar = "",
-                              Expression* collection = nullptr,
-                              Expression* mapping = nullptr)
-        : Expression(Kind::kReduce),
-          accumulator_(accumulator),
-          initial_(initial),
-          innerVar_(innerVar),
-          collection_(collection),
-          mapping_(mapping) {}
+    static ReduceExpression* make(ObjectPool* pool,
+                                  const std::string& accumulator = "",
+                                  Expression* initial = nullptr,
+                                  const std::string& innerVar = "",
+                                  Expression* collection = nullptr,
+                                  Expression* mapping = nullptr) {
+        DCHECK(!!pool);
+        return pool->add(
+            new ReduceExpression(pool, accumulator, initial, innerVar, collection, mapping));
+    }
 
     bool operator==(const Expression& rhs) const override;
 
@@ -39,18 +38,18 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override;
+    Expression* clone() const override;
 
     const std::string& accumulator() const {
         return accumulator_;
     }
 
     const Expression* initial() const {
-        return initial_.get();
+        return initial_;
     }
 
     Expression* initial() {
-        return initial_.get();
+        return initial_;
     }
 
     const std::string& innerVar() const {
@@ -58,19 +57,19 @@ public:
     }
 
     const Expression* collection() const {
-        return collection_.get();
+        return collection_;
     }
 
     Expression* collection() {
-        return collection_.get();
+        return collection_;
     }
 
     const Expression* mapping() const {
-        return mapping_.get();
+        return mapping_;
     }
 
     Expression* mapping() {
-        return mapping_.get();
+        return mapping_;
     }
 
     void setAccumulator(const std::string& name) {
@@ -78,7 +77,7 @@ public:
     }
 
     void setInitial(Expression* expr) {
-        initial_.reset(expr);
+        initial_ = expr;
     }
 
     void setInnerVar(const std::string& name) {
@@ -86,11 +85,11 @@ public:
     }
 
     void setCollection(Expression* expr) {
-        collection_.reset(expr);
+        collection_ = expr;
     }
 
     void setMapping(Expression* expr) {
-        mapping_.reset(expr);
+        mapping_ = expr;
     }
 
     void setOriginString(const std::string& s) {
@@ -102,15 +101,28 @@ public:
     }
 
 private:
-    void writeTo(Encoder& encoder) const override;
+    explicit ReduceExpression(ObjectPool* pool,
+                              const std::string& accumulator = "",
+                              Expression* initial = nullptr,
+                              const std::string& innerVar = "",
+                              Expression* collection = nullptr,
+                              Expression* mapping = nullptr)
+        : Expression(pool, Kind::kReduce),
+          accumulator_(accumulator),
+          initial_(initial),
+          innerVar_(innerVar),
+          collection_(collection),
+          mapping_(mapping) {}
 
+    void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
+private:
     std::string accumulator_;
-    std::unique_ptr<Expression> initial_;
+    Expression* initial_;
     std::string innerVar_;
-    std::unique_ptr<Expression> collection_;
-    std::unique_ptr<Expression> mapping_;
+    Expression* collection_;
+    Expression* mapping_;
     std::string originString_;
     Value result_;
 };

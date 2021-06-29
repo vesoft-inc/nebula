@@ -54,7 +54,7 @@ public:
         }
 
         Expression* defaultValue() const override {
-            return defaultValue_.get();
+            return defaultValue_;
         }
 
         size_t size() const override {
@@ -75,7 +75,7 @@ public:
         cpp2::PropertyType type_;
         bool nullable_;
         bool hasDefault_;
-        std::unique_ptr<Expression> defaultValue_;
+        Expression* defaultValue_;
         size_t size_;
         size_t offset_;
         size_t nullFlagPos_;

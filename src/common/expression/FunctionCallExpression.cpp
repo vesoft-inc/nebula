@@ -62,9 +62,9 @@ void FunctionCallExpression::resetFrom(Decoder& decoder) {
 
     // Read args_
     size_t sz = decoder.readSize();
-    args_ = std::make_unique<ArgumentList>();
+    args_ = ArgumentList::make(pool_);
     for (size_t i = 0;  i < sz; i++) {
-        args_->addArgument(decoder.readExpression());
+        args_->addArgument(decoder.readExpression(pool_));
     }
 
     auto funcResult = FunctionManager::get(name_, args_->numArgs());

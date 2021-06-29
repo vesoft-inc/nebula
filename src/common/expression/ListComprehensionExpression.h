@@ -15,15 +15,17 @@ class ListComprehensionExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit ListComprehensionExpression(const std::string& innerVar = "",
-                                         Expression* collection = nullptr,
-                                         Expression* filter = nullptr,
-                                         Expression* mapping = nullptr)
-        : Expression(Kind::kListComprehension),
-          innerVar_(innerVar),
-          collection_(collection),
-          filter_(filter),
-          mapping_(mapping) {}
+    ListComprehensionExpression& operator=(const ListComprehensionExpression& rhs) = delete;
+    ListComprehensionExpression& operator=(ListComprehensionExpression&&) = delete;
+
+    static ListComprehensionExpression* make(ObjectPool* pool,
+                                             const std::string& innerVar = "",
+                                             Expression* collection = nullptr,
+                                             Expression* filter = nullptr,
+                                             Expression* mapping = nullptr) {
+        return pool->add(
+            new ListComprehensionExpression(pool, innerVar, collection, filter, mapping));
+    }
 
     bool operator==(const Expression& rhs) const override;
 
@@ -37,34 +39,34 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override;
+    Expression* clone() const override;
 
     const std::string& innerVar() const {
         return innerVar_;
     }
 
     const Expression* collection() const {
-        return collection_.get();
+        return collection_;
     }
 
     Expression* collection() {
-        return collection_.get();
+        return collection_;
     }
 
     const Expression* filter() const {
-        return filter_.get();
+        return filter_;
     }
 
     Expression* filter() {
-        return filter_.get();
+        return filter_;
     }
 
     const Expression* mapping() const {
-        return mapping_.get();
+        return mapping_;
     }
 
     Expression* mapping() {
-        return mapping_.get();
+        return mapping_;
     }
 
     void setInnerVar(const std::string& name) {
@@ -72,15 +74,15 @@ public:
     }
 
     void setCollection(Expression* expr) {
-        collection_.reset(expr);
+        collection_ = expr;
     }
 
     void setFilter(Expression* expr) {
-        filter_.reset(expr);
+        filter_ = expr;
     }
 
     void setMapping(Expression* expr) {
-        mapping_.reset(expr);
+        mapping_ = expr;
     }
 
     bool hasFilter() const {
@@ -100,14 +102,26 @@ public:
     }
 
 private:
+    explicit ListComprehensionExpression(ObjectPool* pool,
+                                         const std::string& innerVar = "",
+                                         Expression* collection = nullptr,
+                                         Expression* filter = nullptr,
+                                         Expression* mapping = nullptr)
+        : Expression(pool, Kind::kListComprehension),
+          innerVar_(innerVar),
+          collection_(collection),
+          filter_(filter),
+          mapping_(mapping) {}
+
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
 
+private:
     std::string innerVar_;
-    std::unique_ptr<Expression> collection_;
-    std::unique_ptr<Expression> filter_;    // filter_ is optional
-    std::unique_ptr<Expression> mapping_;   // mapping_ is optional
+    Expression* collection_{nullptr};
+    Expression* filter_{nullptr};    // filter_ is optional
+    Expression* mapping_{nullptr};   // mapping_ is optional
     std::string originString_;
     Value result_;
 };

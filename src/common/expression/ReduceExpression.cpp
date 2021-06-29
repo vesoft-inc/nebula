@@ -35,13 +35,13 @@ const Value& ReduceExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
-std::unique_ptr<Expression> ReduceExpression::clone() const {
-    auto expr = std::make_unique<ReduceExpression>(
-        accumulator_,
-        initial_->clone().release(),
-        innerVar_,
-        collection_->clone().release(),
-        mapping_ != nullptr ? mapping_->clone().release() : nullptr);
+Expression* ReduceExpression::clone() const {
+    auto expr = ReduceExpression::make(pool_,
+                                       accumulator_,
+                                       initial_->clone(),
+                                       innerVar_,
+                                       collection_->clone(),
+                                       mapping_ != nullptr ? mapping_->clone() : nullptr);
     if (hasOriginString()) {
         expr->setOriginString(originString_);
     }
@@ -95,10 +95,10 @@ void ReduceExpression::resetFrom(Decoder& decoder) {
     bool hasString = decoder.readValue().getBool();
 
     accumulator_ = decoder.readStr();
-    initial_ = decoder.readExpression();
+    initial_ = decoder.readExpression(pool_);
     innerVar_ = decoder.readStr();
-    collection_ = decoder.readExpression();
-    mapping_ = decoder.readExpression();
+    collection_ = decoder.readExpression(pool_);
+    mapping_ = decoder.readExpression(pool_);
     if (hasString) {
         originString_ = decoder.readStr();
     }

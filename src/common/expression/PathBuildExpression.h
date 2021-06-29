@@ -15,7 +15,12 @@
 namespace nebula {
 class PathBuildExpression final : public Expression {
 public:
-    PathBuildExpression() : Expression(Kind::kPathBuild) {
+    PathBuildExpression& operator=(const PathBuildExpression& rhs) = delete;
+    PathBuildExpression& operator=(PathBuildExpression&&) = delete;
+
+    static PathBuildExpression* make(ObjectPool* pool ) {
+        DCHECK(!!pool);
+        return pool->add(new PathBuildExpression(pool));
     }
 
     const Value& eval(ExpressionContext& ctx) override;
@@ -26,16 +31,16 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override;
+    Expression* clone() const override;
 
-    PathBuildExpression& add(std::unique_ptr<Expression> expr) {
-        items_.emplace_back(std::move(expr));
+    PathBuildExpression& add(Expression* expr) {
+        items_.emplace_back(expr);
         return *this;
     }
 
-    void setItem(size_t index, std::unique_ptr<Expression> item) {
+    void setItem(size_t index, Expression* item) {
         DCHECK_LT(index, items_.size());
-        items_[index] = std::move(item);
+        items_[index] = item;
     }
 
     size_t size() const {
@@ -51,7 +56,9 @@ public:
     }
 
 private:
-    void writeTo(Encoder &encoder) const override;
+    explicit PathBuildExpression(ObjectPool* pool) : Expression(pool, Kind::kPathBuild) {}
+
+    void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder &decoder) override;
 
@@ -60,8 +67,8 @@ private:
     bool getEdge(const Value& value, Step& step) const;
 
 private:
-    std::vector<std::unique_ptr<Expression>>    items_;
-    Value                                       result_;
+    std::vector<Expression*> items_;
+    Value result_;
 };
 }  // namespace nebula
 #endif  // COMMON_EXPRESSION_PATHBUILDEXPRESSION_H_

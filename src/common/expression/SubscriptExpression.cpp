@@ -257,20 +257,20 @@ void SubscriptRangeExpression::writeTo(Encoder& encoder) const {
 }
 
 void SubscriptRangeExpression::resetFrom(Decoder& decoder) {
-    list_ = decoder.readExpression();
+    list_ = decoder.readExpression(pool_);
     auto size = decoder.readSize();
     auto index = decoder.readSize();
     if (index == 0) {
-        lo_ = decoder.readExpression();
+        lo_ = decoder.readExpression(pool_);
     } else if (index == 1) {
         DCHECK_EQ(size, 1);
-        hi_ = decoder.readExpression();
+        hi_ = decoder.readExpression(pool_);
         return;
     }
     if (size == 2) {
         index = decoder.readSize();
         DCHECK_EQ(index, 1);
-        hi_ = decoder.readExpression();
+        hi_ = decoder.readExpression(pool_);
     }
 }
 

@@ -15,9 +15,12 @@ class TypeCastingExpression final : public Expression {
     friend class Expression;
 
 public:
-    explicit TypeCastingExpression(Value::Type vType = Value::Type::__EMPTY__,
-                                   Expression* operand = nullptr)
-        : Expression(Kind::kTypeCasting), vType_(vType), operand_(operand) {}
+    static TypeCastingExpression* make(ObjectPool* pool,
+                                       Value::Type vType = Value::Type::__EMPTY__,
+                                       Expression* operand = nullptr) {
+        DCHECK(!!pool);
+        return pool->add(new TypeCastingExpression(pool, vType, operand));
+    }
 
     bool operator==(const Expression& rhs) const override;
 
@@ -27,20 +30,20 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<TypeCastingExpression>(type(), operand()->clone().release());
+    Expression* clone() const override {
+        return TypeCastingExpression::make(pool_, type(), operand()->clone());
     }
 
     const Expression* operand() const {
-        return operand_.get();
+        return operand_;
     }
 
     Expression* operand() {
-        return operand_.get();
+        return operand_;
     }
 
     void setOperand(Expression* expr) {
-        operand_.reset(expr);
+        operand_ = expr;
     }
 
     Value::Type type() const {
@@ -50,13 +53,18 @@ public:
     static bool validateTypeCast(Value::Type operandType, Value::Type type);
 
 private:
-    void writeTo(Encoder& encoder) const override;
+    explicit TypeCastingExpression(ObjectPool* pool,
+                                   Value::Type vType = Value::Type::__EMPTY__,
+                                   Expression* operand = nullptr)
+        : Expression(pool, Kind::kTypeCasting), vType_(vType), operand_(operand) {}
 
+    void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
-    Value::Type                 vType_{Value::Type::__EMPTY__};
-    std::unique_ptr<Expression> operand_;
-    Value                       result_;
+private:
+    Value::Type vType_{Value::Type::__EMPTY__};
+    Expression* operand_;
+    Value result_;
 };
 
 }  // namespace nebula

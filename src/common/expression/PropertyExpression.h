@@ -47,11 +47,12 @@ public:
     std::string toString() const override;
 
 protected:
-    PropertyExpression(Kind kind,
+    PropertyExpression(ObjectPool* pool,
+                       Kind kind,
                        const std::string& ref,
                        const std::string& sym,
                        const std::string& prop)
-        : Expression(kind), ref_(ref), sym_(sym), prop_(prop) {}
+        : Expression(pool, kind), ref_(ref), sym_(sym), prop_(prop) {}
 
     void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
@@ -64,16 +65,29 @@ protected:
 // edge_name.any_prop_name
 class EdgePropertyExpression final : public PropertyExpression {
 public:
-    explicit EdgePropertyExpression(const std::string& edge = "", const std::string& prop = "")
-        : PropertyExpression(Kind::kEdgeProperty, "", edge, prop) {}
+    EdgePropertyExpression& operator=(const EdgePropertyExpression& rhs) = delete;
+    EdgePropertyExpression& operator=(EdgePropertyExpression&&) = delete;
+
+    static EdgePropertyExpression* make(ObjectPool* pool,
+                                        const std::string& edge = "",
+                                        const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new EdgePropertyExpression(pool, edge, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgePropertyExpression>(sym(), prop());
+    Expression* clone() const override {
+        return EdgePropertyExpression::make(pool_, sym(), prop());
     }
+
+private:
+    explicit EdgePropertyExpression(ObjectPool* pool,
+                                    const std::string& edge = "",
+                                    const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kEdgeProperty, "", edge, prop) {}
 
 private:
     Value result_;
@@ -82,16 +96,29 @@ private:
 // tag_name.any_prop_name
 class TagPropertyExpression final : public PropertyExpression {
 public:
-    explicit TagPropertyExpression(const std::string& tag = "", const std::string& prop = "")
-        : PropertyExpression(Kind::kTagProperty, "", tag, prop) {}
+    TagPropertyExpression& operator=(const TagPropertyExpression& rhs) = delete;
+    TagPropertyExpression& operator=(TagPropertyExpression&&) = delete;
+
+    static TagPropertyExpression* make(ObjectPool* pool,
+                                       const std::string& tag = "",
+                                       const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new TagPropertyExpression(pool, tag, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<TagPropertyExpression>(sym(), prop());
+    Expression* clone() const override {
+        return TagPropertyExpression::make(pool_, sym(), prop());
     }
+
+private:
+    explicit TagPropertyExpression(ObjectPool* pool,
+                                   const std::string& tag = "",
+                                   const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kTagProperty, "", tag, prop) {}
 
 private:
     Value result_;
@@ -100,23 +127,39 @@ private:
 // $-.any_prop_name
 class InputPropertyExpression final : public PropertyExpression {
 public:
-    explicit InputPropertyExpression(const std::string& prop = "")
-        : PropertyExpression(Kind::kInputProperty, kInputRef, "", prop) {}
+    InputPropertyExpression& operator=(const InputPropertyExpression& rhs) = delete;
+    InputPropertyExpression& operator=(InputPropertyExpression&&) = delete;
+
+    static InputPropertyExpression* make(ObjectPool* pool, const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new InputPropertyExpression(pool, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<InputPropertyExpression>(prop());
+    Expression* clone() const override {
+        return InputPropertyExpression::make(pool_, prop());
     }
+
+private:
+    explicit InputPropertyExpression(ObjectPool* pool, const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kInputProperty, kInputRef, "", prop) {}
 };
 
 // $VarName.any_prop_name
 class VariablePropertyExpression final : public PropertyExpression {
 public:
-    explicit VariablePropertyExpression(const std::string& var = "", const std::string& prop = "")
-        : PropertyExpression(Kind::kVarProperty, kVarRef, var, prop) {}
+    VariablePropertyExpression& operator=(const VariablePropertyExpression& rhs) = delete;
+    VariablePropertyExpression& operator=(VariablePropertyExpression&&) = delete;
+
+    static VariablePropertyExpression* make(ObjectPool* pool,
+                                            const std::string& var = "",
+                                            const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new VariablePropertyExpression(pool, var, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
@@ -124,24 +167,43 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VariablePropertyExpression>(sym(), prop());
+    Expression* clone() const override {
+        return VariablePropertyExpression::make(pool_, sym(), prop());
     }
+
+private:
+    explicit VariablePropertyExpression(ObjectPool* pool,
+                                        const std::string& var = "",
+                                        const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kVarProperty, kVarRef, var, prop) {}
 };
 
 // $^.TagName.any_prop_name
 class SourcePropertyExpression final : public PropertyExpression {
 public:
-    explicit SourcePropertyExpression(const std::string& tag = "", const std::string& prop = "")
-        : PropertyExpression(Kind::kSrcProperty, kSrcRef, tag, prop) {}
+    SourcePropertyExpression& operator=(const SourcePropertyExpression& rhs) = delete;
+    SourcePropertyExpression& operator=(SourcePropertyExpression&&) = delete;
+
+    static SourcePropertyExpression* make(ObjectPool* pool,
+                                          const std::string& tag = "",
+                                          const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new SourcePropertyExpression(pool, tag, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<SourcePropertyExpression>(sym(), prop());
+    Expression* clone() const override {
+        return SourcePropertyExpression::make(pool_, sym(), prop());
     }
+
+private:
+    explicit SourcePropertyExpression(ObjectPool* pool,
+                                      const std::string& tag = "",
+                                      const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kSrcProperty, kSrcRef, tag, prop) {}
 
 private:
     Value result_;
@@ -150,31 +212,53 @@ private:
 // $$.TagName.any_prop_name
 class DestPropertyExpression final : public PropertyExpression {
 public:
-    explicit DestPropertyExpression(const std::string& tag = "", const std::string& prop = "")
-        : PropertyExpression(Kind::kDstProperty, kDstRef, tag, prop) {}
+    DestPropertyExpression& operator=(const DestPropertyExpression& rhs) = delete;
+    DestPropertyExpression& operator=(DestPropertyExpression&&) = delete;
+
+    static DestPropertyExpression* make(ObjectPool* pool,
+                                        const std::string& tag = "",
+                                        const std::string& prop = "") {
+        DCHECK(!!pool);
+        return pool->add(new DestPropertyExpression(pool, tag, prop));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<DestPropertyExpression>(sym(), prop());
+    Expression* clone() const override {
+        return DestPropertyExpression::make(pool_, sym(), prop());
     }
+
+private:
+    explicit DestPropertyExpression(ObjectPool* pool,
+                                    const std::string& tag = "",
+                                    const std::string& prop = "")
+        : PropertyExpression(pool, Kind::kDstProperty, kDstRef, tag, prop) {}
 };
 
 // EdgeName._src
 class EdgeSrcIdExpression final : public PropertyExpression {
 public:
-    explicit EdgeSrcIdExpression(const std::string& edge = "")
-        : PropertyExpression(Kind::kEdgeSrc, "", edge, kSrc) {}
+    EdgeSrcIdExpression& operator=(const EdgeSrcIdExpression& rhs) = delete;
+    EdgeSrcIdExpression& operator=(EdgeSrcIdExpression&&) = delete;
+
+    static EdgeSrcIdExpression* make(ObjectPool* pool, const std::string& edge = "") {
+        DCHECK(!!pool);
+        return pool->add(new EdgeSrcIdExpression(pool, edge));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeSrcIdExpression>(sym());
+    Expression* clone() const override {
+        return EdgeSrcIdExpression::make(pool_, sym());
     }
+
+private:
+    explicit EdgeSrcIdExpression(ObjectPool* pool, const std::string& edge = "")
+        : PropertyExpression(pool, Kind::kEdgeSrc, "", edge, kSrc) {}
 
 private:
     Value result_;
@@ -183,16 +267,25 @@ private:
 // EdgeName._type
 class EdgeTypeExpression final : public PropertyExpression {
 public:
-    explicit EdgeTypeExpression(const std::string& edge = "")
-        : PropertyExpression(Kind::kEdgeType, "", edge, kType) {}
+    EdgeTypeExpression& operator=(const EdgeTypeExpression& rhs) = delete;
+    EdgeTypeExpression& operator=(EdgeTypeExpression&&) = delete;
+
+    static EdgeTypeExpression* make(ObjectPool* pool, const std::string& edge = "") {
+        DCHECK(!!pool);
+        return pool->add(new EdgeTypeExpression(pool, edge));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeTypeExpression>(sym());
+    Expression* clone() const override {
+        return EdgeTypeExpression::make(pool_, sym());
     }
+
+private:
+    explicit EdgeTypeExpression(ObjectPool* pool, const std::string& edge = "")
+        : PropertyExpression(pool, Kind::kEdgeType, "", edge, kType) {}
 
 private:
     Value result_;
@@ -201,16 +294,25 @@ private:
 // EdgeName._rank
 class EdgeRankExpression final : public PropertyExpression {
 public:
-    explicit EdgeRankExpression(const std::string& edge = "")
-        : PropertyExpression(Kind::kEdgeRank, "", edge, kRank) {}
+    EdgeRankExpression& operator=(const EdgeRankExpression& rhs) = delete;
+    EdgeRankExpression& operator=(EdgeRankExpression&&) = delete;
+
+    static EdgeRankExpression* make(ObjectPool* pool, const std::string& edge = "") {
+        DCHECK(!!pool);
+        return pool->add(new EdgeRankExpression(pool, edge));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeRankExpression>(sym());
+    Expression* clone() const override {
+        return EdgeRankExpression::make(pool_, sym());
     }
+
+private:
+    explicit EdgeRankExpression(ObjectPool* pool, const std::string& edge = "")
+        : PropertyExpression(pool, Kind::kEdgeRank, "", edge, kRank) {}
 
 private:
     Value result_;
@@ -219,16 +321,25 @@ private:
 // EdgeName._dst
 class EdgeDstIdExpression final : public PropertyExpression {
 public:
-    explicit EdgeDstIdExpression(const std::string& edge = "")
-        : PropertyExpression(Kind::kEdgeDst, "", edge, kDst) {}
+    EdgeDstIdExpression& operator=(const EdgeDstIdExpression& rhs) = delete;
+    EdgeDstIdExpression& operator=(EdgeDstIdExpression&&) = delete;
+
+    static EdgeDstIdExpression* make(ObjectPool* pool, const std::string& edge = "") {
+        DCHECK(!!pool);
+        return pool->add(new EdgeDstIdExpression(pool, edge));
+    }
 
     const Value& eval(ExpressionContext& ctx) override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<EdgeDstIdExpression>(sym());
+    Expression* clone() const override {
+        return EdgeDstIdExpression::make(pool_, sym());
     }
+
+private:
+    explicit EdgeDstIdExpression(ObjectPool* pool, const std::string& edge = "")
+        : PropertyExpression(pool, Kind::kEdgeDst, "", edge, kDst) {}
 
 private:
     Value result_;

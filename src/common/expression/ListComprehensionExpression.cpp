@@ -53,12 +53,13 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
     return result_;
 }
 
-std::unique_ptr<Expression> ListComprehensionExpression::clone() const {
-    auto expr = std::make_unique<ListComprehensionExpression>(
-        innerVar_,
-        collection_->clone().release(),
-        filter_ != nullptr ? filter_->clone().release() : nullptr,
-        mapping_ != nullptr ? mapping_->clone().release() : nullptr);
+Expression* ListComprehensionExpression::clone() const {
+    auto expr =
+        ListComprehensionExpression::make(pool_,
+                                          innerVar_,
+                                          collection_->clone(),
+                                          filter_ != nullptr ? filter_->clone() : nullptr,
+                                          mapping_ != nullptr ? mapping_->clone() : nullptr);
     if (hasOriginString()) {
         expr->setOriginString(originString_);
     }
@@ -126,12 +127,12 @@ void ListComprehensionExpression::resetFrom(Decoder& decoder) {
     bool hasString = decoder.readValue().getBool();
 
     innerVar_ = decoder.readStr();
-    collection_ = decoder.readExpression();
+    collection_ = decoder.readExpression(pool_);
     if (hasFilter) {
-        filter_ = decoder.readExpression();
+        filter_ = decoder.readExpression(pool_);
     }
     if (hasMapping) {
-        mapping_ = decoder.readExpression();
+        mapping_ = decoder.readExpression(pool_);
     }
     if (hasString) {
         originString_ = decoder.readStr();

@@ -12,8 +12,12 @@
 namespace nebula {
 class VariableExpression final : public Expression {
 public:
-    explicit VariableExpression(const std::string& var = "", bool isInner = false)
-        : Expression(Kind::kVar), isInner_(isInner), var_(var) {}
+    static VariableExpression* make(ObjectPool* pool,
+                                    const std::string& var = "",
+                                    bool isInner = false) {
+        DCHECK(!!pool);
+        return pool->add(new VariableExpression(pool, var, isInner));
+    }
 
     const std::string& var() const {
         return var_;
@@ -36,14 +40,20 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VariableExpression>(var(), isInner_);
+    Expression* clone() const override {
+        return VariableExpression::make(pool_, var(), isInner_);
     }
 
 private:
+    explicit VariableExpression(ObjectPool* pool,
+                                const std::string& var = "",
+                                bool isInner = false)
+        : Expression(pool, Kind::kVar), isInner_(isInner), var_(var) {}
+
     void writeTo(Encoder& encoder) const override;
     void resetFrom(Decoder& decoder) override;
 
+private:
     bool isInner_{false};
     std::string var_;
 };
@@ -54,9 +64,11 @@ private:
  */
 class VersionedVariableExpression final : public Expression {
 public:
-    explicit VersionedVariableExpression(const std::string& var = "", Expression* version = nullptr)
-        : Expression(Kind::kVersionedVar), var_(var) {
-        version_.reset(version);
+    static VersionedVariableExpression* make(ObjectPool* pool,
+                                             const std::string& var = "",
+                                             Expression* version = nullptr) {
+        DCHECK(!!pool);
+        return pool->add(new VersionedVariableExpression(pool, var, version));
     }
 
     const std::string& var() const {
@@ -82,11 +94,16 @@ public:
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<VersionedVariableExpression>(var(), version_->clone().release());
+    Expression* clone() const override {
+        return VersionedVariableExpression::make(pool_, var(), version_->clone());
     }
 
 private:
+    explicit VersionedVariableExpression(ObjectPool* pool,
+                                         const std::string& var = "",
+                                         Expression* version = nullptr)
+        : Expression(pool, Kind::kVersionedVar), var_(var), version_(version) {}
+
     void writeTo(Encoder&) const override {
         LOG(FATAL) << "VersionedVairableExpression not support to encode.";
     }
@@ -95,10 +112,11 @@ private:
         LOG(FATAL) << "VersionedVairableExpression not support to decode.";
     }
 
+private:
     std::string var_;
     // 0 means the latest, -1 the previous one, and so on.
     // 1 means the eldest, 2 the second elder one, and so on.
-    std::unique_ptr<Expression> version_;
+    Expression* version_{nullptr};
 };
 }  // namespace nebula
 #endif

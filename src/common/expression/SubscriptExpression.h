@@ -14,106 +14,121 @@ namespace nebula {
 
 class SubscriptExpression final : public BinaryExpression {
 public:
-    explicit SubscriptExpression(Expression *lhs = nullptr,
-                                 Expression *rhs = nullptr)
-        : BinaryExpression(Kind::kSubscript, lhs, rhs) {}
+    static SubscriptExpression* make(ObjectPool* pool,
+                                     Expression* lhs = nullptr,
+                                     Expression* rhs = nullptr) {
+        DCHECK(!!pool);
+        return pool->add(new SubscriptExpression(pool, lhs, rhs));
+    }
 
-    const Value& eval(ExpressionContext &ctx) override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<SubscriptExpression>(left()->clone().release(),
-                                                     right()->clone().release());
+    Expression* clone() const override {
+        return SubscriptExpression::make(pool_, left()->clone(), right()->clone());
     }
 
 private:
-    Value                               result_;
+    explicit SubscriptExpression(ObjectPool* pool,
+                                 Expression* lhs = nullptr,
+                                 Expression* rhs = nullptr)
+        : BinaryExpression(pool, Kind::kSubscript, lhs, rhs) {}
+
+private:
+    Value result_;
 };
 
 class SubscriptRangeExpression final : public Expression {
 public:
-    // for decode ctor
-    SubscriptRangeExpression()
-        : Expression(Kind::kSubscriptRange),
-          list_(nullptr),
-          lo_(nullptr),
-          hi_(nullptr) {}
-    SubscriptRangeExpression(Expression *list, Expression *lo, Expression *hi)
-        : Expression(Kind::kSubscriptRange),
-          list_(DCHECK_NOTNULL(list)),
-          lo_(lo),
-          hi_(hi) {
-              DCHECK(!(lo_ == nullptr && hi_ == nullptr));
-          }
+    static SubscriptRangeExpression* make(ObjectPool* pool,
+                                          Expression* list = nullptr,
+                                          Expression* lo = nullptr,
+                                          Expression* hi = nullptr) {
+        DCHECK(!!pool);
+        return !list && !lo && !hi ? pool->add(new SubscriptRangeExpression(pool))
+                                   : pool->add(new SubscriptRangeExpression(pool, list, lo, hi));
+    }
 
-    const Value& eval(ExpressionContext &ctx) override;
+    const Value& eval(ExpressionContext& ctx) override;
 
     std::string toString() const override;
 
     void accept(ExprVisitor* visitor) override;
 
-    std::unique_ptr<Expression> clone() const override {
-        return std::make_unique<SubscriptRangeExpression>(
-            list_->clone().release(),
-            lo_ == nullptr ? nullptr : lo_->clone().release(),
-            hi_ == nullptr ? nullptr : hi_->clone().release());
+    Expression* clone() const override {
+        return SubscriptRangeExpression::make(pool_,
+                                              list_->clone(),
+                                              lo_ == nullptr ? nullptr : lo_->clone(),
+                                              hi_ == nullptr ? nullptr : hi_->clone());
     }
 
     bool operator==(const Expression& rhs) const override;
 
     const Expression* list() const {
-        return list_.get();
+        return list_;
     }
 
     Expression* list() {
-        return list_.get();
+        return list_;
     }
 
-    void setList(Expression *list) {
-        list_.reset(list);
+    void setList(Expression* list) {
+        list_ = list;
     }
 
     const Expression* lo() const {
-        return lo_.get();
+        return lo_;
     }
 
     Expression* lo() {
-        return lo_.get();
+        return lo_;
     }
 
-    void setLo(Expression *lo) {
-        lo_.reset(lo);
+    void setLo(Expression* lo) {
+        lo_ = lo;
     }
 
     const Expression* hi() const {
-        return hi_.get();
+        return hi_;
     }
 
     Expression* hi() {
-        return hi_.get();
+        return hi_;
     }
 
-    void setHi(Expression *hi) {
-        hi_.reset(hi);
+    void setHi(Expression* hi) {
+        hi_ = hi;
     }
 
 private:
+    // for decode ctor
+    explicit SubscriptRangeExpression(ObjectPool* pool)
+        : Expression(pool, Kind::kSubscriptRange), list_(nullptr), lo_(nullptr), hi_(nullptr) {}
+
+    explicit SubscriptRangeExpression(ObjectPool* pool,
+                                      Expression* list,
+                                      Expression* lo,
+                                      Expression* hi)
+        : Expression(pool, Kind::kSubscriptRange), list_(DCHECK_NOTNULL(list)), lo_(lo), hi_(hi) {
+        DCHECK(!(lo_ == nullptr && hi_ == nullptr));
+    }
     void writeTo(Encoder& encoder) const override;
 
     void resetFrom(Decoder& decoder) override;
 
-    // It's must list typed
-    std::unique_ptr<Expression> list_;
+private:
+    // It's must be list type
+    Expression* list_;
 
     // range is [lo, hi), they could be any integer
-    std::unique_ptr<Expression> lo_;
-    std::unique_ptr<Expression> hi_;
+    Expression* lo_;
+    Expression* hi_;
 
     // runtime cache
-    Value                       result_;
+    Value result_;
 };
 
 }   // namespace nebula

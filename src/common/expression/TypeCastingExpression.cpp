@@ -119,7 +119,7 @@ void TypeCastingExpression::resetFrom(Decoder& decoder) {
     vType_ = decoder.readValueType();
 
     // Read operand_
-    operand_ = decoder.readExpression();
+    operand_ = decoder.readExpression(pool_);
     CHECK(!!operand_);
 }
 

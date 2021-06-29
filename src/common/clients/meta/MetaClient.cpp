@@ -327,14 +327,18 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     EdgeSchemas edgeSchemas;
     TagID lastTagId = -1;
 
-    auto addSchemaField = [] (NebulaSchemaProvider *schema, const cpp2::ColumnDef &col) {
+    auto addSchemaField = [&spaceInfoCache](NebulaSchemaProvider* schema,
+                                            const cpp2::ColumnDef& col) {
         bool hasDef = col.default_value_ref().has_value();
         auto& colType = col.get_type();
         size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
         bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
-        std::unique_ptr<Expression> defaultValueExpr;
+        Expression* defaultValueExpr = nullptr;
         if (hasDef) {
-            defaultValueExpr = Expression::decode(*col.get_default_value());
+            auto encoded = *col.get_default_value();
+            defaultValueExpr = Expression::decode(
+                &(spaceInfoCache->pool_), folly::StringPiece(encoded.data(), encoded.size()));
+
             if (defaultValueExpr == nullptr) {
                 LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
                 hasDef = false;
@@ -345,7 +349,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                          colType.get_type(),
                          len,
                          nullable,
-                         hasDef ? defaultValueExpr.release() : nullptr);
+                         hasDef ? defaultValueExpr : nullptr);
     };
 
     for (auto& tagIt : tagItemVec) {
