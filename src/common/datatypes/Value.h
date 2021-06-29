@@ -415,7 +415,7 @@ private:
     void setG(DataSet&& v);
 };
 
-static_assert(sizeof(Value) == 16UL);
+static_assert(sizeof(Value) == 16UL, "The size of Value should be 16UL");
 
 void swap(Value& a, Value& b);
 
