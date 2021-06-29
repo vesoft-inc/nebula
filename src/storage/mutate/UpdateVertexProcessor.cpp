@@ -136,7 +136,7 @@ StoragePlan<VertexID> UpdateVertexProcessor::buildPlan(nebula::DataSet* result) 
     auto filterNode = std::make_unique<FilterNode<VertexID>>(planContext_.get(),
                                                              tagUpdate.get(),
                                                              expCtx_.get(),
-                                                             filterExp_.get());
+                                                             filterExp_);
     filterNode->addDependency(tagUpdate.get());
 
     auto updateNode = std::make_unique<UpdateTagNode>(planContext_.get(),
@@ -193,22 +193,23 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         tagContext_.vertexCache_->evict(std::make_pair(vId.getStr(), tagId_));
     }
 
+    auto pool = &planContext_->objPool;
     for (auto& prop : updatedProps_) {
-        SourcePropertyExpression sourcePropExp(tagName, prop.get_name());
-        auto retCode = checkExp(&sourcePropExp, false, false);
+        auto sourcePropExp = SourcePropertyExpression::make(pool, tagName, prop.get_name());
+        auto retCode = checkExp(sourcePropExp, false, false);
         if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(1) << "Invalid update vertex expression!";
             return retCode;
         }
 
-        auto updateExp = Expression::decode(prop.get_value());
+        auto updateExp = Expression::decode(pool, prop.get_value());
         if (!updateExp) {
             VLOG(1) << "Can't decode the prop's value " << prop.get_value();
             return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
         }
 
         valueProps_.clear();
-        retCode = checkExp(updateExp.get(), false, false, insertable_);
+        retCode = checkExp(updateExp, false, false, insertable_);
         if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return retCode;
         }
@@ -220,12 +221,12 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     // Return props
     if (req.return_props_ref().has_value()) {
         for (auto& prop : *req.return_props_ref()) {
-            auto colExp = Expression::decode(prop);
+            auto colExp = Expression::decode(pool, prop);
             if (!colExp) {
                 VLOG(1) << "Can't decode the return expression";
                 return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
             }
-            auto retCode = checkExp(colExp.get(), true, false);
+            auto retCode = checkExp(colExp, true, false);
             if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }
@@ -237,12 +238,12 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     if (req.condition_ref().has_value()) {
         const auto& filterStr = *req.condition_ref();
         if (!filterStr.empty()) {
-            filterExp_ = Expression::decode(filterStr);
+            filterExp_ = Expression::decode(pool, filterStr);
             if (!filterExp_) {
                 VLOG(1) << "Can't decode the filter " << filterStr;
                 return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
             }
-            auto retCode = checkExp(filterExp_.get(), false, true);
+            auto retCode = checkExp(filterExp_, false, true);
             if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }

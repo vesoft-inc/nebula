@@ -202,7 +202,7 @@ protected:
     folly::Executor*                                    executor_{nullptr};
     TagContext                                          tagContext_;
     EdgeContext                                         edgeContext_;
-    std::unique_ptr<Expression>                         filter_;
+    Expression*                                         filter_{nullptr};
 
     // Collect prop in value expression in upsert set clause
     std::unordered_set<std::string>                     valueProps_;

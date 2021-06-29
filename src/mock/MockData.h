@@ -72,16 +72,16 @@ public:
      * Mock schema
      */
     static std::shared_ptr<meta::NebulaSchemaProvider>
-    mockPlayerTagSchema(SchemaVer ver = 0, bool hasProp = true);
+    mockPlayerTagSchema(ObjectPool* pool = nullptr, SchemaVer ver = 0, bool hasProp = true);
+
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockTeamTagSchema(SchemaVer ver = 0,
+                                                                         bool hasProp = true);
 
     static std::shared_ptr<meta::NebulaSchemaProvider>
-    mockTeamTagSchema(SchemaVer ver = 0, bool hasProp = true);
+    mockServeEdgeSchema(ObjectPool* pool = nullptr, SchemaVer ver = 0, bool hasProp = true);
 
-    static std::shared_ptr<meta::NebulaSchemaProvider>
-    mockServeEdgeSchema(SchemaVer ver = 0, bool hasProp = true);
-
-    static std::shared_ptr<meta::NebulaSchemaProvider>
-    mockTeammateEdgeSchema(SchemaVer ver = 0, bool hasProp = true);
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockTeammateEdgeSchema(SchemaVer ver = 0,
+                                                                              bool hasProp = true);
 
     static std::vector<nebula::meta::cpp2::ColumnDef> mockGeneralTagIndexColumns();
 
@@ -99,7 +99,7 @@ public:
 
     static std::shared_ptr<meta::NebulaSchemaProvider> mockGeneralTagSchemaV2();
 
-    static std::shared_ptr<meta::NebulaSchemaProvider> mockTypicaSchemaV2();
+    static std::shared_ptr<meta::NebulaSchemaProvider> mockTypicaSchemaV2(ObjectPool* pool);
 
     static std::vector<nebula::meta::cpp2::ColumnDef> mockTypicaIndexColumns();
 

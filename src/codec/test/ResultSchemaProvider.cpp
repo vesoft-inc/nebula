@@ -55,7 +55,7 @@ bool ResultSchemaProvider::ResultSchemaField::nullable() const {
 
 
 Expression* ResultSchemaProvider::ResultSchemaField::defaultValue() const {
-    return defaultValue_.get();
+    return defaultValue_;
 }
 
 

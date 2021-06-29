@@ -195,13 +195,16 @@ TEST(RowWriterV2, NoDefaultValue) {
     EXPECT_EQ(v1, v2);
 }
 
-
 TEST(RowWriterV2, WithDefaultValue) {
+    ObjectPool objPool;
+    auto pool = &objPool;
+
     SchemaWriter schema(7 /*Schema version*/);
     schema.appendCol("Col01", PropertyType::BOOL, 0, true);
-    schema.appendCol("Col02", PropertyType::INT64, 0, false, new ConstantExpression(12345));
-    schema.appendCol("Col03", PropertyType::STRING, 0, true, new ConstantExpression(str));
-    schema.appendCol("Col04", PropertyType::FIXED_STRING, 12, false, new ConstantExpression(fixed));
+    schema.appendCol("Col02", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 12345));
+    schema.appendCol("Col03", PropertyType::STRING, 0, true, ConstantExpression::make(pool, str));
+    schema.appendCol(
+        "Col04", PropertyType::FIXED_STRING, 12, false, ConstantExpression::make(pool, fixed));
 
     RowWriterV2 writer(&schema);
     ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
@@ -236,7 +239,6 @@ TEST(RowWriterV2, WithDefaultValue) {
     EXPECT_EQ(fixed, v1.getStr());
     EXPECT_EQ(v1, v2);
 }
-
 
 TEST(RowWriterV2, DoubleSet) {
     SchemaWriter schema(3 /*Schema version*/);

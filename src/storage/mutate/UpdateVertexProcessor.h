@@ -57,11 +57,12 @@ private:
     void onProcessFinished() override;
 
     std::vector<Expression*> getReturnPropsExp() {
-        std::vector<Expression*> result;
-        result.resize(returnPropsExp_.size());
-        auto get = [] (auto &ptr) {return ptr.get(); };
-        std::transform(returnPropsExp_.begin(), returnPropsExp_.end(), result.begin(), get);
-        return result;
+        // std::vector<Expression*> result;
+        // result.resize(returnPropsExp_.size());
+        // auto get = [] (auto &ptr) {return ptr.get(); };
+        // std::transform(returnPropsExp_.begin(), returnPropsExp_.end(), result.begin(), get);
+        // return result;
+        return returnPropsExp_;
     }
 
 private:
@@ -78,10 +79,10 @@ private:
     std::vector<storage::cpp2::UpdatedProp>                              updatedProps_;
 
     // return props expression
-    std::vector<std::unique_ptr<Expression>>                             returnPropsExp_;
+    std::vector<Expression*>                                             returnPropsExp_;
 
     // condition expression
-    std::unique_ptr<Expression>                                          filterExp_;
+    Expression*                                                          filterExp_{nullptr};
 
     // updatedProps_ dependent props in value expression
     std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap_;

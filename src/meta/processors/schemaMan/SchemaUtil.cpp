@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "common/base/ObjectPool.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/time/TimeUtils.h"
 
@@ -14,15 +15,18 @@ namespace nebula {
 namespace meta {
 bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
     DefaultValueContext mContext;
+    ObjectPool Objpool;
+    auto pool = &Objpool;
+
     for (auto& column : columns) {
         if (column.default_value_ref().has_value()) {
             auto name = column.get_name();
-            auto defaultValueExpr = Expression::decode(*column.default_value_ref());
+            auto defaultValueExpr = Expression::decode(pool, *column.default_value_ref());
             if (defaultValueExpr == nullptr) {
                 LOG(ERROR) << "Wrong format default value expression for column name: " << name;
                 return false;
             }
-            auto value = Expression::eval(defaultValueExpr.get(), mContext);
+            auto value = Expression::eval(defaultValueExpr, mContext);
             auto nullable = column.nullable_ref().value_or(false);
             if (nullable && value.isNull()) {
                 if (value.getNull() != NullType::__NULL__) {
@@ -118,7 +122,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef> &columns) {
                     if (value.getStr().size() > typeLen) {
                         const auto trimStr = value.getStr().substr(0, typeLen);
                         value.setStr(trimStr);
-                        ConstantExpression fixedValue(value);
+                        const auto& fixedValue = *ConstantExpression::make(pool, value);
                         column.set_default_value(Expression::encode(fixedValue));
                     }
                     break;

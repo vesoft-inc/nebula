@@ -240,11 +240,12 @@ TEST(IndexTest, VerticesValueTest) {
     cluster.initStorageKV(rootPath.path());
     auto* env = cluster.storageEnv_.get();
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
+    auto pool = &cluster.pool_;
 
     // Mock a tag schema for nullable column and default column.
     {
         auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
-        schemaMan->addTagSchema(spaceId, tagId, mock::MockData::mockTypicaSchemaV2());
+        schemaMan->addTagSchema(spaceId, tagId, mock::MockData::mockTypicaSchemaV2(pool));
     }
     // Mock a index for nullable column and default column.
     {

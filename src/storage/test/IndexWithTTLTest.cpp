@@ -4,41 +4,45 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
+#include "common/interface/gen-cpp2/common_types.h"
+#include "common/interface/gen-cpp2/storage_types.h"
+#include "mock/AdHocIndexManager.h"
+#include "mock/AdHocSchemaManager.h"
+#include "mock/MockCluster.h"
+#include "mock/MockData.h"
+
+#include "storage/admin/AdminTaskManager.h"
+#include "storage/admin/RebuildEdgeIndexTask.h"
+#include "storage/admin/RebuildTagIndexTask.h"
+#include "storage/index/LookupProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
-#include "storage/index/LookupProcessor.h"
-#include "storage/admin/AdminTaskManager.h"
-#include "storage/admin/RebuildTagIndexTask.h"
-#include "storage/admin/RebuildEdgeIndexTask.h"
-#include "common/fs/TempDir.h"
-#include "mock/MockCluster.h"
-#include "mock/MockData.h"
-#include "mock/AdHocIndexManager.h"
-#include "mock/AdHocSchemaManager.h"
+#include "utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
 
+ObjectPool objPool;
+auto pool = &objPool;
+
 std::string convertVertexId(size_t vIdLen, int32_t vId) {
     std::string id;
     id.reserve(vIdLen);
-    id.append(reinterpret_cast<const char*>(&vId), sizeof(vId))
-      .append(vIdLen - sizeof(vId), '\0');
+    id.append(reinterpret_cast<const char*>(&vId), sizeof(vId)).append(vIdLen - sizeof(vId), '\0');
     return id;
 }
 
-int64_t verifyResultNum(GraphSpaceID spaceId, PartitionID partId,
+int64_t verifyResultNum(GraphSpaceID spaceId,
+                        PartitionID partId,
                         const std::string& prefix,
-                        nebula::kvstore::KVStore *kv,
+                        nebula::kvstore::KVStore* kv,
                         int64_t ts = 0) {
     std::unique_ptr<kvstore::KVIterator> iter;
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, kv->prefix(spaceId, partId, prefix, &iter));
@@ -63,15 +67,9 @@ void createSchema(meta::SchemaManager* schemaMan,
                   bool isEdge = false) {
     auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    schema->addField("c1",
-                     meta::cpp2::PropertyType::INT64,
-                     0,
-                     false);
-    schema->addField("c2",
-                     meta::cpp2::PropertyType::INT64,
-                     0,
-                     false,
-                     new ConstantExpression(0L));
+    schema->addField("c1", meta::cpp2::PropertyType::INT64, 0, false);
+    schema->addField(
+        "c2", meta::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
     meta::cpp2::SchemaProp prop;
     prop.set_ttl_col("c2");
     prop.set_ttl_duration(duration);
@@ -109,7 +107,7 @@ void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
         nebula::storage::cpp2::NewVertex newVertex;
         nebula::storage::cpp2::NewTag newTag;
         newTag.set_tag_id(tagId);
-        std::vector<Value>  props;
+        std::vector<Value> props;
         props.emplace_back(Value(1L));
         props.emplace_back(Value(time::WallClock::fastNowInSec()));
         newTag.set_props(std::move(props));
@@ -138,7 +136,7 @@ void insertEdge(storage::StorageEnv* env, size_t vIdLen, EdgeType edgeType) {
         edgeKey.set_ranking(0);
         edgeKey.set_dst(convertVertexId(vIdLen, partId + 6));
         newEdge.set_key(std::move(edgeKey));
-        std::vector<Value>  props;
+        std::vector<Value> props;
         props.emplace_back(Value(1L));
         props.emplace_back(Value(time::WallClock::fastNowInSec()));
         newEdge.set_props(std::move(props));
@@ -284,13 +282,13 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
         std::vector<cpp2::UpdatedProp> updatedProps;
         cpp2::UpdatedProp uProp1;
         uProp1.set_name("c1");
-        ConstantExpression val1(2L);
+        const auto& val1 = *ConstantExpression::make(pool, 2L);
         uProp1.set_value(Expression::encode(val1));
         updatedProps.emplace_back(uProp1);
 
         cpp2::UpdatedProp uProp2;
         uProp2.set_name("c2");
-        ConstantExpression val2(5555L);
+        const auto& val2 = *ConstantExpression::make(pool, 5555L);
         uProp2.set_value(Expression::encode(val2));
         updatedProps.emplace_back(uProp2);
         req.set_updated_props(std::move(updatedProps));
@@ -361,13 +359,13 @@ TEST(IndexWithTTLTest, UpdateEdgesIndexWithTTL) {
         std::vector<cpp2::UpdatedProp> updatedProps;
         cpp2::UpdatedProp uProp1;
         uProp1.set_name("c1");
-        ConstantExpression val1(2L);
+        const auto& val1 = *ConstantExpression::make(pool, 2L);
         uProp1.set_value(Expression::encode(val1));
         updatedProps.emplace_back(uProp1);
 
         cpp2::UpdatedProp uProp2;
         uProp2.set_name("c2");
-        ConstantExpression val2(5555L);
+        const auto& val2 = *ConstantExpression::make(pool, 5555L);
         uProp2.set_value(Expression::encode(val2));
         updatedProps.emplace_back(uProp2);
         req.set_updated_props(std::move(updatedProps));
@@ -700,11 +698,11 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(Expression::Kind::kRelNE,
-                              new TagPropertyExpression("2021001", "c1"),
-                              new ConstantExpression(Value(34L)));
+    auto expr = RelationalExpression::makeNE(pool,
+                                              TagPropertyExpression::make(pool, "2021001", "c1"),
+                                              ConstantExpression::make(pool, Value(34L)));
     cpp2::IndexQueryContext context1;
-    context1.set_filter(expr.encode());
+    context1.set_filter(expr->encode());
     context1.set_index_id(2021002);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
@@ -743,11 +741,11 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(Expression::Kind::kRelNE,
-                              new TagPropertyExpression("2021001", "c1"),
-                              new ConstantExpression(Value(34L)));
+    auto expr = RelationalExpression::makeNE(pool,
+                                              TagPropertyExpression::make(pool, "2021001", "c1"),
+                                              ConstantExpression::make(pool, Value(34L)));
     cpp2::IndexQueryContext context1;
-    context1.set_filter(expr.encode());
+    context1.set_filter(expr->encode());
     context1.set_index_id(2021002);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
@@ -788,11 +786,11 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(Expression::Kind::kRelNE,
-                              new TagPropertyExpression("2021001", "c1"),
-                              new ConstantExpression(Value(34L)));
+    auto expr = RelationalExpression::makeNE(pool,
+                                              TagPropertyExpression::make(pool, "2021001", "c1"),
+                                              ConstantExpression::make(pool, Value(34L)));
     cpp2::IndexQueryContext context1;
-    context1.set_filter(expr.encode());
+    context1.set_filter(expr->encode());
     context1.set_index_id(2021002);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
@@ -833,11 +831,11 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
     req.set_return_columns(std::move(returnCols));
-    RelationalExpression expr(Expression::Kind::kRelNE,
-                              new TagPropertyExpression("2021001", "c1"),
-                              new ConstantExpression(Value(34L)));
+    auto expr = RelationalExpression::makeNE(pool,
+                                             TagPropertyExpression::make(pool, "2021001", "c1"),
+                                             ConstantExpression::make(pool, Value(34L)));
     cpp2::IndexQueryContext context1;
-    context1.set_filter(expr.encode());
+    context1.set_filter(expr->encode());
     context1.set_index_id(2021002);
     decltype(indices.contexts) contexts;
     contexts.emplace_back(std::move(context1));
@@ -850,8 +848,8 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
     EXPECT_EQ(0, resp.get_data()->rows.size());
 }
 
-}  // namespace storage
-}  // namespace nebula
+}   // namespace storage
+}   // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

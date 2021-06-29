@@ -8,6 +8,7 @@
 #define STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/context/ExpressionContext.h"
 #include "common/datatypes/Value.h"
 #include "codec/RowReader.h"
@@ -23,7 +24,7 @@ If we need to read value from the RowReader, be sure to set the reader by callin
 it only supports read from **one row**. So the reader is either a row of vertex or a row of edge.
 This mode is used in GetNeighbors at present.
 
-If we need to read value from a user defined plase, just set the related value by
+If we need to read value from a user defined place, just set the related value by
 `setTagProp` and `setEdgeProp`. Be sure about not pass the RowReader by `reset`.
 */
 class StorageExpressionContext final : public ExpressionContext {

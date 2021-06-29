@@ -175,6 +175,9 @@ public:
 
     // used for toss version
     int64_t                             defaultEdgeVer_ = 0L;
+
+    // Manage expressions
+    ObjectPool                          objPool;
 };
 
 class CommonUtils final {

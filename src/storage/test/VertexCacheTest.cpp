@@ -25,6 +25,8 @@
 namespace nebula {
 namespace storage {
 
+ObjectPool objPool;
+auto pool = &objPool;
 cpp2::GetPropRequest
 buildVertexRequest(int32_t totalParts,
                    const std::vector<VertexID>& vertices,
@@ -149,7 +151,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
         // int: player.age = 45
         cpp2::UpdatedProp uProp1;
         uProp1.set_name("age");
-        ConstantExpression val1(45L);
+        const auto& val1 = *ConstantExpression::make(pool, 45L);
         uProp1.set_value(Expression::encode(val1));
         updatedProps.emplace_back(uProp1);
 
@@ -157,7 +159,7 @@ TEST(VertexCacheTest, OperationVertexTest) {
         cpp2::UpdatedProp uProp2;
         uProp2.set_name("country");
         std::string col4new("China");
-        ConstantExpression val2(col4new);
+        const auto& val2 = *ConstantExpression::make(pool, col4new);
         uProp2.set_value(Expression::encode(val2));
         updatedProps.emplace_back(uProp2);
         req.set_updated_props(std::move(updatedProps));
@@ -165,19 +167,19 @@ TEST(VertexCacheTest, OperationVertexTest) {
         LOG(INFO) << "Build yield...";
         // Return player props: name, age, country
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-        SourcePropertyExpression sourcePropExp4("1", kVid);
+        const auto& sourcePropExp4 = *SourcePropertyExpression::make(pool, "1", kVid);
         tmpProps.emplace_back(Expression::encode(sourcePropExp4));
 
-        SourcePropertyExpression sourcePropExp5("1", kTag);
+        const auto& sourcePropExp5 = *SourcePropertyExpression::make(pool, "1", kTag);
         tmpProps.emplace_back(Expression::encode(sourcePropExp5));
 
         req.set_return_props(std::move(tmpProps));

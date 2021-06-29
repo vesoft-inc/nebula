@@ -40,7 +40,7 @@ public:
         bool nullable_;
         int32_t offset_;
         size_t nullFlagPos_;
-        std::unique_ptr<Expression> defaultValue_;
+        Expression* defaultValue_;
     };
 
 

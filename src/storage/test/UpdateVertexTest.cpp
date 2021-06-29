@@ -22,6 +22,8 @@ DECLARE_int32(mock_ttl_duration);
 namespace nebula {
 namespace storage {
 
+ObjectPool objPool;
+auto pool = &objPool;
 static bool encode(const meta::NebulaSchemaProvider* schema,
                    const std::string& key,
                    const std::vector<Value>& props,
@@ -56,10 +58,7 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
         data.clear();
         for (const auto& vertex : part.second) {
             TagID tagId = vertex.tId_;
-            auto key = NebulaKeyUtils::vertexKey(spaceVidLen,
-                                                 part.first,
-                                                 vertex.vId_,
-                                                 tagId);
+            auto key = NebulaKeyUtils::vertexKey(spaceVidLen, part.first, vertex.vId_, tagId);
             auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
             if (!schema) {
                 LOG(ERROR) << "Invalid tagId " << tagId;
@@ -73,14 +72,14 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
             }
         }
 
-        env->kvstore_->asyncMultiPut(spaceId, part.first, std::move(data),
-                                     [&](nebula::cpp2::ErrorCode code) {
-                                         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
-                                         count.fetch_sub(1);
-                                         if (count.load() == 0) {
-                                             baton.post();
-                                         }
-                                    });
+        env->kvstore_->asyncMultiPut(
+            spaceId, part.first, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+                ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+                count.fetch_sub(1);
+                if (count.load() == 0) {
+                    baton.post();
+                }
+            });
     }
     baton.wait();
     return true;
@@ -88,11 +87,11 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
 
 void addTagPropInKey(std::vector<std::string>& returnCols) {
     {
-        SourcePropertyExpression exp("1", kVid);
+        const auto& exp = *SourcePropertyExpression::make(pool, "1", kVid);
         returnCols.emplace_back(Expression::encode(exp));
     }
     {
-        SourcePropertyExpression exp("1", kTag);
+        const auto& exp = *SourcePropertyExpression::make(pool, "1", kTag);
         returnCols.emplace_back(Expression::encode(exp));
     }
 }
@@ -128,7 +127,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     // int: player.age = 45
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression val1(45L);
+    const auto& val1 = *ConstantExpression::make(pool, 45L);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
@@ -136,7 +135,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("country");
     std::string col4new("China");
-    ConstantExpression val2(col4new);
+    const auto& val2 = *ConstantExpression::make(pool, col4new);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -144,13 +143,13 @@ TEST(UpdateVertexTest, No_Filter_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "name");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-    SourcePropertyExpression sourcePropExp2("1", "age");
+    const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    SourcePropertyExpression sourcePropExp3("1", "country");
+    const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
     addTagPropInKey(tmpProps);
@@ -227,37 +226,31 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
     LOG(INFO) << "Build filter...";
     // left int:  1.startYear = 1997
-    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
-    auto* priExp1 = new ConstantExpression(1997L);
-    auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
-                                          srcExp1,
-                                          priExp1);
+    auto* srcExp1 = SourcePropertyExpression::make(pool, "1", "startYear");
+    auto* priExp1 = ConstantExpression::make(pool, 1997L);
+    auto* left = RelationalExpression::makeEQ(pool, srcExp1, priExp1);
 
     // right int: 1.endYear = 2017
-    auto* srcExp2 = new SourcePropertyExpression("1", "endYear");
-    auto* priExp2 = new ConstantExpression(2017L);
-    auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
-                                           srcExp2,
-                                           priExp2);
+    auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "endYear");
+    auto* priExp2 = ConstantExpression::make(pool, 2017L);
+    auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
     // left AND right is ture
-    auto logExp = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd,
-                                                      left,
-                                                      right);
-    req.set_condition(Expression::encode(*logExp.get()));
+    auto logExp = LogicalExpression::makeAnd(pool, left, right);
+    req.set_condition(Expression::encode(*logExp));
 
     LOG(INFO) << "Build updated props...";
     std::vector<cpp2::UpdatedProp> updatedProps;
     // int: player.age = 46
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression val1(46L);
+    const auto& val1 = *ConstantExpression::make(pool, 46L);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
     // string: player.country= China
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("country");
     std::string col4new("China");
-    ConstantExpression val2(col4new);
+    const auto& val2 = *ConstantExpression::make(pool, col4new);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -266,13 +259,13 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
     {
         // Return player props: name, age, country
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -356,14 +349,14 @@ TEST(UpdateVertexTest, Insertable_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression val1(colnew);
+    const auto& val1 = *ConstantExpression::make(pool, colnew);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
     // int: player.age = 20
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    ConstantExpression val2(20L);
+    const auto& val2 = *ConstantExpression::make(pool, 20L);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -372,13 +365,13 @@ TEST(UpdateVertexTest, Insertable_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -458,13 +451,13 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     // int: player.age = 46
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression uVal1(46L);
+    const auto& uVal1 = *ConstantExpression::make(pool, 46L);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
     // int: player.birth = 1997 invalid
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("birth");
-    ConstantExpression uVal2(1997L);
+    const auto& uVal2 = *ConstantExpression::make(pool, 1997L);
     uProp2.set_value(Expression::encode(uVal2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -473,10 +466,10 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         req.set_return_props(std::move(tmpProps));
@@ -535,31 +528,25 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Build filter...";
     // left int:  1.startYear = 1997
-    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
-    auto* priExp1 = new ConstantExpression(1997L);
-    auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
-                                          srcExp1,
-                                          priExp1);
+    auto* srcExp1 = SourcePropertyExpression::make(pool, "1", "startYear");
+    auto* priExp1 = ConstantExpression::make(pool, 1997L);
+    auto* left = RelationalExpression::makeEQ(pool, srcExp1, priExp1);
 
     // invalid prop
     // right int: 1.birth = 1990
-    auto* srcExp2 = new SourcePropertyExpression("1", "birth");
-    auto* priExp2 = new ConstantExpression(1990L);
-    auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
-                                           srcExp2,
-                                           priExp2);
+    auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "birth");
+    auto* priExp2 = ConstantExpression::make(pool, 1990L);
+    auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
     // left AND right is ture
-    auto logExp = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd,
-                                                      left,
-                                                      right);
-    req.set_condition(Expression::encode(*logExp.get()));
+    auto logExp = LogicalExpression::makeAnd(pool, left, right);
+    req.set_condition(Expression::encode(*logExp));
 
     LOG(INFO) << "Build updated props...";
     std::vector<cpp2::UpdatedProp> updatedProps;
     // int: player.age = 46
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression uVal1(46L);
+    const auto& uVal1 = *ConstantExpression::make(pool, 46L);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
 
@@ -567,7 +554,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("country");
     std::string colnew("China");
-    ConstantExpression uVal2(colnew);
+    const auto& uVal2 = *ConstantExpression::make(pool, colnew);
     uProp2.set_value(Expression::encode(uVal2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -576,13 +563,13 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         req.set_return_props(std::move(tmpProps));
@@ -646,14 +633,14 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression val1(colnew);
+    const auto& val1 = *ConstantExpression::make(pool, colnew);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
     // int: player.age = 20
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    ConstantExpression val2(20L);
+    const auto& val2 = *ConstantExpression::make(pool, 20L);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -661,35 +648,29 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
     LOG(INFO) << "Build filter...";
     // filter is valid, but filter value is false
     // left int:  1.startYear = 2020
-    auto* srcExp1 = new SourcePropertyExpression("1", "startYear");
-    auto* priExp1 = new ConstantExpression(2020L);
-    auto* left = new RelationalExpression(Expression::Kind::kRelEQ,
-                                          srcExp1,
-                                          priExp1);
+    auto* srcExp1 = SourcePropertyExpression::make(pool, "1", "startYear");
+    auto* priExp1 = ConstantExpression::make(pool, 2020L);
+    auto* left = RelationalExpression::makeEQ(pool, srcExp1, priExp1);
 
     // right int: 1.age = 30
-    auto* srcExp2 = new SourcePropertyExpression("1", "age");
-    auto* priExp2 = new ConstantExpression(30L);
-    auto* right = new RelationalExpression(Expression::Kind::kRelEQ,
-                                           srcExp2,
-                                           priExp2);
+    auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "age");
+    auto* priExp2 = ConstantExpression::make(pool, 30L);
+    auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
     // left AND right is false
-    auto logExp = std::make_unique<LogicalExpression>(Expression::Kind::kLogicalAnd,
-                                                      left,
-                                                      right);
-    req.set_condition(Expression::encode(*logExp.get()));
+    auto logExp = LogicalExpression::makeAnd(pool, left, right);
+    req.set_condition(Expression::encode(*logExp));
 
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -756,12 +737,12 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
     auto partId = std::hash<std::string>()("Lonzo Ball") % parts + 1;
     VertexID vertexId("Lonzo Ball");
-    auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId,  vertexId, 1);
+    auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertexId, 1);
     std::vector<kvstore::KV> data;
     data.emplace_back(std::make_pair(key, ""));
     folly::Baton<> baton;
-    env->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-        [&](nebula::cpp2::ErrorCode code) {
+    env->kvstore_->asyncMultiPut(
+        spaceId, partId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
             ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
             baton.post();
         });
@@ -779,7 +760,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     // int: player.age = 23
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression uVal1(23L);
+    const auto& uVal1 = *ConstantExpression::make(pool, 23L);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
@@ -787,7 +768,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "country");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     req.set_return_props(std::move(tmpProps));
@@ -837,14 +818,14 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     // int: player.age = 45
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression uVal1(45L);
+    const auto& uVal1 = *ConstantExpression::make(pool, 45L);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
     // string: player.country= China
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("country");
     std::string colnew("China");
-    ConstantExpression uVal2(colnew);
+    const auto& uVal2 = *ConstantExpression::make(pool, colnew);
     uProp2.set_value(Expression::encode(uVal2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -853,13 +834,13 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         req.set_return_props(std::move(tmpProps));
@@ -914,14 +895,14 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string col1new("Tim");
-    ConstantExpression uVal1(col1new);
+    const auto& uVal1 = *ConstantExpression::make(pool, col1new);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
 
     // int: player.age = 20
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    ConstantExpression uVal2(20L);
+    const auto& uVal2 = *ConstantExpression::make(pool, 20L);
     uProp2.set_value(Expression::encode(uVal2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -930,13 +911,13 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -972,7 +953,6 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
     EXPECT_EQ("America", (*resp.props_ref()).rows[0].values[3].getStr());
     EXPECT_EQ("Tim", (*resp.props_ref()).rows[0].values[4].getStr());
     EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
-
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -1025,14 +1005,14 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string col1new("Tim Duncan");
-    ConstantExpression uVal1(col1new);
+    const auto& uVal1 = *ConstantExpression::make(pool, col1new);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
 
     // int: 1.age = 50L
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    ConstantExpression uVal2(50L);
+    const auto& uVal2 = *ConstantExpression::make(pool, 50L);
     uProp2.set_value(Expression::encode(uVal2));
     updatedProps.emplace_back(uProp2);
 
@@ -1040,7 +1020,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     cpp2::UpdatedProp uProp3;
     uProp3.set_name("country");
     std::string col3new("China");
-    ConstantExpression uVal3(col3new);
+    const auto& uVal3 = *ConstantExpression::make(pool, col3new);
     uProp3.set_value(Expression::encode(uVal3));
     updatedProps.emplace_back(uProp3);
 
@@ -1050,13 +1030,13 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
     // Return player props: name, age, country
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-        SourcePropertyExpression sourcePropExp3("1", "country");
+        const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
         tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
         addTagPropInKey(tmpProps);
@@ -1165,7 +1145,7 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression val1(colnew);
+    const auto& val1 = *ConstantExpression::make(pool, colnew);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
@@ -1173,10 +1153,10 @@ TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         req.set_return_props(std::move(tmpProps));
@@ -1225,14 +1205,14 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     std::string colnew("Brandon Ingram");
-    ConstantExpression val1(colnew);
+    const auto& val1 = *ConstantExpression::make(pool, colnew);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
     // int: player.age = $^.player.career
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("age");
-    SourcePropertyExpression val2("1", "career");
+    const auto& val2 = *SourcePropertyExpression::make(pool, "1", "career");
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -1241,10 +1221,10 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     // Return player props: name, age
     {
         std::vector<std::string> tmpProps;
-        SourcePropertyExpression sourcePropExp1("1", "name");
+        const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
         tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-        SourcePropertyExpression sourcePropExp2("1", "age");
+        const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
         tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
         addTagPropInKey(tmpProps);
@@ -1290,7 +1270,6 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
     EXPECT_EQ(10, val.getInt());
 }
 
-
 // update uses another tag test, failed
 TEST(UpdateVertexTest, Update_Multi_tag_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
@@ -1324,16 +1303,15 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     // value is another tag expression
-    SourcePropertyExpression val2("2", "name");
+    const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
     uProp1.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
 
-
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "name");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     addTagPropInKey(tmpProps);
@@ -1349,7 +1327,6 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
-
 
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -1396,16 +1373,15 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("name");
     // value is another tag expression
-    SourcePropertyExpression val2("2", "name");
+    const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
     uProp1.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
 
-
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "name");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     addTagPropInKey(tmpProps);
@@ -1422,7 +1398,6 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
-
     // get player from kvstore directly
     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -1434,7 +1409,6 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
     auto val = reader->getValueByName("name");
     EXPECT_EQ("Tim Duncan", val.getStr());
 }
-
 
 // upsert/update field type and value does not match test, failed
 TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
@@ -1468,7 +1442,7 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
     // string: player.country_ = 2011(value int)
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("country");
-    ConstantExpression uVal1(2011L);
+    const auto& uVal1 = *ConstantExpression::make(pool, 2011L);
     uProp1.set_value(Expression::encode(uVal1));
     updatedProps.emplace_back(uProp1);
     req.set_updated_props(std::move(updatedProps));
@@ -1477,7 +1451,7 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
     LOG(INFO) << "Build yield...";
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "name");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
     addTagPropInKey(tmpProps);

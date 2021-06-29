@@ -8,6 +8,7 @@
 #define META_TEST_TESTUTILS_H_
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/base/CommonMacro.h"
 #include "common/interface/gen-cpp2/common_types.h"
 #include "common/time/WallClock.h"
@@ -39,6 +40,9 @@ using mock::MockCluster;
 using ZoneInfo  = std::unordered_map<std::string, std::vector<HostAddr>>;
 using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
 
+ObjectPool metaTestPool;
+auto metaPool = &metaTestPool;
+
 class TestUtils {
 public:
     static cpp2::ColumnDef columnDef(int32_t index, cpp2::PropertyType type,
@@ -46,7 +50,7 @@ public:
         cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", index));
         if (!defaultValue.empty()) {
-            ConstantExpression defaultExpr(defaultValue);
+            const auto& defaultExpr = *ConstantExpression::make(metaPool, defaultValue);
             column.set_default_value(Expression::encode(defaultExpr));
         }
         column.set_nullable(isNull);
@@ -406,75 +410,75 @@ public:
         ASSERT_EQ((*schema.columns_ref()).size(), 12);
         ASSERT_EQ((*schema.columns_ref())[0].get_name(), "col_0");
         ASSERT_EQ((*schema.columns_ref())[0].get_type().get_type(), PropertyType::BOOL);
-        auto expr = Expression::decode(*(*schema.columns_ref())[0].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(true));
+        auto expr = Expression::decode(metaPool, *(*schema.columns_ref())[0].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(true));
         ASSERT_EQ(*(*schema.columns_ref())[0].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[1].get_name(), "col_1");
         ASSERT_EQ((*schema.columns_ref())[1].get_type().get_type(), PropertyType::INT8);
-        expr = Expression::decode(*(*schema.columns_ref())[1].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(NullType::__NULL__));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[1].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(NullType::__NULL__));
         ASSERT_EQ(*(*schema.columns_ref())[1].get_nullable(), true);
 
         ASSERT_EQ((*schema.columns_ref())[2].get_name(), "col_2");
         ASSERT_EQ((*schema.columns_ref())[2].get_type().get_type(), PropertyType::INT16);
-        expr = Expression::decode(*(*schema.columns_ref())[2].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(20));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[2].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(20));
         ASSERT_EQ(*(*schema.columns_ref())[2].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[3].get_name(), "col_3");
         ASSERT_EQ((*schema.columns_ref())[3].get_type().get_type(), PropertyType::INT32);
-        expr = Expression::decode(*(*schema.columns_ref())[3].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(200));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[3].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(200));
         ASSERT_EQ(*(*schema.columns_ref())[3].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[4].get_name(), "col_4");
         ASSERT_EQ((*schema.columns_ref())[4].get_type().get_type(), PropertyType::INT64);
-        expr = Expression::decode(*(*schema.columns_ref())[4].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(2000));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[4].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(2000));
         ASSERT_EQ(*(*schema.columns_ref())[4].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[5].get_name(), "col_5");
         ASSERT_EQ((*schema.columns_ref())[5].get_type().get_type(), PropertyType::FLOAT);
-        expr = Expression::decode(*(*schema.columns_ref())[5].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(10.0));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[5].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(10.0));
         ASSERT_EQ(*(*schema.columns_ref())[5].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[6].get_name(), "col_6");
         ASSERT_EQ((*schema.columns_ref())[6].get_type().get_type(), PropertyType::DOUBLE);
-        expr = Expression::decode(*(*schema.columns_ref())[6].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(20.0));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[6].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(20.0));
         ASSERT_EQ(*(*schema.columns_ref())[6].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[7].get_name(), "col_7");
         ASSERT_EQ((*schema.columns_ref())[7].get_type().get_type(), PropertyType::STRING);
-        expr = Expression::decode(*(*schema.columns_ref())[7].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value("string"));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[7].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value("string"));
         ASSERT_EQ(*(*schema.columns_ref())[7].get_nullable(), false);
 
         ASSERT_EQ((*schema.columns_ref())[8].get_name(), "col_8");
         ASSERT_EQ((*schema.columns_ref())[8].get_type().get_type(), PropertyType::FIXED_STRING);
-        expr = Expression::decode(*(*schema.columns_ref())[8].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value("longlongst"));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[8].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value("longlongst"));
         ASSERT_EQ(*(*schema.columns_ref())[8].get_nullable(), false);
         ASSERT_EQ(*(*schema.columns_ref())[8].get_type().get_type_length(), 10);
 
         ASSERT_EQ((*schema.columns_ref())[9].get_name(), "col_9");
         ASSERT_EQ((*schema.columns_ref())[9].get_type().get_type(), PropertyType::TIMESTAMP);
-        expr = Expression::decode(*(*schema.columns_ref())[9].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(123456));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[9].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(123456));
         ASSERT_EQ(*(*schema.columns_ref())[9].get_nullable(), true);
 
         ASSERT_EQ((*schema.columns_ref())[10].get_name(), "col_10");
         ASSERT_EQ((*schema.columns_ref())[10].get_type().get_type(), PropertyType::DATE);
-        expr = Expression::decode(*(*schema.columns_ref())[10].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(Date()));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[10].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(Date()));
         ASSERT_EQ(*(*schema.columns_ref())[10].get_nullable(), true);
 
         ASSERT_EQ((*schema.columns_ref())[11].get_name(), "col_11");
         ASSERT_EQ((*schema.columns_ref())[11].get_type().get_type(), PropertyType::DATETIME);
-        expr = Expression::decode(*(*schema.columns_ref())[11].get_default_value());
-        ASSERT_EQ(Expression::eval(expr.get(), defaultContext), Value(DateTime()));
+        expr = Expression::decode(metaPool, *(*schema.columns_ref())[11].get_default_value());
+        ASSERT_EQ(Expression::eval(expr, defaultContext), Value(DateTime()));
         ASSERT_EQ(*(*schema.columns_ref())[11].get_nullable(), true);
     }
 

@@ -143,7 +143,7 @@ StoragePlan<cpp2::EdgeKey> UpdateEdgeProcessor::buildPlan(nebula::DataSet* resul
     auto filterNode = std::make_unique<FilterNode<cpp2::EdgeKey>>(planContext_.get(),
                                                                   edgeUpdate.get(),
                                                                   expCtx_.get(),
-                                                                  filterExp_.get());
+                                                                  filterExp_);
     filterNode->addDependency(edgeUpdate.get());
 
     auto updateNode = std::make_unique<UpdateEdgeNode>(planContext_.get(),
@@ -197,23 +197,24 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     edgeContext_.indexMap_.emplace(edgeKey_.get_edge_type(), edgeContext_.propContexts_.size() - 1);
     edgeContext_.edgeNames_.emplace(edgeKey_.get_edge_type(), edgeName);
 
+    auto pool = &planContext_->objPool;
     // Build context of the update edge prop
     for (auto& edgeProp : updatedProps_) {
-        EdgePropertyExpression edgePropExp(edgeName, edgeProp.get_name());
-        auto retCode = checkExp(&edgePropExp, false, false);
+        auto edgePropExp = EdgePropertyExpression::make(pool, edgeName, edgeProp.get_name());
+        auto retCode = checkExp(edgePropExp, false, false);
         if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             VLOG(1) << "Invalid update edge expression!";
             return retCode;
         }
 
-        auto updateExp = Expression::decode(edgeProp.get_value());
+        auto updateExp = Expression::decode(pool, edgeProp.get_value());
         if (!updateExp) {
             VLOG(1) << "Can't decode the prop's value " << edgeProp.get_value();
             return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
         }
 
         valueProps_.clear();
-        retCode = checkExp(updateExp.get(), false, false, insertable_);
+        retCode = checkExp(updateExp, false, false, insertable_);
         if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return retCode;
         }
@@ -225,12 +226,12 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     // Return props
     if (req.return_props_ref().has_value()) {
         for (auto& prop : *req.return_props_ref()) {
-            auto colExp = Expression::decode(prop);
+            auto colExp = Expression::decode(pool, prop);
             if (!colExp) {
                 VLOG(1) << "Can't decode the return expression";
                 return nebula::cpp2::ErrorCode::E_INVALID_UPDATER;
             }
-            auto retCode = checkExp(colExp.get(), true, false);
+            auto retCode = checkExp(colExp, true, false);
             if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }
@@ -242,12 +243,12 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     if (req.condition_ref().has_value()) {
         const auto& filterStr = *req.condition_ref();
         if (!filterStr.empty()) {
-            filterExp_ = Expression::decode(filterStr);
+            filterExp_ = Expression::decode(pool, filterStr);
             if (!filterExp_) {
                 VLOG(1) << "Can't decode the filter " << filterStr;
                 return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
             }
-            auto retCode = checkExp(filterExp_.get(), false, true);
+            auto retCode = checkExp(filterExp_, false, true);
             if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 return retCode;
             }

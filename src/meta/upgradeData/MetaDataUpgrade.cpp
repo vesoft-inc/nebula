@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Map.h"
 #include "common/conf/Configuration.h"
@@ -212,7 +213,9 @@ Status MetaDataUpgrade::deleteKeyVal(const folly::StringPiece &key) {
 }
 
 Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
-                                           std::vector<cpp2::ColumnDef> &newCols) {
+                                            std::vector<cpp2::ColumnDef> &newCols) {
+    ObjectPool objPool;
+    auto pool = &objPool;
     for (auto &colDef : oldCols) {
         cpp2::ColumnDef columnDef;
         columnDef.set_name(colDef.get_name());
@@ -221,29 +224,29 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
             std::string encodeStr;
             switch (colDef.get_type().get_type()) {
                 case oldmeta::cpp2::SupportedType::BOOL:
-                    encodeStr = Expression::encode
-                        (ConstantExpression(colDef.get_default_value()->get_bool_value()));
+                    encodeStr = Expression::encode(*ConstantExpression::make(
+                        pool, colDef.get_default_value()->get_bool_value()));
                     break;
                 case oldmeta::cpp2::SupportedType::INT:
-                    encodeStr = Expression::encode(
-                            ConstantExpression(colDef.get_default_value()->get_int_value()));
+                    encodeStr = Expression::encode(*ConstantExpression::make(
+                        pool, colDef.get_default_value()->get_int_value()));
                     break;
                 case oldmeta::cpp2::SupportedType::DOUBLE:
-                    encodeStr = Expression::encode(
-                            ConstantExpression(colDef.get_default_value()->get_double_value()));
+                    encodeStr = Expression::encode(*ConstantExpression::make(
+                        pool, colDef.get_default_value()->get_double_value()));
                     break;
                 case oldmeta::cpp2::SupportedType::STRING:
-                    encodeStr = Expression::encode(
-                            ConstantExpression(colDef.get_default_value()->get_string_value()));
+                    encodeStr = Expression::encode(*ConstantExpression::make(
+                        pool, colDef.get_default_value()->get_string_value()));
                     break;
                 case oldmeta::cpp2::SupportedType::TIMESTAMP:
-                    encodeStr = Expression::encode(
-                            ConstantExpression(colDef.get_default_value()->get_timestamp()));
+                    encodeStr = Expression::encode(*ConstantExpression::make(
+                        pool, colDef.get_default_value()->get_timestamp()));
                     break;
                 default:
-                    return Status::Error("Wrong default type: %s",
-                            apache::thrift::util::enumNameSafe(
-                                    colDef.get_type().get_type()).c_str());
+                    return Status::Error(
+                        "Wrong default type: %s",
+                        apache::thrift::util::enumNameSafe(colDef.get_type().get_type()).c_str());
             }
 
             columnDef.set_default_value(std::move(encodeStr));

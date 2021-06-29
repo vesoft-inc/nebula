@@ -59,7 +59,7 @@ public:
                 if (field->hasDefault()) {
                     DefaultValueContext expCtx;
                     auto expr = field->defaultValue()->clone();
-                    return Expression::eval(expr.get(), expCtx);
+                    return Expression::eval(expr, expCtx);
                 } else if (field->nullable()) {
                     return NullType::__NULL__;
                 }

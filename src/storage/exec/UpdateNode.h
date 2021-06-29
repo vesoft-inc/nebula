@@ -55,7 +55,7 @@ public:
                           const std::string& name) {
         if (field->hasDefault()) {
             auto expr = field->defaultValue()->clone();
-            props_[field->name()] = Expression::eval(expr.get(), *expCtx_);
+            props_[field->name()] = Expression::eval(expr, *expCtx_);
         } else if (field->nullable()) {
             props_[name] = Value::kNullValue;
         } else {
@@ -316,11 +316,11 @@ public:
         return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-    folly::Optional<std::string>
-    updateAndWriteBack(const PartitionID partId, const VertexID vId) {
+    folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
+        ObjectPool pool;
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
-            auto updateExp = Expression::decode(updateProp.get_value());
+            auto updateExp = Expression::decode(&pool, updateProp.get_value());
             if (!updateExp) {
                 LOG(ERROR) << "Update expression decode failed " << updateProp.get_value();
                 return folly::none;
@@ -669,9 +669,10 @@ public:
 
     folly::Optional<std::string>
     updateAndWriteBack(const PartitionID partId, const cpp2::EdgeKey& edgeKey) {
+        ObjectPool pool;
         for (auto& updateProp : updatedProps_) {
             auto propName = updateProp.get_name();
-            auto updateExp = Expression::decode(updateProp.get_value());
+            auto updateExp = Expression::decode(&pool, updateProp.get_value());
             if (!updateExp) {
                 return folly::none;
             }

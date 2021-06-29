@@ -8,6 +8,7 @@
 #define MOCK_MOCKCLUSTER_H_
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/clients/storage/GraphStorageClient.h"
 #include "common/clients/storage/GeneralStorageClient.h"
 #include "mock/RpcServer.h"
@@ -137,6 +138,8 @@ public:
     std::unique_ptr<kvstore::NebulaStore>           esListener_{nullptr};
     std::unique_ptr<meta::SchemaManager>            lSchemaMan_;
     std::unique_ptr<meta::MetaClient>               lMetaClient_{nullptr};
+
+    ObjectPool                                      pool_;
 };
 
 }  // namespace mock

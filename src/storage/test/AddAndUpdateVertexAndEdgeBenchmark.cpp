@@ -35,6 +35,8 @@ EdgeType edgeType = 0;
 storage::cpp2::EdgeKey edgeKey;
 int parts = 0;
 storage::StorageEnv* env;
+ObjectPool objPool;
+auto pool = &objPool;
 
 bool encodeV2(const meta::NebulaSchemaProvider* schema,
               const std::string& key,
@@ -344,7 +346,7 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
     // int: player.age = 45
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("age");
-    ConstantExpression val1(45L);
+    const auto& val1 = *ConstantExpression::make(pool, 45L);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
@@ -352,7 +354,7 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("country");
     std::string col4new("China");
-    ConstantExpression val2(col4new);
+    const auto& val2 = *ConstantExpression::make(pool, col4new);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
@@ -360,13 +362,13 @@ cpp2::UpdateVertexRequest buildUpdateVertexReq(bool isVersionV2) {
     // Build yield
     // Return player props: name, age, country
     std::vector<std::string> tmpProps;
-    SourcePropertyExpression sourcePropExp1("1", "name");
+    const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "name");
     tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-    SourcePropertyExpression sourcePropExp2("1", "age");
+    const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    SourcePropertyExpression sourcePropExp3("1", "country");
+    const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
     req.set_return_props(std::move(tmpProps));
@@ -401,7 +403,7 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
     // int: 101.teamCareer = 20
     cpp2::UpdatedProp uProp1;
     uProp1.set_name("teamCareer");
-    ConstantExpression val1(20L);
+    const auto& val1 = *ConstantExpression::make(pool, 20L);
     uProp1.set_value(Expression::encode(val1));
     updatedProps.emplace_back(uProp1);
 
@@ -409,23 +411,23 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
     cpp2::UpdatedProp uProp2;
     uProp2.set_name("type");
     std::string colnew("trade");
-    ConstantExpression val2(colnew);
+    const auto& val2 = *ConstantExpression::make(pool, colnew);
     uProp2.set_value(Expression::encode(val2));
     updatedProps.emplace_back(uProp2);
     req.set_updated_props(std::move(updatedProps));
 
     // Return serve props: playerName, teamName, teamCareer, type
     std::vector<std::string> tmpProps;
-    EdgePropertyExpression edgePropExp1("101", "playerName");
+    const auto& edgePropExp1 = *EdgePropertyExpression::make(pool, "101", "playerName");
     tmpProps.emplace_back(Expression::encode(edgePropExp1));
 
-    EdgePropertyExpression edgePropExp2("101", "teamName");
+    const auto& edgePropExp2 = *EdgePropertyExpression::make(pool, "101", "teamName");
     tmpProps.emplace_back(Expression::encode(edgePropExp2));
 
-    EdgePropertyExpression edgePropExp3("101", "teamCareer");
+    const auto& edgePropExp3 = *EdgePropertyExpression::make(pool, "101", "teamCareer");
     tmpProps.emplace_back(Expression::encode(edgePropExp3));
 
-    EdgePropertyExpression edgePropExp4("101", "type");
+    const auto& edgePropExp4 = *EdgePropertyExpression::make(pool, "101", "type");
     tmpProps.emplace_back(Expression::encode(edgePropExp4));
 
     req.set_return_props(std::move(tmpProps));
