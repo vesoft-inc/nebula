@@ -13,7 +13,7 @@
 #include "common/hdfs/HdfsHelper.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
-#include "common/time/TimeUtils.h"
+#include "common/time/TimezoneInfo.h"
 #include "common/version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/PartManager.h"
@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize the global timezone, it's only used for datetime type compute
     // won't affect the process timezone.
-    status = nebula::time::TimeUtils::initializeGlobalTimezone();
+    status = nebula::time::Timezone::initializeGlobalTimezone();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;

@@ -80,7 +80,7 @@ public:
                 auto info = HostInfo::decode(val);
                 auto role = apache::thrift::util::enumNameSafe(info.role_);
                 auto time =
-                    time::TimeUtils::unixSecondsToDateTime(info.lastHBTimeInMilliSec_ / 1000);
+                    time::TimeConversion::unixSecondsToDateTime(info.lastHBTimeInMilliSec_ / 1000);
                 LOG(INFO) << folly::sformat("host addr: {}, role: {}, last hb time: {}",
                                             host.toString(),
                                             role,
