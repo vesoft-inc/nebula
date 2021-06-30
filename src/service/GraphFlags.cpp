@@ -58,3 +58,6 @@ DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed
 DEFINE_bool(accept_partial_success, false, "Whether to accept partial success, default false");
 
 DEFINE_double(system_memory_high_watermark_ratio, 0.8, "high watermark ratio of system memory");
+
+DEFINE_bool(disable_octal_escape_char, false, "Octal escape character will be disabled"
+                                         " in next version to ensure compatibility with cypher.");

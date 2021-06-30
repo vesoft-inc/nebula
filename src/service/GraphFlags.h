@@ -23,6 +23,7 @@ DECLARE_string(local_ip);
 DECLARE_string(pid_file);
 DECLARE_bool(local_config);
 DECLARE_bool(accept_partial_success);
+DECLARE_bool(disable_octal_escape_char);
 
 DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);

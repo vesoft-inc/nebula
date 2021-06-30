@@ -68,7 +68,8 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.95],
             ['GRAPH', 'session_idle_timeout_secs', 'int', 'MUTABLE', 0],
             ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 10],
-            ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807]
+            ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
+            ['GRAPH', 'disable_octal_escape_char', 'bool', 'MUTABLE', False],
         ]
         self.check_out_of_order_result(resp, expected_result)
 

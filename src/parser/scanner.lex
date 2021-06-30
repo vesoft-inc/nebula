@@ -9,6 +9,7 @@
 #include "parser/GQLParser.h"
 #include "parser/GraphScanner.h"
 #include "GraphParser.hpp"
+#include "service/GraphFlags.h"
 
 #define YY_USER_ACTION                  \
     yylloc->step();                     \
@@ -380,13 +381,28 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 sbufPos_ += yyleng;
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
-                                makeSpaceForString(1);
-                                uint32_t val = 0;
-                                sscanf(yytext + 1, "%o", &val);
-                                if (val > 0xFF) {
+                                if (FLAGS_disable_octal_escape_char) {
+                                    makeSpaceForString(yyleng);
+                                    ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                    sbufPos_ += yyleng;
+                                } else {
+                                    makeSpaceForString(1);
+                                    uint32_t val = 0;
+                                    sscanf(yytext + 1, "%o", &val);
+                                    if (val > 0xFF) {
+                                        yyterminate();
+                                    }
+                                    sbuf()[sbufPos_++] = val;
+                                }
+                            }
+<DQ_STR,SQ_STR>\\{DEC}+ {
+                                if (FLAGS_disable_octal_escape_char) {
+                                    makeSpaceForString(yyleng);
+                                    ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                    sbufPos_ += yyleng;
+                                } else {
                                     yyterminate();
                                 }
-                                sbuf()[sbufPos_++] = val;
                             }
 <DQ_STR,SQ_STR>\\[uUxX]{HEX}{4} {
                                 auto encoded = folly::codePointToUtf8(std::strtoul(yytext+2, nullptr, 16));
@@ -394,7 +410,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 ::strncpy(sbuf() + sbufPos_, encoded.data(), encoded.size());
                                 sbufPos_ += encoded.size();
                             }
-<DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
 <DQ_STR,SQ_STR>\\n          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\n';

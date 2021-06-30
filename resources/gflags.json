@@ -13,7 +13,8 @@
         "system_memory_high_watermark_ratio",
         "session_idle_timeout_secs",
         "session_reclaim_interval_secs",
-        "max_allowed_connections"
+        "max_allowed_connections",
+        "disable_octal_escape_char"
     ],
     "NESTED": [
         "rocksdb_db_options",
