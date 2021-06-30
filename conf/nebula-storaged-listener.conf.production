@@ -26,17 +26,17 @@
 
 ########## networking ##########
 # Meta server address
---meta_server_addrs=192.168.2.1:45500
+--meta_server_addrs=192.168.2.1:9559
 # Local ip
 --local_ip=192.168.2.4
 # Storage daemon listening port
---port=44510
+--port=9789
 # HTTP service ip
 --ws_ip=192.168.2.4
 # HTTP service port
---ws_http_port=12021
+--ws_http_port=19789
 # HTTP2 service port
---ws_h2_port=12031
+--ws_h2_port=19790
 # heartbeat with meta service
 --heartbeat_interval_secs=10
 
