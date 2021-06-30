@@ -5,7 +5,7 @@
  */
 
 #include "meta/processors/admin/GetMetaDirInfoProcessor.h"
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include "common/fs/FileUtils.h"
 
 namespace nebula {
@@ -41,7 +41,7 @@ void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq& req) {
     }
     nebula::cpp2::DirInfo dir;
     dir.set_data(realpaths);
-    dir.set_root(std::filesystem::current_path().string());
+    dir.set_root(boost::filesystem::current_path().string());
     resp_.set_dir(std::move(dir));
 
     resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);

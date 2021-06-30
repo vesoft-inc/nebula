@@ -23,12 +23,12 @@ TEST(DiskManagerTest, PathTest) {
     CHECK(status.ok());
     auto realPath = status.value();
 
-    auto absolute = std::filesystem::absolute(relative);
+    auto absolute = boost::filesystem::absolute(relative);
     EXPECT_NE(realPath, absolute.string());
-    std::filesystem::equivalent(absolute, realPath);
+    boost::filesystem::equivalent(absolute, realPath);
 
-    auto canonical1 = std::filesystem::canonical(relative);
-    auto canonical2 = std::filesystem::canonical(absolute);
+    auto canonical1 = boost::filesystem::canonical(relative);
+    auto canonical2 = boost::filesystem::canonical(absolute);
     EXPECT_EQ(realPath, canonical1.string());
     EXPECT_EQ(realPath, canonical2.string());
 }
@@ -76,10 +76,10 @@ TEST(DiskManagerTest, AvailableTest) {
     GraphSpaceID spaceId = 1;
     fs::TempDir disk1("/tmp/disk_man_test.XXXXXX");
     auto path1 = folly::stringPrintf("%s/nebula/%d", disk1.path(), spaceId);
-    std::filesystem::create_directories(path1);
+    boost::filesystem::create_directories(path1);
     fs::TempDir disk2("/tmp/disk_man_test.XXXXXX");
     auto path2 = folly::stringPrintf("%s/nebula/%d", disk2.path(), spaceId);
-    std::filesystem::create_directories(path2);
+    boost::filesystem::create_directories(path2);
 
     std::vector<std::string> dataPaths = {disk1.path(), disk2.path()};
     DiskManager diskMan(dataPaths);
@@ -111,7 +111,7 @@ TEST(DiskManagerTest, WalNoSpaceTest) {
     PartitionID partId = 1;
     fs::TempDir root("/tmp/testWal.XXXXXX");
     std::string spacePath = folly::stringPrintf("%s/nebula/%d", root.path(), spaceId);
-    std::filesystem::create_directories(spacePath);
+    boost::filesystem::create_directories(spacePath);
     auto walPath = folly::stringPrintf("%s/wal/%d", spacePath.c_str(), partId);
 
     wal::FileBasedWalInfo info;

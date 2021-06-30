@@ -5,7 +5,7 @@
  */
 
 #include "storage/admin/ListClusterInfoProcessor.h"
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include "common/fs/FileUtils.h"
 
 namespace nebula {
@@ -43,7 +43,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
     }
     nebula::cpp2::DirInfo dir;
     dir.set_data(std::move(realpaths));
-    dir.set_root(std::filesystem::current_path().string());
+    dir.set_root(boost::filesystem::current_path().string());
 
     resp_.set_dir(std::move(dir));
 
