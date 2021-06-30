@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/time/TimeUtils.h"
+#include "common/time/TimezoneInfo.h"
 
 namespace nebula {
 
@@ -27,9 +28,9 @@ TEST(Time, secondsTimeCovertion) {
                          0));
         }
         for (const auto &dt : values) {
-            EXPECT_EQ(
-                dt,
-                time::TimeUtils::unixSecondsToDateTime(time::TimeUtils::dateTimeToUnixSeconds(dt)));
+            EXPECT_EQ(dt,
+                      time::TimeConversion::unixSecondsToDateTime(
+                          time::TimeConversion::dateTimeToUnixSeconds(dt)));
         }
     }
     {
@@ -40,8 +41,8 @@ TEST(Time, secondsTimeCovertion) {
         };
         for (std::size_t i = 0; i < dateTimeSeconds.size(); ++i) {
             EXPECT_EQ(dateTimeSeconds[i].second,
-                      time::TimeUtils::dateTimeToUnixSeconds(dateTimeSeconds[i].first));
-            EXPECT_EQ(time::TimeUtils::unixSecondsToDateTime(dateTimeSeconds[i].second),
+                      time::TimeConversion::dateTimeToUnixSeconds(dateTimeSeconds[i].first));
+            EXPECT_EQ(time::TimeConversion::unixSecondsToDateTime(dateTimeSeconds[i].second),
                       dateTimeSeconds[i].first);
         }
     }
@@ -56,7 +57,9 @@ TEST(Time, secondsTimeCovertion) {
                      folly::Random::rand32(1, 29)));
         }
         for (const auto &d : values) {
-            EXPECT_EQ(d, time::TimeUtils::unixSecondsToDate(time::TimeUtils::dateToUnixSeconds(d)));
+            EXPECT_EQ(d,
+                      time::TimeConversion::unixSecondsToDate(
+                          time::TimeConversion::dateToUnixSeconds(d)));
         }
     }
     {
@@ -65,8 +68,8 @@ TEST(Time, secondsTimeCovertion) {
                                                            {Date(2003, 3, 4), 1046736000}}};
         for (std::size_t i = 0; i < dateSeconds.size(); ++i) {
             EXPECT_EQ(dateSeconds[i].second,
-                      time::TimeUtils::dateToUnixSeconds(dateSeconds[i].first));
-            EXPECT_EQ(time::TimeUtils::unixSecondsToDate(dateSeconds[i].second),
+                      time::TimeConversion::dateToUnixSeconds(dateSeconds[i].first));
+            EXPECT_EQ(time::TimeConversion::unixSecondsToDate(dateSeconds[i].second),
                       dateSeconds[i].first);
         }
     }
@@ -80,15 +83,17 @@ TEST(Time, secondsTimeCovertion) {
                                      0));
         }
         for (const auto &t : values) {
-            EXPECT_EQ(t, time::TimeUtils::unixSecondsToTime(time::TimeUtils::timeToSeconds(t)));
+            EXPECT_EQ(
+                t, time::TimeConversion::unixSecondsToTime(time::TimeConversion::timeToSeconds(t)));
         }
     }
     {
         std::vector<std::pair<Time, int64_t>> timeSeconds{
             {{Time(0, 0, 0, 0), 0}, {Time(14, 2, 4, 0), 50524}}};
         for (std::size_t i = 0; i < timeSeconds.size(); ++i) {
-            EXPECT_EQ(timeSeconds[i].second, time::TimeUtils::timeToSeconds(timeSeconds[i].first));
-            EXPECT_EQ(time::TimeUtils::unixSecondsToTime(timeSeconds[i].second),
+            EXPECT_EQ(timeSeconds[i].second,
+                      time::TimeConversion::timeToSeconds(timeSeconds[i].first));
+            EXPECT_EQ(time::TimeConversion::unixSecondsToTime(timeSeconds[i].second),
                       timeSeconds[i].first);
         }
     }
@@ -97,7 +102,7 @@ TEST(Time, secondsTimeCovertion) {
         // incorrect type
         EXPECT_FALSE(time::TimeUtils::toTimestamp(Value(10.0)).ok());
         // incorrect int value
-        EXPECT_FALSE(time::TimeUtils::toTimestamp(std::numeric_limits<int64_t>::max()-10).ok());
+        EXPECT_FALSE(time::TimeUtils::toTimestamp(std::numeric_limits<int64_t>::max() - 10).ok());
         // incorrect string value
         EXPECT_FALSE(time::TimeUtils::toTimestamp(Value("2001-02-29T10:00:10")).ok());
         // incorrect string value
@@ -105,10 +110,56 @@ TEST(Time, secondsTimeCovertion) {
         // correct int
         EXPECT_TRUE(time::TimeUtils::toTimestamp(Value(0)).ok());
         // correct int
-        EXPECT_TRUE(time::TimeUtils::toTimestamp(
-                Value(std::numeric_limits<int64_t>::max() / 1000000000)).ok());
+        EXPECT_TRUE(
+            time::TimeUtils::toTimestamp(Value(std::numeric_limits<int64_t>::max() / 1000000000))
+                .ok());
         // correct string
         EXPECT_TRUE(time::TimeUtils::toTimestamp("2020-08-01T09:00:00").ok());
+    }
+}
+
+TEST(Time, TimezoneShift) {
+    // time
+    {
+        Time t(0, 0, 0, 30);
+        auto nt = time::TimeConversion::timeShift(t, -10);
+        EXPECT_EQ(nt, Time(23, 59, 50, 30));
+    }
+    {
+        Time t(1, 0, 0, 30);
+        auto nt = time::TimeConversion::timeShift(t, -10);
+        EXPECT_EQ(nt, Time(0, 59, 50, 30));
+    }
+    {
+        Time t(23, 59, 55, 30);
+        auto nt = time::TimeConversion::timeShift(t, 10);
+        EXPECT_EQ(nt, Time(0, 0, 5, 30));
+    }
+    {
+        Time t(23, 59, 30, 30);
+        auto nt = time::TimeConversion::timeShift(t, 10);
+        EXPECT_EQ(nt, Time(23, 59, 40, 30));
+    }
+    // datetime
+    {
+        DateTime dt(2001, 3, 24, 0, 0, 5, 30);
+        auto nt = time::TimeConversion::dateTimeShift(dt, -10);
+        EXPECT_EQ(nt, DateTime(2001, 3, 23, 23, 59, 55, 30));
+    }
+    {
+        DateTime dt(2001, 3, 24, 0, 0, 15, 30);
+        auto nt = time::TimeConversion::dateTimeShift(dt, -10);
+        EXPECT_EQ(nt, DateTime(2001, 3, 24, 0, 0, 5, 30));
+    }
+    {
+        DateTime dt(2001, 3, 24, 23, 59, 55, 30);
+        auto nt = time::TimeConversion::dateTimeShift(dt, 10);
+        EXPECT_EQ(nt, DateTime(2001, 3, 25, 0, 0, 5, 30));
+    }
+    {
+        DateTime dt(2001, 3, 24, 3, 40, 30, 30);
+        auto nt = time::TimeConversion::dateTimeShift(dt, 10);
+        EXPECT_EQ(nt, DateTime(2001, 3, 24, 3, 40, 40, 30));
     }
 }
 
@@ -118,14 +169,14 @@ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-    auto result = nebula::time::TimeUtils::initializeGlobalTimezone();
+    auto result = nebula::time::Timezone::initializeGlobalTimezone();
     if (!result.ok()) {
         LOG(FATAL) << result;
     }
 
-    DLOG(INFO) << "Timezone: " << nebula::time::TimeUtils::getGlobalTimezone().stdZoneName();
+    DLOG(INFO) << "Timezone: " << nebula::time::Timezone::getGlobalTimezone().stdZoneName();
     DLOG(INFO) << "Timezone offset: "
-               << nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
+               << nebula::time::Timezone::getGlobalTimezone().utcOffsetSecs();
 
     return RUN_ALL_TESTS();
 }

@@ -64,8 +64,19 @@ public:
         return DCHECK_NOTNULL(zoneInfo_)->base_utc_offset().total_seconds();
     }
 
+    // TODO(shylock) Get Timzone info(I.E. GMT offset) directly from IANA tzdb
+    // to support non-global timezone configuration
+    // See the timezone format from https://man7.org/linux/man-pages/man3/tzset.3.html
+    static Status initializeGlobalTimezone();
+
+    static const auto& getGlobalTimezone() {
+        return globalTimezone;
+    }
+
 private:
     static ::boost::local_time::tz_database tzdb;
+
+    static Timezone globalTimezone;
 
     ::boost::shared_ptr<::boost::date_time::time_zone_base<::boost::posix_time::ptime, char>>
         zoneInfo_{nullptr};

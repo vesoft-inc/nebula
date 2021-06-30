@@ -7,6 +7,7 @@
 #ifndef COMMON_FUNCTION_AGGFUNCTIONMANAGER_H_
 #define COMMON_FUNCTION_AGGFUNCTIONMANAGER_H_
 
+#include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"

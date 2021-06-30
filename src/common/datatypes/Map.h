@@ -7,6 +7,8 @@
 #ifndef COMMON_DATATYPES_MAP_H_
 #define COMMON_DATATYPES_MAP_H_
 
+#include <unordered_map>
+
 #include "common/datatypes/Value.h"
 
 namespace nebula {

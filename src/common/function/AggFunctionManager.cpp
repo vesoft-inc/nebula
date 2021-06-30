@@ -5,8 +5,6 @@
  */
 
 #include "AggFunctionManager.h"
-#include <algorithm>
-#include <string>
 #include "common/datatypes/List.h"
 #include "common/datatypes/Set.h"
 

@@ -7,6 +7,8 @@
 #ifndef COMMON_DATATYPES_DATE_H_
 #define COMMON_DATATYPES_DATE_H_
 
+#include <string>
+
 namespace nebula {
 
 // In nebula only store UTC time, and the interpretion of time value based on the

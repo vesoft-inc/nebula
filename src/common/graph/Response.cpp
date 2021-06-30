@@ -27,5 +27,17 @@ bool PlanNodeDescription::operator==(const PlanNodeDescription &rhs) const {
     return checkPointer(dependencies.get(), rhs.dependencies.get());
 }
 
+#define X(EnumName, EnumNumber) case ErrorCode::EnumName: \
+    return #EnumName;
+
+const char* errorCode(ErrorCode code) {
+    switch (code) {
+        ErrorCodeEnums
+    }
+    return "Unknown error";
+}
+
+#undef X
+
 }  // namespace nebula
 

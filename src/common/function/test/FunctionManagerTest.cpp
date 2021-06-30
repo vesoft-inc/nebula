@@ -6,6 +6,8 @@
 
 #include <gtest/gtest.h>
 
+#include "common/base/Base.h"
+#include "common/time/TimezoneInfo.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
@@ -1828,14 +1830,14 @@ int main(int argc, char **argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    auto result = nebula::time::TimeUtils::initializeGlobalTimezone();
+    auto result = nebula::time::Timezone::initializeGlobalTimezone();
     if (!result.ok()) {
         LOG(FATAL) << result;
     }
 
-    DLOG(INFO) << "Timezone: " << nebula::time::TimeUtils::getGlobalTimezone().stdZoneName();
+    DLOG(INFO) << "Timezone: " << nebula::time::Timezone::getGlobalTimezone().stdZoneName();
     DLOG(INFO) << "Timezone offset: "
-               << nebula::time::TimeUtils::getGlobalTimezone().utcOffsetSecs();
+               << nebula::time::Timezone::getGlobalTimezone().utcOffsetSecs();
 
     return RUN_ALL_TESTS();
 }

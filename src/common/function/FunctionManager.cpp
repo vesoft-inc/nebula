@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <boost/algorithm/string/replace.hpp>
+
 #include "FunctionManager.h"
 
 #include "common/base/Base.h"
