@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "common/base/StatusOr.h"
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace graph {

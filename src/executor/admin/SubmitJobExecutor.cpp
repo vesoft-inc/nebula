@@ -8,10 +8,10 @@
 
 #include "executor/admin/SubmitJobExecutor.h"
 
-#include "planner/plan/Admin.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
 #include "common/time/TimeUtils.h"
+#include "context/QueryContext.h"
+#include "planner/plan/Admin.h"
+#include "util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -24,7 +24,9 @@ folly::Future<Status> SubmitJobExecutor::execute() {
     auto cmd = sjNode->cmd();
     auto params = sjNode->params();
 
-    return qctx()->getMetaClient()->submitJob(jobOp, cmd, params)
+    return qctx()
+        ->getMetaClient()
+        ->submitJob(jobOp, cmd, params)
         .via(runner())
         .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
             SCOPED_TIMER(&execTime_);
@@ -49,8 +51,7 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                     if (!resp.value().recovered_job_num_ref().has_value()) {
                         return Status::Error("Response unexpected.");
                     }
-                    v.emplace_back(
-                        nebula::Row({*resp.value().recovered_job_num_ref()}));
+                    v.emplace_back(nebula::Row({*resp.value().recovered_job_num_ref()}));
                     return finish(std::move(v));
                 }
                 case meta::cpp2::AdminJobOp::SHOW: {
@@ -70,18 +71,20 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                         jobDesc.front().get_id(),
                         apache::thrift::util::enumNameSafe(jobDesc.front().get_cmd()),
                         apache::thrift::util::enumNameSafe(jobDesc.front().get_status()),
-                        time::TimeUtils::unixSecondsToDateTime(jobDesc.front().get_start_time()),
-                        time::TimeUtils::unixSecondsToDateTime(jobDesc.front().get_stop_time()),
+                        time::TimeConversion::unixSecondsToDateTime(
+                            jobDesc.front().get_start_time()),
+                        time::TimeConversion::unixSecondsToDateTime(
+                            jobDesc.front().get_stop_time()),
                     }));
                     // tasks desc
                     auto &tasksDesc = *resp.value().get_task_desc();
-                    for (const auto & taskDesc : tasksDesc) {
+                    for (const auto &taskDesc : tasksDesc) {
                         v.emplace_back(nebula::Row({
                             taskDesc.get_task_id(),
                             taskDesc.get_host().host,
                             apache::thrift::util::enumNameSafe(taskDesc.get_status()),
-                            time::TimeUtils::unixSecondsToDateTime(taskDesc.get_start_time()),
-                            time::TimeUtils::unixSecondsToDateTime(taskDesc.get_stop_time()),
+                            time::TimeConversion::unixSecondsToDateTime(taskDesc.get_start_time()),
+                            time::TimeConversion::unixSecondsToDateTime(taskDesc.get_stop_time()),
                         }));
                     }
                     return finish(std::move(v));
@@ -98,20 +101,18 @@ folly::Future<Status> SubmitJobExecutor::execute() {
                             jobDesc.get_id(),
                             apache::thrift::util::enumNameSafe(jobDesc.get_cmd()),
                             apache::thrift::util::enumNameSafe(jobDesc.get_status()),
-                            time::TimeUtils::unixSecondsToDateTime(jobDesc.get_start_time()),
-                            time::TimeUtils::unixSecondsToDateTime(jobDesc.get_stop_time()),
+                            time::TimeConversion::unixSecondsToDateTime(jobDesc.get_start_time()),
+                            time::TimeConversion::unixSecondsToDateTime(jobDesc.get_stop_time()),
                         }));
                     }
                     return finish(std::move(v));
                 }
                 case meta::cpp2::AdminJobOp::STOP: {
                     nebula::DataSet v({"Result"});
-                    v.emplace_back(nebula::Row({
-                        "Job stopped"
-                    }));
+                    v.emplace_back(nebula::Row({"Job stopped"}));
                     return finish(std::move(v));
                 }
-            // no default so the compiler will warning when lack
+                    // no default so the compiler will warning when lack
             }
             DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
             return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));

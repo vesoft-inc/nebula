@@ -15,7 +15,7 @@
 #include "service/PasswordAuthenticator.h"
 #include "service/CloudAuthenticator.h"
 #include "stats/StatsDef.h"
-#include "common/time/TimeUtils.h"
+#include "common/time/TimezoneInfo.h"
 
 namespace nebula {
 namespace graph {
@@ -98,9 +98,9 @@ folly::Future<AuthResponse> GraphService::future_authenticate(
         ctx->setSession(sessionPtr);
         ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
         ctx->resp().timeZoneOffsetSeconds.reset(
-            new int32_t(time::TimeUtils::getGlobalTimezone().utcOffsetSecs()));
+            new int32_t(time::Timezone::getGlobalTimezone().utcOffsetSecs()));
         ctx->resp().timeZoneName.reset(
-            new std::string(time::TimeUtils::getGlobalTimezone().stdZoneName()));
+            new std::string(time::Timezone::getGlobalTimezone().stdZoneName()));
         return ctx->finish();
     };
 

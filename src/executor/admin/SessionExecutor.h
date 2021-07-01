@@ -28,7 +28,7 @@ private:
     folly::Future<Status> getSession(SessionID sessionId);
 
     DateTime microSecToDateTime(int64_t microSec) {
-        auto dateTime = time::TimeUtils::unixSecondsToDateTime(microSec / 1000000);
+        auto dateTime = time::TimeConversion::unixSecondsToDateTime(microSec / 1000000);
         dateTime.microsec = microSec % 1000000;
         return dateTime;
     }
