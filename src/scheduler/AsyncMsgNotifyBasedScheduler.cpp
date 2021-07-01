@@ -107,7 +107,7 @@ void AsyncMsgNotifyBasedScheduler::runSelect(std::vector<folly::Future<Status>>&
     folly::collect(futures).via(runner).thenTry(
         [select, pros = std::move(promises), this](auto&& t) mutable {
             if (t.hasException()) {
-                return notifyError(pros, Status::Error(t.exception().what().c_str()));
+                return notifyError(pros, Status::Error(t.exception().what()));
             }
             auto status = std::move(t).value();
             auto s = checkStatus(std::move(status));
@@ -120,7 +120,7 @@ void AsyncMsgNotifyBasedScheduler::runSelect(std::vector<folly::Future<Status>>&
                     [select, pros = std::move(pros), this](auto&& selectTry) mutable {
                         if (selectTry.hasException()) {
                             return notifyError(pros, Status::Error(
-                                                        selectTry.exception().what().c_str()));
+                                                        selectTry.exception().what()));
                         }
                         auto selectStatus = std::move(selectTry).value();
                         if (!selectStatus.ok()) {
@@ -145,7 +145,7 @@ void AsyncMsgNotifyBasedScheduler::runSelect(std::vector<folly::Future<Status>>&
                                 if (bodyTry.hasException()) {
                                     return notifyError(pros,
                                                        Status::Error(
-                                                           bodyTry.exception().what().c_str()));
+                                                           bodyTry.exception().what()));
                                 }
                                 auto bodyStatus = std::move(bodyTry).value();
                                 if (!bodyStatus.ok()) {
@@ -166,7 +166,7 @@ void AsyncMsgNotifyBasedScheduler::runExecutor(
     folly::collect(futures).via(runner).thenTry(
         [exe, pros = std::move(promises), this](auto&& t) mutable {
             if (t.hasException()) {
-                return notifyError(pros, Status::Error(t.exception().what().c_str()));
+                return notifyError(pros, Status::Error(t.exception().what()));
             }
             auto status = std::move(t).value();
             auto depStatus = checkStatus(std::move(status));
@@ -177,7 +177,7 @@ void AsyncMsgNotifyBasedScheduler::runExecutor(
             std::move(execute(exe)).thenTry(
                 [pros = std::move(pros), this](auto&& exeTry) mutable {
                     if (exeTry.hasException()) {
-                        return notifyError(pros, Status::Error(exeTry.exception().what().c_str()));
+                        return notifyError(pros, Status::Error(exeTry.exception().what()));
                     }
                     auto exeStatus = std::move(exeTry).value();
                     if (!exeStatus.ok()) {
@@ -196,7 +196,7 @@ void AsyncMsgNotifyBasedScheduler::runLeafExecutor(
         .via(runner)
         .thenTry([pros = std::move(promises), this](auto&& t) mutable {
             if (t.hasException()) {
-                return notifyError(pros, Status::Error(t.exception().what().c_str()));
+                return notifyError(pros, Status::Error(t.exception().what()));
             }
             auto s = std::move(t).value();
             if (!s.ok()) {
@@ -213,7 +213,7 @@ void AsyncMsgNotifyBasedScheduler::runLoop(std::vector<folly::Future<Status>>&& 
     folly::collect(futures).via(runner).thenTry(
         [loop, runner, pros = std::move(promises), this](auto&& t) mutable {
             if (t.hasException()) {
-                return notifyError(pros, Status::Error(t.exception().what().c_str()));
+                return notifyError(pros, Status::Error(t.exception().what()));
             }
             auto status = std::move(t).value();
             auto s = checkStatus(std::move(status));
@@ -224,7 +224,7 @@ void AsyncMsgNotifyBasedScheduler::runLoop(std::vector<folly::Future<Status>>&& 
             std::move(execute(loop)).thenTry(
                 [loop, runner, pros = std::move(pros), this](auto&& loopTry) mutable {
                     if (loopTry.hasException()) {
-                        return notifyError(pros, Status::Error(loopTry.exception().what().c_str()));
+                        return notifyError(pros, Status::Error(loopTry.exception().what()));
                     }
                     auto loopStatus = std::move(loopTry).value();
                     if (!loopStatus.ok()) {
