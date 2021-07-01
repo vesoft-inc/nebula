@@ -90,7 +90,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
     builder.state(result.value());
 
     auto& responses = resps.responses();
-    VLOG(1) << "Resp size: " << responses.size();
+    VLOG(2) << node_->toString() << ", Resp size: " << responses.size();
     List list;
     for (auto& resp : responses) {
         auto dataset = resp.get_vertices();
@@ -99,7 +99,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
             continue;
         }
 
-        VLOG(1) << "Resp row size: " << dataset->rows.size() << "Resp : " << *dataset;
+        VLOG(2) << "Resp row size: " << dataset->rows.size() << ", Resp: " << *dataset;
         list.values.emplace_back(std::move(*dataset));
     }
     builder.value(Value(std::move(list)));

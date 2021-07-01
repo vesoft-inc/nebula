@@ -7,6 +7,8 @@ Feature: Push Filter down Project rule
   Background:
     Given a graph with space named "nba"
 
+  # TODO(yee):
+  @skip
   Scenario: push filter down Project
     When profiling query:
       """

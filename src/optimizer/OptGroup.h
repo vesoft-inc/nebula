@@ -37,12 +37,7 @@ public:
         exploredRules_.emplace_back(rule);
     }
 
-    void setUnexplored(const OptRule *rule) {
-        auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
-        if (iter != exploredRules_.end()) {
-            exploredRules_.erase(iter);
-        }
-    }
+    void setUnexplored(const OptRule *rule);
 
     void addGroupNode(OptGroupNode *groupNode);
     OptGroupNode *makeGroupNode(graph::PlanNode *node);
@@ -99,6 +94,8 @@ public:
     void setExplored(const OptRule *rule) {
         exploredRules_.emplace_back(rule);
     }
+
+    void setUnexplored(const OptRule *rule);
 
     const OptGroup *group() const {
         return group_;

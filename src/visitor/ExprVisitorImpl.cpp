@@ -10,12 +10,12 @@ namespace nebula {
 namespace graph {
 
 void ExprVisitorImpl::visit(UnaryExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->operand()->accept(this);
 }
 
 void ExprVisitorImpl::visit(TypeCastingExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->operand()->accept(this);
 }
 
@@ -46,7 +46,7 @@ void ExprVisitorImpl::visit(LogicalExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(LabelAttributeExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     const_cast<LabelExpression *>(expr->left())->accept(this);
     if (ok()) {
         const_cast<ConstantExpression *>(expr->right())->accept(this);
@@ -55,7 +55,7 @@ void ExprVisitorImpl::visit(LabelAttributeExpression *expr) {
 
 // function call
 void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     for (const auto &arg : expr->args()->args()) {
         arg->accept(this);
         if (!ok()) {
@@ -65,13 +65,13 @@ void ExprVisitorImpl::visit(FunctionCallExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(AggregateExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->arg()->accept(this);
 }
 
 // container expression
 void ExprVisitorImpl::visit(ListExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     for (auto &item : expr->items()) {
         item->accept(this);
         if (!ok()) {
@@ -81,7 +81,7 @@ void ExprVisitorImpl::visit(ListExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(SetExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     for (auto &item : expr->items()) {
         item->accept(this);
         if (!ok()) {
@@ -91,7 +91,7 @@ void ExprVisitorImpl::visit(SetExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(MapExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     for (auto &pair : expr->items()) {
         pair.second->accept(this);
         if (!ok()) {
@@ -102,7 +102,7 @@ void ExprVisitorImpl::visit(MapExpression *expr) {
 
 // case expression
 void ExprVisitorImpl::visit(CaseExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     if (expr->hasCondition()) {
         expr->condition()->accept(this);
         if (!ok()) {
@@ -128,7 +128,7 @@ void ExprVisitorImpl::visit(CaseExpression *expr) {
 }
 
 void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->left()->accept(this);
     if (ok()) {
         expr->right()->accept(this);
@@ -136,7 +136,7 @@ void ExprVisitorImpl::visitBinaryExpr(BinaryExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(PathBuildExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     for (auto &item : expr->items()) {
         item->accept(this);
         if (!ok()) {
@@ -146,7 +146,7 @@ void ExprVisitorImpl::visit(PathBuildExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(PredicateExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->collection()->accept(this);
     if (!ok()) return;
     if (expr->hasFilter()) {
@@ -158,7 +158,7 @@ void ExprVisitorImpl::visit(PredicateExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->collection()->accept(this);
     if (!ok()) return;
     if (expr->hasFilter()) {
@@ -172,7 +172,7 @@ void ExprVisitorImpl::visit(ListComprehensionExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(ReduceExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->initial()->accept(this);
     if (!ok()) return;
     expr->collection()->accept(this);
@@ -182,7 +182,7 @@ void ExprVisitorImpl::visit(ReduceExpression *expr) {
 }
 
 void ExprVisitorImpl::visit(SubscriptRangeExpression *expr) {
-    DCHECK(ok());
+    DCHECK(ok()) << expr->toString();
     expr->list()->accept(this);
     if (!ok()) {
         return;

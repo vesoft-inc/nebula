@@ -29,6 +29,22 @@ const Pattern& IndexScanRule::pattern() const {
     return pattern;
 }
 
+bool IndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
+    UNUSED(ctx);
+    auto idxScan = static_cast<IndexScan*>(matched.node->node());
+    auto ictxs = idxScan->queryContext();
+    if (!ictxs) {
+        return true;
+    }
+    // Has been optimized, skip this rule
+    for (auto& ictx : *ictxs) {
+        if (ictx.index_id_ref().is_set() && ictx.column_hints_ref().is_set()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
                                                             const MatchedResult& matched) const {
     auto groupNode = matched.node;

@@ -7,6 +7,8 @@ Feature: Push Filter down Aggregate rule
   Background:
     Given a graph with space named "nba"
 
+  # TODO(yee):
+  @skip
   Scenario: push filter down Aggregate
     When profiling query:
       """

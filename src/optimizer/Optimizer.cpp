@@ -35,7 +35,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
     NG_RETURN_IF_ERROR(status);
     auto rootGroup = std::move(status).value();
 
-    NG_RETURN_IF_ERROR(doExploration(rootGroup));
+    NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
     return rootGroup->getPlan();
 }
 
@@ -44,10 +44,16 @@ StatusOr<OptGroup *> Optimizer::prepare(OptContext *ctx, PlanNode *root) {
     return convertToGroup(ctx, root, &visited);
 }
 
-Status Optimizer::doExploration(OptGroup *rootGroup) {
-    for (auto ruleSet : ruleSets_) {
-        for (auto rule : ruleSet->rules()) {
-            NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
+Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
+    int8_t appliedTimes = kMaxIterationRound;
+    while (octx->changed()) {
+        if (--appliedTimes < 0) break;
+        octx->setChanged(false);
+        for (auto ruleSet : ruleSets_) {
+            for (auto rule : ruleSet->rules()) {
+                NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
+                rootGroup->setUnexplored(rule);
+            }
         }
     }
     return Status::OK();

@@ -50,6 +50,7 @@ folly::Future<Status> LeftJoinExecutor::join() {
     }
 
     result.colNames = join->colNames();
+    VLOG(2) << node_->toString() << ", result: " << result;
     return finish(ResultBuilder().value(Value(std::move(result))).finish());
 }
 

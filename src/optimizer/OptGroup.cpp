@@ -28,6 +28,16 @@ OptGroup *OptGroup::create(OptContext *ctx) {
     return ctx->objPool()->add(new OptGroup(ctx));
 }
 
+void OptGroup::setUnexplored(const OptRule *rule) {
+    auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
+    if (iter != exploredRules_.end()) {
+        exploredRules_.erase(iter);
+    }
+    for (auto node : groupNodes_) {
+        node->setUnexplored(rule);
+    }
+}
+
 OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
     DCHECK(ctx != nullptr);
 }
@@ -65,6 +75,7 @@ Status OptGroup::explore(const OptRule *rule) {
             ++iter;
             continue;
         }
+        ctx_->setChanged(true);
         auto matched = std::move(status).value();
         auto resStatus = rule->transform(ctx_, matched);
         NG_RETURN_IF_ERROR(resStatus);
@@ -102,12 +113,11 @@ Status OptGroup::explore(const OptRule *rule) {
 Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
     auto maxRound = kMaxExplorationRound;
     while (!isExplored(rule)) {
-        if (0 < maxRound--) {
-            NG_RETURN_IF_ERROR(explore(rule));
-        } else {
+        if (0 >= maxRound--) {
             setExplored(rule);
             break;
         }
+        NG_RETURN_IF_ERROR(explore(rule));
     }
     return Status::OK();
 }
@@ -139,6 +149,19 @@ OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGro
     auto optGNode = ctx->objPool()->add(new OptGroupNode(node, group));
     ctx->addPlanNodeAndOptGroupNode(node->id(), optGNode);
     return optGNode;
+}
+
+void OptGroupNode::setUnexplored(const OptRule *rule) {
+    auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
+    if (iter != exploredRules_.end()) {
+        exploredRules_.erase(iter);
+    }
+    for (auto dep : dependencies_) {
+        dep->setUnexplored(rule);
+    }
+    for (auto body : bodies_) {
+        body->setUnexplored(rule);
+    }
 }
 
 OptGroupNode::OptGroupNode(PlanNode *node, const OptGroup *group) noexcept

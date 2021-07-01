@@ -36,10 +36,19 @@ public:
         return objPool_.get();
     }
 
+    bool changed() const {
+        return changed_;
+    }
+
+    void setChanged(bool changed) {
+        changed_ = changed;
+    }
+
     void addPlanNodeAndOptGroupNode(int64_t planNodeId, const OptGroupNode *optGroupNode);
     const OptGroupNode *findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;
 
 private:
+    bool changed_{true};
     graph::QueryContext *qctx_{nullptr};
     std::unique_ptr<ObjectPool> objPool_;
     std::unordered_map<int64_t, const OptGroupNode *> planNodeToOptGroupNodeMap_;
