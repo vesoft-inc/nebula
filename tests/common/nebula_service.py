@@ -211,6 +211,9 @@ class NebulaService(object):
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):
             with open(pf) as f:
                 self.pids[f.name] = int(f.readline())
+        for pf in glob.glob(self.work_dir + '/pids1/*.pid'):
+            with open(pf) as f:
+                self.pids[f.name] = int(f.readline())
 
     def stop(self):
         print("try to stop nebula services...")
