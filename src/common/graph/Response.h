@@ -117,6 +117,7 @@
     X(E_LIST_CLUSTER_GET_ABS_PATH_FAILURE , -2071)  \
     X(E_GET_META_DIR_FAILURE              , -2072)  \
 \
+    X(E_QUERY_NOT_FOUND                   , -2073) \
     /* 3xxx for storaged */ \
     X(E_CONSENSUS_ERROR                 , -3001)  \
     X(E_KEY_HAS_EXISTS                  , -3002)  \

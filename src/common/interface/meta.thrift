@@ -1063,6 +1063,20 @@ struct ListFTIndexesResp {
     3: map<binary, FTIndex> (cpp.template = "std::unordered_map") indexes,
 }
 
+enum QueryStatus {
+    RUNNING         = 0x01,
+    KILLING         = 0x02,
+} (cpp.enum_strict)
+
+struct QueryDesc {
+    1: common.Timestamp start_time;
+    2: QueryStatus status;
+    3: i64 duration;
+    4: binary query;
+    // The session might transfer between query engines, but the query do not, we must
+    // record which query engine the query belongs to
+    5: common.HostAddr graph_addr,
+}
 
 struct Session {
     1: common.SessionID session_id,
@@ -1074,6 +1088,7 @@ struct Session {
     7: i32 timezone,
     8: binary client_ip,
     9: map<binary, common.Value>(cpp.template = "std::unordered_map") configs,
+    10: map<common.ExecutionPlanID, QueryDesc>(cpp.template = "std::unordered_map") queries;
 }
 
 struct CreateSessionReq {
@@ -1090,6 +1105,13 @@ struct CreateSessionResp {
 
 struct UpdateSessionsReq {
     1: list<Session>        sessions,
+}
+
+struct UpdateSessionsResp {
+    1: common.ErrorCode     code,
+    2: common.HostAddr      leader,
+    3: map<common.SessionID, map<common.ExecutionPlanID, QueryDesc> (cpp.template = "std::unordered_map")>
+        (cpp.template = "std::unordered_map") killed_queries,
 }
 
 struct ListSessionsReq {
@@ -1113,6 +1135,11 @@ struct GetSessionResp {
 
 struct RemoveSessionReq {
     1: common.SessionID      session_id,
+}
+
+struct KillQueryReq {
+    1: map<common.SessionID, set<common.ExecutionPlanID> (cpp.template = "std::unordered_set")>
+        (cpp.template = "std::unordered_map") kill_queries,
 }
 
 struct ReportTaskReq {
@@ -1238,10 +1265,11 @@ service MetaService {
     ListFTIndexesResp listFTIndexes(1: ListFTIndexesReq req);
 
     CreateSessionResp createSession(1: CreateSessionReq req);
-    ExecResp updateSessions(1: UpdateSessionsReq req);
+    UpdateSessionsResp updateSessions(1: UpdateSessionsReq req);
     ListSessionsResp listSessions(1: ListSessionsReq req);
     GetSessionResp getSession(1: GetSessionReq req);
     ExecResp removeSession(1: RemoveSessionReq req);
+    ExecResp killQuery(1: KillQueryReq req);
 
     ExecResp reportTaskFinish(1: ReportTaskReq req);
 

@@ -451,7 +451,7 @@ public:
     folly::Future<StatusOr<cpp2::CreateSessionResp>> createSession(
             const std::string &userName, const HostAddr& graphAddr, const std::string &clientIp);
 
-    folly::Future<StatusOr<cpp2::ExecResp>>
+    folly::Future<StatusOr<cpp2::UpdateSessionsResp>>
     updateSessions(const std::vector<cpp2::Session>& sessions);
 
     folly::Future<StatusOr<cpp2::ListSessionsResp>> listSessions();
@@ -459,6 +459,9 @@ public:
     folly::Future<StatusOr<cpp2::GetSessionResp>> getSession(SessionID sessionId);
 
     folly::Future<StatusOr<cpp2::ExecResp>> removeSession(SessionID sessionId);
+
+    folly::Future<StatusOr<cpp2::ExecResp>> killQuery(
+        std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries);
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);

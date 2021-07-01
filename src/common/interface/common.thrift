@@ -49,6 +49,8 @@ typedef i32 (cpp.type = "nebula::Port") Port
 
 typedef i64 (cpp.type = "nebula::SessionID") SessionID
 
+typedef i64 (cpp.type = "nebula::ExecutionPlanID") ExecutionPlanID
+
 // !! Struct Date has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
 struct Date {
@@ -324,13 +326,15 @@ enum ErrorCode {
 
     // RESTORE Failure
     E_RESTORE_FAILURE                 = -2068,
+
     E_SESSION_NOT_FOUND               = -2069,
 
     // ListClusterInfo Failure
     E_LIST_CLUSTER_FAILURE              = -2070,
     E_LIST_CLUSTER_GET_ABS_PATH_FAILURE = -2071,
-    E_GET_META_DIR_FAILURE              = -2072,    
+    E_GET_META_DIR_FAILURE              = -2072,
 
+    E_QUERY_NOT_FOUND                 = -2073,
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,

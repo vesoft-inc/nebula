@@ -46,5 +46,6 @@ using ZoneID = int32_t;
 
 using SessionID = int64_t;
 
+using ExecutionPlanID = int64_t;
 }  // namespace nebula
 #endif  // COMMON_THRIFT_THRIFTTYPES_H_

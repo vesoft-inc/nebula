@@ -3652,17 +3652,17 @@ MetaClient::createSession(const std::string &userName,
     return future;
 }
 
-folly::Future<StatusOr<cpp2::ExecResp>>
+folly::Future<StatusOr<cpp2::UpdateSessionsResp>>
 MetaClient::updateSessions(const std::vector<cpp2::Session>& sessions) {
     cpp2::UpdateSessionsReq req;
     req.set_sessions(sessions);
-    folly::Promise<StatusOr<cpp2::ExecResp>> promise;
+    folly::Promise<StatusOr<cpp2::UpdateSessionsResp>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req),
                 [] (auto client, auto request) {
                     return client->future_updateSessions(request);
                 },
-                [] (cpp2::ExecResp&& resp) -> decltype(auto){
+                [] (cpp2::UpdateSessionsResp&& resp) -> decltype(auto){
                     return std::move(resp);
                 },
                 std::move(promise),
@@ -3709,6 +3709,24 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sess
     getResponse(std::move(req),
                 [] (auto client, auto request) {
                     return client->future_removeSession(request);
+                },
+                [] (cpp2::ExecResp&& resp) -> decltype(auto){
+                    return std::move(resp);
+                },
+                std::move(promise),
+                true);
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
+    std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries) {
+    cpp2::KillQueryReq req;
+    req.set_kill_queries(std::move(killQueries));
+    folly::Promise<StatusOr<cpp2::ExecResp>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_killQuery(request);
                 },
                 [] (cpp2::ExecResp&& resp) -> decltype(auto){
                     return std::move(resp);
