@@ -9,11 +9,9 @@
 
 #include <gtest/gtest.h>
 
-using Type = nebula::Value::Type;
-
 namespace nebula {
 namespace graph {
-class DeduceTypeVisitorTest : public ValidatorTestBase {
+class DeduceTypeVisitorTest : public VisitorTestBase {
 protected:
     static ColsDef emptyInput_;
 };

@@ -13,7 +13,7 @@
 
 namespace nebula {
 namespace graph {
-class RewriteRelExprVisitorTest : public ValidatorTestBase {};
+class RewriteRelExprVisitorTest : public VisitorTestBase {};
 
 TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExpr) {
     // (label + 1 < 40)  =>  (label < 40 - 1)

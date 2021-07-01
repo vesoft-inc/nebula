@@ -14,7 +14,7 @@
 
 namespace nebula {
 namespace graph {
-class FilterTransformTest : public ValidatorTestBase {};
+class FilterTransformTest : public VisitorTestBase {};
 
 TEST_F(FilterTransformTest, TestComplexExprRewrite) {
     // !!!(v.age - 1 < 40)  =>  (v.age >= 41)

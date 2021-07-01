@@ -82,31 +82,40 @@ void ExtractFilterExprVisitor::visit(ColumnExpression *) {
 }
 
 void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
-    // TODO(dutor) It's buggy when there are multi-level embedded logical expressions
-    if (expr->kind() == Expression::Kind::kLogicalAnd) {
-        auto &operands = expr->operands();
-        std::vector<bool> flags(operands.size(), false);
-        auto canBePushed = false;
-        for (auto i = 0u; i < operands.size(); i++) {
-            operands[i]->accept(this);
-            flags[i] = canBePushed_;
-            canBePushed = canBePushed || canBePushed_;
-        }
-        if (canBePushed) {
-            auto remainedExpr = LogicalExpression::makeAnd(pool_);
-            for (auto i = 0u; i < operands.size(); i++) {
-                if (flags[i]) {
-                    continue;
-                }
-                remainedExpr->addOperand(operands[i]->clone());
-                expr->setOperand(i, ConstantExpression::make(pool_, true));
-            }
-            if (remainedExpr->operands().size() > 0) {
-                remainedExpr_ = std::move(remainedExpr);
-            }
-        }
-    } else {
+    if (expr->kind() != Expression::Kind::kLogicalAnd) {
         ExprVisitorImpl::visit(expr);
+        return;
+    }
+
+    auto &operands = expr->operands();
+    std::vector<bool> flags(operands.size(), false);
+    auto canBePushed = false;
+    for (auto i = 0u; i < operands.size(); i++) {
+        canBePushed_ = true;
+        operands[i]->accept(this);
+        flags[i] = canBePushed_;
+        canBePushed = canBePushed || canBePushed_;
+    }
+    canBePushed_ = canBePushed;
+    if (!canBePushed_) {
+        return;
+    }
+    std::vector<Expression*> remainedOperands;
+    for (auto i = 0u; i < operands.size(); i++) {
+        if (!flags[i]) {
+            remainedOperands.emplace_back(operands[i]->clone());
+            expr->setOperand(i, ConstantExpression::make(pool_, true));
+        }
+    }
+    if (remainedOperands.empty()) {
+        return;
+    }
+    if (remainedOperands.size() > 1) {
+        auto remainedExpr = LogicalExpression::makeAnd(pool_);
+        remainedExpr->setOperands(std::move(remainedOperands));
+        remainedExpr_ = std::move(remainedExpr);
+    } else {
+        remainedExpr_ = std::move(remainedOperands[0]);
     }
 }
 
