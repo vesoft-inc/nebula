@@ -44,15 +44,27 @@ def init_parser():
                           dest='multi_graphd',
                           default='',
                           help='Support multi graphds')
+    opt_parser.add_option('--address',
+                        dest='address',
+                        default='',
+                        help='Address of the Nebula')
     return opt_parser
 
 
 def start_nebula(nb, configs):
-    nb.install()
-    port = nb.start(multi_graphd=configs.multi_graphd)
+    if configs.address is not None and configs.address != "":
+        print('test remote nebula graph, address is {}'.format(configs.address))
+        if len(configs.address.split(':')) != 2:
+            raise Exception('Invalid address, address is {}'.format(configs.address))
+        address, port = configs.address.split(':')
+        port = int(port)
+    else:
+        nb.install()
+        address = "localhost"
+        port = nb.start(multi_graphd=configs.multi_graphd)
 
     # Load csv data
-    pool = get_conn_pool("localhost", port)
+    pool = get_conn_pool(address, port)
     sess = pool.get_session(configs.user, configs.password)
 
     if not os.path.exists(TMP_DIR):
@@ -76,7 +88,11 @@ def start_nebula(nb, configs):
     print('Start nebula successfully')
 
 
-def stop_nebula(nb):
+def stop_nebula(nb, configs=None):
+    if configs.address is not None and configs.address != "":
+        print('test remote nebula graph, no need to stop nebula.')
+        return
+   
     with open(NB_TMP_PATH, "r") as f:
         data = json.loads(f.readline())
         nb.set_work_dir(data["work_dir"])
@@ -101,7 +117,7 @@ if __name__ == "__main__":
         if opt_is(configs.cmd, "start"):
             start_nebula(nebula_svc, configs)
         elif opt_is(configs.cmd, "stop"):
-            stop_nebula(nebula_svc)
+            stop_nebula(nebula_svc, configs)
         else:
             raise ValueError(f"Invalid parser args: {configs.cmd}")
     except Exception as x:
