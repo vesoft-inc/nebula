@@ -288,7 +288,7 @@ public:
     folly::Future<cpp2::CreateSessionResp>
     future_createSession(const cpp2::CreateSessionReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
+    folly::Future<cpp2::UpdateSessionsResp>
     future_updateSessions(const cpp2::UpdateSessionsReq& req) override;
 
     folly::Future<cpp2::ListSessionsResp>
@@ -299,6 +299,9 @@ public:
 
     folly::Future<cpp2::ExecResp>
     future_removeSession(const cpp2::RemoveSessionReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_killQuery(const cpp2::KillQueryReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

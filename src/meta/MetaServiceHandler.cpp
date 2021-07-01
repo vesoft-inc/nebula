@@ -567,7 +567,7 @@ MetaServiceHandler::future_createSession(const cpp2::CreateSessionReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
+folly::Future<cpp2::UpdateSessionsResp>
 MetaServiceHandler::future_updateSessions(const cpp2::UpdateSessionsReq& req) {
     auto* processor = UpdateSessionsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -588,6 +588,12 @@ MetaServiceHandler::future_getSession(const cpp2::GetSessionReq& req) {
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_removeSession(const cpp2::RemoveSessionReq& req) {
     auto* processor = RemoveSessionProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_killQuery(const cpp2::KillQueryReq& req) {
+    auto* processor = KillQueryProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 }  // namespace meta

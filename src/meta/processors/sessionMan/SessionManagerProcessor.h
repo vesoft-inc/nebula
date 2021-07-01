@@ -27,7 +27,7 @@ private:
 };
 
 
-class UpdateSessionsProcessor : public BaseProcessor<cpp2::ExecResp> {
+class UpdateSessionsProcessor : public BaseProcessor<cpp2::UpdateSessionsResp> {
 public:
     static UpdateSessionsProcessor* instance(kvstore::KVStore* kvstore) {
         return new UpdateSessionsProcessor(kvstore);
@@ -37,7 +37,7 @@ public:
 
 private:
     explicit UpdateSessionsProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+        : BaseProcessor<cpp2::UpdateSessionsResp>(kvstore) {}
 };
 
 
@@ -78,6 +78,19 @@ public:
 
 private:
     explicit RemoveSessionProcessor(kvstore::KVStore* kvstore)
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+};
+
+class KillQueryProcessor : public BaseProcessor<cpp2::ExecResp> {
+public:
+    static KillQueryProcessor* instance(kvstore::KVStore* kvstore) {
+        return new KillQueryProcessor(kvstore);
+    }
+
+    void process(const cpp2::KillQueryReq& req);
+
+private:
+    explicit KillQueryProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 }  // namespace meta

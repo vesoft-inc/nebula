@@ -2600,6 +2600,7 @@ TEST(ProcessorTest, SessionManagerTest) {
     TestUtils::createSomeHosts(kv.get());
     TestUtils::assembleSpace(kv.get(), 1, 1);
     SessionID sessionId = 0;
+    ExecutionPlanID epId = 1;
     {
         cpp2::CreateUserReq req;
         req.set_if_not_exists(false);
@@ -2630,6 +2631,8 @@ TEST(ProcessorTest, SessionManagerTest) {
         meta::cpp2::Session session;
         session.set_session_id(sessionId);
         session.set_space_name("test");
+        session.set_update_time(time::WallClock::fastNowInMicroSec());
+        session.queries_ref()->emplace(epId, cpp2::QueryDesc());
         req.set_sessions({session});
 
         auto* processor = UpdateSessionsProcessor::instance(kv.get());
@@ -2637,6 +2640,7 @@ TEST(ProcessorTest, SessionManagerTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_TRUE(resp.get_killed_queries().empty());
     }
     // list session
     {
@@ -2647,6 +2651,8 @@ TEST(ProcessorTest, SessionManagerTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(resp.get_sessions().size(), 1);
+        ASSERT_EQ("test", resp.get_sessions()[0].get_space_name());
     }
     // get session
     {
@@ -2659,6 +2665,43 @@ TEST(ProcessorTest, SessionManagerTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ("test", resp.get_session().get_space_name());
+    }
+    // Kill query
+    {
+        cpp2::KillQueryReq killReq;
+        std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killedQueries;
+        std::unordered_set<ExecutionPlanID> eps = {epId};
+        killedQueries.emplace(sessionId, std::move(eps));
+        killReq.set_kill_queries(std::move(killedQueries));
+
+        auto* processor = KillQueryProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(killReq);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // update session and get all killed queries
+    {
+        cpp2::UpdateSessionsReq req;
+        meta::cpp2::Session session;
+        session.set_session_id(sessionId);
+        session.set_space_name("test");
+        session.queries_ref()->emplace(epId, cpp2::QueryDesc());
+        req.set_sessions({session});
+
+        auto* processor = UpdateSessionsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto& killedQueries = resp.get_killed_queries();
+        EXPECT_EQ(killedQueries.size(), 1);
+        for (auto& s : killedQueries) {
+            EXPECT_EQ(s.first, sessionId);
+            for (auto& q : s.second) {
+                EXPECT_EQ(q.first, epId);
+            }
+        }
     }
     // delete session
     {
