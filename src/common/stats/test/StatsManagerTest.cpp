@@ -93,8 +93,8 @@ TEST(StatsManager, HistogramTest) {
 
 bool counterExists(const folly::dynamic& stats, const std::string& counter, int64_t& val) {
     for (auto& stat : stats) {
-        if (stat["name"] == counter) {
-            val = stat["value"].asInt();
+        if (stat.isObject() && stat.count(counter)) {
+            val = stat[counter].asInt();
             return true;
         }
     }

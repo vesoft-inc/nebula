@@ -303,10 +303,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                 auto status = readStats(statsName.second.id_, range, method);
                 CHECK(status.ok());
                 int64_t metricValue = status.value();
-                folly::dynamic stat = folly::dynamic::object();
-                stat["name"] = metricName;
-                stat["value"] = metricValue;
-                vals.push_back(std::move(stat));
+                vals.push_back(folly::dynamic::object(metricName, metricValue));
             }
         }
 
@@ -339,10 +336,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                     continue;
                 }
                 auto metricValue = status.value();
-                folly::dynamic stat = folly::dynamic::object();
-                stat["name"] = metricName;
-                stat["value"] = metricValue;
-                vals.push_back(std::move(stat));
+                vals.push_back(folly::dynamic::object(metricName, metricValue));
             }
         }
     }
