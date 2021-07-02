@@ -34,6 +34,7 @@ private:
                 switch (sentence_->getCmd()) {
                     case meta::cpp2::AdminCmd::REBUILD_TAG_INDEX:
                     case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
+                    case meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
                     case meta::cpp2::AdminCmd::STATS:
                     case meta::cpp2::AdminCmd::COMPACT:
                     case meta::cpp2::AdminCmd::FLUSH:
