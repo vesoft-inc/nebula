@@ -88,6 +88,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
         item.set_role(cpp2::HostRole::META);
         item.set_git_info_sha(gitInfoSha());
         item.set_status(cpp2::HostStatus::ONLINE);
+        item.set_version(simpleVersionString());
         hostItems_.emplace_back(item);
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -137,6 +138,9 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
             hostItems_.emplace_back(item);
         } else {
             removeHostsKey.emplace_back(iter->key());
+        }
+        if (info.version_.has_value()) {
+            item.set_version(info.version_.value());
         }
         iter->next();
     }

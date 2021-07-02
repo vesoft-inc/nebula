@@ -60,6 +60,9 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
     HostInfo info(time::WallClock::fastNowInMilliSec(),
                   req.get_role(), req.get_git_info_sha());
+    if (req.version_ref().has_value()) {
+        info.version_ = *req.version_ref();
+    }
     if (req.leader_partIds_ref().has_value()) {
         ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
                                              &*req.leader_partIds_ref());

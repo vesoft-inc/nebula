@@ -36,6 +36,8 @@ struct HostInfo {
     int64_t lastHBTimeInMilliSec_ = 0;
     cpp2::HostRole  role_{cpp2::HostRole::UNKNOWN};
     std::string     gitInfoSha_;
+    // version of binary
+    folly::Optional<std::string> version_;
 
 
     static HostInfo decode(const folly::StringPiece& data) {
@@ -73,6 +75,12 @@ struct HostInfo {
         if (!info.gitInfoSha_.empty()) {
             encode.append(info.gitInfoSha_.data(), len);
         }
+
+        if (info.version_.has_value()) {
+            len = info.version_.value().size();
+            encode.append(reinterpret_cast<const char*>(&len), sizeof(std::size_t));
+            encode.append(info.version_.value().data(), len);
+        }
         return encode;
     }
 
@@ -100,6 +108,20 @@ struct HostInfo {
         }
 
         info.gitInfoSha_ = std::string(data.data() + offset, len);
+        offset += len;
+
+        if (offset == data.size()) {
+            return info;
+        }
+
+        len = *reinterpret_cast<const size_t*>(data.data() + offset);
+        offset += sizeof(size_t);
+
+        if (offset + len > data.size()) {
+            FLOG_FATAL("decode out of range, offset=%zu, actual=%zu", offset, data.size());
+        }
+
+        info.version_ = std::string(data.data() + offset, len);
         return info;
     }
 };
