@@ -793,6 +793,14 @@ size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) 
 }
 
 TermID FileBasedWal::getLogTerm(LogID id) {
+    // check the memory log buffer
+    for (auto it = buffers_.rbegin(); it != buffers_.rend(); ++it) {
+        auto buffer = *it;
+        if (id >= buffer->firstLogId() && id <= buffer->lastLogId()) {
+            return buffer->getTerm(id - buffer->firstLogId());
+        }
+    }
+    // check the log file
     TermID term = -1;
     auto walIter = std::make_unique<FileBasedWalIterator>(shared_from_this(), id, id);
     if (walIter->valid()) {

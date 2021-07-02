@@ -1584,7 +1584,7 @@ void RaftPart::processAppendLogRequest(
                                             req.get_log_str_list().end());
 
     // may be need to rollback wal_
-    if (!( req.get_last_log_id_sent() == wal_->lastLogId() && req.get_last_log_term_sent() == wal_->lastLogTerm())) {
+    if (!(req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_)) {
         // check the diff index in log
         size_t diffIndex = 0;
         {
