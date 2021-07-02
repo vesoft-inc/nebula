@@ -47,9 +47,6 @@ protected:
 
     LogID lastApplyLogId() override;
 
-    void cleanup() override {
-    }
-
 private:
     bool writeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId);
 

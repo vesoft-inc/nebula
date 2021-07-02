@@ -21,7 +21,7 @@ public:
                       AdminClient* adminClient,
                       const std::vector<std::string>& paras)
         : MetaJobExecutor(jobId, kvstore, adminClient, paras) {
-        toLeader_ = true;
+        toHost_ = TargetHosts::LEADER;
     }
 
     bool check() override;

@@ -16,11 +16,13 @@
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 #include "meta/processors/jobMan/RebuildTagJobExecutor.h"
 #include "meta/processors/jobMan/RebuildEdgeJobExecutor.h"
+#include "meta/processors/jobMan/RebuildFTJobExecutor.h"
 #include "meta/processors/jobMan/StatisJobExecutor.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
@@ -54,6 +56,12 @@ MetaJobExecutorFactory::createMetaJobExecutor(const JobDescription& jd,
                                              store,
                                              client,
                                              jd.getParas()));
+        break;
+    case cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
+        ret.reset(new RebuildFTJobExecutor(jd.getJobId(),
+                                           store,
+                                           client,
+                                           jd.getParas()));
         break;
     case cpp2::AdminCmd::STATS:
         ret.reset(new StatisJobExecutor(jd.getJobId(),
@@ -138,12 +146,65 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
     return hosts;
 }
 
+ErrOrHosts MetaJobExecutor::getListenerHost(GraphSpaceID space, cpp2::ListenerType type) {
+    const auto& prefix = MetaServiceUtils::listenerPrefix(space, type);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Get space " << space << "'s listener failed, error: "
+                   << apache::thrift::util::enumNameSafe(ret);
+        return ret;
+    }
+
+    auto activeHostsRet = ActiveHostsMan::getActiveHosts(
+        kvstore_,
+        FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor,
+        cpp2::HostRole::LISTENER);
+    if (!nebula::ok(activeHostsRet)) {
+        return nebula::error(activeHostsRet);
+    }
+
+    auto activeHosts = std::move(nebula::value(activeHostsRet));
+    std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
+
+    while (iter->valid()) {
+        auto host = MetaServiceUtils::deserializeHostAddr(iter->val());
+        auto part = MetaServiceUtils::parseListenerPart(iter->key());
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
+            LOG(ERROR) << "Invalid host : " << network::NetworkUtils::toHostsStr({host});
+            return nebula::cpp2::ErrorCode::E_INVALID_HOST;
+        }
+        auto it = std::find_if(hosts.begin(), hosts.end(), [&host](auto& item){
+            return item.first == host;
+        });
+        if (it == hosts.end()) {
+            hosts.emplace_back(std::make_pair(host, std::vector<PartitionID>{part}));
+        } else {
+            it->second.emplace_back(part);
+        }
+        iter->next();
+    }
+    if (hosts.empty()) {
+       return nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND;
+    }
+    return hosts;
+}
+
 nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
     ErrOrHosts addressesRet;
-    if (toLeader_) {
-        addressesRet = getLeaderHost(space_);
-    } else {
-        addressesRet = getTargetHost(space_);
+    switch (toHost_) {
+        case TargetHosts::LEADER: {
+            addressesRet = getLeaderHost(space_);
+            break;
+        }
+        case TargetHosts::LISTENER: {
+            addressesRet = getListenerHost(space_,  cpp2::ListenerType::ELASTICSEARCH);
+            break;
+        }
+        case TargetHosts::DEFAULT: {
+            addressesRet = getTargetHost(space_);
+            break;
+        }
     }
 
     if (!nebula::ok(addressesRet)) {

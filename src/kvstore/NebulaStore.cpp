@@ -1043,6 +1043,16 @@ NebulaStore::space(GraphSpaceID spaceId) {
     return it->second;
 }
 
+ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>>
+NebulaStore::spaceListener(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    auto it = spaceListeners_.find(spaceId);
+    if (UNLIKELY(it == spaceListeners_.end())) {
+        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+    }
+    return it->second;
+}
+
 int32_t NebulaStore::allLeader(
     std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) {
     folly::RWSpinLock::ReadHolder rh(&lock_);

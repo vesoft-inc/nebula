@@ -21,6 +21,12 @@ using ErrOrHosts  = ErrorOr<nebula::cpp2::ErrorCode, std::vector<PartsOfHost>>;
 
 class MetaJobExecutor {
 public:
+    enum class TargetHosts {
+        LEADER = 0,
+        LISTENER,
+        DEFAULT
+    };
+
     MetaJobExecutor(JobID jobId,
                     kvstore::KVStore* kvstore,
                     AdminClient* adminClient,
@@ -66,6 +72,8 @@ protected:
 
     ErrOrHosts getLeaderHost(GraphSpaceID space);
 
+    ErrOrHosts getListenerHost(GraphSpaceID space, cpp2::ListenerType type);
+
     virtual folly::Future<Status>
     executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) = 0;
 
@@ -76,7 +84,7 @@ protected:
     AdminClient*                adminClient_{nullptr};
     GraphSpaceID                space_;
     std::vector<std::string>    paras_;
-    bool                        toLeader_{false};
+    TargetHosts                 toHost_{TargetHosts::DEFAULT};
     int32_t                     concurrency_{INT_MAX};
     bool                        stopped_{false};
     std::mutex                  muInterrupt_;

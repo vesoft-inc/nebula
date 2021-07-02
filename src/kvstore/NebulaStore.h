@@ -256,6 +256,9 @@ public:
     ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>>
     space(GraphSpaceID spaceId);
 
+    ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>>
+    spaceListener(GraphSpaceID spaceId);
+
     /**
      * Implement four interfaces in Handler.
      * */

@@ -111,15 +111,15 @@ public:
     }
 
     void cleanup() override {
+        CHECK(!raftLock_.try_lock());
         leaderCommitId_ = 0;
         lastApplyLogId_ = 0;
         persist(0, 0, lastApplyLogId_);
     }
 
-    void resetListener() {
-        std::lock_guard<std::mutex> g(raftLock_);
-        reset();
-    }
+    void resetListener();
+
+    bool pursueLeaderDone();
 
 protected:
     virtual void init() = 0;
