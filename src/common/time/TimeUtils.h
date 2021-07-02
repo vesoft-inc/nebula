@@ -18,6 +18,7 @@
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/time/WallClock.h"
 
 namespace nebula {
 namespace time {
@@ -76,23 +77,19 @@ public:
                                              Timezone::getGlobalTimezone().utcOffsetSecs());
     }
 
-    static StatusOr<DateTime> localDateTime() {
-        DateTime dt;
-        time_t unixTime = std::time(NULL);
-        if (unixTime == -1) {
-            return Status::Error("Get unix time failed: %s.", std::strerror(errno));
-        }
-        return TimeConversion::unixSecondsToDateTime(unixTime -
-                                                     Timezone::getGlobalTimezone().utcOffsetSecs());
+    static DateTime localDateTime() {
+        auto time = unixTime();
+        auto dt = TimeConversion::unixSecondsToDateTime(
+            time.seconds - Timezone::getGlobalTimezone().utcOffsetSecs());
+        dt.microsec = time.milliseconds * 1000;
+        return dt;
     }
 
-    static StatusOr<DateTime> utcDateTime() {
-        DateTime dt;
-        time_t unixTime = std::time(NULL);
-        if (unixTime == -1) {
-            return Status::Error("Get unix time failed: %s.", std::strerror(errno));
-        }
-        return TimeConversion::unixSecondsToDateTime(unixTime);
+    static DateTime utcDateTime() {
+        auto time = unixTime();
+        auto dt = TimeConversion::unixSecondsToDateTime(time.seconds);
+        dt.microsec = time.milliseconds * 1000;
+        return dt;
     }
 
     static StatusOr<Date> dateFromMap(const Map &m);
@@ -159,26 +156,34 @@ public:
         return TimeConversion::timeShift(time, Timezone::getGlobalTimezone().utcOffsetSecs());
     }
 
-    static StatusOr<Time> localTime() {
-        Time dt;
-        time_t unixTime = std::time(NULL);
-        if (unixTime == -1) {
-            return Status::Error("Get unix time failed: %s.", std::strerror(errno));
-        }
-        return TimeConversion::unixSecondsToTime(unixTime -
-                                                 Timezone::getGlobalTimezone().utcOffsetSecs());
+    static Time localTime() {
+        auto time = unixTime();
+        auto t = TimeConversion::unixSecondsToTime(time.seconds -
+                                                   Timezone::getGlobalTimezone().utcOffsetSecs());
+        t.microsec = time.milliseconds * 1000;
+        return t;
     }
 
-    static StatusOr<Time> utcTime() {
-        Time dt;
-        time_t unixTime = std::time(NULL);
-        if (unixTime == -1) {
-            return Status::Error("Get unix time failed: %s.", std::strerror(errno));
-        }
-        return TimeConversion::unixSecondsToTime(unixTime);
+    static Time utcTime() {
+        auto time = unixTime();
+        auto t = TimeConversion::unixSecondsToTime(time.seconds);
+        t.microsec = time.milliseconds * 1000;
+        return t;
     }
 
     static StatusOr<Value> toTimestamp(const Value &val);
+
+private:
+    struct UnixTime {
+        int64_t seconds{0};
+        int64_t milliseconds{0};
+    };
+
+    // <seconds, milliseconds>
+    static UnixTime unixTime() {
+        auto ms = WallClock::fastNowInMilliSec();
+        return UnixTime{ms / 1000, ms % 1000};
+    }
 };   // class TimeUtils
 
 }   // namespace time
