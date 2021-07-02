@@ -37,7 +37,15 @@ class TestUsers(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
     def test_create_users(self):
+        query = 'DROP USER IF EXISTS user1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
         query = 'CREATE USER user1 WITH PASSWORD "pwd1"'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'DROP USER IF EXISTS user2'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 

@@ -798,3 +798,8 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
+
+        # clean up
+        query = 'DROP SPACE space5'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
