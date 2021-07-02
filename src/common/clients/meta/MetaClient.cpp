@@ -206,7 +206,8 @@ bool MetaClient::loadData() {
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
-        auto r = getPartsAlloc(spaceId).get();
+        MetaClient::PartTerms partTerms;
+        auto r = getPartsAlloc(spaceId, &partTerms).get();
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocation failed for spaceId " << spaceId
                        << ", status " << r.status();
@@ -218,6 +219,7 @@ bool MetaClient::loadData() {
         auto& spaceName = space.second;
         spaceCache->partsOnHost_ = reverse(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
+        spaceCache->termOfPartition_ = std::move(partTerms);
         VLOG(2) << "Load space " << spaceId
                 << ", parts num:" << spaceCache->partsAlloc_.size();
 
@@ -1169,7 +1171,7 @@ MetaClient::listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
 
 
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
-MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
+MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
     cpp2::GetPartsAllocReq req;
     req.set_space_id(spaceId);
     folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>> promise;
@@ -1178,10 +1180,15 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
                 [] (auto client, auto request) {
                     return client->future_getPartsAlloc(request);
                 },
-                [] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
+                [=] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
                     std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
                     for (auto it = resp.get_parts().begin(); it != resp.get_parts().end(); it++) {
                         parts.emplace(it->first, it->second);
+                    }
+                    if (partTerms && resp.terms_ref().has_value()) {
+                        for (auto& termOfPart : resp.terms_ref().value()) {
+                            (*partTerms)[termOfPart.first] = termOfPart.second;
+                        }
                     }
                     return parts;
                 },
@@ -2404,6 +2411,22 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
         return true;
     }
     return false;
+}
+
+TermID MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) const {
+    static TermID notFound = -1;
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceInfo = localCache_.find(spaceId);
+    if (spaceInfo == localCache_.end()) {
+        return notFound;
+    }
+
+    auto termInfo = spaceInfo->second->termOfPartition_.find(partId);
+    if (termInfo == spaceInfo->second->termOfPartition_.end()) {
+        return notFound;
+    }
+
+    return termInfo->second;
 }
 
 StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() const {

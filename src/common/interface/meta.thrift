@@ -491,6 +491,7 @@ struct GetPartsAllocResp {
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
+    4: optional map<common.PartitionID, i64>(cpp.template = "std::unordered_map") terms,
 }
 
 struct MultiPutReq {
