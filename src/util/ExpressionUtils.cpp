@@ -775,6 +775,5 @@ Expression *ExpressionUtils::equalCondition(ObjectPool *pool,
     return RelationalExpression::makeEQ(
         pool, VariableExpression::make(pool, var), ConstantExpression::make(pool, value));
 }
-
 }   // namespace graph
 }   // namespace nebula

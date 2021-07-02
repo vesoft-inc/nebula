@@ -34,7 +34,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_version_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
-        $<TARGET_OBJECTS:session_obj>
+        $<TARGET_OBJECTS:graph_session_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:util_obj>

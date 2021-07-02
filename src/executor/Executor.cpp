@@ -46,6 +46,8 @@
 #include "executor/admin/SwitchSpaceExecutor.h"
 #include "executor/admin/UpdateUserExecutor.h"
 #include "executor/admin/ZoneExecutor.h"
+#include "executor/admin/ShowQueriesExecutor.h"
+#include "executor/admin/KillQueryExecutor.h"
 #include "executor/algo/BFSShortestPathExecutor.h"
 #include "executor/algo/CartesianProductExecutor.h"
 #include "executor/algo/ConjunctPathExecutor.h"
@@ -497,6 +499,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kUpdateSession:  {
             return pool->add(new UpdateSessionExecutor(node, qctx));
         }
+        case PlanNode::Kind::kShowQueries: {
+            return pool->add(new ShowQueriesExecutor(node, qctx));
+        }
+        case PlanNode::Kind::kKillQuery: {
+            return pool->add(new KillQueryExecutor(node, qctx));
+        }
         case PlanNode::Kind::kUnknown: {
             LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
             break;
@@ -521,6 +529,12 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
 Executor::~Executor() {}
 
 Status Executor::open() {
+    if (qctx_->isKilled()) {
+        VLOG(1) << "Execution is being killed. session: " << qctx()->rctx()->session()->id()
+            << "ep: " << qctx()->plan()->id()
+            << "query: " << qctx()->rctx()->query();
+        return Status::Error("Execution had been killed");
+    }
     auto status = MemInfo::make();
     NG_RETURN_IF_ERROR(status);
     auto mem = std::move(status).value();
@@ -555,7 +569,7 @@ folly::Future<Status> Executor::start(Status status) const {
 }
 
 folly::Future<Status> Executor::error(Status status) const {
-    return folly::makeFuture<Status>(ExecutionError(std::move(status))).via(runner());
+    return folly::makeFuture<Status>(std::move(status)).via(runner());
 }
 
 void Executor::drop() {

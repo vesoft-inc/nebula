@@ -57,11 +57,11 @@ test:
 	&& python3 -m pytest --rm_dir=$(RM_DIR) -m "not skip" -k "not tck" job/test_session.py
 
 tck:
-	cd $(CURR_DIR) && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
+	cd $(CURR_DIR) && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_tck.py && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_kill_slow_query_via_same_service.py && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_kill_slow_query_via_different_service.py
+
 
 fail:
-	cd $(CURR_DIR) && python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/
-
+	cd $(CURR_DIR) && python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_tck.py
 report:
 	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json
 	@jq . $(CURR_DIR)/tck-report-bak.json > tck-report.json

@@ -2779,15 +2779,17 @@ TEST_F(ParserTest, FullTextServiceTest) {
         auto result = parse(query);
         ASSERT_FALSE(result.ok());
     }
+}
+
+
+TEST_F(ParserTest, SessionTest) {
     {
-        // GQLParser parser(qctx.get());
         std::string query = "SHOW SESSIONS";
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ(result.value()->toString(), "SHOW SESSIONS");
     }
     {
-        // GQLParser parser(qctx.get());
         std::string query = "SHOW SESSION 123";
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -2819,5 +2821,38 @@ TEST_F(ParserTest, JobTest) {
             "REBUILD TAG INDEX name_index,age_index");
     checkTest("REBUILD EDGE INDEX name_index, age_index",
             "REBUILD EDGE INDEX name_index,age_index");
+}
+
+TEST_F(ParserTest, ShowAndKillQueryTest) {
+    {
+        std::string query = "SHOW QUERIES";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "SHOW QUERIES");
+    }
+    {
+        std::string query = "SHOW ALL QUERIES";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "SHOW ALL QUERIES");
+    }
+    {
+        std::string query = "KILL QUERY (plan=123)";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "KILL QUERY (plan=123)");
+    }
+    {
+        std::string query = "KILL QUERY (session=123, plan=123)";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "KILL QUERY (session=123, plan=123)");
+    }
+    {
+        std::string query = "KILL QUERY (plan=123, session=123)";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ(result.value()->toString(), "KILL QUERY (session=123, plan=123)");
+    }
 }
 }   // namespace nebula

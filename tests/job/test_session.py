@@ -151,7 +151,13 @@ class TestSession(NebulaTestSuite):
 
         resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
+        # time::WallClock::fastNowInMicroSec() is not syncronous in different process,
+        # so we sleep 3 seconds here and charge session
         time.sleep(3)
+        resp = conn1.execute(session_id, 'USE aSpace;')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        time.sleep(3)
+        # We actually not allowed share sessions, this only for testing the scenario of transfer sessions.
         resp = conn1.execute(session_id, 'CREATE TAG IF NOT EXISTS a();')
         self.check_resp_succeeded(ResultSet(resp, 0))
         resp = conn2.execute(session_id, 'CREATE TAG IF NOT EXISTS b();')

@@ -14,7 +14,9 @@ namespace graph {
 class LimitValidator final : public Validator {
 public:
     LimitValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
 
 private:
     Status validateImpl() override;

@@ -57,14 +57,14 @@ def start_nebula(nb, configs):
         if len(configs.address.split(':')) != 2:
             raise Exception('Invalid address, address is {}'.format(configs.address))
         address, port = configs.address.split(':')
-        port = int(port)
+        ports = [int(port)]
     else:
         nb.install()
         address = "localhost"
-        port = nb.start(multi_graphd=configs.multi_graphd)
+        ports = nb.start(multi_graphd=configs.multi_graphd)
 
     # Load csv data
-    pool = get_conn_pool(address, port)
+    pool = get_conn_pool("localhost", ports[0])
     sess = pool.get_session(configs.user, configs.password)
 
     if not os.path.exists(TMP_DIR):
@@ -81,7 +81,7 @@ def start_nebula(nb, configs):
     with open(NB_TMP_PATH, "w") as f:
         data = {
             "ip": "localhost",
-            "port": port,
+            "port": ports,
             "work_dir": nb.work_dir
         }
         f.write(json.dumps(data))
@@ -92,7 +92,7 @@ def stop_nebula(nb, configs=None):
     if configs.address is not None and configs.address != "":
         print('test remote nebula graph, no need to stop nebula.')
         return
-   
+
     with open(NB_TMP_PATH, "r") as f:
         data = json.loads(f.readline())
         nb.set_work_dir(data["work_dir"])

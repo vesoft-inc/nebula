@@ -249,6 +249,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
         case Sentence::Kind::kShowZones:
         case Sentence::Kind::kShowSessions:
             return std::make_unique<ShowSessionsValidator>(sentence, context);
+        case Sentence::Kind::kShowQueries:
+            return std::make_unique<ShowQueriesValidator>(sentence, context);
+        case Sentence::Kind::kKillQuery:
+            return std::make_unique<KillQueryValidator>(sentence, context);
         case Sentence::Kind::kUnknown:
         case Sentence::Kind::kReturn: {
             // nothing

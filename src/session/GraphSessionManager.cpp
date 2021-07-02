@@ -4,35 +4,22 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "session/GraphSessionManager.h"
 #include "common/base/Base.h"
-#include "session/SessionManager.h"
+#include "common/time/WallClock.h"
 #include "service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
 
-SessionManager::SessionManager(meta::MetaClient* metaClient, const HostAddr &hostAddr) {
-    metaClient_ = metaClient;
-    myAddr_ = hostAddr;
-    scavenger_ = std::make_unique<thread::GenericWorker>();
-    auto ok = scavenger_->start("session-manager");
-    DCHECK(ok);
-    scavenger_->addDelayTask(FLAGS_session_reclaim_interval_secs * 1000,
-                             &SessionManager::threadFunc,
-                             this);
-}
-
-
-SessionManager::~SessionManager() {
-    if (scavenger_ != nullptr) {
-        scavenger_->stop();
-        scavenger_->wait();
-        scavenger_.reset();
-    }
+GraphSessionManager::GraphSessionManager(meta::MetaClient* metaClient, const HostAddr& hostAddr)
+    : SessionManager<ClientSession>(metaClient, hostAddr) {
+    scavenger_->addDelayTask(
+        FLAGS_session_reclaim_interval_secs * 1000, &GraphSessionManager::threadFunc, this);
 }
 
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>>
-SessionManager::findSession(SessionID id, folly::Executor* runner) {
+GraphSessionManager::findSession(SessionID id, folly::Executor* runner) {
     // When the sessionId is 0, it means the clients to ping the connection is ok
     if (id == 0) {
         return folly::makeFuture(Status::Error("SessionId is invalid")).via(runner);
@@ -46,8 +33,7 @@ SessionManager::findSession(SessionID id, folly::Executor* runner) {
     return findSessionFromMetad(id, runner);
 }
 
-std::shared_ptr<ClientSession> SessionManager::findSessionFromCache(SessionID id) {
-    folly::RWSpinLock::ReadHolder rHolder(rwlock_);
+std::shared_ptr<ClientSession> GraphSessionManager::findSessionFromCache(SessionID id) {
     auto iter = activeSessions_.find(id);
     if (iter == activeSessions_.end()) {
         return nullptr;
@@ -58,7 +44,7 @@ std::shared_ptr<ClientSession> SessionManager::findSessionFromCache(SessionID id
 
 
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>>
-SessionManager::findSessionFromMetad(SessionID id, folly::Executor* runner) {
+GraphSessionManager::findSessionFromMetad(SessionID id, folly::Executor* runner) {
     VLOG(1) << "Find session `" << id << "' from metad";
     // local cache not found, need to get from metad
     auto addSession = [this, id] (auto &&resp) -> StatusOr<std::shared_ptr<ClientSession>> {
@@ -68,6 +54,7 @@ SessionManager::findSessionFromMetad(SessionID id, folly::Executor* runner) {
                     "Session `%ld' not found: %s", id, resp.status().toString().c_str());
         }
         auto session = resp.value().get_session();
+        session.queries_ref()->clear();
         auto spaceName = session.get_space_name();
         SpaceInfo spaceInfo;
         if (!spaceName.empty()) {
@@ -89,13 +76,16 @@ SessionManager::findSessionFromMetad(SessionID id, folly::Executor* runner) {
         }
 
         {
-            folly::RWSpinLock::WriteHolder wHolder(rwlock_);
             auto findPtr = activeSessions_.find(id);
             if (findPtr == activeSessions_.end()) {
                 VLOG(1) << "Add session id: " << id << " from metad";
+                session.set_graph_addr(myAddr_);
                 auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
                 sessionPtr->charge();
-                activeSessions_[id] = sessionPtr;
+                auto ret = activeSessions_.emplace(id, sessionPtr);
+                if (!ret.second) {
+                    return Status::Error("Insert session to local cache failed.");
+                }
 
                 // update the space info to sessionPtr
                 if (!spaceName.empty()) {
@@ -114,7 +104,7 @@ SessionManager::findSessionFromMetad(SessionID id, folly::Executor* runner) {
 }
 
 folly::Future<StatusOr<std::shared_ptr<ClientSession>>>
-SessionManager::createSession(const std::string userName,
+GraphSessionManager::createSession(const std::string userName,
                               const std::string clientIp,
                               folly::Executor* runner) {
     auto createCB = [this, userName = userName]
@@ -127,13 +117,15 @@ SessionManager::createSession(const std::string userName,
         auto sid = session.get_session_id();
         DCHECK_NE(sid, 0L);
         {
-            folly::RWSpinLock::WriteHolder wHolder(rwlock_);
             auto findPtr = activeSessions_.find(sid);
             if (findPtr == activeSessions_.end()) {
                 VLOG(1) << "Create session id: " << sid << ", for user: " << userName;
                 auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
                 sessionPtr->charge();
-                activeSessions_[sid] = sessionPtr;
+                auto ret = activeSessions_.emplace(sid, sessionPtr);
+                if (!ret.second) {
+                    return Status::Error("Insert session to local cache failed.");
+                }
                 updateSessionInfo(sessionPtr.get());
                 return sessionPtr;
             }
@@ -147,13 +139,13 @@ SessionManager::createSession(const std::string userName,
             .thenValue(createCB);
 }
 
-void SessionManager::removeSession(SessionID id) {
-    folly::RWSpinLock::WriteHolder wHolder(rwlock_);
+void GraphSessionManager::removeSession(SessionID id) {
     auto iter = activeSessions_.find(id);
     if (iter == activeSessions_.end()) {
         return;
     }
 
+    iter->second->markAllQueryKilled();
     auto resp = metaClient_->removeSession(id).get();
     if (!resp.ok()) {
         // it will delete by reclaim
@@ -162,21 +154,20 @@ void SessionManager::removeSession(SessionID id) {
     activeSessions_.erase(iter);
 }
 
-void SessionManager::threadFunc() {
+void GraphSessionManager::threadFunc() {
     reclaimExpiredSessions();
     updateSessionsToMeta();
     scavenger_->addDelayTask(FLAGS_session_reclaim_interval_secs * 1000,
-                             &SessionManager::threadFunc,
+                             &GraphSessionManager::threadFunc,
                              this);
 }
 
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more efficient.
-void SessionManager::reclaimExpiredSessions() {
+void GraphSessionManager::reclaimExpiredSessions() {
     if (FLAGS_session_idle_timeout_secs == 0) {
         return;
     }
 
-    folly::RWSpinLock::WriteHolder wHolder(rwlock_);
     if (activeSessions_.empty()) {
         return;
     }
@@ -193,6 +184,7 @@ void SessionManager::reclaimExpiredSessions() {
         }
         FLOG_INFO("ClientSession %ld has expired", iter->first);
 
+        iter->second->markAllQueryKilled();
         auto resp = metaClient_->removeSession(iter->first).get();
         if (!resp.ok()) {
             // TODO: Handle cases where the delete client failed
@@ -203,33 +195,97 @@ void SessionManager::reclaimExpiredSessions() {
     }
 }
 
-void SessionManager::updateSessionsToMeta() {
+void GraphSessionManager::updateSessionsToMeta() {
     std::vector<meta::cpp2::Session> sessions;
     {
-        folly::RWSpinLock::ReadHolder rHolder(rwlock_);
         if (activeSessions_.empty()) {
             return;
         }
 
         for (auto &ses : activeSessions_) {
-            if (ses.second->getSession().get_graph_addr() == myAddr_) {
-                VLOG(3) << "Add Update session id: " << ses.second->getSession().get_session_id();
-                sessions.emplace_back(ses.second->getSession());
+            VLOG(3) << "Add Update session id: " << ses.second->getSession().get_session_id();
+            auto sessionCopy = ses.second->getSession();
+            for (auto& query : *sessionCopy.queries_ref()) {
+                query.second.set_duration(time::WallClock::fastNowInMicroSec() -
+                                            query.second.get_start_time());
             }
+            sessions.emplace_back(std::move(sessionCopy));
         }
     }
-    auto resp = metaClient_->updateSessions(sessions).get();
-    if (!resp.ok()) {
-        LOG(ERROR) << "Update sessions failed: " << resp.status();
+
+    auto handleKilledQueries = [this] (auto&& resp) {
+        if (!resp.ok()) {
+            LOG(ERROR) << "Update sessions failed: " << resp.status();
+            return Status::Error("Update sessions failed: %s",
+                                resp.status().toString().c_str());
+        }
+        auto& killedQueriesForEachSession = *resp.value().killed_queries_ref();
+        for (auto& killedQueries : killedQueriesForEachSession) {
+            auto sessionId = killedQueries.first;
+            for (auto& desc : killedQueries.second) {
+                auto session = activeSessions_.find(sessionId);
+                if (session == activeSessions_.end()) {
+                    continue;
+                }
+                if (desc.second.get_graph_addr() !=
+                    session->second->getGraphAddr()) {
+                    continue;
+                }
+                auto epId = desc.first;
+                session->second->markQueryKilled(epId);
+                VLOG(1)
+                    << "Kill query, session: " << sessionId << " plan: " << epId;
+            }
+        }
+        return Status::OK();
+    };
+
+    auto result = metaClient_->updateSessions(sessions)
+                      .thenValue(handleKilledQueries)
+                      .get();
+    if (!result.ok()) {
+        LOG(ERROR) << "Update sessions failed: " << result;
     }
 }
 
-void SessionManager::updateSessionInfo(ClientSession* session) {
+void GraphSessionManager::updateSessionInfo(ClientSession* session) {
     session->updateGraphAddr(myAddr_);
     auto roles = metaClient_->getRolesByUserFromCache(session->user());
     for (const auto &role : roles) {
         session->setRole(role.get_space_id(), role.get_role_type());
     }
+}
+
+Status GraphSessionManager::init() {
+    auto listSessionsRet = metaClient_->listSessions().get();
+    if (!listSessionsRet.ok()) {
+        return Status::Error("Load sessions from meta failed.");
+    }
+    auto& sessions = *listSessionsRet.value().sessions_ref();
+    for (auto& session : sessions) {
+        if (session.get_graph_addr() != myAddr_) {
+            continue;
+        }
+        auto sessionId = session.get_session_id();
+        auto idleSecs =
+            (time::WallClock::fastNowInMicroSec() - session.get_update_time()) / 1000000;
+        VLOG(1) << "session_idle_timeout_secs: " << FLAGS_session_idle_timeout_secs
+            << " idleSecs: " << idleSecs;
+        if (FLAGS_session_idle_timeout_secs > 0 && idleSecs > FLAGS_session_idle_timeout_secs) {
+            // remove session if expired
+            VLOG(1) << "Remove session: " << sessionId;
+            metaClient_->removeSession(sessionId);
+            continue;
+        }
+        session.queries_ref()->clear();
+        auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
+        auto ret = activeSessions_.emplace(sessionId, sessionPtr);
+        if (!ret.second) {
+            return Status::Error("Insert session to local cache failed.");
+        }
+        updateSessionInfo(sessionPtr.get());
+    }
+    return Status::OK();
 }
 }   // namespace graph
 }   // namespace nebula

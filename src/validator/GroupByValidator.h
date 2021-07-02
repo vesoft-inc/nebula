@@ -16,7 +16,8 @@ namespace graph {
 
 class GroupByValidator final : public Validator {
 public:
-    GroupByValidator(Sentence *sentence, QueryContext *context) : Validator(sentence, context) {}
+    GroupByValidator(Sentence *sentence, QueryContext *context)
+        : Validator(sentence, context) {}
 
     Status validateImpl() override;
 

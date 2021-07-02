@@ -46,7 +46,11 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
         LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
-    sessionManager_ = std::make_unique<SessionManager>(metaClient_.get(), hostAddr);
+    sessionManager_ = std::make_unique<GraphSessionManager>(metaClient_.get(), hostAddr);
+    auto initSessionMgrStatus = sessionManager_->init();
+    if (!initSessionMgrStatus.ok()) {
+        LOG(WARNING) << "Init sessin manager failed: " << initSessionMgrStatus.toString();
+    }
     queryEngine_ = std::make_unique<QueryEngine>();
 
     myAddr_ = hostAddr;
@@ -121,6 +125,7 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());
+    ctx->setSessionMgr(sessionManager_.get());
     auto future = ctx->future();
     stats::StatsManager::addValue(kNumQueries);
     auto cb = [this, sessionId, ctx = std::move(ctx)]

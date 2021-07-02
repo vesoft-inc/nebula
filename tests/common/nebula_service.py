@@ -205,7 +205,7 @@ class NebulaService(object):
 
         self._collect_pids()
 
-        return graph_ports[0]
+        return graph_ports
 
     def _collect_pids(self):
         for pf in glob.glob(self.work_dir + '/pids/*.pid'):

@@ -12,6 +12,7 @@
 #include "common/cpp/helpers.h"
 #include "common/time/Duration.h"
 #include "session/ClientSession.h"
+#include "session/GraphSessionManager.h"
 
 /**
  * RequestContext holds context infos of a specific request from a client.
@@ -80,6 +81,14 @@ public:
         promise_.setValue(std::move(resp_));
     }
 
+    void setSessionMgr(GraphSessionManager* mgr) {
+        sessionMgr_ = mgr;
+    }
+
+    GraphSessionManager* sessionMgr() const {
+        return sessionMgr_;
+    }
+
 private:
     time::Duration                              duration_;
     std::string                                 query_;
@@ -87,6 +96,7 @@ private:
     folly::Promise<Response>                    promise_;
     std::shared_ptr<ClientSession>              session_;
     folly::Executor                            *runner_{nullptr};
+    GraphSessionManager                        *sessionMgr_{nullptr};
 };
 
 }   // namespace graph

@@ -130,6 +130,8 @@ public:
         kCreateFTIndex,
         kDropFTIndex,
         kShowSessions,
+        kShowQueries,
+        kKillQuery,
     };
 
     Kind kind() const {

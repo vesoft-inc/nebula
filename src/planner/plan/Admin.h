@@ -1367,6 +1367,52 @@ private:
 private:
     meta::cpp2::Session session_;
 };
+
+class ShowQueries final : public SingleInputNode {
+public:
+    static ShowQueries* make(QueryContext* qctx, PlanNode* input, bool isAll) {
+        return qctx->objPool()->add(new ShowQueries(qctx, input, isAll));
+    }
+
+    bool isAll() const {
+        return isAll_;
+    }
+
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
+private:
+    explicit ShowQueries(QueryContext* qctx, PlanNode* input, bool isAll)
+        : SingleInputNode(qctx, Kind::kShowQueries, input), isAll_(isAll) {}
+
+    bool isAll_{false};
+};
+
+class KillQuery final : public SingleInputNode {
+public:
+    static KillQuery* make(QueryContext* qctx,
+                           PlanNode* input,
+                           Expression* sessionId,
+                           Expression* epId) {
+        return qctx->objPool()->add(new KillQuery(qctx, input, sessionId, epId));
+    }
+
+    Expression* sessionId() const {
+        return sessionId_;
+    }
+
+    Expression* epId() const {
+        return epId_;
+    }
+
+    std::unique_ptr<PlanNodeDescription> explain() const override;
+
+private:
+    explicit KillQuery(QueryContext* qctx, PlanNode* input, Expression* sessionId, Expression* epId)
+        : SingleInputNode(qctx, Kind::kKillQuery, input), sessionId_(sessionId), epId_(epId) {}
+
+    Expression* sessionId_;
+    Expression* epId_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_PLAN_ADMIN_H_

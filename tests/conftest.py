@@ -76,27 +76,57 @@ def get_port():
         port = data.get("port", None)
         if port is None:
             raise Exception(f"Invalid port: {port}")
+        return port[0]
+
+def get_ports():
+    with open(NB_TMP_PATH, "r") as f:
+        data = json.loads(f.readline())
+        port = data.get("port", None)
+        if port is None:
+            raise Exception(f"Invalid port: {port}")
         return port
 
-
 @pytest.fixture(scope="session")
-def conn_pool(pytestconfig):
+def conn_pool_to_first_graph_service(pytestconfig):
     addr = pytestconfig.getoption("address")
-    host_addr = addr.split(":") if addr else ["localhost", get_port()]
+    host_addr = addr.split(":") if addr else ["localhost", get_ports()[0]]
     assert len(host_addr) == 2
     pool = get_conn_pool(host_addr[0], host_addr[1])
     yield pool
     pool.close()
 
+@pytest.fixture(scope="session")
+def conn_pool_to_second_graph_service(pytestconfig):
+    addr = pytestconfig.getoption("address")
+    host_addr = ["localhost", get_ports()[1]]
+    assert len(host_addr) == 2
+    pool = get_conn_pool(host_addr[0], host_addr[1])
+    yield pool
+    pool.close()
+
+@pytest.fixture(scope="session")
+def conn_pool(conn_pool_to_first_graph_service):
+    return conn_pool_to_first_graph_service
 
 @pytest.fixture(scope="class")
-def session(conn_pool, pytestconfig):
+def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig):
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
-    sess = conn_pool.get_session(user, password)
+    sess = conn_pool_to_first_graph_service.get_session(user, password)
     yield sess
     sess.release()
 
+@pytest.fixture(scope="class")
+def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfig):
+    user = pytestconfig.getoption("user")
+    password = pytestconfig.getoption("password")
+    sess = conn_pool_to_second_graph_service.get_session(user, password)
+    yield sess
+    sess.release()
+
+@pytest.fixture(scope="class")
+def session(session_from_first_conn_pool):
+    return session_from_first_conn_pool
 
 def load_csv_data_once(space: str):
     with open(SPACE_TMP_PATH, "r") as f:

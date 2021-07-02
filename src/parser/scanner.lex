@@ -250,6 +250,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "SESSIONS"                  { return TokenType::KW_SESSIONS; }
 "SESSION"                   { return TokenType::KW_SESSION; }
 "SAMPLE"                    { return TokenType::KW_SAMPLE; }
+"QUERIES"                   { return TokenType::KW_QUERIES; }
+"QUERY"                     { return TokenType::KW_QUERY; }
+"KILL"                      { return TokenType::KW_KILL; }
+"TOP"                       { return TokenType::KW_TOP; }
+
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 

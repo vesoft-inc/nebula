@@ -11,7 +11,7 @@
 #include "common/interface/gen-cpp2/GraphService.h"
 #include "service/Authenticator.h"
 #include "service/QueryEngine.h"
-#include "session/SessionManager.h"
+#include "session/GraphSessionManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -40,7 +40,7 @@ public:
 private:
     bool auth(const std::string& username, const std::string& password);
 
-    std::unique_ptr<SessionManager>             sessionManager_;
+    std::unique_ptr<GraphSessionManager>        sessionManager_;
     std::unique_ptr<QueryEngine>                queryEngine_;
     std::unique_ptr<meta::MetaClient>           metaClient_;
     HostAddr                                    myAddr_;

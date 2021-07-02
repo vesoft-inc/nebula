@@ -14,7 +14,9 @@ namespace graph {
 class OrderByValidator final : public Validator {
 public:
     OrderByValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+        : Validator(sentence, context) {
+        setNoSpaceRequired();
+    }
 
 private:
     Status validateImpl() override;

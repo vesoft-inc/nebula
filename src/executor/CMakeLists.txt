@@ -72,6 +72,8 @@ nebula_add_library(
     admin/SignInTSServiceExecutor.cpp
     admin/SignOutTSServiceExecutor.cpp
     admin/SessionExecutor.cpp
+    admin/ShowQueriesExecutor.cpp
+    admin/KillQueryExecutor.cpp
     maintain/TagExecutor.cpp
     maintain/TagIndexExecutor.cpp
     maintain/EdgeExecutor.cpp

@@ -4,8 +4,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-    session_obj OBJECT
-    SessionManager.cpp
+    graph_session_obj OBJECT
+    GraphSessionManager.cpp
     ClientSession.cpp
 )
 

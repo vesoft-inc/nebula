@@ -15,6 +15,7 @@
 #include "planner/plan/Admin.h"
 #include "planner/plan/Query.h"
 #include "service/GraphFlags.h"
+#include "util/ExpressionUtils.h"
 #include "util/SchemaUtil.h"
 
 namespace nebula {
@@ -521,5 +522,63 @@ Status ShowSessionsValidator::toPlan() {
     return Status::OK();
 }
 
+Status ShowQueriesValidator::validateImpl() {
+    if (!inputs_.empty()) {
+        return Status::SemanticError("Show queries sentence do not support input");
+    }
+    outputs_.emplace_back("SessionID", Value::Type::INT);
+    outputs_.emplace_back("ExecutionPlanID", Value::Type::INT);
+    outputs_.emplace_back("User", Value::Type::STRING);
+    outputs_.emplace_back("Host", Value::Type::STRING);
+    outputs_.emplace_back("StartTime", Value::Type::DATETIME);
+    outputs_.emplace_back("DurationInUSec", Value::Type::INT);
+    outputs_.emplace_back("Status", Value::Type::STRING);
+    outputs_.emplace_back("Query", Value::Type::STRING);
+    return Status::OK();
+}
+
+Status ShowQueriesValidator::toPlan() {
+    auto sentence = static_cast<ShowQueriesSentence*>(sentence_);
+    auto *node = ShowQueries::make(qctx_, nullptr, sentence->isAll());
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
+
+Status KillQueryValidator::validateImpl() {
+    auto sentence = static_cast<KillQuerySentence *>(sentence_);
+    auto *sessionExpr = sentence->sessionId();
+    auto *epIdExpr = sentence->epId();
+    auto sessionTypeStatus = deduceExprType(sessionExpr);
+    if (!sessionTypeStatus.ok()) {
+        return sessionTypeStatus.status();
+    }
+    if (sessionTypeStatus.value() != Value::Type::INT) {
+        std::stringstream ss;
+        ss << sessionExpr->toString() << ", Session ID must be an integer but was "
+           << sessionTypeStatus.value();
+        return Status::SemanticError(ss.str());
+    }
+    auto epIdStatus = deduceExprType(epIdExpr);
+    if (!epIdStatus.ok()) {
+        return epIdStatus.status();
+    }
+    if (epIdStatus.value() != Value::Type::INT) {
+        std::stringstream ss;
+        ss << epIdExpr->toString() << ", Session ID must be an integer but was "
+           << epIdStatus.value();
+        return Status::SemanticError(ss.str());
+    }
+
+    return Status::OK();
+}
+
+Status KillQueryValidator::toPlan() {
+    auto sentence = static_cast<KillQuerySentence*>(sentence_);
+    auto *node = KillQuery::make(qctx_, nullptr, sentence->sessionId(), sentence->epId());
+    root_ = node;
+    tail_ = root_;
+    return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula

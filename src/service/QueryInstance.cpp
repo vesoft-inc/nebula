@@ -31,6 +31,7 @@ QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *opti
     qctx_ = std::move(qctx);
     optimizer_ = DCHECK_NOTNULL(optimizer);
     scheduler_ = std::make_unique<AsyncMsgNotifyBasedScheduler>(qctx_.get());
+    qctx_->rctx()->session()->addQuery(qctx_.get());
 }
 
 void QueryInstance::execute() {
@@ -97,6 +98,7 @@ void QueryInstance::onFinish() {
     addSlowQueryStats(latency);
     rctx->finish();
 
+    rctx->session()->deleteQuery(qctx_.get());
     // The `QueryInstance' is the root node holding all resources during the execution.
     // When the whole query process is done, it's safe to release this object, as long as
     // no other contexts have chances to access these resources later on,
@@ -151,6 +153,7 @@ void QueryInstance::onError(Status status) {
     rctx->resp().latencyInUs = latency;
     stats::StatsManager::addValue(kNumQueryErrors);
     addSlowQueryStats(latency);
+    rctx->session()->deleteQuery(qctx_.get());
     rctx->finish();
     delete this;
 }

@@ -37,7 +37,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
-    $<TARGET_OBJECTS:session_obj>
+    $<TARGET_OBJECTS:graph_session_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
 )

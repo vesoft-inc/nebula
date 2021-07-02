@@ -162,6 +162,9 @@ public:
         kIngest,
         kShowSessions,
         kUpdateSession,
+
+        kShowQueries,
+        kKillQuery,
     };
 
     bool isQueryNode() const {

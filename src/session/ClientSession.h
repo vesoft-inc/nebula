@@ -13,6 +13,8 @@
 namespace nebula {
 namespace graph {
 
+class QueryContext;
+
 constexpr int64_t kInvalidSpaceID = -1;
 constexpr int64_t kInvalidSessionID = 0;
 
@@ -94,6 +96,11 @@ public:
         return session_.get_timezone();
     }
 
+    HostAddr getGraphAddr() {
+        folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
+        return session_.get_graph_addr();
+    }
+
     void setTimezone(int32_t timezone) {
         {
             folly::RWSpinLock::WriteHolder wHolder(rwSpinLock_);
@@ -123,11 +130,20 @@ public:
         session_.set_space_name(spaceName);
     }
 
+    void addQuery(QueryContext* qctx);
+
+    void deleteQuery(QueryContext* qctx);
+
+    bool findQuery(nebula::ExecutionPlanID epId);
+
+    void markQueryKilled(nebula::ExecutionPlanID epId);
+
+    void markAllQueryKilled();
+
 private:
     ClientSession() = default;
 
     explicit ClientSession(meta::cpp2::Session &&session, meta::MetaClient* metaClient);
-
 
 private:
     SpaceInfo               space_;
@@ -141,6 +157,7 @@ private:
      * But a user has only one role in one space
      */
     std::unordered_map<GraphSpaceID, meta::cpp2::RoleType> roles_;
+    std::unordered_map<ExecutionPlanID, QueryContext*> contexts_;
 };
 
 }  // namespace graph

@@ -732,6 +732,75 @@ private:
     SessionID   sessionId_{0};
     bool        setSeesionId_{false};
 };
+
+class ShowQueriesSentence final : public Sentence {
+public:
+    explicit ShowQueriesSentence(bool isAll = false) {
+        kind_ = Kind::kShowQueries;
+        isAll_ = isAll;
+    }
+
+    bool isAll() const {
+        return isAll_;
+    }
+
+    std::string toString() const override;
+
+private:
+    bool isAll_{false};
+};
+
+class QueryUniqueIdentifier final {
+public:
+    explicit QueryUniqueIdentifier(Expression* epId, Expression* sessionId)
+        : epId_(epId), sessionId_(sessionId) {}
+
+    Expression* sessionId() const {
+        return sessionId_;
+    }
+
+    Expression* epId() const {
+        return epId_;
+    }
+
+    void setSession() {
+        isSetSession_ = true;
+    }
+
+    bool isSetSession() const {
+        return isSetSession_;
+    }
+
+private:
+    Expression* epId_{nullptr};
+    Expression* sessionId_{nullptr};
+    bool        isSetSession_{false};
+};
+
+class KillQuerySentence final : public Sentence {
+public:
+    explicit KillQuerySentence(QueryUniqueIdentifier* identifier) {
+        kind_ = Kind::kKillQuery;
+        identifier_.reset(identifier);
+    }
+
+    Expression* sessionId() const {
+        return identifier_->sessionId();
+    }
+
+    Expression* epId() const {
+        return identifier_->epId();
+    }
+
+    std::string toString() const override;
+
+private:
+    bool isSetSession() const {
+        return identifier_->isSetSession();
+    }
+
+    std::unique_ptr<QueryUniqueIdentifier> identifier_;
+};
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_
