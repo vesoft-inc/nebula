@@ -239,15 +239,16 @@ struct AdminJobReq {
 }
 
 enum AdminCmd {
-    COMPACT             = 0,
-    FLUSH               = 1,
-    REBUILD_TAG_INDEX   = 2,
-    REBUILD_EDGE_INDEX  = 3,
-    STATS               = 4,
-    DATA_BALANCE        = 5,
-    DOWNLOAD            = 6,
-    INGEST              = 7,
-    UNKNOWN             = 99,
+    COMPACT                  = 0,
+    FLUSH                    = 1,
+    REBUILD_TAG_INDEX        = 2,
+    REBUILD_EDGE_INDEX       = 3,
+    REBUILD_FULLTEXT_INDEX   = 4,
+    STATS                    = 5,
+    DATA_BALANCE             = 6,
+    DOWNLOAD                 = 7,
+    INGEST                   = 8,
+    UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
 enum JobStatus {
