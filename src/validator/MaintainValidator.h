@@ -314,6 +314,9 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
+
+private:
+    std::string                      name_;
 };
 
 class ShowEdgeIndexesValidator final : public Validator {
@@ -325,6 +328,9 @@ private:
     Status validateImpl() override;
 
     Status toPlan() override;
+
+private:
+    std::string                      name_;
 };
 
 class ShowTagIndexStatusValidator final : public Validator {

@@ -1343,7 +1343,17 @@ TEST_F(ParserTest, AdminOperation) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
+        std::string query = "SHOW TAG INDEXES BY tag1";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
         std::string query = "SHOW EDGE INDEXES";
+        auto result = parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        std::string query = "SHOW EDGE INDEXES BY edge1";
         auto result = parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

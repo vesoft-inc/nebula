@@ -557,24 +557,42 @@ private:
 
 class ShowTagIndexes final : public SingleDependencyNode {
 public:
-    static ShowTagIndexes* make(QueryContext* qctx, PlanNode* input) {
-        return qctx->objPool()->add(new ShowTagIndexes(qctx, input));
+    static ShowTagIndexes* make(QueryContext* qctx, PlanNode* input, std::string name) {
+        return qctx->objPool()->add(new ShowTagIndexes(qctx, input, std::move(name)));
+    }
+
+    const std::string& name() const {
+        return name_;
     }
 
 private:
-    ShowTagIndexes(QueryContext* qctx, PlanNode* input)
-        : SingleDependencyNode(qctx, Kind::kShowTagIndexes, input) {}
+    ShowTagIndexes(QueryContext* qctx, PlanNode* input, std::string name)
+        : SingleDependencyNode(qctx, Kind::kShowTagIndexes, input) {
+            name_ = std::move(name);
+        }
+
+private:
+    std::string              name_;
 };
 
 class ShowEdgeIndexes final : public SingleDependencyNode {
 public:
-    static ShowEdgeIndexes* make(QueryContext* qctx, PlanNode* input) {
-        return qctx->objPool()->add(new ShowEdgeIndexes(qctx, input));
+    static ShowEdgeIndexes* make(QueryContext* qctx, PlanNode* input, std::string name) {
+        return qctx->objPool()->add(new ShowEdgeIndexes(qctx, input, std::move(name)));
+    }
+
+    const std::string& name() const {
+        return name_;
     }
 
 private:
-    ShowEdgeIndexes(QueryContext* qctx, PlanNode* input)
-        : SingleDependencyNode(qctx, Kind::kShowEdgeIndexes, input) {}
+    ShowEdgeIndexes(QueryContext* qctx, PlanNode* input, std::string name)
+        : SingleDependencyNode(qctx, Kind::kShowEdgeIndexes, input) {
+            name_ = std::move(name);
+        }
+
+private:
+    std::string              name_;
 };
 
 class ShowTagIndexStatus final : public SingleDependencyNode {

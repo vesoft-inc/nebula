@@ -817,20 +817,36 @@ private:
 
 class ShowTagIndexesSentence : public Sentence {
 public:
-    ShowTagIndexesSentence() {
+    explicit ShowTagIndexesSentence(std::string *name) {
+        name_.reset(name);
         kind_ = Kind::kShowTagIndexes;
     }
 
     std::string toString() const override;
+
+    const std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
 };
 
 class ShowEdgeIndexesSentence : public Sentence {
 public:
-    ShowEdgeIndexesSentence() {
+    explicit ShowEdgeIndexesSentence(std::string *name) {
+        name_.reset(name);
         kind_ = Kind::kShowEdgeIndexes;
     }
 
     std::string toString() const override;
+
+    const std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
 };
 
 class ShowTagIndexStatusSentence : public Sentence {

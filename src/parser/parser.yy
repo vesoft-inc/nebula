@@ -2903,10 +2903,16 @@ show_sentence
          $$ = new ShowEdgesSentence();
     }
     | KW_SHOW KW_TAG KW_INDEXES {
-         $$ = new ShowTagIndexesSentence();
+         $$ = new ShowTagIndexesSentence(new std::string(""));
+    }
+    | KW_SHOW KW_TAG KW_INDEXES KW_BY name_label {
+         $$ = new ShowTagIndexesSentence($5);
     }
     | KW_SHOW KW_EDGE KW_INDEXES {
-         $$ = new ShowEdgeIndexesSentence();
+         $$ = new ShowEdgeIndexesSentence(new std::string(""));
+    }
+    | KW_SHOW KW_EDGE KW_INDEXES KW_BY name_label {
+         $$ = new ShowEdgeIndexesSentence($5);
     }
     | KW_SHOW KW_USERS {
         $$ = new ShowUsersSentence();

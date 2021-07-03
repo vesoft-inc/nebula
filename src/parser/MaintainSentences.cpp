@@ -344,11 +344,25 @@ std::string ShowCreateEdgeSentence::toString() const {
 }
 
 std::string ShowTagIndexesSentence::toString() const {
-    return folly::stringPrintf("SHOW TAG INDEXES");
+    std::string buf;
+    buf.reserve(64);
+    buf += "SHOW TAG INDEXES";
+    if (!name()->empty()) {
+        buf += " BY ";
+        buf += *name_;
+    }
+    return buf;
 }
 
 std::string ShowEdgeIndexesSentence::toString() const {
-    return folly::stringPrintf("SHOW EDGE INDEXES");
+    std::string buf;
+    buf.reserve(64);
+    buf += "SHOW EDGE INDEXES";
+    if (!name()->empty()) {
+        buf += " BY ";
+        buf += *name_;
+    }
+    return buf;
 }
 
 std::string ShowTagIndexStatusSentence::toString() const {

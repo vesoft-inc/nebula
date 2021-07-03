@@ -222,10 +222,19 @@ Feature: tag and edge index tests from pytest
       SHOW TAG INDEXES
       """
     Then the result should contain:
-      | Names                |
-      | 'single_tag_index'   |
-      | 'multi_tag_index'    |
-      | 'disorder_tag_index' |
+      | Index Name           | By Tag  | Columns          |
+      | "single_tag_index"   | "tag_1" | ["col2"]         |
+      | "multi_tag_index"    | "tag_1" | ["col2", "col3"] |
+      | "disorder_tag_index" | "tag_1" | ["col3", "col2"] |
+    When executing query:
+      """
+      SHOW TAG INDEXES BY tag_1
+      """
+    Then the result should contain:
+      | Index Name           | Columns          |
+      | "single_tag_index"   | ["col2"]         |
+      | "multi_tag_index"    | ["col2", "col3"] |
+      | "disorder_tag_index" | ["col3", "col2"] |
     When executing query:
       """
       DROP TAG INDEX single_tag_index
@@ -466,10 +475,19 @@ Feature: tag and edge index tests from pytest
       SHOW EDGE INDEXES
       """
     Then the result should contain:
-      | Names                 |
-      | 'single_edge_index'   |
-      | 'multi_edge_index'    |
-      | 'disorder_edge_index' |
+      | Index Name            | By Edge  | Columns          |
+      | "single_edge_index"   | "edge_1" | ["col2"]         |
+      | "multi_edge_index"    | "edge_1" | ["col2", "col3"] |
+      | "disorder_edge_index" | "edge_1" | ["col3", "col2"] |
+    When executing query:
+      """
+      SHOW EDGE INDEXES BY edge_1
+      """
+    Then the result should contain:
+      | Index Name            | Columns          |
+      | "single_edge_index"   | ["col2"]         |
+      | "multi_edge_index"    | ["col2", "col3"] |
+      | "disorder_edge_index" | ["col3", "col2"] |
     # Drop Edge Index
     When executing query:
       """

@@ -75,11 +75,10 @@ def job_id(resp):
 def wait_tag_or_edge_indexes_ready(sess, schema: str = "TAG"):
     resp = resp_ok(sess, f"SHOW {schema} INDEXES")
     jobs = []
-    for key in resp.keys():
-        for val in resp.column_values(key):
-            job = val.as_string()
-            resp = resp_ok(sess, f"REBUILD {schema} INDEX {job}", True)
-            jobs.append(job_id(resp))
+    for val in resp.column_values("Index Name"):
+        job = val.as_string()
+        resp = resp_ok(sess, f"REBUILD {schema} INDEX {job}", True)
+        jobs.append(job_id(resp))
     wait_all_jobs_finished(sess, jobs)
 
 

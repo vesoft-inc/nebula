@@ -112,10 +112,11 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
 
 folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
     SCOPED_TIMER(&execTime_);
-
+    auto *iNode = asNode<ShowEdgeIndexes>(node());
+    const auto& bySchema = iNode->name();
     auto spaceId = qctx()->rctx()->session()->space().id;
     return qctx()->getMetaClient()->listEdgeIndexes(spaceId).via(runner()).thenValue(
-        [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+        [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
             if (!resp.ok()) {
                 LOG(ERROR) << "SpaceId: " << spaceId << ", Show edge indexes failed"
                            << resp.status();
@@ -125,14 +126,35 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
             auto edgeIndexItems = std::move(resp).value();
 
             DataSet dataSet;
-            dataSet.colNames = {"Names"};
-            std::set<std::string> orderEdgeIndexNames;
-            for (auto &edgeIndex : edgeIndexItems) {
-                orderEdgeIndexNames.emplace(edgeIndex.get_index_name());
+            dataSet.colNames.emplace_back("Index Name");
+            if (bySchema.empty()) {
+                dataSet.colNames.emplace_back("By Edge");
             }
-            for (auto &name : orderEdgeIndexNames) {
+            dataSet.colNames.emplace_back("Columns");
+            std::map<std::string, std::pair<std::string, std::vector<std::string>>> ids;
+            for (auto &edgeIndex : edgeIndexItems) {
+                const auto& sch = edgeIndex.get_schema_name();
+                const auto& cols = edgeIndex.get_fields();
+                std::vector<std::string> colsName;
+                for (const auto& col : cols) {
+                    colsName.emplace_back(col.get_name());
+                }
+                ids[edgeIndex.get_index_name()] = {sch, std::move(colsName)};
+            }
+            for (const auto& i : ids) {
+                if (!bySchema.empty() && bySchema != i.second.first) {
+                    continue;
+                }
                 Row row;
-                row.values.emplace_back(name);
+                row.values.emplace_back(i.first);
+                if (bySchema.empty()) {
+                    row.values.emplace_back(i.second.first);
+                }
+                List list;
+                for (const auto& c : i.second.second) {
+                    list.values.emplace_back(c);
+                }
+                row.values.emplace_back(std::move(list));
                 dataSet.rows.emplace_back(std::move(row));
             }
             return finish(ResultBuilder()

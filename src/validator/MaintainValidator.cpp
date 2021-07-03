@@ -438,22 +438,26 @@ Status ShowCreateEdgeIndexValidator::toPlan() {
 }
 
 Status ShowTagIndexesValidator::validateImpl() {
+    auto sentence = static_cast<ShowTagIndexesSentence *>(sentence_);
+    name_ = *sentence->name();
     return Status::OK();
 }
 
 Status ShowTagIndexesValidator::toPlan() {
-    auto *doNode = ShowTagIndexes::make(qctx_, nullptr);
+    auto *doNode = ShowTagIndexes::make(qctx_, nullptr, name_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
 }
 
 Status ShowEdgeIndexesValidator::validateImpl() {
+    auto sentence = static_cast<ShowEdgeIndexesSentence *>(sentence_);
+    name_ = *sentence->name();
     return Status::OK();
 }
 
 Status ShowEdgeIndexesValidator::toPlan() {
-    auto *doNode = ShowEdgeIndexes::make(qctx_, nullptr);
+    auto *doNode = ShowEdgeIndexes::make(qctx_, nullptr, name_);
     root_ = doNode;
     tail_ = root_;
     return Status::OK();
