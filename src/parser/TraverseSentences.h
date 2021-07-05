@@ -82,25 +82,14 @@ private:
 
 class LookupSentence final : public Sentence {
 public:
-    explicit LookupSentence(std::string *from) {
-        from_.reset(from);
-        kind_ = Kind::kLookup;
-    }
+    LookupSentence(std::string* from, WhereClause* where, YieldClause* yield);
 
-    const std::string* from() const {
-        return from_.get();
-    }
-
-    void setWhereClause(WhereClause *whereClause) {
-        whereClause_.reset(whereClause);
+    const std::string& from() const {
+        return *from_;
     }
 
     const WhereClause* whereClause() const {
         return whereClause_.get();
-    }
-
-    void setYieldClause(YieldClause *clause) {
-        yieldClause_.reset(clause);
     }
 
     const YieldClause* yieldClause() const {

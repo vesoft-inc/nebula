@@ -1822,10 +1822,7 @@ lookup_where_clause
 
 lookup_sentence
     : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause {
-        auto sentence = new LookupSentence($3);
-        sentence->setWhereClause($4);
-        sentence->setYieldClause($5);
-        $$ = sentence;
+        $$ = new LookupSentence($3, $4, $5);
     }
     ;
 

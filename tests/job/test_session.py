@@ -47,7 +47,7 @@ class TestSession(NebulaTestSuite):
 
     @classmethod
     def cleanup(self):
-        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 10')
+        resp = self.execute('UPDATE CONFIGS graph:session_reclaim_interval_secs = 2')
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
@@ -222,4 +222,3 @@ class TestSession(NebulaTestSuite):
         resp = conn.execute(session_id, 'SHOW HOSTS')
         assert resp.error_code == ttypes.ErrorCode.E_SESSION_INVALID, resp.error_msg
         assert resp.error_msg.find(b'Session not existed!') > 0
-

@@ -25,7 +25,7 @@ Feature: Slow Query Test
       SHOW ALL QUERIES
       """
     Then the execution should be successful
-    And wait 20 seconds
+    And wait 5 seconds
     When executing query:
       """
       SHOW ALL QUERIES
@@ -37,7 +37,7 @@ Feature: Slow Query Test
       """
       SHOW ALL QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
-      WHERE $-.DurationInUSec > 1000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
+      WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
@@ -84,7 +84,7 @@ Feature: Slow Query Test
       """
       SHOW ALL QUERIES
       | YIELD $-.SessionID AS sid, $-.ExecutionPlanID AS eid, $-.DurationInUSec AS dur
-      WHERE $-.DurationInUSec > 10000000 AND $-.`Query` CONTAINS "GO"
+      WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO"
       | ORDER BY $-.dur
       | KILL QUERY(session=$-.sid, plan=$-.eid)
       """

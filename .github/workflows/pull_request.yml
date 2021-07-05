@@ -138,17 +138,17 @@ jobs:
       - name: Pytest
         run: |
           make up
-          make RM_DIR=false J=${{ steps.cmake.outputs.j }} test
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
           make down
         working-directory: tests/
         timeout-minutes: 15
       - name: TCK
         run: |
           make up
-          make RM_DIR=false J=${{ steps.cmake.outputs.j }} tck
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
           make down
         working-directory: tests/
-        timeout-minutes: 20
+        timeout-minutes: 25
       - name: Sanitizer
         if: ${{ always() }}
         run: |

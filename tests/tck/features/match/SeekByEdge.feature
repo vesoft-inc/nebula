@@ -7,7 +7,7 @@ Feature: Match seek by edge
   Background: Prepare space
     Given a graph with space named "<space_name>"
 
-  Scenario: seek by edge index
+  Scenario Outline: seek by edge index
     When executing query:
       """
       MATCH (player)-[:serve]->(team)
@@ -874,7 +874,7 @@ Feature: Match seek by edge
       | "Shaquile O'Neal"    | "JaVale McGee"       | "Nuggets"       |
       | "Shaquile O'Neal"    | "JaVale McGee"       | "Mavericks"     |
 
-  Scenario: Seek by edge with range
+  Scenario Outline: Seek by edge with range
     When executing query:
       """
       match (p1)-[:like*2]->(p2) return p1.name, p2.name
@@ -1291,7 +1291,7 @@ Feature: Match seek by edge
     Then the result should be, in any order:
       | p1.name | p2.name |
 
-  Scenario: Seek by edge with properties
+  Scenario Outline: Seek by edge with properties
     When executing query:
       """
       match (player)-[:serve {start_year : 2001}]->(team) return player.name AS player, team.name AS team
@@ -1345,7 +1345,7 @@ Feature: Match seek by edge
       | "Grizzlies"  | "Paul Gasol" |
       | "Nets"       | "Jason Kidd" |
 
-  Scenario: Seek by edge with range with properties
+  Scenario Outline: Seek by edge with range with properties
     When executing query:
       """
       match (p1)-[:like*2 {likeness: 90}]->(p2) return p1.name, p2.name
@@ -1463,7 +1463,7 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Grant Hill"         |
       | "Grant Hill"         | "Rudy Gay"           |
 
-  Scenario: seek by edge without index
+  Scenario Outline: seek by edge without index
     When executing query:
       """
       MATCH (p1)-[:teammate]->(p2)

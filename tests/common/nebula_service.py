@@ -71,9 +71,9 @@ class NebulaService(object):
         ]
         if name == 'graphd':
             params.append('--local_config=false')
-            params.append('--enable_optimizer=true')
             params.append('--enable_authorize=true')
             params.append('--system_memory_high_watermark_ratio=0.95')
+            params.append('--session_reclaim_interval_secs=2')
         if name == 'storaged':
             params.append('--local_config=false')
             params.append('--raft_heartbeat_interval_secs=30')

@@ -37,9 +37,12 @@ public:
     dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
                 const std::string& index);
 
-    static
-    StatusOr<std::string> rewriteTSFilter(ObjectPool* pool, bool isEdge, Expression* expr,
-        const std::string& index, const std::vector<nebula::plugin::HttpClient>& tsClients);
+    static StatusOr<Expression*> rewriteTSFilter(
+        ObjectPool* pool,
+        bool isEdge,
+        Expression* expr,
+        const std::string& index,
+        const std::vector<nebula::plugin::HttpClient>& tsClients);
 
     static
     StatusOr<std::vector<std::string>> textSearch(Expression* expr,

@@ -45,10 +45,18 @@ def init_parser():
                           default='',
                           help='Support multi graphds')
     opt_parser.add_option('--address',
-                        dest='address',
-                        default='',
-                        help='Address of the Nebula')
+                          dest='address',
+                          default='',
+                          help='Address of the Nebula')
+    opt_parser.add_option('--debug',
+                          dest='debug',
+                          default=True,
+                          help='Print verbose debug logs')
     return opt_parser
+
+
+def opt_is(val, expect):
+    return type(val) == str and val.lower() == expect
 
 
 def start_nebula(nb, configs):
@@ -61,7 +69,8 @@ def start_nebula(nb, configs):
     else:
         nb.install()
         address = "localhost"
-        ports = nb.start(multi_graphd=configs.multi_graphd)
+        debug = opt_is(configs.debug, "true")
+        ports = nb.start(debug_log=debug, multi_graphd=configs.multi_graphd)
 
     # Load csv data
     pool = get_conn_pool("localhost", ports[0])
@@ -99,10 +108,6 @@ def stop_nebula(nb, configs=None):
     nb.stop()
     shutil.rmtree(TMP_DIR, ignore_errors=True)
     print('nebula services have been stopped.')
-
-
-def opt_is(val, expect):
-    return type(val) == str and val.lower() == expect
 
 
 if __name__ == "__main__":

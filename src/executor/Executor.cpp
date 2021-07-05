@@ -181,7 +181,13 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         case PlanNode::Kind::kUnwind: {
             return pool->add(new UnwindExecutor(node, qctx));
         }
-        case PlanNode::Kind::kIndexScan: {
+        case PlanNode::Kind::kIndexScan:
+        case PlanNode::Kind::kEdgeIndexFullScan:
+        case PlanNode::Kind::kEdgeIndexPrefixScan:
+        case PlanNode::Kind::kEdgeIndexRangeScan:
+        case PlanNode::Kind::kTagIndexFullScan:
+        case PlanNode::Kind::kTagIndexPrefixScan:
+        case PlanNode::Kind::kTagIndexRangeScan: {
             return pool->add(new IndexScanExecutor(node, qctx));
         }
         case PlanNode::Kind::kStart: {

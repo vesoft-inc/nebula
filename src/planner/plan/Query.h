@@ -33,6 +33,10 @@ public:
         return space_;
     }
 
+    void setSpace(GraphSpaceID spaceId) {
+        space_ = spaceId;
+    }
+
     bool dedup() const {
         return dedup_;
     }
@@ -432,16 +436,15 @@ private:
 /**
  * Read data through the index.
  */
-class IndexScan final : public Explore {
+class IndexScan : public Explore {
 public:
-    using IndexQueryCtx = std::unique_ptr<std::vector<storage::cpp2::IndexQueryContext>>;
-    using IndexReturnCols = std::unique_ptr<std::vector<std::string>>;
+    using IndexQueryContext = storage::cpp2::IndexQueryContext;
 
     static IndexScan* make(QueryContext* qctx,
                            PlanNode* input,
                            GraphSpaceID space = -1,  //  TBD: -1 is inValid spaceID?
-                           IndexQueryCtx&& contexts = nullptr,
-                           IndexReturnCols&& returnCols = nullptr,
+                           std::vector<IndexQueryContext>&& contexts = {},
+                           std::vector<std::string> returnCols = {},
                            bool isEdge = false,
                            int32_t schemaId = -1,
                            bool isEmptyResultSet = false,
@@ -463,12 +466,12 @@ public:
                                                   std::move(filter)));
     }
 
-    const std::vector<storage::cpp2::IndexQueryContext>* queryContext() const {
-        return contexts_.get();
+    const std::vector<IndexQueryContext>& queryContext() const {
+        return contexts_;
     }
 
-    const std::vector<std::string>* returnColumns() const {
-        return returnCols_.get();
+    const std::vector<std::string>& returnColumns() const {
+        return returnCols_;
     }
 
     bool isEdge() const {
@@ -479,15 +482,23 @@ public:
         return schemaId_;
     }
 
+    void setSchemaId(int32_t schema) {
+        schemaId_ = schema;
+    }
+
     bool isEmptyResultSet() const {
         return isEmptyResultSet_;
     }
 
-    void setIndexQueryContext(IndexQueryCtx contexts) {
+    void setEmptyResultSet(bool isEmptyResultSet) {
+        isEmptyResultSet_ = isEmptyResultSet;
+    }
+
+    void setIndexQueryContext(std::vector<IndexQueryContext> contexts) {
         contexts_ = std::move(contexts);
     }
 
-    void setReturnCols(IndexReturnCols cols) {
+    void setReturnCols(std::vector<std::string> cols) {
         returnCols_ = std::move(cols);
     }
 
@@ -495,34 +506,24 @@ public:
         isEdge_ = isEdge;
     }
 
-    void setSchemaId(int32_t schema) {
-        schemaId_ = schema;
-    }
-
     PlanNode* clone() const override;
     std::unique_ptr<PlanNodeDescription> explain() const override;
 
-private:
+protected:
     IndexScan(QueryContext* qctx,
               PlanNode* input,
               GraphSpaceID space,
-              IndexQueryCtx&& contexts,
-              IndexReturnCols&& returnCols,
+              std::vector<IndexQueryContext>&& contexts,
+              std::vector<std::string>&& returnCols,
               bool isEdge,
               int32_t schemaId,
               bool isEmptyResultSet,
               bool dedup,
               std::vector<storage::cpp2::OrderBy> orderBy,
               int64_t limit,
-              std::string filter)
-    : Explore(qctx,
-              Kind::kIndexScan,
-              input,
-              space,
-              dedup,
-              limit,
-              std::move(filter),
-              std::move(orderBy)) {
+              std::string filter,
+              Kind kind = Kind::kIndexScan)
+        : Explore(qctx, kind, input, space, dedup, limit, std::move(filter), std::move(orderBy)) {
         contexts_ = std::move(contexts);
         returnCols_ = std::move(returnCols);
         isEdge_ = isEdge;
@@ -533,11 +534,13 @@ private:
     void cloneMembers(const IndexScan&);
 
 private:
-    IndexQueryCtx                                 contexts_;
-    IndexReturnCols                               returnCols_;
+    std::vector<IndexQueryContext>                contexts_;
+    std::vector<std::string>                      returnCols_;
     bool                                          isEdge_;
     int32_t                                       schemaId_;
-    bool                                          isEmptyResultSet_;
+
+    // TODO(yee): Generate special plan for this scenario
+    bool isEmptyResultSet_{false};
 };
 
 /**

@@ -73,5 +73,25 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     return dataSet;
 }
 
+Expression::Kind IndexUtil::reverseRelationalExprKind(Expression::Kind kind) {
+    switch (kind) {
+        case Expression::Kind::kRelGE: {
+            return Expression::Kind::kRelLE;
+        }
+        case Expression::Kind::kRelGT: {
+            return Expression::Kind::kRelLT;
+        }
+        case Expression::Kind::kRelLE: {
+            return Expression::Kind::kRelGE;
+        }
+        case Expression::Kind::kRelLT: {
+            return Expression::Kind::kRelGT;
+        }
+        default: {
+            return kind;
+        }
+    }
+}
+
 }  // namespace graph
 }  // namespace nebula

@@ -29,10 +29,10 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
         return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
     }
     return storageClient->lookupIndex(lookup->space(),
-                                     *lookup->queryContext(),
+                                      lookup->queryContext(),
                                       lookup->isEdge(),
                                       lookup->schemaId(),
-                                     *lookup->returnColumns())
+                                      lookup->returnColumns())
         .via(runner())
         .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
             return handleResp(std::move(rpcResp));

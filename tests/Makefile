@@ -6,6 +6,7 @@
 .PHONY: fmt check init init-all clean test tck fail up down
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
+# PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
 CURR_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 PY_VERSION = $(shell python3 --version | cut -f2 -d' ' | cut -f2 -d'.')
@@ -13,6 +14,7 @@ PY_VERSION = $(shell python3 --version | cut -f2 -d' ' | cut -f2 -d'.')
 RM_DIR ?= true
 TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
+DEBUG ?= true
 J ?= 10
 
 install-deps:
@@ -45,23 +47,32 @@ fmt:
 check:
 	@find $(CURR_DIR)/tck/ -type f -iname "*.feature" -print | xargs $(gherkin_fmt) --check
 
-up:
+up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --multi_graphd=true
+	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true
 
 down:
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)
 
-test:
-	cd $(CURR_DIR) && python3 -m pytest -n$(J) --dist=loadfile --rm_dir=$(RM_DIR) -m "not skip" -k "not tck" $(TEST_DIR) \
-	&& python3 -m pytest --rm_dir=$(RM_DIR) -m "not skip" -k "not tck" job/test_session.py
+currdir:
+	cd $(CURR_DIR)
 
-tck:
-	cd $(CURR_DIR) && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_tck.py && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_kill_slow_query_via_same_service.py && python3 -m pytest --cucumber-json=$(CURR_DIR)/tck-report.json --cucumber-json-expanded -n$(J) --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_kill_slow_query_via_different_service.py
+sess: currdir
+	python3 -m pytest -m "not skip" -k "not tck" job/test_session.py
 
+test: sess
+	python3 -m pytest -n$(J) --dist=loadfile -m "not skip" -k "not tck" $(TEST_DIR)
 
-fail:
-	cd $(CURR_DIR) && python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded --rm_dir=$(RM_DIR) -m "not skip" $(CURR_DIR)/tck/steps/test_tck.py
+slow-query: currdir
+	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_same_service.py && \
+	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
+
+tck: slow-query
+	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
+
+fail: currdir
+	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py
+
 report:
 	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json
 	@jq . $(CURR_DIR)/tck-report-bak.json > tck-report.json

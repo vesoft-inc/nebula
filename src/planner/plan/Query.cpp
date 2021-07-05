@@ -172,8 +172,8 @@ std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
     auto desc = Explore::explain();
     addDescription("schemaId", util::toJson(schemaId_), desc.get());
     addDescription("isEdge", util::toJson(isEdge_), desc.get());
-    addDescription("returnCols", folly::toJson(util::toJson(*returnCols_)), desc.get());
-    addDescription("indexCtx", folly::toJson(util::toJson(*contexts_)), desc.get());
+    addDescription("returnCols", folly::toJson(util::toJson(returnCols_)), desc.get());
+    addDescription("indexCtx", folly::toJson(util::toJson(contexts_)), desc.get());
     return desc;
 }
 
@@ -186,12 +186,8 @@ PlanNode* IndexScan::clone() const {
 void IndexScan::cloneMembers(const IndexScan &g) {
     Explore::cloneMembers(g);
 
-    if (g.contexts_ != nullptr) {
-        contexts_ = std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>(*g.contexts_);
-    }
-    if (g.returnCols_ != nullptr) {
-        returnCols_ = std::make_unique<std::vector<std::string>>(*g.returnCols_);
-    }
+    contexts_ = g.contexts_;
+    returnCols_ = g.returnCols_;
     isEdge_ = g.isEdge();
     schemaId_ = g.schemaId();
     isEmptyResultSet_ = g.isEmptyResultSet();

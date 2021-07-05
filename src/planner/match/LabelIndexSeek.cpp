@@ -70,15 +70,11 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
     using IQC = nebula::storage::cpp2::IndexQueryContext;
     IQC iqctx;
     iqctx.set_index_id(nodeCtx->scanInfo.indexIds.back());
-    auto contexts = std::make_unique<std::vector<IQC>>();
-    contexts->emplace_back(std::move(iqctx));
-    auto columns = std::make_unique<std::vector<std::string>>();
-    columns->emplace_back(kVid);
     auto scan = IndexScan::make(matchClauseCtx->qctx,
                                 nullptr,
                                 matchClauseCtx->space.id,
-                                std::move(contexts),
-                                std::move(columns),
+                                {iqctx},
+                                {kVid},
                                 false,
                                 nodeCtx->scanInfo.schemaIds.back());
     scan->setColNames({kVid});
@@ -125,10 +121,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
                         ExpressionUtils::rewriteLabelAttr2TagProp(pool, flattenFilter);
                     storage::cpp2::IndexQueryContext ctx;
                     ctx.set_filter(Expression::encode(*srcFilter));
-                    auto context =
-                        std::make_unique<std::vector<storage::cpp2::IndexQueryContext>>();
-                    context->emplace_back(std::move(ctx));
-                    scan->setIndexQueryContext(std::move(context));
+                    scan->setIndexQueryContext({ctx});
                     whereCtx.reset();
                 }
             }
@@ -146,22 +139,19 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     using IQC = nebula::storage::cpp2::IndexQueryContext;
     IQC iqctx;
     iqctx.set_index_id(edgeCtx->scanInfo.indexIds.back());
-    auto contexts = std::make_unique<std::vector<IQC>>();
-    contexts->emplace_back(std::move(iqctx));
-    auto columns = std::make_unique<std::vector<std::string>>();
-    std::vector<std::string> columnsName;
+    std::vector<std::string> columns, columnsName;
     switch (edgeCtx->scanInfo.direction) {
         case MatchEdge::Direction::OUT_EDGE:
-            columns->emplace_back(kSrc);
+            columns.emplace_back(kSrc);
             columnsName.emplace_back(kVid);
             break;
         case MatchEdge::Direction::IN_EDGE:
-            columns->emplace_back(kDst);
+            columns.emplace_back(kDst);
             columnsName.emplace_back(kVid);
             break;
         case MatchEdge::Direction::BOTH:
-            columns->emplace_back(kSrc);
-            columns->emplace_back(kDst);
+            columns.emplace_back(kSrc);
+            columns.emplace_back(kDst);
             columnsName.emplace_back(kSrc);
             columnsName.emplace_back(kDst);
             break;
@@ -171,7 +161,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     auto scan = IndexScan::make(qctx,
                                 nullptr,
                                 matchClauseCtx->space.id,
-                                std::move(contexts),
+                                {iqctx},
                                 std::move(columns),
                                 true,
                                 edgeCtx->scanInfo.schemaIds.back());

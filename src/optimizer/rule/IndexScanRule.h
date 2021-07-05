@@ -18,7 +18,6 @@ using storage::cpp2::IndexQueryContext;
 using storage::cpp2::IndexColumnHint;
 using BVO = graph::OptimizerUtils::BoundValueOperator;
 using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
-using IndexQueryCtx = std::unique_ptr<std::vector<IndexQueryContext>>;
 
 class OptContext;
 
@@ -29,6 +28,7 @@ class IndexScanRule final : public OptRule {
 
 public:
     const Pattern& pattern() const override;
+
     bool match(OptContext* ctx, const MatchedResult& matched) const override;
     StatusOr<TransformResult> transform(OptContext* ctx,
                                         const MatchedResult& matched) const override;
@@ -97,41 +97,37 @@ private:
 
     IndexScanRule();
 
-    Status createIndexQueryCtx(IndexQueryCtx &iqctx,
+    Status createIndexQueryCtx(std::vector<graph::IndexScan::IndexQueryContext>& iqctx,
                                ScanKind kind,
                                const FilterItems& items,
-                               graph::QueryContext *qctx,
-                               const OptGroupNode *groupNode) const;
+                               graph::QueryContext* qctx,
+                               const OptGroupNode* groupNode) const;
 
-    Status createIndexQueryCtx(IndexQueryCtx &iqctx,
-                               graph::QueryContext *qctx,
-                               const OptGroupNode *groupNode) const;
+    Status createIndexQueryCtx(std::vector<graph::IndexScan::IndexQueryContext>& iqctx,
+                               graph::QueryContext* qctx,
+                               const OptGroupNode* groupNode) const;
 
-    Status createSingleIQC(IndexQueryCtx &iqctx,
+    Status createSingleIQC(std::vector<graph::IndexScan::IndexQueryContext> &iqctx,
                            const FilterItems& items,
                            graph::QueryContext *qctx,
                            const OptGroupNode *groupNode) const;
 
-    Status createMultipleIQC(IndexQueryCtx &iqctx,
+    Status createMultipleIQC(std::vector<graph::IndexScan::IndexQueryContext> &iqctx,
                              const FilterItems& items,
                              graph::QueryContext *qctx,
                              const OptGroupNode *groupNode) const;
 
     Status appendIQCtx(const IndexItem& index,
                        const FilterItems& items,
-                       IndexQueryCtx &iqctx,
+                       std::vector<graph::IndexScan::IndexQueryContext> &iqctx,
                        const std::string& filter = "") const;
 
     Status appendIQCtx(const IndexItem& index,
-                       IndexQueryCtx &iqctx) const;
+                       std::vector<graph::IndexScan::IndexQueryContext> &iqctx) const;
 
     Status appendColHint(std::vector<IndexColumnHint>& hitns,
                          const FilterItems& items,
                          const meta::cpp2::ColumnDef& col) const;
-
-    Status boundValue(const FilterItem& item,
-                      const meta::cpp2::ColumnDef& col,
-                      Value& begin, Value& end) const;
 
     size_t hintCount(const FilterItems& items) const noexcept;
 
@@ -150,8 +146,6 @@ private:
               typename = std::enable_if_t<std::is_same<E, EdgePropertyExpression>::value ||
                                           std::is_same<E, TagPropertyExpression>::value>>
     Status addFilterItem(RelationalExpression* expr, FilterItems* items) const;
-
-    Expression::Kind reverseRelationalExprKind(Expression::Kind kind) const;
 
     IndexItem findOptimalIndex(graph::QueryContext *qctx,
                                const OptGroupNode *groupNode,

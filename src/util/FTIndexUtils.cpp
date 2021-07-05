@@ -5,6 +5,7 @@
  */
 
 #include "util/FTIndexUtils.h"
+#include "common/expression/Expression.h"
 
 DECLARE_uint32(ft_request_retry_times);
 
@@ -76,7 +77,7 @@ FTIndexUtils::dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClien
     return Status::Error("drop fulltext index failed : %s", index.c_str());
 }
 
-StatusOr<std::string> FTIndexUtils::rewriteTSFilter(
+StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(
     ObjectPool* pool,
     bool isEdge,
     Expression* expr,
@@ -87,32 +88,25 @@ StatusOr<std::string> FTIndexUtils::rewriteTSFilter(
         return Status::SemanticError("Text search error.");
     }
     if (vRet.value().empty()) {
-        return "";
+        return nullptr;
     }
 
-    std::vector<std::string> values;
-    auto tsExpr = static_cast<TextSearchExpression*>(expr);
+    auto tsArg = static_cast<TextSearchExpression*>(expr)->arg();
+    Expression* propExpr;
+    if (isEdge) {
+        propExpr = EdgePropertyExpression::make(pool, tsArg->from(), tsArg->prop());
+    } else {
+        propExpr = TagPropertyExpression::make(pool, tsArg->from(), tsArg->prop());
+    }
     std::vector<Expression*> rels;
     for (const auto& row : vRet.value()) {
-        RelationalExpression* relExpr = nullptr;
-        if (isEdge) {
-            relExpr = RelationalExpression::makeEQ(
-                pool,
-                EdgePropertyExpression::make(pool, tsExpr->arg()->from(), tsExpr->arg()->prop()),
-                ConstantExpression::make(pool, Value(row)));
-        } else {
-            relExpr = RelationalExpression::makeEQ(
-                pool,
-                TagPropertyExpression::make(pool, tsExpr->arg()->from(), tsExpr->arg()->prop()),
-                ConstantExpression::make(pool, Value(row)));
-        }
-        rels.emplace_back(std::move(relExpr));
+        auto constExpr = ConstantExpression::make(pool, Value(row));
+        rels.emplace_back(RelationalExpression::makeEQ(pool, propExpr, constExpr));
     }
     if (rels.size() == 1) {
-        return rels[0]->encode();
+        return rels.front();
     }
-    auto newExpr = ExpressionUtils::pushOrs(pool, rels);
-    return newExpr->encode();
+    return ExpressionUtils::pushOrs(pool, rels);
 }
 
 StatusOr<std::vector<std::string>>

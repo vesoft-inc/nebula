@@ -12,11 +12,14 @@
 
 namespace nebula {
 namespace graph {
+
 struct AstContext {
     QueryContext*   qctx;
     Sentence*       sentence;
     SpaceInfo       space;
 };
+
 }  // namespace graph
 }  // namespace nebula
+
 #endif  // CONTEXT_ASTCONTEXT_H_

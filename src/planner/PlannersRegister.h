@@ -9,6 +9,7 @@
 
 namespace nebula {
 namespace graph {
+
 class PlannersRegister final {
 public:
     PlannersRegister() = delete;
@@ -18,13 +19,10 @@ public:
 
 private:
     static void registSequential();
-
     static void registMatch();
-
-    static void registPath();
-
-    static void registGo();
 };
+
 }  // namespace graph
 }  // namespace nebula
+
 #endif  // PLANNER_PLANNERREGISTER_H_

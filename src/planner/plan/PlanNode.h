@@ -28,7 +28,16 @@ public:
         kGetNeighbors,
         kGetVertices,
         kGetEdges,
+        // ------------------
+        // TODO(yee): refactor in logical plan
         kIndexScan,
+        kTagIndexFullScan,
+        kTagIndexPrefixScan,
+        kTagIndexRangeScan,
+        kEdgeIndexFullScan,
+        kEdgeIndexPrefixScan,
+        kEdgeIndexRangeScan,
+        // ------------------
         kFilter,
         kUnion,
         kUnionAllVersionVar,

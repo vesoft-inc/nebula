@@ -44,6 +44,18 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
             return "GetEdges";
         case Kind::kIndexScan:
             return "IndexScan";
+        case Kind::kTagIndexFullScan:
+            return "TagIndexFullScan";
+        case Kind::kTagIndexRangeScan:
+            return "TagIndexRangeScan";
+        case Kind::kTagIndexPrefixScan:
+            return "TagIndexPrefixScan";
+        case Kind::kEdgeIndexFullScan:
+            return "EdgeIndexFullScan";
+        case Kind::kEdgeIndexRangeScan:
+            return "EdgeIndexRangeScan";
+        case Kind::kEdgeIndexPrefixScan:
+            return "EdgeIndexPrefixScan";
         case Kind::kFilter:
             return "Filter";
         case Kind::kUnion:

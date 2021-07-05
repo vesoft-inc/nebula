@@ -25,7 +25,7 @@ Feature: Slow Query Test
       SHOW ALL QUERIES
       """
     Then the execution should be successful
-    And wait 20 seconds
+    And wait 5 seconds
     When executing query via graph 1:
       """
       SHOW ALL QUERIES

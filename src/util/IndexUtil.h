@@ -25,6 +25,8 @@ public:
     static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
                                                const std::string &indexName,
                                                const meta::cpp2::IndexItem &indexItem);
+
+    static Expression::Kind reverseRelationalExprKind(Expression::Kind kind);
 };
 
 }  // namespace graph

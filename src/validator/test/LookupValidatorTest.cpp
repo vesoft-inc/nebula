@@ -24,7 +24,9 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                 {
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
-                                    PlanNode::Kind::kIndexScan,
+                                    PlanNode::Kind::kProject,
+                                    PlanNode::Kind::kFilter,
+                                    PlanNode::Kind::kTagIndexFullScan,
                                     PlanNode::Kind::kStart,
                                 }));
     }
@@ -38,7 +40,8 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kProject,
-                                    PlanNode::Kind::kIndexScan,
+                                    PlanNode::Kind::kFilter,
+                                    PlanNode::Kind::kTagIndexFullScan,
                                     PlanNode::Kind::kStart,
                                 }));
     }
@@ -50,7 +53,9 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                 {
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
-                                    PlanNode::Kind::kIndexScan,
+                                    PlanNode::Kind::kProject,
+                                    PlanNode::Kind::kFilter,
+                                    PlanNode::Kind::kTagIndexFullScan,
                                     PlanNode::Kind::kStart,
                                 }));
     }
@@ -64,7 +69,8 @@ TEST_F(LookupValidatorTest, InputOutput) {
                                     PlanNode::Kind::kProject,
                                     PlanNode::Kind::kGetVertices,
                                     PlanNode::Kind::kProject,
-                                    PlanNode::Kind::kIndexScan,
+                                    PlanNode::Kind::kFilter,
+                                    PlanNode::Kind::kTagIndexFullScan,
                                     PlanNode::Kind::kStart,
                                 }));
     }
@@ -78,7 +84,8 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
         EXPECT_FALSE(checkResult(query,
                                  {
                                      PlanNode::Kind::kProject,
-                                     PlanNode::Kind::kIndexScan,
+                                     PlanNode::Kind::kFilter,
+                                     PlanNode::Kind::kTagIndexFullScan,
                                      PlanNode::Kind::kStart,
                                  }));
     }

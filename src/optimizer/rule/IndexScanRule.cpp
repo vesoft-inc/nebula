@@ -5,14 +5,22 @@
  */
 
 #include "optimizer/rule/IndexScanRule.h"
+#include <vector>
 #include "common/expression/LabelAttributeExpression.h"
 #include "optimizer/OptContext.h"
 #include "optimizer/OptGroup.h"
+#include "optimizer/OptRule.h"
+#include "optimizer/OptimizerUtils.h"
 #include "planner/plan/PlanNode.h"
 #include "planner/plan/Query.h"
+#include "util/IndexUtil.h"
 
 using nebula::graph::IndexScan;
+using nebula::graph::IndexUtil;
+using nebula::graph::IndexScan;
 using nebula::graph::OptimizerUtils;
+
+using IndexQueryCtx = std::vector<nebula::graph::IndexScan::IndexQueryContext>;
 
 namespace nebula {
 namespace opt {
@@ -30,15 +38,13 @@ const Pattern& IndexScanRule::pattern() const {
 }
 
 bool IndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
-    UNUSED(ctx);
-    auto idxScan = static_cast<IndexScan*>(matched.node->node());
-    auto ictxs = idxScan->queryContext();
-    if (!ictxs) {
-        return true;
+    if (!OptRule::match(ctx, matched)) {
+        return false;
     }
+    auto scan = static_cast<const IndexScan*>(matched.planNode());
     // Has been optimized, skip this rule
-    for (auto& ictx : *ictxs) {
-        if (ictx.index_id_ref().is_set() && ictx.column_hints_ref().is_set()) {
+    for (auto& ictx : scan->queryContext()) {
+        if (ictx.index_id_ref().is_set()) {
             return false;
         }
     }
@@ -54,7 +60,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
 
     auto filter = filterExpr(groupNode);
     auto qctx = ctx->qctx();
-    IndexQueryCtx iqctx = std::make_unique<std::vector<IndexQueryContext>>();
+    std::vector<IndexQueryContext> iqctx;
     if (filter == nullptr) {
         // Only filter is nullptr when lookup on tagname
         NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, groupNode));
@@ -117,7 +123,7 @@ Status IndexScanRule::createSingleIQC(IndexQueryCtx &iqctx,
         return Status::IndexNotFound("No valid index found");
     }
     auto in = static_cast<const IndexScan *>(groupNode->node());
-    const auto& filter = in->queryContext()->begin()->get_filter();
+    const auto& filter = in->queryContext().begin()->get_filter();
     return appendIQCtx(index, items, iqctx, filter);
 }
 
@@ -180,7 +186,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
         ctx.set_filter(filter);
     }
     ctx.set_column_hints(std::move(hints));
-    iqctx->emplace_back(std::move(ctx));
+    iqctx.emplace_back(std::move(ctx));
     return Status::OK();
 }
 
@@ -189,7 +195,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
     IndexQueryContext ctx;
     ctx.set_index_id(index->get_index_id());
     ctx.set_filter("");
-    iqctx->emplace_back(std::move(ctx));
+    iqctx.emplace_back(std::move(ctx));
     return Status::OK();
 }
 
@@ -222,15 +228,15 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
         if (col.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
             return Status::SemanticError("Range scan for bool type is illegal");
         }
-        NG_RETURN_IF_ERROR(boundValue(item, col, begin, end));
+        NG_RETURN_IF_ERROR(OptimizerUtils::boundValue(item.relOP_, item.value_, col, begin, end));
     }
 
     if (isRangeScan) {
-        if (begin == Value()) {
+        if (begin.empty()) {
             begin = OptimizerUtils::boundValue(col, BVO::MIN, Value());
             CHECK_BOUND_VALUE(begin, col.get_name());
         }
-        if (end == Value()) {
+        if (end.empty()) {
             end = OptimizerUtils::boundValue(col, BVO::MAX, Value());
             CHECK_BOUND_VALUE(end, col.get_name());
         }
@@ -242,64 +248,6 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
     hint.set_begin_value(std::move(begin));
     hint.set_column_name(col.get_name());
     hints.emplace_back(std::move(hint));
-    return Status::OK();
-}
-
-Status IndexScanRule::boundValue(const FilterItem& item,
-                                 const meta::cpp2::ColumnDef& col,
-                                 Value& begin, Value& end) const {
-    auto val = item.value_;
-    if (val.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
-        return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
-    }
-    switch (item.relOP_) {
-        case Expression::Kind::kRelLE: {
-            // if c1 <= int(5) , the range pair should be (min, 6)
-            // if c1 < int(5), the range pair should be (min, 5)
-            auto v = OptimizerUtils::boundValue(col, BVO::GREATER_THAN, val);
-            CHECK_BOUND_VALUE(v, col.get_name());
-            // where c <= 1 and c <= 2 , 1 should be valid.
-            if (end == Value()) {
-                end = v;
-            } else {
-                end = v < end ? v : end;
-            }
-            break;
-        }
-        case Expression::Kind::kRelGE: {
-            // where c >= 1 and c >= 2 , 2 should be valid.
-            if (begin == Value()) {
-                begin = val;
-            } else {
-                begin = val < begin ? begin : val;
-            }
-            break;
-        }
-        case Expression::Kind::kRelLT: {
-            // c < 5 and c < 6 , 5 should be valid.
-            if (end == Value()) {
-                end = val;
-            } else {
-                end = val < end ? val : end;
-            }
-            break;
-        }
-        case Expression::Kind::kRelGT: {
-            // if c >= 5, the range pair should be (5, max)
-            // if c > 5, the range pair should be (6, max)
-            auto v = OptimizerUtils::boundValue(col, BVO::GREATER_THAN, val);
-            CHECK_BOUND_VALUE(v, col.get_name());
-            // where c > 1 and c > 2 , 2 should be valid.
-            if (begin == Value()) {
-                begin = v;
-            } else {
-                begin = v < begin ? begin : v;
-            }
-            break;
-        }
-        default:
-            return Status::SemanticError();
-    }
     return Status::OK();
 }
 
@@ -320,19 +268,19 @@ GraphSpaceID IndexScanRule::spaceId(const OptGroupNode *groupNode) const {
 
 Expression* IndexScanRule::filterExpr(const OptGroupNode* groupNode) const {
     auto in = static_cast<const IndexScan*>(groupNode->node());
-    auto qct = in->queryContext();
+    const auto& qct = in->queryContext();
     // The initial IndexScan plan node has only zero or one queryContext.
     // TODO(yee): Move this condition to match interface
-    if (qct == nullptr) {
+    if (qct.empty()) {
         return nullptr;
     }
 
-    if (qct->size() != 1) {
+    if (qct.size() != 1) {
         LOG(ERROR) << "Index Scan plan node error";
         return nullptr;
     }
     auto* pool = in->qctx()->objPool();
-    return Expression::decode(pool, qct->begin()->get_filter());
+    return Expression::decode(pool, qct.begin()->get_filter());
 }
 
 Status IndexScanRule::analyzeExpression(Expression* expr,
@@ -397,42 +345,21 @@ Status IndexScanRule::addFilterItem(RelationalExpression* expr, FilterItems* ite
     auto relType = std::is_same<E, EdgePropertyExpression>::value
                    ? Expression::Kind::kEdgeProperty
                    : Expression::Kind::kTagProperty;
-    graph::QueryExpressionContext ctx(nullptr);
     if (expr->left()->kind() == relType &&
         expr->right()->kind() == Expression::Kind::kConstant) {
         auto* l = static_cast<const E*>(expr->left());
         auto* r = static_cast<ConstantExpression*>(expr->right());
-        items->addItem(l->prop(), expr->kind(), r->eval(ctx));
+        items->addItem(l->prop(), expr->kind(), r->value());
     } else if (expr->left()->kind() == Expression::Kind::kConstant &&
                expr->right()->kind() == relType) {
         auto* r = static_cast<const E*>(expr->right());
         auto* l = static_cast<ConstantExpression*>(expr->left());
-        items->addItem(r->prop(), reverseRelationalExprKind(expr->kind()), l->eval(ctx));
+        items->addItem(r->prop(), IndexUtil::reverseRelationalExprKind(expr->kind()), l->value());
     } else {
         return Status::Error("Optimizer error, when rewrite relational expression");
     }
 
     return Status::OK();
-}
-
-Expression::Kind IndexScanRule::reverseRelationalExprKind(Expression::Kind kind) const {
-    switch (kind) {
-        case Expression::Kind::kRelGE: {
-            return Expression::Kind::kRelLE;
-        }
-        case Expression::Kind::kRelGT: {
-            return Expression::Kind::kRelLT;
-        }
-        case Expression::Kind::kRelLE: {
-            return Expression::Kind::kRelGE;
-        }
-        case Expression::Kind::kRelLT: {
-            return Expression::Kind::kRelGT;
-        }
-        default: {
-            return kind;
-        }
-    }
 }
 
 IndexItem IndexScanRule::findOptimalIndex(graph::QueryContext *qctx,

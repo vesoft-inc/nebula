@@ -12,8 +12,25 @@
 #include "optimizer/OptGroup.h"
 #include "planner/plan/PlanNode.h"
 
+using nebula::graph::PlanNode;
+
 namespace nebula {
 namespace opt {
+
+const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
+    if (pos.empty()) {
+        return DCHECK_NOTNULL(node)->node();
+    }
+
+    DCHECK_EQ(pos[0], 0);
+
+    const MatchedResult *result = this;
+    for (size_t i = 1; i < pos.size(); ++i) {
+        DCHECK_LT(pos[i], result->dependencies.size());
+        result = &result->dependencies[pos[i]];
+    }
+    return DCHECK_NOTNULL(result->node)->node();
+}
 
 Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns) {
     Pattern pattern;

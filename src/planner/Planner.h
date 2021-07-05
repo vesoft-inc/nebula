@@ -17,6 +17,11 @@ namespace nebula {
 namespace graph {
 class Planner;
 
+extern const char* kSrcVID;
+extern const char* kDstVID;
+extern const char* kRanking;
+extern const char* kVertexID;
+
 struct SubPlan {
     // root and tail of a subplan.
     PlanNode*   root{nullptr};
