@@ -1580,13 +1580,11 @@ void RaftPart::processAppendLogRequest(
     size_t numLogs = req.get_log_str_list().size();
     LogID firstId = req.get_last_log_id_sent() + 1;
 
-    std::vector<cpp2::LogEntry> logEntries (req.get_log_str_list().begin(),
-                                            req.get_log_str_list().end());
-
+    size_t diffIndex = 0;
     // may be need to rollback wal_
     if (!(req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_)) {
         // check the diff index in log
-        size_t diffIndex = 0;
+
         {
             std::unique_ptr<LogIterator> it = wal_->iterator(firstId,firstId + numLogs);
             for (size_t i = 0; i < numLogs && it->valid(); i++, ++(*it), diffIndex ++ ) {
@@ -1625,13 +1623,15 @@ void RaftPart::processAppendLogRequest(
         }
 
         // update msg
-        logEntries = std::vector<cpp2::LogEntry> (req.get_log_str_list().begin() + diffIndex,
-                                                req.get_log_str_list().end());
         firstId = firstId + diffIndex;
         numLogs = numLogs - diffIndex;
     }
 
     // Append new logs
+    std::vector<cpp2::LogEntry> logEntries = std::vector<cpp2::LogEntry> (
+        std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
+        std::make_move_iterator(req.get_log_str_list().end()));
+
     LogStrListIterator iter(firstId, req.get_log_term(), logEntries);
 
     if (wal_->appendLogs(iter)) {
