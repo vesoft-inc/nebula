@@ -39,9 +39,11 @@ folly::Future<Status> KillQueryExecutor::execute() {
                 return folly::makeFuture<StatusOr<meta::cpp2::ExecResp>>(status);
             }
 
-            killCurrentHostQueries(killQueries);
+            QueriesMap queriesKilledInLocal;
+            killCurrentHostQueries(killQueries, queriesKilledInLocal);
+            findKillQueriesViaMeta(queriesKilledInLocal, sessionsInMeta, killQueries);
 
-            // upload all queries to be killed to meta.
+            // upload queries to be killed to meta.
             return qctx()->getMetaClient()->killQuery(std::move(killQueries));
         })
         .thenValue([](auto&& resp) {
@@ -102,7 +104,8 @@ Status KillQueryExecutor::verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQ
     return Status::OK();
 }
 
-void KillQueryExecutor::killCurrentHostQueries(const QueriesMap& killQueries) {
+void KillQueryExecutor::killCurrentHostQueries(const QueriesMap& killQueries,
+                                               QueriesMap& queriesKilledInLocal) {
     auto* session = qctx()->rctx()->session();
     auto* sessionMgr = qctx_->rctx()->sessionMgr();
     for (auto& s : killQueries) {
@@ -110,10 +113,12 @@ void KillQueryExecutor::killCurrentHostQueries(const QueriesMap& killQueries) {
         for (auto& epId : s.second) {
             if (sessionId == session->id()) {
                 session->markQueryKilled(epId);
+                queriesKilledInLocal[sessionId].emplace(epId);
             } else {
                 auto sessionPtr = sessionMgr->findSessionFromCache(sessionId);
                 if (sessionPtr != nullptr) {
                     sessionPtr->markQueryKilled(epId);
+                    queriesKilledInLocal[sessionId].emplace(epId);
                 }
             }
         }
@@ -140,6 +145,30 @@ Status KillQueryExecutor::verifyTheQueriesByMetaInfo(
         }
     }
     return Status::OK();
+}
+
+void KillQueryExecutor::findKillQueriesViaMeta(
+    const QueriesMap& queriesKilledInLocal,
+    const std::vector<meta::cpp2::Session>& sessionsInMeta,
+    QueriesMap& killQueries) {
+    for (auto& kv : queriesKilledInLocal) {
+        auto sessionId = kv.first;
+        auto found =
+            std::find_if(sessionsInMeta.begin(), sessionsInMeta.end(), [sessionId](auto& val) {
+                return val.get_session_id() == sessionId;
+            });
+        DCHECK(found != sessionsInMeta.end());
+        for (auto& epId : kv.second) {
+            if (found->get_queries().find(epId) == found->get_queries().end()) {
+                // Remove the queries that do not exists in meta since they have not uploaded
+                auto& queries = killQueries[sessionId];
+                queries.erase(epId);
+                if (queries.empty()) {
+                    killQueries.erase(sessionId);
+                }
+            }
+        }
+    }
 }
 }   // namespace graph
 }   // namespace nebula

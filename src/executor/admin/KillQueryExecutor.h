@@ -26,7 +26,11 @@ private:
     Status verifyTheQueriesByMetaInfo(const QueriesMap& toBeVerifiedQueries,
                                       const std::vector<meta::cpp2::Session>& sessionsInMeta);
 
-    void killCurrentHostQueries(const QueriesMap& killQueries);
+    void killCurrentHostQueries(const QueriesMap& killQueries, QueriesMap& queriesKilledInLocal);
+
+    void findKillQueriesViaMeta(const QueriesMap& queriesKilledInLocal,
+                                const std::vector<meta::cpp2::Session>& sessionsInMeta,
+                                QueriesMap& killQueries);
 };
 }  // namespace graph
 }  // namespace nebula
