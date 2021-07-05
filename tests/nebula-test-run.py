@@ -73,7 +73,7 @@ def start_nebula(nb, configs):
         ports = nb.start(debug_log=debug, multi_graphd=configs.multi_graphd)
 
     # Load csv data
-    pool = get_conn_pool("localhost", ports[0])
+    pool = get_conn_pool(address, ports[0])
     sess = pool.get_session(configs.user, configs.password)
 
     if not os.path.exists(TMP_DIR):
