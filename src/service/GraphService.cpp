@@ -128,6 +128,13 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     ctx->setSessionMgr(sessionManager_.get());
     auto future = ctx->future();
     stats::StatsManager::addValue(kNumQueries);
+    // When the sessionId is 0, it means the clients to ping the connection is ok
+    if (sessionId == 0) {
+        ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
+        ctx->resp().errorMsg = std::make_unique<std::string>("Invalid session id");
+        ctx->finish();
+        return future;
+    }
     auto cb = [this, sessionId, ctx = std::move(ctx)]
             (StatusOr<std::shared_ptr<ClientSession>> ret) mutable {
         if (!ret.ok()) {
