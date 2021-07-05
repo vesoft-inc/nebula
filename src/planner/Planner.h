@@ -21,6 +21,8 @@ extern const char* kSrcVID;
 extern const char* kDstVID;
 extern const char* kRanking;
 extern const char* kVertexID;
+extern const char* kVertices;
+extern const char* kEdges;
 
 struct SubPlan {
     // root and tail of a subplan.

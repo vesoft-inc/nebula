@@ -15,6 +15,8 @@ const char* kSrcVID = "SrcVID";
 const char* kDstVID = "DstVID";
 const char* kRanking = "Ranking";
 const char* kVertexID = "VertexID";
+const char* kVertices = "_vertices";
+const char* kEdges = "_edges";
 
 std::ostream& operator<<(std::ostream& os, const SubPlan& subplan) {
     os << "root(" << subplan.root->toString() << "): " << subplan.root->outputVar() << ", tail("

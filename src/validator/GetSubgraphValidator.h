@@ -34,9 +34,10 @@ private:
     Status zeroStep(PlanNode* depend, const std::string& inputVar);
 
 private:
-    std::unordered_set<EdgeType>                edgeTypes_;
-    bool                                        withProp_{false};
+    std::unordered_set<EdgeType> edgeTypes_;
+    bool withProp_{false};
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif

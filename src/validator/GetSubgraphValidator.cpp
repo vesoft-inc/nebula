@@ -140,8 +140,8 @@ Status GetSubgraphValidator::zeroStep(PlanNode* depend, const std::string& input
     auto* func = AggregateExpression::make(pool, "COLLECT", column, false);
 
     auto* collectVertex = Aggregate::make(qctx_, getVertex, {}, {func});
-    collectVertex->setColNames({"_vertices"});
-
+    collectVertex->setColNames({kVertices});
+    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
     root_ = collectVertex;
     tail_ = projectStartVid_ != nullptr ? projectStartVid_ : getVertex;
     return Status::OK();
@@ -185,9 +185,12 @@ Status GetSubgraphValidator::toPlan() {
     auto* dc = DataCollect::make(qctx_, DataCollect::DCKind::kSubgraph);
     dc->addDep(loop);
     dc->setInputVars({gn->outputVar(), oneMoreStepOutput});
-    dc->setColNames({"_vertices", "_edges"});
+    dc->setColNames({kVertices, kEdges});
     root_ = dc;
     tail_ = projectStartVid_ != nullptr ? projectStartVid_ : loop;
+
+    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
+    outputs_.emplace_back(kEdges, Value::Type::EDGE);
     return Status::OK();
 }
 }   // namespace graph
