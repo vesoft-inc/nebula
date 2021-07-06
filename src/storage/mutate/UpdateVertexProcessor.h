@@ -66,6 +66,7 @@ private:
     }
 
 private:
+    std::unique_ptr<RunTimeContext>                                      context_;
     bool                                                                 insertable_{false};
 
     // update tagId

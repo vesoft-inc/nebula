@@ -64,6 +64,7 @@ private:
     }
 
 private:
+    std::unique_ptr<RunTimeContext>                                      context_;
     bool                                                                 insertable_{false};
 
     cpp2::EdgeKey                                                        edgeKey_;

@@ -200,6 +200,7 @@ protected:
 protected:
     GraphSpaceID                                        spaceId_;
     folly::Executor*                                    executor_{nullptr};
+    std::unique_ptr<PlanContext>                        planContext_;
     TagContext                                          tagContext_;
     EdgeContext                                         edgeContext_;
     Expression*                                         filter_{nullptr};

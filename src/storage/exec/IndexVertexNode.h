@@ -18,12 +18,12 @@ class IndexVertexNode final : public RelNode<T> {
 public:
     using RelNode<T>::execute;
 
-    IndexVertexNode(PlanContext* planCtx,
+    IndexVertexNode(RunTimeContext* context,
                     VertexCache* vertexCache,
                     IndexScanNode<T>* indexScanNode,
                     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                     const std::string& schemaName)
-        : planContext_(planCtx)
+        : context_(context)
         , vertexCache_(vertexCache)
         , indexScanNode_(indexScanNode)
         , schemas_(schemas)
@@ -35,7 +35,7 @@ public:
             return ret;
         }
 
-        auto ttlProp = CommonUtils::ttlProps(planContext_->tagSchema_);
+        auto ttlProp = CommonUtils::ttlProps(context_->tagSchema_);
 
         data_.clear();
         std::vector<VertexID> vids;
@@ -43,7 +43,7 @@ public:
         while (iter && iter->valid()) {
             if (!iter->val().empty() && ttlProp.first) {
                 auto v = IndexKeyUtils::parseIndexTTL(iter->val());
-                if (CommonUtils::checkDataExpiredForTTL(planContext_->tagSchema_,
+                if (CommonUtils::checkDataExpiredForTTL(context_->tagSchema_,
                                                         std::move(v),
                                                         ttlProp.second.second,
                                                         ttlProp.second.first)) {
@@ -55,25 +55,25 @@ public:
             iter->next();
         }
         for (const auto& vId : vids) {
-            VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << planContext_->tagId_;
+            VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                auto result = vertexCache_->get(std::make_pair(vId, planContext_->tagId_));
+                auto result = vertexCache_->get(std::make_pair(vId, context_->tagId_));
                 if (result.ok()) {
-                    auto vertexKey = NebulaKeyUtils::vertexKey(planContext_->vIdLen_,
+                    auto vertexKey = NebulaKeyUtils::vertexKey(context_->vIdLen(),
                                                                partId,
                                                                vId,
-                                                               planContext_->tagId_);
+                                                               context_->tagId_);
                     data_.emplace_back(std::move(vertexKey), std::move(result).value());
                     continue;
                 } else {
-                    VLOG(1) << "Miss cache for vId " << vId << ", tagId " << planContext_->tagId_;
+                    VLOG(1) << "Miss cache for vId " << vId << ", tagId " << context_->tagId_;
                 }
             }
 
             std::unique_ptr<kvstore::KVIterator> vIter;
-            auto prefix = NebulaKeyUtils::vertexPrefix(planContext_->vIdLen_, partId,
-                                                       vId, planContext_->tagId_);
-            ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
+            auto prefix = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId,
+                                                       vId, context_->tagId_);
+            ret = context_->env()->kvstore_->prefix(context_->spaceId(),
                                                        partId, prefix, &vIter);
             if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && vIter && vIter->valid()) {
                 data_.emplace_back(vIter->key(), vIter->val());
@@ -97,7 +97,7 @@ public:
     }
 
 private:
-    PlanContext*                                                          planContext_;
+    RunTimeContext*                                                       context_;
     VertexCache*                                                          vertexCache_;
     IndexScanNode<T>*                                                     indexScanNode_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;

@@ -566,6 +566,63 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
     }
 }
 
+TEST(GetPropTest, ConcurrencyTest) {
+    FLAGS_query_concurrently = true;
+    fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+    mock::MockCluster cluster;
+    cluster.initStorageKV(rootPath.path());
+    auto* env = cluster.storageEnv_.get();
+    auto totalParts = cluster.getTotalParts();
+    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+
+    {
+        LOG(INFO) << "MultiKey";
+        std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+        auto req = buildVertexRequest(totalParts, vertices, tags);
+
+        auto* processor = GetPropProcessor::instance(env, nullptr, threadPool.get());
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+
+        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+        {
+            std::vector<nebula::Row> expected;
+            {
+                nebula::Row row;
+                // The first one is kVid, and player have 11 properties in key and value
+                std::vector<Value> values{"Tony Parker", "Tony Parker", 38, false, 18,
+                                          2001, 2019, 1254, 15.5, 2, "France", 4};
+                // team: 1 property, tag3: 11 property, in total 12
+                for (size_t i = 0; i < 12; i++) {
+                    values.emplace_back(Value());
+                }
+                row.values = std::move(values);
+                expected.emplace_back(std::move(row));
+            }
+            {
+                nebula::Row row;
+                // The first one is kVid, and player have 11 properties in key and value
+                std::vector<Value> values{"Tim Duncan", "Tim Duncan", 44, false, 19,
+                                          1997, 2016, 1392, 19.0, 1, "America", 5};
+                // team: 1 property, tag3: 11 property, in total 12
+                for (size_t i = 0; i < 12; i++) {
+                    values.emplace_back(Value());
+                }
+                row.values = std::move(values);
+                expected.emplace_back(std::move(row));
+            }
+            // kVid, player: 11, team: 1, tag3: 11
+            ASSERT_EQ(1 + 11 + 1 + 11, (*resp.props_ref()).colNames.size());
+            verifyResult(expected, *resp.props_ref());
+        }
+    }
+    FLAGS_query_concurrently = false;
+}
+
 TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
     FLAGS_enable_rocksdb_statistics = true;
     FLAGS_enable_rocksdb_prefix_filtering = true;

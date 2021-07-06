@@ -18,10 +18,10 @@ class IndexScanNode : public RelNode<T> {
 public:
     using RelNode<T>::execute;
 
-    IndexScanNode(PlanContext* planCtx,
+    IndexScanNode(RunTimeContext* context,
                   IndexID indexId,
                   std::vector<cpp2::IndexColumnHint> columnHints)
-    : planContext_(planCtx)
+    : context_(context)
     , indexId_(indexId)
     , columnHints_(std::move(columnHints)) {
         /**
@@ -52,14 +52,14 @@ public:
         scanPair_ = scanRet.value();
         std::unique_ptr<kvstore::KVIterator> iter;
         ret = isRangeScan_
-              ? planContext_->env_->kvstore_->range(planContext_->spaceId_, partId,
+              ? context_->env()->kvstore_->range(context_->spaceId(), partId,
                   scanPair_.first, scanPair_.second, &iter)
-              : planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId,
+              : context_->env()->kvstore_->prefix(context_->spaceId(), partId,
                   scanPair_.first, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            planContext_->isEdge_
-            ? iter_.reset(new EdgeIndexIterator(std::move(iter), planContext_->vIdLen_))
-            : iter_.reset(new VertexIndexIterator(std::move(iter), planContext_->vIdLen_));
+            context_->isEdge()
+            ? iter_.reset(new EdgeIndexIterator(std::move(iter), context_->vIdLen()))
+            : iter_.reset(new VertexIndexIterator(std::move(iter), context_->vIdLen()));
         } else {
             iter_.reset();
             return ret;
@@ -72,7 +72,7 @@ public:
     }
 
     std::vector<kvstore::KV> moveData() {
-        auto* sh = planContext_->isEdge_ ? planContext_->edgeSchema_ : planContext_->tagSchema_;
+        auto* sh = context_->isEdge() ? context_->edgeSchema_ : context_->tagSchema_;
         auto ttlProp = CommonUtils::ttlProps(sh);
         data_.clear();
         while (!!iter_ && iter_->valid()) {
@@ -94,9 +94,9 @@ public:
 
 private:
     StatusOr<std::pair<std::string, std::string>> scanStr(PartitionID partId) {
-        auto iRet = planContext_->isEdge_
-                    ? planContext_->env_->indexMan_->getEdgeIndex(planContext_->spaceId_, indexId_)
-                    : planContext_->env_->indexMan_->getTagIndex(planContext_->spaceId_, indexId_);
+        auto iRet = context_->isEdge()
+                    ? context_->env()->indexMan_->getEdgeIndex(context_->spaceId(), indexId_)
+                    : context_->env()->indexMan_->getTagIndex(context_->spaceId(), indexId_);
         if (!iRet.ok()) {
             return Status::IndexNotFound();
         }
@@ -173,7 +173,7 @@ private:
     }
 
 private:
-    PlanContext*                        planContext_;
+    RunTimeContext*                     context_;
     IndexID                             indexId_;
     bool                                isRangeScan_{false};
     std::unique_ptr<IndexIterator>      iter_;

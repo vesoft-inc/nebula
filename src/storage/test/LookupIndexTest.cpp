@@ -32,7 +32,17 @@ namespace storage {
 ObjectPool objPool;
 auto pool = &objPool;
 
-TEST(LookupIndexTest, LookupIndexTestV1) {
+class LookupIndexTest : public ::testing::TestWithParam<bool> {
+public:
+    void SetUp() override {
+        FLAGS_query_concurrently = GetParam();
+    }
+
+    void TearDown() override {
+    }
+};
+
+TEST_P(LookupIndexTest, LookupIndexTestV1) {
     fs::TempDir rootPath("/tmp/LookupIndexTestV1.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -41,6 +51,7 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId);
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     // setup v1 data and v2 data
     {
         int64_t vid1 = 1, vid2 = 2;
@@ -106,10 +117,6 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
      *              +--------+---------+
      *                       |
      *              +--------+---------+
-     *              |  AggregateNode   |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
      *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
@@ -150,7 +157,7 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
         contexts.emplace_back(std::move(context1));
         indices.set_contexts(std::move(contexts));
         req.set_indices(std::move(indices));
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -180,7 +187,7 @@ TEST(LookupIndexTest, LookupIndexTestV1) {
     }
 }
 
-TEST(LookupIndexTest, SimpleTagIndexTest) {
+TEST_P(LookupIndexTest, SimpleTagIndexTest) {
     fs::TempDir rootPath("/tmp/SimpleVertexIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -190,16 +197,13 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, where player.name_ == "Rudy Gay"
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -215,7 +219,7 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -271,10 +275,6 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
      *                    +--------+---------+
      *                             |
      *                    +--------+---------+
-     *                    |  AggregateNode   |
-     *                    +--------+---------+
-     *                             |
-     *                    +--------+---------+
      *                    |    DeDupNode     |
      *                    +--------+---------+
      *                       |            |
@@ -287,7 +287,7 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
      *   +----------+-----------+     +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -357,7 +357,7 @@ TEST(LookupIndexTest, SimpleTagIndexTest) {
     }
 }
 
-TEST(LookupIndexTest, SimpleEdgeIndexTest) {
+TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     fs::TempDir rootPath("/tmp/SimpleEdgeIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -368,16 +368,13 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, where teammates.player1 == "Tony Parker"
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -393,7 +390,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -465,10 +462,6 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
      *                    +--------+---------+
      *                             |
      *                    +--------+---------+
-     *                    |  AggregateNode   |
-     *                    +--------+---------+
-     *                             |
-     *                    +--------+---------+
      *                    |    DeDupNode     |
      *                    +--------+---------+
      *                       |            |
@@ -481,7 +474,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
      *   +----------+-----------+     +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -577,7 +570,7 @@ TEST(LookupIndexTest, SimpleEdgeIndexTest) {
     }
 }
 
-TEST(LookupIndexTest, TagIndexFilterTest) {
+TEST_P(LookupIndexTest, TagIndexFilterTest) {
     fs::TempDir rootPath("/tmp/TagIndexFilterTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -587,16 +580,13 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, where player.name == "Rudy Gay" AND player.age == 34
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -616,7 +606,7 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -676,10 +666,6 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
      *              +--------+---------+
      *                       |
      *              +--------+---------+
-     *              |  AggregateNode   |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
      *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
@@ -696,7 +682,7 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
      *            +----------+-----------+
      **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -741,7 +727,7 @@ TEST(LookupIndexTest, TagIndexFilterTest) {
     }
 }
 
-TEST(LookupIndexTest, EdgeIndexFilterTest) {
+TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     fs::TempDir rootPath("/tmp/EdgeIndexFilterTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -752,6 +738,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext
@@ -759,10 +746,6 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -782,7 +765,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -859,10 +842,6 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      *              +--------+---------+
      *                       |
      *              +--------+---------+
-     *              |  AggregateNode   |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
      *              |    DeDupNode     |
      *              +--------+---------+
      *                       |
@@ -879,7 +858,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
      *            +----------+-----------+
      **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -929,7 +908,7 @@ TEST(LookupIndexTest, EdgeIndexFilterTest) {
     }
 }
 
-TEST(LookupIndexTest, TagIndexWithDataTest) {
+TEST_P(LookupIndexTest, TagIndexWithDataTest) {
     fs::TempDir rootPath("/tmp/TagIndexWithDataTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -939,16 +918,13 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, where player.name == "Rudy Gay" yield player.games
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -968,7 +944,7 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1018,7 +994,7 @@ TEST(LookupIndexTest, TagIndexWithDataTest) {
     }
 }
 
-TEST(LookupIndexTest, EdgeIndexWithDataTest) {
+TEST_P(LookupIndexTest, EdgeIndexWithDataTest) {
     fs::TempDir rootPath("/tmp/EdgeIndexWithDataTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -1029,16 +1005,13 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, where teammates.player1 == "Tony Parker"
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -1058,7 +1031,7 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1124,7 +1097,7 @@ TEST(LookupIndexTest, EdgeIndexWithDataTest) {
 }
 
 // Tag has prop, statistics vertices
-TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
+TEST_P(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
     fs::TempDir rootPath("/tmp/TagWithPropStatisVerticesIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -1134,16 +1107,13 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true, false));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -1159,7 +1129,7 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1199,7 +1169,7 @@ TEST(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
 }
 
 // Tag no prop, statistics vertices
-TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
+TEST_P(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
     fs::TempDir rootPath("/tmp/TagWithoutPropStatisVerticesIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path(), HostAddr("", 0), 1, false);
@@ -1209,16 +1179,13 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true, false, false));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -1234,7 +1201,7 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1275,7 +1242,7 @@ TEST(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
 
 
 // Edge has prop, statistics edges
-TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
+TEST_P(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
     fs::TempDir rootPath("/tmp/EdgeWithPropStatisVerticesIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -1286,16 +1253,13 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true, false));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -1311,7 +1275,7 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1360,7 +1324,7 @@ TEST(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
 }
 
 // Edge no prop, statistics edges
-TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
+TEST_P(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
     fs::TempDir rootPath("/tmp/EdgeWithoutPropStatisVerticesIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path(), HostAddr("", 0), 1, false);
@@ -1371,16 +1335,13 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, false, false, false));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true, false, false));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * one IndexQueryContext, only has index_id, filter and column_hints are empty
      * lookup plan should be :
      *              +--------+---------+
      *              |       Plan       |
-     *              +--------+---------+
-     *                       |
-     *              +--------+---------+
-     *              |  AggregateNode   |
      *              +--------+---------+
      *                       |
      *              +--------+---------+
@@ -1396,7 +1357,7 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
      *            +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -1444,7 +1405,7 @@ TEST(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
     }
 }
 
-TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
+TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     GraphSpaceID spaceId = 1;
     TagID tagId = 111;
     IndexID indexId = 222;
@@ -1453,6 +1414,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
     cluster.initStorageKV(rootPath.path());
     auto* env = cluster.storageEnv_.get();
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     {
         auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
@@ -1632,7 +1594,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1658,7 +1620,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1696,7 +1658,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1724,7 +1686,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1752,7 +1714,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1782,7 +1744,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1826,7 +1788,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1869,7 +1831,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1917,7 +1879,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -1928,7 +1890,7 @@ TEST(LookupIndexTest, NullableInIndexAndFilterTest) {
     }
 }
 
-TEST(LookupIndexTest, NullablePropertyTest) {
+TEST_P(LookupIndexTest, NullablePropertyTest) {
     GraphSpaceID spaceId = 1;
     TagID tagId = 111;
     IndexID indexId = 222;
@@ -1938,6 +1900,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
     auto* env = cluster.storageEnv_.get();
     auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
     size_t strColLen = 20;
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     {
         auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
@@ -2128,7 +2091,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2157,7 +2120,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2189,7 +2152,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2221,7 +2184,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2250,7 +2213,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2279,7 +2242,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2316,7 +2279,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2353,7 +2316,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2384,7 +2347,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2417,7 +2380,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2452,7 +2415,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2485,7 +2448,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2511,7 +2474,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2540,7 +2503,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2571,7 +2534,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2604,7 +2567,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2637,7 +2600,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2670,7 +2633,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2703,7 +2666,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2731,7 +2694,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
         indices.set_contexts({context});
         req.set_indices(std::move(indices));
 
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -2743,7 +2706,7 @@ TEST(LookupIndexTest, NullablePropertyTest) {
 }
 
 
-TEST(LookupIndexTest, DeDupTagIndexTest) {
+TEST_P(LookupIndexTest, DeDupTagIndexTest) {
     fs::TempDir rootPath("/tmp/DeDupTagIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -2753,16 +2716,13 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
     ASSERT_TRUE(vIdLen.ok());
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
     /**
      * two IndexQueryContext, where player.name_ == "Rudy Gay" OR player.name_ == "Rudy Gay"
      * lookup plan should be :
      *                    +--------+---------+
      *                    |       Plan       |
-     *                    +--------+---------+
-     *                             |
-     *                    +--------+---------+
-     *                    |  AggregateNode   |
      *                    +--------+---------+
      *                             |
      *                    +--------+---------+
@@ -2778,7 +2738,7 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
      *   +----------+-----------+     +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -2800,7 +2760,7 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
         columnHint1.set_begin_value(Value(name1));
         columnHint1.set_column_name("name");
         columnHint1.set_scan_type(cpp2::ScanType::PREFIX);
-        // player.name_ == "Kobe Bryant"
+        // player.name_ == "Rudy Gay"
         cpp2::IndexColumnHint columnHint2;
         std::string name2 = "Rudy Gay";
         columnHint2.set_begin_value(Value(name2));
@@ -2843,7 +2803,7 @@ TEST(LookupIndexTest, DeDupTagIndexTest) {
     }
 }
 
-TEST(LookupIndexTest, DedupEdgeIndexTest) {
+TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
     fs::TempDir rootPath("/tmp/DedupEdgeIndexTest.XXXXXX");
     mock::MockCluster cluster;
     cluster.initStorageKV(rootPath.path());
@@ -2854,16 +2814,13 @@ TEST(LookupIndexTest, DedupEdgeIndexTest) {
     auto totalParts = cluster.getTotalParts();
     ASSERT_TRUE(QueryTestUtils::mockVertexData(env, totalParts));
     ASSERT_TRUE(QueryTestUtils::mockEdgeData(env, totalParts, true));
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     /**
      * two IndexQueryContext
      * where teammates.player1 == "Tony Parker" OR teammates.player1 == "Tony Parker"
      * lookup plan should be :
      *                    +--------+---------+
      *                    |       Plan       |
-     *                    +--------+---------+
-     *                             |
-     *                    +--------+---------+
-     *                    |  AggregateNode   |
      *                    +--------+---------+
      *                             |
      *                    +--------+---------+
@@ -2879,7 +2836,7 @@ TEST(LookupIndexTest, DedupEdgeIndexTest) {
      *   +----------+-----------+     +----------+-----------+
     **/
     {
-        auto* processor = LookupProcessor::instance(env, nullptr, nullptr);
+        auto* processor = LookupProcessor::instance(env, nullptr, threadPool.get());
         cpp2::LookupIndexRequest req;
         nebula::storage::cpp2::IndexSpec indices;
         req.set_space_id(spaceId);
@@ -2955,8 +2912,15 @@ TEST(LookupIndexTest, DedupEdgeIndexTest) {
         QueryTestUtils::checkResponse(resp, expectCols, expectRows);
     }
 }
-}   // namespace storage
-}   // namespace nebula
+
+INSTANTIATE_TEST_CASE_P(
+    Lookup_concurrently,
+    LookupIndexTest,
+    ::testing::Values(false, true));
+
+}  // namespace storage
+}  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

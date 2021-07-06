@@ -22,14 +22,14 @@ namespace storage {
 
 class TossEdgeIterator : public SingleEdgeIterator {
 public:
-    TossEdgeIterator(PlanContext* planCtx,
+    TossEdgeIterator(RunTimeContext* context,
                      std::unique_ptr<kvstore::KVIterator> iter,
                      EdgeType edgeType,
                      const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
                      const folly::Optional<std::pair<std::string, int64_t>>* ttl,
                      bool stopAtFirstEdge)
         : SingleEdgeIterator() {
-        planContext_ = planCtx;
+        context_ = context;
         iter_ = std::move(iter);
         edgeType_ = edgeType;
         schemas_ = schemas;
@@ -111,23 +111,23 @@ public:
             if (isEdge(iter_->key())) {
                 LOG_IF(INFO, FLAGS_trace_toss)
                     << "TossEdgeIterator::next(), found an edge, hex="
-                    << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
+                    << TransactionUtils::hexEdgeId(context_->vIdLen(), iter_->key());
 
                 if (stopAtFirstEdge_ && !calledByCtor_) {
                     stopSearching_ = true;
                 }
                 if (isLatestEdge(iter_->key()) && setReader(iter_->val())) {
-                    lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, iter_->key());
+                    lastRank_ = NebulaKeyUtils::getRank(context_->vIdLen(), iter_->key());
                     lastDstId_ = NebulaKeyUtils::
-                                    getDstId(planContext_->vIdLen_, iter_->key()).str();
+                                    getDstId(context_->vIdLen(), iter_->key()).str();
                     lastIsLock_ = false;
                     LOG_IF(INFO, FLAGS_trace_toss)
                         << "TossEdgeIterator::next(), return edge hex="
-                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
+                        << TransactionUtils::hexEdgeId(context_->vIdLen(), iter_->key());
                     return;
                 } else {
                     LOG_IF(INFO, FLAGS_trace_toss) << "edge, hex="
-                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key())
+                        << TransactionUtils::hexEdgeId(context_->vIdLen(), iter_->key())
                         << ", is not latest";
                 }
 
@@ -137,7 +137,7 @@ public:
                 if (lastIsLock_) {
                     LOG_IF(INFO, FLAGS_trace_toss)
                         << "TossEdgeIterator::next(), prev is a lock, hexEdgeId="
-                        << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key())
+                        << TransactionUtils::hexEdgeId(context_->vIdLen(), iter_->key())
                         << ", hex=" << folly::hexlify(iter_->key());
                     auto tryLockData = recoverEdges_.back()->tryWLock();
                     if (tryLockData && tryLockData->first.empty()) {
@@ -149,13 +149,13 @@ public:
                     lastIsLock_ = false;
                     continue;
                 }
-            } else if (NebulaKeyUtils::isLock(planContext_->vIdLen_, iter_->key())) {
+            } else if (NebulaKeyUtils::isLock(context_->vIdLen(), iter_->key())) {
                 LOG_IF(INFO, FLAGS_trace_toss)
                     << "TossEdgeIterator::next() found a lock, hex="
-                    << TransactionUtils::hexEdgeId(planContext_->vIdLen_, iter_->key());
+                    << TransactionUtils::hexEdgeId(context_->vIdLen(), iter_->key());
                 std::string rawKey = NebulaKeyUtils::toEdgeKey(iter_->key());
-                auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, rawKey);
-                auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, rawKey).str();
+                auto rank = NebulaKeyUtils::getRank(context_->vIdLen(), rawKey);
+                auto dstId = NebulaKeyUtils::getDstId(context_->vIdLen(), rawKey).str();
                 if (!lastIsLock_ && rank == lastRank_ && dstId == lastDstId_) {
                     continue;
                 }
@@ -165,12 +165,12 @@ public:
                 }
 
                 resumeTasks_.emplace_back(
-                    planContext_->env_->txnMan_->resumeTransaction(planContext_->vIdLen_,
-                                                                   planContext_->spaceId_,
+                    context_->env()->txnMan_->resumeTransaction(context_->vIdLen(),
+                                                                   context_->spaceId(),
                                                                    iter_->key().str(),
                                                                    recoverEdges_.back()));
-                lastRank_ = NebulaKeyUtils::getRank(planContext_->vIdLen_, rawKey);
-                lastDstId_ = NebulaKeyUtils::getDstId(planContext_->vIdLen_, rawKey).str();
+                lastRank_ = NebulaKeyUtils::getRank(context_->vIdLen(), rawKey);
+                lastDstId_ = NebulaKeyUtils::getDstId(context_->vIdLen(), rawKey).str();
                 lastIsLock_ = true;
                 continue;
             } else {
@@ -211,12 +211,12 @@ public:
     }
 
     bool isEdge(const folly::StringPiece& key) {
-        return NebulaKeyUtils::isEdge(planContext_->vIdLen_, key);
+        return NebulaKeyUtils::isEdge(context_->vIdLen(), key);
     }
 
     bool isLatestEdge(const folly::StringPiece& key) {
-        auto rank = NebulaKeyUtils::getRank(planContext_->vIdLen_, key);
-        auto dstId = NebulaKeyUtils::getDstId(planContext_->vIdLen_, key);
+        auto rank = NebulaKeyUtils::getRank(context_->vIdLen(), key);
+        auto dstId = NebulaKeyUtils::getDstId(context_->vIdLen(), key);
         return !(rank == lastRank_ && dstId == lastDstId_);
     }
 
@@ -225,11 +225,11 @@ public:
         if (!reader_) {
             reader_.reset(*schemas_, val);
             if (!reader_) {
-                planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
+                context_->resultStat_ = ResultStatus::ILLEGAL_DATA;
                 return false;
             }
         } else if (!reader_->reset(*schemas_, val)) {
-            planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
+            context_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 

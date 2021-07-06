@@ -30,12 +30,12 @@ class FilterNode : public IterateNode<T> {
 public:
     using RelNode<T>::execute;
 
-    FilterNode(PlanContext* planCtx,
+    FilterNode(RunTimeContext* context,
                IterateNode<T>* upstream,
                StorageExpressionContext* expCtx = nullptr,
                Expression* exp = nullptr)
         : IterateNode<T>(upstream)
-        , planContext_(planCtx)
+        , context_(context)
         , expCtx_(expCtx)
         , filterExp_(exp) {}
 
@@ -46,11 +46,11 @@ public:
         }
 
         do {
-            if (planContext_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+            if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
                 break;
             }
             if (this->valid() && !check()) {
-                planContext_->resultStat_ = ResultStatus::FILTER_OUT;
+                context_->resultStat_ = ResultStatus::FILTER_OUT;
                 this->next();
                 continue;
             }
@@ -77,7 +77,7 @@ private:
     }
 
 private:
-    PlanContext                      *planContext_;
+    RunTimeContext                   *context_;
     StorageExpressionContext         *expCtx_;
     Expression                       *filterExp_;
 };

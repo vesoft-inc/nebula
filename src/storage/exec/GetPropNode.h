@@ -18,11 +18,11 @@ class GetTagPropNode : public QueryNode<VertexID> {
 public:
     using RelNode<VertexID>::execute;
 
-    explicit GetTagPropNode(PlanContext *planCtx,
+    explicit GetTagPropNode(RunTimeContext* context,
                             std::vector<TagNode*> tagNodes,
                             nebula::DataSet* resultDataSet,
                             VertexCache* vertexCache)
-        : planContext_(planCtx)
+        : context_(context)
         , tagNodes_(std::move(tagNodes))
         , resultDataSet_(resultDataSet)
         , vertexCache_(vertexCache) {}
@@ -42,13 +42,13 @@ public:
 
         List row;
         // vertexId is the first column
-        if (planContext_->isIntId_) {
+        if (context_->isIntId()) {
             row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
             row.emplace_back(vId);
         }
-        auto vIdLen = planContext_->vIdLen_;
-        auto isIntId = planContext_->isIntId_;
+        auto vIdLen = context_->vIdLen();
+        auto isIntId = context_->isIntId();
         for (auto* tagNode : tagNodes_) {
             ret = tagNode->collectTagPropsIfValid(
                 [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
@@ -82,7 +82,7 @@ public:
     }
 
 private:
-    PlanContext*                planContext_;
+    RunTimeContext*             context_;
     std::vector<TagNode*>       tagNodes_;
     nebula::DataSet*            resultDataSet_;
     VertexCache*                vertexCache_;
@@ -92,10 +92,10 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
 public:
     using RelNode::execute;
 
-    GetEdgePropNode(PlanContext *planCtx,
+    GetEdgePropNode(RunTimeContext* context,
                     std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
                     nebula::DataSet* resultDataSet)
-        : planContext_(planCtx)
+        : context_(context)
         , edgeNodes_(std::move(edgeNodes))
         , resultDataSet_(resultDataSet) {}
 
@@ -106,8 +106,8 @@ public:
         }
 
         List row;
-        auto vIdLen = planContext_->vIdLen_;
-        auto isIntId = planContext_->isIntId_;
+        auto vIdLen = context_->vIdLen();
+        auto isIntId = context_->isIntId();
         for (auto* edgeNode : edgeNodes_) {
             ret = edgeNode->collectEdgePropsIfValid(
                 [&row] (const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
@@ -137,7 +137,7 @@ public:
     }
 
 private:
-    PlanContext*                            planContext_;
+    RunTimeContext*                         context_;
     std::vector<EdgeNode<cpp2::EdgeKey>*>   edgeNodes_;
     nebula::DataSet*                        resultDataSet_;
 };

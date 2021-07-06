@@ -36,14 +36,11 @@ class AggregateNode : public IterateNode<T> {
 public:
     using RelNode<T>::execute;
 
-    explicit AggregateNode(nebula::DataSet* resultSet)
-    : resultSet_(resultSet) {}
-
-    AggregateNode(PlanContext* planCtx,
+    AggregateNode(RunTimeContext* context,
                   IterateNode<T>* upstream,
                   EdgeContext* edgeContext)
         : IterateNode<T>(upstream)
-        , planContext_(planCtx)
+        , context_(context)
         , edgeContext_(edgeContext) {}
 
     nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) override {
@@ -67,7 +64,7 @@ public:
 
     void next() override {
         // we need to collect the stat during `next`
-        collectEdgeStats(this->key(), this->reader(), planContext_->props_);
+        collectEdgeStats(this->key(), this->reader(), context_->props_);
         IterateNode<T>::next();
     }
 
@@ -92,19 +89,19 @@ public:
 
 private:
     VertexIDSlice srcId() const {
-        return NebulaKeyUtils::getSrcId(planContext_->vIdLen_, this->key());
+        return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key());
     }
 
     EdgeType edgeType() const {
-        return NebulaKeyUtils::getEdgeType(planContext_->vIdLen_, this->key());
+        return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key());
     }
 
     EdgeRanking edgeRank() const {
-        return NebulaKeyUtils::getRank(planContext_->vIdLen_, this->key());
+        return NebulaKeyUtils::getRank(context_->vIdLen(), this->key());
     }
 
     VertexIDSlice dstId() const {
-        return NebulaKeyUtils::getDstId(planContext_->vIdLen_, this->key());
+        return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key());
     }
 
     void initStatValue(EdgeContext* edgeContext) {
@@ -133,7 +130,7 @@ private:
                 for (const auto statIndex : prop.statIndex_) {
                     VLOG(2) << "Collect stat prop " << prop.name_;
                     auto value = QueryUtils::readEdgeProp(
-                        key, planContext_->vIdLen_, planContext_->isIntId_, reader, prop);
+                        key, context_->vIdLen(), context_->isIntId(), reader, prop);
                     if (!value.ok()) {
                         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -158,7 +155,7 @@ private:
     }
 
 private:
-    PlanContext* planContext_;
+    RunTimeContext *context_;
     EdgeContext* edgeContext_;
     std::vector<PropStat> stats_;
     nebula::DataSet* resultSet_;

@@ -42,9 +42,10 @@ protected:
                                                                           executor,
                                                                           cache) {}
 
-    StoragePlan<VertexID> buildTagPlan(nebula::DataSet* result);
+private:
+    StoragePlan<VertexID> buildTagPlan(RunTimeContext* context, nebula::DataSet* result);
 
-    StoragePlan<cpp2::EdgeKey> buildEdgePlan(nebula::DataSet* result);
+    StoragePlan<cpp2::EdgeKey> buildEdgePlan(RunTimeContext* context, nebula::DataSet* result);
 
     void onProcessFinished() override;
 
@@ -61,10 +62,19 @@ protected:
 
     void buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps);
 
+    void runInSingleThread(const cpp2::GetPropRequest& req);
+    void runInMultipleThread(const cpp2::GetPropRequest& req);
+
+    folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
+        RunTimeContext* context,
+        nebula::DataSet* result,
+        PartitionID partId,
+        const std::vector<nebula::Row>& rows);
+
 private:
-    bool isEdge_ = false;                   // true for edge, false for tag
-    std::unique_ptr<StorageExpressionContext> expCtx_;
-    std::vector<Expression*> yields_;
+    std::vector<RunTimeContext>               contexts_;
+    std::vector<nebula::DataSet>              results_;
+    bool isEdge_ = false;                     // true for edge, false for tag
 };
 
 }  // namespace storage

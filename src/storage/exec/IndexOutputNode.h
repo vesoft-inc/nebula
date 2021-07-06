@@ -29,53 +29,53 @@ public:
     };
 
     IndexOutputNode(nebula::DataSet* result,
-                    PlanContext* planCtx,
+                    RunTimeContext* context,
                     IndexScanNode<T>* indexScanNode,
                     bool hasNullableCol,
                     const std::vector<meta::cpp2::ColumnDef>& fields)
         : result_(result)
-        , planContext_(planCtx)
+        , context_(context)
         , indexScanNode_(indexScanNode)
         , hasNullableCol_(hasNullableCol)
         , fields_(fields) {
-        type_ = planContext_->isEdge_
+        type_ = context_->isEdge()
                 ? IndexResultType::kEdgeFromIndexScan
                 : IndexResultType::kVertexFromIndexScan;
     }
 
     IndexOutputNode(nebula::DataSet* result,
-                    PlanContext* planCtx,
+                    RunTimeContext* context,
                     IndexEdgeNode<T>* indexEdgeNode)
         : result_(result)
-        , planContext_(planCtx)
+        , context_(context)
         , indexEdgeNode_(indexEdgeNode) {
         type_ = IndexResultType::kEdgeFromDataScan;
     }
 
     IndexOutputNode(nebula::DataSet* result,
-                    PlanContext* planCtx,
+                    RunTimeContext* context,
                     IndexVertexNode<T>* indexVertexNode)
         : result_(result)
-        , planContext_(planCtx)
+        , context_(context)
         , indexVertexNode_(indexVertexNode) {
         type_ = IndexResultType::kVertexFromDataScan;
     }
 
     IndexOutputNode(nebula::DataSet* result,
-                    PlanContext* planCtx,
+                    RunTimeContext* context,
                     IndexFilterNode<T>* indexFilterNode,
                     bool indexFilter = false)
         : result_(result)
-        , planContext_(planCtx)
+        , context_(context)
         , indexFilterNode_(indexFilterNode) {
         hasNullableCol_ = indexFilterNode->hasNullableCol();
         fields_ = indexFilterNode_->indexCols();
         if (indexFilter) {
-            type_ = planContext_->isEdge_
+            type_ = context_->isEdge()
                     ? IndexResultType::kEdgeFromIndexFilter
                     : IndexResultType::kVertexFromIndexFilter;
         } else {
-            type_ = planContext_->isEdge_
+            type_ = context_->isEdge()
                     ? IndexResultType::kEdgeFromDataFilter
                     : IndexResultType::kVertexFromDataFilter;
         }
@@ -236,8 +236,8 @@ private:
                          const meta::NebulaSchemaProvider* schema) {
         switch (QueryUtils::toReturnColType(col)) {
             case QueryUtils::ReturnColType::kVid : {
-                auto vId = NebulaKeyUtils::getVertexId(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto vId = NebulaKeyUtils::getVertexId(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
                 } else {
                     row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -245,12 +245,12 @@ private:
                 break;
             }
             case QueryUtils::ReturnColType::kTag : {
-                row.emplace_back(NebulaKeyUtils::getTagId(planContext_->vIdLen_, data.first));
+                row.emplace_back(NebulaKeyUtils::getTagId(context_->vIdLen(), data.first));
                 break;
             }
             case QueryUtils::ReturnColType::kSrc : {
-                auto src = NebulaKeyUtils::getSrcId(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto src = NebulaKeyUtils::getSrcId(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
                 } else {
                     row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -258,16 +258,16 @@ private:
                 break;
             }
             case QueryUtils::ReturnColType::kType : {
-                row.emplace_back(NebulaKeyUtils::getEdgeType(planContext_->vIdLen_, data.first));
+                row.emplace_back(NebulaKeyUtils::getEdgeType(context_->vIdLen(), data.first));
                 break;
             }
             case QueryUtils::ReturnColType::kRank : {
-                row.emplace_back(NebulaKeyUtils::getRank(planContext_->vIdLen_, data.first));
+                row.emplace_back(NebulaKeyUtils::getRank(context_->vIdLen(), data.first));
                 break;
             }
             case QueryUtils::ReturnColType::kDst : {
-                auto dst = NebulaKeyUtils::getDstId(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto dst = NebulaKeyUtils::getDstId(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
                 } else {
                     row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -290,8 +290,8 @@ private:
     Status addIndexValue(Row& row, const kvstore::KV& data, const std::string& col) {
         switch (QueryUtils::toReturnColType(col)) {
             case QueryUtils::ReturnColType::kVid : {
-                auto vId = IndexKeyUtils::getIndexVertexID(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
                 } else {
                     row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -299,12 +299,12 @@ private:
                 break;
             }
             case QueryUtils::ReturnColType::kTag : {
-                row.emplace_back(planContext_->tagId_);
+                row.emplace_back(context_->tagId_);
                 break;
             }
             case QueryUtils::ReturnColType::kSrc : {
-                auto src = IndexKeyUtils::getIndexSrcId(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto src = IndexKeyUtils::getIndexSrcId(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
                 } else {
                     row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -312,16 +312,16 @@ private:
                 break;
             }
             case QueryUtils::ReturnColType::kType : {
-                row.emplace_back(planContext_->edgeType_);
+                row.emplace_back(context_->edgeType_);
                 break;
             }
             case QueryUtils::ReturnColType::kRank : {
-                row.emplace_back(IndexKeyUtils::getIndexRank(planContext_->vIdLen_, data.first));
+                row.emplace_back(IndexKeyUtils::getIndexRank(context_->vIdLen(), data.first));
                 break;
             }
             case QueryUtils::ReturnColType::kDst : {
-                auto dst = IndexKeyUtils::getIndexDstId(planContext_->vIdLen_, data.first);
-                if (planContext_->isIntId_) {
+                auto dst = IndexKeyUtils::getIndexDstId(context_->vIdLen(), data.first);
+                if (context_->isIntId()) {
                     row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
                 } else {
                     row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -329,11 +329,11 @@ private:
                 break;
             }
             default: {
-                auto v = IndexKeyUtils::getValueFromIndexKey(planContext_->vIdLen_,
+                auto v = IndexKeyUtils::getValueFromIndexKey(context_->vIdLen(),
                                                              data.first,
                                                              col,
                                                              fields_,
-                                                             planContext_->isEdge_,
+                                                             context_->isEdge(),
                                                              hasNullableCol_);
                 row.emplace_back(std::move(v));
             }
@@ -343,7 +343,7 @@ private:
 
 private:
     nebula::DataSet*                                  result_;
-    PlanContext*                                      planContext_;
+    RunTimeContext*                                   context_;
     IndexResultType                                   type_;
     IndexScanNode<T>*                                 indexScanNode_{nullptr};
     IndexEdgeNode<T>*                                 indexEdgeNode_{nullptr};

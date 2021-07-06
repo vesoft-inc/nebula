@@ -62,14 +62,14 @@ public:
     }
 
 protected:
-    EdgeNode(PlanContext* planCtx,
-             EdgeContext* ctx,
+    EdgeNode(RunTimeContext* context,
+             EdgeContext* edgeContext,
              EdgeType edgeType,
              const std::vector<PropContext>* props,
              StorageExpressionContext* expCtx,
              Expression* exp)
-        : planContext_(planCtx)
-        , edgeContext_(ctx)
+        : context_(context)
+        , edgeContext_(edgeContext)
         , edgeType_(edgeType)
         , props_(props)
         , expCtx_(expCtx)
@@ -83,12 +83,12 @@ protected:
         edgeName_ = edgeContext_->edgeNames_[edgeType_];
     }
 
-    EdgeNode(PlanContext* planCtx,
+    EdgeNode(RunTimeContext* context,
              EdgeContext* ctx)
-        : planContext_(planCtx)
+        : context_(context)
         , edgeContext_(ctx) {}
 
-    PlanContext* planContext_;
+    RunTimeContext* context_;
     EdgeContext* edgeContext_;
     EdgeType edgeType_;
     const std::vector<PropContext>* props_;
@@ -108,13 +108,13 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 public:
     using RelNode::execute;
 
-    FetchEdgeNode(PlanContext* planCtx,
-                  EdgeContext* ctx,
+    FetchEdgeNode(RunTimeContext* context,
+                  EdgeContext* edgeContext,
                   EdgeType edgeType,
                   const std::vector<PropContext>* props,
                   StorageExpressionContext* expCtx = nullptr,
                   Expression* exp = nullptr)
-        : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
+        : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
 
     nebula::cpp2::ErrorCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
         auto ret = RelNode::execute(partId, edgeKey);
@@ -128,23 +128,23 @@ public:
             iter_.reset();
             return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
-        prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_,
+        prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(),
                                              partId,
                                              (*edgeKey.src_ref()).getStr(),
                                              *edgeKey.edge_type_ref(),
                                              *edgeKey.ranking_ref(),
                                              (*edgeKey.dst_ref()).getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
-        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
+        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            if (planContext_->env_->txnMan_ &&
-                planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
+            if (context_->env()->txnMan_ &&
+                context_->env()->txnMan_->enableToss(context_->spaceId())) {
                 bool stopAtFirstEdge = true;
                 iter_.reset(new TossEdgeIterator(
-                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
+                    context_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
             } else {
                 iter_.reset(new SingleEdgeIterator(
-                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, false));
+                    context_, std::move(iter), edgeType_, schemas_, &ttl_, false));
             }
         } else {
             iter_.reset();
@@ -157,13 +157,13 @@ public:
 class SingleEdgeNode final : public EdgeNode<VertexID> {
 public:
     using RelNode::execute;
-    SingleEdgeNode(PlanContext* planCtx,
-                   EdgeContext* ctx,
+    SingleEdgeNode(RunTimeContext* context,
+                   EdgeContext* edgeContext,
                    EdgeType edgeType,
                    const std::vector<PropContext>* props,
                    StorageExpressionContext* expCtx = nullptr,
                    Expression* exp = nullptr)
-        : EdgeNode(planCtx, ctx, edgeType, props, expCtx, exp) {}
+        : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
 
     nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -174,17 +174,17 @@ public:
         VLOG(1) << "partId " << partId << ", vId " << vId << ", edgeType " << edgeType_
                 << ", prop size " << props_->size();
         std::unique_ptr<kvstore::KVIterator> iter;
-        prefix_ = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_, partId, vId, edgeType_);
-        ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_, partId, prefix_, &iter);
+        prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(), partId, vId, edgeType_);
+        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            if (planContext_->env_->txnMan_ &&
-                planContext_->env_->txnMan_->enableToss(planContext_->spaceId_)) {
+            if (context_->env()->txnMan_ &&
+                context_->env()->txnMan_->enableToss(context_->spaceId())) {
                 bool stopAtFirstEdge = false;
                 iter_.reset(new TossEdgeIterator(
-                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
+                    context_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
             } else {
                 iter_.reset(new SingleEdgeIterator(
-                    planContext_, std::move(iter), edgeType_, schemas_, &ttl_));
+                    context_, std::move(iter), edgeType_, schemas_, &ttl_));
             }
         } else {
             iter_.reset();

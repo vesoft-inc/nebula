@@ -17,11 +17,11 @@ class IndexEdgeNode final : public RelNode<T> {
 public:
     using RelNode<T>::execute;
 
-    IndexEdgeNode(PlanContext* planCtx,
+    IndexEdgeNode(RunTimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName)
-        : planContext_(planCtx)
+        : context_(context)
         , indexScanNode_(indexScanNode)
         , schemas_(schemas)
         , schemaName_(schemaName) {}
@@ -32,7 +32,7 @@ public:
             return ret;
         }
 
-        auto ttlProp = CommonUtils::ttlProps(planContext_->edgeSchema_);
+        auto ttlProp = CommonUtils::ttlProps(context_->edgeSchema_);
 
         data_.clear();
         std::vector<storage::cpp2::EdgeKey> edges;
@@ -40,7 +40,7 @@ public:
         while (iter && iter->valid()) {
             if (!iter->val().empty() && ttlProp.first) {
                 auto v = IndexKeyUtils::parseIndexTTL(iter->val());
-                if (CommonUtils::checkDataExpiredForTTL(planContext_->edgeSchema_,
+                if (CommonUtils::checkDataExpiredForTTL(context_->edgeSchema_,
                                                         std::move(v),
                                                         ttlProp.second.second,
                                                         ttlProp.second.first)) {
@@ -50,21 +50,21 @@ public:
             }
             storage::cpp2::EdgeKey edge;
             edge.set_src(iter->srcId());
-            edge.set_edge_type(planContext_->edgeType_);
+            edge.set_edge_type(context_->edgeType_);
             edge.set_ranking(iter->ranking());
             edge.set_dst(iter->dstId());
             edges.emplace_back(std::move(edge));
             iter->next();
         }
         for (const auto& edge : edges) {
-            auto prefix = NebulaKeyUtils::edgePrefix(planContext_->vIdLen_,
+            auto prefix = NebulaKeyUtils::edgePrefix(context_->vIdLen(),
                                                      partId,
                                                      (*edge.src_ref()).getStr(),
-                                                     planContext_->edgeType_,
+                                                     context_->edgeType_,
                                                      edge.get_ranking(),
                                                      (*edge.dst_ref()).getStr());
             std::unique_ptr<kvstore::KVIterator> eIter;
-            ret = planContext_->env_->kvstore_->prefix(planContext_->spaceId_,
+            ret = context_->env()->kvstore_->prefix(context_->spaceId(),
                                                        partId, prefix, &eIter);
             if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && eIter && eIter->valid()) {
                 data_.emplace_back(eIter->key(), eIter->val());
@@ -88,7 +88,7 @@ public:
     }
 
 private:
-    PlanContext*                                                          planContext_;
+    RunTimeContext*                                                       context_;
     IndexScanNode<T>*                                                     indexScanNode_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
     const std::string&                                                    schemaName_;

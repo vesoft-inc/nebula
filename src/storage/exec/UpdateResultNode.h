@@ -19,12 +19,12 @@ class UpdateResNode : public RelNode<T>  {
 public:
     using RelNode<T>::execute;
 
-    UpdateResNode(PlanContext* planCtx,
+    UpdateResNode(RunTimeContext* context,
                   RelNode<T>* updateNode,
                   std::vector<Expression*> returnPropsExp,
                   StorageExpressionContext* expCtx,
                   nebula::DataSet* result)
-        : planContext_(planCtx)
+        : context_(context)
         , updateNode_(updateNode)
         , returnPropsExp_(returnPropsExp)
         , expCtx_(expCtx)
@@ -38,7 +38,7 @@ public:
             return ret;
         }
 
-        insert_ = planContext_->insert_;
+        insert_ = context_->insert_;
 
         // Note: If filtered out, the result of tag prop is old
         result_->colNames.emplace_back("_inserted");
@@ -63,7 +63,7 @@ public:
     }
 
 private:
-    PlanContext                                             *planContext_;
+    RunTimeContext                                          *context_;
     RelNode<T>                                              *updateNode_;
     std::vector<Expression*>                                 returnPropsExp_;
     StorageExpressionContext                                *expCtx_;

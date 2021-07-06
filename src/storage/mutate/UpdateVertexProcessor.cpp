@@ -52,6 +52,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
         return;
     }
     planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+    context_ = std::make_unique<RunTimeContext>(planContext_.get());
 
     retCode = checkAndBuildContexts(req);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -128,18 +129,18 @@ The storage plan of update(upsert) vertex looks like this:
 StoragePlan<VertexID> UpdateVertexProcessor::buildPlan(nebula::DataSet* result) {
     StoragePlan<VertexID> plan;
     // handle tag props, return prop, filter prop, update prop
-    auto tagUpdate = std::make_unique<TagNode>(planContext_.get(),
+    auto tagUpdate = std::make_unique<TagNode>(context_.get(),
                                                &tagContext_,
                                                tagContext_.propContexts_[0].first,
                                                &(tagContext_.propContexts_[0].second));
 
-    auto filterNode = std::make_unique<FilterNode<VertexID>>(planContext_.get(),
+    auto filterNode = std::make_unique<FilterNode<VertexID>>(context_.get(),
                                                              tagUpdate.get(),
                                                              expCtx_.get(),
                                                              filterExp_);
     filterNode->addDependency(tagUpdate.get());
 
-    auto updateNode = std::make_unique<UpdateTagNode>(planContext_.get(),
+    auto updateNode = std::make_unique<UpdateTagNode>(context_.get(),
                                                       indexes_,
                                                       updatedProps_,
                                                       filterNode.get(),
@@ -149,7 +150,7 @@ StoragePlan<VertexID> UpdateVertexProcessor::buildPlan(nebula::DataSet* result) 
                                                       &tagContext_);
     updateNode->addDependency(filterNode.get());
 
-    auto resultNode = std::make_unique<UpdateResNode<VertexID>>(planContext_.get(),
+    auto resultNode = std::make_unique<UpdateResNode<VertexID>>(context_.get(),
                                                                 updateNode.get(),
                                                                 getReturnPropsExp(),
                                                                 expCtx_.get(),
@@ -193,7 +194,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         tagContext_.vertexCache_->evict(std::make_pair(vId.getStr(), tagId_));
     }
 
-    auto pool = &planContext_->objPool;
+    auto pool = context_->objPool();
     for (auto& prop : updatedProps_) {
         auto sourcePropExp = SourcePropertyExpression::make(pool, tagName, prop.get_name());
         auto retCode = checkExp(sourcePropExp, false, false);
@@ -259,8 +260,8 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
         return nebula::cpp2::ErrorCode::E_MUTATE_TAG_CONFLICT;
     }
 
-    planContext_->tagId_ = tagId_;
-    planContext_->tagName_ = iter->second;
+    context_->tagId_ = tagId_;
+    context_->tagName_ = iter->second;
     auto schemaMap = tagContext_.schemas_;
     auto iterSchema = schemaMap.find(tagId_);
     if (iterSchema != schemaMap.end()) {
@@ -270,7 +271,7 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
             VLOG(1) << "Fail to get schema in TagId " << tagId_;
             return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
         }
-        planContext_->tagSchema_ = schema;
+        context_->tagSchema_ = schema;
     } else {
         VLOG(1) << "Fail to get schema in TagId " << tagId_;
         return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
@@ -279,8 +280,8 @@ UpdateVertexProcessor::buildTagContext(const cpp2::UpdateVertexRequest& req) {
     if (expCtx_ == nullptr) {
         expCtx_ = std::make_unique<StorageExpressionContext>(spaceVidLen_,
                                                              isIntId_,
-                                                             planContext_->tagName_,
-                                                             planContext_->tagSchema_,
+                                                             context_->tagName_,
+                                                             context_->tagSchema_,
                                                              false);
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;

@@ -29,22 +29,21 @@ public:
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
-        dedup(resultSet_->rows);
+        dedup(resultSet_->rows, pos_);
         return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-private:
-    void dedup(std::vector<Row>& rows) {
-        std::sort(rows.begin(), rows.end(), [this](auto& l, auto& r) {
-            for (auto p : pos_) {
+    static void dedup(std::vector<Row>& rows, const std::vector<size_t>& pos) {
+        std::sort(rows.begin(), rows.end(), [&pos](auto& l, auto& r) {
+            for (const auto& p : pos) {
                 if (l.values[p] != r.values[p]) {
                     return l.values[p] < r.values[p];
                 }
             }
             return false;
         });
-        rows.erase(std::unique(rows.begin(), rows.end(), [this](auto& l, auto& r) {
-            for (auto p : pos_) {
+        rows.erase(std::unique(rows.begin(), rows.end(), [&pos](auto& l, auto& r) {
+            for (const auto& p : pos) {
                 if (l.values[p] != r.values[p]) {
                     return false;
                 }

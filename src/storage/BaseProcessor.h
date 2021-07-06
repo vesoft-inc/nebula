@@ -121,7 +121,6 @@ protected:
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;
 
-    std::unique_ptr<PlanContext>                    planContext_;
     time::Duration                                  duration_;
     std::vector<cpp2::PartitionResult>              codes_;
     std::mutex                                      lock_;

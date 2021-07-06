@@ -45,3 +45,6 @@ DEFINE_bool(trace_toss, false, "output verbose log of toss");
 
 DEFINE_int32(max_edge_returned_per_vertex, INT_MAX,
              "Max edge number returnred searching vertex");
+
+DEFINE_bool(query_concurrently, false,
+            "whether to run query of each part concurrently, only lookup and go are supported");

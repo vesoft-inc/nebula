@@ -36,13 +36,13 @@ class SingleEdgeIterator : public StorageIterator {
 public:
     SingleEdgeIterator() = default;
     SingleEdgeIterator(
-            PlanContext* planCtx,
+            RunTimeContext* context,
             std::unique_ptr<kvstore::KVIterator> iter,
             EdgeType edgeType,
             const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
             const folly::Optional<std::pair<std::string, int64_t>>* ttl,
             bool moveToValidRecord = true)
-        : planContext_(planCtx)
+        : context_(context)
         , iter_(std::move(iter))
         , edgeType_(edgeType)
         , schemas_(schemas)
@@ -104,7 +104,7 @@ protected:
     bool check() {
         reader_.reset(*schemas_, iter_->val());
         if (!reader_) {
-            planContext_->resultStat_ = ResultStatus::ILLEGAL_DATA;
+            context_->resultStat_ = ResultStatus::ILLEGAL_DATA;
             return false;
         }
 
@@ -117,7 +117,7 @@ protected:
         return true;
     }
 
-    PlanContext                                                          *planContext_;
+    RunTimeContext                                                       *context_;
     std::unique_ptr<kvstore::KVIterator>                                  iter_;
     EdgeType                                                              edgeType_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> *schemas_ = nullptr;

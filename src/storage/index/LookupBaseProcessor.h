@@ -45,25 +45,30 @@ protected:
 
     bool isOutsideIndex(Expression* filter, const meta::cpp2::IndexItem* index);
 
-    StatusOr<StoragePlan<IndexID>> buildPlan();
+    StatusOr<StoragePlan<IndexID>> buildPlan(IndexFilterItem* filterItem, nebula::DataSet* result);
 
     std::unique_ptr<IndexOutputNode<IndexID>>
-    buildPlanBasic(const cpp2::IndexQueryContext& ctx,
+    buildPlanBasic(nebula::DataSet* result,
+                   const cpp2::IndexQueryContext& ctx,
                    StoragePlan<IndexID>& plan,
                    bool hasNullableCol,
                    const std::vector<meta::cpp2::ColumnDef>& fields);
 
     std::unique_ptr<IndexOutputNode<IndexID>>
-    buildPlanWithData(const cpp2::IndexQueryContext& ctx, StoragePlan<IndexID>& plan);
+    buildPlanWithData(nebula::DataSet* result,
+                      const cpp2::IndexQueryContext& ctx,
+                      StoragePlan<IndexID>& plan);
 
     std::unique_ptr<IndexOutputNode<IndexID>>
-    buildPlanWithFilter(const cpp2::IndexQueryContext& ctx,
+    buildPlanWithFilter(nebula::DataSet* result,
+                        const cpp2::IndexQueryContext& ctx,
                         StoragePlan<IndexID>& plan,
                         StorageExpressionContext* exprCtx,
                         Expression* exp);
 
     std::unique_ptr<IndexOutputNode<IndexID>>
-    buildPlanWithDataAndFilter(const cpp2::IndexQueryContext& ctx,
+    buildPlanWithDataAndFilter(nebula::DataSet* result,
+                               const cpp2::IndexQueryContext& ctx,
                                StoragePlan<IndexID>& plan,
                                StorageExpressionContext* exprCtx,
                                Expression* exp);
@@ -71,12 +76,14 @@ protected:
 protected:
     GraphSpaceID                                                   spaceId_;
     std::unique_ptr<PlanContext>                                   planContext_;
+    std::unique_ptr<RunTimeContext>                                context_;
     folly::Executor*                                               executor_{nullptr};
     VertexCache*                                                   vertexCache_{nullptr};
     nebula::DataSet                                                resultDataSet_;
-    std::vector<cpp2::IndexQueryContext>                           contexts_{};
+    std::vector<nebula::DataSet>                                   partResults_;
+    std::vector<cpp2::IndexQueryContext>                           indexContexts_{};
     std::vector<std::string>                                       yieldCols_{};
-    IndexFilterItem                                                filterItems_;
+    std::vector<IndexFilterItem>                                   filterItems_;
     // Save schemas when column is out of index, need to read from data
     std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> schemas_;
     std::vector<size_t>                                            deDupColPos_;

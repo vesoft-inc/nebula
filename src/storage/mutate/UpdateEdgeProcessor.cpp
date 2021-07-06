@@ -55,6 +55,7 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     }
 
     planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+    context_ = std::make_unique<RunTimeContext>(planContext_.get());
     if (env_->txnMan_ && env_->txnMan_->enableToss(spaceId_)) {
         planContext_->defaultEdgeVer_ = 1L;
     }
@@ -135,18 +136,18 @@ The storage plan of update(upsert) edge looks like this:
 StoragePlan<cpp2::EdgeKey> UpdateEdgeProcessor::buildPlan(nebula::DataSet* result) {
     StoragePlan<cpp2::EdgeKey> plan;
     // because update edgetype is one
-    auto edgeUpdate = std::make_unique<FetchEdgeNode>(planContext_.get(),
+    auto edgeUpdate = std::make_unique<FetchEdgeNode>(context_.get(),
                                                       &edgeContext_,
                                                       edgeContext_.propContexts_[0].first,
                                                       &(edgeContext_.propContexts_[0].second));
 
-    auto filterNode = std::make_unique<FilterNode<cpp2::EdgeKey>>(planContext_.get(),
+    auto filterNode = std::make_unique<FilterNode<cpp2::EdgeKey>>(context_.get(),
                                                                   edgeUpdate.get(),
                                                                   expCtx_.get(),
                                                                   filterExp_);
     filterNode->addDependency(edgeUpdate.get());
 
-    auto updateNode = std::make_unique<UpdateEdgeNode>(planContext_.get(),
+    auto updateNode = std::make_unique<UpdateEdgeNode>(context_.get(),
                                                        indexes_,
                                                        updatedProps_,
                                                        filterNode.get(),
@@ -156,7 +157,7 @@ StoragePlan<cpp2::EdgeKey> UpdateEdgeProcessor::buildPlan(nebula::DataSet* resul
                                                        &edgeContext_);
     updateNode->addDependency(filterNode.get());
 
-    auto resultNode = std::make_unique<UpdateResNode<cpp2::EdgeKey>>(planContext_.get(),
+    auto resultNode = std::make_unique<UpdateResNode<cpp2::EdgeKey>>(context_.get(),
                                                                      updateNode.get(),
                                                                      getReturnPropsExp(),
                                                                      expCtx_.get(),
@@ -197,7 +198,7 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     edgeContext_.indexMap_.emplace(edgeKey_.get_edge_type(), edgeContext_.propContexts_.size() - 1);
     edgeContext_.edgeNames_.emplace(edgeKey_.get_edge_type(), edgeName);
 
-    auto pool = &planContext_->objPool;
+    auto pool = context_->objPool();
     // Build context of the update edge prop
     for (auto& edgeProp : updatedProps_) {
         auto edgePropExp = EdgePropertyExpression::make(pool, edgeName, edgeProp.get_name());
@@ -264,8 +265,8 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
         return nebula::cpp2::ErrorCode::E_MUTATE_EDGE_CONFLICT;
     }
 
-    planContext_->edgeType_ = edgeKey_.get_edge_type();
-    planContext_->edgeName_ = iter->second;
+    context_->edgeType_ = edgeKey_.get_edge_type();
+    context_->edgeName_ = iter->second;
     auto schemaMap = edgeContext_.schemas_;
     auto iterSchema = schemaMap.find(std::abs(edgeKey_.get_edge_type()));
     if (iterSchema != schemaMap.end()) {
@@ -275,7 +276,7 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
             VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.get_edge_type();
             return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
-        planContext_->edgeSchema_ = schema;
+        context_->edgeSchema_ = schema;
     } else {
         VLOG(1) << "Fail to get schema in edgeType " << edgeKey_.get_edge_type();
         return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
@@ -284,8 +285,8 @@ UpdateEdgeProcessor::buildEdgeContext(const cpp2::UpdateEdgeRequest& req) {
     if (expCtx_ == nullptr) {
         expCtx_ = std::make_unique<StorageExpressionContext>(spaceVidLen_,
                                                              isIntId_,
-                                                             planContext_->edgeName_,
-                                                             planContext_->edgeSchema_,
+                                                             context_->edgeName_,
+                                                             context_->edgeSchema_,
                                                              true);
     }
 

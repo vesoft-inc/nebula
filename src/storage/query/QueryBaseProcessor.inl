@@ -141,7 +141,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(const REQ& re
     }
     const auto& filterStr = *traverseSpec.filter_ref();
 
-    auto pool = &this->planContext_->objPool;
+    auto pool = &this->planContext_->objPool_;
     // auto v = env_;
     if (!filterStr.empty()) {
         // the filter expression **must** return a bool

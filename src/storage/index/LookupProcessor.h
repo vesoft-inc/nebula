@@ -28,8 +28,6 @@ public:
 
     void process(const cpp2::LookupIndexRequest& req) override;
 
-    void doProcess(const cpp2::LookupIndexRequest& req);
-
 protected:
     LookupProcessor(StorageEnv* env,
                     const ProcessorCounters* counters,
@@ -39,6 +37,15 @@ protected:
             env, counters, executor, cache) {}
 
     void onProcessFinished() override;
+
+private:
+    void runInSingleThread(const cpp2::LookupIndexRequest& req);
+    void runInMultipleThread(const cpp2::LookupIndexRequest& req);
+
+    folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>
+    runInExecutor(IndexFilterItem* filterItem, nebula::DataSet* result, PartitionID partId);
+
+    void doProcess(const cpp2::LookupIndexRequest& req);
 };
 
 }  // namespace storage

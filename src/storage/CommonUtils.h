@@ -142,7 +142,8 @@ enum class ResultStatus {
 
 struct PropContext;
 
-// PlanContext stores some information during the process
+// PlanContext stores information **unchanged** during the process.
+// All processor won't change them after request is parsed.
 class PlanContext {
 public:
     PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId)
@@ -153,6 +154,48 @@ public:
     size_t              vIdLen_;
     bool                isIntId_;
 
+    // used in lookup only
+    bool                isEdge_ = false;
+
+    // used for toss version
+    int64_t             defaultEdgeVer_ = 0L;
+
+    // Manage expressions
+    ObjectPool          objPool_;
+};
+
+// RunTimeContext stores information **may changed** during the process. Since not all processor use
+// all following fields, just list all of them here.
+// todo(doodle): after filter is pushed down, I believe all field will not be changed anymore during
+// process
+struct RunTimeContext {
+    explicit RunTimeContext(PlanContext* planContext) : planContext_(planContext) {}
+
+    StorageEnv* env() const {
+        return planContext_->env_;
+    }
+
+    GraphSpaceID spaceId() const {
+        return planContext_->spaceId_;
+    }
+
+    size_t vIdLen() const {
+        return planContext_->vIdLen_;
+    }
+
+    bool isIntId() const {
+        return planContext_->isIntId_;
+    }
+
+    bool isEdge() const {
+        return planContext_->isEdge_;
+    }
+
+    ObjectPool* objPool() {
+        return &planContext_->objPool_;
+    }
+
+    PlanContext                        *planContext_;
     TagID                               tagId_ = 0;
     std::string                         tagName_ = "";
     const meta::NebulaSchemaProvider   *tagSchema_{nullptr};
@@ -169,15 +212,6 @@ public:
     bool                                insert_ = false;
 
     ResultStatus                        resultStat_{ResultStatus::NORMAL};
-
-    // used for lookup
-    bool                                isEdge_ = false;
-
-    // used for toss version
-    int64_t                             defaultEdgeVer_ = 0L;
-
-    // Manage expressions
-    ObjectPool                          objPool;
 };
 
 class CommonUtils final {
