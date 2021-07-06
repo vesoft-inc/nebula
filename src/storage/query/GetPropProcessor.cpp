@@ -269,45 +269,29 @@ GetPropProcessor::checkAndBuildContexts(const cpp2::GetPropRequest& req) {
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    if ((*req.vertex_props_ref()).empty()) {
-        // If no props specified, get all property of all tagId in space
-        auto returnProps = buildAllTagProps();
-        // generate tag prop context
-        ret = handleVertexProps(returnProps);
-        buildTagColName(returnProps);
-    } else {
-        // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(*req.vertex_props_ref());
-        ret = handleVertexProps(returnProps);
-        buildTagColName(returnProps);
-    }
-
+    // req.vertex_props_ref().has_value() checked in methon checkRequest
+    auto returnProps = (*req.vertex_props_ref()).empty()
+                     ? buildAllTagProps()
+                     : *req.vertex_props_ref();
+    auto ret = handleVertexProps(returnProps);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
+    buildTagColName(std::move(returnProps));
     buildTagTTLInfo();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& req) {
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    if ((*req.edge_props_ref()).empty()) {
-        // If no props specified, get all property of all tagId in space
-        auto returnProps = buildAllEdgeProps(cpp2::EdgeDirection::BOTH);
-        // generate edge prop context
-        ret = handleEdgeProps(returnProps);
-        buildEdgeColName(returnProps);
-    } else {
-        // not use const reference because we need to modify it when all property need to return
-        auto returnProps = std::move(*req.edge_props_ref());
-        ret = handleEdgeProps(returnProps);
-        buildEdgeColName(returnProps);
-    }
-
+    // req.edge_props_ref().has_value() checked in methon checkRequest
+    auto returnProps = (*req.edge_props_ref()).empty()
+                     ? buildAllEdgeProps(cpp2::EdgeDirection::BOTH)
+                     : *req.edge_props_ref();
+    auto ret = handleEdgeProps(returnProps);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
+    buildEdgeColName(std::move(returnProps));
     buildEdgeTTLInfo();
     return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
