@@ -37,7 +37,7 @@ std::unique_ptr<OptRule> PushFilterDownTagIndexScanRule::kInstance =
     std::unique_ptr<PushFilterDownTagIndexScanRule>(new PushFilterDownTagIndexScanRule());
 
 PushFilterDownTagIndexScanRule::PushFilterDownTagIndexScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& PushFilterDownTagIndexScanRule::pattern() const {

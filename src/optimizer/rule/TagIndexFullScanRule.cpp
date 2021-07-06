@@ -17,7 +17,7 @@ std::unique_ptr<OptRule> TagIndexFullScanRule::kInstance =
     std::unique_ptr<TagIndexFullScanRule>(new TagIndexFullScanRule());
 
 TagIndexFullScanRule::TagIndexFullScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& TagIndexFullScanRule::pattern() const {

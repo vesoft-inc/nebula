@@ -15,7 +15,7 @@ std::unique_ptr<OptRule> UnionAllTagIndexScanRule::kInstance =
     std::unique_ptr<UnionAllTagIndexScanRule>(new UnionAllTagIndexScanRule());
 
 UnionAllTagIndexScanRule::UnionAllTagIndexScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& UnionAllTagIndexScanRule::pattern() const {

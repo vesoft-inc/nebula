@@ -856,6 +856,7 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
         }
         break;
     }
+    // The filter can always be pushed down for lookup query
     if (iter != index.hints.end() || !index.unusedExprs.empty()) {
         ictx->set_filter(condition->encode());
     }

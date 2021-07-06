@@ -14,6 +14,9 @@
 namespace nebula {
 namespace opt {
 
+// At present, we do NOT split filter conditions into two parts, one part is pushed down storage
+// layer and another will be leaved into filter. Because this is enough for Lookup queries. We
+// will enhance this rule for general usage later, such as MATCH queries.
 class PushFilterDownEdgeIndexScanRule final : public OptRule {
 public:
     const Pattern &pattern() const override;

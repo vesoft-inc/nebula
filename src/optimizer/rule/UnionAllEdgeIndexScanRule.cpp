@@ -15,7 +15,7 @@ std::unique_ptr<OptRule> UnionAllEdgeIndexScanRule::kInstance =
     std::unique_ptr<UnionAllEdgeIndexScanRule>(new UnionAllEdgeIndexScanRule());
 
 UnionAllEdgeIndexScanRule::UnionAllEdgeIndexScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& UnionAllEdgeIndexScanRule::pattern() const {

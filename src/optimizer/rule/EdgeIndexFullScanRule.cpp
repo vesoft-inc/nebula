@@ -21,7 +21,7 @@ std::unique_ptr<OptRule> EdgeIndexFullScanRule::kInstance =
     std::unique_ptr<EdgeIndexFullScanRule>(new EdgeIndexFullScanRule());
 
 EdgeIndexFullScanRule::EdgeIndexFullScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& EdgeIndexFullScanRule::pattern() const {

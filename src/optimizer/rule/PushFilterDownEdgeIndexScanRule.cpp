@@ -46,7 +46,7 @@ std::unique_ptr<OptRule> PushFilterDownEdgeIndexScanRule::kInstance =
     std::unique_ptr<PushFilterDownEdgeIndexScanRule>(new PushFilterDownEdgeIndexScanRule());
 
 PushFilterDownEdgeIndexScanRule::PushFilterDownEdgeIndexScanRule() {
-    RuleSet::QueryRules().addRule(this);
+    RuleSet::DefaultRules().addRule(this);
 }
 
 const Pattern& PushFilterDownEdgeIndexScanRule::pattern() const {
