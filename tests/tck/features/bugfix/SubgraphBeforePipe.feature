@@ -180,29 +180,6 @@ Feature: Test get subgraph before pipe
       """
       GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like | YIELD COUNT(*)
       """
-    Then define some list variables:
-      | edge1                                        | edge2                                            | edge3                                          | vertex4             | edge4                                      |
-      | [:like "Russell Westbrook"->"Paul George"@0] | [:like "Dejounte Murray"->"Russell Westbrook"@0] | [:serve "Dejounte Murray"->"Spurs"@0]          | ("Kyle Anderson")   | [:like "Tony Parker"->"Tim Duncan"@0]      |
-      | [:serve "Paul George"->"Pacers"@0]           | [:like "James Harden"->"Russell Westbrook"@0]    | [:like "Dejounte Murray"->"Chris Paul"@0]      | ("Tony Parker")     | [:serve "Kyle Anderson"->"Spurs"@0]        |
-      | [:serve "Paul George"->"Thunders"@0]         | [:serve "Russell Westbrook"->"Thunders"@0]       | [:like "Dejounte Murray"->"Danny Green"@0]     | ("Danny Green")     | [:like "Marco Belinelli"->"Danny Green"@0] |
-      | [:like "Paul George"->"Russell Westbrook"@0] | [:like "Russell Westbrook"->"James Harden"@0]    | [:like "Dejounte Murray"->"James Harden"@0]    | ("Luka Doncic")     | [:like "Tony Parker"->"Manu Ginobili"@0]   |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Kevin Durant"@0]    | ("Tim Duncan")      | [:serve "Tony Parker"->"Spurs"@0]          |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Kyle Anderson"@0]   | ("Marco Belinelli") | [:serve "Danny Green"->"Spurs"@0]          |
-      |                                              |                                                  | [:like "Dejounte Murray"->"LeBron James"@0]    | ("Kevin Durant")    | [:like "Danny Green"->"LeBron James"@0]    |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Manu Ginobili"@0]   | ("Manu Ginobili")   | [:like "Danny Green"->"Marco Belinelli"@0] |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Marco Belinelli"@0] | ("Chris Paul")      | [:like "Danny Green"->"Tim Duncan"@0]      |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Tim Duncan"@0]      | ("LeBron James")    | [:like "Tim Duncan"->"Tony Parker"@0]      |
-      |                                              |                                                  | [:like "Dejounte Murray"->"Tony Parker"@0]     | ("Spurs")           | [:like "Marco Belinelli"->"Tony Parker"@0] |
-      |                                              |                                                  | [:like "Luka Doncic"->"James Harden"@0]        | ("Rockets")         | [:like "Tim Duncan"->"Manu Ginobili"@0]    |
-      |                                              |                                                  | [:serve "James Harden"->"Rockets"@0]           |                     | [:serve "Tim Duncan"->"Spurs"@0]           |
-      |                                              |                                                  | [:serve "James Harden"->"Thunders"@0]          |                     | [:like "Marco Belinelli"->"Tim Duncan"@0]  |
-      |                                              |                                                  |                                                |                     | [:like "Manu Ginobili"->"Tim Duncan"@0]    |
-      |                                              |                                                  |                                                |                     | [:serve "Marco Belinelli"->"Spurs"@0]      |
-      |                                              |                                                  |                                                |                     | [:serve "Kevin Durant"->"Thunders"@0]      |
-      |                                              |                                                  |                                                |                     | [:serve "Marco Belinelli"->"Spurs"@1]      |
-      |                                              |                                                  |                                                |                     | [:serve "Manu Ginobili"->"Spurs"@0]        |
-      |                                              |                                                  |                                                |                     | [:serve "Chris Paul"->"Rockets"@0]         |
-      |                                              |                                                  |                                                |                     | [:like "Chris Paul"->"LeBron James"@0]     |
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
       | 4        |
