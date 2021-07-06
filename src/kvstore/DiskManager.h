@@ -65,6 +65,9 @@ private:
 
     // the index in dataPaths_ for a given space + part
     std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, size_t>> partIndex_;
+
+    // lock used to protect partPath_ and partIndex_
+    std::mutex lock_;
 };
 
 }  // namespace kvstore

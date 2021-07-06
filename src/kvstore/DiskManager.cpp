@@ -48,8 +48,8 @@ StatusOr<std::vector<std::string>> DiskManager::path(GraphSpaceID spaceId) {
         return Status::Error("Space not found");
     }
     std::vector<std::string> paths;
-    for (const auto& [path, _] : spaceIt->second) {
-        paths.emplace_back(path);
+    for (const auto& partEntry : spaceIt->second) {
+        paths.emplace_back(partEntry.first);
     }
     return paths;
 }
@@ -70,6 +70,7 @@ StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId
 void DiskManager::addPartToPath(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 const std::string& path) {
+    std::lock_guard<std::mutex> lg(lock_);
     try {
         auto canonical = boost::filesystem::canonical(path);
         auto dataPath = canonical.parent_path().parent_path();
@@ -85,6 +86,7 @@ void DiskManager::addPartToPath(GraphSpaceID spaceId,
 void DiskManager::removePartFromPath(GraphSpaceID spaceId,
                                      PartitionID partId,
                                      const std::string& path) {
+    std::lock_guard<std::mutex> lg(lock_);
     try {
         auto canonical = boost::filesystem::canonical(path);
         auto dataPath = canonical.parent_path().parent_path();

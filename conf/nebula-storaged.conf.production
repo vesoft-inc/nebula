@@ -54,6 +54,9 @@
 # One path per Rocksdb instance.
 --data_path=data/storage
 
+# Minimum reserved bytes of each data path
+--minimum_reserved_bytes=268435456
+
 # The default reserved bytes for one batch operation
 --rocksdb_batch_size=4096
 # The default block cache size used in BlockBasedTable. (MB)

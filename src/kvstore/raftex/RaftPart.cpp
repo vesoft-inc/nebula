@@ -768,7 +768,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     } while (false);
 
     if (!checkAppendLogResult(res)) {
-        LOG(ERROR) << idStr_ << "Failed append logs";
+        LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write wal";
         return;
     }
     // Step 2: Replicate to followers
@@ -805,7 +805,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
     } while (false);
 
     if (!checkAppendLogResult(res)) {
-        LOG(ERROR) << idStr_ << "Replicate logs failed";
+        LOG(WARNING) << idStr_ << "replicateLogs failed because of not leader or term changed";
         return;
     }
 
@@ -911,7 +911,9 @@ void RaftPart::processAppendLogResponses(
         } while (false);
 
         if (!checkAppendLogResult(res)) {
-            LOG(ERROR) << idStr_ << "processAppendLogResponses failed!";
+            LOG(WARNING)
+                << idStr_
+                << "processAppendLogResponses failed because of not leader or term changed";
             return;
         }
 

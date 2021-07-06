@@ -338,7 +338,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            KVEngine* engine,
                                            bool asLearner,
                                            const std::vector<HostAddr>& defaultPeers) {
-    auto walPath = folly::stringPrintf("%s/wal/%d", engine->getDataRoot(), partId);
+    auto walPath = folly::stringPrintf("%s/wal/%d", engine->getWalRoot(), partId);
     auto part = std::make_shared<Part>(spaceId,
                                        partId,
                                        raftAddr_,
