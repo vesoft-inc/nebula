@@ -79,6 +79,9 @@ public:
     TermID lastLogTerm() const override {
         return lastLogTerm_;
     }
+    // Return the term of special logId
+    // if not exist， return -1
+    TermID getLogTerm(LogID id) override;
 
     // Append one log messages to the WAL
     // This method **IS NOT** thread-safe
