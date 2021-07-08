@@ -25,7 +25,8 @@ Feature: Slow Query Test
       SHOW ALL QUERIES
       """
     Then the execution should be successful
-    And wait 5 seconds
+    # In case that rebuild indexes cost too much time.
+    And wait 10 seconds
     When executing query via graph 1:
       """
       SHOW ALL QUERIES
