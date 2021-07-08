@@ -80,7 +80,7 @@ TEST(Value, Arithmetics) {
 
         v = vFloat1 + vStr2;
         EXPECT_EQ(Value::Type::STRING, v.type());
-        EXPECT_EQ(std::string("3.140000World"), v.getStr());
+        EXPECT_EQ(std::string("3.14World"), v.getStr());
 
         v = vFloat2 + vInt2;
         EXPECT_EQ(Value::Type::FLOAT, v.type());
@@ -92,7 +92,7 @@ TEST(Value, Arithmetics) {
 
         v = vStr1 + vFloat2;
         EXPECT_EQ(Value::Type::STRING, v.type());
-        EXPECT_EQ(std::string("Hello 2.670000"), v.getStr());
+        EXPECT_EQ(std::string("Hello 2.67"), v.getStr());
 
         v = vStr1 + vBool2;
         EXPECT_EQ(Value::Type::STRING, v.type());
@@ -121,6 +121,20 @@ TEST(Value, Arithmetics) {
         v = vList2 + vSet;
         EXPECT_EQ(Value::Type::LIST, v.type());
         EXPECT_EQ(List({6, 4, 5, Set({8, 7})}), v.getList());
+
+        // str + float
+        v = Value("Allen Wilson") + Value(30.142857142857142);
+        EXPECT_EQ(Value::Type::STRING, v.type());
+        EXPECT_EQ(std::string("Allen Wilson30.142857142857142"), v.getStr());
+        v = Value("Allen Wilson") + Value(-30.142857142857142);
+        EXPECT_EQ(Value::Type::STRING, v.type());
+        EXPECT_EQ(std::string("Allen Wilson-30.142857142857142"), v.getStr());
+        v =  Value(30.142857142857142) + Value("Allen Wilson");
+        EXPECT_EQ(Value::Type::STRING, v.type());
+        EXPECT_EQ(std::string("30.142857142857142Allen Wilson"), v.getStr());
+        v = Value(-30.142857142857142) + Value("Allen Wilson");
+        EXPECT_EQ(Value::Type::STRING, v.type());
+        EXPECT_EQ(std::string("-30.142857142857142Allen Wilson"), v.getStr());
     }
     // -
     {
