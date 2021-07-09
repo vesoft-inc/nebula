@@ -813,7 +813,7 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
                                       const std::vector<std::shared_ptr<IndexItem>>& indexItems,
                                       bool* isPrefixScan,
                                       IndexQueryContext* ictx) {
-    // Return directly if there is not valid index to use.
+    // Return directly if there is no valid index to use.
     if (indexItems.empty()) {
         return false;
     }
