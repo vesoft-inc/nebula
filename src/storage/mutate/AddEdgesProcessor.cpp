@@ -153,6 +153,24 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         visited.reserve(newEdges.size());
         for (auto& newEdge : newEdges) {
             auto edgeKey = *newEdge.key_ref();
+            auto l = std::make_tuple(spaceId_,
+                                     partId,
+                                     (*edgeKey.src_ref()).getStr(),
+                                     *edgeKey.edge_type_ref(),
+                                     *edgeKey.ranking_ref(),
+                                     (*edgeKey.dst_ref()).getStr());
+            if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
+                if (!env_->edgesML_->try_lock(l)) {
+                    LOG(ERROR) << folly::format("edge locked : src {}, type {}, rank {}, dst {}",
+                                                (*edgeKey.src_ref()).getStr(),
+                                                *edgeKey.edge_type_ref(),
+                                                *edgeKey.ranking_ref(),
+                                                (*edgeKey.dst_ref()).getStr());
+                    code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
+                    break;
+                }
+                dummyLock.emplace_back(std::move(l));
+            }
             VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
                     << ", EdgeType: " << *edgeKey.edge_type_ref() << ", EdgeRanking: "
                     << *edgeKey.ranking_ref() << ", VertexID: "
@@ -274,32 +292,15 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                 break;
             }
             batchHolder->put(std::move(key), std::move(retEnc.value()));
-            dummyLock.emplace_back(std::make_tuple(spaceId_,
-                                                   partId,
-                                                   (*edgeKey.src_ref()).getStr(),
-                                                   *edgeKey.edge_type_ref(),
-                                                   *edgeKey.ranking_ref(),
-                                                   (*edgeKey.dst_ref()).getStr()));
         }
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            env_->edgesML_->unlockBatch(dummyLock);
             handleAsync(spaceId_, partId, code);
             continue;
         }
         auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
         DCHECK(!batch.empty());
-        nebula::MemoryLockGuard<EMLI> lg(env_->edgesML_.get(), std::move(dummyLock), true);
-        if (!lg) {
-            auto conflict = lg.conflictKey();
-            LOG(ERROR) << "edge conflict "
-                        << std::get<0>(conflict) << ":"
-                        << std::get<1>(conflict) << ":"
-                        << std::get<2>(conflict) << ":"
-                        << std::get<3>(conflict) << ":"
-                        << std::get<4>(conflict) << ":"
-                        << std::get<5>(conflict);
-            handleAsync(spaceId_, partId, nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
-            continue;
-        }
+        nebula::MemoryLockGuard<EMLI> lg(env_->edgesML_.get(), std::move(dummyLock), false, false);
         env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(batch),
             [l = std::move(lg), icw = std::move(wrapper), partId, this]
             (nebula::cpp2::ErrorCode retCode) {
