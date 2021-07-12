@@ -49,7 +49,7 @@ DECLARE_string(rocksdb_stats_level);
 
 DECLARE_bool(enable_rocksdb_prefix_filtering);
 DECLARE_bool(rocksdb_prefix_bloom_filter_length_flag);
-DECLARE_bool(enable_rocksdb_whole_key_filtering);
+DECLARE_int32(rocksdb_plain_table_prefix_length);
 
 // rocksdb compact RangeOptions
 DECLARE_bool(rocksdb_compact_change_level);
@@ -58,9 +58,6 @@ DECLARE_int32(rocksdb_compact_target_level);
 DECLARE_string(rocksdb_wal_dir);
 DECLARE_string(rocksdb_backup_dir);
 DECLARE_int32(rocksdb_backup_interval_secs);
-
-DECLARE_string(rocksdb_memtable_type);
-DECLARE_int32(rocksdb_memtable_hash_bucket_count);
 
 namespace nebula {
 namespace kvstore {

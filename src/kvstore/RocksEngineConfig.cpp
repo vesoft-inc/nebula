@@ -79,8 +79,7 @@ DEFINE_bool(enable_rocksdb_prefix_filtering, false,
 DEFINE_bool(rocksdb_prefix_bloom_filter_length_flag, false,
             "If true, prefix bloom filter will be sizeof(PartitionID) + vidLen + sizeof(EdgeType). "
             "If false, prefix bloom filter will be sizeof(PartitionID) + vidLen. ");
-DEFINE_bool(enable_rocksdb_whole_key_filtering, true,
-            "Whether or not to enable the whole key filtering.");
+DEFINE_int32(rocksdb_plain_table_prefix_length, 4, "PlainTable prefix size");
 
 DEFINE_bool(rocksdb_compact_change_level, true,
             "If true, compacted files will be moved to the minimum level capable "
@@ -101,14 +100,6 @@ DEFINE_string(rocksdb_backup_dir, "", "Rocksdb backup directory, only used in Pl
 
 DEFINE_int32(rocksdb_backup_interval_secs, 300,
              "Rocksdb backup directory, only used in PlainTable format");
-
-DEFINE_string(rocksdb_memtable_type,
-              "Skiplist",
-              "Rocksdb memtable type, only support Skiplist and HashSkiplist");
-
-DEFINE_int32(rocksdb_memtable_hash_bucket_count,
-             1024 * 1024,
-             "Bucket count of Rocksdb HashSkiplist memtable");
 
 namespace nebula {
 namespace kvstore {
@@ -251,10 +242,10 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
         baseOpts.rate_limiter = rate_limiter;
     }
 
-    size_t prefixLength = FLAGS_rocksdb_prefix_bloom_filter_length_flag
-                              ? sizeof(PartitionID) + vidLen + sizeof(EdgeType)
-                              : sizeof(PartitionID) + vidLen;
     if (FLAGS_rocksdb_table_format == "BlockBasedTable") {
+        size_t prefixLength = FLAGS_rocksdb_prefix_bloom_filter_length_flag
+                                  ? sizeof(PartitionID) + vidLen + sizeof(EdgeType)
+                                  : sizeof(PartitionID) + vidLen;
         // BlockBasedTableOptions
         std::unordered_map<std::string, std::string> bbtOptsMap;
         if (!loadOptionsMap(bbtOptsMap, FLAGS_rocksdb_block_based_table_options)) {
@@ -287,7 +278,6 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
         if (FLAGS_enable_rocksdb_prefix_filtering) {
             baseOpts.prefix_extractor.reset(new GraphPrefixTransform(prefixLength));
         }
-        bbtOpts.whole_key_filtering = FLAGS_enable_rocksdb_whole_key_filtering;
         baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
         baseOpts.create_if_missing = true;
     } else if (FLAGS_rocksdb_table_format == "PlainTable") {
@@ -297,21 +287,12 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
         // so rocksdb_backup_interval_secs is set to half of WAL_ttl_seconds by default.
         // WAL_ttl_seconds and rocksdb_backup_interval_secs need to be modify together if necessary
         FLAGS_rocksdb_disable_wal = false;
-        baseOpts.prefix_extractor.reset(rocksdb::NewCappedPrefixTransform(prefixLength));
+        baseOpts.prefix_extractor.reset(
+            rocksdb::NewCappedPrefixTransform(FLAGS_rocksdb_plain_table_prefix_length));
         baseOpts.table_factory.reset(rocksdb::NewPlainTableFactory());
         baseOpts.create_if_missing = true;
     } else {
         return rocksdb::Status::NotSupported("Illegal table format");
-    }
-
-    if (FLAGS_rocksdb_memtable_type == "Skiplist") {
-        baseOpts.memtable_factory.reset(new rocksdb::SkipListFactory());
-    } else if (FLAGS_rocksdb_memtable_type == "HashSkiplist") {
-        baseOpts.memtable_factory.reset(
-            rocksdb::NewHashSkipListRepFactory(FLAGS_rocksdb_memtable_hash_bucket_count));
-        baseOpts.allow_concurrent_memtable_write = false;
-    } else {
-        return rocksdb::Status::NotSupported("Illegal memtable format");
     }
 
     return s;

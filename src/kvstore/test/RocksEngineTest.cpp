@@ -370,6 +370,76 @@ TEST(RocksEngineTest, BackupRestoreWithData) {
     FLAGS_rocksdb_backup_dir = "";
 }
 
+class RocksEnginePrefixTest
+    : public ::testing::TestWithParam<std::tuple<bool, std::string, int32_t>> {
+public:
+    void SetUp() override {
+        auto param = GetParam();
+        FLAGS_enable_rocksdb_prefix_filtering = std::get<0>(param);
+        FLAGS_rocksdb_table_format = std::get<1>(param);
+        if (FLAGS_rocksdb_table_format == "PlainTable") {
+            FLAGS_rocksdb_plain_table_prefix_length = std::get<2>(param);
+        }
+    }
+
+    void TearDown() override {}
+};
+
+TEST_P(RocksEnginePrefixTest, PrefixTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_engine_PrefixExtractorTest.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
+
+    PartitionID partId = 1;
+
+    std::vector<KV> data;
+    for (auto tagId = 0; tagId < 10; tagId++) {
+        data.emplace_back(NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "vertex", tagId),
+                          folly::stringPrintf("val_%d", tagId));
+    }
+    data.emplace_back(NebulaKeyUtils::systemCommitKey(partId), "123");
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
+
+    {
+        std::string prefix = NebulaKeyUtils::vertexPrefix(kDefaultVIdLen, partId, "vertex");
+        std::unique_ptr<KVIterator> iter;
+        auto code = engine->prefix(prefix, &iter);
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        int32_t num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        EXPECT_EQ(num, 10);
+    }
+    {
+        std::string prefix = NebulaKeyUtils::vertexPrefix(partId);
+        std::unique_ptr<KVIterator> iter;
+        auto code = engine->prefix(prefix, &iter);
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        int32_t num = 0;
+        while (iter->valid()) {
+            num++;
+            iter->next();
+        }
+        EXPECT_EQ(num, 10);
+    }
+    {
+        std::string value;
+        auto code = engine->get(NebulaKeyUtils::systemCommitKey(partId), &value);
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ("123", value);
+    }
+}
+
+INSTANTIATE_TEST_CASE_P(
+    PrefixExtractor_TableFormat_PlainTablePrefixSize,
+    RocksEnginePrefixTest,
+    ::testing::Values(std::make_tuple(false, "BlockBasedTable", 0),
+                      std::make_tuple(true, "BlockBasedTable", 0),
+                      // PlainTable will always enable prefix extractor
+                      std::make_tuple(true, "PlainTable", sizeof(PartitionID)),
+                      std::make_tuple(true, "PlainTable", sizeof(PartitionID) + kDefaultVIdLen)));
+
 }  // namespace kvstore
 }  // namespace nebula
 

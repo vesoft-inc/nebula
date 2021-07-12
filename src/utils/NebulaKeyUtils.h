@@ -262,6 +262,8 @@ public:
         LOG(FATAL) << msg.str();
     }
 
+    static_assert(sizeof(NebulaKeyType) == sizeof(PartitionID));
+
 private:
     NebulaKeyUtils() = delete;
 

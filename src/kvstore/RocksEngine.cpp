@@ -220,7 +220,6 @@ nebula::cpp2::ErrorCode
 RocksEngine::prefix(const std::string& prefix,
                     std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
-    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
@@ -234,7 +233,6 @@ RocksEngine::rangeWithPrefix(const std::string& start,
                              const std::string& prefix,
                              std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
-    options.prefix_same_as_start = true;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));

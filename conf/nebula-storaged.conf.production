@@ -98,8 +98,6 @@
 
 # Whether or not to enable rocksdb's prefix bloom filter, disabled by default.
 --enable_rocksdb_prefix_filtering=false
-# Whether or not to enable the whole key filtering.
---enable_rocksdb_whole_key_filtering=true
 
 ############### misc ####################
 --max_handlers_per_req=1
