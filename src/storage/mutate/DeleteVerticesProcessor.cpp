@@ -96,15 +96,21 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             std::vector<VMLI> dummyLock;
             auto batch = deleteVertices(partId, std::move(pv).second, dummyLock);
             if (!nebula::ok(batch)) {
-                env_->verticesML_->unlockBatch(dummyLock);
                 handleAsync(spaceId_, partId, nebula::error(batch));
                 continue;
             }
             DCHECK(!nebula::value(batch).empty());
-            nebula::MemoryLockGuard<VMLI> lg(env_->verticesML_.get(),
-                                             std::move(dummyLock),
-                                             false,
-                                             false);
+            nebula::MemoryLockGuard<VMLI> lg(env_->verticesML_.get(), std::move(dummyLock), true);
+            if (!lg) {
+                auto conflict = lg.conflictKey();
+                LOG(ERROR) << "vertex conflict "
+                        << std::get<0>(conflict) << ":"
+                        << std::get<1>(conflict) << ":"
+                        << std::get<2>(conflict) << ":"
+                        << std::get<3>(conflict);
+                handleAsync(spaceId_, partId, nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR);
+                continue;
+            }
             env_->kvstore_->asyncAppendBatch(spaceId_, partId, std::move(nebula::value(batch)),
                 [l = std::move(lg), icw = std::move(wrapper), partId, this] (
                     nebula::cpp2::ErrorCode code) {
@@ -136,13 +142,6 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
         while (iter->valid()) {
             auto key = iter->key();
             auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
-            auto l = std::make_tuple(spaceId_, partId, tagId, vertex.getStr());
-            if (!env_->verticesML_->try_lock(l)) {
-                LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}",
-                                            tagId, vertex.getStr());
-                return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-            }
-            target.emplace_back(std::move(l));
             RowReaderWrapper reader;
             for (auto& index : indexes_) {
                 if (index->get_schema_id().get_tag_id() == tagId) {
@@ -187,6 +186,7 @@ DeleteVerticesProcessor::deleteVertices(PartitionID partId,
                 VLOG(3) << "Evict vertex cache for vertex ID " << vertex << ", tagId " << tagId;
                 vertexCache_->evict(std::make_pair(vertex.getStr(), tagId));
             }
+            target.emplace_back(std::make_tuple(spaceId_, partId, tagId, vertex.getStr()));
             batchHolder->remove(key.str());
             iter->next();
         }

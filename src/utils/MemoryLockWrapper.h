@@ -19,19 +19,14 @@ public:
     MemoryLockGuard(MemoryLockCore<Key>* lock, const Key& key)
         : MemoryLockGuard(lock, std::vector<Key>{key}) {}
 
-    MemoryLockGuard(MemoryLockCore<Key>* lock,
-                    const std::vector<Key>& keys,
-                    bool dedup = false,
-                    bool prepCheck = true)
+    MemoryLockGuard(MemoryLockCore<Key>* lock, const std::vector<Key>& keys, bool dedup = false)
         : lock_(lock), keys_(keys) {
         if (dedup) {
             std::sort(keys_.begin(), keys_.end());
-            keys_.erase(unique(keys_.begin(), keys_.end()), keys_.end());
-        }
-        if (prepCheck) {
-            std::tie(iter_, locked_) = lock_->lockBatch(keys_);
+            auto last = std::unique(keys_.begin(), keys_.end());
+            std::tie(iter_, locked_) = lock_->lockBatch(keys_.begin(), last);
         } else {
-            locked_ = true;
+            std::tie(iter_, locked_) = lock_->lockBatch(keys_);
         }
     }
 
