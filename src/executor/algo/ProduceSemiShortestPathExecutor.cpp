@@ -86,9 +86,7 @@ void ProduceSemiShortestPathExecutor::dstNotInHistory(const Edge& edge,
             auto cost = srcPath.second.cost_ + weight;
 
             std::vector<Path> newPaths = createPaths(srcPath.second.paths_, edge);
-            std::unordered_map<Value, CostPaths> temp = {
-                {srcPath.first, CostPaths(cost, newPaths)}};
-            currentCostPathMap.emplace(dst, std::move(temp));
+            currentCostPathMap[dst].emplace(srcPath.first, CostPaths(cost, std::move(newPaths)));
         }
     } else {
         // dst in current
@@ -102,6 +100,7 @@ void ProduceSemiShortestPathExecutor::removeSamePath(std::vector<Path>& paths,
         auto iter = paths.begin();
         while (iter != paths.end()) {
             if (*iter == *ptr) {
+                VLOG(2) << "Erese Path :" << *iter;
                 iter = paths.erase(iter);
             } else {
                 ++iter;
@@ -124,9 +123,8 @@ void ProduceSemiShortestPathExecutor::dstInHistory(const Edge& edge,
                 //  (dst, startVid)'s path not in history
                 auto newCost = srcPath.second.cost_ + weight;
                 std::vector<Path> newPaths = createPaths(srcPath.second.paths_, edge);
-                std::unordered_map<Value, CostPaths> temp = {
-                    {srcPath.first, CostPaths(newCost, newPaths)}};
-                currentCostPathMap.emplace(dst, std::move(temp));
+                currentCostPathMap[dst].emplace(srcPath.first,
+                                                CostPaths(newCost, std::move(newPaths)));
             } else {
                 //  (dst, startVid)'s path in history, compare cost
                 auto newCost = srcPath.second.cost_ + weight;
@@ -136,9 +134,8 @@ void ProduceSemiShortestPathExecutor::dstInHistory(const Edge& edge,
                 } else if (newCost < historyCost) {
                     // update (dst, startVid)'s path
                     std::vector<Path> newPaths = createPaths(srcPath.second.paths_, edge);
-                    std::unordered_map<Value, CostPaths> temp = {
-                        {srcPath.first, CostPaths(newCost, newPaths)}};
-                    currentCostPathMap.emplace(dst, std::move(temp));
+                    currentCostPathMap[dst].emplace(srcPath.first,
+                                                    CostPaths(newCost, std::move(newPaths)));
                 } else {
                     std::vector<Path> newPaths = createPaths(srcPath.second.paths_, edge);
                     // if same path in history, remove it
@@ -146,9 +143,8 @@ void ProduceSemiShortestPathExecutor::dstInHistory(const Edge& edge,
                     if (newPaths.empty()) {
                         continue;
                     }
-                    std::unordered_map<Value, CostPaths> temp = {
-                        {srcPath.first, CostPaths(newCost, newPaths)}};
-                    currentCostPathMap.emplace(dst, std::move(temp));
+                    currentCostPathMap[dst].emplace(srcPath.first,
+                                                    CostPaths(newCost, std::move(newPaths)));
                 }
             }
         }
@@ -220,11 +216,11 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
             path.src = Vertex(src, {});
             path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
             if (currentCostPathMap.find(dst) != currentCostPathMap.end()) {
-                // same (src, dst), diffrent edge type or rank
                 if (currentCostPathMap[dst].find(src) == currentCostPathMap[dst].end()) {
                     CostPaths costPaths(weight, {std::move(path)});
                     currentCostPathMap[dst].emplace(src, std::move(costPaths));
                 } else {
+                    // same (src, dst), diffrent edge type or rank
                     auto currentCost = currentCostPathMap[dst][src].cost_;
                     if (weight == currentCost) {
                         currentCostPathMap[dst][src].paths_.emplace_back(std::move(path));
@@ -237,8 +233,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
                 }
             } else {
                 CostPaths costPaths(weight, {std::move(path)});
-                std::unordered_map<Value, CostPaths> temp = {{src, std::move(costPaths)}};
-                currentCostPathMap.emplace(dst, std::move(temp));
+                currentCostPathMap[dst].emplace(src, std::move(costPaths));
             }
         } else {
             if (historyCostPathMap_.find(dst) == historyCostPathMap_.end()) {
@@ -272,7 +267,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
             updateHistory(dst, srcPath.first, cost, ds.rows.back().values.back());
         }
     }
-
+    VLOG(2) << "SemiShortPath : " << ds;
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
