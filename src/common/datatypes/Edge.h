@@ -71,6 +71,8 @@ struct Edge {
     bool operator<(const Edge& rhs) const;
 
     bool contains(const Value &key) const;
+
+    const Value& value(const std::string &key) const;
 };
 
 inline std::ostream &operator<<(std::ostream& os, const Edge& v) {

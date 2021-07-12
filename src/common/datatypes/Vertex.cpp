@@ -38,6 +38,16 @@ bool Vertex::contains(const Value &key) const {
     return false;
 }
 
+const Value& Vertex::value(const std::string &key) const {
+    for (const auto& tag : tags) {
+        auto find = tag.props.find(key);
+        if (find != tag.props.end()) {
+            return find->second;
+        }
+    }
+    return Value::kNullValue;
+}
+
 std::string Vertex::toString() const {
     std::stringstream os;
     os << "(" << vid << ")";

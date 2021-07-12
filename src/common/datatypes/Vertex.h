@@ -99,6 +99,8 @@ struct Vertex {
     bool operator<(const Vertex& rhs) const;
 
     bool contains(const Value &key) const;
+
+    const Value& value(const std::string &key) const;
 };
 
 

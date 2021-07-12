@@ -40,6 +40,15 @@ bool Edge::contains(const Value& key) const {
     return props.find(key.getStr()) != props.end();
 }
 
+const Value& Edge::value(const std::string &key) const {
+    auto find = props.find(key);
+    if (find != props.end()) {
+        return find->second;
+    } else {
+        return Value::kNullValue;
+    }
+}
+
 bool Edge::operator<(const Edge& rhs) const {
     if (src != rhs.src) {
         return src < rhs.src;

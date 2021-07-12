@@ -24,17 +24,22 @@ const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
     auto& container = attributeExpr->left()->eval(ctx);
     auto& key = attributeExpr->right()->eval(ctx);
 
+    if (!key.isStr()) {
+        result_ = Value::kNullBadType;
+        return result_;
+    }
+
     switch (container.type()) {
         case Value::Type::VERTEX: {
-            result_ = container.getVertex().contains(key);
+            result_ = !container.getVertex().value(key.getStr()).isNull();
             break;
         }
         case Value::Type::EDGE: {
-            result_ = container.getEdge().contains(key);
+            result_ = !container.getEdge().value(key.getStr()).isNull();
             break;
         }
         case Value::Type::MAP: {
-            result_ = container.getMap().contains(key);
+            result_ = !container.getMap().at(key.getStr()).isNull();
             break;
         }
         case Value::Type::NULLVALUE: {
