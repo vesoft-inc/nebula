@@ -288,3 +288,13 @@ Feature: Case Expression
       | "Boris Diaw" | 2008       | 2012     | "old" | "Hornets" |
       | "Boris Diaw" | 2012       | 2016     | "bad" | "Spurs"   |
       | "Boris Diaw" | 2016       | 2017     | "old" | "Jazz"    |
+
+  Scenario: Using the return value of case expr as an input
+    When executing query:
+      """
+      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like;
+      """
+    Then the result should be, in order:
+      | like._dst       |
+      | "Manu Ginobili" |
+      | "Tony Parker"   |

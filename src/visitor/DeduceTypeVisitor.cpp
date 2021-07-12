@@ -556,6 +556,7 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
         if (!ok()) return;
     }
 
+    std::unordered_set<Value::Type> types;
     for (const auto &whenThen : expr->cases()) {
         whenThen.when->accept(this);
         if (!ok()) return;
@@ -567,10 +568,14 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
         }
         whenThen.then->accept(this);
         if (!ok()) return;
+        types.emplace(type_);
     }
 
-    // Will not deduce the actual value type returned by case expression.
-    type_ = Value::Type::__EMPTY__;
+    if (types.size() == 1) {
+        type_ = *types.begin();
+    } else {
+        type_ = Value::Type::__EMPTY__;
+    }
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
