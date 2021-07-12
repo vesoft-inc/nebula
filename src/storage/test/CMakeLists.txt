@@ -700,3 +700,21 @@ nebula_add_test(
         wangle
         gtest
 )
+
+nebula_add_executable(
+    NAME
+        storage_index_write_bm
+    SOURCES
+        StorageIndexWriteBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        follybenchmark
+        boost_regex
+        wangle
+        gtest
+)
+
