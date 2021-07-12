@@ -140,6 +140,13 @@ TEST_F(TypeCastingExpressionTest, TypeCastTest) {
     }
     {
         auto typeCast = TypeCastingExpression::make(
+            &pool, Value::Type::STRING, ConstantExpression::make(&pool, "ABC"));
+        auto eval = Expression::eval(typeCast, gExpCtxt);
+        EXPECT_EQ(eval.type(), Value::Type::STRING);
+        EXPECT_EQ(eval, "ABC");
+    }
+    {
+        auto typeCast = TypeCastingExpression::make(
             &pool, Value::Type::SET, ConstantExpression::make(&pool, 23));
         auto eval = Expression::eval(typeCast, gExpCtxt);
         EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);

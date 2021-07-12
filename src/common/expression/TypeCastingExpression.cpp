@@ -79,7 +79,11 @@ const Value& TypeCastingExpression::eval(ExpressionContext& ctx) {
             break;
         }
         case Value::Type::STRING: {
-            result_.setStr(val.toString());
+            if (val.isStr()) {
+                result_.setStr(val.moveStr());
+            } else {
+                result_.setStr(val.toString());
+            }
             break;
         }
         default: {
