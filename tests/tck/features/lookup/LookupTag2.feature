@@ -49,6 +49,12 @@ Feature: Test lookup on tag index 2
       """
     Then the result should be, in any order:
       | VertexID |
+    When executing query:
+      """
+      lookup on lookup_tag_1 WHERE lookup_tag_1.col1 == 201 AND lookup_tag_1.col2 > 200 AND lookup_tag_1.col1 > 201
+      """
+    Then the result should be, in any order:
+      | VertexID |
     Then drop the used space
 
   Scenario Outline: [tag] scan without hints

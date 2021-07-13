@@ -48,4 +48,10 @@ Feature: Test lookup on edge index 2
       """
     Then the result should be, in any order:
       | SrcVID | DstVID | Ranking |
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 AND lookup_edge_1.col2 > 200 AND lookup_edge_1.col1 > 201
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking |
     Then drop the used space

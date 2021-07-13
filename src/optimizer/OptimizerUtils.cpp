@@ -28,6 +28,7 @@ using nebula::storage::cpp2::IndexColumnHint;
 using nebula::storage::cpp2::IndexQueryContext;
 
 using BVO = nebula::graph::OptimizerUtils::BoundValueOperator;
+using ExprKind = nebula::Expression::Kind;
 
 namespace nebula {
 namespace graph {
@@ -682,25 +683,49 @@ StatusOr<IndexResult> selectRelExprIndex(const RelationalExpression* expr, const
     return result;
 }
 
-bool mergeRangeColumnHints(const std::vector<ScoredColumnHint>& hints, Value* begin, Value* end) {
+bool mergeRangeColumnHints(const ColumnDef& field,
+                           const std::vector<ScoredColumnHint>& hints,
+                           Value* begin,
+                           Value* end) {
     for (auto& h : hints) {
-        if (h.score != IndexScore::kRange) {
-            return false;
-        }
-        if (h.hint.begin_value_ref().is_set()) {
-            const auto& value = h.hint.get_begin_value();
-            if (begin->empty() || *begin < value) {
-                *begin = value;
+        switch (h.score) {
+            case IndexScore::kRange: {
+                if (h.hint.begin_value_ref().is_set()) {
+                    const auto& value = h.hint.get_begin_value();
+                    if (begin->empty() || *begin < value) {
+                        *begin = value;
+                    }
+                }
+                if (h.hint.end_value_ref().is_set()) {
+                    const auto& value = h.hint.get_end_value();
+                    if (end->empty() || *end > value) {
+                        *end = value;
+                    }
+                }
+                break;
             }
-        }
-        if (h.hint.end_value_ref().is_set()) {
-            const auto& value = h.hint.get_end_value();
-            if (end->empty() || *end > value) {
-                *end = value;
+            case IndexScore::kPrefix: {
+                // Prefix value <=> range [value, value]
+                const auto& value = h.hint.get_begin_value();
+                Value b, e;
+                auto status = OptimizerUtils::boundValue(ExprKind::kRelGE, value, field, b, e);
+                if (!status.ok()) return false;
+                if (begin->empty() || *begin < b) {
+                    *begin = b;
+                }
+                status = OptimizerUtils::boundValue(ExprKind::kRelLE, value, field, b, e);
+                if (!status.ok()) return false;
+                if (end->empty() || *end > e) {
+                    *end = e;
+                }
+                break;
+            }
+            case IndexScore::kNotEqual: {
+                return false;
             }
         }
     }
-    return !(*begin > *end);
+    return !(*begin >= *end);
 }
 
 bool getIndexColumnHintInExpr(const ColumnDef& field,
@@ -722,20 +747,37 @@ bool getIndexColumnHintInExpr(const ColumnDef& field,
 
     if (hints.size() == 1) {
         *hint = hints.front();
-    } else {
-        Value begin, end;
-        if (!mergeRangeColumnHints(hints, &begin, &end)) {
-            return false;
-        }
-        ScoredColumnHint h;
-        h.hint.set_column_name(field.get_name());
+        return true;
+    }
+    Value begin, end;
+    if (!mergeRangeColumnHints(field, hints, &begin, &end)) {
+        return false;
+    }
+    ScoredColumnHint h;
+    h.hint.set_column_name(field.get_name());
+    // Change scan type to prefix if begin + 1 == end
+    Value newBegin, newEnd;
+    auto status = OptimizerUtils::boundValue(ExprKind::kRelGT, begin, field, newBegin, newEnd);
+    if (!status.ok()) {
+        // TODO(yee): differentiate between empty set and invalid index to use
+        return false;
+    }
+    if (newBegin < end) {
+        // end > newBegin > begin
         h.hint.set_scan_type(storage::cpp2::ScanType::RANGE);
         h.hint.set_begin_value(std::move(begin));
         h.hint.set_end_value(std::move(end));
         h.score = IndexScore::kRange;
-        *hint = std::move(h);
+    } else if (newBegin == end) {
+        // end == neBegin == begin + 1
+        h.hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
+        h.hint.set_begin_value(std::move(begin));
+        h.score = IndexScore::kPrefix;
+    } else {
+        return false;
     }
 
+    *hint = std::move(h);
     return true;
 }
 
