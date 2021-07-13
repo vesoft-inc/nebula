@@ -21,7 +21,7 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
     if (wctx->filter) {
         SubPlan wherePlan;
         auto* newFilter = MatchSolver::doRewrite(wctx->qctx, *wctx->aliasesUsed, wctx->filter);
-        wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, true);
+        wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
         wherePlan.tail = wherePlan.root;
 
         return wherePlan;

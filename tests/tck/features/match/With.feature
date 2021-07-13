@@ -72,7 +72,7 @@ Feature: With clause
       RETURN count(names)
       """
     Then the result should be, in any order, with relax comparison:
-      | COUNT(names) |
+      | count(names) |
       | 191          |
     When executing query:
       """
@@ -82,8 +82,52 @@ Feature: With clause
       RETURN collect(names)
       """
     Then the result should be, in any order, with relax comparison:
-      | COLLECT(names)                                                                   |
+      | collect(names)                                                                   |
       | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquile O'Neal", "Marco Belinelli"] |
+    When profiling query:
+      """
+      MATCH (v:player)
+      WITH v.age AS age, v AS v, v.name AS name
+         ORDER BY age DESCENDING, name ASCENDING
+         LIMIT 20
+         WHERE age > 30
+      RETURN v, age
+      """
+    Then the result should be, in order, with relax comparison:
+      | v                                                                                                           | age |
+      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | 47  |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | 46  |
+      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})                                                         | 45  |
+      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         | 45  |
+      | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           | 43  |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | 42  |
+      | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     | 42  |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | 41  |
+      | ("Dirk Nowitzki" :player{age: 40, name: "Dirk Nowitzki"})                                                   | 40  |
+      | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"})                                                       | 40  |
+      | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | 39  |
+      | ("David West" :player{age: 38, name: "David West"})                                                         | 38  |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         | 38  |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             | 38  |
+      | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})                                                       | 37  |
+      | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"})                                           | 36  |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | 36  |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | 36  |
+      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               | 34  |
+      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     | 34  |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info         |
+      | 13 | Project     | 12           |                       |
+      | 12 | Filter      | 17           | {"isStable": "true"}  |
+      | 17 | TopN        | 9            |                       |
+      | 9  | Project     | 8            |                       |
+      | 8  | Filter      | 7            | {"isStable": "false"} |
+      | 7  | Project     | 6            |                       |
+      | 6  | Project     | 5            |                       |
+      | 5  | Filter      | 16           | {"isStable": "false"} |
+      | 16 | GetVertices | 1            |                       |
+      | 1  | IndexScan   | 0            |                       |
+      | 0  | Start       |              |                       |
 
   @skip
   Scenario: with match return
@@ -121,39 +165,6 @@ Feature: With clause
       | "hello" | 1 | 1 |
       | "hello" | 2 | 2 |
       | "hello" | 3 | 3 |
-
-  Scenario: match with return
-    When executing query:
-      """
-      MATCH (v:player)
-      WITH v.age AS age, v AS v, v.name AS name
-         ORDER BY age DESCENDING, name ASCENDING
-         LIMIT 20
-         WHERE age > 30
-      RETURN v, age
-      """
-    Then the result should be, in order, with relax comparison:
-      | v                                                                                                           | age |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | 47  |
-      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | 46  |
-      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})                                                         | 45  |
-      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         | 45  |
-      | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           | 43  |
-      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | 42  |
-      | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     | 42  |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | 41  |
-      | ("Dirk Nowitzki" :player{age: 40, name: "Dirk Nowitzki"})                                                   | 40  |
-      | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"})                                                       | 40  |
-      | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   | 39  |
-      | ("David West" :player{age: 38, name: "David West"})                                                         | 38  |
-      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         | 38  |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             | 38  |
-      | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})                                                       | 37  |
-      | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"})                                           | 36  |
-      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         | 36  |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | 36  |
-      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               | 34  |
-      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     | 34  |
 
   Scenario: with exists
     When executing query:

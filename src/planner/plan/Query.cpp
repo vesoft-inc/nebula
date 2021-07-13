@@ -203,6 +203,7 @@ Filter::Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool 
 std::unique_ptr<PlanNodeDescription> Filter::explain() const {
     auto desc = SingleInputNode::explain();
     addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
+    addDescription("isStable", needStableFilter_ ? "true" : "false", desc.get());
     return desc;
 }
 

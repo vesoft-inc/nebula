@@ -53,7 +53,9 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
     }
 
     if (wctx->where != nullptr) {
-        auto wherePlan = std::make_unique<WhereClausePlanner>()->transform(wctx->where.get());
+        bool needStableFilter = wctx->order != nullptr;
+        auto wherePlan =
+            std::make_unique<WhereClausePlanner>(needStableFilter)->transform(wctx->where.get());
         NG_RETURN_IF_ERROR(wherePlan);
         auto plan = std::move(wherePlan).value();
         SegmentsConnector::addInput(plan.tail, subPlan.root, true);

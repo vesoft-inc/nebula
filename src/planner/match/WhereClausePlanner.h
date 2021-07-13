@@ -16,9 +16,14 @@ namespace graph {
  */
 class WhereClausePlanner final : public CypherClausePlanner {
 public:
-    WhereClausePlanner() = default;
+    explicit WhereClausePlanner(bool needStableFilter = false)
+        : needStableFilter_(needStableFilter) {}
 
     StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+
+private:
+    // `needStableFilter_=true` only if there is orderBy in withClause(to avoid unstableErase)
+    bool needStableFilter_{false};
 };
 }   // namespace graph
 }   // namespace nebula
