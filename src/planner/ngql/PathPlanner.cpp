@@ -48,7 +48,7 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
         if (found == exprProps.edgeProps().end()) {
             ep.set_props({kDst, kType, kRank});
         } else {
-            std::set<std::string> props(found->second.begin(), found->second.end());
+            std::set<folly::StringPiece> props(found->second.begin(), found->second.end());
             props.emplace(kDst);
             props.emplace(kType);
             props.emplace(kRank);

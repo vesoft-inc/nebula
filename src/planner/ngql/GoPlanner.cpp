@@ -55,7 +55,7 @@ void GoPlanner::doBuildEdgeProps(std::unique_ptr<EdgeProps>& eProps, bool onlyDs
         if (found == exprProps.edgeProps().end()) {
             ep.set_props({kDst});
         } else {
-            std::set<std::string> props(found->second.begin(), found->second.end());
+            std::set<folly::StringPiece> props(found->second.begin(), found->second.end());
             props.emplace(kDst);
             ep.set_props(std::vector<std::string>(props.begin(), props.end()));
         }
