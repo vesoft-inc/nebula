@@ -217,11 +217,11 @@ void GraphSessionManager::updateSessionsToMeta() {
         auto& killedQueriesForEachSession = *resp.value().killed_queries_ref();
         for (auto& killedQueries : killedQueriesForEachSession) {
             auto sessionId = killedQueries.first;
+            auto session = activeSessions_.find(sessionId);
+            if (session == activeSessions_.end()) {
+                continue;
+            }
             for (auto& desc : killedQueries.second) {
-                auto session = activeSessions_.find(sessionId);
-                if (session == activeSessions_.end()) {
-                    continue;
-                }
                 if (desc.second.get_graph_addr() !=
                     session->second->getGraphAddr()) {
                     continue;
