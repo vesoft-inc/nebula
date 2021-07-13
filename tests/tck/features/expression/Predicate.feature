@@ -144,6 +144,26 @@ Feature: Predicate
     Then a SyntaxError should be raised at runtime: The exists only accept LabelAttribe, Attribute and Subscript
     Then drop the used space
 
+  Scenario: use a exists with null properties
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player) WHERE not exists(v.name) RETURN id(v)
+      """
+    Then the result should be, in any order:
+      | id(v)   |
+      | "Null1" |
+      | "Null2" |
+      | "Null3" |
+      | "Null4" |
+    When executing query:
+      """
+      WITH {a : NULL, b : 1, c : false} AS m RETURN exists(m.a)
+      """
+    Then the result should be, in any order:
+      | exists(m.a) |
+      | false       |
+
   Scenario: exists with dynamic map in variable length MATCH
     Given a graph with space named "nba"
     When executing query:
