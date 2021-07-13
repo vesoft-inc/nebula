@@ -120,6 +120,18 @@ Status GroupByValidator::validateGroup(const GroupClause* groupClause) {
 Status GroupByValidator::toPlan() {
     auto* groupBy = Aggregate::make(qctx_, nullptr, std::move(groupKeys_), std::move(groupItems_));
     groupBy->setColNames(aggOutputColNames_);
+    if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
+        if (userDefinedVarNameList_.size() != 1) {
+            return Status::SemanticError("Multiple user defined vars not supported yet.");
+        }
+        auto userDefinedVar = *userDefinedVarNameList_.begin();
+        if (!userDefinedVar.empty()) {
+            groupBy->setInputVar(userDefinedVar);
+        } else {
+            return Status::SemanticError("Invalid anonymous user defined var.");
+        }
+    }
+
     if (needGenProject_) {
         // rewrite Expr which has inner aggExpr and push it up to Project.
         root_ = Project::make(qctx_, groupBy, projCols_);

@@ -345,6 +345,17 @@ Feature: Basic Aggregate and GroupBy
       | "Raptors"   | 34     |
       | "Lakers"    | 40     |
 
+  Scenario: GroupBy user defined var
+    When executing query:
+      """
+      $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst, $$.player.age AS age;
+      GROUP BY $var.age YIELD $var.age AS age, count($var.dst) AS count
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age | count |
+      | 36  | 1     |
+      | 41  | 1     |
+
   Scenario: Implicit GroupBy
     When executing query:
       """
@@ -660,6 +671,13 @@ Feature: Basic Aggregate and GroupBy
       $var1=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst;
       $var2=GO FROM "Tim Duncan" OVER serve YIELD serve._dst AS dst;
       YIELD count($var1.dst),$var2.dst AS count
+      """
+    Then a SemanticError should be raised at runtime: Only one variable allowed to use.
+    When executing query:
+      """
+      $var1=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst;
+      $var2=GO FROM "Tim Duncan" OVER serve YIELD serve._dst AS dst;
+      GROUP BY $var1.dst,$var2.dst YIELD 3
       """
     Then a SemanticError should be raised at runtime: Only one variable allowed to use.
     When executing query:
