@@ -73,10 +73,13 @@ class TestJobs(NebulaTestSuite):
         check_jobs_resp_obj(resp.row_values(0), 'STATS')
 
         job_id = resp.row_values(0)[0].as_int()
-        resp = self.client.execute('STOP JOB {};'.format(job_id))
-        # Executin error becuase the job is finished
-        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
-        
+        stop_job_resp = self.client.execute('STOP JOB {};'.format(job_id))
+        if resp.row_values(0)[2].as_string() == "FINISHED":
+            # Executin error if the job is finished
+            self.check_resp_failed(stop_job_resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        else:
+            self.check_resp_succeeded(stop_job_resp)
+
         # This is skipped becuase it is hard to simulate the situation
         # resp = self.client.execute('RECOVER JOB;')
         # self.check_resp_succeeded(resp)
