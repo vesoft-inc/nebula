@@ -60,7 +60,10 @@ currdir:
 sess: currdir
 	python3 -m pytest -m "not skip" -k "not tck" job/test_session.py
 
-test: sess
+jobs: currdir
+	python3 -m pytest -m "not skip" -k "not tck" job/test_jobs.py
+
+test: sess jobs
 	python3 -m pytest -n$(J) --dist=loadfile -m "not skip" -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
