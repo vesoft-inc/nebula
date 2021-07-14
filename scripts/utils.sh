@@ -148,3 +148,10 @@ function env_check {
         WARN "The CPU time a process can consume is restricted to ${cputime}"
     fi
 }
+
+# Get the daemon Git commit version information
+function daemon_version {
+    local version=$(${1} --version | head -n 1)
+    echo ${version} | sed 's/.*Git: \([[:alnum:]]*\).*/\1/g'
+}
+

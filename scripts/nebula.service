@@ -207,6 +207,7 @@ function kill_daemon {
 # args: <daemon name> [config file]
 function status_daemon {
     local daemon_name=nebula-${1}
+    local daemon_version=$(daemon_version ${INSTALL_ROOT}/bin/${daemon_name})
     local config=${2}
 
     [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
@@ -221,9 +222,9 @@ function status_daemon {
         else
             port=${BLINK}${RED}${port}${NC}
         fi
-        INFO "${daemon_name}: Running as $(cat ${pid_file}), Listening on ${port}"
+        INFO "${daemon_name}(${daemon_version}): Running as $(cat ${pid_file}), Listening on ${port}"
     else
-        INFO "${daemon_name}: Exited"
+        INFO "${daemon_name}(${daemon_version}): Exited"
     fi
 }
 
