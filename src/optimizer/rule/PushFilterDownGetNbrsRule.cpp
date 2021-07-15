@@ -18,6 +18,7 @@
 #include "planner/plan/Query.h"
 #include "visitor/ExtractFilterExprVisitor.h"
 
+using nebula::Expression;
 using nebula::graph::Filter;
 using nebula::graph::GetNeighbors;
 using nebula::graph::PlanNode;
@@ -30,14 +31,24 @@ std::unique_ptr<OptRule> PushFilterDownGetNbrsRule::kInstance =
     std::unique_ptr<PushFilterDownGetNbrsRule>(new PushFilterDownGetNbrsRule());
 
 PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() {
-    // There is a problem with the push-down of the storage layer filtering
-    // RuleSet::QueryRules().addRule(this);
+    RuleSet::QueryRules().addRule(this);
 }
 
 const Pattern &PushFilterDownGetNbrsRule::pattern() const {
-    static Pattern pattern = Pattern::create(
-        graph::PlanNode::Kind::kFilter, {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)});
+    static Pattern pattern =
+        Pattern::create(PlanNode::Kind::kFilter, {Pattern::create(PlanNode::Kind::kGetNeighbors)});
     return pattern;
+}
+
+bool PushFilterDownGetNbrsRule::match(OptContext *ctx, const MatchedResult &matched) const {
+    if (!OptRule::match(ctx, matched)) {
+        return false;
+    }
+    auto gn = static_cast<const GetNeighbors *>(matched.planNode({0, 0}));
+    auto edgeProps = gn->edgeProps();
+    // if fetching props of edge in GetNeighbors, let it go and do more checks in transform.
+    // otherwise skip this rule.
+    return edgeProps != nullptr && !edgeProps->empty();
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(

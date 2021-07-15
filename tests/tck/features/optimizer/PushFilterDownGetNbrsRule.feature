@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@skip
 Feature: Push Filter down GetNeighbors rule
 
   Background:
@@ -114,25 +113,25 @@ Feature: Push Filter down GetNeighbors rule
       | 2  | Start        |              |                                       |
 
   @skip
-  Scenario: Only push start vertex filter down
+  Scenario: Only push source vertex filter down
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
-      WHERE $^.player.age > 18 AND $$.team.name == "Lakers"
+      WHERE $^.player.age > 18 AND $$.team.name == "Spurs"
       YIELD $^.player.name AS name
       """
     Then the result should be, in any order:
       | name         |
       | "Boris Diaw" |
     And the execution plan should be:
-      | name         | dependencies | operator info                             |
-      | Project      | 1            |                                           |
-      | Filter       | 2            | {"condition": "($$.team.name=="Lakers")"} |
-      | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}          |
-      | Start        |              |                                           |
+      | name         | dependencies | operator info                            |
+      | Project      | 1            |                                          |
+      | Filter       | 2            | {"condition": "($$.team.name=="Spurs")"} |
+      | GetNeighbors | 3            | {"filter": "($^.player.age>18)"}         |
+      | Start        |              |                                          |
 
   @skip
-  Scenario: fail to push start or end vertex filter condition down
+  Scenario: fail to push source or dst vertex filter condition down
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
@@ -150,7 +149,7 @@ Feature: Push Filter down GetNeighbors rule
       | Start        |              |                                                                 |
 
   @skip
-  Scenario: fail to push end vertex filter down
+  Scenario: fail to push dst vertex filter down
     When profiling query:
       """
       GO 1 STEPS FROM "Boris Diaw" OVER serve
