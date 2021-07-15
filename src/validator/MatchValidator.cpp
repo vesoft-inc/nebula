@@ -437,6 +437,15 @@ Status MatchValidator::validateWith(const WithClause *with,
     std::vector<const Expression *> exprs;
     exprs.reserve(with->columns()->size());
     for (auto *col : with->columns()->columns()) {
+        auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
+        for (auto *labelExpr : labelExprs) {
+            DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
+            auto label = static_cast<const LabelExpression *>(labelExpr)->name();
+            if (!withClauseCtx.yield->aliasesUsed ||
+                !withClauseCtx.yield->aliasesUsed->count(label)) {
+                return Status::SemanticError("Variable `%s` not defined", label.c_str());
+            }
+        }
         if (col->alias().empty()) {
             if (col->expr()->kind() == Expression::Kind::kLabel) {
                 col->setAlias(col->toString());

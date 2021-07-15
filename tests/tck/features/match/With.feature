@@ -29,13 +29,6 @@ Feature: With clause
     Then the result should be, in any order, with relax comparison:
       | a       | b       |
       | [1,2,3] | "hello" |
-    When executing query:
-      """
-      WITH [1, 2, 3] AS a
-      WITH a, "hello"
-      RETURN a
-      """
-    Then a SemanticError should be raised at runtime: Expression in WITH must be aliased (use AS)
 
   Scenario: with agg return
     When executing query:
@@ -199,3 +192,19 @@ Feature: With clause
     Then the result should be, in any order, with relax comparison:
       | exists(m.abc) | exists(NULL.abc) |
       | NULL          | NULL             |
+
+  Scenario: error check
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a
+      WITH a, "hello"
+      RETURN a
+      """
+    Then a SemanticError should be raised at runtime: Expression in WITH must be aliased (use AS)
+    When executing query:
+      """
+      WITH [1, 2, 3] AS a
+      WITH a, a+b AS c
+      RETURN a
+      """
+    Then a SemanticError should be raised at runtime:  Variable `b` not defined
