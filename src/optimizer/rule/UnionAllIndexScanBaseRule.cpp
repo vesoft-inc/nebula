@@ -58,10 +58,16 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
 StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
                                                                const MatchedResult& matched) const {
     auto filter = static_cast<const Filter*>(matched.planNode());
-    auto scan = static_cast<const TagIndexFullScan*>(matched.planNode({0, 0}));
+    auto node = matched.planNode({0, 0});
+    auto scan = static_cast<const IndexScan*>(node);
 
     auto metaClient = ctx->qctx()->getMetaClient();
-    auto status = metaClient->getTagIndexesFromCache(scan->space());
+    StatusOr<std::vector<std::shared_ptr<meta::cpp2::IndexItem>>> status;
+    if (node->kind() == graph::PlanNode::Kind::kTagIndexFullScan) {
+        status = metaClient->getTagIndexesFromCache(scan->space());
+    } else {
+        status = metaClient->getEdgeIndexesFromCache(scan->space());
+    }
     NG_RETURN_IF_ERROR(status);
     auto indexItems = std::move(status).value();
 
