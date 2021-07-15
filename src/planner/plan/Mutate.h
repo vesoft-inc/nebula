@@ -390,8 +390,8 @@ public:
     static DeleteEdges* make(QueryContext* qctx,
                              PlanNode* input,
                              GraphSpaceID spaceId,
-                             std::vector<EdgeKeyRef*> edgeKeyRefs) {
-        return qctx->objPool()->add(new DeleteEdges(qctx, input, spaceId, std::move(edgeKeyRefs)));
+                             EdgeKeyRef *edgeKeyRef) {
+        return qctx->objPool()->add(new DeleteEdges(qctx, input, spaceId, edgeKeyRef));
     }
 
     std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -400,22 +400,22 @@ public:
         return space_;
     }
 
-    const std::vector<EdgeKeyRef*>& getEdgeKeyRefs() const {
-        return edgeKeyRefs_;
+    EdgeKeyRef* edgeKeyRef() const {
+        return edgeKeyRef_;
     }
 
 private:
     DeleteEdges(QueryContext* qctx,
                 PlanNode* input,
                 GraphSpaceID spaceId,
-                std::vector<EdgeKeyRef*> edgeKeyRefs)
+                EdgeKeyRef *edgeKeyRef)
         : SingleInputNode(qctx, Kind::kDeleteEdges, input)
         , space_(spaceId)
-        , edgeKeyRefs_(std::move(edgeKeyRefs)) {}
+        , edgeKeyRef_(edgeKeyRef) {}
 
 private:
     GraphSpaceID space_{-1};
-    std::vector<EdgeKeyRef*> edgeKeyRefs_;
+    EdgeKeyRef  *edgeKeyRef_{nullptr};
 };
 
 }  // namespace graph

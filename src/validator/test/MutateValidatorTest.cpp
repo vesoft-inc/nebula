@@ -56,7 +56,10 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
         std::vector<PlanNode::Kind> expected = {
             PK::kDeleteVertices,
             PK::kDeleteEdges,
+            PK::kDedup,
+            PK::kProject,
             PK::kGetNeighbors,
+            PK::kDedup,
             PK::kStart,
         };
         ASSERT_TRUE(checkResult(cmd, expected));
@@ -67,7 +70,10 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
         std::vector<PlanNode::Kind> expected = {
             PK::kDeleteVertices,
             PK::kDeleteEdges,
+            PK::kDedup,
+            PK::kProject,
             PK::kGetNeighbors,
+            PK::kDedup,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart,
@@ -87,6 +93,7 @@ TEST_F(MutateValidatorTest, DeleteEdgeTest) {
         auto cmd = "DELETE EDGE like \"A\"->\"B\"";
         std::vector<PlanNode::Kind> expected = {
             PK::kDeleteEdges,
+            PK::kDedup,
             PK::kStart,
         };
         ASSERT_TRUE(checkResult(cmd, expected));
@@ -103,6 +110,7 @@ TEST_F(MutateValidatorTest, DeleteEdgeTest) {
                    "| DELETE EDGE like $-.src -> $-.dst @ $-.rank";
         std::vector<PlanNode::Kind> expected = {
             PK::kDeleteEdges,
+            PK::kDedup,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart,
@@ -116,6 +124,7 @@ TEST_F(MutateValidatorTest, DeleteEdgeTest) {
                    "; DELETE EDGE like $var.src -> $var.dst @ $var.rank";
         std::vector<PlanNode::Kind> expected = {
             PK::kDeleteEdges,
+            PK::kDedup,
             PK::kProject,
             PK::kGetNeighbors,
             PK::kStart,

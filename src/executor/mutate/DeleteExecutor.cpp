@@ -80,67 +80,63 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
     SCOPED_TIMER(&execTime_);
 
     auto *deNode = asNode<DeleteEdges>(node());
-    auto edgeKeyRefs = deNode->getEdgeKeyRefs();
+    auto *edgeKeyRef = DCHECK_NOTNULL(deNode->edgeKeyRef());
     std::vector<storage::cpp2::EdgeKey> edgeKeys;
     const auto& spaceInfo = qctx()->rctx()->session()->space();
-    if (!edgeKeyRefs.empty()) {
-        auto inputVar = deNode->inputVar();
-        DCHECK(!inputVar.empty());
-        auto& inputResult = ectx_->getResult(inputVar);
-        auto iter = inputResult.iter();
-        edgeKeys.reserve(iter->size());
-        QueryExpressionContext ctx(ectx_);
-        for (; iter->valid(); iter->next()) {
-            for (auto &edgeKeyRef : edgeKeyRefs) {
-                storage::cpp2::EdgeKey edgeKey;
-                auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx(iter.get()));
-                if (srcId.isNull() || srcId.empty()) {
-                    VLOG(3) << "NULL or EMPTY vid";
-                    continue;
-                }
-                if (!SchemaUtil::isValidVid(srcId, *spaceInfo.spaceDesc.vid_type_ref())) {
-                    std::stringstream ss;
-                    ss << "Wrong srcId type `" << srcId.type()
-                       << "`, value `" << srcId.toString() << "'";
-                    return Status::Error(ss.str());
-                }
-                auto dstId = Expression::eval(edgeKeyRef->dstid(), ctx(iter.get()));
-                if (!SchemaUtil::isValidVid(dstId, *spaceInfo.spaceDesc.vid_type_ref())) {
-                    std::stringstream ss;
-                    ss << "Wrong dstId type `" << dstId.type()
-                       << "', value `" << dstId.toString() << "'";
-                    return Status::Error(ss.str());
-                }
-                auto rank = Expression::eval(edgeKeyRef->rank(), ctx(iter.get()));
-                if (!rank.isInt()) {
-                    std::stringstream ss;
-                    ss << "Wrong rank type `" << rank.type()
-                       << "', value `" << rank.toString() << "'";
-                    return Status::Error(ss.str());
-                }
-                DCHECK(edgeKeyRef->type());
-                auto type = Expression::eval(edgeKeyRef->type(), ctx(iter.get()));
-                if (!type.isInt()) {
-                    std::stringstream ss;
-                    ss << "Wrong edge type `" << type.type()
-                       << "', value `" << type.toString() << "'";
-                    return Status::Error(ss.str());
-                }
-
-                // out edge
-                edgeKey.set_src(srcId);
-                edgeKey.set_dst(dstId);
-                edgeKey.set_ranking(rank.getInt());
-                edgeKey.set_edge_type(type.getInt());
-                edgeKeys.emplace_back(edgeKey);
-
-                // in edge
-                edgeKey.set_src(std::move(dstId));
-                edgeKey.set_dst(std::move(srcId));
-                edgeKey.set_edge_type(-type.getInt());
-                edgeKeys.emplace_back(std::move(edgeKey));
-            }
+    auto inputVar = deNode->inputVar();
+    DCHECK(!inputVar.empty());
+    auto& inputResult = ectx_->getResult(inputVar);
+    auto iter = inputResult.iter();
+    edgeKeys.reserve(iter->size());
+    QueryExpressionContext ctx(ectx_);
+    for (; iter->valid(); iter->next()) {
+        storage::cpp2::EdgeKey edgeKey;
+        auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx(iter.get()));
+        if (srcId.isNull() || srcId.empty()) {
+            VLOG(3) << "NULL or EMPTY vid";
+            continue;
         }
+        if (!SchemaUtil::isValidVid(srcId, *spaceInfo.spaceDesc.vid_type_ref())) {
+            std::stringstream ss;
+            ss << "Wrong srcId type `" << srcId.type()
+                << "`, value `" << srcId.toString() << "'";
+            return Status::Error(ss.str());
+        }
+        auto dstId = Expression::eval(edgeKeyRef->dstid(), ctx(iter.get()));
+        if (!SchemaUtil::isValidVid(dstId, *spaceInfo.spaceDesc.vid_type_ref())) {
+            std::stringstream ss;
+            ss << "Wrong dstId type `" << dstId.type()
+                << "', value `" << dstId.toString() << "'";
+            return Status::Error(ss.str());
+        }
+        auto rank = Expression::eval(edgeKeyRef->rank(), ctx(iter.get()));
+        if (!rank.isInt()) {
+            std::stringstream ss;
+            ss << "Wrong rank type `" << rank.type()
+                << "', value `" << rank.toString() << "'";
+            return Status::Error(ss.str());
+        }
+        DCHECK(edgeKeyRef->type());
+        auto type = Expression::eval(edgeKeyRef->type(), ctx(iter.get()));
+        if (!type.isInt()) {
+            std::stringstream ss;
+            ss << "Wrong edge type `" << type.type()
+                << "', value `" << type.toString() << "'";
+            return Status::Error(ss.str());
+        }
+
+        // out edge
+        edgeKey.set_src(srcId);
+        edgeKey.set_dst(dstId);
+        edgeKey.set_ranking(rank.getInt());
+        edgeKey.set_edge_type(type.getInt());
+        edgeKeys.emplace_back(edgeKey);
+
+        // in edge
+        edgeKey.set_src(std::move(dstId));
+        edgeKey.set_dst(std::move(srcId));
+        edgeKey.set_edge_type(-type.getInt());
+        edgeKeys.emplace_back(std::move(edgeKey));
     }
 
     if (edgeKeys.empty()) {

@@ -323,6 +323,9 @@ Status DeleteVerticesValidator::toPlan() {
         vidVar = inputVarName_;
     }
 
+    auto* dedupVid = Dedup::make(qctx_, nullptr);
+    dedupVid->setInputVar(vidVar);
+
     std::vector<storage::cpp2::EdgeProp> edgeProps;
     // make edgeRefs and edgeProp
     auto index = 0u;
@@ -354,7 +357,7 @@ Status DeleteVerticesValidator::toPlan() {
     auto statPropsPtr = std::make_unique<std::vector<storage::cpp2::StatProp>>();
     auto exprPtr = std::make_unique<std::vector<storage::cpp2::Expr>>();
     auto* getNeighbors = GetNeighbors::make(qctx_,
-                                            nullptr,
+                                            dedupVid,
                                             spaceId_,
                                             vidRef_,
                                             edgeTypes_,
@@ -363,22 +366,35 @@ Status DeleteVerticesValidator::toPlan() {
                                             std::move(edgePropsPtr),
                                             std::move(statPropsPtr),
                                             std::move(exprPtr));
-    getNeighbors->setInputVar(vidVar);
+
+    auto *yieldColumns = pool->makeAndAdd<YieldColumns>();
+    yieldColumns->addColumn(new YieldColumn(EdgeSrcIdExpression::make(pool, "*"), kSrc));
+    yieldColumns->addColumn(new YieldColumn(EdgeTypeExpression::make(pool, "*"), kType));
+    yieldColumns->addColumn(new YieldColumn(EdgeRankExpression::make(pool, "*"), kRank));
+    yieldColumns->addColumn(new YieldColumn(EdgeDstIdExpression::make(pool, "*"), kDst));
+    auto *edgeKey = Project::make(qctx_, getNeighbors, yieldColumns);
+
+    auto *dedupEdgeKey = Dedup::make(qctx_, edgeKey);
 
     // create deleteEdges node
+    auto *edgeKeyRef = pool->makeAndAdd<EdgeKeyRef>(InputPropertyExpression::make(pool, kSrc),
+                                                    InputPropertyExpression::make(pool, kDst),
+                                                    InputPropertyExpression::make(pool, kRank),
+                                                    true);
+    edgeKeyRef->setType(InputPropertyExpression::make(pool, kType));
     auto *deNode = DeleteEdges::make(qctx_,
-                                     getNeighbors,
+                                     dedupEdgeKey,
                                      spaceId_,
-                                     std::move(edgeKeyRefs_));
+                                     edgeKeyRef);
 
     auto *dvNode = DeleteVertices::make(qctx_,
                                         deNode,
                                         spaceId_,
                                         vidRef_);
 
-    dvNode->setInputVar(vidVar);
+    dvNode->setInputVar(dedupVid->outputVar());
     root_ = dvNode;
-    tail_ = getNeighbors;
+    tail_ = dedupVid;
     return Status::OK();
 }
 
@@ -473,13 +489,15 @@ Status DeleteEdgesValidator::checkInput() {
 }
 
 Status DeleteEdgesValidator::toPlan() {
+    auto dedup = Dedup::make(qctx_, nullptr);
+    dedup->setInputVar(edgeKeyVar_);
+
     auto *doNode = DeleteEdges::make(qctx_,
-                                     nullptr,
+                                     dedup,
                                      vctx_->whichSpace().id,
-                                     edgeKeyRefs_);
-    doNode->setInputVar(edgeKeyVar_);
+                                     edgeKeyRefs_.front());
     root_ = doNode;
-    tail_ = root_;
+    tail_ = dedup;
     return Status::OK();
 }
 
