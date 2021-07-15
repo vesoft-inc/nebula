@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
+#include "util/ExpressionUtils.h"
 
 namespace nebula {
 class StepClause final {
@@ -340,6 +341,15 @@ public:
 
     YieldColumn* back() {
         return columns_.back().get();
+    }
+
+    bool hasAgg() const {
+        for (auto& col : columns_) {
+            if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
+                return true;
+            }
+        }
+        return false;
     }
 
 private:

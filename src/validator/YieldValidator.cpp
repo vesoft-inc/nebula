@@ -27,7 +27,7 @@ Status YieldValidator::validateImpl() {
     }
 
     auto yield = static_cast<YieldSentence *>(sentence_);
-    if (yield->hasAgg()) {
+    if (yield->yield()->yields()->hasAgg()) {
         NG_RETURN_IF_ERROR(makeImplicitGroupByValidator());
     }
     NG_RETURN_IF_ERROR(validateWhere(yield->where()));

@@ -1390,9 +1390,25 @@ unwind_clause
 
 with_clause
     : KW_WITH yield_columns match_order_by match_skip match_limit where_clause {
+        if ($6 && graph::ExpressionUtils::findAny($6->filter(),{Expression::Kind::kAggregate})) {
+            delete($2);
+            delete($3);
+            delete($4);
+            delete($5);
+            delete($6);
+            throw nebula::GraphParser::syntax_error(@6, "Invalid use of aggregating function in this context.");
+        }
         $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
     }
     | KW_WITH KW_DISTINCT yield_columns match_order_by match_skip match_limit where_clause {
+        if ($7 && graph::ExpressionUtils::findAny($7->filter(),{Expression::Kind::kAggregate})) {
+            delete($3);
+            delete($4);
+            delete($5);
+            delete($6);
+            delete($7);
+            throw nebula::GraphParser::syntax_error(@7, "Invalid use of aggregating function in this context.");
+        }
         $$ = new WithClause($3, $4, $5, $6, $7, true);
     }
     ;

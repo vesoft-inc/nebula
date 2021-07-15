@@ -768,6 +768,22 @@ Feature: Basic Aggregate and GroupBy
       RETURN v.age
       """
     Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v
+      WHERE avg(v.age) > 1
+      RETURN v.age
+      """
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH DISTINCT v
+      WHERE avg(v.age) > 1
+      RETURN v.age
+      """
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in this context. near `WHERE avg(v.age) > 1'
 
 # When executing query:
 # """
