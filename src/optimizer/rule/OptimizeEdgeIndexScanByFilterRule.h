@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_RULE_PUSHFILTERDOWNEDGEINDEXSCANRULE_H_
-#define OPTIMIZER_RULE_PUSHFILTERDOWNEDGEINDEXSCANRULE_H_
+#ifndef OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
+#define OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
 
 #include <memory>
 
@@ -17,7 +17,7 @@ namespace opt {
 // At present, we do NOT split filter conditions into two parts, one part is pushed down storage
 // layer and another will be leaved into filter. Because this is enough for Lookup queries. We
 // will enhance this rule for general usage later, such as MATCH queries.
-class PushFilterDownEdgeIndexScanRule final : public OptRule {
+class OptimizeEdgeIndexScanByFilterRule final : public OptRule {
 public:
     const Pattern &pattern() const override;
     bool match(OptContext *ctx, const MatchedResult &matched) const override;
@@ -27,7 +27,7 @@ public:
     std::string toString() const override;
 
 private:
-    PushFilterDownEdgeIndexScanRule();
+    OptimizeEdgeIndexScanByFilterRule();
 
     static std::unique_ptr<OptRule> kInstance;
 };
@@ -35,4 +35,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_RULE_PUSHFILTERDOWNEDGEINDEXSCANRULE_H_
+#endif   // OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_

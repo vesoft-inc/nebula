@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/PushFilterDownTagIndexScanRule.h"
+#include "optimizer/rule/OptimizeTagIndexScanByFilterRule.h"
 
 #include "common/expression/Expression.h"
 #include "common/interface/gen-cpp2/storage_types.h"
@@ -33,20 +33,20 @@ using TransformResult = nebula::opt::OptRule::TransformResult;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> PushFilterDownTagIndexScanRule::kInstance =
-    std::unique_ptr<PushFilterDownTagIndexScanRule>(new PushFilterDownTagIndexScanRule());
+std::unique_ptr<OptRule> OptimizeTagIndexScanByFilterRule::kInstance =
+    std::unique_ptr<OptimizeTagIndexScanByFilterRule>(new OptimizeTagIndexScanByFilterRule());
 
-PushFilterDownTagIndexScanRule::PushFilterDownTagIndexScanRule() {
+OptimizeTagIndexScanByFilterRule::OptimizeTagIndexScanByFilterRule() {
     RuleSet::DefaultRules().addRule(this);
 }
 
-const Pattern& PushFilterDownTagIndexScanRule::pattern() const {
+const Pattern& OptimizeTagIndexScanByFilterRule::pattern() const {
     static Pattern pattern =
         Pattern::create(Kind::kFilter, {Pattern::create(Kind::kTagIndexFullScan)});
     return pattern;
 }
 
-bool PushFilterDownTagIndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
+bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResult& matched) const {
     if (!OptRule::match(ctx, matched)) {
         return false;
     }
@@ -82,7 +82,7 @@ TagIndexScan* makeTagIndexScan(QueryContext* qctx, const TagIndexScan* scan, boo
     return tagScan;
 }
 
-StatusOr<TransformResult> PushFilterDownTagIndexScanRule::transform(
+StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
     OptContext* ctx,
     const MatchedResult& matched) const {
     auto filter = static_cast<const Filter*>(matched.planNode());
@@ -117,8 +117,8 @@ StatusOr<TransformResult> PushFilterDownTagIndexScanRule::transform(
     return result;
 }
 
-std::string PushFilterDownTagIndexScanRule::toString() const {
-    return "PushFilterDownTagIndexScanRule";
+std::string OptimizeTagIndexScanByFilterRule::toString() const {
+    return "OptimizeTagIndexScanByFilterRule";
 }
 
 }   // namespace opt

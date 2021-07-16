@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/PushFilterDownEdgeIndexScanRule.h"
+#include "optimizer/rule/OptimizeEdgeIndexScanByFilterRule.h"
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -42,20 +42,20 @@ using TransformResult = nebula::opt::OptRule::TransformResult;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> PushFilterDownEdgeIndexScanRule::kInstance =
-    std::unique_ptr<PushFilterDownEdgeIndexScanRule>(new PushFilterDownEdgeIndexScanRule());
+std::unique_ptr<OptRule> OptimizeEdgeIndexScanByFilterRule::kInstance =
+    std::unique_ptr<OptimizeEdgeIndexScanByFilterRule>(new OptimizeEdgeIndexScanByFilterRule());
 
-PushFilterDownEdgeIndexScanRule::PushFilterDownEdgeIndexScanRule() {
+OptimizeEdgeIndexScanByFilterRule::OptimizeEdgeIndexScanByFilterRule() {
     RuleSet::DefaultRules().addRule(this);
 }
 
-const Pattern& PushFilterDownEdgeIndexScanRule::pattern() const {
+const Pattern& OptimizeEdgeIndexScanByFilterRule::pattern() const {
     static Pattern pattern =
         Pattern::create(Kind::kFilter, {Pattern::create(Kind::kEdgeIndexFullScan)});
     return pattern;
 }
 
-bool PushFilterDownEdgeIndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
+bool OptimizeEdgeIndexScanByFilterRule::match(OptContext* ctx, const MatchedResult& matched) const {
     if (!OptRule::match(ctx, matched)) {
         return false;
     }
@@ -90,7 +90,7 @@ EdgeIndexScan* makeEdgeIndexScan(QueryContext* qctx, const EdgeIndexScan* scan, 
     return scanNode;
 }
 
-StatusOr<TransformResult> PushFilterDownEdgeIndexScanRule::transform(
+StatusOr<TransformResult> OptimizeEdgeIndexScanByFilterRule::transform(
     OptContext* ctx,
     const MatchedResult& matched) const {
     auto filter = static_cast<const Filter*>(matched.planNode());
@@ -124,8 +124,8 @@ StatusOr<TransformResult> PushFilterDownEdgeIndexScanRule::transform(
     return result;
 }
 
-std::string PushFilterDownEdgeIndexScanRule::toString() const {
-    return "PushFilterDownEdgeIndexScanRule";
+std::string OptimizeEdgeIndexScanByFilterRule::toString() const {
+    return "OptimizeEdgeIndexScanByFilterRule";
 }
 
 }   // namespace opt

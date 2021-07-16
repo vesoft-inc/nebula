@@ -883,6 +883,12 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
     std::vector<storage::cpp2::IndexColumnHint> hints;
     hints.reserve(index.hints.size());
     auto iter = index.hints.begin();
+
+    // Use full scan if the highest index score is NotEqual
+    if (iter->score == IndexScore::kNotEqual) {
+        return false;
+    }
+
     for (; iter != index.hints.end(); ++iter) {
         auto& hint = *iter;
         if (hint.score == IndexScore::kPrefix) {
