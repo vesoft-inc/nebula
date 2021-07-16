@@ -353,6 +353,8 @@ public:
     static GraphSpaceID parseIndexKeySpaceID(folly::StringPiece key);
     static GraphSpaceID parseDefaultKeySpaceID(folly::StringPiece key);
 
+    static std::string idKey();
+
     // backup
     static ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> backupIndex(
         kvstore::KVStore* kvstore,

@@ -155,7 +155,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::all
 template<typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
-    static const std::string kIdKey = "__id__";
+    const std::string kIdKey = MetaServiceUtils::idKey();
     int32_t id;
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);

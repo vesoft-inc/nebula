@@ -25,7 +25,9 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"groups", {"__groups__", true}},
     {"zones", {"__zones__", true}},
     {"ft_service", {"__ft_service__", false}},
-    {"sessions", {"__sessions__", true}}};
+    {"sessions", {"__sessions__", true}},
+    {"id", {"__id__", true}}
+    };
 
 // name => {prefix, parseSpaceid}, nullptr means that the backup should be skipped.
 static const std::unordered_map<
@@ -79,6 +81,8 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
 const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
 const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
+
+const std::string kIdKey = systemTableMaps.at("id").first;                       // NOLINT
 
 const int kMaxIpAddrLen = 15;   // '255.255.255.255'
 
@@ -1005,6 +1009,10 @@ std::string MetaServiceUtils::genTimestampStr() {
     std::time_t t = std::time(nullptr);
     std::strftime(ch, sizeof(ch), "%Y_%m_%d_%H_%M_%S", localtime(&t));
     return ch;
+}
+
+std::string MetaServiceUtils::idKey() {
+    return kIdKey;
 }
 
 std::function<bool(const folly::StringPiece& key)>
