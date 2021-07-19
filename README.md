@@ -77,7 +77,7 @@ In order to prevent cloud providers monetizing from the project without contribu
 
 ## Contact
 
-* [Slack channel](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)
+* [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/zt-7ybejuqa-NCZBroh~PCh66d9kOQj45g)
 * [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
 * Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
 * [LinkedIn page](https://www.linkedin.com/company/vesoft-nebula-graph)
