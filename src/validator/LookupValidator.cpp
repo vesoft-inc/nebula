@@ -148,6 +148,10 @@ StatusOr<Expression*> LookupValidator::handleLogicalExprOperands(LogicalExpressi
 }
 
 StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
+    // TODO: Support IN expression push down
+    if (expr->isRelExpr()) {
+        return checkRelExpr(static_cast<RelationalExpression*>(expr));
+    }
     switch (expr->kind()) {
         case Expression::Kind::kLogicalOr: {
             ExpressionUtils::pullOrs(expr);
@@ -156,14 +160,6 @@ StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
         case Expression::Kind::kLogicalAnd: {
             ExpressionUtils::pullAnds(expr);
             return handleLogicalExprOperands(static_cast<LogicalExpression*>(expr));
-        }
-        case Expression::Kind::kRelLE:
-        case Expression::Kind::kRelGE:
-        case Expression::Kind::kRelEQ:
-        case Expression::Kind::kRelLT:
-        case Expression::Kind::kRelGT:
-        case Expression::Kind::kRelNE: {
-            return checkRelExpr(static_cast<RelationalExpression*>(expr));
         }
         default: {
             return Status::SemanticError("Expression %s not supported yet",
@@ -261,7 +257,10 @@ StatusOr<Value> LookupValidator::checkConstExpr(Expression* expr,
     }
 
     if (v.type() != SchemaUtil::propTypeToValueType(type)) {
-        return Status::SemanticError("Column type error : %s", prop.c_str());
+        // allow diffrent types in the IN expression, such as "abc" IN ["abc"]
+        if (v.type() != Value::Type::LIST) {
+            return Status::SemanticError("Column type error : %s", prop.c_str());
+        }
     }
     return v;
 }
