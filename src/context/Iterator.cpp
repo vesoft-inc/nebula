@@ -298,6 +298,9 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag,
     auto colId = index->second.colIdx;
     auto& row = *currentRow_;
     DCHECK_GT(row.size(), colId);
+    if (row[colId].empty()) {
+        return Value::kEmpty;
+    }
     if (!row[colId].isList()) {
         return Value::kNullBadType;
     }

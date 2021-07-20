@@ -1821,3 +1821,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+
+  Scenario: with no existed tag
+    When executing query:
+      """
+      GO FROM 'Tony Parker' OVER like YIELD $$.player.name, $^.team.name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $$.player.name      | $^.team.name |
+      | "LaMarcus Aldridge" | EMPTY        |
+      | "Manu Ginobili"     | EMPTY        |
+      | "Tim Duncan"        | EMPTY        |
