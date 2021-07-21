@@ -200,7 +200,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
         }
         auto it = std::find(activeHosts.begin(), activeHosts.end(), host);
         if (it == activeHosts.end()) {
-            LOG(INFO) << "skip inactive host: " << host;
+            VLOG(1) << "skip inactive host: " << host;
             continue;  // skip inactive host
         }
 
@@ -209,7 +209,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
         });
 
         if (hostIt == hostItems_.end()) {
-            LOG(INFO) << "skip inactive host";
+            VLOG(1) << "skip inactive host";
             continue;
         }
 

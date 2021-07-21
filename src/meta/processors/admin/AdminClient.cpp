@@ -36,6 +36,10 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
     if (it == peers.end()) {
         return Status::PartNotFound();
     }
+    if (peers.size() == 1 && peers.front() == leader) {
+        // if there is only one replica, skip transfer leader phase
+        return Status::OK();
+    }
     auto target = dst;
     if (dst == kRandomPeer) {
         for (auto& p : peers) {
