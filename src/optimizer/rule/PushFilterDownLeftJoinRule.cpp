@@ -48,7 +48,6 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     const std::pair<std::string, int64_t>& leftVar = oldLeftJoinNode->leftVar();
     auto symTable = octx->qctx()->symTable();
     std::vector<std::string> leftVarColNames = symTable->getVar(leftVar.first)->colNames;
-    auto objPool = octx->qctx()->objPool();
 
     // split the `condition` based on whether the varPropExpr comes from the left child
     auto picker = [&leftVarColNames](const Expression* e) -> bool {
@@ -73,7 +72,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     };
     Expression* filterPicked = nullptr;
     Expression* filterUnpicked = nullptr;
-    graph::ExpressionUtils::splitFilter(objPool, condition, picker, &filterPicked, &filterUnpicked);
+    graph::ExpressionUtils::splitFilter(condition, picker, &filterPicked, &filterUnpicked);
 
     if (!filterPicked) {
         return TransformResult::noTransform();
@@ -83,7 +82,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     auto* newLeftFilterNode = graph::Filter::make(
         octx->qctx(),
         const_cast<graph::PlanNode*>(oldLeftJoinNode->dep()),
-        graph::ExpressionUtils::rewriteInnerVar(objPool, filterPicked, leftVar.first));
+        graph::ExpressionUtils::rewriteInnerVar(filterPicked, leftVar.first));
     newLeftFilterNode->setInputVar(leftVar.first);
     newLeftFilterNode->setColNames(leftVarColNames);
     auto newFilterGroup = OptGroup::create(octx);
@@ -100,7 +99,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownLeftJoinRule::transform(
     std::vector<Expression*> newHashKeys;
     for (auto* k : hashKeys) {
         newHashKeys.emplace_back(
-            graph::ExpressionUtils::rewriteInnerVar(objPool, k, newLeftFilterOutputVar));
+            graph::ExpressionUtils::rewriteInnerVar(k, newLeftFilterOutputVar));
     }
     newLeftJoinNode->setHashKeys(newHashKeys);
 

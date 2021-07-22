@@ -56,36 +56,33 @@ public:
 
     static bool isEvaluableExpr(const Expression* expr);
 
-    static Expression* rewriteLabelAttr2TagProp(ObjectPool* pool, const Expression* expr);
+    static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
-    static Expression* rewriteLabelAttr2EdgeProp(ObjectPool* pool, const Expression* expr);
+    static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr);
 
-    static Expression* rewriteAgg2VarProp(ObjectPool* pool, const Expression* expr);
+    static Expression* rewriteAgg2VarProp(const Expression* expr);
 
-    static Expression* rewriteInnerVar(ObjectPool* pool,
-                                       const Expression* expr,
-                                       std::string newVar);
+    static Expression* rewriteInnerVar(const Expression* expr, std::string newVar);
 
     // Rewrite relational expression, gather evaluable expressions to one side
-    static Expression* rewriteRelExpr(const Expression* expr, ObjectPool* pool);
-    static Expression* rewriteRelExprHelper(ObjectPool* pool,
-                                            const Expression* expr,
+    static Expression* rewriteRelExpr(const Expression* expr);
+    static Expression* rewriteRelExprHelper(const Expression* expr,
                                             Expression*& relRightOperandExpr);
 
     // Clone and fold constant expression
-    static StatusOr<Expression*> foldConstantExpr(ObjectPool* objPool, const Expression* expr);
+    static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
 
     // Clone and reduce unaryNot expression
-    static Expression* reduceUnaryNotExpr(const Expression* expr, ObjectPool* pool);
+    static Expression* reduceUnaryNotExpr(const Expression* expr);
 
     // Transform filter using multiple expression rewrite strategies
-    static StatusOr<Expression*> filterTransform(const Expression* expr, ObjectPool* objPool);
+    static StatusOr<Expression*> filterTransform(const Expression* expr);
 
     // Negate the given logical expr: (A && B) -> (!A || !B)
-    static LogicalExpression* reverseLogicalExpr(ObjectPool* pool, LogicalExpression* expr);
+    static LogicalExpression* reverseLogicalExpr(LogicalExpression* expr);
 
     // Negate the given relational expr: (A > B) -> (A <= B)
-    static RelationalExpression* reverseRelExpr(ObjectPool* pool, RelationalExpression* expr);
+    static RelationalExpression* reverseRelExpr(RelationalExpression* expr);
 
     // Return the negation of the given relational kind
     static Expression::Kind getNegatedRelExprKind(const Expression::Kind kind);
@@ -119,8 +116,7 @@ public:
 
     static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
-    static void splitFilter(ObjectPool* pool,
-                            const Expression* expr,
+    static void splitFilter(const Expression* expr,
                             std::function<bool(const Expression*)> picker,
                             Expression** filterPicked,
                             Expression** filterUnpicked);

@@ -45,8 +45,7 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
         return Status::SemanticError("Not support `%s' in where sentence.",
                                      expr->toString().c_str());
     }
-    auto* pool = qctx_->objPool();
-    where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, expr));
+    where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
     auto filter = where->filter();
 
     auto typeStatus = deduceExprType(filter);

@@ -199,7 +199,7 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 
     // fold constant expression
     auto pool = qctx_->objPool();
-    auto foldRes = ExpressionUtils::foldConstantExpr(pool, expr);
+    auto foldRes = ExpressionUtils::foldConstantExpr(expr);
     NG_RETURN_IF_ERROR(foldRes);
     expr = static_cast<RelationalExpression*>(foldRes.value());
     DCHECK_EQ(expr->left()->kind(), Expression::Kind::kLabelAttribute);
@@ -212,9 +212,9 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 
     // rewrite PropertyExpression
     if (lookupCtx_->isEdge) {
-        expr->setLeft(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, la));
+        expr->setLeft(ExpressionUtils::rewriteLabelAttr2EdgeProp(la));
     } else {
-        expr->setLeft(ExpressionUtils::rewriteLabelAttr2TagProp(pool, la));
+        expr->setLeft(ExpressionUtils::rewriteLabelAttr2TagProp(la));
     }
     return expr;
 }

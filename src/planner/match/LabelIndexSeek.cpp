@@ -117,8 +117,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
                     }
                 }
                 if (canBeEmbeded2IndexScan) {
-                    auto* srcFilter =
-                        ExpressionUtils::rewriteLabelAttr2TagProp(pool, flattenFilter);
+                    auto* srcFilter = ExpressionUtils::rewriteLabelAttr2TagProp(flattenFilter);
                     storage::cpp2::IndexQueryContext ctx;
                     ctx.set_filter(Expression::encode(*srcFilter));
                     scan->setIndexQueryContext({ctx});

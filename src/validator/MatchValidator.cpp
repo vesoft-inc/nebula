@@ -278,8 +278,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
-    auto pool = whereClauseCtx.qctx->objPool();
-    auto transformRes =  ExpressionUtils::filterTransform(filter, pool);
+    auto transformRes =  ExpressionUtils::filterTransform(filter);
     NG_RETURN_IF_ERROR(transformRes);
     whereClauseCtx.filter = transformRes.value();
 
@@ -692,7 +691,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
                 yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
             }
             if (!aggs.empty()) {
-                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(pool, colExpr);
+                auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
                 yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
                 yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
                 continue;

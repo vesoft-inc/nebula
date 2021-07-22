@@ -56,9 +56,8 @@ Status GoValidator::validateWhere(WhereClause* where) {
         return Status::SemanticError("`%s', not support aggregate function in where sentence.",
                                      expr->toString().c_str());
     }
-    auto pool = qctx()->objPool();
-    where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, expr));
-    auto foldRes = ExpressionUtils::foldConstantExpr(pool, where->filter());
+    where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
+    auto foldRes = ExpressionUtils::foldConstantExpr(where->filter());
     NG_RETURN_IF_ERROR(foldRes);
 
     auto filter = foldRes.value();
@@ -141,7 +140,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
     }
 
     for (auto col : cols) {
-        col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, col->expr()));
+        col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
 
         auto* colExpr = col->expr();

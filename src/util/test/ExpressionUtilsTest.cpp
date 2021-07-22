@@ -519,7 +519,7 @@ TEST_F(ExpressionUtilsTest, splitFilter) {
         };
         Expression *newExpr1 = nullptr;
         Expression *newExpr2 = nullptr;
-        ExpressionUtils::splitFilter(pool, expr, picker, &newExpr1, &newExpr2);
+        ExpressionUtils::splitFilter(expr, picker, &newExpr1, &newExpr2);
         ASSERT_EQ(*expected1, *newExpr1);
         ASSERT_EQ(*second, *newExpr2);
     }
@@ -534,7 +534,7 @@ TEST_F(ExpressionUtilsTest, splitFilter) {
         };
         Expression *newExpr1 = nullptr;
         Expression *newExpr2 = nullptr;
-        ExpressionUtils::splitFilter(pool, expr, picker, &newExpr1, &newExpr2);
+        ExpressionUtils::splitFilter(expr, picker, &newExpr1, &newExpr2);
         ASSERT_EQ(*expr, *newExpr1);
         ASSERT_EQ(nullptr, newExpr2);
     }

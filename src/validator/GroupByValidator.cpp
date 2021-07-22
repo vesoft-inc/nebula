@@ -50,7 +50,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
                 needGenProject_ = true;
             }
             if (!aggs.empty()) {
-                auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(pool, colExpr);
+                auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr);
                 projCols_->addColumn(new YieldColumn(colRewrited, colOldName));
                 continue;
             }

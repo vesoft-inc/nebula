@@ -43,7 +43,6 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
     DCHECK_EQ(projNode->kind(), PlanNode::Kind::kProject);
     const auto* oldProjNode = static_cast<const graph::Project*>(projNode);
     const auto* condition = oldFilterNode->condition();
-    auto objPool = octx->qctx()->objPool();
 
     auto projColNames = oldProjNode->colNames();
     auto projColumns = oldProjNode->columns()->columns();
@@ -86,7 +85,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
     };
     Expression* filterPicked = nullptr;
     Expression* filterUnpicked = nullptr;
-    graph::ExpressionUtils::splitFilter(objPool, condition, picker, &filterPicked, &filterUnpicked);
+    graph::ExpressionUtils::splitFilter(condition, picker, &filterPicked, &filterUnpicked);
 
     if (!filterPicked) {
         return TransformResult::noTransform();

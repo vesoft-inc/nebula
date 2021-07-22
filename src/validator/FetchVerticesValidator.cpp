@@ -153,7 +153,7 @@ Status FetchVerticesValidator::preparePropertiesWithYield(const YieldClause *yie
 
     auto* pool = qctx_->objPool();
     for (auto col : yield->columns()) {
-        col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(pool, col->expr()));
+        col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
         NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
         col->expr()->accept(&deducePropsVisitor);
         if (!deducePropsVisitor.ok()) {

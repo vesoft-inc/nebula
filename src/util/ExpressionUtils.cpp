@@ -109,11 +109,12 @@ bool ExpressionUtils::isEvaluableExpr(const Expression *expr) {
 }
 
 // rewrite LabelAttr to EdgeProp
-Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(ObjectPool *pool, const Expression *expr) {
+Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
+    ObjectPool *pool = expr->getObjPool();
     auto matcher = [](const Expression *e) -> bool {
         return e->kind() == Expression::Kind::kLabelAttribute;
     };
-    auto rewriter = [&pool](const Expression *e) -> Expression * {
+    auto rewriter = [pool](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
         auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
         auto leftName = labelAttrExpr->left()->name();
@@ -125,13 +126,12 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(ObjectPool *pool, const E
 }
 
 // rewrite var in VariablePropExpr to another var
-Expression *ExpressionUtils::rewriteInnerVar(ObjectPool *pool,
-                                             const Expression *expr,
-                                             std::string newVar) {
+Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string newVar) {
+    ObjectPool* pool = expr->getObjPool();
     auto matcher = [](const Expression *e) -> bool {
         return e->kind() == Expression::Kind::kVarProperty;
     };
-    auto rewriter = [&](const Expression *e) -> Expression * {
+    auto rewriter = [pool, newVar](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
         auto varPropExpr = static_cast<const VariablePropertyExpression *>(e);
         auto newProp = varPropExpr->prop();
@@ -142,11 +142,12 @@ Expression *ExpressionUtils::rewriteInnerVar(ObjectPool *pool,
 }
 
 // rewrite LabelAttr to tagProp
-Expression *ExpressionUtils::rewriteLabelAttr2TagProp(ObjectPool* pool, const Expression *expr) {
+Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
+    ObjectPool* pool = expr->getObjPool();
     auto matcher = [](const Expression *e) -> bool {
         return e->kind() == Expression::Kind::kLabelAttribute;
     };
-    auto rewriter = [&pool](const Expression *e) -> Expression * {
+    auto rewriter = [pool](const Expression *e) -> Expression * {
         DCHECK_EQ(e->kind(), Expression::Kind::kLabelAttribute);
         auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
         auto leftName = labelAttrExpr->left()->name();
@@ -158,19 +159,20 @@ Expression *ExpressionUtils::rewriteLabelAttr2TagProp(ObjectPool* pool, const Ex
 }
 
 // rewrite Agg to VarProp
-Expression *ExpressionUtils::rewriteAgg2VarProp(ObjectPool *pool, const Expression *expr) {
+Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
+    ObjectPool* pool = expr->getObjPool();
     auto matcher = [](const Expression *e) -> bool {
         return e->kind() == Expression::Kind::kAggregate;
     };
-    auto rewriter = [&pool](const Expression *e) -> Expression * {
+    auto rewriter = [pool](const Expression *e) -> Expression * {
         return VariablePropertyExpression::make(pool, "", e->toString());
     };
 
     return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-StatusOr<Expression *> ExpressionUtils::foldConstantExpr(ObjectPool *objPool,
-                                                         const Expression *expr) {
+StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr) {
+    ObjectPool* objPool = expr->getObjPool();
     auto newExpr = expr->clone();
     FoldConstantExprVisitor visitor(objPool);
     newExpr->accept(&visitor);
@@ -187,7 +189,7 @@ StatusOr<Expression *> ExpressionUtils::foldConstantExpr(ObjectPool *objPool,
     return newExpr;
 }
 
-Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPool *pool) {
+Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
     // Match the operand
     auto operandMatcher = [](const Expression *operandExpr) -> bool {
         return (operandExpr->kind() == Expression::Kind::kUnaryNot ||
@@ -214,10 +216,10 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPo
             reducedExpr = castedExpr->operand();
         } else if (reducedExpr->isRelExpr() && reducedExpr->kind() != Expression::Kind::kRelREG) {
             auto castedExpr = static_cast<RelationalExpression *>(reducedExpr);
-            reducedExpr = reverseRelExpr(pool, castedExpr);
+            reducedExpr = reverseRelExpr(castedExpr);
         } else if (reducedExpr->isLogicalExpr()) {
             auto castedExpr = static_cast<LogicalExpression *>(reducedExpr);
-            reducedExpr = reverseLogicalExpr(pool, castedExpr);
+            reducedExpr = reverseLogicalExpr(castedExpr);
         }
         // Rewrite the output of rewrite if possible
         return operandMatcher(reducedExpr)
@@ -228,7 +230,8 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr, ObjectPo
     return RewriteVisitor::transform(expr, rootMatcher, rewriter);
 }
 
-Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr, ObjectPool *pool) {
+Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
+    ObjectPool* pool = expr->getObjPool();
     // Match relational expressions containing at least one airthmetic expr
     auto matcher = [](const Expression *e) -> bool {
         if (e->isRelExpr()) {
@@ -247,7 +250,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr, ObjectPool *
     };
 
     // Simplify relational expressions involving boolean literals
-    auto simplifyBoolOperand = [&pool](RelationalExpression *relExpr,
+    auto simplifyBoolOperand = [pool](RelationalExpression *relExpr,
                                        Expression *lExpr,
                                        Expression *rExpr) -> Expression * {
         QueryExpressionContext ctx(nullptr);
@@ -288,7 +291,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr, ObjectPool *
         }
         // Move all evaluable expression to the right side
         auto relRightOperandExpr = relExpr->right()->clone();
-        auto relLeftOperandExpr = rewriteRelExprHelper(pool, relExpr->left(), relRightOperandExpr);
+        auto relLeftOperandExpr = rewriteRelExprHelper(relExpr->left(), relRightOperandExpr);
         return RelationalExpression::makeKind(
             pool, relExpr->kind(), relLeftOperandExpr->clone(), relRightOperandExpr->clone());
     };
@@ -296,9 +299,9 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr, ObjectPool *
     return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
-Expression *ExpressionUtils::rewriteRelExprHelper(ObjectPool *pool,
-                                                  const Expression *expr,
+Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
                                                   Expression *&relRightOperandExpr) {
+    ObjectPool* pool = expr->getObjPool();
     // TODO: Support rewrite mul/div expressoion after fixing overflow
     auto matcher = [](const Expression *e) -> bool {
         if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
@@ -342,19 +345,19 @@ Expression *ExpressionUtils::rewriteRelExprHelper(ObjectPool *pool,
             break;
     }
 
-    return rewriteRelExprHelper(pool, root, relRightOperandExpr);
+    return rewriteRelExprHelper(root, relRightOperandExpr);
 }
 
-StatusOr<Expression*> ExpressionUtils::filterTransform(const Expression *filter, ObjectPool *pool) {
+StatusOr<Expression*> ExpressionUtils::filterTransform(const Expression *filter) {
     auto rewrittenExpr = const_cast<Expression *>(filter);
     // Rewrite relational expression
-    rewrittenExpr = rewriteRelExpr(rewrittenExpr, pool);
+    rewrittenExpr = rewriteRelExpr(rewrittenExpr);
     // Fold constant expression
-    auto constantFoldRes = foldConstantExpr(pool, rewrittenExpr);
+    auto constantFoldRes = foldConstantExpr(rewrittenExpr);
     NG_RETURN_IF_ERROR(constantFoldRes);
     rewrittenExpr = constantFoldRes.value();
     // Reduce Unary expression
-    rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr, pool);
+    rewrittenExpr = reduceUnaryNotExpr(rewrittenExpr);
     return rewrittenExpr;
 }
 
@@ -428,11 +431,11 @@ Expression* ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
 }
 
 // pick the subparts of expression that meet picker's criteria
-void ExpressionUtils::splitFilter(ObjectPool *pool,
-                                  const Expression *expr,
+void ExpressionUtils::splitFilter(const Expression *expr,
                                   std::function<bool(const Expression *)> picker,
                                   Expression **filterPicked,
                                   Expression **filterUnpicked) {
+    ObjectPool* pool = expr->getObjPool();
     // Pick the non-LogicalAndExpr directly
     if (expr->kind() != Expression::Kind::kLogicalAnd) {
         if (picker(expr)) {
@@ -641,8 +644,8 @@ bool ExpressionUtils::findInnerRandFunction(const Expression *expr) {
 }
 
 // Negate the given relational expr
-RelationalExpression *ExpressionUtils::reverseRelExpr(ObjectPool *pool,
-                                                      RelationalExpression *expr) {
+RelationalExpression *ExpressionUtils::reverseRelExpr(RelationalExpression *expr) {
+    ObjectPool *pool = expr->getObjPool();
     auto left = static_cast<RelationalExpression *>(expr)->left();
     auto right = static_cast<RelationalExpression *>(expr)->right();
     auto negatedKind = getNegatedRelExprKind(expr->kind());
@@ -706,7 +709,8 @@ Expression::Kind ExpressionUtils::getNegatedArithmeticType(const Expression::Kin
     }
 }
 
-LogicalExpression*ExpressionUtils::reverseLogicalExpr(ObjectPool* pool, LogicalExpression *expr) {
+LogicalExpression*ExpressionUtils::reverseLogicalExpr(LogicalExpression *expr) {
+    ObjectPool* pool = expr->getObjPool();
     std::vector<Expression *> operands;
     if (expr->kind() == Expression::Kind::kLogicalAnd) {
         pullAnds(expr);

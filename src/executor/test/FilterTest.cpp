@@ -25,15 +25,14 @@ public:
 #define FILTER_RESUTL_CHECK(inputName, outputName, sentence, expected)                             \
     do {                                                                                           \
         qctx_->symTable()->newVariable(outputName);                                                \
-        auto* pool = qctx_->objPool();                                                             \
         auto yieldSentence = getYieldSentence(sentence, qctx_.get());                              \
         auto columns = yieldSentence->columns();                                                   \
         for (auto& col : columns) {                                                                \
-            col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, col->expr()));           \
+            col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));                 \
         }                                                                                          \
         auto* whereSentence = yieldSentence->where();                                              \
         whereSentence->setFilter(                                                                  \
-            ExpressionUtils::rewriteLabelAttr2EdgeProp(pool, whereSentence->filter()));            \
+            ExpressionUtils::rewriteLabelAttr2EdgeProp(whereSentence->filter()));                  \
         auto* filterNode = Filter::make(qctx_.get(), nullptr, yieldSentence->where()->filter());   \
         filterNode->setInputVar(inputName);                                                        \
         filterNode->setOutputVar(outputName);                                                      \

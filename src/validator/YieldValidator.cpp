@@ -70,7 +70,6 @@ Status YieldValidator::validateImpl() {
 Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     columns_->addColumn(column);
 
-    auto* pool = qctx()->objPool();
     auto colExpr = column->expr();
     DCHECK(colExpr != nullptr);
 
@@ -83,7 +82,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
     auto name = column->name();
     // Constant expression folding must be after type deduction
-    auto foldedExpr = ExpressionUtils::foldConstantExpr(pool, expr);
+    auto foldedExpr = ExpressionUtils::foldConstantExpr(expr);
     NG_RETURN_IF_ERROR(foldedExpr);
     auto foldedExprCopy = std::move(foldedExpr).value()->clone();
     column->setExpr(foldedExprCopy);
@@ -178,8 +177,7 @@ Status YieldValidator::validateWhere(const WhereClause *clause) {
     }
     if (filter != nullptr) {
         NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
-        auto pool = qctx_->objPool();
-        auto foldRes = ExpressionUtils::foldConstantExpr(pool, filter);
+        auto foldRes = ExpressionUtils::foldConstantExpr(filter);
         NG_RETURN_IF_ERROR(foldRes);
         filterCondition_ = foldRes.value();
     }
