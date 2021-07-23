@@ -20,7 +20,7 @@ public:
     folly::Future<Status> execute() override;
 
 private:
-    std::vector<Value> extractList(Value &val);
+    std::vector<Value> extractList(const Value &val);
 };
 
 }   // namespace graph

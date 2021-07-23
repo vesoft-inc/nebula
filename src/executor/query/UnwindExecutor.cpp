@@ -26,7 +26,7 @@ folly::Future<Status> UnwindExecutor::execute() {
     DataSet ds;
     ds.colNames = unwind->colNames();
     for (; iter->valid(); iter->next()) {
-        Value list = unwindExpr->eval(ctx(iter.get()));
+        const Value& list = unwindExpr->eval(ctx(iter.get()));
         std::vector<Value> vals = extractList(list);
         for (auto &v : vals) {
             Row row;
@@ -41,17 +41,14 @@ folly::Future<Status> UnwindExecutor::execute() {
     return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
-std::vector<Value> UnwindExecutor::extractList(Value &val) {
+std::vector<Value> UnwindExecutor::extractList(const Value &val) {
     std::vector<Value> ret;
     if (val.isList()) {
         auto &list = val.getList();
-        ret.reserve(list.size());
-        for (size_t i = 0; i < list.size(); ++i) {
-            ret.emplace_back(std::move(list[i]));
-        }
+        ret = list.values;
     } else {
         if (!(val.isNull() || val.empty())) {
-            ret.emplace_back(std::move(val));
+            ret.push_back(val);
         }
     }
 
