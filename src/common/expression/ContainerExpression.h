@@ -115,6 +115,10 @@ public:
         return ListExpression::make(pool_, items);
     }
 
+    bool isContainerExpr() const override {
+        return true;
+    }
+
 private:
     explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
 
@@ -181,6 +185,10 @@ public:
         return SetExpression::make(pool_, items);
     }
 
+    bool isContainerExpr() const override {
+        return true;
+    }
+
 private:
     explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
 
@@ -245,6 +253,10 @@ public:
             items->add(item.first, item.second->clone());
         }
         return MapExpression::make(pool_, items);
+    }
+
+    bool isContainerExpr() const override {
+        return true;
     }
 
 private:

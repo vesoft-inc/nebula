@@ -168,6 +168,10 @@ public:
         return false;
     }
 
+    virtual bool isContainerExpr() const {
+        return false;
+    }
+
 protected:
     class Encoder final {
     public:
