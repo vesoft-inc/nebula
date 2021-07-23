@@ -62,11 +62,6 @@ Status MatchValidator::validateImpl() {
                 }
                 aliasesUsed = &matchClauseCtx->aliasesGenerated;
 
-                if (i == clauses.size() - 1) {
-                    retClauseCtx->yield->aliasesUsed = aliasesUsed;
-                    NG_RETURN_IF_ERROR(
-                        validateReturn(sentence->ret(), matchClauseCtx.get(), *retClauseCtx));
-                }
                 matchCtx_->clauses.emplace_back(std::move(matchClauseCtx));
 
                 break;
@@ -78,11 +73,7 @@ Status MatchValidator::validateImpl() {
                 NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
                 aliasesUsed = unwindClauseCtx->aliasesUsed;
-                if (i == clauses.size() - 1) {
-                    retClauseCtx->yield->aliasesUsed = aliasesUsed;
-                    NG_RETURN_IF_ERROR(
-                        validateReturn(sentence->ret(), unwindClauseCtx.get(), *retClauseCtx));
-                }
+
                 matchCtx_->clauses.emplace_back(std::move(unwindClauseCtx));
 
                 // TODO: delete prevYieldColumns
@@ -95,7 +86,10 @@ Status MatchValidator::validateImpl() {
                 auto withYieldCtx = getContext<YieldClauseContext>();
                 withClauseCtx->yield = std::move(withYieldCtx);
                 withClauseCtx->yield->aliasesUsed = aliasesUsed;
-                NG_RETURN_IF_ERROR(validateWith(withClause, *withClauseCtx));
+                NG_RETURN_IF_ERROR(validateWith(
+                    withClause,
+                    matchCtx_->clauses.empty() ? nullptr : matchCtx_->clauses.back().get(),
+                    *withClauseCtx));
                 if (withClause->where() != nullptr) {
                     auto whereClauseCtx = getContext<WhereClauseContext>();
                     whereClauseCtx->aliasesUsed = &withClauseCtx->aliasesGenerated;
@@ -107,17 +101,16 @@ Status MatchValidator::validateImpl() {
                 aliasesUsed = &withClauseCtx->aliasesGenerated;
                 prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
 
-                if (i == clauses.size() - 1) {
-                    retClauseCtx->yield->aliasesUsed = aliasesUsed;
-                    NG_RETURN_IF_ERROR(
-                        validateReturn(sentence->ret(), withClauseCtx.get(), *retClauseCtx));
-                }
                 matchCtx_->clauses.emplace_back(std::move(withClauseCtx));
 
                 break;
             }
         }
     }
+
+    retClauseCtx->yield->aliasesUsed = aliasesUsed;
+    NG_RETURN_IF_ERROR(
+        validateReturn(sentence->ret(), matchCtx_->clauses.back().get(), *retClauseCtx));
 
     NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yield->yieldColumns));
     matchCtx_->clauses.emplace_back(std::move(retClauseCtx));
@@ -298,69 +291,79 @@ Status MatchValidator::validateFilter(const Expression *filter,
     return Status::OK();
 }
 
-Status MatchValidator::validateReturn(MatchReturn *ret,
-                                      const CypherClauseContextBase *cypherClauseCtx,
-                                      ReturnClauseContext &retClauseCtx) const {
+Status MatchValidator::includeExisting(const CypherClauseContextBase *cypherClauseCtx,
+                                       YieldColumns *columns) const {
+    if (cypherClauseCtx == nullptr) {
+        return Status::OK();
+    }
     auto kind = cypherClauseCtx->kind;
     if (kind != CypherClauseKind::kMatch && kind != CypherClauseKind::kUnwind &&
         kind != CypherClauseKind::kWith) {
         return Status::SemanticError("Must be a MATCH/UNWIND/WITH");
     }
-    // `RETURN *': return all named nodes or edges
-    YieldColumns *columns = nullptr;
     auto *pool = qctx_->objPool();
-    if (ret->isAll()) {
-        auto makeColumn = [&pool](const std::string &name) {
-            auto *expr = LabelExpression::make(pool, name);
-            return new YieldColumn(expr, name);
-        };
-        if (kind == CypherClauseKind::kMatch) {
-            auto matchClauseCtx = static_cast<const MatchClauseContext *>(cypherClauseCtx);
+    auto makeColumn = [&pool](const std::string &name) {
+        auto *expr = LabelExpression::make(pool, name);
+        return new YieldColumn(expr, name);
+    };
+    if (kind == CypherClauseKind::kMatch) {
+        auto matchClauseCtx = static_cast<const MatchClauseContext *>(cypherClauseCtx);
 
-            columns = saveObject(new YieldColumns());
-            auto steps = matchClauseCtx->edgeInfos.size();
+        auto steps = matchClauseCtx->edgeInfos.size();
 
-            if (!matchClauseCtx->nodeInfos[0].anonymous) {
-                columns->addColumn(makeColumn(matchClauseCtx->nodeInfos[0].alias));
+        if (!matchClauseCtx->nodeInfos[0].anonymous) {
+            columns->addColumn(makeColumn(matchClauseCtx->nodeInfos[0].alias));
+        }
+
+        for (auto i = 0u; i < steps; i++) {
+            if (!matchClauseCtx->edgeInfos[i].anonymous) {
+                columns->addColumn(makeColumn(matchClauseCtx->edgeInfos[i].alias));
             }
-
-            for (auto i = 0u; i < steps; i++) {
-                if (!matchClauseCtx->edgeInfos[i].anonymous) {
-                    columns->addColumn(makeColumn(matchClauseCtx->edgeInfos[i].alias));
-                }
-                if (!matchClauseCtx->nodeInfos[i + 1].anonymous) {
-                    columns->addColumn(makeColumn(matchClauseCtx->nodeInfos[i + 1].alias));
-                }
+            if (!matchClauseCtx->nodeInfos[i + 1].anonymous) {
+                columns->addColumn(makeColumn(matchClauseCtx->nodeInfos[i + 1].alias));
             }
+        }
 
-            for (auto &aliasPair : matchClauseCtx->aliasesGenerated) {
-                if (aliasPair.second == AliasType::kPath) {
-                    columns->addColumn(makeColumn(aliasPair.first));
-                }
-            }
-        } else if (kind == CypherClauseKind::kUnwind) {
-            auto unwindClauseCtx = static_cast<const UnwindClauseContext *>(cypherClauseCtx);
-            columns = saveObject(new YieldColumns());
-            columns->addColumn(makeColumn(unwindClauseCtx->alias));
-        } else {
-            // kWith
-            auto withClauseCtx = static_cast<const WithClauseContext *>(cypherClauseCtx);
-            columns = saveObject(new YieldColumns());
-            for (auto &aliasPair : withClauseCtx->aliasesGenerated) {
+        for (auto &aliasPair : matchClauseCtx->aliasesGenerated) {
+            if (aliasPair.second == AliasType::kPath) {
                 columns->addColumn(makeColumn(aliasPair.first));
             }
         }
-
-        if (columns->empty()) {
-            return Status::SemanticError("`RETURN *' not allowed if there is no alias");
+    } else if (kind == CypherClauseKind::kUnwind) {
+        auto unwindClauseCtx = static_cast<const UnwindClauseContext *>(cypherClauseCtx);
+        columns->addColumn(makeColumn(unwindClauseCtx->alias));
+    } else {
+        // kWith
+        auto withClauseCtx = static_cast<const WithClauseContext *>(cypherClauseCtx);
+        for (auto &aliasPair : withClauseCtx->aliasesGenerated) {
+            columns->addColumn(makeColumn(aliasPair.first));
         }
     }
 
-    if (columns == nullptr) {
-        retClauseCtx.yield->yieldColumns = ret->columns();
-    } else {
-        retClauseCtx.yield->yieldColumns = columns;
+    return Status::OK();
+}
+
+Status MatchValidator::validateReturn(MatchReturn *ret,
+                                      const CypherClauseContextBase *cypherClauseCtx,
+                                      ReturnClauseContext &retClauseCtx) const {
+    YieldColumns *columns = saveObject(new YieldColumns());
+    if (ret->returnItems()->includeExisting()) {
+        auto status = includeExisting(cypherClauseCtx, columns);
+        if (!status.ok()) {
+            return status;
+        }
+        if (columns->empty() && !ret->returnItems()->columns()) {
+            return Status::SemanticError(
+                "RETURN * is not allowed when there are no variables in scope");
+        }
     }
+    if (ret->returnItems()->columns()) {
+        for (auto *column : ret->returnItems()->columns()->columns()) {
+            columns->addColumn(column->clone().release());
+        }
+    }
+    DCHECK(!columns->empty());
+    retClauseCtx.yield->yieldColumns = columns;
 
     // Check all referencing expressions are valid
     std::vector<const Expression *> exprs;
@@ -383,7 +386,8 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
 
     if (ret->orderFactors() != nullptr) {
         auto orderByCtx = getContext<OrderByClauseContext>();
-        NG_RETURN_IF_ERROR(validateOrderBy(ret->orderFactors(), ret->columns(), *orderByCtx));
+        NG_RETURN_IF_ERROR(
+            validateOrderBy(ret->orderFactors(), retClauseCtx.yield->yieldColumns, *orderByCtx));
         retClauseCtx.order = std::move(orderByCtx);
     }
 
@@ -431,11 +435,26 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 }
 
 Status MatchValidator::validateWith(const WithClause *with,
+                                    const CypherClauseContextBase *cypherClauseCtx,
                                     WithClauseContext &withClauseCtx) const {
+    YieldColumns *columns = saveObject(new YieldColumns());
+    if (with->returnItems()->includeExisting()) {
+        auto status = includeExisting(cypherClauseCtx, columns);
+        if (!status.ok()) {
+            return status;
+        }
+    }
+    if (with->returnItems()->columns()) {
+        for (auto* column : with->returnItems()->columns()->columns()) {
+            columns->addColumn(column->clone().release());
+        }
+    }
+    withClauseCtx.yield->yieldColumns = columns;
+
     // Check all referencing expressions are valid
     std::vector<const Expression *> exprs;
-    exprs.reserve(with->columns()->size());
-    for (auto *col : with->columns()->columns()) {
+    exprs.reserve(withClauseCtx.yield->yieldColumns->size());
+    for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
         auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
         for (auto *labelExpr : labelExprs) {
             DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
@@ -461,7 +480,8 @@ Status MatchValidator::validateWith(const WithClause *with,
         }
         exprs.push_back(col->expr());
     }
-    withClauseCtx.yield->yieldColumns = with->columns();
+
+
     NG_RETURN_IF_ERROR(validateAliases(exprs, withClauseCtx.yield->aliasesUsed));
     NG_RETURN_IF_ERROR(validateYield(*withClauseCtx.yield));
 
@@ -473,7 +493,8 @@ Status MatchValidator::validateWith(const WithClause *with,
 
     if (with->orderFactors() != nullptr) {
         auto orderByCtx = getContext<OrderByClauseContext>();
-        NG_RETURN_IF_ERROR(validateOrderBy(with->orderFactors(), with->columns(), *orderByCtx));
+        NG_RETURN_IF_ERROR(
+            validateOrderBy(with->orderFactors(), withClauseCtx.yield->yieldColumns, *orderByCtx));
         withClauseCtx.order = std::move(orderByCtx);
     }
 
@@ -719,7 +740,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
 Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
     auto cols = yieldCtx.yieldColumns->columns();
     if (cols.empty()) {
-        return Status::SemanticError("Return yield columns is Empty.");
+        return Status::OK();
     }
 
     yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());

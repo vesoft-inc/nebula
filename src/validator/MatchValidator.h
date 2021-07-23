@@ -40,7 +40,9 @@ private:
 
     Status validateStepRange(const MatchStepRange *range) const;
 
-    Status validateWith(const WithClause *with, WithClauseContext &withClauseCtx) const;
+    Status validateWith(const WithClause *with,
+                        const CypherClauseContextBase *cypherClauseCtx,
+                        WithClauseContext &withClauseCtx) const;
 
     Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
 
@@ -55,6 +57,9 @@ private:
     Status validateGroup(YieldClauseContext &yieldCtx) const;
 
     Status validateYield(YieldClauseContext &yieldCtx) const;
+
+    Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
+                           YieldColumns *columns) const;
 
     StatusOr<Expression*> makeSubFilter(const std::string &alias,
                                         const MapExpression *map,

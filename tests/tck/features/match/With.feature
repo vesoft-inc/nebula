@@ -29,6 +29,23 @@ Feature: With clause
     Then the result should be, in any order, with relax comparison:
       | a       | b       |
       | [1,2,3] | "hello" |
+    When executing query:
+      """
+      WITH 1 AS a, 2 AS b
+      WITH *
+      RETURN *, a + b AS c
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a | b | c |
+      | 1 | 2 | 3 |
+    When executing query:
+      """
+      WITH *, "tom" AS a
+      RETURN *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a     |
+      | "tom" |
 
   Scenario: with agg return
     When executing query:
@@ -121,6 +138,29 @@ Feature: With clause
       | 16 | GetVertices | 1            |                       |
       | 1  | IndexScan   | 0            |                       |
       | 0  | Start       |              |                       |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(v2)
+      WHERE v.name == "Tony Parker" and v2.age == 42
+      WITH *, v.age + 100 AS age
+      RETURN *, v2.name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                     | age | v2                                                                                                          | v2.name      |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | 136 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (:player)-[:like]->()
+      RETURN *
+      """
+    Then a SemanticError should be raised at runtime: RETURN * is not allowed when there are no variables in scope
+    When executing query:
+      """
+      MATCH (:player)-[:like]->()
+      WITH *
+      RETURN *
+      """
+    Then a SemanticError should be raised at runtime: RETURN * is not allowed when there are no variables in scope
 
   @skip
   Scenario: with match return

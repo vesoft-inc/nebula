@@ -261,34 +261,45 @@ private:
     std::vector<std::unique_ptr<MatchEdge>>         edges_;
 };
 
+class MatchReturnItems final {
+public:
+    explicit MatchReturnItems(bool includeExisting, YieldColumns* columns = nullptr)
+        : includeExisting_(includeExisting), columns_(columns) {}
+
+    bool includeExisting() const { return includeExisting_; }
+
+    YieldColumns* columns() { return columns_.get(); }
+
+    const YieldColumns* columns() const { return columns_.get(); }
+
+    std::string toString() const;
+
+private:
+    bool includeExisting_{false};  // `*` indicates include all existing variables
+    std::unique_ptr<YieldColumns> columns_;
+};
+
 
 class MatchReturn final {
 public:
-    explicit MatchReturn(YieldColumns* columns = nullptr,
+    explicit MatchReturn(MatchReturnItems* returnItems = nullptr,
                          OrderFactors* orderFactors = nullptr,
                          Expression* skip = nullptr,
                          Expression* limit = nullptr,
                          bool distinct = false) {
-        columns_.reset(columns);
+        returnItems_.reset(returnItems);
         orderFactors_.reset(orderFactors);
         skip_ = skip;
         limit_ = limit;
         isDistinct_ = distinct;
-        if (columns_ == nullptr) {
-            isAll_ = true;
-        }
     }
 
-    const YieldColumns* columns() const {
-        return columns_.get();
+    MatchReturnItems* returnItems() {
+        return returnItems_.get();
     }
 
-    void setColumns(YieldColumns *columns) {
-        columns_.reset(columns);
-    }
-
-    bool isAll() const {
-        return isAll_;
+    const MatchReturnItems* returnItems() const {
+        return returnItems_.get();
     }
 
     bool isDistinct() const {
@@ -314,12 +325,11 @@ public:
     std::string toString() const;
 
 private:
-    std::unique_ptr<YieldColumns>   columns_;
-    bool                            isAll_{false};
-    bool                            isDistinct_{false};
-    std::unique_ptr<OrderFactors>   orderFactors_;
-    Expression*                     skip_{nullptr};
-    Expression*                     limit_{nullptr};
+    std::unique_ptr<MatchReturnItems>   returnItems_;
+    bool                                isDistinct_{false};
+    std::unique_ptr<OrderFactors>       orderFactors_;
+    Expression*                         skip_{nullptr};
+    Expression*                         limit_{nullptr};
 };
 
 
@@ -425,14 +435,14 @@ private:
 
 class WithClause final : public ReadingClause {
 public:
-    explicit WithClause(YieldColumns *cols,
+    explicit WithClause(MatchReturnItems *returnItems,
                        OrderFactors *orderFactors = nullptr,
                        Expression *skip = nullptr,
                        Expression *limit = nullptr,
                        WhereClause *where = nullptr,
                        bool distinct = false)
         : ReadingClause(Kind::kWith) {
-        columns_.reset(cols);
+        returnItems_.reset(returnItems);
         orderFactors_.reset(orderFactors);
         skip_ = skip;
         limit_ = limit;
@@ -440,12 +450,12 @@ public:
         isDistinct_ = distinct;
     }
 
-    YieldColumns* columns() {
-        return columns_.get();
+    MatchReturnItems* returnItems() {
+        return returnItems_.get();
     }
 
-    const YieldColumns* columns() const {
-        return columns_.get();
+    const MatchReturnItems* returnItems() const {
+        return returnItems_.get();
     }
 
     OrderFactors* orderFactors() {
@@ -487,7 +497,7 @@ public:
     std::string toString() const override;
 
 private:
-    std::unique_ptr<YieldColumns>       columns_;
+    std::unique_ptr<MatchReturnItems>   returnItems_;
     std::unique_ptr<OrderFactors>       orderFactors_;
     Expression*                         skip_{nullptr};
     Expression*                         limit_{nullptr};

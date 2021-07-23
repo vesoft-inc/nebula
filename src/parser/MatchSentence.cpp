@@ -49,7 +49,7 @@ std::string WithClause::toString() const {
         buf += "DISTINCT ";
     }
 
-    buf += columns_->toString();
+    buf += returnItems_->toString();
 
     if (orderFactors_ != nullptr) {
         buf += " ";
@@ -173,6 +173,21 @@ std::string MatchPath::toString() const {
     return buf;
 }
 
+std::string MatchReturnItems::toString() const {
+    std::string buf;
+    if (includeExisting_) {
+        buf += '*';
+    }
+    if (columns_) {
+        if (includeExisting_) {
+            buf += ',';
+        }
+        buf += columns_->toString();
+    }
+
+    return buf;
+}
+
 std::string MatchReturn::toString() const {
     std::string buf;
     buf.reserve(64);
@@ -183,11 +198,7 @@ std::string MatchReturn::toString() const {
         buf += "DISTINCT ";
     }
 
-    if (isAll()) {
-        buf += '*';
-    } else {
-        buf += columns_->toString();
-    }
+    buf += returnItems_->toString();
 
     if (orderFactors_ != nullptr) {
         buf += " ";

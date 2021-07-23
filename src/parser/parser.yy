@@ -133,6 +133,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     MatchEdge                              *match_edge;
     MatchEdgeProp                          *match_edge_prop;
     MatchEdgeTypeList                      *match_edge_type_list;
+    MatchReturnItems                       *match_return_items;
     MatchReturn                            *match_return;
     ReadingClause                          *reading_clause;
     MatchClauseList                        *match_clause_list;
@@ -302,6 +303,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <match_node_label_list> match_node_label_list
 %type <match_edge> match_edge
 %type <match_edge_prop> match_edge_prop
+%type <match_return_items> match_return_items
 %type <match_return> match_return
 %type <expr> match_skip
 %type <expr> match_limit
@@ -1389,7 +1391,7 @@ unwind_clause
     ;
 
 with_clause
-    : KW_WITH yield_columns match_order_by match_skip match_limit where_clause {
+    : KW_WITH match_return_items match_order_by match_skip match_limit where_clause {
         if ($6 && graph::ExpressionUtils::findAny($6->filter(),{Expression::Kind::kAggregate})) {
             delete($2);
             delete($3);
@@ -1400,7 +1402,7 @@ with_clause
         }
         $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
     }
-    | KW_WITH KW_DISTINCT yield_columns match_order_by match_skip match_limit where_clause {
+    | KW_WITH KW_DISTINCT match_return_items match_order_by match_skip match_limit where_clause {
         if ($7 && graph::ExpressionUtils::findAny($7->filter(),{Expression::Kind::kAggregate})) {
             delete($3);
             delete($4);
@@ -1627,19 +1629,24 @@ match_edge_type_list
     ;
 
 match_return
-    : KW_RETURN yield_columns match_order_by match_skip match_limit {
+    : KW_RETURN match_return_items match_order_by match_skip match_limit {
         $$ = new MatchReturn($2, $3, $4, $5);
     }
-    | KW_RETURN KW_DISTINCT yield_columns match_order_by match_skip match_limit {
+    | KW_RETURN KW_DISTINCT match_return_items match_order_by match_skip match_limit {
         $$ = new MatchReturn($3, $4, $5, $6, true);
     }
-    | KW_RETURN STAR match_order_by match_skip match_limit {
-        $$ = new MatchReturn(nullptr, $3, $4, $5);
-    }
-    | KW_RETURN KW_DISTINCT STAR match_order_by match_skip match_limit {
-        $$ = new MatchReturn(nullptr, $4, $5, $6, true);
-    }
     ;
+
+match_return_items
+    : STAR {
+        $$ = new MatchReturnItems(true);
+    }
+    | STAR COMMA yield_columns {
+        $$ = new MatchReturnItems(true, $3);
+    }
+    | yield_columns {
+        $$ = new MatchReturnItems(false, $1);
+    }
 
 match_order_by
     : %empty {
