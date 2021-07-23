@@ -99,13 +99,10 @@ folly::SemiFuture<ErrOrVal> InternalStorageClient::getValue(size_t vIdLen,
                                                             folly::StringPiece key,
                                                             folly::EventBase* evb) {
     auto srcVid = key.subpiece(sizeof(PartitionID), vIdLen);
-    auto stPartId = metaClient_->partId(spaceId, srcVid.str());
-    if (!stPartId.ok()) {
-        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    }
+    auto partId = metaClient_->partId(spaceId, srcVid.str());
 
     auto c = folly::makePromiseContract<ErrOrVal>();
-    getValueImpl(spaceId, stPartId.value(), key.str(), std::move(c.first), evb);
+    getValueImpl(spaceId, partId, key.str(), std::move(c.first), evb);
     return std::move(c.second);
 }
 

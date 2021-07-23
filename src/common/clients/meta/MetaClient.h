@@ -511,7 +511,7 @@ public:
 
     StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
 
-    StatusOr<PartitionID> partId(int32_t numParts, VertexID id) const;
+    PartitionID partId(int32_t numParts, VertexID id) const;
 
     StatusOr<std::shared_ptr<const NebulaSchemaProvider>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
