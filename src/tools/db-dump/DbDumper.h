@@ -65,6 +65,8 @@ private:
 
     bool isValidVidLen(VertexID vid);
 
+    Value getVertexId(const folly::StringPiece &vidStr);
+
 private:
     std::unique_ptr<rocksdb::DB>                                   db_;
     rocksdb::Options                                               options_;
@@ -72,6 +74,7 @@ private:
     std::unique_ptr<meta::ServerBasedSchemaManager>                schemaMng_;
     GraphSpaceID                                                   spaceId_;
     int32_t                                                        spaceVidLen_;
+    meta::cpp2::PropertyType                                       spaceVidType_;
     int32_t                                                        partNum_;
     std::unordered_set<PartitionID>                                parts_;
     std::unordered_set<VertexID>                                   vids_;

@@ -545,9 +545,7 @@ struct TossEnvironment {
 
     int32_t getPartId(const std::string& src) {
         // auto stPart = mClient_->partId(spaceId_, edgeKey.src.getStr());
-        auto stPart = mClient_->partId(spaceId_, src);
-        LOG_IF(FATAL, !stPart.ok()) << "mClient_->partId failed";
-        return stPart.value();
+        return mClient_->partId(spaceId_, src);
     }
 
     /**

@@ -49,13 +49,8 @@ void AddEdgesAtomicProcessor::processByChain(const cpp2::AddEdgesRequest& req) {
     for (auto& part : *req.parts_ref()) {
         auto localPart = part.first;
         for (auto& edge : part.second) {
-            auto stPartId = env_->metaClient_->partId(spaceId_,
+            auto remotePart = env_->metaClient_->partId(spaceId_,
                     (*(*edge.key_ref()).dst_ref()).getStr());
-            if (!stPartId.ok()) {
-                failedPart[localPart] = nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-                break;
-            }
-            auto remotePart = stPartId.value();
             ChainId cid{localPart, remotePart};
             if (FLAGS_trace_toss) {
                 auto& ekey = *edge.key_ref();

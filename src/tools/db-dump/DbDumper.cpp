@@ -82,6 +82,12 @@ Status DbDumper::initSpace() {
     }
     spaceVidLen_ = spaceVidLen.value();
 
+    auto vidTypeStatus = metaClient_->getSpaceVidType(spaceId_);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    spaceVidType_ = std::move(vidTypeStatus).value();
+
     auto partNum = metaClient_->partsNum(spaceId_);
     if (!partNum.ok()) {
         return Status::Error("Get partition number from '%s' failed.", FLAGS_space_name.c_str());
@@ -94,7 +100,15 @@ Status DbDumper::initParams() {
     std::vector<std::string> tags, edges;
     try {
         folly::splitTo<PartitionID>(',', FLAGS_parts, std::inserter(parts_, parts_.begin()), true);
-        folly::splitTo<VertexID>(',', FLAGS_vids, std::inserter(vids_, vids_.begin()), true);
+        if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+            std::vector<int64_t> intVids;
+            folly::splitTo<int64_t>(',', FLAGS_vids, std::inserter(intVids, intVids.begin()), true);
+            for (auto vid : intVids) {
+                vids_.emplace(std::string(reinterpret_cast<const char*>(&vid), 8));
+            }
+        } else {
+            folly::splitTo<VertexID>(',', FLAGS_vids, std::inserter(vids_, vids_.begin()), true);
+        }
         folly::splitTo<std::string>(',', FLAGS_tags, std::inserter(tags, tags.begin()), true);
         folly::splitTo<std::string>(',', FLAGS_edges, std::inserter(edges, edges.begin()), true);
     } catch (const std::exception& e) {
@@ -209,7 +223,7 @@ void DbDumper::run() {
                 if (!isValidVidLen(vid)) {
                     continue;
                 }
-                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto partId = metaClient_->partId(partNum_, vid);
                 auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
                 seek(prefix);
             }
@@ -221,7 +235,7 @@ void DbDumper::run() {
                 if (!isValidVidLen(vid)) {
                     continue;
                 }
-                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto partId = metaClient_->partId(partNum_, vid);
                 for (auto edgeType : edgeTypes_) {
                     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, vid, edgeType);
                     seek(prefix);
@@ -235,7 +249,7 @@ void DbDumper::run() {
                 if (!isValidVidLen(vid)) {
                     continue;
                 }
-                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto partId = metaClient_->partId(partNum_, vid);
                 for (auto tagId : tagIds_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
                     seek(prefix);
@@ -249,7 +263,7 @@ void DbDumper::run() {
                 if (!isValidVidLen(vid)) {
                     continue;
                 }
-                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto partId = metaClient_->partId(partNum_, vid);
                 for (auto edgeType : edgeTypes_) {
                     auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_, partId, vid, edgeType);
                     seek(prefix);
@@ -260,7 +274,7 @@ void DbDumper::run() {
                 if (!isValidVidLen(vid)) {
                     continue;
                 }
-                auto partId = std::hash<VertexID>()(vid) % partNum_  + 1;
+                auto partId = metaClient_->partId(partNum_, vid);
                 for (auto tagId : tagIds_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
                     seek(prefix);
@@ -515,7 +529,7 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
 
 inline void DbDumper::printTagKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
-    auto vid = NebulaKeyUtils::getVertexId(spaceVidLen_, key);
+    auto vid = getVertexId(NebulaKeyUtils::getVertexId(spaceVidLen_, key));
     auto tagId = NebulaKeyUtils::getTagId(spaceVidLen_, key);
     std::cout << "[vertex] key: " << part << ", " << vid << ", " << getTagName(tagId);
 }
@@ -523,8 +537,8 @@ inline void DbDumper::printTagKey(const folly::StringPiece& key) {
 inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
     auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
-    auto src = NebulaKeyUtils::getSrcId(spaceVidLen_, key);
-    auto dst = NebulaKeyUtils::getDstId(spaceVidLen_, key);
+    auto src = getVertexId(NebulaKeyUtils::getSrcId(spaceVidLen_, key));
+    auto dst = getVertexId(NebulaKeyUtils::getDstId(spaceVidLen_, key));
     auto rank = NebulaKeyUtils::getRank(spaceVidLen_, key);
     std::cout << "[edge] key: " << part << ", " << src << ", " << getEdgeName(edgeType) << ", "
         << rank << ", " << dst;
@@ -567,6 +581,16 @@ std::string DbDumper::getEdgeName(const EdgeType edgeType) {
         return folly::stringPrintf("%d", edgeType);
     } else {
         return name.value();
+    }
+}
+
+Value DbDumper::getVertexId(const folly::StringPiece &vidStr) {
+    if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+        int64_t val;
+        memcpy(reinterpret_cast<void*>(&val), vidStr.begin(), sizeof(int64_t));
+        return val;
+    } else {
+        return vidStr.str();
     }
 }
 }  // namespace storage

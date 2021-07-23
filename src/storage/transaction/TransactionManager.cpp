@@ -231,11 +231,7 @@ TransactionManager::updateEdgeAtomic(size_t vIdLen,
                                      PartitionID partId,
                                      const cpp2::EdgeKey& edgeKey,
                                      GetBatchFunc batchGetter) {
-    auto stRemotePart = env_->metaClient_->partId(spaceId, (*edgeKey.dst_ref()).getStr());
-    if (!stRemotePart.ok()) {
-        return folly::makeFuture(nebula::cpp2::ErrorCode::E_UNKNOWN);
-    }
-    auto remotePart = stRemotePart.value();
+    auto remotePart = env_->metaClient_->partId(spaceId, (*edgeKey.dst_ref()).getStr());
     auto localKey = TransactionUtils::edgeKey(vIdLen, partId, edgeKey);
 
     std::vector<KV> data{std::make_pair(localKey, "")};
@@ -265,11 +261,8 @@ TransactionManager::resumeTransaction(size_t vIdLen,
     auto c = folly::makePromiseContract<nebula::cpp2::ErrorCode>();
 
     auto dst = NebulaKeyUtils::getDstId(vIdLen, localKey);
-    auto stRemotePartId = env_->metaClient_->partId(spaceId, dst.str());
-    if (!stRemotePartId.ok()) {
-        return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    }
-    auto remoteKey = TransactionUtils::reverseRawKey(vIdLen, stRemotePartId.value(), localKey);
+    auto remotePartId = env_->metaClient_->partId(spaceId, dst.str());
+    auto remoteKey = TransactionUtils::reverseRawKey(vIdLen, remotePartId, localKey);
 
     LOG_IF(INFO, FLAGS_trace_toss) << "try to get remote key=" << folly::hexlify(remoteKey)
         << ", according to lock=" << folly::hexlify(lockKey);
