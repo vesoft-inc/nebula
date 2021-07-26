@@ -120,26 +120,17 @@ void SubscriptExpression::accept(ExprVisitor *visitor) {
 // For the positive range bound it start from begin,
 // for the negative range bound it start from end
 const Value& SubscriptRangeExpression::eval(ExpressionContext &ctx) {
-    const auto listValue = DCHECK_NOTNULL(list_)->eval(ctx);
+    const auto& listValue = DCHECK_NOTNULL(list_)->eval(ctx);
     if (!listValue.isList()) {
         result_ = Value::kNullBadType;
         return result_;
     }
-    const auto list = listValue.getList();
+    const auto& list = listValue.getList();
+    size_t size = list.size();
     int64_t lo, hi;
     if (lo_ == nullptr) {
-        auto hiValue = DCHECK_NOTNULL(hi_)->eval(ctx);
-        if (hiValue.isNull()) {
-            result_ = Value::kNullValue;
-            return result_;
-        }
-        if (!hiValue.isInt()) {
-            result_ = Value::kNullBadType;
-            return result_;
-        }
-        hi = hiValue.getInt();
-        lo = (hi < 0 ? -list.size() : 0);
-    } else if (hi_ == nullptr) {
+        lo = 0;
+    } else {
         auto loValue = DCHECK_NOTNULL(lo_)->eval(ctx);
         if (loValue.isNull()) {
             result_ = Value::kNullValue;
@@ -150,57 +141,47 @@ const Value& SubscriptRangeExpression::eval(ExpressionContext &ctx) {
             return result_;
         }
         lo = loValue.getInt();
-        hi = (lo < 0 ? -1 : list.size());
+        if (lo < 0) {
+            lo += size;
+        }
+    }
+
+    if (hi_ == nullptr) {
+        hi = size;
     } else {
-        auto loValue = lo_->eval(ctx);
-        auto hiValue = hi_->eval(ctx);
-        if (loValue.isNull() || hiValue.isNull()) {
+        auto hiValue = DCHECK_NOTNULL(hi_)->eval(ctx);
+        if (hiValue.isNull()) {
             result_ = Value::kNullValue;
             return result_;
         }
-        if (!(loValue.isInt() && hiValue.isInt())) {
+        if (!hiValue.isInt()) {
             result_ = Value::kNullBadType;
             return result_;
         }
-        lo = loValue.getInt();
         hi = hiValue.getInt();
+        if (hi < 0) {
+            hi += size;
+        }
     }
 
-    // fit the out-of-range
+    // Out-of-bound slices are simply truncated
     if (lo < 0) {
-        if (lo < -static_cast<int64_t>(list.size())) {
-            lo = -list.size();
-        }
-    } else {
-        if (lo >= static_cast<int64_t>(list.size())) {
-            result_ = List();
-            return result_;
-        }
+        lo = 0;
     }
-
-    if (hi < 0) {
-        if (hi < -static_cast<int64_t>(list.size())) {
-            result_ = List();
-            return result_;
-        }
-    } else {
-        if (hi >= static_cast<int64_t>(list.size())) {
-            hi = list.size();
-        }
-    }
-
-    const auto begin = lo < 0 ? list.values.end() + lo : list.values.begin() + lo;
-    const auto end = hi < 0 ? list.values.end() + hi : list.values.begin() + hi;
-    using iterCategory = typename std::iterator_traits<decltype(begin)>::iterator_category;
-    static_assert(std::is_base_of_v<std::random_access_iterator_tag, iterCategory>);
-    if (std::distance(begin, end) < 0) {
-        // The unclosed range
+    if (lo >= hi) {
         result_ = List();
         return result_;
     }
+    if (static_cast<size_t>(lo) >= size) {
+        result_ = List();
+        return result_;
+    }
+    if (static_cast<size_t>(hi) >= size) {
+        hi = size;
+    }
 
     List r;
-    r.values.insert(r.values.end(), begin, end);
+    r.values = {list.values.begin()+lo, list.values.begin()+hi};
     result_ = std::move(r);
     return result_;
 }
