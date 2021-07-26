@@ -20,6 +20,7 @@ macro(package to_one name home_page scripts_dir)
         set(CPACK_GENERATOR "RPM")
         file (STRINGS "/etc/redhat-release" SYSTEM_NAME)
         if (${SYSTEM_NAME} MATCHES "CentOS")
+	    set(HOST_SYSTEM_NAME "el")
             execute_process(
                 COMMAND echo ${SYSTEM_NAME}
                 COMMAND tr -dc "0-9."
@@ -27,19 +28,21 @@ macro(package to_one name home_page scripts_dir)
                 OUTPUT_VARIABLE HOST_SYSTEM_VER
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
-            string(CONCAT HOST_SYSTEM_VER "el" ${HOST_SYSTEM_VER})
+            string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
         elseif (${SYSTEM_NAME} MATCHES "Fedora")
+	    set(HOST_SYSTEM_NAME "fc")
             execute_process(
                 COMMAND echo ${SYSTEM_NAME}
                 COMMAND cut -d " " -f3
                 OUTPUT_VARIABLE HOST_SYSTEM_VER
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
-            string(CONCAT HOST_SYSTEM_VER "fc" ${HOST_SYSTEM_VER})
+            string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
         else()
             set(HOST_SYSTEM_VER "Unknown")
         endif()
     elseif (EXISTS "/etc/lsb-release")
+        set(HOST_SYSTEM_NAME "ubuntu")
         set(CPACK_GENERATOR "DEB")
         file (STRINGS "/etc/lsb-release" SYSTEM_NAME)
         execute_process(
@@ -50,22 +53,64 @@ macro(package to_one name home_page scripts_dir)
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
         string(REPLACE "." "" HOST_SYSTEM_VER ${HOST_SYSTEM_VER})
-        string(CONCAT HOST_SYSTEM_VER "ubuntu" ${HOST_SYSTEM_VER})
+        string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
     elseif (EXISTS "/etc/issue")
-        set(CPACK_GENERATOR "DEB")
         file (STRINGS "/etc/issue" SYSTEM_NAME)
         execute_process(
             COMMAND echo "${SYSTEM_NAME}"
+            COMMAND sed -n "1p"
+            COMMAND cut -d " " -f 1
+            OUTPUT_VARIABLE HOST_SYSTEM_NAME
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND echo "${SYSTEM_NAME}"
+            COMMAND sed -n "1p"
             COMMAND cut -d " " -f 3
             OUTPUT_VARIABLE HOST_SYSTEM_VER
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        string(CONCAT HOST_SYSTEM_VER "debian" ${HOST_SYSTEM_VER})
+        if (${HOST_SYSTEM_NAME} MATCHES "Debian")
+            execute_process(
+                COMMAND echo "${SYSTEM_NAME}"
+                COMMAND sed -n "1p"
+                COMMAND cut -d " " -f 3
+                OUTPUT_VARIABLE HOST_SYSTEM_VER
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            set(CPACK_GENERATOR "DEB")
+        # Adapt the Kylin system
+        elseif (${HOST_SYSTEM_NAME} MATCHES "Kylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "aarch64")
+            execute_process(
+                COMMAND echo "${SYSTEM_NAME}"
+                COMMAND sed -n "1p"
+                COMMAND cut -d " " -f 2
+                OUTPUT_VARIABLE HOST_SYSTEM_VER
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            set(CMAKE_HOST_SYSTEM_PROCESSOR "arm64")
+            set(CPACK_GENERATOR "DEB")
+        elseif (${HOST_SYSTEM_NAME} MATCHES "NeoKylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "mips64")
+            execute_process(
+                COMMAND echo "${SYSTEM_NAME}"
+                COMMAND sed -n "1p"
+                COMMAND cut -d " " -f 4
+                OUTPUT_VARIABLE HOST_SYSTEM_VER
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            set(CMAKE_HOST_SYSTEM_PROCESSOR "mips64el")
+            set(CPACK_GENERATOR "RPM")
+        endif()
+        string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
+        set(CMAKE_HOST_SYSTEM_PROCESSOR "mips64el")
     else()
         set(HOST_SYSTEM_VER "Unknown")
     endif()
+
+    message(STATUS "HOST_SYSTEM_NAME is ${HOST_SYSTEM_NAME}")
     message(STATUS "HOST_SYSTEM_VER is ${HOST_SYSTEM_VER}")
     message(STATUS "CPACK_GENERATOR is ${CPACK_GENERATOR}")
+    message(STATUS "CMAKE_HOST_SYSTEM_PROCESSOR is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}.${HOST_SYSTEM_VER}.${CMAKE_HOST_SYSTEM_PROCESSOR})
     if (${to_one})

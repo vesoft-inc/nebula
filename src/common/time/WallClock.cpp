@@ -46,7 +46,7 @@ int64_t WallClock::fastNowInMilliSec() {
 int64_t WallClock::fastNowInMicroSec() {
     return TscHelper::tickToTimePointInUSec(TscHelper::readTsc());
 }
-#elif defined(__aarch64__) || defined(__arm64__)
+#elif defined(__aarch64__) || defined(__arm64__) || defined(__mips64)
 int64_t WallClock::fastNowInSec() {
     return WallClock::slowNowInSec();
 }

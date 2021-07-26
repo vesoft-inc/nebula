@@ -14,6 +14,7 @@
 #include <folly/SpinLock.h>
 
 #include "common/cpp/helpers.h"
+#include "common/base/Logging.h"
 
 namespace nebula {
 
