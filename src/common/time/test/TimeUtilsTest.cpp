@@ -163,6 +163,20 @@ TEST(Time, TimezoneShift) {
     }
 }
 
+TEST(Time, Parse) {
+    // datetime
+    {
+        auto result = time::TimeUtils::parseDateTime("2019-03-04 22:00:30");
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), DateTime(2019, 3, 4, 22, 0, 30, 0));
+    }
+    {
+        auto result = time::TimeUtils::parseDateTime("2019-03-04T22:00:30");
+        ASSERT_TRUE(result.ok());
+        EXPECT_EQ(result.value(), DateTime(2019, 3, 4, 22, 0, 30, 0));
+    }
+}
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {

@@ -9,6 +9,7 @@
 
 #include <iomanip>
 #include <limits>
+#include <sstream>
 #include <vector>
 
 #include "common/base/Status.h"
@@ -50,7 +51,11 @@ public:
         std::istringstream ss(str);
         ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
         if (ss.fail()) {
-            return Status::Error();
+            std::istringstream ss2(str);
+            ss2 >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+            if (ss2.fail()) {
+                return Status::Error();
+            }
         }
         DateTime dt;
         dt.year = tm.tm_year + 1900;
