@@ -1595,7 +1595,7 @@ Value Value::toFloat() const {
         }
         case Value::Type::STRING: {
             const auto& str = getStr();
-            char *pEnd;
+            char* pEnd;
             double val = strtod(str.c_str(), &pEnd);
             if (*pEnd != '\0') {
                 return Value::kNullValue;
@@ -1629,12 +1629,23 @@ Value Value::toInt() const {
         }
         case Value::Type::STRING: {
             const auto& str = getStr();
-            char *pEnd;
-            double val = strtod(str.c_str(), &pEnd);
+            errno = 0;
+            char* pEnd;
+            auto it = std::find(str.begin(), str.end(), '.');
+            int64_t val =
+                (it == str.end())
+                    ? int64_t(strtoll(str.c_str(), &pEnd, 10))   // string representing int
+                    : int64_t(strtod(str.c_str(), &pEnd));       // string representing double
             if (*pEnd != '\0') {
                 return Value::kNullValue;
             }
-            return static_cast<int64_t>(val);
+            // Check overflow
+            if ((val == std::numeric_limits<int64_t>::max() ||
+                 val == std::numeric_limits<int64_t>::min()) &&
+                errno == ERANGE) {
+                return kNullOverflow;
+            }
+            return val;
         }
         default: {
             return Value::kNullBadType;
