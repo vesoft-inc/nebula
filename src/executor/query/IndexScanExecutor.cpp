@@ -6,6 +6,8 @@
 
 #include "executor/query/IndexScanExecutor.h"
 
+#include <algorithm>
+
 #include "planner/plan/PlanNode.h"
 #include "context/QueryContext.h"
 #include "service/GraphFlags.h"
@@ -28,8 +30,16 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
         DataSet dataSet({"dummy"});
         return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
     }
+
+    const auto &ictxs = lookup->queryContext();
+    auto iter = std::find_if(
+        ictxs.begin(), ictxs.end(), [](auto &ictx) { return !ictx.index_id_ref().is_set(); });
+    if (ictxs.empty() || iter != ictxs.end()) {
+        return Status::Error("There is no index to use at runtime");
+    }
+
     return storageClient->lookupIndex(lookup->space(),
-                                      lookup->queryContext(),
+                                      ictxs,
                                       lookup->isEdge(),
                                       lookup->schemaId(),
                                       lookup->returnColumns())
