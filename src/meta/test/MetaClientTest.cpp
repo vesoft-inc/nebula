@@ -641,7 +641,7 @@ TEST(MetaClientTest, TagTest) {
     }
     // Test wrong format timestamp in default value
     {
-        cpp2::Schema schema = genSchema("2010-10-10 10:00:00", PropertyType::TIMESTAMP, true);
+        cpp2::Schema schema = genSchema("2010-10-10X10:00:00", PropertyType::TIMESTAMP, true);
         auto result = client->createTagSchema(
                 spaceId, "test_tag_wrong_default_timestamp2", std::move(schema)).get();
         ASSERT_FALSE(result.ok());
@@ -651,6 +651,12 @@ TEST(MetaClientTest, TagTest) {
         cpp2::Schema schema = genSchema("2010-10-10T10:00:00", PropertyType::TIMESTAMP, true);
         auto result = client->createTagSchema(
                 spaceId, "test_tag_right_default_timestamp2", std::move(schema)).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        cpp2::Schema schema = genSchema("2010-10-10 10:00:00", PropertyType::TIMESTAMP, true);
+        auto result = client->createTagSchema(
+                spaceId, "test_tag_wrong_default_timestamp2", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
     }
     // Test out of range of int8
