@@ -26,3 +26,17 @@ Feature: Function Call Expression
     Then the result should be, in any order:
       | a       | b                      | c                            | d                                               |
       | /^\d+$/ | /^\d{4}\-\d{2}-\d{2}$/ | /^\d{2}:\d{2}:\d{2}\.\d{6}$/ | /^\d{4}\-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$/ |
+    When executing query:
+      """
+      YIELD datetime('2019-03-02T22:00:30') as dt
+      """
+    Then the result should be, in any order:
+      | dt                           |
+      | '2019-03-02T22:00:30.000000' |
+    When executing query:
+      """
+      YIELD datetime('2019-03-02 22:00:30') as dt
+      """
+    Then the result should be, in any order:
+      | dt                           |
+      | '2019-03-02T22:00:30.000000' |
