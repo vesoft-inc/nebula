@@ -79,7 +79,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
             return false;
         }
         auto& propName = static_cast<const VariablePropertyExpression*>(e)->prop();
-        return rewriteMap[propName];
+        return rewriteMap.find(propName) != rewriteMap.end();
     };
     auto rewriter = [&rewriteMap](const Expression* e) -> Expression* {
         DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);

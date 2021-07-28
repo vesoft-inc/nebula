@@ -14,6 +14,7 @@ nebula_add_library(
     rule/PushFilterDownGetNbrsRule.cpp
     rule/RemoveNoopProjectRule.cpp
     rule/CombineFilterRule.cpp
+    rule/CollapseProjectRule.cpp
     rule/MergeGetVerticesAndDedupRule.cpp
     rule/MergeGetVerticesAndProjectRule.cpp
     rule/MergeGetNbrsAndDedupRule.cpp
