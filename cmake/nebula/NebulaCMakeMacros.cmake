@@ -101,6 +101,7 @@ macro(nebula_link_libraries target)
         ${GETTIME_LIB}
         ${libatomic_link_flags}
         -pthread
+        z
         ${COVERAGES}
     )
 endmacro(nebula_link_libraries)
