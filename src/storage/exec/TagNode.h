@@ -41,34 +41,21 @@ public:
     }
 
     nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-        reader_.reset();
+        valid_ = false;
         auto ret = RelNode::execute(partId, vId);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
         }
+
         VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << tagId_
                 << ", prop size " << props_->size();
-
-        // when update, has already evicted
-        if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
-            auto cache = tagContext_->vertexCache_->get(std::make_pair(vId, tagId_));
-            if (cache.ok()) {
-                key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
-                value_ = std::move(cache.value());
-                // if data in vertex cache is valid, don't read from kv
-                if (resetReader(vId)) {
-                    return nebula::cpp2::ErrorCode::SUCCEEDED;
-                }
-            }
-        }
-
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto prefix = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId, vId, tagId_);
-        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix, &iter);
-        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            key_ = iter->key().str();
-            value_ = iter->val().str();
-            resetReader(vId);
+        key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+        ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &value_);
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            resetReader();
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
+        } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            // regard key not found as succeed as well, upper node will handle it
             return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
         return ret;
@@ -84,12 +71,12 @@ public:
     }
 
     bool valid() const override {
-        return !stopSearching_ && reader_ != nullptr;
+        return valid_;
     }
 
     void next() override {
         // tag only has one valid record, so stop iterate
-        stopSearching_ = true;
+        valid_ = false;
     }
 
     folly::StringPiece key() const override {
@@ -108,22 +95,15 @@ public:
         return tagName_;
     }
 
-    TagID getTagId() {
-        return tagId_;
-    }
-
 private:
-    bool resetReader(const VertexID& vId) {
+    void resetReader() {
         reader_.reset(*schemas_, value_);
         if (!reader_ || (ttl_.hasValue() && CommonUtils::checkDataExpiredForTTL(
             schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
             reader_.reset();
-            if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
-                tagContext_->vertexCache_->evict(std::make_pair(vId, tagId_));
-            }
-            return false;
+            return;
         }
-        return true;
+        valid_ = true;
     }
 
     RunTimeContext                                                       *context_;
@@ -136,7 +116,7 @@ private:
     folly::Optional<std::pair<std::string, int64_t>>                      ttl_;
     std::string                                                           tagName_;
 
-    bool                                                                  stopSearching_ = false;
+    bool                                                                  valid_ = false;
     std::string                                                           key_;
     std::string                                                           value_;
     RowReaderWrapper                                                      reader_;

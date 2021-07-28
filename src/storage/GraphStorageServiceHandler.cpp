@@ -28,8 +28,7 @@ namespace nebula {
 namespace storage {
 
 GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env)
-        : env_(env)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        : env_(env) {
     if (FLAGS_reader_handlers_type == "io") {
         auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
         readerPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers,
@@ -64,14 +63,14 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env)
 // Vertice section
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_addVertices(const cpp2::AddVerticesRequest& req) {
-    auto* processor = AddVerticesProcessor::instance(env_, &kAddVerticesCounters, &vertexCache_);
+    auto* processor = AddVerticesProcessor::instance(env_, &kAddVerticesCounters);
     RETURN_FUTURE(processor);
 }
 
 
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& req) {
-    auto* processor = DeleteVerticesProcessor::instance(env_, &kDelVerticesCounters, &vertexCache_);
+    auto* processor = DeleteVerticesProcessor::instance(env_, &kDelVerticesCounters);
     RETURN_FUTURE(processor);
 }
 
@@ -80,8 +79,7 @@ folly::Future<cpp2::UpdateResponse>
 GraphStorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
     auto* processor = UpdateVertexProcessor::instance(env_,
                                                       &kUpdateVertexCounters,
-                                                      readerPool_.get(),
-                                                      &vertexCache_);
+                                                      readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -112,8 +110,7 @@ folly::Future<cpp2::GetNeighborsResponse>
 GraphStorageServiceHandler::future_getNeighbors(const cpp2::GetNeighborsRequest& req) {
     auto* processor = GetNeighborsProcessor::instance(env_,
                                                       &kGetNeighborsCounters,
-                                                      readerPool_.get(),
-                                                      &vertexCache_);
+                                                      readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -122,8 +119,7 @@ folly::Future<cpp2::GetPropResponse>
 GraphStorageServiceHandler::future_getProps(const cpp2::GetPropRequest& req) {
     auto* processor = GetPropProcessor::instance(env_,
                                                  &kGetPropCounters,
-                                                 readerPool_.get(),
-                                                 &vertexCache_);
+                                                 readerPool_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -132,8 +128,7 @@ folly::Future<cpp2::LookupIndexResp>
 GraphStorageServiceHandler::future_lookupIndex(const cpp2::LookupIndexRequest& req) {
     auto* processor = LookupProcessor::instance(env_,
                                                 &kLookupCounters,
-                                                readerPool_.get(),
-                                                &vertexCache_);
+                                                readerPool_.get());
     RETURN_FUTURE(processor);
 }
 

@@ -253,6 +253,7 @@ private:
      * use stopAtFirstEdge_ to let caller tell if this need to stop early
      * use stopSearching_ to judge inside.
      */
+    bool                                                     stopSearching_{false};
     bool                                                     stopAtFirstEdge_{false};
     bool                                                     calledByCtor_{true};
     std::list<folly::SemiFuture<nebula::cpp2::ErrorCode>>    resumeTasks_;

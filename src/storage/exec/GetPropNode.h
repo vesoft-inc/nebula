@@ -20,12 +20,10 @@ public:
 
     explicit GetTagPropNode(RunTimeContext* context,
                             std::vector<TagNode*> tagNodes,
-                            nebula::DataSet* resultDataSet,
-                            VertexCache* vertexCache)
+                            nebula::DataSet* resultDataSet)
         : context_(context)
         , tagNodes_(std::move(tagNodes))
-        , resultDataSet_(resultDataSet)
-        , vertexCache_(vertexCache) {}
+        , resultDataSet_(resultDataSet) {}
 
     nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
@@ -59,17 +57,13 @@ public:
                     }
                     return nebula::cpp2::ErrorCode::SUCCEEDED;
                 },
-                [this, &row, vIdLen, isIntId, &vId, tagNode] (folly::StringPiece key,
-                                                              RowReader* reader,
-                                                              const std::vector<PropContext>* props)
+                [&row, vIdLen, isIntId] (folly::StringPiece key,
+                                                        RowReader* reader,
+                                                        const std::vector<PropContext>* props)
                 -> nebula::cpp2::ErrorCode {
                     if (!QueryUtils::collectVertexProps(key, vIdLen, isIntId,
                                                         reader, props, row).ok()) {
                         return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
-                    }
-                    if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                        auto tagId = tagNode->getTagId();
-                        vertexCache_->insert(std::make_pair(vId, tagId), reader->getData());
                     }
                     return nebula::cpp2::ErrorCode::SUCCEEDED;
                 });
@@ -85,7 +79,6 @@ private:
     RunTimeContext*             context_;
     std::vector<TagNode*>       tagNodes_;
     nebula::DataSet*            resultDataSet_;
-    VertexCache*                vertexCache_;
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {

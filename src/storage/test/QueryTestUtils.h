@@ -206,7 +206,7 @@ public:
             std::vector<kvstore::KV> data;
             for (const auto& edge : entry.second) {
                 auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, edge.srcId_, edge.type_,
-                                                   edge.rank_, edge.dstId_, 0L);
+                                                   edge.rank_, edge.dstId_);
                 SchemaVer ver = folly::Random::rand64() % schemaVerCount;
                 auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_), ver);
                 if (!schema) {

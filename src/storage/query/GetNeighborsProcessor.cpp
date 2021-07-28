@@ -203,7 +203,7 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RunTimeContext* context,
         tags.emplace_back(tag.get());
         plan.addNode(std::move(tag));
     }
-    std::vector<EdgeNode<VertexID>*> edges;
+    std::vector<SingleEdgeNode*> edges;
     for (const auto& ec : edgeContext_.propContexts_) {
         auto edge = std::make_unique<SingleEdgeNode>(context, &edgeContext_, ec.first, &ec.second);
         edges.emplace_back(edge.get());

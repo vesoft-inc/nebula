@@ -347,7 +347,6 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithData(nebula::DataSet* result,
         return output;
     } else {
         auto vertex = std::make_unique<IndexVertexNode<IndexID>>(context_.get(),
-                                                                 this->vertexCache_,
                                                                  indexScan.get(),
                                                                  schemas_,
                                                                  context_->tagName_);
@@ -472,7 +471,6 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
         return output;
     } else {
         auto vertex = std::make_unique<IndexVertexNode<IndexID>>(context_.get(),
-                                                                 this->vertexCache_,
                                                                  indexScan.get(),
                                                                  schemas_,
                                                                  context_->tagName_);

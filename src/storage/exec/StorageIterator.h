@@ -40,40 +40,27 @@ public:
             std::unique_ptr<kvstore::KVIterator> iter,
             EdgeType edgeType,
             const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
-            const folly::Optional<std::pair<std::string, int64_t>>* ttl,
-            bool moveToValidRecord = true)
+            const folly::Optional<std::pair<std::string, int64_t>>* ttl)
         : context_(context)
         , iter_(std::move(iter))
         , edgeType_(edgeType)
-        , schemas_(schemas)
-        , moveToValidRecord_(moveToValidRecord) {
+        , schemas_(schemas) {
         CHECK(!!iter_);
         if (ttl->hasValue()) {
             hasTtl_ = true;
             ttlCol_ = ttl->value().first;
             ttlDuration_ = ttl->value().second;
         }
-        // If moveToValidRecord is true, iterator will try to move to first valid record,
-        // which is used in GetNeighbors. If it is false, it will only check the latest record,
-        // which is used in GetProps and UpdateEdge.
-        if (moveToValidRecord_) {
-            while (iter_->valid() && !check()) {
-                iter_->next();
-            }
-        } else {
-            check();
+        while (iter_->valid() && !check()) {
+            iter_->next();
         }
     }
 
     bool valid() const override {
-        return !stopSearching_ && reader_ != nullptr;
+        return reader_ != nullptr;
     }
 
     void next() override {
-        if (!moveToValidRecord_) {
-            stopSearching_ = true;
-            return;
-        }
         do {
             iter_->next();
             if (!iter_->valid()) {
@@ -124,8 +111,6 @@ protected:
     bool                                                                  hasTtl_ = false;
     std::string                                                           ttlCol_;
     int64_t                                                               ttlDuration_;
-    bool                                                                  moveToValidRecord_{true};
-    bool                                                                  stopSearching_ = false;
 
     RowReaderWrapper                                                      reader_;
     EdgeRanking                                                           lastRank_ = 0;

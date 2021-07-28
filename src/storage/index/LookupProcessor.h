@@ -21,9 +21,8 @@ class LookupProcessor
 public:
     static LookupProcessor* instance(StorageEnv* env,
                                      const ProcessorCounters* counters = &kLookupCounters,
-                                     folly::Executor* executor = nullptr,
-                                     VertexCache* cache = nullptr) {
-        return new LookupProcessor(env, counters, executor, cache);
+                                     folly::Executor* executor = nullptr) {
+        return new LookupProcessor(env, counters, executor);
     }
 
     void process(const cpp2::LookupIndexRequest& req) override;
@@ -31,10 +30,9 @@ public:
 protected:
     LookupProcessor(StorageEnv* env,
                     const ProcessorCounters* counters,
-                    folly::Executor* executor,
-                    VertexCache* cache)
+                    folly::Executor* executor)
         : LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp>(
-            env, counters, executor, cache) {}
+            env, counters, executor) {}
 
     void onProcessFinished() override;
 

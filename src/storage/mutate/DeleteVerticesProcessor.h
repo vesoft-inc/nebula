@@ -21,19 +21,16 @@ class DeleteVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteVerticesProcessor* instance(
             StorageEnv* env,
-            const ProcessorCounters* counters = &kDelVerticesCounters,
-            VertexCache* cache = nullptr) {
-        return new DeleteVerticesProcessor(env, counters, cache);
+            const ProcessorCounters* counters = &kDelVerticesCounters) {
+        return new DeleteVerticesProcessor(env, counters);
     }
 
     void process(const cpp2::DeleteVerticesRequest& req);
 
 private:
     DeleteVerticesProcessor(StorageEnv* env,
-                            const ProcessorCounters* counters,
-                            VertexCache* cache)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters)
-        , vertexCache_(cache) {}
+                            const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
     ErrorOr<nebula::cpp2::ErrorCode, std::string>
     deleteVertices(PartitionID partId,
@@ -42,7 +39,6 @@ private:
 
 private:
     GraphSpaceID                                                spaceId_;
-    VertexCache*                                                vertexCache_{nullptr};
     std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
 

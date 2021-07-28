@@ -430,23 +430,23 @@ AddEdgesProcessor::addEdges(PartitionID partId, const std::vector<kvstore::KV>& 
 
 ErrorOr<nebula::cpp2::ErrorCode, std::string>
 AddEdgesProcessor::findOldValue(PartitionID partId, const folly::StringPiece& rawKey) {
-    auto prefix = NebulaKeyUtils::edgePrefix(spaceVidLen_,
-                                             partId,
-                                             NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),
-                                             NebulaKeyUtils::getEdgeType(spaceVidLen_, rawKey),
-                                             NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
-                                             NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str());
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
+    auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
+                                       partId,
+                                       NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),
+                                       NebulaKeyUtils::getEdgeType(spaceVidLen_, rawKey),
+                                       NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
+                                       NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str());
+    std::string val;
+    auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return val;
+    } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+        return std::string();
+    } else {
+        LOG(ERROR) << "Error! ret = " << apache::thrift::util::enumNameSafe(ret)
                    << ", spaceId " << spaceId_;
         return ret;
     }
-    if (iter && iter->valid()) {
-        return iter->val().str();
-    }
-    return std::string();
 }
 
 std::string AddEdgesProcessor::indexKey(PartitionID partId,

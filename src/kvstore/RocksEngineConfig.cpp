@@ -55,6 +55,10 @@ DEFINE_int32(rocksdb_batch_size,
 DEFINE_int64(rocksdb_block_cache, 1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
+DEFINE_int32(row_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
+
+DEFINE_int32(cache_bucket_exp, 8, "Total buckets number is 1 << cache_bucket_exp");
+
 DEFINE_bool(enable_partitioned_index_filter, false, "True for partitioned index filters");
 
 DEFINE_string(rocksdb_compression, "snappy", "Compression algorithm used by RocksDB, "
@@ -260,9 +264,15 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
         if (FLAGS_rocksdb_block_cache <= 0) {
             bbtOpts.no_block_cache = true;
         } else {
-            static std::shared_ptr<rocksdb::Cache> blockCache
-                = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024, 8/*shard bits*/);
+            static std::shared_ptr<rocksdb::Cache> blockCache = rocksdb::NewLRUCache(
+                FLAGS_rocksdb_block_cache * 1024 * 1024, FLAGS_cache_bucket_exp);
             bbtOpts.block_cache = blockCache;
+        }
+
+        if (FLAGS_row_cache_num) {
+            static std::shared_ptr<rocksdb::Cache> rowCache
+                = rocksdb::NewLRUCache(FLAGS_row_cache_num, FLAGS_cache_bucket_exp);
+            baseOpts.row_cache = rowCache;
         }
 
         bbtOpts.filter_policy.reset(rocksdb::NewBloomFilterPolicy(10, false));

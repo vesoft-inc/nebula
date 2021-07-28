@@ -881,61 +881,6 @@ TEST(GetNeighborsTest, MaxEdgReturnedPerVertexTest) {
     FLAGS_max_edge_returned_per_vertex = defaultVal;
 }
 
-
-TEST(GetNeighborsTest, VertexCacheTest) {
-    fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
-    mock::MockCluster cluster;
-    cluster.initStorageKV(rootPath.path());
-    auto* env = cluster.storageEnv_.get();
-    auto totalParts = cluster.getTotalParts();
-    ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
-    ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-    VertexCache vertexCache(1000, 4);
-
-    TagID player = 1;
-    EdgeType serve = 101;
-
-    {
-        std::vector<VertexID> vertices = {"Tim Duncan"};
-        std::vector<EdgeType> over = {serve};
-        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
-        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
-        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
-        edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-
-        auto* processor =
-            GetNeighborsProcessor::instance(env, nullptr, threadPool.get(), &vertexCache);
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-
-        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-        // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
-    }
-    {
-        std::vector<VertexID> vertices = {"Tim Duncan"};
-        std::vector<EdgeType> over = {serve};
-        std::vector<std::pair<TagID, std::vector<std::string>>> tags;
-        std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
-        tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
-        edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
-        auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
-
-        auto* processor =
-            GetNeighborsProcessor::instance(env, nullptr, threadPool.get(), &vertexCache);
-        auto fut = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(fut).get();
-
-        ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-        // vId, stat, player, serve, expr
-        QueryTestUtils::checkResponse(*resp.vertices_ref(), vertices, over, tags, edges, 1, 5);
-    }
-}
-
 TEST(GetNeighborsTest, TtlTest) {
     FLAGS_mock_ttl_col = true;
 

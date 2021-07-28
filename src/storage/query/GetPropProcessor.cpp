@@ -207,7 +207,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RunTimeContext* context,
         tags.emplace_back(tag.get());
         plan.addNode(std::move(tag));
     }
-    auto output = std::make_unique<GetTagPropNode>(context, tags, result, tagContext_.vertexCache_);
+    auto output = std::make_unique<GetTagPropNode>(context, tags, result);
     for (auto* tag : tags) {
         output->addDependency(tag);
     }

@@ -113,7 +113,6 @@ struct TagContext {
         std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>> schemas_;
     // tagId -> tag ttl info
     std::unordered_map<TagID, std::pair<std::string, int64_t>>          ttlInfo_;
-    VertexCache                                                        *vertexCache_ = nullptr;
 };
 
 
@@ -147,11 +146,9 @@ public:
 protected:
     explicit QueryBaseProcessor(StorageEnv* env,
                                 const ProcessorCounters* counters,
-                                folly::Executor* executor = nullptr,
-                                VertexCache* cache = nullptr)
+                                folly::Executor* executor = nullptr)
         : BaseProcessor<RESP>(env, counters)
         , executor_(executor) {
-        this->tagContext_.vertexCache_ = cache;
     }
 
     virtual nebula::cpp2::ErrorCode checkAndBuildContexts(const REQ& req) = 0;

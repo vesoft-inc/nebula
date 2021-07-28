@@ -65,7 +65,6 @@ public:
 
 private:
     StorageEnv*                                     env_{nullptr};
-    VertexCache                                     vertexCache_;
     std::shared_ptr<folly::Executor>                readerPool_;
 };
 

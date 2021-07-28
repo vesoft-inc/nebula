@@ -370,6 +370,101 @@ TEST(RocksEngineTest, BackupRestoreWithData) {
     FLAGS_rocksdb_backup_dir = "";
 }
 
+TEST(RocksEngineTest, VertexBloomFilterTest) {
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/rocksdb_engine_VertexBloomFilterTest.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
+    PartitionID partId = 1;
+    VertexID vId = "vertex";
+
+    auto writeVertex = [&](TagID tagId) {
+        std::vector<KV> data;
+        data.emplace_back(NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, vId, tagId),
+                          folly::stringPrintf("val_%d", tagId));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    };
+
+    auto readVertex = [&](TagID tagId) {
+        auto key = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, vId, tagId);
+        std::string val;
+        auto ret = engine->get(key, &val);
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            EXPECT_EQ(folly::stringPrintf("val_%d", tagId), val);
+        } else {
+            EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, ret);
+        }
+    };
+
+    auto statistics = kvstore::getDBStatistics();
+
+    // write initial vertex
+    writeVertex(0);
+
+    // read data while in memtable
+    readVertex(0);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    readVertex(1);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    // flush to sst, read again
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->flush());
+    readVertex(0);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    // read not exists data, whole key bloom filter will be useful
+    readVertex(1);
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    FLAGS_enable_rocksdb_statistics = false;
+}
+
+
+TEST(RocksEngineTest, EdgeBloomFilterTest) {
+    FLAGS_enable_rocksdb_statistics = true;
+    fs::TempDir rootPath("/tmp/rocksdb_engine_EdgeBloomFilterTest.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
+    PartitionID partId = 1;
+    VertexID vId = "vertex";
+    auto writeEdge = [&](EdgeType edgeType) {
+        std::vector<KV> data;
+        data.emplace_back(NebulaKeyUtils::edgeKey(kDefaultVIdLen, partId, vId, edgeType, 0, vId),
+                          folly::stringPrintf("val_%d", edgeType));
+        EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    };
+
+    auto readEdge = [&](EdgeType edgeType) {
+        auto key = NebulaKeyUtils::edgeKey(kDefaultVIdLen, partId, vId, edgeType, 0, vId);
+        std::string val;
+        auto ret = engine->get(key, &val);
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            EXPECT_EQ(folly::stringPrintf("val_%d", edgeType), val);
+        } else {
+            EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, ret);
+        }
+    };
+
+    auto statistics = kvstore::getDBStatistics();
+    statistics->getAndResetTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL);
+
+    // write initial vertex
+    writeEdge(0);
+
+    // read data while in memtable
+    readEdge(0);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    readEdge(1);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    // flush to sst, read again
+    EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->flush());
+    readEdge(0);
+    EXPECT_EQ(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+    // read not exists data, whole key bloom filter will be useful
+    readEdge(1);
+    EXPECT_GT(statistics->getTickerCount(rocksdb::Tickers::BLOOM_FILTER_USEFUL), 0);
+
+    FLAGS_enable_rocksdb_statistics = false;
+}
+
 class RocksEnginePrefixTest
     : public ::testing::TestWithParam<std::tuple<bool, std::string, int32_t>> {
 public:

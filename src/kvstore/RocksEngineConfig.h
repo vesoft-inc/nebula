@@ -36,6 +36,10 @@ DECLARE_int64(rocksdb_block_cache);
 
 DECLARE_int32(rocksdb_batch_size);
 
+DECLARE_int32(row_cache_num);
+
+DECLARE_int32(cache_bucket_exp);
+
 // rocksdb table format
 DECLARE_string(rocksdb_table_format);
 

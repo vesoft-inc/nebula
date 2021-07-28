@@ -23,9 +23,8 @@ public:
     static UpdateVertexProcessor* instance(
             StorageEnv* env,
             const ProcessorCounters* counters = &kUpdateVertexCounters,
-            folly::Executor* executor = nullptr,
-            VertexCache* cache = nullptr) {
-        return new UpdateVertexProcessor(env, counters, executor, cache);
+            folly::Executor* executor = nullptr) {
+        return new UpdateVertexProcessor(env, counters, executor);
     }
 
     void process(const cpp2::UpdateVertexRequest& req) override;
@@ -35,12 +34,10 @@ public:
 private:
     UpdateVertexProcessor(StorageEnv* env,
                           const ProcessorCounters* counters,
-                          folly::Executor* executor,
-                          VertexCache* cache)
+                          folly::Executor* executor)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest, cpp2::UpdateResponse>(env,
                                                                               counters,
-                                                                              executor,
-                                                                              cache) {}
+                                                                              executor) {}
 
     nebula::cpp2::ErrorCode
     checkAndBuildContexts(const cpp2::UpdateVertexRequest& req) override;

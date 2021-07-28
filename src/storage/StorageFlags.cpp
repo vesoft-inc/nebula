@@ -26,10 +26,6 @@ DEFINE_int32(rebuild_index_batch_num, 1024,
 DEFINE_int32(rebuild_index_locked_threshold, 1024,
              "The locked threshold will refuse writing.");
 
-DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
-
-DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
-
 DEFINE_bool(enable_vertex_cache, true, "Enable vertex cache");
 
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");

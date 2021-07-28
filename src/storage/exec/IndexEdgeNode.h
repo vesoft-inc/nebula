@@ -57,17 +57,18 @@ public:
             iter->next();
         }
         for (const auto& edge : edges) {
-            auto prefix = NebulaKeyUtils::edgePrefix(context_->vIdLen(),
-                                                     partId,
-                                                     (*edge.src_ref()).getStr(),
-                                                     context_->edgeType_,
-                                                     edge.get_ranking(),
-                                                     (*edge.dst_ref()).getStr());
-            std::unique_ptr<kvstore::KVIterator> eIter;
-            ret = context_->env()->kvstore_->prefix(context_->spaceId(),
-                                                       partId, prefix, &eIter);
-            if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && eIter && eIter->valid()) {
-                data_.emplace_back(eIter->key(), eIter->val());
+            auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
+                                               partId,
+                                               (*edge.src_ref()).getStr(),
+                                               context_->edgeType_,
+                                               edge.get_ranking(),
+                                               (*edge.dst_ref()).getStr());
+            std::string val;
+            ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key, &val);
+            if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+                data_.emplace_back(std::move(key), std::move(val));
+            } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+                continue;
             } else {
                 return ret;
             }

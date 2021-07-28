@@ -21,40 +21,13 @@ namespace storage {
 template<typename T>
 class EdgeNode : public IterateNode<T> {
 public:
-    SingleEdgeIterator* iter() {
-        return iter_.get();
-    }
-
     nebula::cpp2::ErrorCode
     collectEdgePropsIfValid(NullHandler nullHandler,
                             PropHandler valueHandler) {
-        if (!iter_ || !iter_->valid()) {
+        if (!this->valid()) {
             return nullHandler(props_);
         }
-        return valueHandler(iter_->key(), iter_->reader(), props_);
-    }
-
-    bool valid() const override {
-        return iter_ && iter_->valid();
-    }
-
-    void next() override {
-        iter_->next();
-    }
-
-    folly::StringPiece key() const override {
-        return iter_->key();
-    }
-
-    folly::StringPiece val() const override {
-        return iter_->val();
-    }
-
-    RowReader* reader() const override {
-        if (iter_) {
-            return iter_->reader();
-        }
-        return nullptr;
+        return valueHandler(this->key(), this->reader(), props_);
     }
 
     const std::string& getEdgeName() {
@@ -98,9 +71,6 @@ protected:
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
     folly::Optional<std::pair<std::string, int64_t>> ttl_;
     std::string edgeName_;
-
-    std::unique_ptr<SingleEdgeIterator> iter_;
-    std::string prefix_;
 };
 
 // FetchEdgeNode is used to fetch a single edge
@@ -116,7 +86,28 @@ public:
                   Expression* exp = nullptr)
         : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
 
+    bool valid() const override {
+        return valid_;
+    }
+
+    void next() override {
+        valid_ = false;
+    }
+
+    folly::StringPiece key() const override {
+        return key_;
+    }
+
+    folly::StringPiece val() const override {
+        return val_;
+    }
+
+    RowReader* reader() const override {
+        return reader_.get();
+    }
+
     nebula::cpp2::ErrorCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
+        valid_ = false;
         auto ret = RelNode::execute(partId, edgeKey);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return ret;
@@ -125,32 +116,44 @@ public:
         VLOG(1) << "partId " << partId << ", edgeType " << edgeType_
                 << ", prop size " << props_->size();
         if (edgeType_ !=  *edgeKey.edge_type_ref()) {
-            iter_.reset();
             return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
-        prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(),
-                                             partId,
-                                             (*edgeKey.src_ref()).getStr(),
-                                             *edgeKey.edge_type_ref(),
-                                             *edgeKey.ranking_ref(),
-                                             (*edgeKey.dst_ref()).getStr());
-        std::unique_ptr<kvstore::KVIterator> iter;
-        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
-        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            if (context_->env()->txnMan_ &&
-                context_->env()->txnMan_->enableToss(context_->spaceId())) {
-                bool stopAtFirstEdge = true;
-                iter_.reset(new TossEdgeIterator(
-                    context_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
-            } else {
-                iter_.reset(new SingleEdgeIterator(
-                    context_, std::move(iter), edgeType_, schemas_, &ttl_, false));
-            }
-        } else {
-            iter_.reset();
+        key_ = NebulaKeyUtils::edgeKey(context_->vIdLen(),
+                                       partId,
+                                       (*edgeKey.src_ref()).getStr(),
+                                       *edgeKey.edge_type_ref(),
+                                       *edgeKey.ranking_ref(),
+                                       (*edgeKey.dst_ref()).getStr());
+        ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &val_);
+        if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+            resetReader();
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
+        } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+            // regard key not found as succeed as well, upper node will handle it
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
         return ret;
     }
+
+private:
+    void resetReader() {
+        reader_.reset(*schemas_, val_);
+        if (!reader_ ||
+            (ttl_.hasValue() && CommonUtils::checkDataExpiredForTTL(schemas_->back().get(),
+                                                                    reader_.get(),
+                                                                    ttl_.value().first,
+                                                                    ttl_.value().second))) {
+            reader_.reset();
+            return;
+        }
+        valid_ = true;
+    }
+
+
+    bool                valid_ = false;
+    std::string         key_;
+    std::string         val_;
+    RowReaderWrapper    reader_;
 };
 
 // SingleEdgeNode is used to scan all edges of a specified edgeType of the same srcId
@@ -165,6 +168,30 @@ public:
                    Expression* exp = nullptr)
         : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
 
+    SingleEdgeIterator* iter() {
+        return iter_.get();
+    }
+
+    bool valid() const override {
+        return iter_ && iter_->valid();
+    }
+
+    void next() override {
+        iter_->next();
+    }
+
+    folly::StringPiece key() const override {
+        return iter_->key();
+    }
+
+    folly::StringPiece val() const override {
+        return iter_->val();
+    }
+
+    RowReader* reader() const override {
+        return iter_->reader();
+    }
+
     nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
         auto ret = RelNode::execute(partId, vId);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -177,20 +204,17 @@ public:
         prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(), partId, vId, edgeType_);
         ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-            if (context_->env()->txnMan_ &&
-                context_->env()->txnMan_->enableToss(context_->spaceId())) {
-                bool stopAtFirstEdge = false;
-                iter_.reset(new TossEdgeIterator(
-                    context_, std::move(iter), edgeType_, schemas_, &ttl_, stopAtFirstEdge));
-            } else {
-                iter_.reset(new SingleEdgeIterator(
-                    context_, std::move(iter), edgeType_, schemas_, &ttl_));
-            }
+            iter_.reset(
+                new SingleEdgeIterator(context_, std::move(iter), edgeType_, schemas_, &ttl_));
         } else {
             iter_.reset();
         }
         return ret;
     }
+
+private:
+    std::unique_ptr<SingleEdgeIterator> iter_;
+    std::string prefix_;
 };
 
 }  // namespace storage

@@ -27,7 +27,7 @@ public:
 
     HashJoinNode(RunTimeContext* context,
                  const std::vector<TagNode*>& tagNodes,
-                 const std::vector<EdgeNode<VertexID>*>& edgeNodes,
+                 const std::vector<SingleEdgeNode*>& edgeNodes,
                  TagContext* tagContext,
                  EdgeContext* edgeContext,
                  StorageExpressionContext* expCtx)
@@ -62,14 +62,13 @@ public:
                     result.values.emplace_back(Value());
                     return nebula::cpp2::ErrorCode::SUCCEEDED;
                 },
-                [this, &vId, &result, tagNode] (folly::StringPiece key,
-                                                RowReader* reader,
-                                                const std::vector<PropContext>* props)
+                [this, &result, tagNode] (folly::StringPiece key,
+                                          RowReader* reader,
+                                          const std::vector<PropContext>* props)
                 -> nebula::cpp2::ErrorCode {
                     nebula::List list;
                     list.reserve(props->size());
                     const auto& tagName = tagNode->getTagName();
-                    auto tagId = tagNode->getTagId();
                     for (const auto& prop : *props) {
                         VLOG(2) << "Collect prop " << prop.name_;
                         auto value = QueryUtils::readVertexProp(
@@ -83,10 +82,6 @@ public:
                         if (prop.returned_) {
                             list.emplace_back(std::move(value).value());
                         }
-                    }
-                    if (FLAGS_enable_vertex_cache && tagContext_->vertexCache_ != nullptr) {
-                        tagContext_->vertexCache_->insert(std::make_pair(vId, tagId),
-                                                          reader->getData());
                     }
                     result.values.emplace_back(std::move(list));
                     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -160,7 +155,7 @@ private:
 private:
     RunTimeContext* context_;
     std::vector<TagNode*> tagNodes_;
-    std::vector<EdgeNode<VertexID>*> edgeNodes_;
+    std::vector<SingleEdgeNode*> edgeNodes_;
     TagContext* tagContext_;
     EdgeContext* edgeContext_;
     StorageExpressionContext* expCtx_;

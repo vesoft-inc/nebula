@@ -193,8 +193,7 @@ void mockData(kvstore::KVStore* kv ,
                 VLOG(3) << "Write part " << partId << ", vertex "
                         << vertexId << ", dst " << dstId;
                 auto ekey =
-                        NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, dstId,
-                                                std::numeric_limits<int>::max() - 1);
+                        NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, dstId);
                 RowWriter ewriter(nullptr);
                 for (uint64_t numInt = 0; numInt < 10; numInt++) {
                     ewriter << (numInt + 1);
@@ -375,11 +374,10 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
-            auto version = std::numeric_limits<int>::max() - 1;
             {
                 VertexID srcId = 1;
                 VertexID dstId = 10;
-                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId, version);
+                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
                 RowWriter ewriter(nullptr);
                 ewriter << "AB" << "CAB" << "CABC";
                 auto eval = ewriter.encode();
@@ -391,7 +389,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
             {
                 VertexID srcId = 2;
                 VertexID dstId = 20;
-                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId, version);
+                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
                 RowWriter ewriter(nullptr);
                 ewriter << "ABC" << "ABC" << "ABC";
                 auto eval = ewriter.encode();
@@ -558,11 +556,10 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
-            auto version = std::numeric_limits<int>::max() - 1;
             {
                 VertexID srcId = 1;
                 VertexID dstId = 10;
-                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId, version);
+                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
                 RowWriter ewriter(nullptr);
                 ewriter << boost::get<double>(1.1)
                         << boost::get<double>(0.0)
@@ -576,7 +573,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
             {
                 VertexID srcId = 2;
                 VertexID dstId = 20;
-                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId, version);
+                auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
                 RowWriter ewriter(nullptr);
                 ewriter << boost::get<double>(2.2)
                         << boost::get<double>(0.0)

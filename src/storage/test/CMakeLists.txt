@@ -444,21 +444,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        vertex_cache_test
-    SOURCES
-        VertexCacheTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         storage_http_admin_test
     SOURCES
         StorageHttpAdminHandlerTest.cpp

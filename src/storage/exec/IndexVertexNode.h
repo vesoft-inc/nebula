@@ -19,12 +19,10 @@ public:
     using RelNode<T>::execute;
 
     IndexVertexNode(RunTimeContext* context,
-                    VertexCache* vertexCache,
                     IndexScanNode<T>* indexScanNode,
                     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                     const std::string& schemaName)
         : context_(context)
-        , vertexCache_(vertexCache)
         , indexScanNode_(indexScanNode)
         , schemas_(schemas)
         , schemaName_(schemaName) {}
@@ -56,27 +54,13 @@ public:
         }
         for (const auto& vId : vids) {
             VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
-            if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-                auto result = vertexCache_->get(std::make_pair(vId, context_->tagId_));
-                if (result.ok()) {
-                    auto vertexKey = NebulaKeyUtils::vertexKey(context_->vIdLen(),
-                                                               partId,
-                                                               vId,
-                                                               context_->tagId_);
-                    data_.emplace_back(std::move(vertexKey), std::move(result).value());
-                    continue;
-                } else {
-                    VLOG(1) << "Miss cache for vId " << vId << ", tagId " << context_->tagId_;
-                }
-            }
-
-            std::unique_ptr<kvstore::KVIterator> vIter;
-            auto prefix = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId,
-                                                       vId, context_->tagId_);
-            ret = context_->env()->kvstore_->prefix(context_->spaceId(),
-                                                       partId, prefix, &vIter);
-            if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && vIter && vIter->valid()) {
-                data_.emplace_back(vIter->key(), vIter->val());
+            auto key = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, context_->tagId_);
+            std::string val;
+            ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key, &val);
+            if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+                data_.emplace_back(std::move(key), std::move(val));
+            } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+                continue;
             } else {
                 return ret;
             }
@@ -98,7 +82,6 @@ public:
 
 private:
     RunTimeContext*                                                       context_;
-    VertexCache*                                                          vertexCache_;
     IndexScanNode<T>*                                                     indexScanNode_;
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
     const std::string&                                                    schemaName_;

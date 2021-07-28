@@ -23,9 +23,8 @@ public:
     static GetPropProcessor* instance(
             StorageEnv* env,
             const ProcessorCounters* counters = &kGetPropCounters,
-            folly::Executor* executor = nullptr,
-            VertexCache* cache = nullptr) {
-        return new GetPropProcessor(env, counters, executor, cache);
+            folly::Executor* executor = nullptr) {
+        return new GetPropProcessor(env, counters, executor);
     }
 
     void process(const cpp2::GetPropRequest& req) override;
@@ -35,12 +34,10 @@ public:
 protected:
     GetPropProcessor(StorageEnv* env,
                      const ProcessorCounters* counters,
-                     folly::Executor* executor,
-                     VertexCache* cache)
+                     folly::Executor* executor)
         : QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse>(env,
                                                                           counters,
-                                                                          executor,
-                                                                          cache) {}
+                                                                          executor) {}
 
 private:
     StoragePlan<VertexID> buildTagPlan(RunTimeContext* context, nebula::DataSet* result);

@@ -28,7 +28,7 @@ void mockData(kvstore::KVStore* kv) {
             // Generate 7 edges for each edgeType.
             for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
+                auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId);
                 auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }

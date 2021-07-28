@@ -60,11 +60,8 @@ static bool mockEdgeData(storage::StorageEnv* env, int32_t totalParts, int32_t s
         data.clear();
 
         for (const auto& edge : part.second) {
-            // Switch version to big-endian, make sure the key is in ordered.
-            auto version = std::numeric_limits<int64_t>::max() - 0L;
-            version = folly::Endian::big(version);
             auto key = NebulaKeyUtils::edgeKey(
-                spaceVidLen, part.first, edge.srcId_, edge.type_, edge.rank_, edge.dstId_, version);
+                spaceVidLen, part.first, edge.srcId_, edge.type_, edge.rank_, edge.dstId_);
             auto schema = env->schemaMan_->getEdgeSchema(spaceId, std::abs(edge.type_));
             if (!schema) {
                 LOG(ERROR) << "Invalid edge " << edge.type_;
@@ -991,7 +988,7 @@ TEST(UpdateEdgeTest, CorruptDataTest) {
     VertexID dstId = "Lakers";
     EdgeRanking rank = 2017;
     EdgeType edgeType = 101;
-    auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, srcId, edgeType, rank, dstId, 0L);
+    auto key = NebulaKeyUtils::edgeKey(spaceVidLen, partId, srcId, edgeType, rank, dstId);
 
     std::vector<kvstore::KV> data;
     data.emplace_back(std::make_pair(key, ""));
@@ -1411,7 +1408,7 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
         iter->next();
         count++;
     }
-    EXPECT_EQ(2, count);
+    EXPECT_EQ(1, count);
 }
 
 // Update success, yield _src, _dst, _rank, _type

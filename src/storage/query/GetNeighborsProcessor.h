@@ -25,9 +25,8 @@ public:
     static GetNeighborsProcessor* instance(
             StorageEnv* env,
             const ProcessorCounters* counters = &kGetNeighborsCounters,
-            folly::Executor* executor = nullptr,
-            VertexCache* cache = nullptr) {
-        return new GetNeighborsProcessor(env, counters, executor, cache);
+            folly::Executor* executor = nullptr) {
+        return new GetNeighborsProcessor(env, counters, executor);
     }
 
     void process(const cpp2::GetNeighborsRequest& req) override;
@@ -35,13 +34,11 @@ public:
 protected:
     GetNeighborsProcessor(StorageEnv* env,
                           const ProcessorCounters* counters,
-                          folly::Executor* executor,
-                          VertexCache* cache)
+                          folly::Executor* executor)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::GetNeighborsResponse>(env,
                                                          counters,
-                                                         executor,
-                                                         cache) {}
+                                                         executor) {}
 
     StoragePlan<VertexID> buildPlan(RunTimeContext* context,
                                     StorageExpressionContext* expCtx,

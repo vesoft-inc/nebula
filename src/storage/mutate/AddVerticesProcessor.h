@@ -22,9 +22,8 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddVerticesProcessor* instance(
             StorageEnv* env,
-            const ProcessorCounters* counters = &kAddVerticesCounters,
-            VertexCache* cache = nullptr) {
-        return new AddVerticesProcessor(env, counters, cache);
+            const ProcessorCounters* counters = &kAddVerticesCounters) {
+        return new AddVerticesProcessor(env, counters);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
@@ -35,10 +34,8 @@ public:
 
 private:
     AddVerticesProcessor(StorageEnv* env,
-                         const ProcessorCounters* counters,
-                         VertexCache* cache)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters)
-        , vertexCache_(cache) {}
+                         const ProcessorCounters* counters)
+        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
     ErrorOr<nebula::cpp2::ErrorCode, std::string>
     findOldValue(PartitionID partId,
@@ -52,7 +49,6 @@ private:
 
 private:
     GraphSpaceID                                                spaceId_;
-    VertexCache*                                                vertexCache_{nullptr};
     std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
     bool                                                        ifNotExists_{false};
 };
