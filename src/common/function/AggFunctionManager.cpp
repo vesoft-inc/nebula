@@ -34,10 +34,6 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isNull()) {
                 res = 0;
             }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
-                return;
-            }
             if (val.isNull() || val.empty()) {
                 return;
             }
@@ -55,7 +51,7 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isNull()) {
                 res = 0;
             }
-            if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isNumeric()))) {
+            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isNumeric())) {
                 res = Value::kNullBadType;
                 return;
             }
@@ -77,7 +73,7 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
-            if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isNumeric()))) {
+            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isNumeric())) {
                 res = Value::kNullBadType;
                 return;
             }
@@ -105,10 +101,6 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
-                return;
-            }
             if (val.isNull() || val.empty()) {
                 return;
             }
@@ -127,10 +119,6 @@ AggFunctionManager::AggFunctionManager() {
         func = [](AggData* aggData, const Value& val) {
             auto& res = aggData->result();
             if (res.isBadNull()) {
-                return;
-            }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
                 return;
             }
             if (val.isNull() || val.empty()) {
@@ -154,10 +142,6 @@ AggFunctionManager::AggFunctionManager() {
             }
             if (UNLIKELY(!val.isNull() && !val.empty() && !val.isNumeric())) {
                 res = Value::kNullBadType;
-                return;
-            }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
                 return;
             }
             if (val.isNull() || val.empty()) {
@@ -190,7 +174,7 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
-            if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isInt()))) {
+            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isInt())) {
                 res = Value::kNullBadType;
                 return;
             }
@@ -212,7 +196,7 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
-            if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isInt()))) {
+            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isInt())) {
                 res = Value::kNullBadType;
                 return;
             }
@@ -234,7 +218,7 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isBadNull()) {
                 return;
             }
-            if (UNLIKELY(val.isBadNull() || (!val.isNull() && !val.empty() && !val.isInt()))) {
+            if (UNLIKELY(!val.isNull() && !val.empty() && !val.isInt())) {
                 res = Value::kNullBadType;
                 return;
             }
@@ -259,10 +243,6 @@ AggFunctionManager::AggFunctionManager() {
             if (res.isNull()) {
                 res = List();
             }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
-                return;
-            }
             if (val.isNull() || val.empty()) {
                 return;
             }
@@ -283,10 +263,6 @@ AggFunctionManager::AggFunctionManager() {
             }
             if (res.isNull()) {
                 res = Set();
-            }
-            if (val.isBadNull()) {
-                res = Value::kNullBadData;
-                return;
             }
             if (val.isNull() || val.empty()) {
                 return;

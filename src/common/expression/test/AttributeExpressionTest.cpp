@@ -125,6 +125,55 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
         ASSERT_EQ("vid", value.getStr());
     }
 }
+
+TEST_F(AttributeExpressionTest, DateTimeAttribute) {
+    DateTime dt(2021, 7, 19, 2, 7, 57, 0);
+    Date d(2021, 7, 19);
+    Time t(2, 7, 57, 0);
+    {
+        auto *left = ConstantExpression::make(&pool, Value(dt));
+        auto *right = LabelExpression::make(&pool, "not exist attribute");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value::kNullUnknownProp, value);
+    }
+    {
+        auto *left = ConstantExpression::make(&pool, Value(dt));
+        auto *right = LabelExpression::make(&pool, "year");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value(2021), value);
+    }
+    {
+        auto *left = ConstantExpression::make(&pool, Value(d));
+        auto *right = LabelExpression::make(&pool, "not exist attribute");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value::kNullUnknownProp, value);
+    }
+    {
+        auto *left = ConstantExpression::make(&pool, Value(d));
+        auto *right = LabelExpression::make(&pool, "day");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value(19), value);
+    }
+    {
+        auto *left = ConstantExpression::make(&pool, Value(t));
+        auto *right = LabelExpression::make(&pool, "not exist attribute");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value::kNullUnknownProp, value);
+    }
+    {
+        auto *left = ConstantExpression::make(&pool, Value(t));
+        auto *right = LabelExpression::make(&pool, "minute");
+        auto expr = AttributeExpression::make(&pool, left, right);
+        auto value = Expression::eval(expr, gExpCtxt);
+        ASSERT_EQ(Value(7), value);
+    }
+}
+
 }   // namespace nebula
 
 int main(int argc, char **argv) {

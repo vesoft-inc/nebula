@@ -3,25 +3,37 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+#include <gtest/gtest.h>
+#include <ostream>
 #include "common/expression/test/TestBase.h"
 
 #define TEST_AGG(name, isDistinct, expr, inputVar, expected)                                       \
     do {                                                                                           \
-        testAggExpr(#name, isDistinct, #expr, inputVar, expected);                                 \
+        EXPECT_TRUE(testAggExpr(#name, isDistinct, #expr, inputVar, expected));                    \
     } while (0)
 
 namespace nebula {
+
+template<typename K, typename V>
+static inline std::ostream& operator<<(std::ostream &os, const std::unordered_map<K, V> &m) {
+    os << "{";
+    for (const auto &i : m) {
+        os << i.first << ":" << i.second << ",";
+    }
+    os << "}";
+    return os;
+}
 
 class AggregateExpressionTest : public ::testing::Test {
 public:
     void SetUp() override {}
     void TearDown() override {}
 
-    void testAggExpr(const char* name,
-                     bool isDistinct,
-                     const char* expr,
-                     std::vector<std::pair<std::string, Value>> inputVar,
-                     const std::unordered_map<std::string, Value>& expected) {
+    ::testing::AssertionResult testAggExpr(const char* name,
+                                           bool isDistinct,
+                                           const char* expr,
+                                           std::vector<std::pair<std::string, Value>> inputVar,
+                                           const std::unordered_map<std::string, Value>& expected) {
         auto agg = name;
         auto func = std::make_unique<std::string>(expr);
         Expression* arg = nullptr;
@@ -51,7 +63,11 @@ public:
         for (auto& iter : agg_data_map) {
             res[iter.first] = iter.second->result();
         }
-        EXPECT_EQ(res, expected) << "check failed: " << name;
+        if (res != expected) {
+            return ::testing::AssertionFailure() << "Expect: " << expected << ", Got: " << res;
+        } else {
+            return ::testing::AssertionSuccess();
+        }
     }
 };
 
@@ -284,8 +300,8 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
 
         TEST_AGG(COUNT, false, isConst, vals5_, expected2);
         TEST_AGG(COUNT, true, isConst, vals5_, expected2);
-        TEST_AGG(COUNT, false, abs, vals9_, expected5);
-        TEST_AGG(COUNT, true, abs, vals9_, expected5);
+        TEST_AGG(COUNT, false, abs, vals9_, expected2);
+        TEST_AGG(COUNT, true, abs, vals9_, expected2);
         TEST_AGG(SUM, false, isConst, vals5_, expected2);
         TEST_AGG(SUM, true, isConst, vals5_, expected2);
         TEST_AGG(SUM, false, isConst, vals9_, expected5);
