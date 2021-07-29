@@ -33,7 +33,7 @@ public:
     }
 
     bool found() const {
-        return found_;
+        return !foundExprs_.empty();
     }
 
     std::vector<const Expression*> results() const {
@@ -53,7 +53,6 @@ private:
     void visit(CaseExpression* expr) override;
     void visit(PredicateExpression* expr) override;
     void visit(ReduceExpression* expr) override;
-
     void visit(ConstantExpression* expr) override;
     void visit(EdgePropertyExpression* expr) override;
     void visit(TagPropertyExpression* expr) override;
@@ -77,14 +76,11 @@ private:
     void visit(SubscriptRangeExpression* expr) override;
 
     void visitBinaryExpr(BinaryExpression* expr) override;
-
     void findInCurrentExpr(Expression* expr);
 
 private:
     Finder finder_;
     bool needFindAll_;
-
-    bool found_{false};
     std::vector<const Expression*> foundExprs_;
 };
 

@@ -9,84 +9,84 @@ namespace graph {
 
 void FindVisitor::visit(TypeCastingExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->operand()->accept(this);
 }
 
 void FindVisitor::visit(UnaryExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->operand()->accept(this);
 }
 
 void FindVisitor::visit(FunctionCallExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     for (const auto& arg : expr->args()->args()) {
         arg->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visit(AggregateExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->arg()->accept(this);
 }
 
 void FindVisitor::visit(ListExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     for (const auto& item : expr->items()) {
         item->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visit(SetExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     for (const auto& item : expr->items()) {
         item->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visit(MapExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     for (const auto& pair : expr->items()) {
         pair.second->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visit(CaseExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     if (expr->hasCondition()) {
         expr->condition()->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
     if (expr->hasDefault()) {
         expr->defaultResult()->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
     for (const auto& whenThen : expr->cases()) {
         whenThen.when->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
         whenThen.then->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visit(PredicateExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     expr->collection()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
     }
@@ -94,26 +94,26 @@ void FindVisitor::visit(PredicateExpression* expr) {
 
 void FindVisitor::visit(ReduceExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     expr->initial()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->collection()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->mapping()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 }
 
 void FindVisitor::visit(ListComprehensionExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     expr->collection()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     if (expr->hasFilter()) {
         expr->filter()->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 
     if (expr->hasMapping()) {
@@ -183,9 +183,9 @@ void FindVisitor::visit(LabelExpression* expr) {
 
 void FindVisitor::visit(LabelAttributeExpression *expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->left()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->right()->accept(this);
 }
 
@@ -204,33 +204,32 @@ void FindVisitor::visit(ColumnExpression* expr) {
 
 void FindVisitor::visit(SubscriptRangeExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     expr->list()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
 
     if (expr->lo() != nullptr) {
         expr->lo()->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 
     if (expr->hi() != nullptr) {
         expr->hi()->accept(this);
-        if (!needFindAll_ && found_) return;
+        if (!needFindAll_ && !foundExprs_.empty()) return;
     }
 }
 
 void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
     findInCurrentExpr(expr);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->left()->accept(this);
-    if (!needFindAll_ && found_) return;
+    if (!needFindAll_ && !foundExprs_.empty()) return;
     expr->right()->accept(this);
 }
 
 void FindVisitor::findInCurrentExpr(Expression* expr) {
     if (finder_(expr)) {
-        found_ = true;
         foundExprs_.emplace_back(expr);
     }
 }
