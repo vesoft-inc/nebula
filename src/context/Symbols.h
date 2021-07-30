@@ -47,16 +47,8 @@ struct Variable {
     std::unordered_set<PlanNode*> readBy;
     std::unordered_set<PlanNode*> writtenBy;
 
-    // None means will used in later
-    // non-positive means static lifetime
-    // positive means last user id
-    folly::Optional<int64_t>      lastUser;
-
-    void setLastUser(int64_t id) {
-        if (!lastUser.hasValue()) {
-            lastUser = id;
-        }
-    }
+    // the count of use the variable
+    std::atomic<uint64_t>         userCount;
 };
 
 class SymbolTable final {

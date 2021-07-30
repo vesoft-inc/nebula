@@ -8,6 +8,7 @@
 
 #include <folly/String.h>
 #include <folly/executors/InlineExecutor.h>
+#include <atomic>
 
 #include "common/base/Memory.h"
 #include "common/base/ObjectPool.h"
@@ -581,16 +582,20 @@ folly::Future<Status> Executor::error(Status status) const {
 void Executor::drop() {
     for (const auto &inputVar : node()->inputVars()) {
         if (inputVar != nullptr) {
-            if (inputVar->lastUser.value() == node()->id()) {
-                    ectx_->dropResult(inputVar->name);
-                    VLOG(1) << "Drop variable " << node()->outputVar();
+            // Make sure use the variable happened-before decrement count
+            if (inputVar->userCount.fetch_sub(1, std::memory_order_release) == 1) {
+                // Make sure drop happened-after count decrement
+                CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
+                ectx_->dropResult(inputVar->name);
+                VLOG(1) << "Drop variable " << node()->outputVar();
             }
         }
     }
 }
 
 Status Executor::finish(Result &&result) {
-    if (!FLAGS_enable_lifetime_optimize || node()->outputVarPtr()->lastUser.hasValue()) {
+    if (!FLAGS_enable_lifetime_optimize ||
+        node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
         numRows_ = result.size();
         ectx_->setResult(node()->outputVar(), std::move(result));
     } else {

@@ -5,6 +5,8 @@
  */
 
 #include "scheduler/Scheduler.h"
+#include <atomic>
+#include <limits>
 
 #include "context/QueryContext.h"
 #include "executor/ExecutionError.h"
@@ -28,10 +30,15 @@ namespace graph {
         const auto currentInLoop = std::get<1>(current);
         for (auto& inputVar : currentNode->inputVars()) {
             if (inputVar != nullptr) {
-                inputVar->setLastUser(
-                    (currentNode->kind() == PlanNode::Kind::kLoop || currentInLoop)
-                        ? -1
-                        : currentNode->id());
+                if (currentNode->kind() == PlanNode::Kind::kLoop || currentInLoop) {
+                    inputVar->userCount.store(std::numeric_limits<uint64_t>::max(),
+                                              std::memory_order_relaxed);
+                } else {
+                    if (inputVar->userCount.load(std::memory_order_relaxed) !=
+                        std::numeric_limits<uint64_t>::max()) {
+                        inputVar->userCount.fetch_add(1, std::memory_order_relaxed);
+                    }
+                }
             }
         }
         stack.pop();
@@ -42,13 +49,18 @@ namespace graph {
         switch (currentNode->kind()) {
             case PlanNode::Kind::kSelect: {
                 auto sel = static_cast<const Select*>(currentNode);
+                // used by scheduler
+                sel->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
+                                                     std::memory_order_relaxed);
                 stack.push(std::make_tuple(sel->then(), currentInLoop));
                 stack.push(std::make_tuple(sel->otherwise(), currentInLoop));
                 break;
             }
             case PlanNode::Kind::kLoop: {
                 auto loop = static_cast<const Loop*>(currentNode);
-                loop->outputVarPtr()->setLastUser(-1);
+                // used by scheduler
+                loop->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
+                                                      std::memory_order_relaxed);
                 stack.push(std::make_tuple(loop->body(), true));
                 break;
             }
