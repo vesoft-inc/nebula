@@ -24,6 +24,7 @@ public:
 
 private:
     StatusOr<SubPlan> connectSegments(
+        AstContext* astCtx,
         std::vector<SubPlan>& subplans,
         std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses);
 };

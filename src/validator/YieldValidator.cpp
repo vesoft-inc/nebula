@@ -50,12 +50,6 @@ Status YieldValidator::validateImpl() {
         return Status::SemanticError("Only one variable allowed to use.");
     }
 
-    if (!groupByValidator_ && exprProps_.inputProps().empty()
-        && exprProps_.varProps().empty() && inputVarName_.empty()) {
-        // generate constant expression result into querycontext
-        genConstantExprValues();
-    }
-
     if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
         // TODO: Support Multiple userDefinedVars
         if (userDefinedVarNameList_.size() != 1) {
@@ -88,20 +82,6 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
     column->setExpr(foldedExprCopy);
     outputs_.emplace_back(name, type);
     return Status::OK();
-}
-
-void YieldValidator::genConstantExprValues() {
-    constantExprVar_ = vctx_->anonVarGen()->getVar();
-    DataSet ds;
-    ds.colNames = getOutColNames();
-    QueryExpressionContext ctx;
-    Row row;
-    for (auto &column : columns_->columns()) {
-        row.values.emplace_back(Expression::eval(column->expr(), ctx(nullptr)));
-    }
-    ds.emplace_back(std::move(row));
-    qctx_->ectx()->setResult(constantExprVar_,
-                             ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
 Status YieldValidator::makeImplicitGroupByValidator() {
@@ -192,8 +172,10 @@ Status YieldValidator::toPlan() {
     if (!userDefinedVarName_.empty()) {
         inputVar = userDefinedVarName_;
         colNames = qctx_->symTable()->getVar(inputVar)->colNames;
-    } else if (!constantExprVar_.empty()) {
-        inputVar = constantExprVar_;
+    } else if (exprProps_.inputProps().empty()
+        && exprProps_.varProps().empty() && inputVarName_.empty()) {
+        // generate constant expression result into querycontext
+        inputVar = vctx_->anonVarGen()->getVar();
     } else {
         std::transform(
             inputs_.cbegin(), inputs_.cend(), colNames.begin(), [](auto &col) { return col.name; });

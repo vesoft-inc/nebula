@@ -67,15 +67,17 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
         }
     }
 
-    auto finalPlan = connectSegments(subplans, matchCtx->clauses);
+    auto finalPlan = connectSegments(astCtx, subplans, matchCtx->clauses);
     NG_RETURN_IF_ERROR(finalPlan);
     return std::move(finalPlan).value();
 }
 
 StatusOr<SubPlan> MatchPlanner::connectSegments(
+    AstContext* astCtx,
     std::vector<SubPlan>& subplans,
     std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses) {
     DCHECK(!subplans.empty());
+    subplans.front().tail->setInputVar(astCtx->qctx->vctx()->anonVarGen()->getVar());
     if (subplans.size() == 1) {
         return subplans.front();
     }
