@@ -3765,7 +3765,7 @@ folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
                                                    GraphSpaceID spaceId) {
     auto url = folly::stringPrintf(
             "http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
-            active_.host.c_str(), FLAGS_ws_meta_http_port,
+            leader_.host.c_str(), FLAGS_ws_meta_http_port,
             hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(), spaceId);
     auto func = [url] {
         auto result = http::HttpClient::get(url);
