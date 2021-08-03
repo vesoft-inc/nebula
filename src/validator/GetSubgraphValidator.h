@@ -8,20 +8,18 @@
 #define VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
 #include "validator/TraversalValidator.h"
+#include "context/ast/QueryAstContext.h"
 #include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
 class GetSubgraphValidator final : public TraversalValidator {
 public:
-    using EdgeProp = nebula::storage::cpp2::EdgeProp;
     GetSubgraphValidator(Sentence* sentence, QueryContext* context)
         : TraversalValidator(sentence, context) {}
 
 private:
     Status validateImpl() override;
-
-    Status toPlan() override;
 
     Status validateInBound(InBoundClause* in);
 
@@ -29,13 +27,12 @@ private:
 
     Status validateBothInOutBound(BothInOutClause* out);
 
-    StatusOr<std::unique_ptr<std::vector<EdgeProp>>> buildEdgeProps();
-
-    Status zeroStep(PlanNode* depend, const std::string& inputVar);
+    AstContext* getAstContext() override {
+        return subgraphCtx_.get();
+    }
 
 private:
-    std::unordered_set<EdgeType> edgeTypes_;
-    bool withProp_{false};
+    std::unique_ptr<SubgraphContext> subgraphCtx_;
 };
 
 }  // namespace graph

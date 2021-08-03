@@ -107,13 +107,22 @@ struct GoContext final : AstContext {
 };
 
 struct LookupContext final : public AstContext {
-    bool isEdge{false};
-    bool dedup{false};
-    bool isEmptyResultSet{false};
-    int32_t schemaId{-1};
-    int32_t limit{-1};
-    Expression* filter{nullptr};
+    bool                        isEdge{false};
+    bool                        dedup{false};
+    bool                        isEmptyResultSet{false};
+    int32_t                     schemaId{-1};
+    int32_t                     limit{-1};
+    Expression*                 filter{nullptr};
     // order by
+};
+
+struct SubgraphContext final : public AstContext {
+    Starts                          from;
+    StepClause                      steps;
+    std::string                     loopSteps;
+
+    std::unordered_set<EdgeType>    edgeTypes;
+    bool                            withProp{false};
 };
 
 }  // namespace graph

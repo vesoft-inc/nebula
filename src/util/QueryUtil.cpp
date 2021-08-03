@@ -76,6 +76,5 @@ PlanNode* QueryUtil::extractDstFromGN(QueryContext* qctx, PlanNode* gn, const st
     dedup->setOutputVar(output);
     return dedup;
 }
-
 }  // namespace graph
 }  // namespace nebula

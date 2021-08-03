@@ -16,6 +16,7 @@
 #include "planner/ngql/LookupPlanner.h"
 #include "planner/ngql/PathPlanner.h"
 #include "planner/ngql/GoPlanner.h"
+#include "planner/ngql/SubgraphPlanner.h"
 
 namespace nebula {
 namespace graph {
@@ -41,6 +42,10 @@ void PlannersRegister::registSequential() {
     {
         auto& planners = Planner::plannersMap()[Sentence::Kind::kLookup];
         planners.emplace_back(&LookupPlanner::match, &LookupPlanner::make);
+    }
+    {
+        auto& planners = Planner::plannersMap()[Sentence::Kind::kGetSubgraph];
+        planners.emplace_back(&SubgraphPlanner::match, &SubgraphPlanner::make);
     }
 }
 

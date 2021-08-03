@@ -38,5 +38,6 @@ nebula_add_library(
     plan/Maintain.cpp
     ngql/PathPlanner.cpp
     ngql/GoPlanner.cpp
+    ngql/SubgraphPlanner.cpp
     ngql/LookupPlanner.cpp
 )
