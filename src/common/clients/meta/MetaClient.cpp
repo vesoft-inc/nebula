@@ -3782,7 +3782,7 @@ folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
 
 folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
     auto url = folly::stringPrintf("http://%s:%d/ingest-dispatch?space=%d",
-                                   active_.host.c_str(), FLAGS_ws_meta_http_port, spaceId);
+                                   leader_.host.c_str(), FLAGS_ws_meta_http_port, spaceId);
     auto func = [url] {
         auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile ingest successfully") {
