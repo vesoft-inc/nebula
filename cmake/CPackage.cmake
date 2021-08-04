@@ -42,9 +42,15 @@ macro(package to_one name home_page scripts_dir)
             set(HOST_SYSTEM_VER "Unknown")
         endif()
     elseif (EXISTS "/etc/lsb-release")
-        set(HOST_SYSTEM_NAME "ubuntu")
         set(CPACK_GENERATOR "DEB")
         file (STRINGS "/etc/lsb-release" SYSTEM_NAME)
+        execute_process(
+            COMMAND echo "${SYSTEM_NAME}"
+            COMMAND cut -d ";" -f 1
+            COMMAND cut -d "=" -f 2
+            OUTPUT_VARIABLE HOST_SYSTEM_NAME
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
         execute_process(
             COMMAND echo "${SYSTEM_NAME}"
             COMMAND cut -d ";" -f 2
@@ -54,6 +60,15 @@ macro(package to_one name home_page scripts_dir)
         )
         string(REPLACE "." "" HOST_SYSTEM_VER ${HOST_SYSTEM_VER})
         string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
+        if (${HOST_SYSTEM_NAME} MATCHES "Ubuntu")
+            # the ubuntu need to modify the architecture name
+            if (${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
+                set(CMAKE_HOST_SYSTEM_PROCESSOR "amd64")
+            endif()
+        # Adapt the Kylin system
+        elseif (${HOST_SYSTEM_NAME} MATCHES "Kylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "aarch64")
+            set(CMAKE_HOST_SYSTEM_PROCESSOR "arm64")
+        endif()
     elseif (EXISTS "/etc/issue")
         file (STRINGS "/etc/issue" SYSTEM_NAME)
         execute_process(
@@ -79,17 +94,7 @@ macro(package to_one name home_page scripts_dir)
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
             set(CPACK_GENERATOR "DEB")
-        # Adapt the Kylin system
-        elseif (${HOST_SYSTEM_NAME} MATCHES "Kylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "aarch64")
-            execute_process(
-                COMMAND echo "${SYSTEM_NAME}"
-                COMMAND sed -n "1p"
-                COMMAND cut -d " " -f 2
-                OUTPUT_VARIABLE HOST_SYSTEM_VER
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            set(CMAKE_HOST_SYSTEM_PROCESSOR "arm64")
-            set(CPACK_GENERATOR "DEB")
+        # Adapt the NeoKylin system
         elseif (${HOST_SYSTEM_NAME} MATCHES "NeoKylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "mips64")
             execute_process(
                 COMMAND echo "${SYSTEM_NAME}"
