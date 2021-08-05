@@ -9,6 +9,7 @@
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddEdgesAtomicProcessor.h"
 #include "storage/mutate/DeleteVerticesProcessor.h"
+#include "storage/mutate/DeleteTagsProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
@@ -49,6 +50,7 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env)
     kAddEdgesCounters.init("add_edges");
     kAddEdgesAtomicCounters.init("add_edges_atomic");
     kDelVerticesCounters.init("delete_vertices");
+    kDelTagsCounters.init("delete_tags");
     kDelEdgesCounters.init("delete_edges");
     kUpdateVertexCounters.init("update_vertex");
     kUpdateEdgeCounters.init("update_edge");
@@ -71,6 +73,13 @@ GraphStorageServiceHandler::future_addVertices(const cpp2::AddVerticesRequest& r
 folly::Future<cpp2::ExecResponse>
 GraphStorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& req) {
     auto* processor = DeleteVerticesProcessor::instance(env_, &kDelVerticesCounters);
+    RETURN_FUTURE(processor);
+}
+
+
+folly::Future<cpp2::ExecResponse>
+GraphStorageServiceHandler::future_deleteTags(const cpp2::DeleteTagsRequest& req) {
+    auto* processor = DeleteTagsProcessor::instance(env_, &kDelTagsCounters);
     RETURN_FUTURE(processor);
 }
 

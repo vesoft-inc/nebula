@@ -29,6 +29,9 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_deleteVertices(const cpp2::DeleteVerticesRequest& req) override;
 
+    folly::Future<cpp2::ExecResponse>
+    future_deleteTags(const cpp2::DeleteTagsRequest& req) override;
+
     folly::Future<cpp2::UpdateResponse>
     future_updateVertex(const cpp2::UpdateVertexRequest& req) override;
 

@@ -30,6 +30,7 @@ nebula_add_library(
     context/StorageExpressionContext.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/DeleteVerticesProcessor.cpp
+    mutate/DeleteTagsProcessor.cpp
     mutate/AddEdgesProcessor.cpp
     mutate/AddEdgesAtomicProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
