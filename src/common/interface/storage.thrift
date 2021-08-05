@@ -363,13 +363,25 @@ struct DeleteVerticesRequest {
         (cpp.template = "std::unordered_map")           parts,
 }
 
-
 struct DeleteEdgesRequest {
     1: common.GraphSpaceID                      space_id,
     // partId => edgeKeys
     2: map<common.PartitionID, list<EdgeKey>>
         (cpp.template = "std::unordered_map")   parts,
 }
+
+struct DelTags {
+    1: common.Value id,
+    2: list<common.TagID> tags,
+}
+
+struct DeleteTagsRequest {
+    1: common.GraphSpaceID                              space_id,
+    // partId => vertexId
+    2: map<common.PartitionID, list<DelTags>>
+        (cpp.template = "std::unordered_map")           parts,
+}
+
 /*
  * End of DeleteVertex section
  */
@@ -617,6 +629,7 @@ service GraphStorageService {
 
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertices(1: DeleteVerticesRequest req);
+    ExecResponse deleteTags(1: DeleteTagsRequest req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req);
     UpdateResponse updateEdge(1: UpdateEdgeRequest req);

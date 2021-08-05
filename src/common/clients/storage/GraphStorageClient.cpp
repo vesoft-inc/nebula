@@ -289,6 +289,39 @@ GraphStorageClient::deleteVertices(GraphSpaceID space,
         });
 }
 
+folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
+GraphStorageClient::deleteTags(GraphSpaceID space,
+                               std::vector<cpp2::DelTags> delTags,
+                               folly::EventBase* evb) {
+    auto cbStatus = getIdFromDelTags(space);
+    if (!cbStatus.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(cbStatus.status().toString()));
+    }
+
+    auto status = clusterIdsToHosts(space, std::move(delTags), std::move(cbStatus).value());
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
+    std::unordered_map<HostAddr, cpp2::DeleteTagsRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(
+        evb,
+        std::move(requests),
+        [] (cpp2::GraphStorageServiceAsyncClient* client,
+            const cpp2::DeleteTagsRequest& r) {
+            return client->future_deleteTags(r);
+        });
+}
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>>
 GraphStorageClient::updateVertex(GraphSpaceID space,
@@ -708,5 +741,35 @@ StatusOr<std::function<const VertexID&(const Value&)>> GraphStorageClient::getId
     }
     return cb;
 }
+
+StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClient::getIdFromDelTags(
+    GraphSpaceID space) const {
+    auto vidTypeStatus = metaClient_->getSpaceVidType(space);
+    if (!vidTypeStatus) {
+        return vidTypeStatus.status();
+    }
+    auto vidType = std::move(vidTypeStatus).value();
+
+    std::function<const VertexID&(const cpp2::DelTags&)> cb;
+    if (vidType == meta::cpp2::PropertyType::INT64) {
+        cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
+                const auto& vId = delTags.get_id();
+                DCHECK_EQ(Value::Type::INT, vId.type());
+                auto& mutableV = const_cast<Value&>(vId);
+                mutableV = Value(std::string(reinterpret_cast<const char*>(&vId.getInt()), 8));
+                return mutableV.getStr();
+            };
+    } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+        cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
+                const auto& vId = delTags.get_id();
+                DCHECK_EQ(Value::Type::STRING, vId.type());
+                return vId.getStr();
+            };
+    } else {
+        return Status::Error("Only support integer/string type vid.");
+    }
+    return cb;
+}
+
 }   // namespace storage
 }   // namespace nebula
