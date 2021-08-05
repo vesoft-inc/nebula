@@ -56,3 +56,5 @@
 --engine_type=rocksdb
 # The type of part, `simple', `consensus'...
 --part_type=simple
+# Index rebuild batch number
+--rebuild_index_batch_num=256

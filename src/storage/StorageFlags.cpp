@@ -20,10 +20,10 @@ DEFINE_int32(waiting_new_leader_retry_times, 5, "retry times when waiting for ne
 DEFINE_int32(waiting_new_leader_interval_in_secs, 5,
              "interval between two requests for catching up state");
 
-DEFINE_int32(rebuild_index_batch_num, 1024,
+DEFINE_int32(rebuild_index_batch_num, 256,
              "The batch size when rebuild index");
 
-DEFINE_int32(rebuild_index_locked_threshold, 1024,
+DEFINE_int32(rebuild_index_locked_threshold, 256,
              "The locked threshold will refuse writing.");
 
 DEFINE_bool(enable_vertex_cache, true, "Enable vertex cache");
