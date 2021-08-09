@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/test/TestUtils.h"

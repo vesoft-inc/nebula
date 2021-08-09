@@ -6,7 +6,7 @@
 
 #include "storage/StorageFlags.h"
 #include "storage/admin/RebuildEdgeIndexTask.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 #include "codec/RowReaderWrapper.h"
 
 namespace nebula {

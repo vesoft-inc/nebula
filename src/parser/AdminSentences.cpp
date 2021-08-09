@@ -6,7 +6,7 @@
 
 #include "parser/AdminSentences.h"
 #include <sstream>
-#include "util/SchemaUtil.h"
+#include "graph/util/SchemaUtil.h"
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {

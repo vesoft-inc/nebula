@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_SCHEMAUTIL_H_
-#define UTIL_SCHEMAUTIL_H_
+#ifndef GRAPH_UTIL_SCHEMAUTIL_H_
+#define GRAPH_UTIL_SCHEMAUTIL_H_
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/expression/Expression.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "parser/MaintainSentences.h"
 
@@ -76,4 +76,4 @@ public:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_SCHEMAUTIL_H_
+#endif  // GRAPH_UTIL_SCHEMAUTIL_H_

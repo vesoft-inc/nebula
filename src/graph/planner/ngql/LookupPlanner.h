@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_NGQL_LOOKUPPLANNER_H_
-#define PLANNER_NGQL_LOOKUPPLANNER_H_
+#ifndef GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
+#define GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
 
 #include <memory>
 #include <string>
 
-#include "planner/Planner.h"
+#include "graph/planner/Planner.h"
 
 namespace nebula {
 
@@ -42,4 +42,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // PLANNER_NGQL_LOOKUPPLANNER_H_
+#endif   // GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_

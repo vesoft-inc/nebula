@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
-#define EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
+#define GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
 
-#include "executor/query/GetPropExecutor.h"
+#include "graph/executor/query/GetPropExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -28,4 +28,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
+#endif   // GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_

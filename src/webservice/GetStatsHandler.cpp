@@ -5,8 +5,8 @@
  */
 
 #include "common/base/Base.h"
-#include "common/webservice/GetStatsHandler.h"
-#include "common/webservice/Common.h"
+#include "webservice/GetStatsHandler.h"
+#include "webservice/Common.h"
 #include "common/stats/StatsManager.h"
 #include <folly/String.h>
 #include <folly/json.h>

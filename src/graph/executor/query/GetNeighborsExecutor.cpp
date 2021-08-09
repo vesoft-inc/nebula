@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/GetNeighborsExecutor.h"
+#include "graph/executor/query/GetNeighborsExecutor.h"
 
 #include <sstream>
 
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
-#include "service/GraphFlags.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
+#include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;

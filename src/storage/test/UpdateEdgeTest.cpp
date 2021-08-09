@@ -6,14 +6,14 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "storage/test/TestUtils.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "common/expression/ConstantExpression.h"
 #include "storage/test/QueryTestUtils.h"
 

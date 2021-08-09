@@ -8,7 +8,7 @@
 #define META_METASERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/MetaService.h"
+#include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/HBProcessor.h"

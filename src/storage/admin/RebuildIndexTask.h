@@ -9,7 +9,7 @@
 
 #include "kvstore/LogEncoder.h"
 #include "common/meta/IndexManager.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "storage/admin/AdminTask.h"
 
 namespace nebula {

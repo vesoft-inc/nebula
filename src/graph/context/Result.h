@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_RESULT_H_
-#define CONTEXT_RESULT_H_
+#ifndef GRAPH_CONTEXT_RESULT_H_
+#define GRAPH_CONTEXT_RESULT_H_
 
 #include <vector>
 
-#include "context/Iterator.h"
+#include "graph/context/Iterator.h"
 
 namespace nebula {
 namespace graph {
@@ -140,4 +140,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // CONTEXT_RESULT_H_
+#endif   // GRAPH_CONTEXT_RESULT_H_

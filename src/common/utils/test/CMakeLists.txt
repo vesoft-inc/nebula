@@ -5,11 +5,11 @@ nebula_add_test(
         NebulaKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_datatypes_obj>
-        $<TARGET_OBJECTS:common_meta_thrift_obj>
-        $<TARGET_OBJECTS:common_common_thrift_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -22,11 +22,11 @@ nebula_add_test(
         IndexKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_datatypes_obj>
-        $<TARGET_OBJECTS:common_meta_thrift_obj>
-        $<TARGET_OBJECTS:common_common_thrift_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -39,11 +39,11 @@ nebula_add_test(
         OperationKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_datatypes_obj>
-        $<TARGET_OBJECTS:common_meta_thrift_obj>
-        $<TARGET_OBJECTS:common_common_thrift_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

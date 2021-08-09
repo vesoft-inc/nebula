@@ -7,7 +7,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "common/version/Version.h"
+#include "version/Version.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);
@@ -88,7 +88,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
         item.set_role(cpp2::HostRole::META);
         item.set_git_info_sha(gitInfoSha());
         item.set_status(cpp2::HostStatus::ONLINE);
-        item.set_version(simpleVersionString());
+        item.set_version(versionString(false));
         hostItems_.emplace_back(item);
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;

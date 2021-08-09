@@ -12,9 +12,9 @@
 #include "codec/RowReaderWrapper.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 

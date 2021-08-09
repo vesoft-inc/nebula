@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "utils/LogIterator.h"
+#include "common/utils/LogIterator.h"
 #include "kvstore/wal/test/InMemoryLogBuffer.h"
 
 namespace nebula {

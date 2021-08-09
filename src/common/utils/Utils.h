@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTILS_UTILS_H_
-#define UTILS_UTILS_H_
+#ifndef COMMON_UTILS_UTILS_H_
+#define COMMON_UTILS_UTILS_H_
 
 #include "common/base/Base.h"
 
@@ -50,4 +50,4 @@ public:
     }
 };
 }  // namespace nebula
-#endif  // UTILS_UTILS_H_
+#endif  // COMMON_UTILS_UTILS_H_

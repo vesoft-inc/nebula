@@ -7,7 +7,7 @@
 #include "kvstore/Common.h"
 #include "storage/StorageFlags.h"
 #include "storage/admin/RebuildIndexTask.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 
 namespace nebula {
 namespace storage {

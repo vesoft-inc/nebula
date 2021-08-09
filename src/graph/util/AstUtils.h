@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_ASTUTIL_H_
-#define UTIL_ASTUTIL_H_
+#ifndef GRAPH_UTIL_ASTUTIL_H_
+#define GRAPH_UTIL_ASTUTIL_H_
 
 #include "parser/GQLParser.h"
 
@@ -36,4 +36,4 @@ public:
 
 }   // namespace graph
 }   // namespace nebula
-#endif   // UTIL_ASTUTIL_H_
+#endif   // GRAPH_UTIL_ASTUTIL_H_

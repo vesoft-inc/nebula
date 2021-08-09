@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/PlanNode.h"
+#include "graph/planner/plan/PlanNode.h"
 
 #include <memory>
 #include <vector>
@@ -13,8 +13,8 @@
 #include <folly/json.h>
 
 #include "common/graph/Response.h"
-#include "context/QueryContext.h"
-#include "util/ToJson.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ToJson.h"
 
 namespace nebula {
 namespace graph {

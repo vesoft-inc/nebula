@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_DOWNLOADVALIDATOR_H_
-#define VALIDATOR_DOWNLOADVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_DOWNLOADVALIDATOR_H_
+#define GRAPH_VALIDATOR_DOWNLOADVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/Validator.h"
+#include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
 
 namespace nebula {
@@ -30,4 +30,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // VALIDATOR_DOWNLOADVALIDATOR_H_
+#endif  // GRAPH_VALIDATOR_DOWNLOADVALIDATOR_H_

@@ -12,7 +12,7 @@
 #include <string>
 #include <folly/Range.h>
 #include <gtest/gtest_prod.h>
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/jobMan/JobStatus.h"
 
 /*

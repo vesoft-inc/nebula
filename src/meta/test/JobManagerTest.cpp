@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/webservice/WebService.h"
+#include "webservice/WebService.h"
 #include <gtest/gtest.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/ActiveHostsMan.h"

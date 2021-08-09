@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTILS_TYPES_H_
-#define UTILS_TYPES_H_
+#ifndef COMMON_UTILS_TYPES_H_
+#define COMMON_UTILS_TYPES_H_
 
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
@@ -63,5 +63,5 @@ static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID) +
                                          sizeof(EdgeRanking);
 
 }  // namespace nebula
-#endif  // UTILS_TYPES_H_
+#endif  // COMMON_UTILS_TYPES_H_
 

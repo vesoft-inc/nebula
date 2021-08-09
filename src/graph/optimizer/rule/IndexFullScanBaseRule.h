@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
-#define OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
+#ifndef GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
+#define GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
 
-#include "optimizer/OptRule.h"
+#include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 class PlanNode;
@@ -31,4 +31,4 @@ protected:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
+#endif   // GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_

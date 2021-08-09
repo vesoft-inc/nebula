@@ -6,8 +6,8 @@
 
 #include "common/encryption/Base64.h"
 #include "common/http/HttpClient.h"
-#include "service/CloudAuthenticator.h"
-#include "service/GraphFlags.h"
+#include "graph/service/CloudAuthenticator.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {

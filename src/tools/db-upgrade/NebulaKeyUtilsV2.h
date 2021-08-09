@@ -7,7 +7,7 @@
 #ifndef TOOLS_DBUPGRADE_NEBULAKEYUTILSV2_H_
 #define TOOLS_DBUPGRADE_NEBULAKEYUTILSV2_H_
 
-#include "utils/Types.h"
+#include "common/utils/Types.h"
 
 namespace nebula {
 

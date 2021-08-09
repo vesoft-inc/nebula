@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "storage/mutate/AddVerticesProcessor.h"
@@ -16,7 +16,7 @@
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "common/expression/ConstantExpression.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "codec/test/RowWriterV1.h"
 #include <folly/Benchmark.h>
 

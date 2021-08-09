@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
-#define PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
+#ifndef GRAPH_PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
+#define GRAPH_PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
 
-#include "planner/plan/PlanNode.h"
-#include "planner/match/SegmentsConnectStrategy.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/match/SegmentsConnectStrategy.h"
 
 namespace nebula {
 namespace graph {
@@ -23,4 +23,4 @@ public:
 };
 }   // namespace graph
 }   // namespace nebula
-#endif   // PLANNER_MATCH_SIMPLECONNECTSTRATEGY_H_
+#endif   // GRAPH_PLANNER_MATCH_SIMPLECONNECTSTRATEGY_H_

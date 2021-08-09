@@ -10,7 +10,7 @@
 #include "common/fs/TempDir.h"
 #include "kvstore/RocksEngineConfig.h"
 #include "mock/MockCluster.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 
 DEFINE_int64(vertex_per_part, 100, "vertex count with each partition");

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_CLIENTS_STORAGE_STORAGECLIENTBASE_H_
-#define COMMON_CLIENTS_STORAGE_STORAGECLIENTBASE_H_
+#ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_H_
+#define CLIENTS_STORAGE_STORAGECLIENTBASE_H_
 
 #include "common/base/Base.h"
 #include <folly/futures/Future.h>
@@ -13,8 +13,8 @@
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
 #include "common/thrift/ThriftClientManager.h"
-#include "common/clients/meta/MetaClient.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "clients/meta/MetaClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 DECLARE_int32(storage_client_timeout_ms);
 DECLARE_uint32(storage_client_retry_interval_ms);
@@ -259,6 +259,6 @@ private:
 }   // namespace storage
 }   // namespace nebula
 
-#include "common/clients/storage/StorageClientBase.inl"
+#include "clients/storage/StorageClientBase.inl"
 
-#endif  // COMMON_CLIENTS_STORAGE_STORAGECLIENTBASE_H_
+#endif  // CLIENTS_STORAGE_STORAGECLIENTBASE_H_

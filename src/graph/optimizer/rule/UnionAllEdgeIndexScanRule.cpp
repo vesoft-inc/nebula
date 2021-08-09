@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/UnionAllEdgeIndexScanRule.h"
+#include "graph/optimizer/rule/UnionAllEdgeIndexScanRule.h"
 
 using Kind = nebula::graph::PlanNode::Kind;
 

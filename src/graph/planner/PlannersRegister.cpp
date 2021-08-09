@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/PlannersRegister.h"
+#include "graph/planner/PlannersRegister.h"
 
-#include "planner/Planner.h"
-#include "planner/SequentialPlanner.h"
-#include "planner/match/MatchPlanner.h"
-#include "planner/match/StartVidFinder.h"
-#include "planner/match/PropIndexSeek.h"
-#include "planner/match/VertexIdSeek.h"
-#include "planner/match/LabelIndexSeek.h"
-#include "planner/ngql/LookupPlanner.h"
-#include "planner/ngql/PathPlanner.h"
-#include "planner/ngql/GoPlanner.h"
-#include "planner/ngql/SubgraphPlanner.h"
+#include "graph/planner/Planner.h"
+#include "graph/planner/SequentialPlanner.h"
+#include "graph/planner/match/MatchPlanner.h"
+#include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/match/PropIndexSeek.h"
+#include "graph/planner/match/VertexIdSeek.h"
+#include "graph/planner/match/LabelIndexSeek.h"
+#include "graph/planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/PathPlanner.h"
+#include "graph/planner/ngql/GoPlanner.h"
+#include "graph/planner/ngql/SubgraphPlanner.h"
 
 namespace nebula {
 namespace graph {

@@ -8,8 +8,8 @@
 #define RAFTEX_RAFTPART_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/raftex_types.h"
-#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "common/time/Duration.h"
 #include "common/thread/GenericThreadPool.h"
 #include "kvstore/Common.h"
@@ -18,7 +18,7 @@
 #include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
 #include <gtest/gtest_prod.h>
-#include "utils/LogIterator.h"
+#include "common/utils/LogIterator.h"
 
 namespace folly {
 class IOThreadPoolExecutor;

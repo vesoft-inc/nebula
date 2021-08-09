@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_
-#define EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_
+#define GRAPH_EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_
 
-#include "executor/Executor.h"
-#include "context/QueryContext.h"
+#include "graph/executor/Executor.h"
+#include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
@@ -27,4 +27,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ADMIN_RESETBALANCEEXECUTOR_H_

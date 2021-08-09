@@ -6,11 +6,11 @@
 
 #include <gtest/gtest.h>
 
-#include "context/QueryContext.h"
-#include "planner/plan/Query.h"
-#include "executor/query/InnerJoinExecutor.h"
-#include "executor/query/LeftJoinExecutor.h"
-#include "executor/test/QueryTestBase.h"
+#include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/executor/query/InnerJoinExecutor.h"
+#include "graph/executor/query/LeftJoinExecutor.h"
+#include "graph/executor/test/QueryTestBase.h"
 
 namespace nebula {
 namespace graph {

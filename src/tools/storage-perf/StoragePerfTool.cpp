@@ -7,7 +7,7 @@
 #include "common/base/Base.h"
 #include "common/thread/GenericWorker.h"
 #include "common/time/Duration.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include <folly/TokenBucket.h>
 #include <folly/stats/TimeseriesHistogram.h>
 #include <folly/stats/BucketedTimeSeries.h>

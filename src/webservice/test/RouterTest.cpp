@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/webservice/Router.h"
+#include "webservice/Router.h"
 
 #include <folly/init/Init.h>
 #include <gtest/gtest.h>

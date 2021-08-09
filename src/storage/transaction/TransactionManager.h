@@ -11,16 +11,16 @@
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/Synchronized.h>
 
-#include "common/clients/meta/MetaClient.h"
-#include "common/clients/storage/GraphStorageClient.h"
-#include "common/clients/storage/InternalStorageClient.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "clients/meta/MetaClient.h"
+#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/InternalStorageClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "common/meta/SchemaManager.h"
 #include "common/thrift/ThriftTypes.h"
 #include "kvstore/KVStore.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/transaction/TransactionUtils.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

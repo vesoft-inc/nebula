@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
-#define EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
+#define GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
 
 #include "common/time/TimeUtils.h"
 
-#include "executor/Executor.h"
-#include "service/RequestContext.h"
+#include "graph/executor/Executor.h"
+#include "graph/service/RequestContext.h"
 
 namespace nebula {
 namespace graph {
@@ -45,4 +45,4 @@ public:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_

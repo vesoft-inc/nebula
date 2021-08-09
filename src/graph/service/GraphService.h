@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SERVICE_GRAPHSERVICE_H_
-#define SERVICE_GRAPHSERVICE_H_
+#ifndef GRAPH_SERVICE_GRAPHSERVICE_H_
+#define GRAPH_SERVICE_GRAPHSERVICE_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/GraphService.h"
-#include "service/Authenticator.h"
-#include "service/QueryEngine.h"
-#include "session/GraphSessionManager.h"
+#include "interface/gen-cpp2/GraphService.h"
+#include "graph/service/Authenticator.h"
+#include "graph/service/QueryEngine.h"
+#include "graph/session/GraphSessionManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;

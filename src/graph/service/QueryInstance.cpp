@@ -4,21 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "service/QueryInstance.h"
+#include "graph/service/QueryInstance.h"
 
 #include "common/base/Base.h"
-#include "executor/ExecutionError.h"
-#include "executor/Executor.h"
-#include "optimizer/OptRule.h"
+#include "graph/executor/ExecutionError.h"
+#include "graph/executor/Executor.h"
+#include "graph/optimizer/OptRule.h"
 #include "parser/ExplainSentence.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "planner/plan/PlanNode.h"
-#include "scheduler/Scheduler.h"
-#include "stats/StatsDef.h"
-#include "util/AstUtils.h"
-#include "util/ScopedTimer.h"
-#include "validator/Validator.h"
-#include "scheduler/AsyncMsgNotifyBasedScheduler.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/scheduler/Scheduler.h"
+#include "graph/stats/StatsDef.h"
+#include "graph/util/AstUtils.h"
+#include "graph/util/ScopedTimer.h"
+#include "graph/validator/Validator.h"
+#include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 
 using nebula::opt::Optimizer;
 using nebula::opt::OptRule;

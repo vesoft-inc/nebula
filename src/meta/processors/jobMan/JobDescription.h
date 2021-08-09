@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include <gtest/gtest_prod.h>
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "kvstore/KVStore.h"

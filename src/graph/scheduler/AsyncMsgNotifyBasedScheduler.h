@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
-#define SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
+#ifndef GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
+#define GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
 
-#include "scheduler/Scheduler.h"
-#include "executor/logic/LoopExecutor.h"
-#include "executor/logic/SelectExecutor.h"
+#include "graph/scheduler/Scheduler.h"
+#include "graph/executor/logic/LoopExecutor.h"
+#include "graph/executor/logic/SelectExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -74,4 +74,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
+#endif  // GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_

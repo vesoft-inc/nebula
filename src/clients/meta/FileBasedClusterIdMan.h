@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
-#define COMMON_CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
+#ifndef CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
+#define CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
@@ -27,4 +27,4 @@ public:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // COMMON_CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_
+#endif  // CLIENTS_META_FILEBASEDCLUSTERIDMAN_H_

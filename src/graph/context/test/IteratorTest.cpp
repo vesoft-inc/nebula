@@ -5,7 +5,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "context/Iterator.h"
+#include "graph/context/Iterator.h"
 #include "common/datatypes/Vertex.h"
 #include "common/datatypes/Edge.h"
 

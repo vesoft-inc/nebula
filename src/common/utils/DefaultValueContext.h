@@ -4,11 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_DEFAULTVALUECONTEXT_H_
-#define UTIL_DEFAULTVALUECONTEXT_H_
+#ifndef COMMON_UTILS_DEFAULTVALUECONTEXT_H_
+#define COMMON_UTILS_DEFAULTVALUECONTEXT_H_
 
 #include "common/base/Base.h"
 #include "common/datatypes/Value.h"
+#include "common/context/ExpressionContext.h"
 
 namespace nebula {
 class DefaultValueContext final : public ExpressionContext {
@@ -74,4 +75,4 @@ public:
 };
 }  // namespace nebula
 
-#endif  // UTIL_DEFAULTVALUECONTEXT_H_
+#endif  // COMMON_UTILS_DEFAULTVALUECONTEXT_H_

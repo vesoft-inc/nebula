@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/Expand.h"
+#include "graph/planner/match/Expand.h"
 
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
-#include "planner/match/MatchSolver.h"
-#include "planner/match/SegmentsConnector.h"
-#include "util/AnonColGenerator.h"
-#include "util/ExpressionUtils.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/util/AnonColGenerator.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 using nebula::storage::cpp2::EdgeProp;
 using nebula::storage::cpp2::VertexProp;

@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/QueryUtil.h"
+#include "graph/util/QueryUtil.h"
 #include "common/base/Base.h"
 #include "common/expression/ColumnExpression.h"
-#include "context/QueryContext.h"
-#include "context/ast/QueryAstContext.h"
-#include "planner/plan/Query.h"
-#include "planner/Planner.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ast/QueryAstContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/Planner.h"
 
 namespace nebula {
 namespace graph {

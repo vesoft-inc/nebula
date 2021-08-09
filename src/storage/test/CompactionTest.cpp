@@ -6,8 +6,8 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 #include <gtest/gtest.h>
 #include "storage/CommonUtils.h"
 #include "storage/test/QueryTestUtils.h"

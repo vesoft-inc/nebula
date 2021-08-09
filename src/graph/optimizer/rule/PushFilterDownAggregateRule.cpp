@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/PushFilterDownAggregateRule.h"
+#include "graph/optimizer/rule/PushFilterDownAggregateRule.h"
 
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
-#include "visitor/ExtractFilterExprVisitor.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/ExtractFilterExprVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;

@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/InnerJoinStrategy.h"
+#include "graph/planner/match/InnerJoinStrategy.h"
 
 #include "common/expression/AttributeExpression.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
-#include "planner/match/MatchSolver.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/planner/match/MatchSolver.h"
 
 namespace nebula {
 namespace graph {

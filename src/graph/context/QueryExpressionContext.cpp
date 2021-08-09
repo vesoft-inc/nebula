@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "context/QueryExpressionContext.h"
+#include "graph/context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {

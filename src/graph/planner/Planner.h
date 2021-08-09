@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLANNER_H_
-#define PLANNER_PLANNER_H_
+#ifndef GRAPH_PLANNER_PLANNER_H_
+#define GRAPH_PLANNER_PLANNER_H_
 
 #include <ostream>
 
 #include "common/base/Base.h"
-#include "planner/plan/PlanNode.h"
-#include "context/ast/AstContext.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/context/ast/AstContext.h"
 
 namespace nebula {
 namespace graph {
@@ -60,4 +60,4 @@ protected:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_PLANNER_H_
+#endif  // GRAPH_PLANNER_PLANNER_H_

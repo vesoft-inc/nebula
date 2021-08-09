@@ -7,30 +7,30 @@ nebula_add_library(
 set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:codec_test_obj>
-    $<TARGET_OBJECTS:common_datatypes_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:common_meta_thrift_obj>
-    $<TARGET_OBJECTS:common_common_thrift_obj>
-    $<TARGET_OBJECTS:common_raftex_thrift_obj>
-    $<TARGET_OBJECTS:common_meta_client_obj>
-    $<TARGET_OBJECTS:common_ws_obj>
-    $<TARGET_OBJECTS:common_ws_common_obj>
-    $<TARGET_OBJECTS:common_http_client_obj>
-    $<TARGET_OBJECTS:common_file_based_cluster_id_man_obj>
-    $<TARGET_OBJECTS:common_base_obj>
-    $<TARGET_OBJECTS:common_network_obj>
-    $<TARGET_OBJECTS:common_fs_obj>
-    $<TARGET_OBJECTS:common_thread_obj>
-    $<TARGET_OBJECTS:common_stats_obj>
-    $<TARGET_OBJECTS:common_time_obj>
-    $<TARGET_OBJECTS:common_conf_obj>
-    $<TARGET_OBJECTS:common_meta_obj>
-    $<TARGET_OBJECTS:common_process_obj>
-    $<TARGET_OBJECTS:common_expression_obj>
-    $<TARGET_OBJECTS:common_function_manager_obj>
-    $<TARGET_OBJECTS:common_agg_function_manager_obj>
-    $<TARGET_OBJECTS:common_time_utils_obj>
-    $<TARGET_OBJECTS:common_version_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:meta_client_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:conf_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:agg_function_manager_obj>
+    $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:version_obj>
 )
 
 

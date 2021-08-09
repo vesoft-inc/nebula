@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SERVICE_PASSWORDAUTHENTICATOR_H_
-#define SERVICE_PASSWORDAUTHENTICATOR_H_
+#ifndef GRAPH_SERVICE_PASSWORDAUTHENTICATOR_H_
+#define GRAPH_SERVICE_PASSWORDAUTHENTICATOR_H_
 
-#include "common/clients/meta/MetaClient.h"
-#include "service/Authenticator.h"
+#include "clients/meta/MetaClient.h"
+#include "graph/service/Authenticator.h"
 
 namespace nebula {
 namespace graph {

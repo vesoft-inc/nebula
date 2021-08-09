@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/context/ExpressionContext.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/context/StorageExpressionContext.h"
 #include "storage/query/QueryBaseProcessor.h"

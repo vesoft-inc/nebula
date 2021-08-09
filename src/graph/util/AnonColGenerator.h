@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_ANONCOLGENERATOR_H_
-#define UTIL_ANONCOLGENERATOR_H_
+#ifndef GRAPH_UTIL_ANONCOLGENERATOR_H_
+#define GRAPH_UTIL_ANONCOLGENERATOR_H_
 
 #include "common/base/Base.h"
 
-#include "util/IdGenerator.h"
+#include "graph/util/IdGenerator.h"
 
 namespace nebula {
 namespace graph {
@@ -39,4 +39,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_ANONCOLGENERATOR_H_
+#endif  // GRAPH_UTIL_ANONCOLGENERATOR_H_

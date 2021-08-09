@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include "storage/test/TestUtils.h"
 #include "meta/test/TestUtils.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "codec/RowReader.h"
 
 DECLARE_string(meta_server_addrs);

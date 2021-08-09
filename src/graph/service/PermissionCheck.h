@@ -6,10 +6,10 @@
 
 #include "parser/TraverseSentences.h"
 #include "parser/AdminSentences.h"
-#include "service/PermissionManager.h"
+#include "graph/service/PermissionManager.h"
 
-#ifndef SERVICE_PERMISSIONCHECK_H_
-#define SERVICE_PERMISSIONCHECK_H_
+#ifndef GRAPH_SERVICE_PERMISSIONCHECK_H_
+#define GRAPH_SERVICE_PERMISSIONCHECK_H_
 
 namespace nebula {
 namespace graph {

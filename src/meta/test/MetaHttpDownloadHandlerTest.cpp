@@ -7,8 +7,8 @@
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
 #include "common/http/HttpClient.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 #include <gtest/gtest.h>
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"

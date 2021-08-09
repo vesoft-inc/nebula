@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
-#define OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
+#ifndef GRAPH_OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
+#define GRAPH_OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
 
 #include <memory>
 
-#include "optimizer/OptRule.h"
+#include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
@@ -35,4 +35,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_
+#endif   // GRAPH_OPTIMIZER_RULE_OPTIMIZEEDGEINDEXSCANBYFILTERRULE_H_

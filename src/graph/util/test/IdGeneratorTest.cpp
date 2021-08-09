@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include "common/base/Base.h"
 #include "common/concurrent/Barrier.h"
-#include "util/IdGenerator.h"
+#include "graph/util/IdGenerator.h"
 
 namespace nebula {
 namespace graph {

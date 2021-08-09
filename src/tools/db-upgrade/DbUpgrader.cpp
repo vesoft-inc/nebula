@@ -9,8 +9,8 @@
 #include "tools/db-upgrade/DbUpgrader.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV1.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 
 DEFINE_string(src_db_path, "", "Source data path(data_path in storage 1.x conf), "
                                "multi paths should be split by comma");

@@ -12,9 +12,9 @@
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include <folly/Benchmark.h>
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "utils/NebulaKeyUtils.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "mock/AdHocIndexManager.h"
 #include "mock/AdHocSchemaManager.h"
 

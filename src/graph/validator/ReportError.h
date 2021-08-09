@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_REPORTERROR_H_
-#define VALIDATOR_REPORTERROR_H_
+#ifndef GRAPH_VALIDATOR_REPORTERROR_H_
+#define GRAPH_VALIDATOR_REPORTERROR_H_
 
 #include "common/base/Base.h"
 

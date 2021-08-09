@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/Algo.h"
-#include "util/ToJson.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
 

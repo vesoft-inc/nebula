@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_OPTRULE_H_
-#define OPTIMIZER_OPTRULE_H_
+#ifndef GRAPH_OPTIMIZER_OPTRULE_H_
+#define GRAPH_OPTIMIZER_OPTRULE_H_
 
 #include <initializer_list>
 #include <memory>
@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "common/base/StatusOr.h"
-#include "planner/plan/PlanNode.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 
@@ -114,4 +114,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_OPTRULE_H_
+#endif   // GRAPH_OPTIMIZER_OPTRULE_H_

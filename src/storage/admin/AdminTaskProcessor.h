@@ -12,7 +12,7 @@
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace storage {

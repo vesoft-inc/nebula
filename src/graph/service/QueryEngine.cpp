@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "service/QueryEngine.h"
+#include "graph/service/QueryEngine.h"
 
 #include "common/base/Base.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
-#include "context/QueryContext.h"
-#include "optimizer/OptRule.h"
-#include "planner/PlannersRegister.h"
-#include "service/QueryInstance.h"
-#include "service/GraphFlags.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/OptRule.h"
+#include "graph/planner/PlannersRegister.h"
+#include "graph/service/QueryInstance.h"
+#include "graph/service/GraphFlags.h"
 #include "version/Version.h"
 
 DECLARE_bool(local_config);

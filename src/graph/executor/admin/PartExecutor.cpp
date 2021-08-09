@@ -4,10 +4,10 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "executor/admin/PartExecutor.h"
-#include "planner/plan/Admin.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/admin/PartExecutor.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 using nebula::network::NetworkUtils;
 

@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_AST_CYPHERASTCONTEXT_H_
-#define CONTEXT_AST_CYPHERASTCONTEXT_H_
+#ifndef GRAPH_CONTEXT_AST_CYPHERASTCONTEXT_H_
+#define GRAPH_CONTEXT_AST_CYPHERASTCONTEXT_H_
 
 #include "common/base/Base.h"
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PathBuildExpression.h"
-#include "context/ast/AstContext.h"
+#include "graph/context/ast/AstContext.h"
 #include "parser/MatchSentence.h"
 
 namespace nebula {
@@ -188,4 +188,4 @@ struct EdgeContext final : PatternContext {
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // CONTEXT_AST_CYPHERASTCONTEXT_H_
+#endif  // GRAPH_CONTEXT_AST_CYPHERASTCONTEXT_H_

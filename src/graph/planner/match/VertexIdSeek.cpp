@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/VertexIdSeek.h"
+#include "graph/planner/match/VertexIdSeek.h"
 
-#include "planner/plan/Logic.h"
-#include "planner/match/MatchSolver.h"
-#include "visitor/VidExtractVisitor.h"
-#include "util/ExpressionUtils.h"
-#include "util/SchemaUtil.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/visitor/VidExtractVisitor.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

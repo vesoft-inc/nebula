@@ -7,9 +7,9 @@
 #ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 #define _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 
-#include "executor/StorageAccessExecutor.h"
-#include "common/clients/storage/StorageClientBase.h"
-#include "service/GraphFlags.h"
+#include "graph/executor/StorageAccessExecutor.h"
+#include "clients/storage/StorageClientBase.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {

@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_VIDEXTRACTVISITOR_H_
-#define VISITOR_VIDEXTRACTVISITOR_H_
+#ifndef GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
+#define GRAPH_VISITOR_VIDEXTRACTVISITOR_H_
 
 #include <memory>
 
 #include "common/expression/ExprVisitor.h"
-#include "util/SchemaUtil.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 
@@ -115,4 +115,4 @@ std::ostream& operator<<(std::ostream &os, const VidExtractVisitor::VidPattern &
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_VIDEXTRACTVISITOR_H_
+#endif   // GRAPH_VISITOR_VIDEXTRACTVISITOR_H_

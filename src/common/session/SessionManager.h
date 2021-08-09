@@ -13,7 +13,7 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/base/StatusOr.h"
 #include "common/thread/GenericWorker.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 
 
 /**

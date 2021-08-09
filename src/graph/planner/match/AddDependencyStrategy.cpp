@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/AddDependencyStrategy.h"
+#include "graph/planner/match/AddDependencyStrategy.h"
 
 namespace nebula {
 namespace graph {

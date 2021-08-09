@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_MUTATEVALIDATOR_H_
-#define VALIDATOR_MUTATEVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_MUTATEVALIDATOR_H_
+#define GRAPH_VALIDATOR_MUTATEVALIDATOR_H_
 
-#include "validator/Validator.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "graph/validator/Validator.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "parser/MutateSentences.h"
 #include "parser/TraverseSentences.h"
 
@@ -190,4 +190,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // VALIDATOR_MUTATEVALIDATOR_H_
+#endif  // GRAPH_VALIDATOR_MUTATEVALIDATOR_H_

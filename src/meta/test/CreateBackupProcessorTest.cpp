@@ -9,7 +9,7 @@
 #include "common/fs/TempDir.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/test/TestUtils.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 #include "meta/processors/jobMan/JobManager.h"
 
 namespace nebula {

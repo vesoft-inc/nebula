@@ -10,7 +10,7 @@
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
-#include "common/interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/MetaServiceAsyncClient.h"
 
 namespace nebula {
 namespace meta {

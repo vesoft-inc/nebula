@@ -5,9 +5,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/Admin.h"
+#include "graph/planner/plan/Admin.h"
 
-#include "util/ToJson.h"
+#include "graph/util/ToJson.h"
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {

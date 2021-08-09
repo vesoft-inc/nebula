@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/MergeGetVerticesAndDedupRule.h"
+#include "graph/optimizer/rule/MergeGetVerticesAndDedupRule.h"
 
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
 
 using nebula::graph::Dedup;
 using nebula::graph::GetVertices;

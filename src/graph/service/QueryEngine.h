@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SERVICE_QUERYENGINE_H_
-#define SERVICE_QUERYENGINE_H_
+#ifndef GRAPH_SERVICE_QUERYENGINE_H_
+#define GRAPH_SERVICE_QUERYENGINE_H_
 
 #include "common/cpp/helpers.h"
-#include "service/RequestContext.h"
-#include "common/interface/gen-cpp2/GraphService.h"
+#include "graph/service/RequestContext.h"
+#include "interface/gen-cpp2/GraphService.h"
 #include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
-#include "common/clients/meta/MetaClient.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/meta/MetaClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/charset/Charset.h"
-#include "optimizer/Optimizer.h"
+#include "graph/optimizer/Optimizer.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**

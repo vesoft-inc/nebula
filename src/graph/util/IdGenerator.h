@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_IDGENERATOR_H_
-#define PLANNER_IDGENERATOR_H_
+#ifndef GRAPH_PLANNER_IDGENERATOR_H_
+#define GRAPH_PLANNER_IDGENERATOR_H_
 
 #include "common/base/Base.h"
 
@@ -46,4 +46,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_IDGENERATOR_H_
+#endif  // GRAPH_PLANNER_IDGENERATOR_H_

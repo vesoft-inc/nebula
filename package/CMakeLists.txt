@@ -20,17 +20,9 @@ project("Nebula Package")
 
 OPTION(ENABLE_PACKAGE_STORAGE "Whether package storage." ON)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/../../modules/common/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/../cmake")
 
 message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
-
-if(NOT NEBULA_STORAGE_SOURCE_DIR)
-    set(NEBULA_STORAGE_SOURCE_DIR ${CMAKE_BINARY_DIR}/../../modules/storage)
-endif()
-
-if(NOT NEBULA_STORAGE_BINARY_DIR)
-    set(NEBULA_STORAGE_BINARY_DIR ${CMAKE_BINARY_DIR}/../modules/storage)
-endif()
 
 if(NOT NEBULA_SOURCE_DIR)
     set(NEBULA_SOURCE_DIR ${CMAKE_BINARY_DIR}/../../)
@@ -40,8 +32,6 @@ if(NOT NEBULA_BINARY_DIR)
     set(NEBULA_BINARY_DIR ${CMAKE_BINARY_DIR}/../)
 endif()
 
-message(STATUS "NEBULA_STORAGE_SOURCE_DIR : ${NEBULA_STORAGE_SOURCE_DIR}")
-message(STATUS "NEBULA_STORAGE_BINARY_DIR : ${NEBULA_STORAGE_BINARY_DIR}")
 message(STATUS "NEBULA_SOURCE_DIR         : ${NEBULA_SOURCE_DIR}")
 message(STATUS "NEBULA_BINARY_DIR         : ${NEBULA_BINARY_DIR}")
 
@@ -49,7 +39,7 @@ if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/nebula-storaged
+        ${NEBULA_BINARY_DIR}/bin/nebula-storaged
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -62,7 +52,7 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/nebula-metad
+        ${NEBULA_BINARY_DIR}/bin/nebula-metad
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -92,7 +82,7 @@ if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/db_dump
+        ${NEBULA_BINARY_DIR}/bin/db_dump
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -105,7 +95,7 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/meta_dump
+        ${NEBULA_BINARY_DIR}/bin/meta_dump
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -118,7 +108,7 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_BINARY_DIR}/bin/db_upgrader
+        ${NEBULA_BINARY_DIR}/bin/db_upgrader
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -131,9 +121,9 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged.conf.default
-        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged.conf.production
-        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-storaged-listener.conf.production
+        ${NEBULA_SOURCE_DIR}/conf/nebula-storaged.conf.default
+        ${NEBULA_SOURCE_DIR}/conf/nebula-storaged.conf.production
+        ${NEBULA_SOURCE_DIR}/conf/nebula-storaged-listener.conf.production
     PERMISSIONS
         OWNER_READ
         GROUP_READ
@@ -146,8 +136,8 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-metad.conf.default
-        ${NEBULA_STORAGE_SOURCE_DIR}/conf/nebula-metad.conf.production
+        ${NEBULA_SOURCE_DIR}/conf/nebula-metad.conf.default
+        ${NEBULA_SOURCE_DIR}/conf/nebula-metad.conf.production
     PERMISSIONS
         OWNER_READ
         GROUP_READ
@@ -178,7 +168,7 @@ if(ENABLE_PACKAGE_STORAGE)
 
 install(
     FILES
-        ${NEBULA_STORAGE_SOURCE_DIR}/scripts/nebula-storaged.service
+        ${NEBULA_SOURCE_DIR}/scripts/nebula-storaged.service
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -191,7 +181,7 @@ install(
 
 install(
     FILES
-        ${NEBULA_STORAGE_SOURCE_DIR}/scripts/nebula-metad.service
+        ${NEBULA_SOURCE_DIR}/scripts/nebula-metad.service
     PERMISSIONS
         OWNER_EXECUTE OWNER_WRITE OWNER_READ
         GROUP_EXECUTE GROUP_READ
@@ -258,6 +248,6 @@ install(
 
 include(CPackage)
 package(${ENABLE_PACK_ONE}
-        "nebula-graph"
-        "https://github.com/vesoft-inc/nebula-graph/releases"
+        "nebula"
+        "https://github.com/vesoft-inc/nebula/releases"
         ${CMAKE_SOURCE_DIR})

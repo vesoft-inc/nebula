@@ -7,9 +7,9 @@
 #include <algorithm>
 #include "common/time/WallClock.h"
 #include "codec/RowWriterV2.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 

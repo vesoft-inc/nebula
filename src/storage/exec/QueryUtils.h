@@ -11,7 +11,7 @@
 #include "common/expression/Expression.h"
 #include "storage/CommonUtils.h"
 #include "storage/query/QueryBaseProcessor.h"
-#include "utils/DefaultValueContext.h"
+#include "common/utils/DefaultValueContext.h"
 
 namespace nebula {
 namespace storage {

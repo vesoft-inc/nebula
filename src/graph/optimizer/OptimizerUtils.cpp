@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/OptimizerUtils.h"
+#include "graph/optimizer/OptimizerUtils.h"
 
 #include <algorithm>
 #include <iterator>
@@ -18,9 +18,9 @@
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
-#include "common/interface/gen-cpp2/meta_types.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "planner/plan/Query.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/planner/plan/Query.h"
 
 using nebula::meta::cpp2::ColumnDef;
 using nebula::meta::cpp2::IndexItem;

@@ -12,10 +12,10 @@
 #include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
 #include "common/base/ConcurrentLRUCache.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "codec/RowReader.h"
 #include "kvstore/KVStore.h"
-#include "utils/MemoryLockWrapper.h"
+#include "common/utils/MemoryLockWrapper.h"
 #include <folly/concurrency/ConcurrentHashMap.h>
 
 

@@ -5,11 +5,11 @@
  */
 
 #include "DeleteExecutor.h"
-#include "planner/plan/Mutate.h"
-#include "context/QueryContext.h"
-#include "util/SchemaUtil.h"
-#include "executor/mutate/DeleteExecutor.h"
-#include "util/ScopedTimer.h"
+#include "graph/planner/plan/Mutate.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/executor/mutate/DeleteExecutor.h"
+#include "graph/util/ScopedTimer.h"
 
 
 namespace nebula {

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/OptimizeEdgeIndexScanByFilterRule.h"
+#include "graph/optimizer/rule/OptimizeEdgeIndexScanByFilterRule.h"
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -15,14 +15,14 @@
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
-#include "common/interface/gen-cpp2/meta_types.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "context/QueryContext.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "optimizer/OptimizerUtils.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Scan.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Scan.h"
 
 using nebula::Expression;
 using nebula::graph::EdgeIndexFullScan;

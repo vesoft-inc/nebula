@@ -9,7 +9,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/time/TimezoneInfo.h"
-#include "common/version/Version.h"
+#include "version/Version.h"
 #include "storage/StorageServer.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_OPTGROUP_H_
-#define OPTIMIZER_OPTGROUP_H_
+#ifndef GRAPH_OPTIMIZER_OPTGROUP_H_
+#define GRAPH_OPTIMIZER_OPTGROUP_H_
 
 #include <algorithm>
 #include <list>
@@ -122,4 +122,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_OPTGROUP_H_
+#endif   // GRAPH_OPTIMIZER_OPTGROUP_H_

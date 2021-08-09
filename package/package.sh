@@ -96,7 +96,6 @@ function _build_storage {
           -DENABLE_STATIC_ASAN=${ssan} \
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
-          -DNEBULA_COMMON_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
           -DENABLE_PACK_ONE=${package_one} \
           ${storage_dir}
@@ -118,9 +117,7 @@ function _build_graph {
           -DENABLE_STATIC_ASAN=${ssan} \
           -DENABLE_STATIC_UBSAN=${ssan} \
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
-          -DNEBULA_COMMON_REPO_TAG=${branch} \
           -DENABLE_TESTING=OFF \
-          -DENABLE_BUILD_STORAGE=OFF \
           -DENABLE_PACK_ONE=${package_one} \
           ${project_dir}
 
@@ -164,8 +161,6 @@ function package {
         -DENABLE_PACK_ONE=${package_one} \
         -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
         -DENABLE_PACKAGE_STORAGE=${build_storage} \
-        -DNEBULA_STORAGE_SOURCE_DIR=${storage_dir} \
-        -DNEBULA_STORAGE_BINARY_DIR=${storage_build_dir} \
         ${project_dir}/package/
 
     strip_enable=$1

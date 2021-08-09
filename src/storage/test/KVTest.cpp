@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
-#include "common/clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GeneralStorageClient.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "storage/kv/PutProcessor.h"

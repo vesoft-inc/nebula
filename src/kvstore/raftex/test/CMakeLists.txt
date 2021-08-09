@@ -2,14 +2,14 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:common_raftex_thrift_obj>
-    $<TARGET_OBJECTS:common_base_obj>
-    $<TARGET_OBJECTS:common_datatypes_obj>
-    $<TARGET_OBJECTS:common_thread_obj>
-    $<TARGET_OBJECTS:common_fs_obj>
-    $<TARGET_OBJECTS:common_network_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:common_time_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
 )
 
 

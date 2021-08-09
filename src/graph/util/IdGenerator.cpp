@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/IdGenerator.h"
+#include "graph/util/IdGenerator.h"
 
 namespace nebula {
 namespace graph {

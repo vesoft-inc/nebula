@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/PaginationPlanner.h"
+#include "graph/planner/match/PaginationPlanner.h"
 
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

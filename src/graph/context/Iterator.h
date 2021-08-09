@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_ITERATOR_H_
-#define CONTEXT_ITERATOR_H_
+#ifndef GRAPH_CONTEXT_ITERATOR_H_
+#define GRAPH_CONTEXT_ITERATOR_H_
 
 #include <gtest/gtest_prod.h>
 
@@ -510,4 +510,4 @@ struct hash<const nebula::Row*> {
 
 }  // namespace std
 
-#endif  // CONTEXT_ITERATOR_H_
+#endif  // GRAPH_CONTEXT_ITERATOR_H_

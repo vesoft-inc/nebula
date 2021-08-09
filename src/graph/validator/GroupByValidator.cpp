@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/GroupByValidator.h"
-#include "planner/plan/Query.h"
-#include "util/AnonColGenerator.h"
-#include "util/AnonVarGenerator.h"
-#include "util/ExpressionUtils.h"
-#include "visitor/FindVisitor.h"
+#include "graph/validator/GroupByValidator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/AnonColGenerator.h"
+#include "graph/util/AnonVarGenerator.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/FindVisitor.h"
 
 namespace nebula {
 namespace graph {

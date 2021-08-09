@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_WEBSERVICE_NOTFOUNDHANDLER_H_
-#define COMMON_WEBSERVICE_NOTFOUNDHANDLER_H_
+#ifndef WEBSERVICE_NOTFOUNDHANDLER_H_
+#define WEBSERVICE_NOTFOUNDHANDLER_H_
 
 #include "common/base/Base.h"
 #include <proxygen/httpserver/RequestHandler.h>
@@ -31,4 +31,4 @@ public:
 };
 
 }  // namespace nebula
-#endif  // COMMON_WEBSERVICE_NOTFOUNDHANDLER_H_
+#endif  // WEBSERVICE_NOTFOUNDHANDLER_H_

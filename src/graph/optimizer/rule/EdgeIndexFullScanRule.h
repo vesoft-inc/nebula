@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
-#define OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
+#ifndef GRAPH_OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
+#define GRAPH_OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
 
-#include "optimizer/rule/IndexFullScanBaseRule.h"
+#include "graph/optimizer/rule/IndexFullScanBaseRule.h"
 
 namespace nebula {
 namespace opt {
@@ -27,4 +27,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_
+#endif   // GRAPH_OPTIMIZER_RULE_EDGEINDEXFULLSCANRULE_H_

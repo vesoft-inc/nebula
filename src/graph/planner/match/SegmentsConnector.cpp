@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/SegmentsConnector.h"
-#include "planner/match/AddDependencyStrategy.h"
-#include "planner/match/AddInputStrategy.h"
-#include "planner/match/CartesianProductStrategy.h"
+#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/planner/match/AddDependencyStrategy.h"
+#include "graph/planner/match/AddInputStrategy.h"
+#include "graph/planner/match/CartesianProductStrategy.h"
 
 namespace nebula {
 namespace graph {

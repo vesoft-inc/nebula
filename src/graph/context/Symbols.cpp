@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "context/Symbols.h"
+#include "graph/context/Symbols.h"
 
 #include <sstream>
 
-#include "planner/plan/PlanNode.h"
-#include "util/Utils.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/util/Utils.h"
 
 namespace nebula {
 namespace graph {

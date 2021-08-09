@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_UTILS_H_
-#define UTIL_UTILS_H_
+#ifndef GRAPH_UTIL_UTILS_H_
+#define GRAPH_UTIL_UTILS_H_
 
 #include <iterator>
 #include <string>
@@ -28,4 +28,4 @@ std::string join(const Container& container, Fn fn, const std::string& delimiter
 }   // namespace util
 }   // namespace nebula
 
-#endif   // UTIL_UTILS_H_
+#endif   // GRAPH_UTIL_UTILS_H_

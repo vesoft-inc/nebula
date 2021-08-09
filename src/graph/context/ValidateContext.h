@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_VALIDATECONTEXT_H_
-#define CONTEXT_VALIDATECONTEXT_H_
+#ifndef GRAPH_CONTEXT_VALIDATECONTEXT_H_
+#define GRAPH_CONTEXT_VALIDATECONTEXT_H_
 
 #include "common/charset/Charset.h"
 #include "common/datatypes/Value.h"
 #include "common/meta/SchemaManager.h"
-#include "context/Symbols.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "util/AnonColGenerator.h"
-#include "util/AnonVarGenerator.h"
-#include "session/ClientSession.h"
+#include "graph/context/Symbols.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/util/AnonColGenerator.h"
+#include "graph/util/AnonVarGenerator.h"
+#include "graph/session/ClientSession.h"
 
 namespace nebula {
 namespace graph {
@@ -106,4 +106,4 @@ private:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // CONTEXT_VALIDATECONTEXT_H_
+#endif  // GRAPH_CONTEXT_VALIDATECONTEXT_H_

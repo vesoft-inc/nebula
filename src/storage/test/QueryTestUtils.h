@@ -14,7 +14,7 @@
 #include "mock/MockData.h"
 #include "codec/RowWriterV2.h"
 #include "codec/RowReaderWrapper.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 DECLARE_bool(mock_ttl_col);
 DECLARE_int32(mock_ttl_duration);

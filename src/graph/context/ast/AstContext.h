@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_ASTCONTEXT_H_
-#define CONTEXT_ASTCONTEXT_H_
+#ifndef GRAPH_CONTEXT_ASTCONTEXT_H_
+#define GRAPH_CONTEXT_ASTCONTEXT_H_
 
-#include "context/QueryContext.h"
+#include "graph/context/QueryContext.h"
 #include "parser/Sentence.h"
 
 namespace nebula {
@@ -22,4 +22,4 @@ struct AstContext {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // CONTEXT_ASTCONTEXT_H_
+#endif  // GRAPH_CONTEXT_ASTCONTEXT_H_

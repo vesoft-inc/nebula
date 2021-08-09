@@ -5,7 +5,7 @@
  */
 
 #include "common/http/HttpClient.h"
-#include "common/webservice/Common.h"
+#include "webservice/Common.h"
 #include "common/time/WallClock.h"
 #include <boost/stacktrace.hpp>
 #include <gtest/gtest.h>

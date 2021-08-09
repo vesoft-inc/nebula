@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef OPTIMIZER_INDEXSCANRULE_H_
-#define OPTIMIZER_INDEXSCANRULE_H_
+#ifndef GRAPH_OPTIMIZER_INDEXSCANRULE_H_
+#define GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 
-#include "optimizer/OptRule.h"
-#include "planner/plan/Query.h"
-#include "optimizer/OptimizerUtils.h"
+#include "graph/optimizer/OptRule.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/optimizer/OptimizerUtils.h"
 
 namespace nebula {
 namespace opt {
@@ -173,4 +173,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_INDEXSCANRULE_H_
+#endif   // GRAPH_OPTIMIZER_INDEXSCANRULE_H_

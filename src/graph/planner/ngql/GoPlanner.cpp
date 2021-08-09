@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/ngql/GoPlanner.h"
-#include "validator/Validator.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Algo.h"
-#include "util/SchemaUtil.h"
-#include "util/QueryUtil.h"
-#include "util/ExpressionUtils.h"
+#include "graph/planner/ngql/GoPlanner.h"
+#include "graph/validator/Validator.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/util/QueryUtil.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {

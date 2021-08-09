@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_ZONEUTIL_H_
-#define UTIL_ZONEUTIL_H_
+#ifndef GRAPH_UTIL_ZONEUTIL_H_
+#define GRAPH_UTIL_ZONEUTIL_H_
 
 #include "common/base/StatusOr.h"
 #include "parser/MaintainSentences.h"
@@ -20,4 +20,4 @@ public:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_ZONEUTIL_H_
+#endif  // GRAPH_UTIL_ZONEUTIL_H_

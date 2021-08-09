@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/FilterNode.h"
 #include "storage/exec/UpdateNode.h"

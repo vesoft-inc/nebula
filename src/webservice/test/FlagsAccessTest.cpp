@@ -7,8 +7,8 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include <folly/json.h>
-#include "common/webservice/WebService.h"
-#include "common/webservice/test/TestUtils.h"
+#include "webservice/WebService.h"
+#include "webservice/test/TestUtils.h"
 
 DEFINE_int32(int32_test, 10, "Test flag for int32 type");
 DEFINE_int64(int64_test, 10, "Test flag for int64 type");

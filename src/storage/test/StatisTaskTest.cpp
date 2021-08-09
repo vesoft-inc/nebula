@@ -14,7 +14,7 @@
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/test/TestUtils.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace storage {

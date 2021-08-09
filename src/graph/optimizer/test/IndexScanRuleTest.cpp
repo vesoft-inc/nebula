@@ -5,8 +5,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "optimizer/OptimizerUtils.h"
-#include "optimizer/rule/IndexScanRule.h"
+#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/optimizer/rule/IndexScanRule.h"
 
 using nebula::graph::OptimizerUtils;
 

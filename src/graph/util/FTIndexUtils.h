@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_FT_INDEXUTIL_H_
-#define UTIL_FT_INDEXUTIL_H_
+#ifndef GRAPH_UTIL_FT_INDEXUTIL_H_
+#define GRAPH_UTIL_FT_INDEXUTIL_H_
 
 #include "common/base/StatusOr.h"
 #include "parser/MaintainSentences.h"
-#include "util/SchemaUtil.h"
-#include "util/ExpressionUtils.h"
-#include "common/clients/meta/MetaClient.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/util/ExpressionUtils.h"
+#include "clients/meta/MetaClient.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 
 namespace nebula {
@@ -55,4 +55,4 @@ public:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_FT_INDEXUTIL_H_
+#endif  // GRAPH_UTIL_FT_INDEXUTIL_H_

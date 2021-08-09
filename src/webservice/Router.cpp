@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/webservice/Router.h"
+#include "webservice/Router.h"
 
 #include <sstream>
 
 #include <proxygen/httpserver/RequestHandler.h>
 
-#include "common/webservice/NotFoundHandler.h"
-#include "common/webservice/WebService.h"
+#include "webservice/NotFoundHandler.h"
+#include "webservice/WebService.h"
 
 namespace nebula {
 namespace web {

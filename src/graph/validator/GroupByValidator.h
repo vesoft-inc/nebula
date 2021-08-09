@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_GROUPBY_VALIDATOR_H_
-#define VALIDATOR_GROUPBY_VALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
+#define GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "planner/plan/Query.h"
-#include "validator/Validator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {

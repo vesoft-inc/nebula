@@ -12,7 +12,7 @@
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/thrift/ThriftTypes.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 namespace kvstore {

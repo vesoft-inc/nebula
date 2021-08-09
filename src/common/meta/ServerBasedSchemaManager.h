@@ -10,7 +10,7 @@
 #include "common/base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "common/meta/SchemaManager.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace meta {

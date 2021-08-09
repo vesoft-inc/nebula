@@ -17,7 +17,7 @@
 #include <cstddef>
 #include "parser/ExplainSentence.h"
 #include "parser/SequentialSentences.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/VariableExpression.h"
@@ -29,10 +29,10 @@
 #include "common/function/FunctionManager.h"
 
 #include "common/expression/ReduceExpression.h"
-#include "util/ParserUtil.h"
-#include "util/ExpressionUtils.h"
-#include "context/QueryContext.h"
-#include "util/SchemaUtil.h"
+#include "graph/util/ParserUtil.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 

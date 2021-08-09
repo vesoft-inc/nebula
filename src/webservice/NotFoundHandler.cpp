@@ -5,8 +5,8 @@
  */
 
 #include "common/base/Base.h"
-#include "common/webservice/Common.h"
-#include "common/webservice/NotFoundHandler.h"
+#include "webservice/Common.h"
+#include "webservice/NotFoundHandler.h"
 #include <proxygen/httpserver/ResponseBuilder.h>
 
 namespace nebula {

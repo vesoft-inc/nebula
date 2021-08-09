@@ -5,8 +5,8 @@
  */
 
 #include "common/base/Base.h"
-#include "common/webservice/SetFlagsHandler.h"
-#include "common/webservice/Common.h"
+#include "webservice/SetFlagsHandler.h"
+#include "webservice/Common.h"
 #include <folly/Conv.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>

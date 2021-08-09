@@ -9,7 +9,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "parser/GQLParser.h"
-#include "util/ExpressionUtils.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {

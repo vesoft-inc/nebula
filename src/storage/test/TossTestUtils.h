@@ -18,12 +18,12 @@
 
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
-#include "common/clients/storage/GraphStorageClient.h"
-#include "common/clients/storage/InternalStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/InternalStorageClient.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/meta/SchemaManager.h"
 #include "storage/transaction/TransactionUtils.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 
 namespace nebula {

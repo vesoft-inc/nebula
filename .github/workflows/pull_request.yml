@@ -21,9 +21,12 @@ jobs:
         with:
           fetch-depth: 2
       - name: Cpplint
+        env:
+          TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
           .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+          git diff -U0 --no-color --staged | $TOOLSET/share/clang/clang-format-diff.py -p1
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
@@ -67,18 +70,6 @@ jobs:
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           make init -C tests
-      - name: Checkout common
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.repository_owner }}/nebula-common
-          path: modules/common
-          ref: ${{ github.base_ref }}
-      - name: Checkout storage
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.repository_owner }}/nebula-storage
-          path: modules/storage
-          ref: ${{ github.base_ref }}
       - name: CMake
         id: cmake
         run: |
@@ -92,7 +83,6 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
-                  -DENABLE_BUILD_STORAGE=on \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -103,7 +93,6 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
-                  -DENABLE_BUILD_STORAGE=on \
                   -DNEBULA_USE_LINKER=lld \
                   -B build
               echo "::set-output name=j::10"
@@ -118,13 +107,12 @@ jobs:
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
-                -DENABLE_BUILD_STORAGE=on \
                 -DNEBULA_USE_LINKER=lld \
                 -B build
             echo "::set-output name=j::6"
             ;;
           esac
-      - name: Make graph
+      - name: Make
         run: |
           ccache -z
           cmake --build build/ -j $(nproc)

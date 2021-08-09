@@ -4,23 +4,23 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/ToJson.h"
+#include "graph/util/ToJson.h"
 
 #include <folly/String.h>
 #include <folly/dynamic.h>
 #include <string>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "common/datatypes/Value.h"
 #include "common/expression/Expression.h"
-#include "common/interface/gen-cpp2/meta_types.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "context/Symbols.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/context/Symbols.h"
 #include "parser/EdgeKey.h"
-#include "util/SchemaUtil.h"
+#include "graph/util/SchemaUtil.h"
 
-#include "context/QueryExpressionContext.h"
+#include "graph/context/QueryExpressionContext.h"
 #include "parser/EdgeKey.h"
 
 namespace nebula {

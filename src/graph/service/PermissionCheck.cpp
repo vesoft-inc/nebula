@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "service/PermissionCheck.h"
+#include "graph/service/PermissionCheck.h"
 
 namespace nebula {
 namespace graph {

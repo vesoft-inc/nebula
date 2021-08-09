@@ -8,8 +8,8 @@
 #define COMMON_META_INDEXMANAGER_H_
 
 #include "common/base/Base.h"
-#include "common/clients/meta/MetaClient.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "clients/meta/MetaClient.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {

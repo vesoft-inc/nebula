@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_SYMBOLS_H_
-#define CONTEXT_SYMBOLS_H_
+#ifndef GRAPH_CONTEXT_SYMBOLS_H_
+#define GRAPH_CONTEXT_SYMBOLS_H_
 
 #include <unordered_set>
 #include <vector>

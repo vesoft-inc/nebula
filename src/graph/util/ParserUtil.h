@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_PARSERUTIL_H_
-#define UTIL_PARSERUTIL_H_
+#ifndef GRAPH_UTIL_PARSERUTIL_H_
+#define GRAPH_UTIL_PARSERUTIL_H_
 
 #include "common/base/StatusOr.h"
-#include "context/QueryContext.h"
+#include "graph/context/QueryContext.h"
 #include "parser/MaintainSentences.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -36,4 +36,4 @@ public:
 
 }   // namespace graph
 }   // namespace nebula
-#endif   // UTIL_PARSERUTIL_H_
+#endif   // GRAPH_UTIL_PARSERUTIL_H_

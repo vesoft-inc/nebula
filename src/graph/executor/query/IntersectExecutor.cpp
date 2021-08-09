@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/IntersectExecutor.h"
+#include "graph/executor/query/IntersectExecutor.h"
 
 #include <unordered_set>
 
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "util/ScopedTimer.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

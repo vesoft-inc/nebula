@@ -7,14 +7,14 @@
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
 #include "common/http/HttpClient.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/conf/Configuration.h"
 #include "common/stats/StatsManager.h"
-#include "common/clients/meta/FileBasedClusterIdMan.h"
-#include "common/webservice/Common.h"
-#include "common/version/Version.h"
+#include "clients/meta/FileBasedClusterIdMan.h"
+#include "webservice/Common.h"
+#include "version/Version.h"
 #include <folly/hash/Hash.h>
 #include <folly/ScopeGuard.h>
 #include <folly/executors/Async.h>
@@ -2470,7 +2470,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_role(options_.role_);
     req.set_git_info_sha(options_.gitInfoSHA_);
 #if defined(NEBULA_BUILD_VERSION)
-    req.set_version(simpleVersionString());
+    req.set_version(versionString(false));
 #endif
     if (options_.role_ == cpp2::HostRole::STORAGE) {
         if (options_.clusterId_.load() == 0) {

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "scheduler/AsyncMsgNotifyBasedScheduler.h"
+#include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 
 DECLARE_bool(enable_lifetime_optimize);
 

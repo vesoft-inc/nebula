@@ -10,9 +10,9 @@
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-#include "common/webservice/Common.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Common.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 
 namespace nebula {
 namespace http {

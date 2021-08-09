@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "scheduler/Scheduler.h"
+#include "graph/scheduler/Scheduler.h"
 #include <atomic>
 #include <limits>
 
-#include "context/QueryContext.h"
-#include "executor/ExecutionError.h"
-#include "executor/Executor.h"
-#include "executor/logic/LoopExecutor.h"
-#include "executor/logic/PassThroughExecutor.h"
-#include "executor/logic/SelectExecutor.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/ExecutionError.h"
+#include "graph/executor/Executor.h"
+#include "graph/executor/logic/LoopExecutor.h"
+#include "graph/executor/logic/PassThroughExecutor.h"
+#include "graph/executor/logic/SelectExecutor.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

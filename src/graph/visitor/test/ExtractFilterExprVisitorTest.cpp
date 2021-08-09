@@ -9,9 +9,9 @@
 #include "common/base/ObjectPool.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
-#include "util/ExpressionUtils.h"
-#include "visitor/ExtractFilterExprVisitor.h"
-#include "visitor/test/VisitorTestBase.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/ExtractFilterExprVisitor.h"
+#include "graph/visitor/test/VisitorTestBase.h"
 
 namespace nebula {
 namespace graph {

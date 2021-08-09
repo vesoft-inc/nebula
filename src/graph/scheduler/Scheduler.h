@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SCHEDULER_SCHEDULER_H_
-#define SCHEDULER_SCHEDULER_H_
+#ifndef GRAPH_SCHEDULER_SCHEDULER_H_
+#define GRAPH_SCHEDULER_SCHEDULER_H_
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
-#include "executor/Executor.h"
-#include "planner/plan/PlanNode.h"
+#include "graph/executor/Executor.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
@@ -25,4 +25,4 @@ public:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // SCHEDULER_SCHEDULER_H_
+#endif  // GRAPH_SCHEDULER_SCHEDULER_H_

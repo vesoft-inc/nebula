@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 #include "common/base/Base.h"
 #include "parser/GQLParser.h"
-#include "util/AstUtils.h"
+#include "graph/util/AstUtils.h"
 
 namespace nebula {
 

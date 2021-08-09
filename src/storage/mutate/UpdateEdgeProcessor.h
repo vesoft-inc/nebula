@@ -11,7 +11,7 @@
 #include "storage/exec/StoragePlan.h"
 #include "storage/context/StorageExpressionContext.h"
 #include "common/expression/Expression.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace storage {

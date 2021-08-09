@@ -8,7 +8,7 @@
 #define META_METAHTTPDOWNLOADHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/webservice/Common.h"
+#include "webservice/Common.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"

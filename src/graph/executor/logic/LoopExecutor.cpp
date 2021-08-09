@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/logic/LoopExecutor.h"
+#include "graph/executor/logic/LoopExecutor.h"
 
 #include <folly/String.h>
 
-#include "common/interface/gen-cpp2/common_types.h"
-#include "context/QueryExpressionContext.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
-#include "util/ScopedTimer.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 using folly::stringPrintf;
 

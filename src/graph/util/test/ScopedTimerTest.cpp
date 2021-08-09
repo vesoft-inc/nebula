@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/ScopedTimer.h"
+#include "graph/util/ScopedTimer.h"
 
 #include <gtest/gtest.h>
 

@@ -8,11 +8,11 @@
 #define GRAPH_REQUESTCONTEXT_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/GraphService.h"
+#include "interface/gen-cpp2/GraphService.h"
 #include "common/cpp/helpers.h"
 #include "common/time/Duration.h"
-#include "session/ClientSession.h"
-#include "session/GraphSessionManager.h"
+#include "graph/session/ClientSession.h"
+#include "graph/session/GraphSessionManager.h"
 
 /**
  * RequestContext holds context infos of a specific request from a client.

@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/mutate/InsertExecutor.h"
+#include "graph/executor/mutate/InsertExecutor.h"
 
-#include "planner/plan/Mutate.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/planner/plan/Mutate.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

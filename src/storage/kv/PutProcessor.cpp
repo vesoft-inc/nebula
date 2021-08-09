@@ -5,7 +5,7 @@
  */
 
 #include "storage/kv/PutProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

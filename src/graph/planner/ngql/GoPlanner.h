@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_NGQL_GOPLANNER_H_
-#define PLANNER_NGQL_GOPLANNER_H_
+#ifndef GRAPH_PLANNER_NGQL_GOPLANNER_H_
+#define GRAPH_PLANNER_NGQL_GOPLANNER_H_
 
 #include "common/base/Base.h"
-#include "context/ast/QueryAstContext.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/Planner.h"
-#include "util/ExpressionUtils.h"
-#include "planner/plan/Query.h"
+#include "graph/context/ast/QueryAstContext.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/Planner.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -80,4 +80,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // PLANNER_NGQL_GOPLANNER_H
+#endif  // GRAPH_PLANNER_NGQL_GOPLANNER_H

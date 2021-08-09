@@ -5,9 +5,9 @@
  */
 
 #include "storage/context/StorageExpressionContext.h"
-#include <utils/IndexKeyUtils.h>
-#include "utils/NebulaKeyUtils.h"
-#include "utils/DefaultValueContext.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/DefaultValueContext.h"
 
 namespace nebula {
 namespace storage {

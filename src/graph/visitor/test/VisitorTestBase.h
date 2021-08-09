@@ -185,4 +185,4 @@ protected:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_TEST_VISITORTESTBASE_H_
+#endif   // GRAPH_VISITOR_TEST_VISITORTESTBASE_H_

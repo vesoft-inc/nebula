@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SERVICE_PERMISSIONMANAGER_H_
-#define SERVICE_PERMISSIONMANAGER_H_
+#ifndef GRAPH_SERVICE_PERMISSIONMANAGER_H_
+#define GRAPH_SERVICE_PERMISSIONMANAGER_H_
 
 #include "common/base/Base.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "parser/AdminSentences.h"
-#include "service/GraphFlags.h"
-#include "session/ClientSession.h"
-#include "context/ValidateContext.h"
+#include "graph/service/GraphFlags.h"
+#include "graph/session/ClientSession.h"
+#include "graph/context/ValidateContext.h"
 
 namespace nebula {
 namespace graph {

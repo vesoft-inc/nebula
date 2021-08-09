@@ -6,10 +6,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "executor/admin/ListRolesExecutor.h"
-#include "context/QueryContext.h"
-#include "planner/plan/Admin.h"
-#include "service/PermissionManager.h"
+#include "graph/executor/admin/ListRolesExecutor.h"
+#include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/service/PermissionManager.h"
 
 namespace nebula {
 namespace graph {

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLAN_EXECUTIONPLAN_H_
-#define PLANNER_PLAN_EXECUTIONPLAN_H_
+#ifndef GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
+#define GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
 
 #include <string>
 

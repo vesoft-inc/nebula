@@ -5,10 +5,10 @@
  */
 
 #include "UpdateExecutor.h"
-#include "planner/plan/Mutate.h"
-#include "util/SchemaUtil.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/planner/plan/Mutate.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 
 namespace nebula {

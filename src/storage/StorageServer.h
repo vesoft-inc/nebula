@@ -10,7 +10,7 @@
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
 #include "common/meta/IndexManager.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "common/hdfs/HdfsHelper.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/NebulaStore.h"

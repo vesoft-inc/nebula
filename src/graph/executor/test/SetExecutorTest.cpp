@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/UnionExecutor.h"
+#include "graph/executor/query/UnionExecutor.h"
 
 #include <memory>
 
 #include <folly/String.h>
 #include <gtest/gtest.h>
 
-#include "context/ExecutionContext.h"
-#include "context/QueryContext.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
 
 using folly::stringPrintf;
 

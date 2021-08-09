@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/IndexScanExecutor.h"
+#include "graph/executor/query/IndexScanExecutor.h"
 
 #include <algorithm>
 
-#include "planner/plan/PlanNode.h"
-#include "context/QueryContext.h"
-#include "service/GraphFlags.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/context/QueryContext.h"
+#include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::LookupIndexResp;

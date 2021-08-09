@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_EVALUABLEEXPRVISITOR_H_
-#define VISITOR_EVALUABLEEXPRVISITOR_H_
+#ifndef GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
+#define GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
 
-#include "visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {
@@ -103,4 +103,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_EVALUABLEEXPRVISITOR_H_
+#endif   // GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_

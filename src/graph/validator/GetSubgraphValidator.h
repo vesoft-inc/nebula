@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_GETSUBGRAPHVALIDATOR_H_
-#define VALIDATOR_GETSUBGRAPHVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
+#define GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
-#include "validator/TraversalValidator.h"
-#include "context/ast/QueryAstContext.h"
+#include "graph/validator/TraversalValidator.h"
+#include "graph/context/ast/QueryAstContext.h"
 #include "parser/Clauses.h"
 
 namespace nebula {

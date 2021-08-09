@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include <rocksdb/db.h>

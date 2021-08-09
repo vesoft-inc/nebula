@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "context/Iterator.h"
+#include "graph/context/Iterator.h"
 
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "util/SchemaUtil.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "graph/util/SchemaUtil.h"
 namespace nebula {
 namespace graph {
 GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)

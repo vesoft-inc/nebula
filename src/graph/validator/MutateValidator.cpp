@@ -3,13 +3,13 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "validator/MutateValidator.h"
+#include "graph/validator/MutateValidator.h"
 
 #include "common/expression/LabelAttributeExpression.h"
-#include "planner/plan/Mutate.h"
-#include "planner/plan/Query.h"
-#include "util/SchemaUtil.h"
-#include "visitor/RewriteSymExprVisitor.h"
+#include "graph/planner/plan/Mutate.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/visitor/RewriteSymExprVisitor.h"
 
 namespace nebula {
 namespace graph {

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/LimitPushDownRule.h"
+#include "graph/optimizer/rule/LimitPushDownRule.h"
 
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/ConstantExpression.h"
@@ -12,11 +12,11 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/UnaryExpression.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "visitor/ExtractFilterExprVisitor.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;

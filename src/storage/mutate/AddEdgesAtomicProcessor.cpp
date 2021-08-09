@@ -13,8 +13,8 @@
 #include "storage/mutate/AddEdgesAtomicProcessor.h"
 #include "storage/transaction/TransactionManager.h"
 #include "storage/transaction/TransactionUtils.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 
 namespace nebula {

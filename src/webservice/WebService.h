@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_WEBSERVICE_WEBSERVICE_H_
-#define COMMON_WEBSERVICE_WEBSERVICE_H_
+#ifndef WEBSERVICE_WEBSERVICE_H_
+#define WEBSERVICE_WEBSERVICE_H_
 
 #include "common/base/Status.h"
 
@@ -57,4 +57,4 @@ private:
 };
 
 }  // namespace nebula
-#endif  // COMMON_WEBSERVICE_WEBSERVICE_H_
+#endif  // WEBSERVICE_WEBSERVICE_H_

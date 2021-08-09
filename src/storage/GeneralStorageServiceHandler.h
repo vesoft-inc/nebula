@@ -8,7 +8,7 @@
 #define STORAGE_GENERALSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/GeneralStorageService.h"
+#include "interface/gen-cpp2/GeneralStorageService.h"
 
 namespace nebula {
 namespace storage {

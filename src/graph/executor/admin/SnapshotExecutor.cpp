@@ -6,10 +6,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "executor/admin/SnapshotExecutor.h"
-#include "planner/plan/Admin.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/admin/SnapshotExecutor.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

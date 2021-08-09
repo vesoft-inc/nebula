@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "common/clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GeneralStorageClient.h"
 
 namespace nebula {
 namespace storage {

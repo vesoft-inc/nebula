@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/TagNode.h"
 #include "storage/exec/FilterNode.h"
 #include "storage/exec/UpdateNode.h"

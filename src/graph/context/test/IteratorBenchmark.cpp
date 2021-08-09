@@ -5,7 +5,7 @@
  */
 
 #include <folly/Benchmark.h>
-#include "context/Iterator.h"
+#include "graph/context/Iterator.h"
 
 // 40 edges
 std::shared_ptr<nebula::Value> gDataSets1;

@@ -7,7 +7,7 @@
 #ifndef META_STATISJOBEXECUTOR_H_
 #define META_STATISJOBEXECUTOR_H_
 
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/jobMan/MetaJobExecutor.h"
 

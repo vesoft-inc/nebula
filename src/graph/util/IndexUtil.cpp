@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/IndexUtil.h"
+#include "graph/util/IndexUtil.h"
 
 namespace nebula {
 namespace graph {

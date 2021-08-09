@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
-#define EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
+#define GRAPH_EXECUTOR_QUERY_INNERJOINEXECUTOR_H_
 
-#include "executor/query/JoinExecutor.h"
+#include "graph/executor/query/JoinExecutor.h"
 
 namespace nebula {
 namespace graph {

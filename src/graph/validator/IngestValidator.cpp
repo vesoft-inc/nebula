@@ -6,8 +6,8 @@
 
 #include "common/base/Base.h"
 
-#include "planner/plan/Admin.h"
-#include "validator/IngestValidator.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/validator/IngestValidator.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {

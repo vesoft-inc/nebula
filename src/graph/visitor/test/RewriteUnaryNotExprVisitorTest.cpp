@@ -5,8 +5,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/ExpressionUtils.h"
-#include "visitor/test/VisitorTestBase.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/test/VisitorTestBase.h"
 
 #include <gtest/gtest.h>
 

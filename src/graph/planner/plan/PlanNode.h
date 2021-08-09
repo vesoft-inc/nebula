@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLAN_PLANNODE_H_
-#define PLANNER_PLAN_PLANNODE_H_
+#ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
+#define GRAPH_PLANNER_PLAN_PLANNODE_H_
 
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
-#include "context/QueryContext.h"
-#include "context/Symbols.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/Symbols.h"
 
 namespace nebula {
 namespace graph {
@@ -428,4 +428,4 @@ protected:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // PLANNER_PLAN_PLANNODE_H_
+#endif  // GRAPH_PLANNER_PLAN_PLANNODE_H_

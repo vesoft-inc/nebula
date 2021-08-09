@@ -9,8 +9,8 @@
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
-#include "common/clients/storage/GraphStorageClient.h"
-#include "common/clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/GeneralStorageClient.h"
 #include "mock/RpcServer.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"

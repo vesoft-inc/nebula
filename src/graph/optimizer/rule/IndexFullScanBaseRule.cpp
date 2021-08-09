@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/IndexFullScanBaseRule.h"
+#include "graph/optimizer/rule/IndexFullScanBaseRule.h"
 
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "context/QueryContext.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "optimizer/OptRule.h"
-#include "optimizer/OptimizerUtils.h"
-#include "planner/plan/Query.h"
-#include "planner/plan/Scan.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/OptRule.h"
+#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Scan.h"
 
 using nebula::graph::IndexScan;
 using nebula::graph::OptimizerUtils;

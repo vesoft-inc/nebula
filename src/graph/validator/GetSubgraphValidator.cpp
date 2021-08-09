@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/GetSubgraphValidator.h"
+#include "graph/validator/GetSubgraphValidator.h"
 #include <memory>
 
 #include "common/expression/UnaryExpression.h"
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
-#include "context/QueryExpressionContext.h"
+#include "graph/context/QueryExpressionContext.h"
 #include "parser/TraverseSentences.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

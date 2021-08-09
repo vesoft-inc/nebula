@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/ExplainValidator.h"
+#include "graph/validator/ExplainValidator.h"
 
 #include <algorithm>
 
 #include <folly/String.h>
 
 #include "common/base/StatusOr.h"
-#include "common/interface/gen-cpp2/graph_types.h"
+#include "interface/gen-cpp2/graph_types.h"
 #include "parser/ExplainSentence.h"
-#include "planner/plan/PlanNode.h"
-#include "validator/SequentialValidator.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/validator/SequentialValidator.h"
 
 namespace nebula {
 namespace graph {

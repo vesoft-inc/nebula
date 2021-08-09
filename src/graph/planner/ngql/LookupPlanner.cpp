@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/LookupPlanner.h"
 
 #include <algorithm>
 #include <tuple>
@@ -14,12 +14,12 @@
 #include "common/expression/Expression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/PropertyExpression.h"
-#include "context/ast/QueryAstContext.h"
+#include "graph/context/ast/QueryAstContext.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
-#include "planner/Planner.h"
-#include "planner/plan/Scan.h"
-#include "visitor/FindVisitor.h"
+#include "graph/planner/Planner.h"
+#include "graph/planner/plan/Scan.h"
+#include "graph/visitor/FindVisitor.h"
 
 namespace nebula {
 namespace graph {

@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_MATCHVALIDATOR_H_
-#define VALIDATOR_MATCHVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
+#define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/TraversalValidator.h"
-#include "util/AnonVarGenerator.h"
-#include "planner/plan/Query.h"
-#include "context/ast/CypherAstContext.h"
+#include "graph/validator/TraversalValidator.h"
+#include "graph/util/AnonVarGenerator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/context/ast/CypherAstContext.h"
 
 namespace nebula {
 
@@ -102,4 +102,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // VALIDATOR_MATCHVALIDATOR_H_
+#endif  // GRAPH_VALIDATOR_MATCHVALIDATOR_H_

@@ -4,9 +4,9 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "executor/admin/CharsetExecutor.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/admin/CharsetExecutor.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

@@ -8,7 +8,7 @@
 #define STORAGE_HTTP_STORAGEHTTPSTATSHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/webservice/GetStatsHandler.h"
+#include "webservice/GetStatsHandler.h"
 
 namespace nebula {
 namespace storage {

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_OBJECTPOOL_H_
-#define UTIL_OBJECTPOOL_H_
+#ifndef COMMON_BASE_OBJECTPOOL_H_
+#define COMMON_BASE_OBJECTPOOL_H_
 
 #include <functional>
 #include <list>
@@ -74,4 +74,4 @@ private:
 
 }   // namespace nebula
 
-#endif   // UTIL_OBJECTPOOL_H_
+#endif   // COMMON_BASE_OBJECTPOOL_H_

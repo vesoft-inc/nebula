@@ -7,10 +7,10 @@
 #ifndef NGQL_PLANNERS_SUBGRAPHPLANNER_H
 #define NGQL_PLANNERS_SUBGRAPHPLANNER_H
 
-#include "context/QueryContext.h"
-#include "context/ast/QueryAstContext.h"
-#include "planner/Planner.h"
-#include "planner/plan/Query.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ast/QueryAstContext.h"
+#include "graph/planner/Planner.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

@@ -6,9 +6,9 @@
 
 #include <gtest/gtest.h>
 
-#include "context/QueryContext.h"
-#include "executor/query/AggregateExecutor.h"
-#include "planner/plan/Query.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/query/AggregateExecutor.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

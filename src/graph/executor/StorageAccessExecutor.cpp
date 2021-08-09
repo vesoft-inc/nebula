@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/StorageAccessExecutor.h"
+#include "graph/executor/StorageAccessExecutor.h"
 
-#include "common/interface/gen-cpp2/meta_types.h"
-#include "context/Iterator.h"
-#include "context/QueryExpressionContext.h"
-#include "util/SchemaUtil.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "graph/context/Iterator.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLAN_SCAN_H_
-#define PLANNER_PLAN_SCAN_H_
+#ifndef GRAPH_PLANNER_PLAN_SCAN_H_
+#define GRAPH_PLANNER_PLAN_SCAN_H_
 
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -432,4 +432,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // PLANNER_PLAN_SCAN_H_
+#endif   // GRAPH_PLANNER_PLAN_SCAN_H_

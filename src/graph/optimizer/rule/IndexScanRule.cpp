@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/IndexScanRule.h"
+#include "graph/optimizer/rule/IndexScanRule.h"
 #include <vector>
 #include "common/expression/LabelAttributeExpression.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "optimizer/OptRule.h"
-#include "optimizer/OptimizerUtils.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "util/IndexUtil.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/OptRule.h"
+#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/IndexUtil.h"
 
 using nebula::graph::IndexScan;
 using nebula::graph::IndexUtil;

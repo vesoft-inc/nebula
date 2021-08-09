@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_SEQUENTIALVALIDATOR_H_
-#define VALIDATOR_SEQUENTIALVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_SEQUENTIALVALIDATOR_H_
+#define GRAPH_VALIDATOR_SEQUENTIALVALIDATOR_H_
 
 #include "parser/SequentialSentences.h"
-#include "validator/Validator.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {

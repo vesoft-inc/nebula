@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/OptimizeTagIndexScanByFilterRule.h"
+#include "graph/optimizer/rule/OptimizeTagIndexScanByFilterRule.h"
 
 #include "common/expression/Expression.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "context/QueryContext.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "optimizer/OptimizerUtils.h"
-#include "optimizer/rule/IndexScanRule.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Scan.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/optimizer/rule/IndexScanRule.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Scan.h"
 
 using nebula::graph::Filter;
 using nebula::graph::OptimizerUtils;

@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/maintain/TagIndexExecutor.h"
-#include "planner/plan/Maintain.h"
-#include "util/IndexUtil.h"
+#include "graph/executor/maintain/TagIndexExecutor.h"
+#include "graph/planner/plan/Maintain.h"
+#include "graph/util/IndexUtil.h"
 
 namespace nebula {
 namespace graph {

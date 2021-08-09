@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_STORAGEACCESSEXECUTOR_H_
-#define EXECUTOR_STORAGEACCESSEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
+#define GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
-#include "common/clients/storage/StorageClientBase.h"
-#include "context/QueryContext.h"
-#include "executor/Executor.h"
+#include "clients/storage/StorageClientBase.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/Executor.h"
 
 namespace nebula {
 
@@ -144,4 +144,4 @@ protected:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // EXECUTOR_STORAGEACCESSEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_

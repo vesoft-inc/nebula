@@ -5,7 +5,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "optimizer/OptimizerUtils.h"
+#include "graph/optimizer/OptimizerUtils.h"
 
 namespace nebula {
 namespace graph {

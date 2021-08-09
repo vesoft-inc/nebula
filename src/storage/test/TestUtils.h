@@ -12,8 +12,8 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "utils/NebulaKeyUtils.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {

@@ -7,11 +7,11 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/conf/Configuration.h"
-#include "executor/admin/ConfigExecutor.h"
-#include "planner/plan/Admin.h"
-#include "util/SchemaUtil.h"
-#include "context/QueryContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/admin/ConfigExecutor.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/context/QueryContext.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

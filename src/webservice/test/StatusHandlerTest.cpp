@@ -7,10 +7,10 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include <folly/json.h>
-#include "common/webservice/WebService.h"
+#include "webservice/WebService.h"
 #include "common/fs/TempDir.h"
 #include "common/http/HttpClient.h"
-#include "common/version/Version.h"
+#include "version/Version.h"
 
 namespace nebula {
 
@@ -39,6 +39,8 @@ protected:
 
 TEST(StatusHandlerTest, SimpleTest) {
     std::string gitInfoShaValue = gitInfoSha();
+    std::string pattern = R"([a-f0-9]{7,})";
+    std::regex gitInfoShaRegex(pattern);
     {
         auto url = "/status";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
@@ -49,6 +51,7 @@ TEST(StatusHandlerTest, SimpleTest) {
         LOG(INFO) << folly::toPrettyJson(json);
         ASSERT_EQ("running", json["status"].asString());
         ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
+        ASSERT_TRUE(std::regex_match(json["git_info_sha"].asString(), gitInfoShaRegex));
     }
     {
         auto url = "";
@@ -59,6 +62,7 @@ TEST(StatusHandlerTest, SimpleTest) {
         auto json = folly::parseJson(resp.value());
         ASSERT_EQ("running", json["status"].asString());
         ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
+        ASSERT_TRUE(std::regex_match(json["git_info_sha"].asString(), gitInfoShaRegex));
     }
 }
 

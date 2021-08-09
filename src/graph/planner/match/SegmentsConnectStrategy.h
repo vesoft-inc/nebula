@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_
-#define PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_
+#ifndef GRAPH_PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_
+#define GRAPH_PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_
 
 namespace nebula {
 namespace graph {
@@ -23,4 +23,4 @@ protected:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_
+#endif  // GRAPH_PLANNER_MATCH_SEGMENTSCONNECTSTRATEGY_H_

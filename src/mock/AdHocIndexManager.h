@@ -8,7 +8,7 @@
 #define MOCK_ADHOCINDEXMANAGER_H_
 
 #include "common/meta/IndexManager.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace mock {

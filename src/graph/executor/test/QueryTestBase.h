@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_TESTQUERYBASE_H
-#define EXECUTOR_QUERY_TESTQUERYBASE_H
+#ifndef GRAPH_EXECUTOR_QUERY_TESTQUERYBASE_H
+#define GRAPH_EXECUTOR_QUERY_TESTQUERYBASE_H
 #include "common/base/Base.h"
 
 #include <gtest/gtest.h>
@@ -159,4 +159,4 @@ protected:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // EXECUTOR_QUERY_TESTQUERYBASE_H
+#endif  // GRAPH_EXECUTOR_QUERY_TESTQUERYBASE_H

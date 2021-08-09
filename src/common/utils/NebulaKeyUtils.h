@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTILS_NEBULAKEYUTILS_H_
-#define UTILS_NEBULAKEYUTILS_H_
+#ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
+#define COMMON_UTILS_NEBULAKEYUTILS_H_
 
-#include "utils/Types.h"
+#include "common/utils/Types.h"
 
 namespace nebula {
 
@@ -272,5 +272,5 @@ private:
 };
 
 }  // namespace nebula
-#endif  // UTILS_NEBULAKEYUTILS_H_
+#endif  // COMMON_UTILS_NEBULAKEYUTILS_H_
 

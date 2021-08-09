@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/LabelIndexSeek.h"
-#include "planner/plan/Query.h"
-#include "planner/match/MatchSolver.h"
-#include "util/ExpressionUtils.h"
+#include "graph/planner/match/LabelIndexSeek.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {

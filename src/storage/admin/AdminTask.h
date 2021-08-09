@@ -10,8 +10,8 @@
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/thrift/ThriftTypes.h"
 #include "kvstore/Common.h"
 #include "kvstore/NebulaStore.h"

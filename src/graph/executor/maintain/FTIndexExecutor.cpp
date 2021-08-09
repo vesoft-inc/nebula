@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
-#include "context/QueryContext.h"
-#include "executor/maintain/FTIndexExecutor.h"
-#include "planner/plan/Maintain.h"
-#include "util/FTIndexUtils.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/maintain/FTIndexExecutor.h"
+#include "graph/planner/plan/Maintain.h"
+#include "graph/util/FTIndexUtils.h"
 
 namespace nebula {
 namespace graph {

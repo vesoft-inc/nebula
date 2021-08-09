@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
-#define EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
+#define GRAPH_EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
 
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 
-#include "executor/StorageAccessExecutor.h"
-#include "planner/plan/Query.h"
+#include "graph/executor/StorageAccessExecutor.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -37,4 +37,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_
+#endif   // GRAPH_EXECUTOR_QUERY_GETNEIGHBORSEXECUTOR_H_

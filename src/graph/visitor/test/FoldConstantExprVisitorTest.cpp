@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "visitor/FoldConstantExprVisitor.h"
-#include "visitor/test/VisitorTestBase.h"
+#include "graph/visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/test/VisitorTestBase.h"
 
 #include <gtest/gtest.h>
 

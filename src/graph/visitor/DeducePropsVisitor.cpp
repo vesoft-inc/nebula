@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "visitor/DeducePropsVisitor.h"
+#include "graph/visitor/DeducePropsVisitor.h"
 
 #include <sstream>
 
-#include "context/QueryContext.h"
+#include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {

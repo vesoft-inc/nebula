@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_CLIENTS_META_METACLIENT_H_
-#define COMMON_CLIENTS_META_METACLIENT_H_
+#ifndef CLIENTS_META_METACLIENT_H_
+#define CLIENTS_META_METACLIENT_H_
 
 #include "common/base/Base.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/RWSpinLock.h>
 #include <gtest/gtest_prod.h>
-#include "common/interface/gen-cpp2/MetaServiceAsyncClient.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
@@ -788,4 +788,4 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // COMMON_CLIENTS_META_METACLIENT_H_
+#endif  // CLIENTS_META_METACLIENT_H_

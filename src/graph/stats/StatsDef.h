@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STATS_STATSDEF_H_
-#define STATS_STATSDEF_H_
+#ifndef GRAPH_STATS_STATSDEF_H_
+#define GRAPH_STATS_STATSDEF_H_
 
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
@@ -24,4 +24,4 @@ extern stats::CounterId kSlowQueryLatencyUs;
 void initCounters();
 
 }  // namespace nebula
-#endif  // STATS_STATSDEF_H_
+#endif  // GRAPH_STATS_STATSDEF_H_

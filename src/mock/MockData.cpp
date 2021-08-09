@@ -5,10 +5,10 @@
  */
 
 #include "mock/MockData.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/time/WallClock.h"
 #include "common/expression/ConstantExpression.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 
 DEFINE_bool(mock_ttl_col, false, "Will use a column as ttl_col if set to true");
 DEFINE_int32(mock_ttl_duration, 5, "Ttl duration for ttl col");

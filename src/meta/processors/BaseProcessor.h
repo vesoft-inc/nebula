@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "common/time/Duration.h"
 #include "common/network/NetworkUtils.h"
 #include <folly/futures/Promise.h>

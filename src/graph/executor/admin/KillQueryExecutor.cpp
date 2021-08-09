@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/admin/KillQueryExecutor.h"
+#include "graph/executor/admin/KillQueryExecutor.h"
 
-#include "context/QueryContext.h"
-#include "planner/plan/Admin.h"
+#include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

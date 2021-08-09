@@ -7,12 +7,12 @@
 #include <gtest/gtest.h>
 
 #include "common/expression/VariableExpression.h"
-#include "context/QueryContext.h"
-#include "executor/logic/LoopExecutor.h"
-#include "executor/logic/SelectExecutor.h"
-#include "executor/logic/StartExecutor.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/logic/LoopExecutor.h"
+#include "graph/executor/logic/SelectExecutor.h"
+#include "graph/executor/logic/StartExecutor.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

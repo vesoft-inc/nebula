@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/ExpressionUtils.h"
+#include "graph/util/ExpressionUtils.h"
 
 #include <memory>
 
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
-#include "context/QueryExpressionContext.h"
-#include "visitor/FoldConstantExprVisitor.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/visitor/FoldConstantExprVisitor.h"
 #include "common/base/ObjectPool.h"
 
 namespace nebula {

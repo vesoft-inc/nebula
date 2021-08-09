@@ -6,10 +6,10 @@
 
 #include <gtest/gtest.h>
 
-#include "context/QueryContext.h"
-#include "executor/query/AssignExecutor.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/query/AssignExecutor.h"
 #include "common/expression/VariableExpression.h"
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

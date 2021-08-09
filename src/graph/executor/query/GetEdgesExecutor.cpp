@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/GetEdgesExecutor.h"
-#include "context/QueryContext.h"
-#include "planner/plan/Query.h"
-#include "util/SchemaUtil.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/query/GetEdgesExecutor.h"
+#include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;

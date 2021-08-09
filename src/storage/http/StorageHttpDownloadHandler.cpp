@@ -5,7 +5,7 @@
  */
 
 #include "storage/http/StorageHttpDownloadHandler.h"
-#include "common/webservice/Common.h"
+#include "webservice/Common.h"
 #include "common/process/ProcessUtils.h"
 #include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsHelper.h"

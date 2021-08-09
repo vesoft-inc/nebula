@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/algo/CartesianProductExecutor.h"
+#include "graph/executor/algo/CartesianProductExecutor.h"
 
-#include "planner/plan/Algo.h"
+#include "graph/planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {

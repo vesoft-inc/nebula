@@ -6,9 +6,9 @@
 
 #include "storage/StorageFlags.h"
 #include "storage/mutate/DeleteTagsProcessor.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 
 namespace nebula {
 namespace storage {

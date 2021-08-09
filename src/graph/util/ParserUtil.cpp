@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/ParserUtil.h"
+#include "graph/util/ParserUtil.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 

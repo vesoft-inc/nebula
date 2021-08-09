@@ -7,7 +7,7 @@
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "codec/RowWriterV2.h"
-#include "utils/DefaultValueContext.h"
+#include "common/utils/DefaultValueContext.h"
 
 namespace nebula {
 

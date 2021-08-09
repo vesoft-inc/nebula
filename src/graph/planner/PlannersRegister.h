@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLANNERREGISTER_H_
-#define PLANNER_PLANNERREGISTER_H_
+#ifndef GRAPH_PLANNER_PLANNERREGISTER_H_
+#define GRAPH_PLANNER_PLANNERREGISTER_H_
 
 namespace nebula {
 namespace graph {
@@ -25,4 +25,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // PLANNER_PLANNERREGISTER_H_
+#endif  // GRAPH_PLANNER_PLANNERREGISTER_H_

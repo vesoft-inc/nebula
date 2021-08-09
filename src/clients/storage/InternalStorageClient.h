@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
-#define COMMON_CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
+#ifndef CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
+#define CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
 
 #include <gtest/gtest_prod.h>
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
-#include "common/clients/storage/StorageClientBase.h"
-#include "common/interface/gen-cpp2/InternalStorageServiceAsyncClient.h"
+#include "clients/storage/StorageClientBase.h"
+#include "interface/gen-cpp2/InternalStorageServiceAsyncClient.h"
 
 namespace nebula {
 namespace storage {
@@ -64,4 +64,4 @@ protected:
 }   // namespace storage
 }   // namespace nebula
 
-#endif   // COMMON_CLIENTS_STORAGE_INTERNALSTORAGEClient_H_
+#endif   // CLIENTS_STORAGE_INTERNALSTORAGEClient_H_

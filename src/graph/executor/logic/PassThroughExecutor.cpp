@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/logic/PassThroughExecutor.h"
+#include "graph/executor/logic/PassThroughExecutor.h"
 
-#include "planner/plan/Query.h"
-#include "util/ScopedTimer.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

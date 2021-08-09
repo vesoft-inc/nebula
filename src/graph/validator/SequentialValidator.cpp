@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/SequentialValidator.h"
+#include "graph/validator/SequentialValidator.h"
 
 #include "common/base/Base.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
-#include "service/GraphFlags.h"
-#include "service/PermissionCheck.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/service/GraphFlags.h"
+#include "graph/service/PermissionCheck.h"
 
 DECLARE_uint32(max_allowed_statements);
 

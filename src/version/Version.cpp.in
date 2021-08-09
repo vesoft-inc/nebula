@@ -11,23 +11,25 @@
 #cmakedefine NEBULA_BUILD_VERSION
 
 namespace nebula {
-namespace graph {
 
 std::string gitInfoSha() {
     return "@GIT_INFO_SHA@";
 }
 
-std::string versionString() {
+std::string versionString(bool verbose) {
     std::string version;
 #if defined(NEBULA_BUILD_VERSION)
     version = folly::stringPrintf("%s, ", "@NEBULA_BUILD_VERSION@");
 #endif
-    version += folly::stringPrintf("Git: %s", gitInfoSha().c_str());
-    version += folly::stringPrintf(", Build Time: %s %s", __DATE__, __TIME__);
-    version += "\nThis source code is licensed under Apache 2.0 License,"
-               " attached with Common Clause Condition 1.0.";
+    if (verbose) {
+        version += folly::stringPrintf("Git: %s, ", gitInfoSha().c_str());
+    }
+    version += folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
+    if (verbose) {
+        version += "\nThis source code is licensed under Apache 2.0 License,"
+                   " attached with Common Clause Condition 1.0.";
+    }
     return version;
 }
 
-}   // namespace graph
 }   // namespace nebula

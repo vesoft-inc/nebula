@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/plugins/elasticsearch/ESListener.h"
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 

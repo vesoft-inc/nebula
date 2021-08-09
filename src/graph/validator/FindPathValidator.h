@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_FINDPATHVALIDATOR_H_
-#define VALIDATOR_FINDPATHVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
+#define GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "validator/TraversalValidator.h"
-#include "context/ast/QueryAstContext.h"
+#include "graph/validator/TraversalValidator.h"
+#include "graph/context/ast/QueryAstContext.h"
 
 namespace nebula {
 namespace graph {

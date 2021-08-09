@@ -10,19 +10,19 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include "context/QueryContext.h"
-#include "context/ValidateContext.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ValidateContext.h"
 #include "parser/GQLParser.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/PlannersRegister.h"
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/PlannersRegister.h"
+#include "graph/planner/plan/Query.h"
 #include "common/base/ObjectPool.h"
-#include "validator/Validator.h"
-#include "validator/test/MockSchemaManager.h"
-#include "validator/test/MockIndexManager.h"
-#include "util/AstUtils.h"
+#include "graph/validator/Validator.h"
+#include "graph/validator/test/MockSchemaManager.h"
+#include "graph/validator/test/MockIndexManager.h"
+#include "graph/util/AstUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -135,4 +135,4 @@ std::ostream& operator<<(std::ostream& os, const std::vector<PlanNode::Kind>& pl
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VALIDATOR_TEST_VALIDATORTESTBASE_H_
+#endif   // GRAPH_VALIDATOR_TEST_VALIDATORTESTBASE_H_

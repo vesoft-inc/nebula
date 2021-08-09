@@ -11,7 +11,7 @@
 #include "common/meta/SchemaProviderIf.h"
 #include "common/meta/SchemaManager.h"
 #include "common/meta/NebulaSchemaProvider.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace mock {

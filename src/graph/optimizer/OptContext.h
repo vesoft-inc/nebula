@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef OPTIMIZER_OPTCONTEXT_H_
-#define OPTIMIZER_OPTCONTEXT_H_
+#ifndef GRAPH_OPTIMIZER_OPTCONTEXT_H_
+#define GRAPH_OPTIMIZER_OPTCONTEXT_H_
 
 #include <memory>
 #include <unordered_map>
@@ -57,4 +57,4 @@ private:
 }   // namespace opt
 }   // namespace nebula
 
-#endif   // OPTIMIZER_OPTCONTEXT_H_
+#endif   // GRAPH_OPTIMIZER_OPTCONTEXT_H_

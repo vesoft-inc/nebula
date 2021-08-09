@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_
-#define PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_
+#ifndef GRAPH_PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_
+#define GRAPH_PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_
 namespace nebula {
 namespace graph {
 /*
@@ -16,4 +16,4 @@ class LeftOuterJoinStrategy final {
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_
+#endif  // GRAPH_PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_

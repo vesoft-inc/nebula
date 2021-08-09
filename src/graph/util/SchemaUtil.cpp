@@ -7,9 +7,9 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
-#include "util/SchemaUtil.h"
-#include "context/QueryContext.h"
-#include "context/QueryExpressionContext.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {

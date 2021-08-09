@@ -8,8 +8,8 @@
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "util/ExpressionUtils.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 class StepClause final {

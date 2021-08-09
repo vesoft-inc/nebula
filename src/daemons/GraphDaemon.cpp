@@ -14,12 +14,12 @@
 #include "common/fs/FileUtils.h"
 #include "common/process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "service/GraphService.h"
-#include "service/GraphFlags.h"
-#include "common/webservice/WebService.h"
+#include "graph/service/GraphService.h"
+#include "graph/service/GraphFlags.h"
+#include "webservice/WebService.h"
 #include "version/Version.h"
 #include "common/time/TimezoneInfo.h"
-#include "stats/StatsDef.h"
+#include "graph/stats/StatsDef.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;

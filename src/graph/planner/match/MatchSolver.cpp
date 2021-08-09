@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/MatchSolver.h"
+#include "graph/planner/match/MatchSolver.h"
 
 #include "common/expression/UnaryExpression.h"
-#include "context/ast/AstContext.h"
-#include "context/ast/CypherAstContext.h"
-#include "planner/Planner.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
-#include "util/SchemaUtil.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/context/ast/AstContext.h"
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/Planner.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {

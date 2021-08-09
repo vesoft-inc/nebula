@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/GoValidator.h"
-#include "util/ExpressionUtils.h"
+#include "graph/validator/GoValidator.h"
+#include "graph/util/ExpressionUtils.h"
 #include "common/base/Base.h"
 #include "common/expression/VariableExpression.h"
 #include "parser/TraverseSentences.h"
-#include "planner/plan/Logic.h"
-#include "visitor/ExtractPropExprVisitor.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/visitor/ExtractPropExprVisitor.h"
 
 namespace nebula {
 namespace graph {

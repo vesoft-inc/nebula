@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/MatchClausePlanner.h"
+#include "graph/planner/match/MatchClausePlanner.h"
 
-#include "context/ast/CypherAstContext.h"
-#include "planner/plan/Query.h"
-#include "planner/match/Expand.h"
-#include "planner/match/MatchSolver.h"
-#include "planner/match/SegmentsConnector.h"
-#include "planner/match/StartVidFinder.h"
-#include "planner/match/WhereClausePlanner.h"
-#include "util/ExpressionUtils.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/match/Expand.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/match/WhereClausePlanner.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 using JoinStrategyPos = nebula::graph::InnerJoinStrategy::JoinPos;
 

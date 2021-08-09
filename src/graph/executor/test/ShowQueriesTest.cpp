@@ -6,9 +6,9 @@
 
 #include <gtest/gtest.h>
 #include "common/time/TimeUtils.h"
-#include "executor/admin/ShowQueriesExecutor.h"
-#include "executor/test/QueryTestBase.h"
-#include "planner/plan/Admin.h"
+#include "graph/executor/admin/ShowQueriesExecutor.h"
+#include "graph/executor/test/QueryTestBase.h"
+#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

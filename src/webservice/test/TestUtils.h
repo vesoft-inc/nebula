@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "common/webservice/WebService.h"
+#include "webservice/WebService.h"
 #include "common/http/HttpClient.h"
 
 namespace nebula {

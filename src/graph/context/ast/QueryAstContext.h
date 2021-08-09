@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_AST_QUERYASTCONTEXT_H_
-#define CONTEXT_AST_QUERYASTCONTEXT_H_
+#ifndef GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_
+#define GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "context/ast/AstContext.h"
-#include "visitor/DeducePropsVisitor.h"
+#include "graph/context/ast/AstContext.h"
+#include "graph/visitor/DeducePropsVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -127,4 +127,4 @@ struct SubgraphContext final : public AstContext {
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // CONTEXT_AST_QUERYASTCONTEXT_H_
+#endif  // GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_

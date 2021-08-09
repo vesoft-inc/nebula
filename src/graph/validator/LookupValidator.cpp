@@ -4,16 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/LookupValidator.h"
+#include "graph/validator/LookupValidator.h"
 
 #include "common/base/Status.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/meta/NebulaSchemaProvider.h"
-#include "context/ast/QueryAstContext.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
-#include "util/FTIndexUtils.h"
-#include "util/SchemaUtil.h"
+#include "graph/context/ast/QueryAstContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/FTIndexUtils.h"
+#include "graph/util/SchemaUtil.h"
 
 using nebula::meta::NebulaSchemaProvider;
 using std::shared_ptr;

@@ -6,8 +6,8 @@
 
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaHttpIngestHandler.h"
-#include "common/webservice/Common.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Common.h"
+#include "webservice/WebService.h"
 #include "common/network/NetworkUtils.h"
 #include "common/http/HttpClient.h"
 #include "common/process/ProcessUtils.h"

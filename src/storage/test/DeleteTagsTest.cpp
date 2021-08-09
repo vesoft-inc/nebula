@@ -7,12 +7,12 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/mutate/DeleteTagsProcessor.h"
 #include "storage/query/GetPropProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include <gtest/gtest.h>

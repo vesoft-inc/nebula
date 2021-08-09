@@ -9,7 +9,7 @@
 #include "parser/GQLParser.h"
 #include "parser/GraphScanner.h"
 #include "GraphParser.hpp"
-#include "service/GraphFlags.h"
+#include "graph/service/GraphFlags.h"
 
 #define YY_USER_ACTION                  \
     yylloc->step();                     \

@@ -5,8 +5,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "context/ExecutionContext.h"
-#include "context/QueryExpressionContext.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/context/QueryExpressionContext.h"
 
 namespace nebula {
 namespace graph {

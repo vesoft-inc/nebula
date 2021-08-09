@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
-#define PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
+#ifndef GRAPH_PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
+#define GRAPH_PLANNER_PLANNERS_MATCH_INNERJOINSTRATEGY_H_
 
-#include "planner/plan/PlanNode.h"
-#include "planner/match/SegmentsConnectStrategy.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/match/SegmentsConnectStrategy.h"
 
 namespace nebula {
 namespace graph {

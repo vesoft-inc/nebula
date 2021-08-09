@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/clients/storage/InternalStorageClient.h"
+#include "clients/storage/InternalStorageClient.h"
 #include "common/base/Base.h"
 
 namespace nebula {

@@ -12,7 +12,7 @@
 #include <folly/lang/Bits.h>
 #include "kvstore/RocksEngine.h"
 #include "kvstore/RocksEngineConfig.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace kvstore {

@@ -6,15 +6,15 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
-#include "common/version/Version.h"
+#include "version/Version.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"

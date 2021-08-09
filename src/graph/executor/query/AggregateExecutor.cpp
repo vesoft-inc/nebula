@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AggregateExecutor.h"
 
 #include "common/datatypes/List.h"
 #include "common/expression/AggregateExpression.h"
-#include "context/QueryExpressionContext.h"
-#include "context/Result.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "util/ScopedTimer.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/context/Result.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

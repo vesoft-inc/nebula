@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "visitor/VidExtractVisitor.h"
+#include "graph/visitor/VidExtractVisitor.h"
 
 namespace nebula {
 namespace graph {

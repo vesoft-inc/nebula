@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "validator/test/ValidatorTestBase.h"
+#include "graph/validator/test/ValidatorTestBase.h"
 
 namespace nebula {
 namespace graph {

@@ -8,7 +8,7 @@
 #include "common/base/MurmurHash2.h"
 #include "kvstore/Common.h"
 #include "storage/admin/StatisTask.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

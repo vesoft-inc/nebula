@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include <boost/core/noncopyable.hpp>
 #include <gtest/gtest_prod.h>
 #include <folly/concurrency/UnboundedQueue.h>

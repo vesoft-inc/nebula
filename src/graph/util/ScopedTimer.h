@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_SCOPEDTIMER_H_
-#define UTIL_SCOPEDTIMER_H_
+#ifndef GRAPH_UTIL_SCOPEDTIMER_H_
+#define GRAPH_UTIL_SCOPEDTIMER_H_
 
 #include <functional>
 
@@ -57,4 +57,4 @@ private:
 #define MACRO_CONCAT(x, y) CONCAT_IMPL(x, y)
 #define SCOPED_TIMER(v) ::nebula::ScopedTimer MACRO_CONCAT(_SCOPED_TIMER_, __LINE__)(v)
 
-#endif   // UTIL_SCOPEDTIMER_H_
+#endif   // GRAPH_UTIL_SCOPEDTIMER_H_

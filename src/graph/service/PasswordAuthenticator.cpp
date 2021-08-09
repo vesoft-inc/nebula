@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "service/PasswordAuthenticator.h"
+#include "graph/service/PasswordAuthenticator.h"
 
 namespace nebula {
 namespace graph {

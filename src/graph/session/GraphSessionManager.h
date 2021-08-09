@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SESSION_GRAPHSESSIONMANAGER_H_
-#define SESSION_GRAPHSESSIONMANAGER_H_
+#ifndef GRAPH_SESSION_GRAPHSESSIONMANAGER_H_
+#define GRAPH_SESSION_GRAPHSESSIONMANAGER_H_
 
 #include "common/session/SessionManager.h"
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/base/StatusOr.h"
 #include "common/thread/GenericWorker.h"
-#include "common/clients/meta/MetaClient.h"
-#include "common/interface/gen-cpp2/GraphService.h"
-#include "session/ClientSession.h"
+#include "clients/meta/MetaClient.h"
+#include "interface/gen-cpp2/GraphService.h"
+#include "graph/session/ClientSession.h"
 
 /**
  * GraphSessionManager manages the client sessions, e.g. create new, find existing and drop expired.
@@ -78,4 +78,4 @@ private:
 }   // namespace nebula
 
 
-#endif  // SESSION_GRAPHSESSIONMANAGER_H_
+#endif  // GRAPH_SESSION_GRAPHSESSIONMANAGER_H_

@@ -8,13 +8,13 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "common/fs/TempDir.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 #include "mock/AdHocIndexManager.h"
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "storage/index/LookupProcessor.h"
 #include "codec/test/RowWriterV1.h"
 #include "codec/RowWriterV2.h"

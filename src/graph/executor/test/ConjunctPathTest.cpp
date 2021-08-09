@@ -6,10 +6,10 @@
 
 #include <gtest/gtest.h>
 
-#include "context/QueryContext.h"
-#include "executor/algo/ConjunctPathExecutor.h"
-#include "planner/plan/Algo.h"
-#include "planner/plan/Logic.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/algo/ConjunctPathExecutor.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Logic.h"
 
 namespace nebula {
 namespace graph {

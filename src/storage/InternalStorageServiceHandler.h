@@ -8,7 +8,7 @@
 #define STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/InternalStorageService.h"
+#include "interface/gen-cpp2/InternalStorageService.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"

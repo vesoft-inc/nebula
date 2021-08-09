@@ -6,7 +6,7 @@
 
 #include "storage/transaction/TransactionUtils.h"
 #include "common/time/WallClock.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

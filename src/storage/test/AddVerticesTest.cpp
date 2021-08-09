@@ -6,9 +6,9 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "utils/NebulaKeyUtils.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "storage/mutate/AddVerticesProcessor.h"

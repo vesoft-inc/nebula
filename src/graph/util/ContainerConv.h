@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_CONTAINERCONV_H_
-#define UTIL_CONTAINERCONV_H_
+#ifndef GRAPH_UTIL_CONTAINERCONV_H_
+#define GRAPH_UTIL_CONTAINERCONV_H_
 
 #include "common/base/Base.h"
 
@@ -32,4 +32,4 @@ public:
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // UTIL_CONTAINERCONV_H_
+#endif  // GRAPH_UTIL_CONTAINERCONV_H_

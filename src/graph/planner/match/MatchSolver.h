@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MATCHSOLVER_H_
-#define PLANNER_MATCHSOLVER_H_
+#ifndef GRAPH_PLANNER_MATCHSOLVER_H_
+#define GRAPH_PLANNER_MATCHSOLVER_H_
 
 #include "common/expression/ContainerExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
-#include "context/QueryContext.h"
-#include "context/ast/CypherAstContext.h"
-#include "planner/Planner.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/Planner.h"
 
 namespace nebula {
 namespace graph {
@@ -81,4 +81,4 @@ public:
 
 }   // namespace graph
 }   // namespace nebula
-#endif   // PLANNER_MATCHSOLVER_H_
+#endif   // GRAPH_PLANNER_MATCHSOLVER_H_

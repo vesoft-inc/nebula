@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
 namespace nebula {

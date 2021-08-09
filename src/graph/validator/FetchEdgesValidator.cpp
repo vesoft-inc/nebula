@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/FetchEdgesValidator.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
-#include "util/SchemaUtil.h"
+#include "graph/validator/FetchEdgesValidator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

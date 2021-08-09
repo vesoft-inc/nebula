@@ -10,7 +10,7 @@
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/HostAddr.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {

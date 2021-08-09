@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/test/ValidatorTestBase.h"
+#include "graph/validator/test/ValidatorTestBase.h"
 
 #include "common/base/Base.h"
-#include "context/QueryContext.h"
-#include "context/ValidateContext.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ValidateContext.h"
 #include "parser/GQLParser.h"
-#include "planner/plan/Admin.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "planner/plan/Maintain.h"
-#include "planner/plan/Mutate.h"
-#include "planner/plan/PlanNode.h"
-#include "planner/plan/Query.h"
-#include "util/Utils.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/plan/Maintain.h"
+#include "graph/planner/plan/Mutate.h"
+#include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/Utils.h"
 
 namespace nebula {
 namespace graph {

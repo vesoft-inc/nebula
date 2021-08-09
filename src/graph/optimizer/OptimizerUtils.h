@@ -6,7 +6,7 @@
 #ifndef NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 #define NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
 
-#include "util/SchemaUtil.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 

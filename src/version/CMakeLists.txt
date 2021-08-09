@@ -13,5 +13,3 @@ nebula_add_library(
   OBJECT
   ${CMAKE_CURRENT_BINARY_DIR}/Version.cpp
   )
-
-nebula_add_subdirectory(test)

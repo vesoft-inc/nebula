@@ -17,7 +17,7 @@ endif()
 message(STATUS "cxx_cmd: ${cxx_cmd}")
 execute_process(
     COMMAND
-        env CXX=${cxx_cmd} version=${NEBULA_THIRDPARTY_VERSION} ${nebula_common_source_dir}/third-party/install-third-party.sh --prefix=${third_party_install_prefix}
+        env CXX=${cxx_cmd} version=${NEBULA_THIRDPARTY_VERSION} ${CMAKE_SOURCE_DIR}/third-party/install-third-party.sh --prefix=${third_party_install_prefix}
     WORKING_DIRECTORY
         ${CMAKE_BINARY_DIR}
 )

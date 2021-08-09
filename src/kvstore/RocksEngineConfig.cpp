@@ -17,7 +17,7 @@
 #include <rocksdb/filter_policy.h>
 #include <rocksdb/concurrent_task_limiter.h>
 #include <rocksdb/rate_limiter.h>
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,

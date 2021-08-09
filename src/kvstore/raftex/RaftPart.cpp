@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "common/base/CollectNSucceeded.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "common/network/NetworkUtils.h"

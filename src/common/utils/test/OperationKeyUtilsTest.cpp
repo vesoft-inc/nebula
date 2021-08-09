@@ -5,7 +5,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 
 namespace nebula {
 

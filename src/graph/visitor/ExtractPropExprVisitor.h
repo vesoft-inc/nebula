@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef VISITOR_EXTRACTPROPEXPRVISITON_H_
-#define VISITOR_EXTRACTPROPEXPRVISITON_H_
+#ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
+#define GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
 
-#include "visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"
 #include "parser/Clauses.h"
-#include "context/ValidateContext.h"
+#include "graph/context/ValidateContext.h"
 
 namespace nebula {
 namespace graph {
@@ -79,4 +79,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_EXTRACTPROPEXPRVISITON_H_
+#endif   // GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_

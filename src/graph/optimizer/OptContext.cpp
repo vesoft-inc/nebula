@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/OptContext.h"
+#include "graph/optimizer/OptContext.h"
 
 #include "common/base/Logging.h"
 #include "common/base/ObjectPool.h"
-#include "optimizer/OptGroup.h"
-#include "planner/Planner.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/planner/Planner.h"
 
 namespace nebula {
 namespace opt {

@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"

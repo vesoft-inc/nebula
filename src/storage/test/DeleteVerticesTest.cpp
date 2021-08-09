@@ -6,13 +6,13 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "storage/test/TestUtils.h"

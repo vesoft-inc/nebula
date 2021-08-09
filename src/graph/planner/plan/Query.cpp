@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"
 
 #include <folly/String.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "util/ToJson.h"
+#include "graph/util/ToJson.h"
 
 using folly::stringPrintf;
 

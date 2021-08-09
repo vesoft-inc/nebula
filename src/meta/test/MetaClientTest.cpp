@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/GflagsManager.h"

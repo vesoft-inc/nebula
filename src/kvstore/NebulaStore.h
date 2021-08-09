@@ -10,7 +10,7 @@
 #include <folly/RWSpinLock.h>
 #include <gtest/gtest_prod.h>
 #include "common/base/Base.h"
-#include "common/interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/Part.h"
@@ -21,7 +21,7 @@
 #include "kvstore/KVEngine.h"
 #include "kvstore/DiskManager.h"
 #include "kvstore/raftex/SnapshotManager.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 
 namespace nebula {
 namespace kvstore {

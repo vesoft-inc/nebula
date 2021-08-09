@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/JoinExecutor.h"
+#include "graph/executor/query/JoinExecutor.h"
 
-#include "planner/plan/Query.h"
-#include "context/QueryExpressionContext.h"
-#include "context/Iterator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/context/Iterator.h"
 
 namespace nebula {
 namespace graph {

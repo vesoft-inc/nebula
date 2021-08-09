@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTIL_INDEXUTIL_H_
-#define UTIL_INDEXUTIL_H_
+#ifndef GRAPH_UTIL_INDEXUTIL_H_
+#define GRAPH_UTIL_INDEXUTIL_H_
 
 #include "common/base/StatusOr.h"
 #include "parser/MaintainSentences.h"
-#include "util/SchemaUtil.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {
@@ -31,4 +31,4 @@ public:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // UTIL_INDEXUTIL_H_
+#endif  // GRAPH_UTIL_INDEXUTIL_H_

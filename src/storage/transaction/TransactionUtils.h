@@ -9,7 +9,7 @@
 
 #include <folly/FBVector.h>
 #include <folly/container/Enumerate.h>
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/Common.h"
 
 namespace nebula {

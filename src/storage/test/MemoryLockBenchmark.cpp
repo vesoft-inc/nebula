@@ -8,8 +8,8 @@
 #include <rocksdb/db.h>
 #include <folly/Benchmark.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
-#include "utils/MemoryLockWrapper.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/MemoryLockWrapper.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 DEFINE_int64(total_spaces, 10000, "total spaces number");
 DEFINE_int64(num_threads, 100, "threads number");

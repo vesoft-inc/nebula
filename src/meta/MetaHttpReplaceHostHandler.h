@@ -8,7 +8,7 @@
 #define META_METAHTTPREPLACEHOSTHANDLER_H
 
 #include "common/base/Base.h"
-#include "common/webservice/Common.h"
+#include "webservice/Common.h"
 #include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"
 #include <proxygen/httpserver/RequestHandler.h>

@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/TagIndexFullScanRule.h"
-#include "optimizer/OptContext.h"
-#include "planner/plan/Scan.h"
+#include "graph/optimizer/rule/TagIndexFullScanRule.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/planner/plan/Scan.h"
 
 using Kind = nebula::graph::PlanNode::Kind;
 

@@ -8,7 +8,7 @@
 
 
 #include <algorithm>
-#include "utils/MemoryLockCore.h"
+#include "common/utils/MemoryLockCore.h"
 
 namespace nebula {
 

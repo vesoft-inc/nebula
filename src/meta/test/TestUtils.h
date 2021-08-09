@@ -10,10 +10,10 @@
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/base/CommonMacro.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "common/time/WallClock.h"
 #include "common/expression/ConstantExpression.h"
-#include "common/version/Version.h"
+#include "version/Version.h"
 #include "mock/MockCluster.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -22,7 +22,7 @@
 #include "meta/MetaServiceHandler.h"
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/ActiveHostsMan.h"
-#include "utils/DefaultValueContext.h"
+#include "common/utils/DefaultValueContext.h"
 #include <gtest/gtest.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>

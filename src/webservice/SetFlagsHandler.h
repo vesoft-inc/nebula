@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_WEBSERVICE_SETFLAGSHANDLER_H_
-#define COMMON_WEBSERVICE_SETFLAGSHANDLER_H_
+#ifndef WEBSERVICE_SETFLAGSHANDLER_H_
+#define WEBSERVICE_SETFLAGSHANDLER_H_
 
 #include "common/base/Base.h"
-#include "common/webservice/Common.h"
+#include "webservice/Common.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
@@ -36,4 +36,4 @@ private:
 };
 
 }  // namespace nebula
-#endif  // COMMON_WEBSERVICE_SETFLAGSHANDLER_H_
+#endif  // WEBSERVICE_SETFLAGSHANDLER_H_

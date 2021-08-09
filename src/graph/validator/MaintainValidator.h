@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_MAINTAINVALIDATOR_H_
-#define VALIDATOR_MAINTAINVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_
+#define GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_
 
-#include "validator/Validator.h"
+#include "graph/validator/Validator.h"
 #include "parser/MaintainSentences.h"
 #include "parser/AdminSentences.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 
 namespace nebula {
 namespace graph {
@@ -548,4 +548,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // VALIDATOR_MAINTAINVALIDATOR_H_
+#endif  // GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_

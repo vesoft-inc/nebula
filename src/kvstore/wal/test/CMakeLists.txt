@@ -6,11 +6,11 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_thread_obj>
-        $<TARGET_OBJECTS:common_fs_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_thread_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
         gtest
 )
@@ -24,10 +24,10 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_fs_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_thread_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
         gtest
 )
@@ -38,7 +38,7 @@ nebula_add_test(
     SOURCES
         AtomicLogBufferTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:common_base_obj>
+        $<TARGET_OBJECTS:base_obj>
     LIBRARIES
         gtest
 )
@@ -50,7 +50,7 @@ nebula_add_executable(
         LogBufferBenchmark.cpp
         InMemoryLogBuffer.cpp
     OBJECTS
-        $<TARGET_OBJECTS:common_base_obj>
+        $<TARGET_OBJECTS:base_obj>
     LIBRARIES
         follybenchmark
         boost_regex
@@ -64,11 +64,11 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:disk_man_obj>
-        $<TARGET_OBJECTS:common_base_obj>
-        $<TARGET_OBJECTS:common_thread_obj>
-        $<TARGET_OBJECTS:common_fs_obj>
-        $<TARGET_OBJECTS:common_time_obj>
-        $<TARGET_OBJECTS:common_thread_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:thread_obj>
     LIBRARIES
         gtest
 )

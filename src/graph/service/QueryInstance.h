@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef SERVICE_QUERYINSTANCE_H_
-#define SERVICE_QUERYINSTANCE_H_
+#ifndef GRAPH_SERVICE_QUERYINSTANCE_H_
+#define GRAPH_SERVICE_QUERYINSTANCE_H_
 
 #include "common/base/Status.h"
 #include "common/cpp/helpers.h"
-#include "context/QueryContext.h"
-#include "optimizer/Optimizer.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/Optimizer.h"
 #include "parser/GQLParser.h"
-#include "scheduler/Scheduler.h"
+#include "graph/scheduler/Scheduler.h"
 
 /**
  * QueryInstance coordinates the execution process,

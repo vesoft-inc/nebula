@@ -5,9 +5,9 @@
  */
 
 #include "common/time/WallClock.h"
-#include "utils/NebulaKeyUtils.h"
-#include "utils/IndexKeyUtils.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 #include <algorithm>
 #include "codec/RowWriterV2.h"
 #include "storage/mutate/AddEdgesProcessor.h"

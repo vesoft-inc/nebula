@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef COMMON_WEBSERVICE_ROUTER_H_
-#define COMMON_WEBSERVICE_ROUTER_H_
+#ifndef WEBSERVICE_ROUTER_H_
+#define WEBSERVICE_ROUTER_H_
 
 #include <memory>
 #include <regex>
@@ -107,4 +107,4 @@ private:
 }   // namespace web
 }   // namespace nebula
 
-#endif   // COMMON_WEBSERVICE_ROUTER_H_
+#endif   // WEBSERVICE_ROUTER_H_

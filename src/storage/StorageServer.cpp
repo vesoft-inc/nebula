@@ -6,14 +6,14 @@
 
 #include "storage/StorageServer.h"
 #include "common/network/NetworkUtils.h"
-#include "common/webservice/WebService.h"
-#include "common/webservice/Router.h"
+#include "webservice/WebService.h"
+#include "webservice/Router.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/thread/GenericThreadPool.h"
-#include "common/clients/storage/InternalStorageClient.h"
-#include "common/version/Version.h"
+#include "clients/storage/InternalStorageClient.h"
+#include "version/Version.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CompactionFilter.h"
 #include "storage/StorageFlags.h"
@@ -26,7 +26,7 @@
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/transaction/TransactionManager.h"
 #include "kvstore/PartManager.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");

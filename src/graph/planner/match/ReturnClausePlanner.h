@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
-#define PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
+#ifndef GRAPH_PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
+#define GRAPH_PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
 
-#include "planner/match/CypherClausePlanner.h"
+#include "graph/planner/match/CypherClausePlanner.h"
 
 namespace nebula {
 namespace graph {
@@ -24,4 +24,4 @@ public:
 };
 }  // namespace graph
 }  // namespace nebula
-#endif  // PLANNER_MATCH_RETURNCLAUSEPLANNER_H_
+#endif  // GRAPH_PLANNER_MATCH_RETURNCLAUSEPLANNER_H_

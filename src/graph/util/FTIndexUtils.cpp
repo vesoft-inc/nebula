@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "util/FTIndexUtils.h"
+#include "graph/util/FTIndexUtils.h"
 #include "common/expression/Expression.h"
 
 DECLARE_uint32(ft_request_retry_times);

@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/logic/SelectExecutor.h"
+#include "graph/executor/logic/SelectExecutor.h"
 
-#include "context/QueryExpressionContext.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
-#include "util/ScopedTimer.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

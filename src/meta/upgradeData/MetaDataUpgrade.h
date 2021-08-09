@@ -10,7 +10,7 @@
 #include <rocksdb/db.h>
 #include "common/base/Base.h"
 #include "common/base/Status.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "meta/upgradeData/oldThrift/gen-cpp2/old_meta_types.h"
 
 

@@ -5,7 +5,7 @@
  */
 
 #include "kvstore/SnapshotManagerImpl.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(snapshot_batch_size, 1024 * 1024 * 10, "batch size for snapshot");

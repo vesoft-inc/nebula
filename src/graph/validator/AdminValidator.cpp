@@ -6,17 +6,17 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "validator/AdminValidator.h"
+#include "graph/validator/AdminValidator.h"
 
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
-#include "planner/plan/Admin.h"
-#include "planner/plan/Query.h"
-#include "service/GraphFlags.h"
-#include "util/ExpressionUtils.h"
-#include "util/SchemaUtil.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/service/GraphFlags.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

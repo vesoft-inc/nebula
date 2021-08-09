@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/AssignExecutor.h"
-#include "planner/plan/Query.h"
+#include "graph/executor/query/AssignExecutor.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

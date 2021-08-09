@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/OptRule.h"
+#include "graph/optimizer/OptRule.h"
 
 #include "common/base/Logging.h"
-#include "context/Symbols.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "planner/plan/PlanNode.h"
+#include "graph/context/Symbols.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/planner/plan/PlanNode.h"
 
 using nebula::graph::PlanNode;
 

@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/Mutate.h"
+#include "graph/planner/plan/Mutate.h"
 
-#include "common/interface/gen-cpp2/storage_types.h"
-#include "util/ToJson.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "graph/util/ToJson.h"
 
 namespace nebula {
 namespace graph {

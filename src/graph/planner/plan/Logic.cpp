@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/plan/Logic.h"
+#include "graph/planner/plan/Logic.h"
 
-#include "common/interface/gen-cpp2/graph_types.h"
+#include "interface/gen-cpp2/graph_types.h"
 
 namespace nebula {
 namespace graph {

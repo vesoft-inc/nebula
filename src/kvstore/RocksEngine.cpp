@@ -11,7 +11,7 @@
 #include "common/fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 DEFINE_bool(move_files, false,
             "Move the SST files instead of copy when ingest into dataset");

@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "session/GraphSessionManager.h"
+#include "graph/session/GraphSessionManager.h"
 #include "common/base/Base.h"
 #include "common/time/WallClock.h"
-#include "service/GraphFlags.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {

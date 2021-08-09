@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VISITOR_DEDUCEPROPSVISITOR_H_
-#define VISITOR_DEDUCEPROPSVISITOR_H_
+#ifndef GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_
+#define GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_
 
 #include "common/base/Status.h"
 #include "common/thrift/ThriftTypes.h"
-#include "visitor/ExprVisitorImpl.h"
+#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 
@@ -137,4 +137,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VISITOR_DEDUCEPROPSVISITOR_H_
+#endif   // GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_

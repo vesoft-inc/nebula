@@ -7,13 +7,13 @@
 #include <folly/container/Enumerate.h>
 
 #include "codec/RowWriterV2.h"
-#include "common/clients/storage/InternalStorageClient.h"
+#include "clients/storage/InternalStorageClient.h"
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/transaction/TransactionManager.h"
 #include "storage/transaction/TransactionUtils.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "executor/query/SetExecutor.h"
+#include "graph/executor/query/SetExecutor.h"
 
 #include <sstream>
 
 #include "common/datatypes/DataSet.h"
-#include "context/ExecutionContext.h"
-#include "planner/plan/Query.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

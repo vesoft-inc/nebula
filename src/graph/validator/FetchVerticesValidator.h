@@ -7,9 +7,9 @@
 #ifndef _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 #define _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "parser/TraverseSentences.h"
-#include "validator/Validator.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {

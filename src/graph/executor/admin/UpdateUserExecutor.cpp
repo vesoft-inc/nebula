@@ -6,9 +6,9 @@
 
 #include "common/encryption/MD5Utils.h"
 
-#include "context/QueryContext.h"
-#include "executor/admin/UpdateUserExecutor.h"
-#include "planner/plan/Admin.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/admin/UpdateUserExecutor.h"
+#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

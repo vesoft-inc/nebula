@@ -13,7 +13,7 @@
 #include "common/datatypes/Map.h"
 #include "common/conf/Configuration.h"
 #include "common/expression/ConstantExpression.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 #include "kvstore/Common.h"
 #include "meta/MetaServiceUtils.h"

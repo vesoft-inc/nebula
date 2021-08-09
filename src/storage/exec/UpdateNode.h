@@ -14,7 +14,7 @@
 #include "storage/exec/FilterNode.h"
 #include "storage/StorageFlags.h"
 #include "kvstore/LogEncoder.h"
-#include "utils/OperationKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 
 namespace nebula {
 namespace storage {

@@ -5,7 +5,7 @@
  */
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
-#include "service/PermissionManager.h"
+#include "graph/service/PermissionManager.h"
 
 namespace nebula {
 namespace graph {

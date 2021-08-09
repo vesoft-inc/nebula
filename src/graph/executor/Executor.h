@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_EXECUTOR_H_
-#define EXECUTOR_EXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_EXECUTOR_H_
+#define GRAPH_EXECUTOR_EXECUTOR_H_
 
 #include <set>
 #include <string>
@@ -17,8 +17,8 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
-#include "context/ExecutionContext.h"
-#include "util/ScopedTimer.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -130,4 +130,4 @@ protected:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXECUTOR_EXECUTOR_H_
+#endif   // GRAPH_EXECUTOR_EXECUTOR_H_

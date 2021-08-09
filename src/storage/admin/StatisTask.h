@@ -8,7 +8,7 @@
 #define STORAGE_ADMIN_STATISTASK_H_
 
 #include "common/thrift/ThriftTypes.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/admin/AdminTask.h"

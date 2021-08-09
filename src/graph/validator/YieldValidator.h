@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_YIELDVALIDATOR_H_
-#define VALIDATOR_YIELDVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_YIELDVALIDATOR_H_
+#define GRAPH_VALIDATOR_YIELDVALIDATOR_H_
 
 #include <vector>
 
 #include "common/base/Status.h"
-#include "planner/plan/Query.h"
-#include "validator/Validator.h"
-#include "validator/GroupByValidator.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/validator/Validator.h"
+#include "graph/validator/GroupByValidator.h"
 
 namespace nebula {
 
@@ -55,4 +55,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // VALIDATOR_YIELDVALIDATOR_H_
+#endif   // GRAPH_VALIDATOR_YIELDVALIDATOR_H_

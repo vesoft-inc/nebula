@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef UTIL_TOJSON_H_
-#define UTIL_TOJSON_H_
+#ifndef GRAPH_UTIL_TOJSON_H_
+#define GRAPH_UTIL_TOJSON_H_
 
 #include <iterator>
 #include <string>
@@ -102,4 +102,4 @@ folly::dynamic toJson(const std::vector<T> &arr) {
 }   // namespace util
 }   // namespace nebula
 
-#endif   // UTIL_TOJSON_H_
+#endif   // GRAPH_UTIL_TOJSON_H_

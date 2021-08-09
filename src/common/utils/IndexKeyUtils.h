@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef UTILS_INDEXKEYUTILS_H_
-#define UTILS_INDEXKEYUTILS_H_
+#ifndef COMMON_UTILS_INDEXKEYUTILS_H_
+#define COMMON_UTILS_INDEXKEYUTILS_H_
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "codec/RowReader.h"
-#include "utils/Types.h"
+#include "common/utils/Types.h"
 #include "codec/RowReader.h"
 
 namespace nebula {
@@ -497,5 +497,5 @@ private:
 };
 
 }  // namespace nebula
-#endif  // UTILS_INDEXKEYUTILS_H_
+#endif  // COMMON_UTILS_INDEXKEYUTILS_H_
 

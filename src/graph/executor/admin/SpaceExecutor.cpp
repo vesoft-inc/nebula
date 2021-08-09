@@ -4,13 +4,13 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "executor/admin/SpaceExecutor.h"
-#include "context/QueryContext.h"
-#include "service/PermissionManager.h"
-#include "planner/plan/Admin.h"
-#include "util/SchemaUtil.h"
-#include "util/ScopedTimer.h"
-#include "util/FTIndexUtils.h"
+#include "graph/executor/admin/SpaceExecutor.h"
+#include "graph/context/QueryContext.h"
+#include "graph/service/PermissionManager.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/util/SchemaUtil.h"
+#include "graph/util/ScopedTimer.h"
+#include "graph/util/FTIndexUtils.h"
 
 namespace nebula {
 namespace graph {

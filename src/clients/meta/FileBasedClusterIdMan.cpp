@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "common/clients/meta/FileBasedClusterIdMan.h"
+#include "clients/meta/FileBasedClusterIdMan.h"
 
 
 namespace nebula {

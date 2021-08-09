@@ -9,8 +9,8 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "common/interface/gen-cpp2/common_types.h"
-#include "common/interface/gen-cpp2/storage_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "mock/AdHocIndexManager.h"
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockCluster.h"
@@ -24,7 +24,7 @@
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {

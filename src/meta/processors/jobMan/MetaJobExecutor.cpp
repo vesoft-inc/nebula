@@ -5,7 +5,7 @@
  */
 
 #include "common/network/NetworkUtils.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/MetaServiceUtils.h"
@@ -19,7 +19,7 @@
 #include "meta/processors/jobMan/RebuildFTJobExecutor.h"
 #include "meta/processors/jobMan/StatisJobExecutor.h"
 #include "meta/processors/jobMan/TaskDescription.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

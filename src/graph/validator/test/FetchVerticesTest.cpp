@@ -5,10 +5,10 @@
  */
 
 #include "common/base/ObjectPool.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
-#include "validator/FetchVerticesValidator.h"
-#include "validator/test/ValidatorTestBase.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/validator/FetchVerticesValidator.h"
+#include "graph/validator/test/ValidatorTestBase.h"
 
 namespace nebula {
 namespace graph {

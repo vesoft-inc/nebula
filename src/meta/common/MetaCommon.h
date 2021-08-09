@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
 

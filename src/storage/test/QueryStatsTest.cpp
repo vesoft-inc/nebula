@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "storage/test/TestUtils.h"

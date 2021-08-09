@@ -6,11 +6,11 @@
 
 #include <gtest/gtest.h>
 
-#include "context/QueryContext.h"
-#include "executor/query/ProjectExecutor.h"
-#include "executor/test/QueryTestBase.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/Query.h"
+#include "graph/context/QueryContext.h"
+#include "graph/executor/query/ProjectExecutor.h"
+#include "graph/executor/test/QueryTestBase.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

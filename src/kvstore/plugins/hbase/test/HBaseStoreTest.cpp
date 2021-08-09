@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "utils/NebulaKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/plugins/hbase/HBaseStore.h"
 #include "kvstore/plugins/hbase/test/TestUtils.h"
 #include <gtest/gtest.h>

@@ -7,9 +7,9 @@
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
 #include <folly/json.h>
-#include "common/webservice/WebService.h"
+#include "webservice/WebService.h"
 #include "common/stats/StatsManager.h"
-#include "common/webservice/test/TestUtils.h"
+#include "webservice/test/TestUtils.h"
 
 namespace nebula {
 

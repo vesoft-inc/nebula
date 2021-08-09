@@ -8,7 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 #include "meta/processors/Common.h"
 #include "meta/common/MetaCommon.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_uint32(expired_time_factor);

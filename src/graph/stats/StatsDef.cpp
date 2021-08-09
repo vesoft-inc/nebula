@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "StatsDef.h"
+#include "graph/stats/StatsDef.h"
 #include "common/stats/StatsManager.h"
 
 DEFINE_int32(slow_query_threshold_us, 200000,

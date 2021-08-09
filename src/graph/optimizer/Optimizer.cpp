@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/Optimizer.h"
+#include "graph/optimizer/Optimizer.h"
 
-#include "context/QueryContext.h"
-#include "optimizer/OptContext.h"
-#include "optimizer/OptGroup.h"
-#include "optimizer/OptRule.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "planner/plan/Logic.h"
-#include "planner/plan/PlanNode.h"
+#include "graph/context/QueryContext.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/OptRule.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
 
 using nebula::graph::BinaryInputNode;
 using nebula::graph::Loop;

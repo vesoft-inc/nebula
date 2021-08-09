@@ -8,7 +8,7 @@
 
 #include "storage/admin/AdminTaskProcessor.h"
 #include "storage/admin/AdminTaskManager.h"
-#include "common/interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
 namespace storage {

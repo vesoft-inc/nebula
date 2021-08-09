@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "visitor/DeduceTypeVisitor.h"
-#include "visitor/test/VisitorTestBase.h"
+#include "graph/visitor/DeduceTypeVisitor.h"
+#include "graph/visitor/test/VisitorTestBase.h"
 
 #include <gtest/gtest.h>
 

@@ -4,9 +4,9 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "executor/admin/ZoneExecutor.h"
-#include "planner/plan/Admin.h"
-#include "util/ScopedTimer.h"
+#include "graph/executor/admin/ZoneExecutor.h"
+#include "graph/planner/plan/Admin.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

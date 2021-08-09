@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_VALIDATOR_H_
-#define VALIDATOR_VALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_VALIDATOR_H_
+#define GRAPH_VALIDATOR_VALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "context/ast/AstContext.h"
-#include "context/QueryContext.h"
-#include "context/ValidateContext.h"
+#include "graph/context/ast/AstContext.h"
+#include "graph/context/QueryContext.h"
+#include "graph/context/ValidateContext.h"
 #include "parser/Sentence.h"
-#include "planner/plan/ExecutionPlan.h"
-#include "planner/Planner.h"
-#include "service/PermissionCheck.h"
-#include "visitor/DeducePropsVisitor.h"
+#include "graph/planner/plan/ExecutionPlan.h"
+#include "graph/planner/Planner.h"
+#include "graph/service/PermissionCheck.h"
+#include "graph/visitor/DeducePropsVisitor.h"
 
 namespace nebula {
 namespace graph {

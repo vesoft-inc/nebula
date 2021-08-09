@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/GroupByValidator.h"
+#include "graph/validator/GroupByValidator.h"
 
-#include "validator/test/ValidatorTestBase.h"
+#include "graph/validator/test/ValidatorTestBase.h"
 
 namespace nebula {
 namespace graph {

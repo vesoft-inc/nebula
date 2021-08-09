@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/YieldValidator.h"
+#include "graph/validator/YieldValidator.h"
 
 #include "common/expression/Expression.h"
-#include "context/QueryContext.h"
+#include "graph/context/QueryContext.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
-#include "planner/plan/Query.h"
-#include "util/ExpressionUtils.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {

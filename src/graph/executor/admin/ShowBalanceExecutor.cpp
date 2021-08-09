@@ -6,8 +6,8 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "executor/admin/ShowBalanceExecutor.h"
-#include "planner/plan/Admin.h"
+#include "graph/executor/admin/ShowBalanceExecutor.h"
+#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {

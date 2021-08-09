@@ -7,13 +7,13 @@
 #define PARSER_MAINTAINSENTENCES_H_
 
 #include <string>
-#include "common/interface/gen-cpp2/common_types.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
-#include "context/QueryExpressionContext.h"
+#include "graph/context/QueryExpressionContext.h"
 
 namespace nebula {
 

@@ -9,7 +9,7 @@
 #include "common/fs/TempDir.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/network/NetworkUtils.h"
-#include "common/clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GeneralStorageClient.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 

@@ -4,14 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "planner/match/UnwindClausePlanner.h"
+#include "graph/planner/match/UnwindClausePlanner.h"
 
-#include "planner/plan/Query.h"
-#include "planner/match/MatchSolver.h"
-#include "planner/match/OrderByClausePlanner.h"
-#include "planner/match/PaginationPlanner.h"
-#include "planner/match/SegmentsConnector.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/OrderByClausePlanner.h"
+#include "graph/planner/match/PaginationPlanner.h"
+#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {

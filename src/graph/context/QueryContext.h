@@ -4,23 +4,23 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_QUERYCONTEXT_H_
-#define CONTEXT_QUERYCONTEXT_H_
+#ifndef GRAPH_CONTEXT_QUERYCONTEXT_H_
+#define GRAPH_CONTEXT_QUERYCONTEXT_H_
 
 #include "common/base/ObjectPool.h"
 #include "common/charset/Charset.h"
-#include "common/clients/meta/MetaClient.h"
-#include "common/clients/storage/GraphStorageClient.h"
+#include "clients/meta/MetaClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/meta/IndexManager.h"
 #include "common/meta/SchemaManager.h"
-#include "context/ExecutionContext.h"
-#include "context/Symbols.h"
-#include "context/ValidateContext.h"
+#include "graph/context/ExecutionContext.h"
+#include "graph/context/Symbols.h"
+#include "graph/context/ValidateContext.h"
 #include "parser/SequentialSentences.h"
-#include "service/RequestContext.h"
-#include "util/IdGenerator.h"
+#include "graph/service/RequestContext.h"
+#include "graph/util/IdGenerator.h"
 
 namespace nebula {
 namespace graph {
@@ -161,4 +161,4 @@ private:
 
 }   // namespace graph
 }   // namespace nebula
-#endif   // CONTEXT_QUERYCONTEXT_H_
+#endif   // GRAPH_CONTEXT_QUERYCONTEXT_H_

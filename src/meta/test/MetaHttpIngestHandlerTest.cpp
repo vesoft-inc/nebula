@@ -5,8 +5,8 @@
  */
 
 #include "common/base/Base.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 #include "common/fs/TempDir.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/http/HttpClient.h"

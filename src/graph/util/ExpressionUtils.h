@@ -16,9 +16,9 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
-#include "visitor/EvaluableExprVisitor.h"
-#include "visitor/FindVisitor.h"
-#include "visitor/RewriteVisitor.h"
+#include "graph/visitor/EvaluableExprVisitor.h"
+#include "graph/visitor/FindVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 class ObjectPool;

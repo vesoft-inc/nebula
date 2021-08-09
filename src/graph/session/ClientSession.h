@@ -3,11 +3,11 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef SESSION_CLIENTSESSION_H_
-#define SESSION_CLIENTSESSION_H_
+#ifndef GRAPH_SESSION_CLIENTSESSION_H_
+#define GRAPH_SESSION_CLIENTSESSION_H_
 
-#include "common/clients/meta/MetaClient.h"
-#include "common/interface/gen-cpp2/meta_types.h"
+#include "clients/meta/MetaClient.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "common/time/Duration.h"
 
 namespace nebula {
@@ -163,4 +163,4 @@ private:
 }  // namespace graph
 }  // namespace nebula
 
-#endif   // SESSION_CLIENTSESSION_H_
+#endif   // GRAPH_SESSION_CLIENTSESSION_H_

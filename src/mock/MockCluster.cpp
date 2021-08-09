@@ -10,7 +10,7 @@
 #include "meta/MetaServiceHandler.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/meta/ServerBasedIndexManager.h"
-#include "common/clients/meta/MetaClient.h"
+#include "clients/meta/MetaClient.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/GeneralStorageServiceHandler.h"

@@ -4,11 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CONTEXT_EXECUTIONCONTEXT_H_
-#define CONTEXT_EXECUTIONCONTEXT_H_
+#ifndef GRAPH_CONTEXT_EXECUTIONCONTEXT_H_
+#define GRAPH_CONTEXT_EXECUTIONCONTEXT_H_
 
 #include "common/datatypes/Value.h"
-#include "context/Result.h"
+#include "graph/context/Result.h"
 
 namespace nebula {
 namespace graph {
@@ -81,4 +81,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // CONTEXT_EXECUTIONCONTEXT_H_
+#endif  // GRAPH_CONTEXT_EXECUTIONCONTEXT_H_

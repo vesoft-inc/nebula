@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef EXECUTOR_QUERY_SETEXECUTOR_H_
-#define EXECUTOR_QUERY_SETEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
+#define GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_
 
 #include <memory>
 
-#include "executor/Executor.h"
+#include "graph/executor/Executor.h"
 
 namespace nebula {
 
@@ -35,4 +35,4 @@ protected:
 }   // namespace graph
 }   // namespace nebula
 
-#endif   // EXECUTOR_QUERY_SETEXECUTOR_H_
+#endif   // GRAPH_EXECUTOR_QUERY_SETEXECUTOR_H_

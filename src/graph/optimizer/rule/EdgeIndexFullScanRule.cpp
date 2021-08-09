@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "optimizer/rule/EdgeIndexFullScanRule.h"
-#include "optimizer/OptContext.h"
-#include "planner/plan/Query.h"
-#include "planner/plan/Scan.h"
+#include "graph/optimizer/rule/EdgeIndexFullScanRule.h"
+#include "graph/optimizer/OptContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Scan.h"
 
 using nebula::graph::EdgeIndexFullScan;
 using nebula::graph::IndexScan;

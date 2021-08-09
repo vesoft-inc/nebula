@@ -9,9 +9,9 @@
 #include <folly/json.h>
 #include "kvstore/RocksEngineConfig.h"
 #include "common/fs/TempDir.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/WebService.h"
-#include "common/webservice/test/TestUtils.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
+#include "webservice/test/TestUtils.h"
 #include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/test/TestUtils.h"
 #include "mock/MockCluster.h"

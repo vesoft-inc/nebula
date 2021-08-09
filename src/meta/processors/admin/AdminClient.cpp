@@ -11,7 +11,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "kvstore/Part.h"
-#include "utils/Utils.h"
+#include "common/utils/Utils.h"
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 

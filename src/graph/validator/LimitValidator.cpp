@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "validator/LimitValidator.h"
+#include "graph/validator/LimitValidator.h"
 #include "parser/TraverseSentences.h"
-#include "planner/plan/Query.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

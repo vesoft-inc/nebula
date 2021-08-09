@@ -6,10 +6,10 @@
 
 #include "common/function/FunctionManager.h"
 
-#include "visitor/FoldConstantExprVisitor.h"
+#include "graph/visitor/FoldConstantExprVisitor.h"
 
-#include "context/QueryExpressionContext.h"
-#include "util/ExpressionUtils.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/util/ExpressionUtils.h"
 namespace nebula {
 namespace graph {
 

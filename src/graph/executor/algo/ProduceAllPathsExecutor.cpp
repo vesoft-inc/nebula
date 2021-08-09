@@ -3,9 +3,9 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "executor/algo/ProduceAllPathsExecutor.h"
+#include "graph/executor/algo/ProduceAllPathsExecutor.h"
 
-#include "planner/plan/Algo.h"
+#include "graph/planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {

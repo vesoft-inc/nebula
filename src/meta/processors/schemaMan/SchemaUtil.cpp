@@ -9,7 +9,7 @@
 #include "common/time/TimeUtils.h"
 
 #include "meta/processors/schemaMan/SchemaUtil.h"
-#include "utils/DefaultValueContext.h"
+#include "common/utils/DefaultValueContext.h"
 
 namespace nebula {
 namespace meta {

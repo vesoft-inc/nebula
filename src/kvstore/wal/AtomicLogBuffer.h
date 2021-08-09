@@ -8,7 +8,7 @@
 #define WAL_ATOMICLOGBUFFER_H_
 
 #include "common/thrift/ThriftTypes.h"
-#include "utils/LogIterator.h"
+#include "common/utils/LogIterator.h"
 #include <gtest/gtest_prod.h>
 #include <folly/lang/Aligned.h>
 

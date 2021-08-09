@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/MetaServiceUtils.h"
-#include "common/webservice/Common.h"
-#include "common/webservice/WebService.h"
+#include "webservice/Common.h"
+#include "webservice/WebService.h"
 #include "common/network/NetworkUtils.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/http/HttpClient.h"

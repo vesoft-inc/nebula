@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef VALIDATOR_USEVALIDATOR_H_
-#define VALIDATOR_USEVALIDATOR_H_
+#ifndef GRAPH_VALIDATOR_USEVALIDATOR_H_
+#define GRAPH_VALIDATOR_USEVALIDATOR_H_
 
-#include "validator/Validator.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {

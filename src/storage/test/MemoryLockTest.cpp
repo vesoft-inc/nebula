@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include <gtest/gtest.h>
-#include "utils/MemoryLockWrapper.h"
+#include "common/utils/MemoryLockWrapper.h"
 
 namespace nebula {
 namespace storage {

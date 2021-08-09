@@ -4,19 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/webservice/WebService.h"
+#include "webservice/WebService.h"
 
 #include <proxygen/httpserver/HTTPServer.h>
 #include <proxygen/httpserver/HTTPServerOptions.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
 #include "common/thread/NamedThread.h"
-#include "common/webservice/NotFoundHandler.h"
-#include "common/webservice/GetFlagsHandler.h"
-#include "common/webservice/SetFlagsHandler.h"
-#include "common/webservice/GetStatsHandler.h"
-#include "common/webservice/Router.h"
-#include "common/webservice/StatusHandler.h"
+#include "webservice/NotFoundHandler.h"
+#include "webservice/GetFlagsHandler.h"
+#include "webservice/SetFlagsHandler.h"
+#include "webservice/GetStatsHandler.h"
+#include "webservice/Router.h"
+#include "webservice/StatusHandler.h"
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");

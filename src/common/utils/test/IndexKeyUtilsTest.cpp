@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 #include "common/base/Base.h"
-#include "utils/IndexKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 
 namespace nebula {
 

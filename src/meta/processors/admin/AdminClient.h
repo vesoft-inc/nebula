@@ -10,7 +10,7 @@
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/thrift/ThriftClientManager.h"
-#include "common/interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
+#include "interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
 #include "kvstore/KVStore.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
