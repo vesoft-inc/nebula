@@ -100,3 +100,9 @@
 --rocksdb_column_family_options={"write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_block_based_table_options={"block_size":"8192"}
+
+############## Runtime global Options ##############
+# Index rebuild batch number
+--rebuild_index_batch_num=256
+# Index rebuild processing interval, microsecond.
+--rebuild_index_process_interval=3000

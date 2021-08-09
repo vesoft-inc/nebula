@@ -101,3 +101,9 @@
 
 ############### misc ####################
 --max_handlers_per_req=1
+
+############## Runtime global Options ##############
+# Index rebuild batch number
+--rebuild_index_batch_num=256
+# Index rebuild processing interval, microsecond.
+--rebuild_index_process_interval=3000

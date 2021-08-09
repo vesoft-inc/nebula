@@ -23,6 +23,8 @@ DECLARE_int32(rebuild_index_batch_num);
 
 DECLARE_int32(rebuild_index_locked_threshold);
 
+DECLARE_int32(rebuild_index_process_interval);
+
 DECLARE_bool(enable_vertex_cache);
 
 DECLARE_int32(reader_handlers);

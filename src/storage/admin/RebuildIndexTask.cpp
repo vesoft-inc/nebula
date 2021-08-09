@@ -160,6 +160,7 @@ RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space, PartitionID part) {
                 operations.clear();
             }
             operationIter->next();
+            usleep(FLAGS_rebuild_index_process_interval);
         }
 
         auto ret = cleanupOperationLogs(space, part, operations);
@@ -224,6 +225,7 @@ RebuildIndexTask::removeLegacyLogs(GraphSpaceID space,
             operations.clear();
         }
         operationIter->next();
+        usleep(FLAGS_rebuild_index_process_interval);
     }
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;

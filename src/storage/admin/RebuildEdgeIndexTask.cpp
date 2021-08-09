@@ -157,6 +157,7 @@ RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
             }
         }
         iter->next();
+        usleep(FLAGS_rebuild_index_process_interval);
     }
 
     auto result = writeData(space, part, std::move(data));
