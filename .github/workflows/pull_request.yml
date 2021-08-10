@@ -53,10 +53,10 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
         TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
-        CCACHE_DIR: /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
+        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 8G
       volumes:
-        - /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
       - name: Cleanup
