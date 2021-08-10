@@ -24,7 +24,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:executor_obj>
         $<TARGET_OBJECTS:scheduler_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
-        $<TARGET_OBJECTS:context_obj>
+        $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
