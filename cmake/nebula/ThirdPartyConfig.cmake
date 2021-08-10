@@ -106,6 +106,7 @@ find_package(FLEX REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(Fizz REQUIRED)
 find_package(Sodium REQUIRED)
+find_package(Breakpad REQUIRED)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
@@ -148,6 +149,10 @@ if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN OR ENABLE_UBSAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
+endif()
+
+if (Breakpad_FOUND)
+    include_directories(AFTER SYSTEM ${Breakpad_INCLUDE_DIR}/breakpad)
 endif()
 
 message(">>>> Configuring third party for '${PROJECT_NAME}' done <<<<")

@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <breakpad/client/linux/handler/exception_handler.h>
 #include <errno.h>
 #include <folly/ssl/Init.h>
 #include <signal.h>
