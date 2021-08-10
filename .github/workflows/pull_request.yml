@@ -120,7 +120,7 @@ jobs:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
-        timeout-minutes: 20
+        timeout-minutes: 40
       - name: Pytest
         run: |
           make up
@@ -134,7 +134,7 @@ jobs:
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
           make down
         working-directory: tests/
-        timeout-minutes: 25
+        timeout-minutes: 30
       - name: Sanitizer
         if: ${{ always() }}
         run: |
