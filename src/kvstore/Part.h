@@ -106,11 +106,22 @@ class Part : public raftex::RaftPart {
 
   nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 
- protected:
-  GraphSpaceID spaceId_;
-  PartitionID partId_;
-  std::string walPath_;
-  NewLeaderCallback newLeaderCb_ = nullptr;
+public:
+    struct CallbackOptions {
+        GraphSpaceID spaceId;
+        PartitionID partId;
+        TermID term;
+    };
+
+    using OnElectedCallBack = std::function<void(const CallbackOptions& opt)>;
+    void registerOnElected(OnElectedCallBack cb);
+
+protected:
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
+    std::string walPath_;
+    NewLeaderCallback newLeaderCb_ = nullptr;
+    std::vector<OnElectedCallBack> onElectedCallBacks_;
 
  private:
   KVEngine* engine_ = nullptr;
