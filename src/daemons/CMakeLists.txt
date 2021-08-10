@@ -8,6 +8,7 @@ nebula_add_executable(
         nebula-graphd
     SOURCES
         GraphDaemon.cpp
+        SetupLogging.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_def_obj>
         $<TARGET_OBJECTS:version_obj>
