@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/vesoft-inc/nebula/raw/master/docs/logo.png"/>
+  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/vesoft-inc/nebula/raw/master/docs/logo.png"/>
+  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
   <br>中文 | <a href="README.md">English</a>
   <br>世界上唯一能够容纳千亿个顶点和万亿条边，并提供毫秒级查询延时的图数据库解决方案<br>
 </p>
@@ -90,4 +90,3 @@ Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，�
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
 * email: info@vesoft.com
-  
