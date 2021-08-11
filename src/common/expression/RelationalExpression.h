@@ -15,105 +15,90 @@ public:
     static RelationalExpression* makeEQ(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelEQ, lhs, rhs));
     }
 
     static RelationalExpression* makeNE(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelNE, lhs, rhs));
     }
 
     static RelationalExpression* makeLT(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelLT, lhs, rhs));
     }
 
     static RelationalExpression* makeLE(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelLE, lhs, rhs));
     }
 
     static RelationalExpression* makeGT(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelGT, lhs, rhs));
     }
 
     static RelationalExpression* makeGE(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelGE, lhs, rhs));
     }
 
     static RelationalExpression* makeREG(ObjectPool* pool,
                                          Expression* lhs = nullptr,
                                          Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelREG, lhs, rhs));
     }
 
     static RelationalExpression* makeIn(ObjectPool* pool,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelIn, lhs, rhs));
     }
 
     static RelationalExpression* makeNotIn(ObjectPool* pool,
                                            Expression* lhs = nullptr,
                                            Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kRelNotIn, lhs, rhs));
     }
 
     static RelationalExpression* makeContains(ObjectPool* pool,
                                               Expression* lhs = nullptr,
                                               Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kContains, lhs, rhs));
     }
 
     static RelationalExpression* makeNotContains(ObjectPool* pool,
                                                  Expression* lhs = nullptr,
                                                  Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kNotContains, lhs, rhs));
     }
 
     static RelationalExpression* makeStartsWith(ObjectPool* pool,
                                                 Expression* lhs = nullptr,
                                                 Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kStartsWith, lhs, rhs));
     }
 
     static RelationalExpression* makeNotStartsWith(ObjectPool* pool,
                                                    Expression* lhs = nullptr,
                                                    Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kNotStartsWith, lhs, rhs));
     }
 
     static RelationalExpression* makeEndsWith(ObjectPool* pool,
                                               Expression* lhs = nullptr,
                                               Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kEndsWith, lhs, rhs));
     }
 
     static RelationalExpression* makeNotEndsWith(ObjectPool* pool,
                                                  Expression* lhs = nullptr,
                                                  Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, Kind::kNotEndsWith, lhs, rhs));
     }
 
@@ -122,7 +107,6 @@ public:
                                           Kind kind,
                                           Expression* lhs = nullptr,
                                           Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new RelationalExpression(pool, kind, lhs, rhs));
     }
 

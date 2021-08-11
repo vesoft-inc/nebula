@@ -110,10 +110,7 @@ public:
         kSubscriptRange,
     };
 
-
-    // explicit Expression(Kind kind) : kind_(kind) {}
-
-    explicit Expression(ObjectPool* pool, Kind kind) : pool_(pool), kind_(kind) {}
+    Expression(ObjectPool* pool, Kind kind);
     virtual ~Expression() = default;
 
     Expression& operator=(const Expression& rhs) = delete;
@@ -219,7 +216,7 @@ protected:
     // Reset the content of the expression from the given decoder
     virtual void resetFrom(Decoder& decoder) = 0;
 
-    ObjectPool* pool_;
+    ObjectPool* pool_{nullptr};
 
     Kind kind_;
 };

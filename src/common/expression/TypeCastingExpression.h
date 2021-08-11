@@ -18,7 +18,6 @@ public:
     static TypeCastingExpression* make(ObjectPool* pool,
                                        Value::Type vType = Value::Type::__EMPTY__,
                                        Expression* operand = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new TypeCastingExpression(pool, vType, operand));
     }
 

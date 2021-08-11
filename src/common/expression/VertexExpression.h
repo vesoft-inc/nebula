@@ -20,7 +20,6 @@ namespace nebula {
 class VertexExpression final : public Expression {
 public:
     static VertexExpression *make(ObjectPool *pool) {
-        DCHECK(!!pool);
         return pool->add(new VertexExpression(pool));
     }
 

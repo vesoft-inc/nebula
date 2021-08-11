@@ -176,6 +176,8 @@ Expression* Expression::Decoder::readExpression(ObjectPool* pool) noexcept {
  *  class Expression
  *
  ***************************************/
+Expression::Expression(ObjectPool* pool, Kind kind) : pool_(DCHECK_NOTNULL(pool)), kind_(kind) {}
+
 // static
 std::string Expression::encode(const Expression& exp) {
     return exp.encode();

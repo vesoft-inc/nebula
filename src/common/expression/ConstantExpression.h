@@ -20,7 +20,6 @@ public:
     ConstantExpression& operator=(ConstantExpression&&) = delete;
 
     static ConstantExpression* make(ObjectPool* pool, Value v = Value(NullType::__NULL__)) {
-        DCHECK(!!pool);
         return pool->add(new ConstantExpression(pool, v));
     }
 

@@ -14,7 +14,6 @@ namespace nebula {
 class ExpressionList final {
 public:
     static ExpressionList* make(ObjectPool *pool, size_t sz = 0) {
-        DCHECK(!!pool);
         return pool->add(new ExpressionList(sz));
     }
 
@@ -41,7 +40,6 @@ private:
 class MapItemList final {
 public:
     static MapItemList* make(ObjectPool *pool, size_t sz = 0) {
-        DCHECK(!!pool);
         return pool->add(new MapItemList(sz));
     }
 
@@ -73,7 +71,6 @@ public:
 
 
     static ListExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
-        DCHECK(!!pool);
         return items == nullptr ? pool->add(new ListExpression(pool))
                                 : pool->add(new ListExpression(pool, items));
     }
@@ -143,7 +140,6 @@ public:
     SetExpression& operator=(SetExpression&&) = delete;
 
     static SetExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
-        DCHECK(!!pool);
         return items == nullptr ? pool->add(new SetExpression(pool))
                                 : pool->add(new SetExpression(pool, items));
     }
@@ -211,7 +207,6 @@ public:
     MapExpression& operator=(MapExpression&&) = delete;
 
     static MapExpression *make(ObjectPool *pool, MapItemList *items = nullptr) {
-        DCHECK(!!pool);
         return items == nullptr ? pool->add(new MapExpression(pool))
                                 : pool->add(new MapExpression(pool, items));
     }
