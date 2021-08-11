@@ -3,34 +3,34 @@ nebula_add_library(
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
-    processors/partsMan/ListHostsProcessor.cpp
-    processors/partsMan/ListPartsProcessor.cpp
-    processors/partsMan/CreateSpaceProcessor.cpp
-    processors/partsMan/GetSpaceProcessor.cpp
-    processors/partsMan/ListSpacesProcessor.cpp
-    processors/partsMan/DropSpaceProcessor.cpp
-    processors/partsMan/GetPartsAllocProcessor.cpp
-    processors/schemaMan/CreateTagProcessor.cpp
-    processors/schemaMan/AlterTagProcessor.cpp
-    processors/schemaMan/GetTagProcessor.cpp
-    processors/schemaMan/ListTagsProcessor.cpp
-    processors/schemaMan/DropTagProcessor.cpp
-    processors/schemaMan/CreateEdgeProcessor.cpp
-    processors/schemaMan/AlterEdgeProcessor.cpp
-    processors/schemaMan/GetEdgeProcessor.cpp
-    processors/schemaMan/ListEdgesProcessor.cpp
-    processors/schemaMan/DropEdgeProcessor.cpp
-    processors/schemaMan/SchemaUtil.cpp
-    processors/indexMan/CreateTagIndexProcessor.cpp
-    processors/indexMan/DropTagIndexProcessor.cpp
-    processors/indexMan/GetTagIndexProcessor.cpp
-    processors/indexMan/ListTagIndexesProcessor.cpp
-    processors/indexMan/CreateEdgeIndexProcessor.cpp
-    processors/indexMan/DropEdgeIndexProcessor.cpp
-    processors/indexMan/GetEdgeIndexProcessor.cpp
-    processors/indexMan/ListEdgeIndexesProcessor.cpp
-    processors/indexMan/FTServiceProcessor.cpp
-    processors/indexMan/FTIndexProcessor.cpp
+    processors/parts/ListHostsProcessor.cpp
+    processors/parts/ListPartsProcessor.cpp
+    processors/parts/CreateSpaceProcessor.cpp
+    processors/parts/GetSpaceProcessor.cpp
+    processors/parts/ListSpacesProcessor.cpp
+    processors/parts/DropSpaceProcessor.cpp
+    processors/parts/GetPartsAllocProcessor.cpp
+    processors/schema/CreateTagProcessor.cpp
+    processors/schema/AlterTagProcessor.cpp
+    processors/schema/GetTagProcessor.cpp
+    processors/schema/ListTagsProcessor.cpp
+    processors/schema/DropTagProcessor.cpp
+    processors/schema/CreateEdgeProcessor.cpp
+    processors/schema/AlterEdgeProcessor.cpp
+    processors/schema/GetEdgeProcessor.cpp
+    processors/schema/ListEdgesProcessor.cpp
+    processors/schema/DropEdgeProcessor.cpp
+    processors/schema/SchemaUtil.cpp
+    processors/index/CreateTagIndexProcessor.cpp
+    processors/index/DropTagIndexProcessor.cpp
+    processors/index/GetTagIndexProcessor.cpp
+    processors/index/ListTagIndexesProcessor.cpp
+    processors/index/CreateEdgeIndexProcessor.cpp
+    processors/index/DropEdgeIndexProcessor.cpp
+    processors/index/GetEdgeIndexProcessor.cpp
+    processors/index/ListEdgeIndexesProcessor.cpp
+    processors/index/FTServiceProcessor.cpp
+    processors/index/FTIndexProcessor.cpp
     processors/customKV/GetProcessor.cpp
     processors/customKV/MultiGetProcessor.cpp
     processors/customKV/MultiPutProcessor.cpp
@@ -38,7 +38,7 @@ nebula_add_library(
     processors/customKV/RemoveRangeProcessor.cpp
     processors/customKV/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
-    processors/usersMan/AuthenticationProcessor.cpp
+    processors/user/AuthenticationProcessor.cpp
     processors/admin/BalanceProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
@@ -53,42 +53,42 @@ nebula_add_library(
     processors/admin/RestoreProcessor.cpp
     processors/admin/ListClusterInfoProcessor.cpp
     processors/admin/GetMetaDirInfoProcessor.cpp
-    processors/configMan/RegConfigProcessor.cpp
-    processors/configMan/GetConfigProcessor.cpp
-    processors/configMan/ListConfigsProcessor.cpp
-    processors/configMan/SetConfigProcessor.cpp
-    processors/jobMan/JobManager.cpp
-    processors/jobMan/JobDescription.cpp
-    processors/jobMan/TaskDescription.cpp
-    processors/jobMan/JobStatus.cpp
-    processors/jobMan/AdminJobProcessor.cpp
-    processors/jobMan/ReportTaskProcessor.cpp
-    processors/jobMan/JobUtils.cpp
-    processors/jobMan/MetaJobExecutor.cpp
-    processors/jobMan/SimpleConcurrentJobExecutor.cpp
-    processors/jobMan/CompactJobExecutor.cpp
-    processors/jobMan/FlushJobExecutor.cpp
-    processors/jobMan/BalanceJobExecutor.cpp
-    processors/jobMan/RebuildJobExecutor.cpp
-    processors/jobMan/RebuildTagJobExecutor.cpp
-    processors/jobMan/RebuildEdgeJobExecutor.cpp
-    processors/jobMan/RebuildFTJobExecutor.cpp
-    processors/jobMan/StatisJobExecutor.cpp
-    processors/jobMan/GetStatisProcessor.cpp
-    processors/jobMan/ListTagIndexStatusProcessor.cpp
-    processors/jobMan/ListEdgeIndexStatusProcessor.cpp
-    processors/zoneMan/AddZoneProcessor.cpp
-    processors/zoneMan/DropZoneProcessor.cpp
-    processors/zoneMan/GetZoneProcessor.cpp
-    processors/zoneMan/ListZonesProcessor.cpp
-    processors/zoneMan/UpdateZoneProcessor.cpp
-    processors/zoneMan/AddGroupProcessor.cpp
-    processors/zoneMan/DropGroupProcessor.cpp
-    processors/zoneMan/GetGroupProcessor.cpp
-    processors/zoneMan/ListGroupsProcessor.cpp
-    processors/zoneMan/UpdateGroupProcessor.cpp
-    processors/listenerMan/ListenerProcessor.cpp
-    processors/sessionMan/SessionManagerProcessor.cpp
+    processors/config/RegConfigProcessor.cpp
+    processors/config/GetConfigProcessor.cpp
+    processors/config/ListConfigsProcessor.cpp
+    processors/config/SetConfigProcessor.cpp
+    processors/job/JobManager.cpp
+    processors/job/JobDescription.cpp
+    processors/job/TaskDescription.cpp
+    processors/job/JobStatus.cpp
+    processors/job/AdminJobProcessor.cpp
+    processors/job/ReportTaskProcessor.cpp
+    processors/job/JobUtils.cpp
+    processors/job/MetaJobExecutor.cpp
+    processors/job/SimpleConcurrentJobExecutor.cpp
+    processors/job/CompactJobExecutor.cpp
+    processors/job/FlushJobExecutor.cpp
+    processors/job/BalanceJobExecutor.cpp
+    processors/job/RebuildJobExecutor.cpp
+    processors/job/RebuildTagJobExecutor.cpp
+    processors/job/RebuildEdgeJobExecutor.cpp
+    processors/job/RebuildFTJobExecutor.cpp
+    processors/job/StatisJobExecutor.cpp
+    processors/job/GetStatisProcessor.cpp
+    processors/job/ListTagIndexStatusProcessor.cpp
+    processors/job/ListEdgeIndexStatusProcessor.cpp
+    processors/zone/AddZoneProcessor.cpp
+    processors/zone/DropZoneProcessor.cpp
+    processors/zone/GetZoneProcessor.cpp
+    processors/zone/ListZonesProcessor.cpp
+    processors/zone/UpdateZoneProcessor.cpp
+    processors/zone/AddGroupProcessor.cpp
+    processors/zone/DropGroupProcessor.cpp
+    processors/zone/GetGroupProcessor.cpp
+    processors/zone/ListGroupsProcessor.cpp
+    processors/zone/UpdateGroupProcessor.cpp
+    processors/listener/ListenerProcessor.cpp
+    processors/session/SessionManagerProcessor.cpp
 )
 
 nebula_add_library(

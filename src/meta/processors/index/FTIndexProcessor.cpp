@@ -5,7 +5,7 @@
  */
 
 #include "common/base/CommonMacro.h"
-#include "meta/processors/indexMan/FTIndexProcessor.h"
+#include "meta/processors/index/FTIndexProcessor.h"
 
 namespace nebula {
 namespace meta {

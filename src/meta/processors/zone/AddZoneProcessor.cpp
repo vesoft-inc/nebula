@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/zoneMan/AddZoneProcessor.h"
+#include "meta/processors/zone/AddZoneProcessor.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 

@@ -7,7 +7,7 @@
 #ifndef META_FLUSHJOBEXECUTOR_H_
 #define META_FLUSHJOBEXECUTOR_H_
 
-#include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
+#include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
 namespace nebula {
 namespace meta {

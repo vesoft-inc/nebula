@@ -7,7 +7,7 @@
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/SnapShot.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {

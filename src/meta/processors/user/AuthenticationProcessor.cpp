@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/usersMan/AuthenticationProcessor.h"
+#include "meta/processors/user/AuthenticationProcessor.h"
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 namespace nebula {

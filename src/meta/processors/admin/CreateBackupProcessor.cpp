@@ -9,7 +9,7 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/SnapShot.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobManager.h"
 
 
 namespace nebula {

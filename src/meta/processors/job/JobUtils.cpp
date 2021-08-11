@@ -5,7 +5,7 @@
  */
 
 #include "common/base/Base.h"
-#include "meta/processors/jobMan/JobUtils.h"
+#include "meta/processors/job/JobUtils.h"
 #include <stdexcept>
 #include <vector>
 #include <boost/stacktrace.hpp>

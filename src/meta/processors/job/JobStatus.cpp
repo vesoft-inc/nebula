@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/job/JobStatus.h"
 #include <folly/String.h>
 
 namespace nebula {

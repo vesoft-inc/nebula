@@ -11,7 +11,7 @@
 #include "common/base/ErrorOr.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/job/JobDescription.h"
 
 namespace nebula {
 namespace meta {

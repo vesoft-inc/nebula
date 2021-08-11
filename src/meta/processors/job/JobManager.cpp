@@ -16,10 +16,10 @@
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/jobMan/JobManager.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/TaskDescription.h"
-#include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/job/JobManager.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/TaskDescription.h"
+#include "meta/processors/job/JobStatus.h"
 #include "meta/MetaServiceUtils.h"
 
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");

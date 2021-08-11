@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/RebuildEdgeJobExecutor.h"
+#include "meta/processors/job/RebuildEdgeJobExecutor.h"
 
 namespace nebula {
 namespace meta {

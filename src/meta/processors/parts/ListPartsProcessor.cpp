@@ -5,7 +5,7 @@
  */
 
 #include "meta/ActiveHostsMan.h"
-#include "meta/processors/partsMan/ListPartsProcessor.h"
+#include "meta/processors/parts/ListPartsProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
 DECLARE_int32(heartbeat_interval_secs);

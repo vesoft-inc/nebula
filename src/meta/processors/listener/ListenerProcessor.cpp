@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/listenerMan/ListenerProcessor.h"
+#include "meta/processors/listener/ListenerProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_int32(heartbeat_interval_secs);

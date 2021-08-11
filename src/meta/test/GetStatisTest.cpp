@@ -12,9 +12,9 @@
 #include "meta/test/TestUtils.h"
 #include "meta/test/MockAdminClient.h"
 #include "kvstore/Common.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobManager.h"
-#include "meta/processors/jobMan/GetStatisProcessor.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/JobManager.h"
+#include "meta/processors/job/GetStatisProcessor.h"
 
 namespace nebula {
 namespace meta {

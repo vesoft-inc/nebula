@@ -8,7 +8,7 @@
 #define META_SIMPLECONCURRENTJOBEXECUTOR_H_
 
 #include "interface/gen-cpp2/common_types.h"
-#include "meta/processors/jobMan/MetaJobExecutor.h"
+#include "meta/processors/job/MetaJobExecutor.h"
 
 namespace nebula {
 namespace meta {

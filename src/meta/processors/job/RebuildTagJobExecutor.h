@@ -7,7 +7,7 @@
 #ifndef META_REBUILDTAGJOBEXECUTOR_H_
 #define META_REBUILDTAGJOBEXECUTOR_H_
 
-#include "meta/processors/jobMan/RebuildJobExecutor.h"
+#include "meta/processors/job/RebuildJobExecutor.h"
 
 namespace nebula {
 namespace meta {

@@ -6,7 +6,7 @@
 
 #include "meta/common/MetaCommon.h"
 #include "meta/MetaServiceUtils.h"
-#include "meta/processors/jobMan/StatisJobExecutor.h"
+#include "meta/processors/job/StatisJobExecutor.h"
 #include "meta/processors/Common.h"
 #include "common/utils/Utils.h"
 

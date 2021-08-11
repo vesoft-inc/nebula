@@ -6,7 +6,7 @@
 
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
+#include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
 namespace nebula {
 namespace meta {

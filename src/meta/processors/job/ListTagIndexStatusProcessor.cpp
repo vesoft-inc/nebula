@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/ListTagIndexStatusProcessor.h"
+#include "meta/processors/job/ListTagIndexStatusProcessor.h"
 
 namespace nebula {
 namespace meta {

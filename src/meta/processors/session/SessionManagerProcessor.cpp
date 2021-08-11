@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/sessionMan/SessionManagerProcessor.h"
+#include "meta/processors/session/SessionManagerProcessor.h"
 
 namespace nebula {
 namespace meta {

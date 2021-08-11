@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/partsMan/CreateSpaceProcessor.h"
+#include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");

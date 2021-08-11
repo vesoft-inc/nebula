@@ -5,7 +5,7 @@
 */
 
 #include "meta/upgradeData/oldThrift/MetaServiceUtilsV1.h"
-#include "meta/processors/jobMan/JobUtils.h"
+#include "meta/processors/job/JobUtils.h"
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>

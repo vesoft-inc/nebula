@@ -24,7 +24,7 @@
 #include "meta/MetaHttpReplaceHostHandler.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobManager.h"
 #include "meta/RootUserMan.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaVersionMan.h"

@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/TaskDescription.h"
-#include "meta/processors/jobMan/JobStatus.h"
-#include "meta/processors/jobMan/JobUtils.h"
+#include "meta/processors/job/TaskDescription.h"
+#include "meta/processors/job/JobStatus.h"
+#include "meta/processors/job/JobUtils.h"
 #include "common/time/WallClock.h"
 #include "meta/MetaServiceUtils.h"
 #include <folly/String.h>

@@ -15,10 +15,10 @@
 #include <folly/concurrency/UnboundedQueue.h>
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/jobMan/JobStatus.h"
-#include "meta/processors/jobMan/JobDescription.h"
-#include "meta/processors/jobMan/TaskDescription.h"
-#include "meta/processors/jobMan/MetaJobExecutor.h"
+#include "meta/processors/job/JobStatus.h"
+#include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/TaskDescription.h"
+#include "meta/processors/job/MetaJobExecutor.h"
 
 namespace nebula {
 namespace meta {

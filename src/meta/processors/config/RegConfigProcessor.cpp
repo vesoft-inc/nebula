@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/configMan/RegConfigProcessor.h"
+#include "meta/processors/config/RegConfigProcessor.h"
 
 namespace nebula {
 namespace meta {

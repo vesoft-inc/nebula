@@ -5,7 +5,7 @@
  */
 
 #include "common/base/CommonMacro.h"
-#include "meta/processors/indexMan/CreateEdgeIndexProcessor.h"
+#include "meta/processors/index/CreateEdgeIndexProcessor.h"
 
 namespace nebula {
 namespace meta {

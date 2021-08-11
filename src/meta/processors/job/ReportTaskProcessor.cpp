@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/jobMan/ReportTaskProcessor.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/ReportTaskProcessor.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
 
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobManager.h"
 
 void ReportTaskProcessor::process(const cpp2::ReportTaskReq& req) {
     JobManager* jobMgr = JobManager::getInstance();

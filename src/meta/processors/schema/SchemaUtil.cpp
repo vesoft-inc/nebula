@@ -8,7 +8,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/time/TimeUtils.h"
 
-#include "meta/processors/schemaMan/SchemaUtil.h"
+#include "meta/processors/schema/SchemaUtil.h"
 #include "common/utils/DefaultValueContext.h"
 
 namespace nebula {

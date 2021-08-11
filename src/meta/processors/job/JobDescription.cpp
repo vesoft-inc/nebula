@@ -9,8 +9,8 @@
 #include <boost/stacktrace.hpp>
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/JobDescription.h"
 #include "kvstore/KVIterator.h"
 
 namespace nebula {

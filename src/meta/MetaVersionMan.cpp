@@ -7,8 +7,8 @@
 #include "meta/MetaVersionMan.h"
 #include "meta/upgradeData/MetaDataUpgrade.h"
 #include "meta/upgradeData/oldThrift/MetaServiceUtilsV1.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/JobDescription.h"
 
 DEFINE_bool(null_type, true, "set schema to support null type");
 DEFINE_bool(print_info, false, "enable to print the rewrite data");

@@ -13,9 +13,9 @@
 #include "meta/test/TestUtils.h"
 #include "meta/test/MockAdminClient.h"
 #include "kvstore/Common.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/TaskDescription.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/TaskDescription.h"
+#include "meta/processors/job/JobManager.h"
 
 DECLARE_int32(ws_storage_http_port);
 

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/partsMan/ListHostsProcessor.h"
+#include "meta/processors/parts/ListHostsProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "version/Version.h"

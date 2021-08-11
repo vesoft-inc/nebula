@@ -8,8 +8,8 @@
 #define META_LISTTAGINDEXSTATUSPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobDescription.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/JobDescription.h"
 
 namespace nebula {
 namespace meta {

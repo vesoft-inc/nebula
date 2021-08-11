@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/zoneMan/GetZoneProcessor.h"
+#include "meta/processors/zone/GetZoneProcessor.h"
 
 namespace nebula {
 namespace meta {

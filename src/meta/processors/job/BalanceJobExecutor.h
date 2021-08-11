@@ -9,7 +9,7 @@
 
 #include "meta/processors/admin/BalanceTask.h"
 #include "meta/processors/admin/BalancePlan.h"
-#include "meta/processors/jobMan/SimpleConcurrentJobExecutor.h"
+#include "meta/processors/job/SimpleConcurrentJobExecutor.h"
 
 namespace nebula {
 namespace meta {

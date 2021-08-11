@@ -9,7 +9,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
-#include "meta/processors/jobMan/RebuildJobExecutor.h"
+#include "meta/processors/job/RebuildJobExecutor.h"
 #include "common/utils/Utils.h"
 
 DECLARE_int32(heartbeat_interval_secs);

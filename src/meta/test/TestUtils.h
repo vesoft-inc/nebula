@@ -18,9 +18,9 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/partsMan/ListHostsProcessor.h"
+#include "meta/processors/parts/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/processors/usersMan/AuthenticationProcessor.h"
+#include "meta/processors/user/AuthenticationProcessor.h"
 #include "meta/ActiveHostsMan.h"
 #include "common/utils/DefaultValueContext.h"
 #include <gtest/gtest.h>
