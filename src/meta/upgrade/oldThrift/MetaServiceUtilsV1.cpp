@@ -4,7 +4,7 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "meta/upgradeData/oldThrift/MetaServiceUtilsV1.h"
+#include "meta/upgrade/oldThrift/MetaServiceUtilsV1.h"
 #include "meta/processors/job/JobUtils.h"
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>

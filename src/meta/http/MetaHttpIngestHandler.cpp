@@ -5,7 +5,7 @@
  */
 
 #include "meta/MetaServiceUtils.h"
-#include "meta/MetaHttpIngestHandler.h"
+#include "meta/http/MetaHttpIngestHandler.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
 #include "common/network/NetworkUtils.h"

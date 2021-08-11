@@ -11,7 +11,7 @@
 #include "common/thread/GenericThreadPool.h"
 #include "common/http/HttpClient.h"
 #include <gtest/gtest.h>
-#include "meta/MetaHttpIngestHandler.h"
+#include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include <rocksdb/sst_file_writer.h>

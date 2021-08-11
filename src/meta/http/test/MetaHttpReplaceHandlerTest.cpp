@@ -11,7 +11,7 @@
 #include "webservice/WebService.h"
 #include "common/fs/TempDir.h"
 #include "common/thread/GenericThreadPool.h"
-#include "meta/MetaHttpReplaceHostHandler.h"
+#include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/test/TestUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/sst_file_writer.h>

@@ -6,7 +6,7 @@
 
 #include <sys/wait.h>
 #include <sys/types.h>
-#include "meta/MetaHttpDownloadHandler.h"
+#include "meta/http/MetaHttpDownloadHandler.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"

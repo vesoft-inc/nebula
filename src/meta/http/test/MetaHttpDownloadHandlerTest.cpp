@@ -10,7 +10,7 @@
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include <gtest/gtest.h>
-#include "meta/MetaHttpDownloadHandler.h"
+#include "meta/http/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
 #include "storage/http/StorageHttpDownloadHandler.h"

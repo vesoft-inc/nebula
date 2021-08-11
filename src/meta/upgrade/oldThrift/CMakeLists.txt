@@ -6,7 +6,7 @@ add_custom_command(
     gen-cpp2/old_meta_data.cpp
     gen-cpp2/old_meta_metadata.cpp
     gen-cpp2/old_meta_types.cpp
-    COMMAND "${THRIFT1}" "--strict" "--allow-neg-enum-vals" "--gen" "mstch_cpp2:include_prefix=\"meta/upgradeData/oldThrift\",process_in_event_base,stack_arguments"   "-o" "." "${CMAKE_CURRENT_SOURCE_DIR}/old_meta.thrift"
+    COMMAND "${THRIFT1}" "--strict" "--allow-neg-enum-vals" "--gen" "mstch_cpp2:include_prefix=\"meta/upgrade/oldThrift\",process_in_event_base,stack_arguments"   "-o" "." "${CMAKE_CURRENT_SOURCE_DIR}/old_meta.thrift"
     DEPENDS old_meta.thrift
 )
 

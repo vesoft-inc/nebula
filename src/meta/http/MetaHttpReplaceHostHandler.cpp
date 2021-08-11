@@ -6,7 +6,7 @@
 
 #include "meta/processors/Common.h"
 #include "meta/MetaServiceUtils.h"
-#include "meta/MetaHttpReplaceHostHandler.h"
+#include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
 #include "common/network/NetworkUtils.h"
