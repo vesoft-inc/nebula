@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://github.com/vesoft-inc/nebula/raw/master/docs/logo.png"/>
+  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
 <p align="center">
-  <a href="https://github.com/vesoft-inc/nebula-graph/actions?workflow=docker">
-    <img src="https://github.com/vesoft-inc/nebula-graph/workflows/docker/badge.svg" alt="build docker image workflow"/>
+  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
+    <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
   <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
     <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
@@ -66,7 +66,7 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 
 Contributions are warmly welcomed and greatly appreciated. And here are a few ways you can contribute:
 
-* Start by some [issues](https://github.com/vesoft-inc/nebula-graph/issues)
+* Start by some [issues](https://github.com/vesoft-inc/nebula/issues)
 * Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/master/15.contribution/how-to-contribute/).
 
 ## Licensing
