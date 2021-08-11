@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/customKV/MultiPutProcessor.h"
+#include "meta/processors/kv/MultiPutProcessor.h"
 
 namespace nebula {
 namespace meta {

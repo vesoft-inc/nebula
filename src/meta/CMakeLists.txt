@@ -31,12 +31,12 @@ nebula_add_library(
     processors/index/ListEdgeIndexesProcessor.cpp
     processors/index/FTServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
-    processors/customKV/GetProcessor.cpp
-    processors/customKV/MultiGetProcessor.cpp
-    processors/customKV/MultiPutProcessor.cpp
-    processors/customKV/RemoveProcessor.cpp
-    processors/customKV/RemoveRangeProcessor.cpp
-    processors/customKV/ScanProcessor.cpp
+    processors/kv/GetProcessor.cpp
+    processors/kv/MultiGetProcessor.cpp
+    processors/kv/MultiPutProcessor.cpp
+    processors/kv/RemoveProcessor.cpp
+    processors/kv/RemoveRangeProcessor.cpp
+    processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
     processors/admin/BalanceProcessor.cpp

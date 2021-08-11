@@ -5,7 +5,7 @@
  */
 
 
-#include "meta/processors/customKV/GetProcessor.h"
+#include "meta/processors/kv/GetProcessor.h"
 
 namespace nebula {
 namespace meta {

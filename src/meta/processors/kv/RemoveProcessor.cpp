@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/customKV/RemoveProcessor.h"
+#include "meta/processors/kv/RemoveProcessor.h"
 
 namespace nebula {
 namespace meta {
