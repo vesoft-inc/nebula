@@ -10,8 +10,6 @@
 namespace nebula {
 namespace storage {
 
-namespace {
-
 template<class Request, class RemoteFunc, class Response>
 struct ResponseContext {
 public:
@@ -68,7 +66,6 @@ private:
     bool fulfilled_{false};
 };
 
-}  // Anonymous namespace
 
 
 template<typename ClientType>
