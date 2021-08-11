@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.5.0)
 # Set the project name
 project("Nebula Package")
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/../cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake")
 
 message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
