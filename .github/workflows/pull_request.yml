@@ -21,12 +21,10 @@ jobs:
         with:
           fetch-depth: 2
       - name: Cpplint
-        env:
-          TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
           .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
-          git diff -U0 --no-color --staged | $TOOLSET/share/clang/clang-format-diff.py -p1
+          git diff -U0 --no-color --staged | "$(dirname "$(which clang-format)")"/../share/clang/clang-format-10/clang-format-diff.py -p1
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
@@ -55,10 +53,10 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
         TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
-        CCACHE_DIR: /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
+        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 8G
       volumes:
-        - /tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula-graph/${{ matrix.os }}-${{ matrix.compiler }}
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
       - name: Cleanup
@@ -122,7 +120,7 @@ jobs:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
-        timeout-minutes: 20
+        timeout-minutes: 40
       - name: Pytest
         run: |
           make up
@@ -136,7 +134,7 @@ jobs:
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
           make down
         working-directory: tests/
-        timeout-minutes: 25
+        timeout-minutes: 30
       - name: Sanitizer
         if: ${{ always() }}
         run: |
