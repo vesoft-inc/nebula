@@ -19,7 +19,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/upgrade/MetaDataUpgrade.h"
-#include "meta/upgrade/oldThrift/MetaServiceUtilsV1.h"
+#include "meta/upgrade/thrift/MetaServiceUtilsV1.h"
 
 DECLARE_bool(null_type);
 DECLARE_uint32(string_index_limit);

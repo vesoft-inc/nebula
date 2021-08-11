@@ -6,7 +6,7 @@
 
 #include "meta/MetaVersionMan.h"
 #include "meta/upgrade/MetaDataUpgrade.h"
-#include "meta/upgrade/oldThrift/MetaServiceUtilsV1.h"
+#include "meta/upgrade/thrift/MetaServiceUtilsV1.h"
 #include "meta/processors/job/JobUtils.h"
 #include "meta/processors/job/JobDescription.h"
 
