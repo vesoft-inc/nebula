@@ -20,6 +20,7 @@ namespace nebula {
 
 class Expression;
 
+// It's MT-Unsafe
 class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
 public:
     ObjectPool() {}
@@ -27,7 +28,6 @@ public:
     ~ObjectPool() = default;
 
     void clear() {
-        folly::SpinLockGuard g(lock_);
         objects_.clear();
     }
 
@@ -36,7 +36,6 @@ public:
         if constexpr (std::is_same_v<T, Expression>) {
             VLOG(3) << "New expression added into pool: " << obj->toString();
         }
-        folly::SpinLockGuard g(lock_);
         objects_.emplace_back(obj);
         return obj;
     }
@@ -68,8 +67,6 @@ private:
     };
 
     std::list<OwnershipHolder> objects_;
-
-    folly::SpinLock lock_;
 };
 
 }   // namespace nebula
