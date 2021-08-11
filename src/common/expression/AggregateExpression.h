@@ -24,7 +24,6 @@ public:
                                      const std::string& name = "",
                                      Expression* arg = nullptr,
                                      bool distinct = false) {
-        DCHECK(!!pool);
         return pool->add(new AggregateExpression(pool, name, arg, distinct));
     }
 

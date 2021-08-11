@@ -21,7 +21,6 @@ public:
                                   const std::string& innerVar = "",
                                   Expression* collection = nullptr,
                                   Expression* mapping = nullptr) {
-        DCHECK(!!pool);
         return pool->add(
             new ReduceExpression(pool, accumulator, initial, innerVar, collection, mapping));
     }

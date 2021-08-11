@@ -20,7 +20,6 @@ public:
     static AttributeExpression *make(ObjectPool *pool,
                                      Expression *lhs = nullptr,
                                      Expression *rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new AttributeExpression(pool, lhs, rhs));
     }
 

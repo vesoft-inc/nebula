@@ -19,7 +19,6 @@ public:
     PathBuildExpression& operator=(PathBuildExpression&&) = delete;
 
     static PathBuildExpression* make(ObjectPool* pool ) {
-        DCHECK(!!pool);
         return pool->add(new PathBuildExpression(pool));
     }
 

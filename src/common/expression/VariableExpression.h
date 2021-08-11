@@ -15,7 +15,6 @@ public:
     static VariableExpression* make(ObjectPool* pool,
                                     const std::string& var = "",
                                     bool isInner = false) {
-        DCHECK(!!pool);
         return pool->add(new VariableExpression(pool, var, isInner));
     }
 
@@ -67,7 +66,6 @@ public:
     static VersionedVariableExpression* make(ObjectPool* pool,
                                              const std::string& var = "",
                                              Expression* version = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new VersionedVariableExpression(pool, var, version));
     }
 

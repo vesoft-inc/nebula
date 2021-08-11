@@ -18,7 +18,6 @@ public:
                                     const std::string& from,
                                     const std::string& prop,
                                     const std::string& val) {
-        DCHECK(!!pool);
         return pool->add(new TextSearchArgument(from, prop, val));
     }
 
@@ -93,22 +92,18 @@ private:
 class TextSearchExpression : public Expression {
 public:
     static TextSearchExpression* makePrefix(ObjectPool* pool, TextSearchArgument* arg) {
-        DCHECK(!!pool);
         return pool->add(new TextSearchExpression(pool, Kind::kTSPrefix, arg));
     }
 
     static TextSearchExpression* makeWildcard(ObjectPool* pool, TextSearchArgument* arg) {
-        DCHECK(!!pool);
         return pool->add(new TextSearchExpression(pool, Kind::kTSWildcard, arg));
     }
 
     static TextSearchExpression* makeRegexp(ObjectPool* pool, TextSearchArgument* arg) {
-        DCHECK(!!pool);
         return pool->add(new TextSearchExpression(pool, Kind::kTSRegexp, arg));
     }
 
     static TextSearchExpression* makeFuzzy(ObjectPool* pool, TextSearchArgument* arg) {
-        DCHECK(!!pool);
         return pool->add(new TextSearchExpression(pool, Kind::kTSFuzzy, arg));
     }
 

@@ -23,7 +23,6 @@ public:
     static LabelAttributeExpression* make(ObjectPool* pool,
                                           LabelExpression* lhs = nullptr,
                                           ConstantExpression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new LabelAttributeExpression(pool, lhs, rhs));
     }
 

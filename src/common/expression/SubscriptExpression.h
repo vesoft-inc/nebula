@@ -17,7 +17,6 @@ public:
     static SubscriptExpression* make(ObjectPool* pool,
                                      Expression* lhs = nullptr,
                                      Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new SubscriptExpression(pool, lhs, rhs));
     }
 
@@ -47,7 +46,6 @@ public:
                                           Expression* list = nullptr,
                                           Expression* lo = nullptr,
                                           Expression* hi = nullptr) {
-        DCHECK(!!pool);
         return !list && !lo && !hi ? pool->add(new SubscriptRangeExpression(pool))
                                    : pool->add(new SubscriptRangeExpression(pool, list, lo, hi));
     }

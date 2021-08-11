@@ -71,7 +71,6 @@ public:
     static EdgePropertyExpression* make(ObjectPool* pool,
                                         const std::string& edge = "",
                                         const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new EdgePropertyExpression(pool, edge, prop));
     }
 
@@ -102,7 +101,6 @@ public:
     static TagPropertyExpression* make(ObjectPool* pool,
                                        const std::string& tag = "",
                                        const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new TagPropertyExpression(pool, tag, prop));
     }
 
@@ -131,7 +129,6 @@ public:
     InputPropertyExpression& operator=(InputPropertyExpression&&) = delete;
 
     static InputPropertyExpression* make(ObjectPool* pool, const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new InputPropertyExpression(pool, prop));
     }
 
@@ -157,7 +154,6 @@ public:
     static VariablePropertyExpression* make(ObjectPool* pool,
                                             const std::string& var = "",
                                             const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new VariablePropertyExpression(pool, var, prop));
     }
 
@@ -187,7 +183,6 @@ public:
     static SourcePropertyExpression* make(ObjectPool* pool,
                                           const std::string& tag = "",
                                           const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new SourcePropertyExpression(pool, tag, prop));
     }
 
@@ -218,7 +213,6 @@ public:
     static DestPropertyExpression* make(ObjectPool* pool,
                                         const std::string& tag = "",
                                         const std::string& prop = "") {
-        DCHECK(!!pool);
         return pool->add(new DestPropertyExpression(pool, tag, prop));
     }
 
@@ -244,7 +238,6 @@ public:
     EdgeSrcIdExpression& operator=(EdgeSrcIdExpression&&) = delete;
 
     static EdgeSrcIdExpression* make(ObjectPool* pool, const std::string& edge = "") {
-        DCHECK(!!pool);
         return pool->add(new EdgeSrcIdExpression(pool, edge));
     }
 
@@ -271,7 +264,6 @@ public:
     EdgeTypeExpression& operator=(EdgeTypeExpression&&) = delete;
 
     static EdgeTypeExpression* make(ObjectPool* pool, const std::string& edge = "") {
-        DCHECK(!!pool);
         return pool->add(new EdgeTypeExpression(pool, edge));
     }
 
@@ -298,7 +290,6 @@ public:
     EdgeRankExpression& operator=(EdgeRankExpression&&) = delete;
 
     static EdgeRankExpression* make(ObjectPool* pool, const std::string& edge = "") {
-        DCHECK(!!pool);
         return pool->add(new EdgeRankExpression(pool, edge));
     }
 
@@ -325,7 +316,6 @@ public:
     EdgeDstIdExpression& operator=(EdgeDstIdExpression&&) = delete;
 
     static EdgeDstIdExpression* make(ObjectPool* pool, const std::string& edge = "") {
-        DCHECK(!!pool);
         return pool->add(new EdgeDstIdExpression(pool, edge));
     }
 

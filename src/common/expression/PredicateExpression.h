@@ -31,7 +31,6 @@ public:
                                      const std::string& innerVar = "",
                                      Expression* collection = nullptr,
                                      Expression* filter = nullptr) {
-        DCHECK(!!pool);
         return pool->add(new PredicateExpression(pool, name, innerVar, collection, filter));
     }
 

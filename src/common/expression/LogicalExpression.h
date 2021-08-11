@@ -18,7 +18,6 @@ public:
     static LogicalExpression* makeAnd(ObjectPool* pool,
                                       Expression* lhs = nullptr,
                                       Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalAnd, lhs, rhs))
                             : pool->add(new LogicalExpression(pool, Kind::kLogicalAnd));
     }
@@ -26,7 +25,6 @@ public:
     static LogicalExpression* makeOr(ObjectPool* pool,
                                      Expression* lhs = nullptr,
                                      Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalOr, lhs, rhs))
                             : pool->add(new LogicalExpression(pool, Kind::kLogicalOr));
     }
@@ -34,7 +32,6 @@ public:
     static LogicalExpression* makeXor(ObjectPool* pool,
                                       Expression* lhs = nullptr,
                                       Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalXor, lhs, rhs))
                             : pool->add(new LogicalExpression(pool, Kind::kLogicalXor));
     }
@@ -43,7 +40,6 @@ public:
                                        Kind kind,
                                        Expression* lhs = nullptr,
                                        Expression* rhs = nullptr) {
-        DCHECK(!!pool);
         return (lhs && rhs) ? pool->add(new LogicalExpression(pool, kind, lhs, rhs))
                             : pool->add(new LogicalExpression(pool, kind));
     }
