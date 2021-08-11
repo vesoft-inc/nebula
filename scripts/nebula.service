@@ -4,7 +4,7 @@ function usage {
     echo "Usage: ${USAGE_INFO}"
 }
 
-[[ -z ${USAGE_INFO} ]] && USAGE_INFO="${0} [-v] [-c /path/to/config] <start|stop|restart|status|kill> <metad|storaged|all>"
+[[ -z ${USAGE_INFO} ]] && USAGE_INFO="${0} [-v] [-c /path/to/config] <start|stop|restart|status|kill> <metad|graphd|storaged|all>"
 
 if [[ $# == 0 ]]; then
     usage
@@ -82,11 +82,14 @@ case ${TARGET} in
     metad)
         TARGETS=(${TARGET})
         ;;
+    graphd)
+        TARGETS=(${TARGET})
+        ;;
     storaged)
         TARGETS=(${TARGET})
         ;;
     all)
-        TARGETS=(metad storaged)
+        TARGETS=(metad graphd storaged)
         ;;
     *)
         ERROR "Unknown daemon \`${DAEMON}'"
