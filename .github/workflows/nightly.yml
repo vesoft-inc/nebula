@@ -1,4 +1,4 @@
-name: package
+name: nightly
 
 on:
   schedule:
