@@ -4,12 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METAHTTPDOWNLOADHANDLER_H_
-#define META_METAHTTPDOWNLOADHANDLER_H_
+#ifndef META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
+#define META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
 
 #include "common/base/Base.h"
 #include "webservice/Common.h"
-#include "common/hdfs/HdfsHelper.h"
 #include "common/thread/GenericThreadPool.h"
 #include "kvstore/KVStore.h"
 #include <proxygen/httpserver/RequestHandler.h>
@@ -19,13 +18,13 @@ namespace meta {
 
 using nebula::HttpCode;
 
-class MetaHttpDownloadHandler : public proxygen::RequestHandler {
-public:
-    MetaHttpDownloadHandler() = default;
+class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
+    FRIEND_TEST(MetaHttpReplaceHandlerTest, FooTest);
 
-    void init(nebula::kvstore::KVStore *kvstore,
-              nebula::hdfs::HdfsHelper *helper,
-              nebula::thread::GenericThreadPool *pool);
+public:
+    MetaHttpReplaceHostHandler() = default;
+
+    void init(nebula::kvstore::KVStore *kvstore);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -39,23 +38,18 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-private:
-    bool dispatchSSTFiles(const std::string& host,
-                          int32_t port,
-                          const std::string& path);
+    bool replaceHost(std::string ipv4From, std::string ipv4To);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string hdfsHost_;
-    int32_t hdfsPort_;
-    std::string hdfsPath_;
-    GraphSpaceID spaceID_;
+    std::string errMsg_;
+    std::string ipv4From_;
+    std::string ipv4To_;
     nebula::kvstore::KVStore *kvstore_;
-    nebula::hdfs::HdfsHelper *helper_;
-    nebula::thread::GenericThreadPool *pool_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_METAHTTPDOWNLOADHANDLER_H_
+#endif  // META_HTTP_METAHTTPReplaceHostHANDLER_H
+

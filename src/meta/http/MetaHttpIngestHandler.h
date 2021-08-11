@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METAHTTPREPLACEHOSTHANDLER_H
-#define META_METAHTTPREPLACEHOSTHANDLER_H
+#ifndef META_HTTP_METAHTTPINGESTHANDLER_H
+#define META_HTTP_METAHTTPINGESTHANDLER_H
 
 #include "common/base/Base.h"
 #include "webservice/Common.h"
@@ -18,13 +18,12 @@ namespace meta {
 
 using nebula::HttpCode;
 
-class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
-    FRIEND_TEST(MetaHttpReplaceHandlerTest, FooTest);
-
+class MetaHttpIngestHandler : public proxygen::RequestHandler {
 public:
-    MetaHttpReplaceHostHandler() = default;
+    MetaHttpIngestHandler() = default;
 
-    void init(nebula::kvstore::KVStore *kvstore);
+    void init(nebula::kvstore::KVStore *kvstore,
+              nebula::thread::GenericThreadPool *pool);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -38,18 +37,17 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-    bool replaceHost(std::string ipv4From, std::string ipv4To);
+    bool ingestSSTFiles(GraphSpaceID space);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string errMsg_;
-    std::string ipv4From_;
-    std::string ipv4To_;
+    GraphSpaceID space_;
     nebula::kvstore::KVStore *kvstore_;
+    nebula::thread::GenericThreadPool *pool_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_METAHTTPReplaceHostHANDLER_H
+#endif  // META_HTTP_METAHTTPINGESTHANDLER_H
 
