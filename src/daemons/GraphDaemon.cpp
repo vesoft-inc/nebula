@@ -32,12 +32,14 @@ using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
+static void setupBreakpad();
 
 DECLARE_string(flagfile);
 
@@ -89,6 +91,9 @@ int main(int argc, char *argv[]) {
   } else {
     // Write the current pid into the pid file
     status = ProcessUtils::makePidFile(pidPath);
+
+    setupBreakpad();
+
     if (!status.ok()) {
       LOG(ERROR) << status;
       return EXIT_FAILURE;
@@ -178,6 +183,12 @@ int main(int argc, char *argv[]) {
   FLOG_INFO("nebula-graphd on %s:%d has been stopped", localhost.host.c_str(), localhost.port);
 
   return EXIT_SUCCESS;
+}
+
+void setupBreakpad() {
+  google_breakpad::MinidumpDescriptor descriptor(FLAGS_log_dir);
+  gExceptionHandler = std::make_unique<google_breakpad::ExceptionHandler>(
+      descriptor, nullptr, nullptr, nullptr, true, -1);
 }
 
 Status setupSignalHandler() {
