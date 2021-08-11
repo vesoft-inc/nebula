@@ -16,14 +16,14 @@
 
 #include "common/datatypes/CommonCpp2Ops.h"
 #include "common/datatypes/Value.h"
-#include "common/datatypes/DataSetOps.inl"
-#include "common/datatypes/DateOps.inl"
-#include "common/datatypes/PathOps.inl"
-#include "common/datatypes/VertexOps.inl"
-#include "common/datatypes/EdgeOps.inl"
-#include "common/datatypes/ListOps.inl"
-#include "common/datatypes/MapOps.inl"
-#include "common/datatypes/SetOps.inl"
+#include "common/datatypes/DataSetOps-inl.h"
+#include "common/datatypes/DateOps-inl.h"
+#include "common/datatypes/PathOps-inl.h"
+#include "common/datatypes/VertexOps-inl.h"
+#include "common/datatypes/EdgeOps-inl.h"
+#include "common/datatypes/ListOps-inl.h"
+#include "common/datatypes/MapOps-inl.h"
+#include "common/datatypes/SetOps-inl.h"
 
 namespace apache {
 namespace thrift {

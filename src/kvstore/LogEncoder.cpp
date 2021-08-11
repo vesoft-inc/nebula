@@ -6,7 +6,7 @@
 
 #include "common/base/Base.h"
 #include "common/time/WallClock.h"
-#include "common/datatypes/HostAddrOps.inl"
+#include "common/datatypes/HostAddrOps-inl.h"
 #include "kvstore/LogEncoder.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>

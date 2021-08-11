@@ -211,6 +211,6 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 
-#include "storage/query/QueryBaseProcessor.inl"
+#include "storage/query/QueryBaseProcessor-inl.h"
 
 #endif  // STORAGE_QUERY_QUERYBASEPROCESSOR_H_

@@ -88,7 +88,7 @@ private:
 }  // namespace nebula
 
 
-#include "codec/test/RowWriterV1.inl"
+#include "codec/test/RowWriterV1-inl.h"
 
 #endif  // CODEC_TEST_ROWWRITERV1_H_
 

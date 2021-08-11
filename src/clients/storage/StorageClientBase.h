@@ -259,6 +259,6 @@ private:
 }   // namespace storage
 }   // namespace nebula
 
-#include "clients/storage/StorageClientBase.inl"
+#include "clients/storage/StorageClientBase-inl.h"
 
 #endif  // CLIENTS_STORAGE_STORAGECLIENTBASE_H_

@@ -272,7 +272,7 @@ protected:
 }  // namespace meta
 }  // namespace nebula
 
-#include "meta/processors/BaseProcessor.inl"
+#include "meta/processors/BaseProcessor-inl.h"
 
 #endif  // META_BASEPROCESSOR_H_
 
