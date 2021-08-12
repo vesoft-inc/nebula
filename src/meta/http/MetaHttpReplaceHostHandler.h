@@ -4,8 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
-#define META_HTTP_METAHTTPREPLACEHOSTHANDLER_H
+#pragma once
 
 #include "common/base/Base.h"
 #include "webservice/Common.h"
@@ -50,6 +49,3 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-
-#endif  // META_HTTP_METAHTTPReplaceHostHANDLER_H
-
