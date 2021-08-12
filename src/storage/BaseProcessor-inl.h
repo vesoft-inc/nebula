@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 #include "storage/BaseProcessor.h"
 
 namespace nebula {

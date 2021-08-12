@@ -214,6 +214,6 @@ private:
 }  // namespace stats
 }  // namespace nebula
 
-#include "common/stats/StatsManager.inl"
+#include "common/stats/StatsManager-inl.h"
 
 #endif  // COMMON_STATS_STATSMANAGER_H_

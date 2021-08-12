@@ -14,17 +14,17 @@ namespace csharp nebula
 namespace py nebula2.common
 
 cpp_include "common/thrift/ThriftTypes.h"
-cpp_include "common/datatypes/DateOps.inl"
-cpp_include "common/datatypes/VertexOps.inl"
-cpp_include "common/datatypes/EdgeOps.inl"
-cpp_include "common/datatypes/PathOps.inl"
-cpp_include "common/datatypes/ValueOps.inl"
-cpp_include "common/datatypes/MapOps.inl"
-cpp_include "common/datatypes/ListOps.inl"
-cpp_include "common/datatypes/SetOps.inl"
-cpp_include "common/datatypes/DataSetOps.inl"
-cpp_include "common/datatypes/KeyValueOps.inl"
-cpp_include "common/datatypes/HostAddrOps.inl"
+cpp_include "common/datatypes/DateOps-inl.h"
+cpp_include "common/datatypes/VertexOps-inl.h"
+cpp_include "common/datatypes/EdgeOps-inl.h"
+cpp_include "common/datatypes/PathOps-inl.h"
+cpp_include "common/datatypes/ValueOps-inl.h"
+cpp_include "common/datatypes/MapOps-inl.h"
+cpp_include "common/datatypes/ListOps-inl.h"
+cpp_include "common/datatypes/SetOps-inl.h"
+cpp_include "common/datatypes/DataSetOps-inl.h"
+cpp_include "common/datatypes/KeyValueOps-inl.h"
+cpp_include "common/datatypes/HostAddrOps-inl.h"
 
 /*
  *

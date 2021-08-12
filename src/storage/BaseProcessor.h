@@ -132,6 +132,6 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 
-#include "storage/BaseProcessor.inl"
+#include "storage/BaseProcessor-inl.h"
 
 #endif  // STORAGE_BASEPROCESSOR_H_

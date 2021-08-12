@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 namespace nebula {
 
 template<typename T>
@@ -46,4 +48,3 @@ RowWriterV1::writeInt(T v) {
 }
 
 }  // namespace nebula
-

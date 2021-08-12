@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 namespace nebula {
 namespace stats {
 
@@ -29,4 +31,3 @@ StatsManager::VT StatsManager::readValue(StatsHolder& stats,
 
 }  // namespace stats
 }  // namespace nebula
-

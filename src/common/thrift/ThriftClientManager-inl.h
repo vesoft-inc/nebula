@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>

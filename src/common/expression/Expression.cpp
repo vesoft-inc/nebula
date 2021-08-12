@@ -8,7 +8,7 @@
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
-#include "common/datatypes/ValueOps.inl"
+#include "common/datatypes/ValueOps-inl.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/ConstantExpression.h"

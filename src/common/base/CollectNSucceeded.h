@@ -77,6 +77,6 @@ auto collectNSucceeded(Collection&& c,
 
 }  // namespace nebula
 
-#include "common/base/CollectNSucceeded.inl"
+#include "common/base/CollectNSucceeded-inl.h"
 
 #endif  // COMMON_BASE_COLLECTNSUCCEEDED_H_

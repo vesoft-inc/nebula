@@ -25,11 +25,11 @@ if [ $# -eq 0 ];then
         echo "You have unstaged changes, please stage or stash them first."
         exit 1
     fi
-    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
+    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
 else
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
-                          -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
+                          -name "*.[h]" -o -name "*.cpp" \
                           | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*' \
                           | grep -v 'com_vesoft_client_NativeClient.h' \
                           | grep -v 'com_vesoft_nebula_NebulaCodec.h')
@@ -43,7 +43,7 @@ fi
 
 echo "Performing C++ linters..."
 
-CPPLINT_EXTENS=cpp,h,inl
+CPPLINT_EXTENS=cpp,h
 CPPLINT_FILTER=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references,-build/c++11
 
 python3 $CPPLINT --quiet --extensions=$CPPLINT_EXTENS \

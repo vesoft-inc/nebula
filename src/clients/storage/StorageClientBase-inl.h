@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 #include <folly/Try.h>
 #include "common/time/WallClock.h"
 
 namespace nebula {
 namespace storage {
-
-namespace {
 
 template<class Request, class RemoteFunc, class Response>
 struct ResponseContext {
@@ -68,7 +68,6 @@ private:
     bool fulfilled_{false};
 };
 
-}  // Anonymous namespace
 
 
 template<typename ClientType>
