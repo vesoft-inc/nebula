@@ -10,7 +10,7 @@
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/test/TestUtils.h"
 #include "common/utils/Utils.h"
-#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {

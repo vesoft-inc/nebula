@@ -89,5 +89,5 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 
-#include "storage/index/LookupBaseProcessor.inl"
+#include "storage/index/LookupBaseProcessor-inl.h"
 #endif  // STORAGE_QUERY_LOOKUPBASEPROCESSOR_H_

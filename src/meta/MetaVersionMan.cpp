@@ -5,10 +5,10 @@
  */
 
 #include "meta/MetaVersionMan.h"
-#include "meta/upgradeData/MetaDataUpgrade.h"
-#include "meta/upgradeData/oldThrift/MetaServiceUtilsV1.h"
-#include "meta/processors/jobMan/JobUtils.h"
-#include "meta/processors/jobMan/JobDescription.h"
+#include "meta/upgrade/MetaDataUpgrade.h"
+#include "meta/upgrade/v1/MetaServiceUtilsV1.h"
+#include "meta/processors/job/JobUtils.h"
+#include "meta/processors/job/JobDescription.h"
 
 DEFINE_bool(null_type, true, "set schema to support null type");
 DEFINE_bool(print_info, false, "enable to print the rewrite data");
@@ -100,7 +100,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
     MetaDataUpgrade upgrader(kv);
     {
         // kSpacesTable
-        auto prefix = nebula::oldmeta::kSpacesTable;
+        auto prefix = nebula::meta::v1::kSpacesTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -121,7 +121,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     {
         // kPartsTable
-        auto prefix = nebula::oldmeta::kPartsTable;
+        auto prefix = nebula::meta::v1::kPartsTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -142,7 +142,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     {
         // kHostsTable
-        auto prefix = nebula::oldmeta::kHostsTable;
+        auto prefix = nebula::meta::v1::kHostsTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -162,7 +162,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
     }
     {
         // kLeadersTable
-        auto prefix = nebula::oldmeta::kLeadersTable;
+        auto prefix = nebula::meta::v1::kLeadersTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -182,7 +182,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
     }
     {
         // kTagsTable
-        auto prefix = nebula::oldmeta::kTagsTable;
+        auto prefix = nebula::meta::v1::kTagsTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -203,7 +203,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     {
         // kEdgesTable
-        auto prefix = nebula::oldmeta::kEdgesTable;
+        auto prefix = nebula::meta::v1::kEdgesTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -224,7 +224,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     {
         // kIndexesTable
-        auto prefix = nebula::oldmeta::kIndexesTable;
+        auto prefix = nebula::meta::v1::kIndexesTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -245,7 +245,7 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     {
         // kConfigsTable
-        auto prefix = nebula::oldmeta::kConfigsTable;
+        auto prefix = nebula::meta::v1::kConfigsTable;
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -296,21 +296,21 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
 
     // delete
     {
-        std::vector<std::string> prefixes({nebula::oldmeta::kIndexStatusTable,
-                                           nebula::oldmeta::kDefaultTable,
-                                           nebula::oldmeta::kCurrJob,
-                                           nebula::oldmeta::kJobArchive});
+        std::vector<std::string> prefixes({nebula::meta::v1::kIndexStatusTable,
+                                           nebula::meta::v1::kDefaultTable,
+                                           nebula::meta::v1::kCurrJob,
+                                           nebula::meta::v1::kJobArchive});
         std::unique_ptr <kvstore::KVIterator> iter;
         for (auto &prefix : prefixes) {
             auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
             if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
                 Status status = Status::OK();
                 while (iter->valid()) {
-                    if (prefix == nebula::oldmeta::kIndexesTable) {
+                    if (prefix == nebula::meta::v1::kIndexesTable) {
                         if (FLAGS_print_info) {
                             upgrader.printIndexes(iter->val());
                         }
-                        auto oldItem = oldmeta::MetaServiceUtilsV1::parseIndex(iter->val());
+                        auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(iter->val());
                         auto spaceId = MetaServiceUtils::parseIndexesKeySpaceID(iter->key());
                         status = upgrader.deleteKeyVal(
                                 MetaServiceUtils::indexIndexKey(spaceId, oldItem.get_index_name()));

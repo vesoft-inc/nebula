@@ -8,7 +8,7 @@
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
-#include "common/datatypes/ValueOps.inl"
+#include "common/datatypes/ValueOps-inl.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/ConstantExpression.h"
@@ -176,6 +176,8 @@ Expression* Expression::Decoder::readExpression(ObjectPool* pool) noexcept {
  *  class Expression
  *
  ***************************************/
+Expression::Expression(ObjectPool* pool, Kind kind) : pool_(DCHECK_NOTNULL(pool)), kind_(kind) {}
+
 // static
 std::string Expression::encode(const Expression& exp) {
     return exp.encode();

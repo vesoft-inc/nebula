@@ -16,7 +16,6 @@ class UUIDExpression final : public Expression {
 
 public:
     static UUIDExpression* make(ObjectPool* pool, const std::string& field = "") {
-        DCHECK(!!pool);
         return pool->add(new UUIDExpression(pool, field));
     }
 

@@ -42,6 +42,6 @@ private:
 }  // namespace thrift
 }  // namespace nebula
 
-#include "common/thrift/ThriftClientManager.inl"
+#include "common/thrift/ThriftClientManager-inl.h"
 
 #endif  // COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
