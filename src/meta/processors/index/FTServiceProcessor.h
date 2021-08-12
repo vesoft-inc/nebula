@@ -12,44 +12,44 @@ namespace nebula {
 namespace meta {
 
 class SignInFTServiceProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static SignInFTServiceProcessor* instance(kvstore::KVStore* kvstore) {
-        return new SignInFTServiceProcessor(kvstore);
-    }
+ public:
+  static SignInFTServiceProcessor* instance(kvstore::KVStore* kvstore) {
+    return new SignInFTServiceProcessor(kvstore);
+  }
 
-    void process(const cpp2::SignInFTServiceReq& req);
+  void process(const cpp2::SignInFTServiceReq& req);
 
-private:
-    explicit SignInFTServiceProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit SignInFTServiceProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class SignOutFTServiceProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static SignOutFTServiceProcessor* instance(kvstore::KVStore* kvstore) {
-        return new SignOutFTServiceProcessor(kvstore);
-    }
+ public:
+  static SignOutFTServiceProcessor* instance(kvstore::KVStore* kvstore) {
+    return new SignOutFTServiceProcessor(kvstore);
+  }
 
-    void process(const cpp2::SignOutFTServiceReq& req);
+  void process(const cpp2::SignOutFTServiceReq& req);
 
-private:
-    explicit SignOutFTServiceProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit SignOutFTServiceProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class ListFTClientsProcessor : public BaseProcessor<cpp2::ListFTClientsResp> {
-public:
-    static ListFTClientsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListFTClientsProcessor(kvstore);
-    }
+ public:
+  static ListFTClientsProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListFTClientsProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListFTClientsReq& req);
+  void process(const cpp2::ListFTClientsReq& req);
 
-private:
-    explicit ListFTClientsProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ListFTClientsResp>(kvstore) {}
+ private:
+  explicit ListFTClientsProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListFTClientsResp>(kvstore) {}
 };
 }  // namespace meta
 }  // namespace nebula
 
-#endif   // META_FTISERVICEPROCESSOR_H_
+#endif  // META_FTISERVICEPROCESSOR_H_

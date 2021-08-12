@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class PassThroughExecutor final : public Executor {
-public:
-    PassThroughExecutor(const PlanNode* node, QueryContext* qctx)
-        : Executor("PassThroughExecutor", node, qctx) {}
+ public:
+  PassThroughExecutor(const PlanNode* node, QueryContext* qctx)
+      : Executor("PassThroughExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_LOGIC_PASSTHROUGHEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_LOGIC_PASSTHROUGHEXECUTOR_H_

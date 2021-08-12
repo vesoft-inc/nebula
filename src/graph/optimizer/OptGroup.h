@@ -16,7 +16,7 @@
 namespace nebula {
 namespace graph {
 class PlanNode;
-}   // namespace graph
+}  // namespace graph
 
 namespace opt {
 
@@ -25,101 +25,79 @@ class OptGroupNode;
 class OptRule;
 
 class OptGroup final {
-public:
-    static OptGroup *create(OptContext *ctx);
+ public:
+  static OptGroup *create(OptContext *ctx);
 
-    bool isExplored(const OptRule *rule) const {
-        return std::find(exploredRules_.cbegin(), exploredRules_.cend(), rule) !=
-               exploredRules_.cend();
-    }
+  bool isExplored(const OptRule *rule) const {
+    return std::find(exploredRules_.cbegin(), exploredRules_.cend(), rule) != exploredRules_.cend();
+  }
 
-    void setExplored(const OptRule *rule) {
-        exploredRules_.emplace_back(rule);
-    }
+  void setExplored(const OptRule *rule) { exploredRules_.emplace_back(rule); }
 
-    void setUnexplored(const OptRule *rule);
+  void setUnexplored(const OptRule *rule);
 
-    void addGroupNode(OptGroupNode *groupNode);
-    OptGroupNode *makeGroupNode(graph::PlanNode *node);
-    const std::list<OptGroupNode *> &groupNodes() const {
-        return groupNodes_;
-    }
+  void addGroupNode(OptGroupNode *groupNode);
+  OptGroupNode *makeGroupNode(graph::PlanNode *node);
+  const std::list<OptGroupNode *> &groupNodes() const { return groupNodes_; }
 
-    Status explore(const OptRule *rule);
-    Status exploreUntilMaxRound(const OptRule *rule);
-    double getCost() const;
-    const graph::PlanNode *getPlan() const;
+  Status explore(const OptRule *rule);
+  Status exploreUntilMaxRound(const OptRule *rule);
+  double getCost() const;
+  const graph::PlanNode *getPlan() const;
 
-private:
-    explicit OptGroup(OptContext *ctx) noexcept;
+ private:
+  explicit OptGroup(OptContext *ctx) noexcept;
 
-    static constexpr int16_t kMaxExplorationRound = 128;
+  static constexpr int16_t kMaxExplorationRound = 128;
 
-    std::pair<double, const OptGroupNode *> findMinCostGroupNode() const;
+  std::pair<double, const OptGroupNode *> findMinCostGroupNode() const;
 
-    OptContext *ctx_{nullptr};
-    std::list<OptGroupNode *> groupNodes_;
-    std::vector<const OptRule *> exploredRules_;
+  OptContext *ctx_{nullptr};
+  std::list<OptGroupNode *> groupNodes_;
+  std::vector<const OptRule *> exploredRules_;
 };
 
 class OptGroupNode final {
-public:
-    static OptGroupNode *create(OptContext *ctx, graph::PlanNode *node, const OptGroup *group);
+ public:
+  static OptGroupNode *create(OptContext *ctx, graph::PlanNode *node, const OptGroup *group);
 
-    void dependsOn(OptGroup *dep) {
-        dependencies_.emplace_back(dep);
-    }
+  void dependsOn(OptGroup *dep) { dependencies_.emplace_back(dep); }
 
-    const std::vector<OptGroup *> &dependencies() const {
-        return dependencies_;
-    }
+  const std::vector<OptGroup *> &dependencies() const { return dependencies_; }
 
-    void setDeps(std::vector<OptGroup *> deps) {
-        dependencies_ = deps;
-    }
+  void setDeps(std::vector<OptGroup *> deps) { dependencies_ = deps; }
 
-    void addBody(OptGroup *body) {
-        bodies_.emplace_back(body);
-    }
+  void addBody(OptGroup *body) { bodies_.emplace_back(body); }
 
-    const std::vector<OptGroup *> &bodies() const {
-        return bodies_;
-    }
+  const std::vector<OptGroup *> &bodies() const { return bodies_; }
 
-    bool isExplored(const OptRule *rule) const {
-        return std::find(exploredRules_.cbegin(), exploredRules_.cend(), rule) !=
-               exploredRules_.cend();
-    }
+  bool isExplored(const OptRule *rule) const {
+    return std::find(exploredRules_.cbegin(), exploredRules_.cend(), rule) != exploredRules_.cend();
+  }
 
-    void setExplored(const OptRule *rule) {
-        exploredRules_.emplace_back(rule);
-    }
+  void setExplored(const OptRule *rule) { exploredRules_.emplace_back(rule); }
 
-    void setUnexplored(const OptRule *rule);
+  void setUnexplored(const OptRule *rule);
 
-    const OptGroup *group() const {
-        return group_;
-    }
+  const OptGroup *group() const { return group_; }
 
-    graph::PlanNode *node() const {
-        return node_;
-    }
+  graph::PlanNode *node() const { return node_; }
 
-    Status explore(const OptRule *rule);
-    double getCost() const;
-    const graph::PlanNode *getPlan() const;
+  Status explore(const OptRule *rule);
+  double getCost() const;
+  const graph::PlanNode *getPlan() const;
 
-private:
-    OptGroupNode(graph::PlanNode *node, const OptGroup *group) noexcept;
+ private:
+  OptGroupNode(graph::PlanNode *node, const OptGroup *group) noexcept;
 
-    graph::PlanNode *node_{nullptr};
-    const OptGroup *group_{nullptr};
-    std::vector<OptGroup *> dependencies_;
-    std::vector<OptGroup *> bodies_;
-    std::vector<const OptRule *> exploredRules_;
+  graph::PlanNode *node_{nullptr};
+  const OptGroup *group_{nullptr};
+  std::vector<OptGroup *> dependencies_;
+  std::vector<OptGroup *> bodies_;
+  std::vector<const OptRule *> exploredRules_;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_OPTGROUP_H_
+#endif  // GRAPH_OPTIMIZER_OPTGROUP_H_

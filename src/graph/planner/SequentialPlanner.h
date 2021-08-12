@@ -13,23 +13,23 @@
 namespace nebula {
 namespace graph {
 class SequentialPlanner final : public Planner {
-public:
-    static std::unique_ptr<SequentialPlanner> make() {
-        return std::unique_ptr<SequentialPlanner>(new SequentialPlanner());
-    }
+ public:
+  static std::unique_ptr<SequentialPlanner> make() {
+    return std::unique_ptr<SequentialPlanner>(new SequentialPlanner());
+  }
 
-    static bool match(AstContext* astCtx);
+  static bool match(AstContext* astCtx);
 
-    /**
-     * Each sentence would be converted to a sub-plan, and they would
-     * be cascaded together into a complete execution plan.
-     */
-    StatusOr<SubPlan> transform(AstContext* astCtx) override;
+  /**
+   * Each sentence would be converted to a sub-plan, and they would
+   * be cascaded together into a complete execution plan.
+   */
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-    void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
+  void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
 
-private:
-    SequentialPlanner() = default;
+ private:
+  SequentialPlanner() = default;
 };
 }  // namespace graph
 }  // namespace nebula

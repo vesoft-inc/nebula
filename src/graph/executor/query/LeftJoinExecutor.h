@@ -13,34 +13,33 @@ namespace nebula {
 namespace graph {
 
 class LeftJoinExecutor final : public JoinExecutor {
-public:
-    LeftJoinExecutor(const PlanNode *node, QueryContext *qctx)
-        : JoinExecutor("LeftJoinExecutor", node, qctx) {}
+ public:
+  LeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
+      : JoinExecutor("LeftJoinExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-    Status close() override;
+  Status close() override;
 
-private:
-    folly::Future<Status> join();
+ private:
+  folly::Future<Status> join();
 
-    DataSet probe(const std::vector<Expression*>& probeKeys,
-                  Iterator* probeIter,
-                  const std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+  DataSet probe(const std::vector<Expression*>& probeKeys,
+                Iterator* probeIter,
+                const std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
 
-    DataSet singleKeyProbe(
-        Expression* probeKey,
-        Iterator* probeIter,
-        const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+  DataSet singleKeyProbe(Expression* probeKey,
+                         Iterator* probeIter,
+                         const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
 
-    template <class T>
-    void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
-                     const T& val,
-                     const Row& lRow,
-                     DataSet& ds) const;
+  template <class T>
+  void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
+                   const T& val,
+                   const Row& lRow,
+                   DataSet& ds) const;
 
-private:
-    size_t rightColSize_{0};
+ private:
+  size_t rightColSize_{0};
 };
 }  // namespace graph
 }  // namespace nebula

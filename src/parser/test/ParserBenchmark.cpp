@@ -3,66 +3,68 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "common/base/Base.h"
 #include <folly/Benchmark.h>
-#include "parser/GQLParser.h"
+
+#include "common/base/Base.h"
 #include "common/expression/Expression.h"
+#include "parser/GQLParser.h"
 
 using nebula::GQLParser;
 
-auto simpleQuery =  "USE myspace";
-auto complexQuery =  "GO 2 STEPS FROM 123456789 OVER myedge "
-                     "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 AND "
-                     "alias.prop5 == alias.prop6 YIELD 1 AS first, 2 AS second";
+auto simpleQuery = "USE myspace";
+auto complexQuery =
+    "GO 2 STEPS FROM 123456789 OVER myedge "
+    "WHERE alias.prop1 + alias.prop2 * alias.prop3 > alias.prop4 AND "
+    "alias.prop5 == alias.prop6 YIELD 1 AS first, 2 AS second";
 
 auto qctx = std::make_unique<nebula::graph::QueryContext>();
 
 size_t SimpleQuery(size_t iters, size_t nrThreads) {
-    constexpr size_t ops = 500000UL;
+  constexpr size_t ops = 500000UL;
 
-    auto parse = [&] () {
-        auto n = iters * ops;
-        for (auto i = 0UL; i < n; i++) {
-            // static thread_local GQLParser parser;
-            GQLParser parser(qctx.get());
-            auto result = parser.parse(simpleQuery);
-            folly::doNotOptimizeAway(result);
-        }
-    };
-
-    std::vector<std::thread> workers;
-    for (auto i = 0u; i < nrThreads; i++) {
-        workers.emplace_back(parse);
+  auto parse = [&]() {
+    auto n = iters * ops;
+    for (auto i = 0UL; i < n; i++) {
+      // static thread_local GQLParser parser;
+      GQLParser parser(qctx.get());
+      auto result = parser.parse(simpleQuery);
+      folly::doNotOptimizeAway(result);
     }
-    for (auto i = 0u; i < nrThreads; i++) {
-        workers[i].join();
-    }
+  };
 
-    return iters * ops;
+  std::vector<std::thread> workers;
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers.emplace_back(parse);
+  }
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers[i].join();
+  }
+
+  return iters * ops;
 }
 
 size_t ComplexQuery(size_t iters, size_t nrThreads) {
-    constexpr size_t ops = 500000UL;
+  constexpr size_t ops = 500000UL;
 
-    auto parse = [&] () {
-        auto n = iters * ops;
-        for (auto i = 0UL; i < n; i++) {
-            // static thread_local GQLParser parser;
-            GQLParser parser(qctx.get());
-            auto result = parser.parse(complexQuery);
-            folly::doNotOptimizeAway(result);
-        }
-    };
-
-    std::vector<std::thread> workers;
-    for (auto i = 0u; i < nrThreads; i++) {
-        workers.emplace_back(parse);
+  auto parse = [&]() {
+    auto n = iters * ops;
+    for (auto i = 0UL; i < n; i++) {
+      // static thread_local GQLParser parser;
+      GQLParser parser(qctx.get());
+      auto result = parser.parse(complexQuery);
+      folly::doNotOptimizeAway(result);
     }
-    for (auto i = 0u; i < nrThreads; i++) {
-        workers[i].join();
-    }
+  };
 
-    return iters * ops;
+  std::vector<std::thread> workers;
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers.emplace_back(parse);
+  }
+  for (auto i = 0u; i < nrThreads; i++) {
+    workers[i].join();
+  }
+
+  return iters * ops;
 }
 
 BENCHMARK_NAMED_PARAM_MULTI(SimpleQuery, 1_thread, 1)
@@ -83,22 +85,21 @@ BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 16_thread, 16)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 32_thread, 32)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(ComplexQuery, 48_thread, 48)
 
-int
-main(int argc, char **argv) {
-    gflags::ParseCommandLineFlags(&argc, &argv, true);
-    {
-        GQLParser parser(qctx.get());
-        auto result = parser.parse(simpleQuery);
-        CHECK(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser(qctx.get());
-        auto result = parser.parse(complexQuery);
-        CHECK(result.ok()) << result.status();
-    }
+int main(int argc, char **argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  {
+    GQLParser parser(qctx.get());
+    auto result = parser.parse(simpleQuery);
+    CHECK(result.ok()) << result.status();
+  }
+  {
+    GQLParser parser(qctx.get());
+    auto result = parser.parse(complexQuery);
+    CHECK(result.ok()) << result.status();
+  }
 
-    folly::runBenchmarks();
-    return 0;
+  folly::runBenchmarks();
+  return 0;
 }
 
 /*           Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz, 20core 40thread

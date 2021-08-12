@@ -5,37 +5,34 @@
  */
 
 #include "storage/InternalStorageServiceHandler.h"
-#include "storage/transaction/TransactionProcessor.h"
-#include "storage/transaction/GetValueProcessor.h"
 
-#define RETURN_FUTURE(processor) \
-    auto f = processor->getFuture(); \
-    processor->process(req); \
-    return f;
+#include "storage/transaction/GetValueProcessor.h"
+#include "storage/transaction/TransactionProcessor.h"
+
+#define RETURN_FUTURE(processor)   \
+  auto f = processor->getFuture(); \
+  processor->process(req);         \
+  return f;
 
 namespace nebula {
 namespace storage {
 
-InternalStorageServiceHandler::InternalStorageServiceHandler(StorageEnv* env)
-        : env_(env) {
-    kForwardTranxCounters.init("forward_tranx");
-    kGetValueCounters.init("get_value");
+InternalStorageServiceHandler::InternalStorageServiceHandler(StorageEnv* env) : env_(env) {
+  kForwardTranxCounters.init("forward_tranx");
+  kGetValueCounters.init("get_value");
 }
 
-
-folly::Future<cpp2::ExecResponse>
-InternalStorageServiceHandler::future_forwardTransaction(const cpp2::InternalTxnRequest& req) {
-    auto* processor = InterTxnProcessor::instance(env_);
-    RETURN_FUTURE(processor);
+folly::Future<cpp2::ExecResponse> InternalStorageServiceHandler::future_forwardTransaction(
+    const cpp2::InternalTxnRequest& req) {
+  auto* processor = InterTxnProcessor::instance(env_);
+  RETURN_FUTURE(processor);
 }
 
-
-folly::Future<cpp2::GetValueResponse>
-InternalStorageServiceHandler::future_getValue(const cpp2::GetValueRequest& req) {
-    auto* processor = GetValueProcessor::instance(env_);
-    RETURN_FUTURE(processor);
+folly::Future<cpp2::GetValueResponse> InternalStorageServiceHandler::future_getValue(
+    const cpp2::GetValueRequest& req) {
+  auto* processor = GetValueProcessor::instance(env_);
+  RETURN_FUTURE(processor);
 }
-
 
 }  // namespace storage
 }  // namespace nebula

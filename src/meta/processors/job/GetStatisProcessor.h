@@ -13,16 +13,16 @@ namespace nebula {
 namespace meta {
 
 class GetStatisProcessor : public BaseProcessor<cpp2::GetStatisResp> {
-public:
-    static GetStatisProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetStatisProcessor(kvstore);
-    }
+ public:
+  static GetStatisProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GetStatisProcessor(kvstore);
+  }
 
-    void process(const cpp2::GetStatisReq& req);
+  void process(const cpp2::GetStatisReq& req);
 
-private:
-    explicit GetStatisProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetStatisResp>(kvstore) {}
+ private:
+  explicit GetStatisProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::GetStatisResp>(kvstore) {}
 };
 
 }  // namespace meta

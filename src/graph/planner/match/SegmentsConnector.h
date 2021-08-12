@@ -9,9 +9,9 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/Planner.h"
 #include "graph/planner/match/InnerJoinStrategy.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
@@ -20,37 +20,37 @@ namespace graph {
  * plan segment.
  */
 class SegmentsConnector final {
-public:
-    enum class ConnectStrategy : int8_t {
-        kAddDependency,
-        kInnerJoin,
-        kLeftOuterJoin,
-        kCartesianProduct,
-        kUnion,
-    };
+ public:
+  enum class ConnectStrategy : int8_t {
+    kAddDependency,
+    kInnerJoin,
+    kLeftOuterJoin,
+    kCartesianProduct,
+    kUnion,
+  };
 
-    SegmentsConnector() = delete;
+  SegmentsConnector() = delete;
 
-    // Analyse the relation of two segments and connect them.
-    static StatusOr<SubPlan> connectSegments(CypherClauseContextBase* leftCtx,
-                                             CypherClauseContextBase* rightCtx,
-                                             SubPlan& left,
-                                             SubPlan& right);
+  // Analyse the relation of two segments and connect them.
+  static StatusOr<SubPlan> connectSegments(CypherClauseContextBase* leftCtx,
+                                           CypherClauseContextBase* rightCtx,
+                                           SubPlan& left,
+                                           SubPlan& right);
 
-    static PlanNode* innerJoinSegments(
-        QueryContext* qctx,
-        const PlanNode* left,
-        const PlanNode* right,
-        InnerJoinStrategy::JoinPos leftPos = InnerJoinStrategy::JoinPos::kEnd,
-        InnerJoinStrategy::JoinPos rightPos = InnerJoinStrategy::JoinPos::kStart);
+  static PlanNode* innerJoinSegments(
+      QueryContext* qctx,
+      const PlanNode* left,
+      const PlanNode* right,
+      InnerJoinStrategy::JoinPos leftPos = InnerJoinStrategy::JoinPos::kEnd,
+      InnerJoinStrategy::JoinPos rightPos = InnerJoinStrategy::JoinPos::kStart);
 
-    static PlanNode* cartesianProductSegments(QueryContext* qctx,
-                                              const PlanNode* left,
-                                              const PlanNode* right);
+  static PlanNode* cartesianProductSegments(QueryContext* qctx,
+                                            const PlanNode* left,
+                                            const PlanNode* right);
 
-    static void addDependency(const PlanNode* left, const PlanNode* right);
+  static void addDependency(const PlanNode* left, const PlanNode* right);
 
-    static void addInput(const PlanNode* left, const PlanNode* right, bool copyColNames = false);
+  static void addInput(const PlanNode* left, const PlanNode* right, bool copyColNames = false);
 };
 }  // namespace graph
 }  // namespace nebula

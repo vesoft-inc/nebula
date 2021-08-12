@@ -15,12 +15,12 @@ namespace graph {
  * The OrderByClausePlanner was designed to generate plan for order by clause;
  */
 class OrderByClausePlanner final : public CypherClausePlanner {
-public:
-    OrderByClausePlanner() = default;
+ public:
+  OrderByClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-    Status buildSort(OrderByClauseContext* octx, SubPlan& subplan);
+  Status buildSort(OrderByClauseContext* octx, SubPlan& subplan);
 };
 }  // namespace graph
 }  // namespace nebula

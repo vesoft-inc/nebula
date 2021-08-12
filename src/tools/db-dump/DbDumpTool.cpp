@@ -8,8 +8,8 @@
 #include "tools/db-dump/DbDumper.h"
 
 void printHelp() {
-    fprintf(stderr,
-           R"(  ./db_dump --space_name=<space name>
+  fprintf(stderr,
+          R"(  ./db_dump --space_name=<space name>
 
 required:
        --space_name=<space name>
@@ -55,37 +55,36 @@ optional:
 }
 
 void printParams() {
-    std::cout << "===========================PARAMS============================\n";
-    std::cout << "mode: " << FLAGS_mode << "\n";
-    std::cout << "meta server: " << FLAGS_meta_server << "\n";
-    std::cout << "space name: " << FLAGS_space_name << "\n";
-    std::cout << "path: " << FLAGS_db_path << "\n";
-    std::cout << "parts: " << FLAGS_parts << "\n";
-    std::cout << "vids: " << FLAGS_vids << "\n";
-    std::cout << "tags: " << FLAGS_tags << "\n";
-    std::cout << "edges: " << FLAGS_edges << "\n";
-    std::cout << "limit: " << FLAGS_limit << "\n";
-    std::cout << "===========================PARAMS============================\n\n";
+  std::cout << "===========================PARAMS============================\n";
+  std::cout << "mode: " << FLAGS_mode << "\n";
+  std::cout << "meta server: " << FLAGS_meta_server << "\n";
+  std::cout << "space name: " << FLAGS_space_name << "\n";
+  std::cout << "path: " << FLAGS_db_path << "\n";
+  std::cout << "parts: " << FLAGS_parts << "\n";
+  std::cout << "vids: " << FLAGS_vids << "\n";
+  std::cout << "tags: " << FLAGS_tags << "\n";
+  std::cout << "edges: " << FLAGS_edges << "\n";
+  std::cout << "limit: " << FLAGS_limit << "\n";
+  std::cout << "===========================PARAMS============================\n\n";
 }
 
 int main(int argc, char *argv[]) {
-    if (argc == 1) {
-        printHelp();
-        return EXIT_FAILURE;
-    } else {
-        folly::init(&argc, &argv, true);
-    }
+  if (argc == 1) {
+    printHelp();
+    return EXIT_FAILURE;
+  } else {
+    folly::init(&argc, &argv, true);
+  }
 
-    google::SetStderrLogging(google::FATAL);
+  google::SetStderrLogging(google::FATAL);
 
-    printParams();
+  printParams();
 
-    nebula::storage::DbDumper dumper;
-    auto status = dumper.init();
-    if (!status.ok()) {
-      std::cerr << "Error: " << status << "\n\n";
-      return EXIT_FAILURE;
-    }
-    dumper.run();
+  nebula::storage::DbDumper dumper;
+  auto status = dumper.init();
+  if (!status.ok()) {
+    std::cerr << "Error: " << status << "\n\n";
+    return EXIT_FAILURE;
+  }
+  dumper.run();
 }
-

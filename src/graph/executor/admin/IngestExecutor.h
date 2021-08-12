@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class IngestExecutor final : public Executor {
-public:
-    IngestExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("IngestExecutor", node, qctx) {}
+ public:
+  IngestExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("IngestExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_ADMIN_INGESTEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ADMIN_INGESTEXECUTOR_H_

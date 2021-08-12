@@ -5,50 +5,51 @@
  */
 
 #include "graph/validator/UseValidator.h"
-#include "parser/TraverseSentences.h"
+
+#include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Admin.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 namespace graph {
 Status UseValidator::validateImpl() {
-    auto useSentence = static_cast<UseSentence*>(sentence_);
-    spaceName_ = useSentence->space();
-    SpaceInfo spaceInfo;
-    spaceInfo.name = *spaceName_;
-    // firstly get from validate context
-    if (!vctx_->hasSpace(*spaceName_)) {
-        // secondly get from cache
-        auto spaceId = qctx_->schemaMng()->toGraphSpaceID(*spaceName_);
-        if (!spaceId.ok()) {
-            LOG(ERROR) << "Unknown space: " << *spaceName_;
-            return spaceId.status();
-        }
-        auto spaceDesc = qctx_->getMetaClient()->getSpaceDesc(spaceId.value());
-        if (!spaceDesc.ok()) {
-            return spaceDesc.status();
-        }
-        spaceInfo.id = spaceId.value();
-        spaceInfo.spaceDesc = std::move(spaceDesc).value();
-        vctx_->switchToSpace(std::move(spaceInfo));
-        return Status::OK();
+  auto useSentence = static_cast<UseSentence*>(sentence_);
+  spaceName_ = useSentence->space();
+  SpaceInfo spaceInfo;
+  spaceInfo.name = *spaceName_;
+  // firstly get from validate context
+  if (!vctx_->hasSpace(*spaceName_)) {
+    // secondly get from cache
+    auto spaceId = qctx_->schemaMng()->toGraphSpaceID(*spaceName_);
+    if (!spaceId.ok()) {
+      LOG(ERROR) << "Unknown space: " << *spaceName_;
+      return spaceId.status();
     }
-
-    spaceInfo.id = -1;
+    auto spaceDesc = qctx_->getMetaClient()->getSpaceDesc(spaceId.value());
+    if (!spaceDesc.ok()) {
+      return spaceDesc.status();
+    }
+    spaceInfo.id = spaceId.value();
+    spaceInfo.spaceDesc = std::move(spaceDesc).value();
     vctx_->switchToSpace(std::move(spaceInfo));
     return Status::OK();
+  }
+
+  spaceInfo.id = -1;
+  vctx_->switchToSpace(std::move(spaceInfo));
+  return Status::OK();
 }
 
 Status UseValidator::toPlan() {
-    // The input will be set by father validator later.
-    auto switchSpace = SwitchSpace::make(qctx_, nullptr, *spaceName_);
-    qctx_->rctx()->session()->updateSpaceName(*spaceName_);
-    auto session = qctx_->rctx()->session()->getSession();
-    auto update = UpdateSession::make(qctx_, switchSpace, std::move(session));
-    root_ = update;
-    tail_ = switchSpace;
-    return Status::OK();
+  // The input will be set by father validator later.
+  auto switchSpace = SwitchSpace::make(qctx_, nullptr, *spaceName_);
+  qctx_->rctx()->session()->updateSpaceName(*spaceName_);
+  auto session = qctx_->rctx()->session()->getSession();
+  auto update = UpdateSession::make(qctx_, switchSpace, std::move(session));
+  root_ = update;
+  tail_ = switchSpace;
+  return Status::OK();
 }
 }  // namespace graph
 }  // namespace nebula

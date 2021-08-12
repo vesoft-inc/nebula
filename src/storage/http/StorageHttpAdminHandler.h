@@ -7,10 +7,11 @@
 #ifndef STORAGE_HTTP_STORAGEHTTPADMINHANDLER_H_
 #define STORAGE_HTTP_STORAGEHTTPADMINHANDLER_H_
 
-#include "common/base/Base.h"
-#include "webservice/Common.h"
-#include "kvstore/KVStore.h"
 #include <proxygen/httpserver/RequestHandler.h>
+
+#include "common/base/Base.h"
+#include "kvstore/KVStore.h"
+#include "webservice/Common.h"
 
 namespace nebula {
 namespace storage {
@@ -18,29 +19,27 @@ namespace storage {
 using nebula::HttpCode;
 
 class StorageHttpAdminHandler : public proxygen::RequestHandler {
-public:
-    StorageHttpAdminHandler(meta::SchemaManager* schemaMan, kvstore::KVStore* kv)
-        : schemaMan_(schemaMan)
-        , kv_(kv) {}
+ public:
+  StorageHttpAdminHandler(meta::SchemaManager* schemaMan, kvstore::KVStore* kv)
+      : schemaMan_(schemaMan), kv_(kv) {}
 
-    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
+  void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
-    void onBody(std::unique_ptr<folly::IOBuf> body)  noexcept override;
+  void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
 
-    void onEOM() noexcept override;
+  void onEOM() noexcept override;
 
-    void onUpgrade(proxygen::UpgradeProtocol protocol) noexcept override;
+  void onUpgrade(proxygen::UpgradeProtocol protocol) noexcept override;
 
-    void requestComplete() noexcept override;
+  void requestComplete() noexcept override;
 
-    void onError(proxygen::ProxygenError error) noexcept override;
+  void onError(proxygen::ProxygenError error) noexcept override;
 
-
-private:
-    HttpCode err_{HttpCode::SUCCEEDED};
-    std::string resp_;
-    meta::SchemaManager* schemaMan_ = nullptr;
-    kvstore::KVStore*    kv_ = nullptr;
+ private:
+  HttpCode err_{HttpCode::SUCCEEDED};
+  std::string resp_;
+  meta::SchemaManager* schemaMan_ = nullptr;
+  kvstore::KVStore* kv_ = nullptr;
 };
 
 }  // namespace storage

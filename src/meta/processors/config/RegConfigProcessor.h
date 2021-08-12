@@ -13,16 +13,15 @@ namespace nebula {
 namespace meta {
 
 class RegConfigProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static RegConfigProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RegConfigProcessor(kvstore);
-    }
+ public:
+  static RegConfigProcessor* instance(kvstore::KVStore* kvstore) {
+    return new RegConfigProcessor(kvstore);
+  }
 
-    void process(const cpp2::RegConfigReq& req);
+  void process(const cpp2::RegConfigReq& req);
 
-private:
-    explicit RegConfigProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit RegConfigProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

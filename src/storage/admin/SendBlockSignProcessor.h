@@ -10,22 +10,21 @@
 #include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
-#include "storage/StorageFlags.h"
 #include "storage/BaseProcessor.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
 class SendBlockSignProcessor : public BaseProcessor<cpp2::AdminExecResp> {
-public:
-    static SendBlockSignProcessor* instance(StorageEnv* env) {
-        return new SendBlockSignProcessor(env);
-    }
+ public:
+  static SendBlockSignProcessor* instance(StorageEnv* env) {
+    return new SendBlockSignProcessor(env);
+  }
 
-    void process(const cpp2::BlockingSignRequest& req);
+  void process(const cpp2::BlockingSignRequest& req);
 
-private:
-    explicit SendBlockSignProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::AdminExecResp>(env) {}
+ private:
+  explicit SendBlockSignProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 }  // namespace storage
 }  // namespace nebula

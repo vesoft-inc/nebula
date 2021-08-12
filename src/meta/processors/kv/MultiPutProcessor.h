@@ -13,16 +13,15 @@ namespace nebula {
 namespace meta {
 
 class MultiPutProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static MultiPutProcessor* instance(kvstore::KVStore* kvstore) {
-        return new MultiPutProcessor(kvstore);
-    }
+ public:
+  static MultiPutProcessor* instance(kvstore::KVStore* kvstore) {
+    return new MultiPutProcessor(kvstore);
+  }
 
-    void process(const cpp2::MultiPutReq& req);
+  void process(const cpp2::MultiPutReq& req);
 
-private:
-    explicit MultiPutProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit MultiPutProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

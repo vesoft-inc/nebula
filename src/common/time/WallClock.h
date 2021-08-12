@@ -7,8 +7,9 @@
 #ifndef COMMON_TIME_WALLCLOCK_H_
 #define COMMON_TIME_WALLCLOCK_H_
 
-#include "common/base/Base.h"
 #include <time.h>
+
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace time {
@@ -21,17 +22,17 @@ namespace time {
  *
  */
 class WallClock final {
-public:
-    WallClock() = delete;
+ public:
+  WallClock() = delete;
 
-    static int64_t slowNowInSec();
-    static int64_t fastNowInSec();
+  static int64_t slowNowInSec();
+  static int64_t fastNowInSec();
 
-    static int64_t slowNowInMilliSec();
-    static int64_t fastNowInMilliSec();
+  static int64_t slowNowInMilliSec();
+  static int64_t fastNowInMilliSec();
 
-    static int64_t slowNowInMicroSec();
-    static int64_t fastNowInMicroSec();
+  static int64_t slowNowInMicroSec();
+  static int64_t fastNowInMicroSec();
 };
 
 }  // namespace time

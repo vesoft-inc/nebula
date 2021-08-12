@@ -9,31 +9,31 @@
 
 #include "common/base/StatusOr.h"
 #include "graph/context/QueryContext.h"
-#include "parser/MaintainSentences.h"
 #include "graph/visitor/RewriteVisitor.h"
+#include "parser/MaintainSentences.h"
 
 namespace nebula {
 namespace graph {
 
 class ParserUtil final {
-public:
-    ParserUtil() = delete;
+ public:
+  ParserUtil() = delete;
 
-    static bool isLabel(const Expression *expr);
-    static void rewriteLC(QueryContext *qctx,
-                          ListComprehensionExpression *lc,
+  static bool isLabel(const Expression *expr);
+  static void rewriteLC(QueryContext *qctx,
+                        ListComprehensionExpression *lc,
+                        const std::string &oldVarName);
+
+  static void rewritePred(QueryContext *qctx,
+                          PredicateExpression *pred,
                           const std::string &oldVarName);
 
-    static void rewritePred(QueryContext *qctx,
-                            PredicateExpression *pred,
+  static void rewriteReduce(QueryContext *qctx,
+                            ReduceExpression *reduce,
+                            const std::string &oldAccName,
                             const std::string &oldVarName);
-
-    static void rewriteReduce(QueryContext *qctx,
-                              ReduceExpression *reduce,
-                              const std::string &oldAccName,
-                              const std::string &oldVarName);
 };
 
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_UTIL_PARSERUTIL_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_UTIL_PARSERUTIL_H_

@@ -15,16 +15,17 @@ namespace graph {
  * The WhereClausePlanner was designed to generate plan for where clause.
  */
 class WhereClausePlanner final : public CypherClausePlanner {
-public:
-    explicit WhereClausePlanner(bool needStableFilter = false)
-        : needStableFilter_(needStableFilter) {}
+ public:
+  explicit WhereClausePlanner(bool needStableFilter = false)
+      : needStableFilter_(needStableFilter) {}
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-private:
-    // `needStableFilter_=true` only if there is orderBy in withClause(to avoid unstableErase)
-    bool needStableFilter_{false};
+ private:
+  // `needStableFilter_=true` only if there is orderBy in withClause(to avoid
+  // unstableErase)
+  bool needStableFilter_{false};
 };
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_PLANNER_MATCH_WHERECLAUSEPLANNER_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_PLANNER_MATCH_WHERECLAUSEPLANNER_H_

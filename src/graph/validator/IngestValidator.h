@@ -15,16 +15,13 @@ namespace nebula {
 namespace graph {
 
 class IngestValidator final : public Validator {
-public:
-    IngestValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {}
+ public:
+  IngestValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-private:
-    Status validateImpl() override {
-        return Status::OK();
-    }
+ private:
+  Status validateImpl() override { return Status::OK(); }
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 }  // namespace graph

@@ -16,20 +16,17 @@ namespace storage {
 class StorageEnv;
 
 class GeneralStorageServiceHandler final : public cpp2::GeneralStorageServiceSvIf {
-public:
-    explicit GeneralStorageServiceHandler(StorageEnv* env);
+ public:
+  explicit GeneralStorageServiceHandler(StorageEnv* env);
 
-    folly::Future<cpp2::ExecResponse>
-    future_put(const cpp2::KVPutRequest& req) override;
+  folly::Future<cpp2::ExecResponse> future_put(const cpp2::KVPutRequest& req) override;
 
-    folly::Future<cpp2::KVGetResponse>
-    future_get(const cpp2::KVGetRequest& req) override;
+  folly::Future<cpp2::KVGetResponse> future_get(const cpp2::KVGetRequest& req) override;
 
-    folly::Future<cpp2::ExecResponse>
-    future_remove(const cpp2::KVRemoveRequest& req) override;
+  folly::Future<cpp2::ExecResponse> future_remove(const cpp2::KVRemoveRequest& req) override;
 
-private:
-    StorageEnv*             env_{nullptr};
+ private:
+  StorageEnv* env_{nullptr};
 };
 
 }  // namespace storage

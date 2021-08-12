@@ -13,43 +13,42 @@ namespace nebula {
 namespace meta {
 
 class AddListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static AddListenerProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddListenerProcessor(kvstore);
-    }
+ public:
+  static AddListenerProcessor* instance(kvstore::KVStore* kvstore) {
+    return new AddListenerProcessor(kvstore);
+  }
 
-    void process(const cpp2::AddListenerReq& req);
+  void process(const cpp2::AddListenerReq& req);
 
-private:
-    explicit AddListenerProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit AddListenerProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
-
 class RemoveListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static RemoveListenerProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RemoveListenerProcessor(kvstore);
-    }
+ public:
+  static RemoveListenerProcessor* instance(kvstore::KVStore* kvstore) {
+    return new RemoveListenerProcessor(kvstore);
+  }
 
-    void process(const cpp2::RemoveListenerReq& req);
+  void process(const cpp2::RemoveListenerReq& req);
 
-private:
-    explicit RemoveListenerProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit RemoveListenerProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class ListListenerProcessor : public BaseProcessor<cpp2::ListListenerResp> {
-public:
-    static ListListenerProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListListenerProcessor(kvstore);
-    }
+ public:
+  static ListListenerProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListListenerProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListListenerReq& req);
+  void process(const cpp2::ListListenerReq& req);
 
-private:
-    explicit ListListenerProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ListListenerResp>(kvstore) {}
+ private:
+  explicit ListListenerProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListListenerResp>(kvstore) {}
 };
 
 }  // namespace meta

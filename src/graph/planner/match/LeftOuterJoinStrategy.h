@@ -9,11 +9,10 @@
 namespace nebula {
 namespace graph {
 /*
- * The LeftOuterJoinStrategy was designed to connect two expand part by left outer join
- * in optional match situation.
+ * The LeftOuterJoinStrategy was designed to connect two expand part by left
+ * outer join in optional match situation.
  */
-class LeftOuterJoinStrategy final {
-};
+class LeftOuterJoinStrategy final {};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_MATCH_LEFTOUTERJOINSTRATEGY_H_

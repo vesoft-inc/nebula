@@ -7,16 +7,16 @@
 #ifndef RAFTEX_HOST_H_
 #define RAFTEX_HOST_H_
 
-#include "common/base/Base.h"
-#include "interface/gen-cpp2/raftex_types.h"
-#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
-#include "common/thrift/ThriftClientManager.h"
 #include <folly/futures/Future.h>
+
+#include "common/base/Base.h"
+#include "common/thrift/ThriftClientManager.h"
+#include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "interface/gen-cpp2/raftex_types.h"
 
 namespace folly {
 class EventBase;
 }  // namespace folly
-
 
 namespace nebula {
 namespace raftex {
@@ -24,141 +24,125 @@ namespace raftex {
 class RaftPart;
 
 class Host final : public std::enable_shared_from_this<Host> {
-    friend class RaftPart;
-public:
-    Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
+  friend class RaftPart;
 
-    ~Host() {
-        LOG(INFO) << idStr_ << " The host has been destroyed!";
-    }
+ public:
+  Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
-    const char* idStr() const {
-        return idStr_.c_str();
-    }
+  ~Host() { LOG(INFO) << idStr_ << " The host has been destroyed!"; }
 
-    // This will be called when the shard lost its leadership
-    void pause() {
-        std::lock_guard<std::mutex> g(lock_);
-        paused_ = true;
-    }
+  const char* idStr() const { return idStr_.c_str(); }
 
-    // This will be called when the shard becomes the leader
-    void resume() {
-        std::lock_guard<std::mutex> g(lock_);
-        paused_ = false;
-    }
+  // This will be called when the shard lost its leadership
+  void pause() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = true;
+  }
 
-    void stop() {
-        std::lock_guard<std::mutex> g(lock_);
-        stopped_ = true;
-    }
+  // This will be called when the shard becomes the leader
+  void resume() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = false;
+  }
 
-    void reset() {
-        std::unique_lock<std::mutex> g(lock_);
-        noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
-        logIdToSend_ = 0;
-        logTermToSend_ = 0;
-        lastLogIdSent_ = 0;
-        lastLogTermSent_ = 0;
-        committedLogId_ = 0;
-        sendingSnapshot_ = false;
-        followerCommittedLogId_ = 0;
-    }
+  void stop() {
+    std::lock_guard<std::mutex> g(lock_);
+    stopped_ = true;
+  }
 
-    void waitForStop();
+  void reset() {
+    std::unique_lock<std::mutex> g(lock_);
+    noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
+    logIdToSend_ = 0;
+    logTermToSend_ = 0;
+    lastLogIdSent_ = 0;
+    lastLogTermSent_ = 0;
+    committedLogId_ = 0;
+    sendingSnapshot_ = false;
+    followerCommittedLogId_ = 0;
+  }
 
-    bool isLearner() const {
-        return isLearner_;
-    }
+  void waitForStop();
 
-    void setLearner(bool isLearner) {
-        isLearner_ = isLearner;
-    }
+  bool isLearner() const { return isLearner_; }
 
-    folly::Future<cpp2::AskForVoteResponse> askForVote(
-        const cpp2::AskForVoteRequest& req,
-        folly::EventBase* eb);
+  void setLearner(bool isLearner) { isLearner_ = isLearner; }
 
-    // When logId == lastLogIdSent, it is a heartbeat
-    folly::Future<cpp2::AppendLogResponse> appendLogs(
-        folly::EventBase* eb,
-        TermID term,                // Current term
-        LogID logId,                // The last log to be sent
-        LogID committedLogId,       // The last committed log id
-        TermID lastLogTermSent,     // The last log term being sent
-        LogID lastLogIdSent);       // The last log id being sent
+  folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
+                                                     folly::EventBase* eb);
 
-    folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(
-        folly::EventBase* eb,
-        TermID term,
-        LogID latestLogId,
-        LogID commitLogId,
-        TermID lastLogTerm,
-        LogID lastLogId);
+  // When logId == lastLogIdSent, it is a heartbeat
+  folly::Future<cpp2::AppendLogResponse> appendLogs(
+      folly::EventBase* eb,
+      TermID term,             // Current term
+      LogID logId,             // The last log to be sent
+      LogID committedLogId,    // The last committed log id
+      TermID lastLogTermSent,  // The last log term being sent
+      LogID lastLogIdSent);    // The last log id being sent
 
-    const HostAddr& address() const {
-        return addr_;
-    }
+  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
+                                                       TermID term,
+                                                       LogID latestLogId,
+                                                       LogID commitLogId,
+                                                       TermID lastLogTerm,
+                                                       LogID lastLogId);
 
-private:
-    cpp2::ErrorCode checkStatus() const;
+  const HostAddr& address() const { return addr_; }
 
-    folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
-        folly::EventBase* eb,
-        std::shared_ptr<cpp2::AppendLogRequest> req);
+ private:
+  cpp2::ErrorCode checkStatus() const;
 
-    void appendLogsInternal(
-        folly::EventBase* eb,
-        std::shared_ptr<cpp2::AppendLogRequest> req);
+  folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
+      folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
-    folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
-        folly::EventBase* eb,
-        std::shared_ptr<cpp2::HeartbeatRequest> req);
+  void appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
-    std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
+  folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
+      folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
-    bool noRequest() const;
+  std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
 
-    void setResponse(const cpp2::AppendLogResponse& r);
+  bool noRequest() const;
 
-private:
-    // <term, logId, committedLogId>
-    using Request = std::tuple<TermID, LogID, LogID>;
+  void setResponse(const cpp2::AppendLogResponse& r);
 
-    std::shared_ptr<RaftPart> part_;
-    const HostAddr addr_;
-    bool isLearner_ = false;
-    const std::string idStr_;
+ private:
+  // <term, logId, committedLogId>
+  using Request = std::tuple<TermID, LogID, LogID>;
 
-    mutable std::mutex lock_;
+  std::shared_ptr<RaftPart> part_;
+  const HostAddr addr_;
+  bool isLearner_ = false;
+  const std::string idStr_;
 
-    bool paused_{false};
-    bool stopped_{false};
+  mutable std::mutex lock_;
 
-    bool requestOnGoing_{false};
-    std::condition_variable noMoreRequestCV_;
-    folly::SharedPromise<cpp2::AppendLogResponse> promise_;
-    folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
+  bool paused_{false};
+  bool stopped_{false};
 
-    Request pendingReq_{0, 0, 0};
+  bool requestOnGoing_{false};
+  std::condition_variable noMoreRequestCV_;
+  folly::SharedPromise<cpp2::AppendLogResponse> promise_;
+  folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
 
-    // These logId and term pointing to the latest log we need to send
-    LogID logIdToSend_{0};
-    TermID logTermToSend_{0};
+  Request pendingReq_{0, 0, 0};
 
-    // The previous log before this batch
-    LogID lastLogIdSent_{0};
-    TermID lastLogTermSent_{0};
+  // These logId and term pointing to the latest log we need to send
+  LogID logIdToSend_{0};
+  TermID logTermToSend_{0};
 
-    LogID committedLogId_{0};
-    std::atomic_bool sendingSnapshot_{false};
+  // The previous log before this batch
+  LogID lastLogIdSent_{0};
+  TermID lastLogTermSent_{0};
 
-    // CommittedLogId of follower
-    LogID followerCommittedLogId_{0};
+  LogID committedLogId_{0};
+  std::atomic_bool sendingSnapshot_{false};
+
+  // CommittedLogId of follower
+  LogID followerCommittedLogId_{0};
 };
 
 }  // namespace raftex
 }  // namespace nebula
 
 #endif  // RAFTEX_HOST_H_
-

@@ -10,9 +10,9 @@ namespace nebula {
 namespace meta {
 
 void RemoveProcessor::process(const cpp2::RemoveReq& req) {
-    CHECK_SEGMENT(req.get_segment());
-    auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
-    doRemove(key);
+  CHECK_SEGMENT(req.get_segment());
+  auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
+  doRemove(key);
 }
 
 }  // namespace meta

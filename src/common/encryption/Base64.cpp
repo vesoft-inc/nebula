@@ -10,9 +10,8 @@ namespace nebula {
 namespace encryption {
 
 std::string Base64::encode(const std::string &toEncodeStr) {
-    return proxygen::base64Encode(folly::ByteRange(
-        reinterpret_cast<const unsigned char*>(toEncodeStr.c_str()),
-        toEncodeStr.length()));
+  return proxygen::base64Encode(folly::ByteRange(
+      reinterpret_cast<const unsigned char *>(toEncodeStr.c_str()), toEncodeStr.length()));
 }
 
 }  // namespace encryption

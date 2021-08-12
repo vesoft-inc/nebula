@@ -13,19 +13,17 @@ namespace nebula {
 namespace meta {
 
 class AlterEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static AlterEdgeProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AlterEdgeProcessor(kvstore);
-    }
+ public:
+  static AlterEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+    return new AlterEdgeProcessor(kvstore);
+  }
 
-    void process(const cpp2::AlterEdgeReq& req);
+  void process(const cpp2::AlterEdgeReq& req);
 
-private:
-    explicit AlterEdgeProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit AlterEdgeProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_ALTEREDGEPROCESSOR_H_
-

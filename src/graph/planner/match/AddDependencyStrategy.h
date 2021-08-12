@@ -7,20 +7,21 @@
 #ifndef GRAPH_PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
 #define GRAPH_PLANNER_MATCH_ADDDEPENDENCYSTRATEGY_H_
 
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/match/SegmentsConnectStrategy.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
 /*
- * The AddDependencyStrategy was designed to connect two subplan by adding dependency.
+ * The AddDependencyStrategy was designed to connect two subplan by adding
+ * dependency.
  */
 class AddDependencyStrategy final : public SegmentsConnectStrategy {
-public:
-    AddDependencyStrategy() : SegmentsConnectStrategy(nullptr) {}
+ public:
+  AddDependencyStrategy() : SegmentsConnectStrategy(nullptr) {}
 
-    PlanNode* connect(const PlanNode* left, const PlanNode* right) override;
+  PlanNode* connect(const PlanNode* left, const PlanNode* right) override;
 };
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_PLANNER_MATCH_SIMPLECONNECTSTRATEGY_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_PLANNER_MATCH_SIMPLECONNECTSTRATEGY_H_

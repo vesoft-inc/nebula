@@ -17,18 +17,18 @@ namespace graph {
 class SequentialValidator;
 
 class ExplainValidator final : public Validator {
-public:
-    ExplainValidator(Sentence* sentence, QueryContext* context);
+ public:
+  ExplainValidator(Sentence* sentence, QueryContext* context);
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 
-    std::unique_ptr<SequentialValidator> validator_;
+  std::unique_ptr<SequentialValidator> validator_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_VALIDATOR_EXPLAINVALIDATOR_H
+#endif  // GRAPH_VALIDATOR_EXPLAINVALIDATOR_H

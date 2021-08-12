@@ -18,17 +18,17 @@ namespace meta {
  * This class manages clusterId used for meta server and storage server.
  * */
 class ClusterIdManBase {
-public:
-    ClusterIdManBase() = delete;
+ public:
+  ClusterIdManBase() = delete;
 
-    static ClusterID create(const std::string& metaAddrs) {
-        std::hash<std::string> hash_fn;
-        auto clusterId = hash_fn(metaAddrs);
-        uint64_t mask = 0x7FFFFFFFFFFFFFFF;
-        clusterId &= mask;
-        LOG(INFO) << "Create ClusterId " << clusterId;
-        return clusterId;
-    }
+  static ClusterID create(const std::string& metaAddrs) {
+    std::hash<std::string> hash_fn;
+    auto clusterId = hash_fn(metaAddrs);
+    uint64_t mask = 0x7FFFFFFFFFFFFFFF;
+    clusterId &= mask;
+    LOG(INFO) << "Create ClusterId " << clusterId;
+    return clusterId;
+  }
 };
 
 }  // namespace meta

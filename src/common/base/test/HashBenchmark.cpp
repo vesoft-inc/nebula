@@ -3,47 +3,48 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "common/base/Base.h"
 #include <folly/Benchmark.h>
+
+#include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
 
 using nebula::MurmurHash2;
 
 std::string makeString(size_t size) {
-    std::string str;
-    str.resize(size);
-    for (auto &c : str) {
-        c = folly::Random::rand32() % (0x7E/*~*/ - 0x21/*!*/) + 0x21;
-    }
-    return str;
+  std::string str;
+  str.resize(size);
+  for (auto &c : str) {
+    c = folly::Random::rand32() % (0x7E /*~*/ - 0x21 /*!*/) + 0x21;
+  }
+  return str;
 }
 
 size_t StdHashTest(size_t iters, size_t size) {
-    constexpr size_t ops = 1000000UL;
+  constexpr size_t ops = 1000000UL;
 
-    std::hash<std::string> hash;
-    auto str = makeString(size);
-    auto i = 0UL;
-    while (i++ < ops * iters) {
-        auto hv = hash(str);
-        folly::doNotOptimizeAway(hv);
-    }
+  std::hash<std::string> hash;
+  auto str = makeString(size);
+  auto i = 0UL;
+  while (i++ < ops * iters) {
+    auto hv = hash(str);
+    folly::doNotOptimizeAway(hv);
+  }
 
-    return iters * ops;
+  return iters * ops;
 }
 
 size_t MurmurHash2Test(size_t iters, size_t size) {
-    constexpr size_t ops = 1000000UL;
+  constexpr size_t ops = 1000000UL;
 
-    MurmurHash2 hash;
-    auto str = makeString(size);
-    auto i = 0UL;
-    while (i++ < ops * iters) {
-        auto hv = hash(str);
-        folly::doNotOptimizeAway(hv);
-    }
+  MurmurHash2 hash;
+  auto str = makeString(size);
+  auto i = 0UL;
+  while (i++ < ops * iters) {
+    auto hv = hash(str);
+    folly::doNotOptimizeAway(hv);
+  }
 
-    return iters * ops;
+  return iters * ops;
 }
 
 BENCHMARK_NAMED_PARAM_MULTI(StdHashTest, 1Byte, 1UL)
@@ -88,11 +89,10 @@ BENCHMARK_DRAW_LINE();
 BENCHMARK_NAMED_PARAM_MULTI(StdHashTest, 4096Byte, 4096UL)
 BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(MurmurHash2Test, 4096Byte, 4096UL)
 
-int
-main(int argc, char **argv) {
-    gflags::ParseCommandLineFlags(&argc, &argv, true);
-    folly::runBenchmarks();
-    return 0;
+int main(int argc, char **argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  folly::runBenchmarks();
+  return 0;
 }
 
 /*           Intel(R) Xeon(R) CPU E5-2673 v3 @ 2.40GHz

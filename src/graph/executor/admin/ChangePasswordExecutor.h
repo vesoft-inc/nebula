@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class ChangePasswordExecutor final : public Executor {
-public:
-    ChangePasswordExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ChangePasswordExecutor", node, qctx) {}
+ public:
+  ChangePasswordExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ChangePasswordExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> changePassword();
+ private:
+  folly::Future<Status> changePassword();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_CHANGEPASSWORDEXECUTOR_H_

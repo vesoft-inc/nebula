@@ -10,16 +10,19 @@
 namespace nebula {
 namespace graph {
 
+class PlanNode;
+class QueryContext;
+
 class SegmentsConnectStrategy {
-public:
-    explicit SegmentsConnectStrategy(QueryContext* qctx) : qctx_(qctx) {}
+ public:
+  explicit SegmentsConnectStrategy(QueryContext* qctx) : qctx_(qctx) {}
 
-    virtual ~SegmentsConnectStrategy() = default;
+  virtual ~SegmentsConnectStrategy() = default;
 
-    virtual PlanNode* connect(const PlanNode* left, const PlanNode* right) = 0;
+  virtual PlanNode* connect(const PlanNode* left, const PlanNode* right) = 0;
 
-protected:
-    QueryContext*   qctx_;
+ protected:
+  QueryContext* qctx_;
 };
 }  // namespace graph
 }  // namespace nebula

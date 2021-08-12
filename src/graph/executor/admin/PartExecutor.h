@@ -1,8 +1,8 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
-*
-* This source code is licensed under Apache 2.0 License,
-* attached with Common Clause Condition 1.0, found in the LICENSES directory.
-*/
+ *
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ */
 
 #ifndef GRAPH_EXECUTOR_ADMIN_PARTEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_PARTEXECUTOR_H_
@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class ShowPartsExecutor final : public Executor {
-public:
-    ShowPartsExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ShowPartsExecutor", node, qctx) {}
+ public:
+  ShowPartsExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowPartsExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_ADMIN_PARTEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ADMIN_PARTEXECUTOR_H_
