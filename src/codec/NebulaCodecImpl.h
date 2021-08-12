@@ -7,21 +7,20 @@
 #ifndef NEBULA_GRAPH_NEBULACODECIMPL_H
 #define NEBULA_GRAPH_NEBULACODECIMPL_H
 
-#include "common/base/StatusOr.h"
 #include "codec/include/NebulaCodec.h"
+#include "common/base/StatusOr.h"
 
 namespace nebula {
 namespace dataman {
 
 class NebulaCodecImpl : public NebulaCodec {
-public:
-    std::string encode(std::vector<Value> values,
-                       std::shared_ptr<const meta::SchemaProviderIf> schema
-                           = std::shared_ptr<const meta::SchemaProviderIf>()) override;
+ public:
+  std::string encode(std::vector<Value> values,
+                     std::shared_ptr<const meta::SchemaProviderIf> schema =
+                         std::shared_ptr<const meta::SchemaProviderIf>()) override;
 
-    StatusOr<std::unordered_map<std::string, Value>>
-    decode(std::string encoded,
-           std::shared_ptr<const meta::SchemaProviderIf> schema) override;
+  StatusOr<std::unordered_map<std::string, Value>> decode(
+      std::string encoded, std::shared_ptr<const meta::SchemaProviderIf> schema) override;
 };
 
 }  // namespace dataman

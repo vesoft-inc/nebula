@@ -14,53 +14,43 @@
 namespace nebula {
 
 struct Set {
-    std::unordered_set<Value> values;
+  std::unordered_set<Value> values;
 
-    Set() = default;
-    Set(const Set&) = default;
-    Set(Set&&) noexcept = default;
-    explicit Set(std::unordered_set<Value> value) {
-        values = std::move(value);
+  Set() = default;
+  Set(const Set&) = default;
+  Set(Set&&) noexcept = default;
+  explicit Set(std::unordered_set<Value> value) { values = std::move(value); }
+
+  void clear() { values.clear(); }
+
+  void __clear() { clear(); }
+
+  std::string toString() const;
+
+  Set& operator=(const Set& rhs) {
+    if (this == &rhs) {
+      return *this;
     }
+    values = rhs.values;
+    return *this;
+  }
 
-    void clear() {
-        values.clear();
+  Set& operator=(Set&& rhs) noexcept {
+    if (this == &rhs) {
+      return *this;
     }
+    values = std::move(rhs.values);
+    return *this;
+  }
 
-    void __clear() {
-        clear();
-    }
+  bool operator==(const Set& rhs) const { return values == rhs.values; }
 
-    std::string toString() const;
+  bool contains(const Value& value) const { return values.count(value) != 0; }
 
-    Set& operator=(const Set& rhs) {
-        if (this == &rhs) { return *this; }
-        values = rhs.values;
-        return *this;
-    }
-
-    Set& operator=(Set&& rhs) noexcept {
-        if (this == &rhs) { return *this; }
-        values = std::move(rhs.values);
-        return *this;
-    }
-
-    bool operator==(const Set& rhs) const {
-        return values == rhs.values;
-    }
-
-    bool contains(const Value &value) const {
-        return values.count(value) != 0;
-    }
-
-    size_t size() const {
-        return values.size();
-    }
+  size_t size() const { return values.size(); }
 };
 
-inline std::ostream &operator<<(std::ostream& os, const Set& s) {
-    return os << s.toString();
-}
+inline std::ostream& operator<<(std::ostream& os, const Set& s) { return os << s.toString(); }
 
 }  // namespace nebula
 #endif  // COMMON_DATATYPES_SET_H_

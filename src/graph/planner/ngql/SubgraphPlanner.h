@@ -16,31 +16,31 @@ namespace nebula {
 namespace graph {
 
 class SubgraphPlanner final : public Planner {
-public:
-    using EdgeProp = nebula::storage::cpp2::EdgeProp;
+ public:
+  using EdgeProp = nebula::storage::cpp2::EdgeProp;
 
-    static std::unique_ptr<SubgraphPlanner> make() {
-        return std::unique_ptr<SubgraphPlanner>(new SubgraphPlanner());
-    }
+  static std::unique_ptr<SubgraphPlanner> make() {
+    return std::unique_ptr<SubgraphPlanner>(new SubgraphPlanner());
+  }
 
-    static bool match(AstContext* astCtx) {
-        return astCtx->sentence->kind() == Sentence::Kind::kGetSubgraph;
-    }
+  static bool match(AstContext* astCtx) {
+    return astCtx->sentence->kind() == Sentence::Kind::kGetSubgraph;
+  }
 
-    StatusOr<SubPlan> transform(AstContext* astCtx) override;
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-    StatusOr<SubPlan> zeroStep(SubPlan& startVidPlan, const std::string& input);
+  StatusOr<SubPlan> zeroStep(SubPlan& startVidPlan, const std::string& input);
 
-    StatusOr<SubPlan> nSteps(SubPlan& startVidPlan, const std::string& input);
+  StatusOr<SubPlan> nSteps(SubPlan& startVidPlan, const std::string& input);
 
-    StatusOr<std::unique_ptr<std::vector<EdgeProp>>> buildEdgeProps();
+  StatusOr<std::unique_ptr<std::vector<EdgeProp>>> buildEdgeProps();
 
-    Expression* loopCondition(uint32_t steps, const std::string& var);
+  Expression* loopCondition(uint32_t steps, const std::string& var);
 
-private:
-    SubgraphPlanner() = default;
+ private:
+  SubgraphPlanner() = default;
 
-    SubgraphContext* subgraphCtx_{nullptr};
+  SubgraphContext* subgraphCtx_{nullptr};
 };
 
 }  // namespace graph

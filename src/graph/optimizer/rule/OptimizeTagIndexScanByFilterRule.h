@@ -14,25 +14,25 @@
 namespace nebula {
 namespace opt {
 
-// At present, we do NOT split filter conditions into two parts, one part is pushed down storage
-// layer and another will be leaved into filter. Because this is enough for Lookup queries. We
-// will enhance this rule for general usage later, such as MATCH queries.
+// At present, we do NOT split filter conditions into two parts, one part is
+// pushed down storage layer and another will be leaved into filter. Because
+// this is enough for Lookup queries. We will enhance this rule for general
+// usage later, such as MATCH queries.
 class OptimizeTagIndexScanByFilterRule final : public OptRule {
-public:
-    const Pattern &pattern() const override;
-    bool match(OptContext *ctx, const MatchedResult &matched) const override;
-    StatusOr<TransformResult> transform(OptContext *ctx,
-                                        const MatchedResult &matched) const override;
+ public:
+  const Pattern &pattern() const override;
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 
-    std::string toString() const override;
+  std::string toString() const override;
 
-private:
-    OptimizeTagIndexScanByFilterRule();
+ private:
+  OptimizeTagIndexScanByFilterRule();
 
-    static std::unique_ptr<OptRule> kInstance;
+  static std::unique_ptr<OptRule> kInstance;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_OPTIMIZETAGINDEXSCANBYFILTERRULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_OPTIMIZETAGINDEXSCANBYFILTERRULE_H_

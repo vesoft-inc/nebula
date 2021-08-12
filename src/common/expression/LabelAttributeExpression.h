@@ -16,78 +16,70 @@ namespace nebula {
 
 // label.label
 class LabelAttributeExpression final : public Expression {
-public:
-    LabelAttributeExpression& operator=(const LabelAttributeExpression& rhs) = delete;
-    LabelAttributeExpression& operator=(LabelAttributeExpression&&) = delete;
+ public:
+  LabelAttributeExpression& operator=(const LabelAttributeExpression& rhs) = delete;
+  LabelAttributeExpression& operator=(LabelAttributeExpression&&) = delete;
 
-    static LabelAttributeExpression* make(ObjectPool* pool,
-                                          LabelExpression* lhs = nullptr,
-                                          ConstantExpression* rhs = nullptr) {
-        return pool->add(new LabelAttributeExpression(pool, lhs, rhs));
+  static LabelAttributeExpression* make(ObjectPool* pool,
+                                        LabelExpression* lhs = nullptr,
+                                        ConstantExpression* rhs = nullptr) {
+    return pool->add(new LabelAttributeExpression(pool, lhs, rhs));
+  }
+
+  bool operator==(const Expression& rhs) const override {
+    if (rhs.kind() != kind()) {
+      return false;
     }
+    auto& expr = static_cast<const LabelAttributeExpression&>(rhs);
+    return *lhs_ == *expr.lhs_ && *rhs_ == *expr.rhs_;
+  }
 
-    bool operator==(const Expression &rhs) const override {
-        if (rhs.kind() != kind()) {
-            return false;
-        }
-        auto &expr = static_cast<const LabelAttributeExpression&>(rhs);
-        return *lhs_ == *expr.lhs_ && *rhs_ == *expr.rhs_;
-    }
+  const Value& eval(ExpressionContext&) override {
+    LOG(FATAL) << "LabelAttributeExpression has to be rewritten";
+    return Value::kNullBadData;
+  }
 
-    const Value& eval(ExpressionContext&) override {
-        LOG(FATAL) << "LabelAttributeExpression has to be rewritten";
-        return Value::kNullBadData;
-    }
+  void accept(ExprVisitor* visitor) override;
 
-    void accept(ExprVisitor *visitor) override;
+  Expression* clone() const override {
+    return LabelAttributeExpression::make(pool_,
+                                          static_cast<LabelExpression*>(left()->clone()),
+                                          static_cast<ConstantExpression*>(right()->clone()));
+  }
 
-    Expression* clone() const override {
-        return LabelAttributeExpression::make(pool_,
-                                              static_cast<LabelExpression*>(left()->clone()),
-                                              static_cast<ConstantExpression*>(right()->clone()));
-    }
+  const LabelExpression* left() const { return lhs_; }
 
-    const LabelExpression* left() const {
-        return lhs_;
-    }
+  LabelExpression* left() { return lhs_; }
 
-    LabelExpression* left() {
-        return lhs_;
-    }
+  const ConstantExpression* right() const { return rhs_; }
 
-    const ConstantExpression* right() const {
-        return rhs_;
-    }
+  ConstantExpression* right() { return rhs_; }
 
-    ConstantExpression* right() {
-        return rhs_;
-    }
+  std::string toString() const override;
 
-    std::string toString() const override;
+ private:
+  explicit LabelAttributeExpression(ObjectPool* pool,
+                                    LabelExpression* lhs = nullptr,
+                                    ConstantExpression* rhs = nullptr)
+      : Expression(pool, Kind::kLabelAttribute) {
+    DCHECK(rhs == nullptr || rhs->value().isStr());
+    lhs_ = lhs;
+    rhs_ = rhs;
+  }
 
-private:
-    explicit LabelAttributeExpression(ObjectPool* pool,
-                                      LabelExpression* lhs = nullptr,
-                                      ConstantExpression* rhs = nullptr)
-        : Expression(pool, Kind::kLabelAttribute) {
-        DCHECK(rhs == nullptr || rhs->value().isStr());
-        lhs_ = lhs;
-        rhs_ = rhs;
-    }
+  void writeTo(Encoder&) const override {
+    LOG(FATAL) << "LabelAttributeExpression not supporte to encode.";
+  }
 
-    void writeTo(Encoder&) const override {
-        LOG(FATAL) << "LabelAttributeExpression not supporte to encode.";
-    }
+  void resetFrom(Decoder&) override {
+    LOG(FATAL) << "LabelAttributeExpression not supporte to decode.";
+  }
 
-    void resetFrom(Decoder&) override {
-        LOG(FATAL) << "LabelAttributeExpression not supporte to decode.";
-    }
-
-private:
-    LabelExpression*    lhs_;
-    ConstantExpression* rhs_;
+ private:
+  LabelExpression* lhs_;
+  ConstantExpression* rhs_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
 #endif  // COMMON_EXPRESSION_LABELATTRIBUTEEXPRESSION_H_

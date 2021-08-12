@@ -8,10 +8,10 @@
 #define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "graph/validator/TraversalValidator.h"
-#include "graph/util/AnonVarGenerator.h"
-#include "graph/planner/plan/Query.h"
 #include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/AnonVarGenerator.h"
+#include "graph/validator/TraversalValidator.h"
 
 namespace nebula {
 
@@ -19,87 +19,87 @@ class MatchStepRange;
 class ObjectPool;
 namespace graph {
 class MatchValidator final : public TraversalValidator {
-public:
-    MatchValidator(Sentence *sentence, QueryContext *context);
+ public:
+  MatchValidator(Sentence *sentence, QueryContext *context);
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    AstContext* getAstContext() override;
+  AstContext *getAstContext() override;
 
-    Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
 
-    Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
+  Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
-    Status validateReturn(MatchReturn *ret,
-                          const CypherClauseContextBase *cypherClauseCtx,
-                          ReturnClauseContext &retClauseCtx) const;
-
-    Status validateAliases(const std::vector<const Expression *> &exprs,
-                           const std::unordered_map<std::string, AliasType> *aliases) const;
-
-    Status validateStepRange(const MatchStepRange *range) const;
-
-    Status validateWith(const WithClause *with,
+  Status validateReturn(MatchReturn *ret,
                         const CypherClauseContextBase *cypherClauseCtx,
-                        WithClauseContext &withClauseCtx) const;
+                        ReturnClauseContext &retClauseCtx) const;
 
-    Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
+  Status validateAliases(const std::vector<const Expression *> &exprs,
+                         const std::unordered_map<std::string, AliasType> *aliases) const;
 
-    Status validatePagination(const Expression *skipExpr,
-                              const Expression *limitExpr,
-                              PaginationContext &paginationCtx) const;
+  Status validateStepRange(const MatchStepRange *range) const;
 
-    Status validateOrderBy(const OrderFactors *factors,
-                           const YieldColumns *yieldColumns,
-                           OrderByClauseContext &orderByCtx) const;
+  Status validateWith(const WithClause *with,
+                      const CypherClauseContextBase *cypherClauseCtx,
+                      WithClauseContext &withClauseCtx) const;
 
-    Status validateGroup(YieldClauseContext &yieldCtx) const;
+  Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
 
-    Status validateYield(YieldClauseContext &yieldCtx) const;
+  Status validatePagination(const Expression *skipExpr,
+                            const Expression *limitExpr,
+                            PaginationContext &paginationCtx) const;
 
-    Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
-                           YieldColumns *columns) const;
+  Status validateOrderBy(const OrderFactors *factors,
+                         const YieldColumns *yieldColumns,
+                         OrderByClauseContext &orderByCtx) const;
 
-    StatusOr<Expression*> makeSubFilter(const std::string &alias,
-                                        const MapExpression *map,
-                                        const std::string &label = "") const;
+  Status validateGroup(YieldClauseContext &yieldCtx) const;
 
-    static Expression* andConnect(ObjectPool* pool, Expression *left, Expression *right);
+  Status validateYield(YieldClauseContext &yieldCtx) const;
 
-    template <typename T>
-    T* saveObject(T *obj) const {
-        return qctx_->objPool()->add(obj);
-    }
+  Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
+                         YieldColumns *columns) const;
 
-    Status buildNodeInfo(const MatchPath *path,
-                         std::vector<NodeInfo> &edgeInfos,
-                         std::unordered_map<std::string, AliasType> &aliases) const;
+  StatusOr<Expression *> makeSubFilter(const std::string &alias,
+                                       const MapExpression *map,
+                                       const std::string &label = "") const;
 
-    Status buildEdgeInfo(const MatchPath *path,
-                         std::vector<EdgeInfo> &nodeInfos,
-                         std::unordered_map<std::string, AliasType> &aliases) const;
+  static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
-    Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  template <typename T>
+  T *saveObject(T *obj) const {
+    return qctx_->objPool()->add(obj);
+  }
 
-    Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
-                          const std::unordered_map<std::string, AliasType> &lastAliases) const;
+  Status buildNodeInfo(const MatchPath *path,
+                       std::vector<NodeInfo> &edgeInfos,
+                       std::unordered_map<std::string, AliasType> &aliases) const;
 
-    Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
+  Status buildEdgeInfo(const MatchPath *path,
+                       std::vector<EdgeInfo> &nodeInfos,
+                       std::unordered_map<std::string, AliasType> &aliases) const;
 
-    StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType> *aliasesUsed,
-                                     const std::string &name) const;
+  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
 
-    Status checkAlias(const Expression *refExpr,
-                      const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
+  Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
+                        const std::unordered_map<std::string, AliasType> &lastAliases) const;
 
-    Status buildOutputs(const YieldColumns *yields);
+  Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
 
-private:
-    std::unique_ptr<MatchAstContext>            matchCtx_;
+  StatusOr<AliasType> getAliasType(const std::unordered_map<std::string, AliasType> *aliasesUsed,
+                                   const std::string &name) const;
+
+  Status checkAlias(const Expression *refExpr,
+                    const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
+
+  Status buildOutputs(const YieldColumns *yields);
+
+ private:
+  std::unique_ptr<MatchAstContext> matchCtx_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_VALIDATOR_MATCHVALIDATOR_H_

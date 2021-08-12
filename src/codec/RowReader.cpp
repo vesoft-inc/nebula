@@ -4,9 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include "codec/RowReader.h"
+
 #include "codec/RowReaderWrapper.h"
+#include "common/base/Base.h"
 
 namespace nebula {
 
@@ -16,9 +17,8 @@ namespace nebula {
  *
  ********************************************/
 Value RowReader::Cell::value() const noexcept {
-    return iter_->reader_->getValueByIndex(iter_->index_);
+  return iter_->reader_->getValueByIndex(iter_->index_);
 }
-
 
 /*********************************************
  *
@@ -27,27 +27,19 @@ Value RowReader::Cell::value() const noexcept {
  ********************************************/
 
 bool RowReader::Iterator::operator==(const Iterator& rhs) const noexcept {
-    return reader_ == rhs.reader_ && index_ == rhs.index_;
+  return reader_ == rhs.reader_ && index_ == rhs.index_;
 }
 
+const RowReader::Cell& RowReader::Iterator::operator*() const noexcept { return cell_; }
 
-const RowReader::Cell& RowReader::Iterator::operator*() const noexcept {
-    return cell_;
-}
-
-
-const RowReader::Cell* RowReader::Iterator::operator->() const noexcept {
-    return &cell_;
-}
-
+const RowReader::Cell* RowReader::Iterator::operator->() const noexcept { return &cell_; }
 
 RowReader::Iterator& RowReader::Iterator::operator++() {
-    if (index_ < reader_->numFields()) {
-        ++index_;
-    }
-    return *this;
+  if (index_ < reader_->numFields()) {
+    ++index_;
+  }
+  return *this;
 }
-
 
 /*********************************************
  *
@@ -55,13 +47,12 @@ RowReader::Iterator& RowReader::Iterator::operator++() {
  *
  ********************************************/
 
-bool RowReader::resetImpl(meta::SchemaProviderIf const* schema,
-                          folly::StringPiece row) noexcept {
-    schema_ = schema;
-    data_ = row;
+bool RowReader::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept {
+  schema_ = schema;
+  data_ = row;
 
-    endIter_.reset(schema_->getNumFields());
-    return true;
+  endIter_.reset(schema_->getNumFields());
+  return true;
 }
 
 }  // namespace nebula

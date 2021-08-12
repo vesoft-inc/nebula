@@ -6,28 +6,28 @@
 
 #include "graph/planner/match/WhereClausePlanner.h"
 
-#include "graph/planner/plan/Query.h"
 #include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/plan/Query.h"
 #include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
 StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
-    if (ctx->kind != CypherClauseKind::kWhere) {
-        return Status::Error("Not a valid context for WhereClausePlanner.");
-    }
+  if (ctx->kind != CypherClauseKind::kWhere) {
+    return Status::Error("Not a valid context for WhereClausePlanner.");
+  }
 
-    auto* wctx = static_cast<WhereClauseContext*>(ctx);
-    if (wctx->filter) {
-        SubPlan wherePlan;
-        auto* newFilter = MatchSolver::doRewrite(wctx->qctx, *wctx->aliasesUsed, wctx->filter);
-        wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
-        wherePlan.tail = wherePlan.root;
+  auto* wctx = static_cast<WhereClauseContext*>(ctx);
+  if (wctx->filter) {
+    SubPlan wherePlan;
+    auto* newFilter = MatchSolver::doRewrite(wctx->qctx, *wctx->aliasesUsed, wctx->filter);
+    wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
+    wherePlan.tail = wherePlan.root;
 
-        return wherePlan;
-    }
+    return wherePlan;
+  }
 
-    return Status::OK();
+  return Status::OK();
 }
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

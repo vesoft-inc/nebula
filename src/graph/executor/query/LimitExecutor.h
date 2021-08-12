@@ -13,14 +13,13 @@ namespace nebula {
 namespace graph {
 
 class LimitExecutor final : public Executor {
-public:
-    LimitExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("LimitExecutor", node, qctx) {}
+ public:
+  LimitExecutor(const PlanNode *node, QueryContext *qctx) : Executor("LimitExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_LIMITEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_LIMITEXECUTOR_H_

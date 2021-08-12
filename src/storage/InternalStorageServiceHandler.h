@@ -7,9 +7,10 @@
 #ifndef STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
 #define STORAGE_INTERNALSTORAGESERVICEHANDLER_H_
 
+#include <folly/executors/IOThreadPoolExecutor.h>
+
 #include "common/base/Base.h"
 #include "interface/gen-cpp2/InternalStorageService.h"
-#include <folly/executors/IOThreadPoolExecutor.h>
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
 
@@ -19,17 +20,16 @@ namespace storage {
 class StorageEnv;
 
 class InternalStorageServiceHandler final : public cpp2::InternalStorageServiceSvIf {
-public:
-    explicit InternalStorageServiceHandler(StorageEnv* env);
+ public:
+  explicit InternalStorageServiceHandler(StorageEnv* env);
 
-    folly::Future<cpp2::ExecResponse>
-    future_forwardTransaction(const cpp2::InternalTxnRequest& req) override;
+  folly::Future<cpp2::ExecResponse> future_forwardTransaction(
+      const cpp2::InternalTxnRequest& req) override;
 
-    folly::Future<cpp2::GetValueResponse>
-    future_getValue(const cpp2::GetValueRequest& req) override;
+  folly::Future<cpp2::GetValueResponse> future_getValue(const cpp2::GetValueRequest& req) override;
 
-private:
-    StorageEnv*                                     env_{nullptr};
+ private:
+  StorageEnv* env_{nullptr};
 };
 
 }  // namespace storage

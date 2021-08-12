@@ -8,18 +8,18 @@
 
 namespace nebula {
 std::string ReturnSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
+  std::string buf;
+  buf.reserve(256);
 
-    buf += "RETURN $";
-    if (var_ != nullptr) {
-        buf += *var_;
-    }
-    if (condition_ != nullptr) {
-        buf += " IF $";
-        buf += *condition_;
-        buf += " IS NOT NULL";
-    }
-    return buf;
+  buf += "RETURN $";
+  if (var_ != nullptr) {
+    buf += *var_;
+  }
+  if (condition_ != nullptr) {
+    buf += " IF $";
+    buf += *condition_;
+    buf += " IS NOT NULL";
+  }
+  return buf;
 }
 }  // namespace nebula

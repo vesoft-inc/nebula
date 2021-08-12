@@ -13,18 +13,18 @@ namespace nebula {
 namespace meta {
 
 class RebuildFTJobExecutor : public RebuildJobExecutor {
-public:
-    RebuildFTJobExecutor(JobID jobId,
-                         kvstore::KVStore* kvstore,
-                         AdminClient* adminClient,
-                         const std::vector<std::string>& paras)
-        : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {
-            toHost_ = TargetHosts::LISTENER;
-        }
+ public:
+  RebuildFTJobExecutor(JobID jobId,
+                       kvstore::KVStore* kvstore,
+                       AdminClient* adminClient,
+                       const std::vector<std::string>& paras)
+      : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {
+    toHost_ = TargetHosts::LISTENER;
+  }
 
-protected:
-    folly::Future<Status>
-    executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) override;
+ protected:
+  folly::Future<Status> executeInternal(HostAddr&& address,
+                                        std::vector<PartitionID>&& parts) override;
 };
 
 }  // namespace meta

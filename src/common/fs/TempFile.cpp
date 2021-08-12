@@ -4,34 +4,33 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include "common/fs/TempFile.h"
+
+#include "common/base/Base.h"
 
 namespace nebula {
 namespace fs {
 
-TempFile::TempFile(const char *path, bool autoDelete) {
-    autoDelete_ = autoDelete;
-    auto len = ::strlen(path);
-    path_ = std::make_unique<char[]>(len + 1);
-    ::strcpy(path_.get(), path);    // NOLINT
+TempFile::TempFile(const char* path, bool autoDelete) {
+  autoDelete_ = autoDelete;
+  auto len = ::strlen(path);
+  path_ = std::make_unique<char[]>(len + 1);
+  ::strcpy(path_.get(), path);  // NOLINT
 
-    auto fd = ::mkstemp(path_.get());
-    if (fd == -1) {
-        throw std::runtime_error(std::string(path) + ": " + strerror(errno));
-    }
-    ::close(fd);
+  auto fd = ::mkstemp(path_.get());
+  if (fd == -1) {
+    throw std::runtime_error(std::string(path) + ": " + strerror(errno));
+  }
+  ::close(fd);
 }
 
 TempFile::~TempFile() {
-    if (autoDelete_) {
-        ::unlink(path_.get());
-    }
+  if (autoDelete_) {
+    ::unlink(path_.get());
+  }
 }
 
-const char* TempFile::path() const {
-    return path_.get();
-}
+const char* TempFile::path() const { return path_.get(); }
 
-}   // namespace fs
-}   // namespace nebula
+}  // namespace fs
+}  // namespace nebula

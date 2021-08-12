@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class SignOutTSServiceExecutor final : public Executor {
-public:
-    SignOutTSServiceExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("SignInTSServiceExecutor", node, qctx) {}
+ public:
+  SignOutTSServiceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("SignInTSServiceExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> signOutTSService();
+ private:
+  folly::Future<Status> signOutTSService();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_SIGNOUTTSSERVICEEXECUTOR_H_

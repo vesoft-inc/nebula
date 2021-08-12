@@ -15,13 +15,13 @@
 namespace nebula {
 namespace graph {
 class Scheduler : private cpp::NonCopyable, private cpp::NonMovable {
-public:
-    Scheduler() = default;
-    virtual ~Scheduler() = default;
+ public:
+  Scheduler() = default;
+  virtual ~Scheduler() = default;
 
-    virtual folly::Future<Status> schedule() = 0;
+  virtual folly::Future<Status> schedule() = 0;
 
-    static void analyzeLifetime(const PlanNode *node, bool inLoop = false);
+  static void analyzeLifetime(const PlanNode *node, bool inLoop = false);
 };
 }  // namespace graph
 }  // namespace nebula

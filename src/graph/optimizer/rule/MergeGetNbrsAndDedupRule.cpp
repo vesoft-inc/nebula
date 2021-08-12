@@ -21,44 +21,39 @@ namespace opt {
 std::unique_ptr<OptRule> MergeGetNbrsAndDedupRule::kInstance =
     std::unique_ptr<MergeGetNbrsAndDedupRule>(new MergeGetNbrsAndDedupRule());
 
-MergeGetNbrsAndDedupRule::MergeGetNbrsAndDedupRule() {
-    RuleSet::QueryRules().addRule(this);
-}
+MergeGetNbrsAndDedupRule::MergeGetNbrsAndDedupRule() { RuleSet::QueryRules().addRule(this); }
 
 const Pattern &MergeGetNbrsAndDedupRule::pattern() const {
-    static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
-                                             {Pattern::create(graph::PlanNode::Kind::kDedup)});
-    return pattern;
+  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
+                                           {Pattern::create(graph::PlanNode::Kind::kDedup)});
+  return pattern;
 }
 
 StatusOr<OptRule::TransformResult> MergeGetNbrsAndDedupRule::transform(
-    OptContext *octx,
-    const MatchedResult &matched) const {
-    const OptGroupNode *optGN = matched.node;
-    const OptGroupNode *optDedup = matched.dependencies.back().node;
-    DCHECK_EQ(optGN->node()->kind(), PlanNode::Kind::kGetNeighbors);
-    DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
-    auto gn = static_cast<const GetNeighbors *>(optGN->node());
-    auto dedup = static_cast<const Dedup *>(optDedup->node());
+    OptContext *octx, const MatchedResult &matched) const {
+  const OptGroupNode *optGN = matched.node;
+  const OptGroupNode *optDedup = matched.dependencies.back().node;
+  DCHECK_EQ(optGN->node()->kind(), PlanNode::Kind::kGetNeighbors);
+  DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
+  auto gn = static_cast<const GetNeighbors *>(optGN->node());
+  auto dedup = static_cast<const Dedup *>(optDedup->node());
 
-    auto newGN = static_cast<GetNeighbors *>(gn->clone());
-    if (!newGN->dedup()) {
-        newGN->setDedup();
-    }
-    newGN->setInputVar(dedup->inputVar());
-    auto newOptGV = OptGroupNode::create(octx, newGN, optGN->group());
-    for (auto dep : optDedup->dependencies()) {
-        newOptGV->dependsOn(dep);
-    }
-    TransformResult result;
-    result.eraseCurr = true;
-    result.newGroupNodes.emplace_back(newOptGV);
-    return result;
+  auto newGN = static_cast<GetNeighbors *>(gn->clone());
+  if (!newGN->dedup()) {
+    newGN->setDedup();
+  }
+  newGN->setInputVar(dedup->inputVar());
+  auto newOptGV = OptGroupNode::create(octx, newGN, optGN->group());
+  for (auto dep : optDedup->dependencies()) {
+    newOptGV->dependsOn(dep);
+  }
+  TransformResult result;
+  result.eraseCurr = true;
+  result.newGroupNodes.emplace_back(newOptGV);
+  return result;
 }
 
-std::string MergeGetNbrsAndDedupRule::toString() const {
-    return "MergeGetNbrsAndDedupRule";
-}
+std::string MergeGetNbrsAndDedupRule::toString() const { return "MergeGetNbrsAndDedupRule"; }
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula

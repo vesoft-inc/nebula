@@ -8,17 +8,18 @@
 #define GRAPH_REQUESTCONTEXT_H_
 
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/GraphService.h"
 #include "common/cpp/helpers.h"
 #include "common/time/Duration.h"
 #include "graph/session/ClientSession.h"
 #include "graph/session/GraphSessionManager.h"
+#include "interface/gen-cpp2/GraphService.h"
 
 /**
  * RequestContext holds context infos of a specific request from a client.
  * The typical use is:
  *  1. Create a RequestContext, with statement, session, etc.
- *  2. Obtain a Future from the context, which is to be returned back to the Thrift framework.
+ *  2. Obtain a Future from the context, which is to be returned back to the
+ * Thrift framework.
  *  3. Prepare the Response when the request is complished.
  *  4. Call `finish' to send the response to the client.
  */
@@ -28,78 +29,56 @@ namespace graph {
 
 template <typename Response>
 class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
-public:
-    RequestContext() = default;
-    ~RequestContext() {
-        if (session_ != nullptr) {
-            // keep the session active
-            session_->charge();
-        }
+ public:
+  RequestContext() = default;
+  ~RequestContext() {
+    if (session_ != nullptr) {
+      // keep the session active
+      session_->charge();
     }
+  }
 
-    void setQuery(std::string query) {
-        query_ = std::move(query);
+  void setQuery(std::string query) { query_ = std::move(query); }
+
+  const std::string& query() const { return query_; }
+
+  Response& resp() { return resp_; }
+
+  folly::Future<Response> future() { return promise_.getFuture(); }
+
+  void setSession(std::shared_ptr<ClientSession> session) {
+    session_ = std::move(session);
+    if (session_ != nullptr) {
+      // keep the session active
+      session_->charge();
     }
+  }
 
-    const std::string& query() const {
-        return query_;
-    }
+  ClientSession* session() const { return session_.get(); }
 
-    Response& resp() {
-        return resp_;
-    }
+  folly::Executor* runner() const { return runner_; }
 
-    folly::Future<Response> future() {
-        return promise_.getFuture();
-    }
+  void setRunner(folly::Executor* runner) { runner_ = runner; }
 
-    void setSession(std::shared_ptr<ClientSession> session) {
-        session_ = std::move(session);
-        if (session_ != nullptr) {
-            // keep the session active
-            session_->charge();
-        }
-    }
+  const time::Duration& duration() const { return duration_; }
 
-    ClientSession* session() const {
-        return session_.get();
-    }
+  void finish() { promise_.setValue(std::move(resp_)); }
 
-    folly::Executor* runner() const {
-        return runner_;
-    }
+  void setSessionMgr(GraphSessionManager* mgr) { sessionMgr_ = mgr; }
 
-    void setRunner(folly::Executor *runner) {
-        runner_ = runner;
-    }
+  GraphSessionManager* sessionMgr() const { return sessionMgr_; }
 
-    const time::Duration& duration() const {
-        return duration_;
-    }
-
-    void finish() {
-        promise_.setValue(std::move(resp_));
-    }
-
-    void setSessionMgr(GraphSessionManager* mgr) {
-        sessionMgr_ = mgr;
-    }
-
-    GraphSessionManager* sessionMgr() const {
-        return sessionMgr_;
-    }
-
-private:
-    time::Duration                              duration_;
-    std::string                                 query_;
-    Response                                    resp_;
-    folly::Promise<Response>                    promise_;
-    std::shared_ptr<ClientSession>              session_;
-    folly::Executor                            *runner_{nullptr};
-    GraphSessionManager                        *sessionMgr_{nullptr};
+ private:
+  time::Duration duration_;
+  std::string query_;
+  Response resp_;
+  folly::Promise<Response> promise_;
+  std::shared_ptr<ClientSession> session_;
+  folly::Executor* runner_{nullptr};
+  GraphSessionManager* sessionMgr_{nullptr};
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_REQUESTCONTEXT_H_

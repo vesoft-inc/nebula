@@ -14,17 +14,17 @@ namespace nebula {
 namespace meta {
 
 class GetMetaDirInfoProcessor : public BaseProcessor<cpp2::GetMetaDirInfoResp> {
-public:
-    static GetMetaDirInfoProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetMetaDirInfoProcessor(kvstore);
-    }
-    void process(const cpp2::GetMetaDirInfoReq& req);
+ public:
+  static GetMetaDirInfoProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GetMetaDirInfoProcessor(kvstore);
+  }
+  void process(const cpp2::GetMetaDirInfoReq& req);
 
-private:
-    explicit GetMetaDirInfoProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::GetMetaDirInfoResp>(kvstore) {}
+ private:
+  explicit GetMetaDirInfoProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::GetMetaDirInfoResp>(kvstore) {}
 };
-}   // namespace meta
-}   // namespace nebula
+}  // namespace meta
+}  // namespace nebula
 
-#endif   // META_GETMETADIRINFOPROCESSOR_H_
+#endif  // META_GETMETADIRINFOPROCESSOR_H_

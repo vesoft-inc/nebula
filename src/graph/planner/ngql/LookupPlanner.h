@@ -23,23 +23,23 @@ struct LookupContext;
 struct AstContext;
 
 class LookupPlanner final : public Planner {
-public:
-    static std::unique_ptr<Planner> make();
-    static bool match(AstContext* astCtx);
+ public:
+  static std::unique_ptr<Planner> make();
+  static bool match(AstContext* astCtx);
 
-    StatusOr<SubPlan> transform(AstContext* astCtx) override;
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-private:
-    YieldColumns* prepareReturnCols(LookupContext* lookupCtx);
-    void appendColumns(LookupContext* lookupCtx, YieldColumns* columns);
-    void extractUsedColumns(Expression* filter);
-    void addLookupColumns(const std::string& retCol, const std::string& outCol);
+ private:
+  YieldColumns* prepareReturnCols(LookupContext* lookupCtx);
+  void appendColumns(LookupContext* lookupCtx, YieldColumns* columns);
+  void extractUsedColumns(Expression* filter);
+  void addLookupColumns(const std::string& retCol, const std::string& outCol);
 
-    std::vector<std::string> returnCols_;
-    std::vector<std::string> colNames_;
+  std::vector<std::string> returnCols_;
+  std::vector<std::string> colNames_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
+#endif  // GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_

@@ -13,29 +13,29 @@ namespace nebula {
 namespace meta {
 
 class AddZoneIntoGroupProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static AddZoneIntoGroupProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddZoneIntoGroupProcessor(kvstore);
-    }
+ public:
+  static AddZoneIntoGroupProcessor* instance(kvstore::KVStore* kvstore) {
+    return new AddZoneIntoGroupProcessor(kvstore);
+  }
 
-    void process(const cpp2::AddZoneIntoGroupReq& req);
+  void process(const cpp2::AddZoneIntoGroupReq& req);
 
-private:
-    explicit AddZoneIntoGroupProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit AddZoneIntoGroupProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class DropZoneFromGroupProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropZoneFromGroupProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropZoneFromGroupProcessor(kvstore);
-    }
+ public:
+  static DropZoneFromGroupProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropZoneFromGroupProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropZoneFromGroupReq& req);
+  void process(const cpp2::DropZoneFromGroupReq& req);
 
-private:
-    explicit DropZoneFromGroupProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropZoneFromGroupProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

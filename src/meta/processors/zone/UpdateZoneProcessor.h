@@ -13,29 +13,29 @@ namespace nebula {
 namespace meta {
 
 class AddHostIntoZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static AddHostIntoZoneProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddHostIntoZoneProcessor(kvstore);
-    }
+ public:
+  static AddHostIntoZoneProcessor* instance(kvstore::KVStore* kvstore) {
+    return new AddHostIntoZoneProcessor(kvstore);
+  }
 
-    void process(const cpp2::AddHostIntoZoneReq& req);
+  void process(const cpp2::AddHostIntoZoneReq& req);
 
-private:
-    explicit AddHostIntoZoneProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit AddHostIntoZoneProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class DropHostFromZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropHostFromZoneProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropHostFromZoneProcessor(kvstore);
-    }
+ public:
+  static DropHostFromZoneProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropHostFromZoneProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropHostFromZoneReq& req);
+  void process(const cpp2::DropHostFromZoneReq& req);
 
-private:
-    explicit DropHostFromZoneProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropHostFromZoneProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

@@ -13,19 +13,19 @@ namespace nebula {
 namespace graph {
 class GetEdges;
 class GetEdgesExecutor final : public GetPropExecutor {
-public:
-    GetEdgesExecutor(const PlanNode *node, QueryContext *qctx)
-        : GetPropExecutor("GetEdgesExecutor", node, qctx) {}
+ public:
+  GetEdgesExecutor(const PlanNode *node, QueryContext *qctx)
+      : GetPropExecutor("GetEdgesExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    DataSet buildRequestDataSet(const GetEdges* ge);
+ private:
+  DataSet buildRequestDataSet(const GetEdges *ge);
 
-    folly::Future<Status> getEdges();
+  folly::Future<Status> getEdges();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_GETEDGESEXECUTOR_H_

@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class ShowTSClientsExecutor final : public Executor {
-public:
-    ShowTSClientsExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ShowTSClientsExecutor", node, qctx) {}
+ public:
+  ShowTSClientsExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowTSClientsExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> showTSClients();
+ private:
+  folly::Future<Status> showTSClients();
 };
 
 }  // namespace graph

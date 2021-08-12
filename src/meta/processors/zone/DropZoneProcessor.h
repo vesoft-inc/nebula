@@ -13,18 +13,17 @@ namespace nebula {
 namespace meta {
 
 class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropZoneProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropZoneProcessor(kvstore);
-    }
+ public:
+  static DropZoneProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropZoneProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropZoneReq& req);
+  void process(const cpp2::DropZoneReq& req);
 
-private:
-    explicit DropZoneProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    nebula::cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
+  nebula::cpp2::ErrorCode checkGroupDependency(const std::string& zoneName);
 };
 
 }  // namespace meta
