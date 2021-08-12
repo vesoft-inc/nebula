@@ -4,7 +4,7 @@ Manage the allocate and deallocate of AST object by Arena technology.
 
 # Motivation
 
-The Arena is used to reduce the count of memory allocate and deallocate for many small objects. And AST object is perfect fit this.
+The Arena is used to reduce the count of memory allocate and deallocate for many small objects. And AST object is perfect fit this. And construct the objects in continuously block will speed up access according to the locality principle.
 
 # Usage explanation
 
