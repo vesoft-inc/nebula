@@ -8,9 +8,9 @@
 #include "common/fs/TempDir.h"
 #include <gtest/gtest.h>
 #include "meta/test/TestUtils.h"
-#include "meta/processors/usersMan/AuthenticationProcessor.h"
-#include "meta/processors/partsMan/CreateSpaceProcessor.h"
-#include "meta/processors/partsMan/DropSpaceProcessor.h"
+#include "meta/processors/user/AuthenticationProcessor.h"
+#include "meta/processors/parts/CreateSpaceProcessor.h"
+#include "meta/processors/parts/DropSpaceProcessor.h"
 
 namespace nebula {
 namespace meta {

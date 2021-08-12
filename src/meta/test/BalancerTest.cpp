@@ -12,7 +12,7 @@
 #include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 #include "meta/test/MockAdminClient.h"
-#include "meta/processors/partsMan/CreateSpaceProcessor.h"
+#include "meta/processors/parts/CreateSpaceProcessor.h"
 
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(heartbeat_interval_secs);

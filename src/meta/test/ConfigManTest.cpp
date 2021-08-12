@@ -13,10 +13,10 @@
 #include <rocksdb/db.h>
 #include <rocksdb/utilities/options_util.h>
 #include "meta/test/TestUtils.h"
-#include "meta/processors/configMan/GetConfigProcessor.h"
-#include "meta/processors/configMan/SetConfigProcessor.h"
-#include "meta/processors/configMan/ListConfigsProcessor.h"
-#include "meta/processors/configMan/RegConfigProcessor.h"
+#include "meta/processors/config/GetConfigProcessor.h"
+#include "meta/processors/config/SetConfigProcessor.h"
+#include "meta/processors/config/ListConfigsProcessor.h"
+#include "meta/processors/config/RegConfigProcessor.h"
 #include "storage/test/TestUtils.h"
 
 DECLARE_int32(heartbeat_interval_secs);
