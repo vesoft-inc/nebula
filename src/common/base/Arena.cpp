@@ -29,6 +29,7 @@ void* Arena::allocateAligned(const std::size_t alloc) {
     } else {
         newChunk(std::max(consumption, kMinChunkSize));
         // The new operator will allocate the aligned memory
+        DCHECK_EQ(reinterpret_cast<uintptr_t>(currentPtr_) & (kAlignment - 1), 0);
         void* ptr = currentPtr_;
         currentPtr_ += alloc;
         allocatedSize_ += alloc;

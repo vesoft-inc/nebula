@@ -130,3 +130,13 @@ nebula_add_executable(
         follybenchmark
         ${THRIFT_LIBRARIES}
 )
+
+nebula_add_test(
+    NAME arena_test
+    SOURCES ArenaTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)
