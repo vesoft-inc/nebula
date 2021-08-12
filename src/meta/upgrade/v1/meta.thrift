@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-namespace cpp nebula.oldmeta
+namespace cpp nebula.meta.v1
 
 cpp_include "common/thrift/ThriftTypes.h"
 

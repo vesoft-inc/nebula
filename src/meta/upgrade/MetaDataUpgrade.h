@@ -11,7 +11,7 @@
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
-#include "meta/upgrade/thrift/gen-cpp2/old_meta_types.h"
+#include "meta/upgrade/v1/gen-cpp2/meta_types.h"
 
 
 namespace nebula {
@@ -101,10 +101,10 @@ private:
         return Status::OK();;
     }
 
-    Status convertToNewColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+    Status convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                                std::vector<cpp2::ColumnDef> &newCols);
 
-    Status convertToNewIndexColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+    Status convertToNewIndexColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                                     std::vector<cpp2::ColumnDef> &newCols);
 
 private:

@@ -12,12 +12,11 @@
 #include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/meta_types.h"
 
-#include "meta/upgrade/thrift/gen-cpp2/old_meta_types.h"
+#include "meta/upgrade/v1/gen-cpp2/meta_types.h"
 #include "kvstore/Common.h"
 
 
-namespace nebula {
-namespace oldmeta {
+namespace nebula::meta::v1 {
 
 const std::string kSpacesTable         = "__spaces__";         // NOLINT
 const std::string kPartsTable          = "__parts__";          // NOLINT
@@ -76,7 +75,5 @@ public:
     parseJobDesc(const folly::StringPiece& rawVal);
 };
 
-}  // namespace oldmeta
-}  // namespace nebula
+}  // namespace nebula::meta::v1
 #endif  // TOOLS_METADATAUPDATETOOL_OLDTHRIFT_METADATAUPDATE_H_
-

@@ -19,7 +19,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/upgrade/MetaDataUpgrade.h"
-#include "meta/upgrade/thrift/MetaServiceUtilsV1.h"
+#include "meta/upgrade/v1/MetaServiceUtilsV1.h"
 
 DECLARE_bool(null_type);
 DECLARE_uint32(string_index_limit);
@@ -29,7 +29,7 @@ namespace meta {
 
 Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key,
                                      const folly::StringPiece &val) {
-    auto host = oldmeta::MetaServiceUtilsV1::parseHostKey(key);
+    auto host = meta::v1::MetaServiceUtilsV1::parseHostKey(key);
     auto info = HostInfo::decodeV1(val);
     auto newVal = HostInfo::encodeV2(info);
     auto newKey = MetaServiceUtils::hostKeyV2(
@@ -41,7 +41,7 @@ Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
-    auto host = oldmeta::MetaServiceUtilsV1::parseLeaderKey(key);
+    auto host = meta::v1::MetaServiceUtilsV1::parseLeaderKey(key);
     auto newKey = MetaServiceUtils::leaderKey(
             network::NetworkUtils::intToIPv4(host.get_ip()), host.get_port());
     NG_LOG_AND_RETURN_IF_ERROR(put(newKey, val));
@@ -51,7 +51,7 @@ Status MetaDataUpgrade::rewriteLeaders(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
                                       const folly::StringPiece &val) {
-    auto oldProps = oldmeta::MetaServiceUtilsV1::parseSpace(val);
+    auto oldProps = meta::v1::MetaServiceUtilsV1::parseSpace(val);
     cpp2::SpaceDesc spaceDesc;
     spaceDesc.set_space_name(oldProps.get_space_name());
     spaceDesc.set_partition_num(oldProps.get_partition_num());
@@ -66,7 +66,7 @@ Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteParts(const folly::StringPiece &key,
                                     const folly::StringPiece &val) {
-    auto oldHosts = oldmeta::MetaServiceUtilsV1::parsePartVal(val);
+    auto oldHosts = meta::v1::MetaServiceUtilsV1::parsePartVal(val);
     std::vector<HostAddr> newHosts;
     for (auto &host : oldHosts) {
         HostAddr hostAddr;
@@ -80,7 +80,7 @@ Status MetaDataUpgrade::rewriteParts(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
-    auto oldSchema = oldmeta::MetaServiceUtilsV1::parseSchema(val);
+    auto oldSchema = meta::v1::MetaServiceUtilsV1::parseSchema(val);
     cpp2::Schema newSchema;
     cpp2::SchemaProp newSchemaProps;
     auto &schemaProp = oldSchema.get_schema_prop();
@@ -103,12 +103,12 @@ Status MetaDataUpgrade::rewriteSchemas(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
-    auto oldItem = oldmeta::MetaServiceUtilsV1::parseIndex(val);
+    auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(val);
     cpp2::IndexItem newItem;
     newItem.set_index_id(oldItem.get_index_id());
     newItem.set_index_name(oldItem.get_index_name());
     cpp2::SchemaID schemaId;
-    if (oldItem.get_schema_id().getType() == oldmeta::cpp2::SchemaID::Type::tag_id) {
+    if (oldItem.get_schema_id().getType() == meta::v1::cpp2::SchemaID::Type::tag_id) {
         schemaId.set_tag_id(oldItem.get_schema_id().get_tag_id());
     } else {
         schemaId.set_edge_type(oldItem.get_schema_id().get_edge_type());
@@ -122,30 +122,30 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
-    auto item = oldmeta::MetaServiceUtilsV1::parseConfigValue(val);
+    auto item = meta::v1::MetaServiceUtilsV1::parseConfigValue(val);
 
     Value configVal;
     switch (item.get_type()) {
-        case oldmeta::cpp2::ConfigType::INT64: {
+        case meta::v1::cpp2::ConfigType::INT64: {
             auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
             configVal.setInt(boost::get<int64_t>(value));
             break;
         }
-        case oldmeta::cpp2::ConfigType::DOUBLE: {
+        case meta::v1::cpp2::ConfigType::DOUBLE: {
             auto value = *reinterpret_cast<const double *>(item.get_value().data());
             configVal.setFloat(boost::get<double>(value));
             break;
         }
-        case oldmeta::cpp2::ConfigType::BOOL: {
+        case meta::v1::cpp2::ConfigType::BOOL: {
             auto value = *reinterpret_cast<const bool *>(item.get_value().data());
             configVal.setBool(boost::get<bool>(value) ? "True" : "False");
             break;
         }
-        case oldmeta::cpp2::ConfigType::STRING: {
+        case meta::v1::cpp2::ConfigType::STRING: {
             configVal.setStr(boost::get<std::string>(item.get_value()));
             break;
         }
-        case oldmeta::cpp2::ConfigType::NESTED: {
+        case meta::v1::cpp2::ConfigType::NESTED: {
             auto value = item.get_value();
             // transform to map value
             conf::Configuration conf;
@@ -172,7 +172,7 @@ Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
 
 Status MetaDataUpgrade::rewriteJobDesc(const folly::StringPiece &key,
                                        const folly::StringPiece &val) {
-    auto jobDesc = oldmeta::MetaServiceUtilsV1::parseJobDesc(val);
+    auto jobDesc = meta::v1::MetaServiceUtilsV1::parseJobDesc(val);
     auto cmdStr = std::get<0>(jobDesc);
     nebula::meta::cpp2::AdminCmd adminCmd;
     if (cmdStr.find("flush") == 0) {
@@ -212,7 +212,7 @@ Status MetaDataUpgrade::deleteKeyVal(const folly::StringPiece &key) {
     return Status::OK();
 }
 
-Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                                             std::vector<cpp2::ColumnDef> &newCols) {
     ObjectPool objPool;
     auto pool = &objPool;
@@ -223,23 +223,23 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
         if (colDef.default_value_ref().has_value()) {
             std::string encodeStr;
             switch (colDef.get_type().get_type()) {
-                case oldmeta::cpp2::SupportedType::BOOL:
+                case meta::v1::cpp2::SupportedType::BOOL:
                     encodeStr = Expression::encode(*ConstantExpression::make(
                         pool, colDef.get_default_value()->get_bool_value()));
                     break;
-                case oldmeta::cpp2::SupportedType::INT:
+                case meta::v1::cpp2::SupportedType::INT:
                     encodeStr = Expression::encode(*ConstantExpression::make(
                         pool, colDef.get_default_value()->get_int_value()));
                     break;
-                case oldmeta::cpp2::SupportedType::DOUBLE:
+                case meta::v1::cpp2::SupportedType::DOUBLE:
                     encodeStr = Expression::encode(*ConstantExpression::make(
                         pool, colDef.get_default_value()->get_double_value()));
                     break;
-                case oldmeta::cpp2::SupportedType::STRING:
+                case meta::v1::cpp2::SupportedType::STRING:
                     encodeStr = Expression::encode(*ConstantExpression::make(
                         pool, colDef.get_default_value()->get_string_value()));
                     break;
-                case oldmeta::cpp2::SupportedType::TIMESTAMP:
+                case meta::v1::cpp2::SupportedType::TIMESTAMP:
                     encodeStr = Expression::encode(*ConstantExpression::make(
                         pool, colDef.get_default_value()->get_timestamp()));
                     break;
@@ -260,12 +260,12 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<oldmeta::cpp2::Col
 }
 
 Status
-MetaDataUpgrade::convertToNewIndexColumns(const std::vector<oldmeta::cpp2::ColumnDef> &oldCols,
+MetaDataUpgrade::convertToNewIndexColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                                           std::vector<cpp2::ColumnDef> &newCols) {
     for (auto &colDef : oldCols) {
         cpp2::ColumnDef columnDef;
         columnDef.set_name(colDef.get_name());
-        if (colDef.get_type().get_type() == oldmeta::cpp2::SupportedType::STRING) {
+        if (colDef.get_type().get_type() == meta::v1::cpp2::SupportedType::STRING) {
             cpp2::ColumnTypeDef type;
             type.set_type(cpp2::PropertyType::FIXED_STRING);
             type.set_type_length(FLAGS_string_index_limit);
@@ -283,7 +283,7 @@ MetaDataUpgrade::convertToNewIndexColumns(const std::vector<oldmeta::cpp2::Colum
 }
 
 void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::StringPiece &val) {
-    auto host = oldmeta::MetaServiceUtilsV1::parseHostKey(key);
+    auto host = meta::v1::MetaServiceUtilsV1::parseHostKey(key);
     auto info = HostInfo::decodeV1(val);
     LOG(INFO) << "Host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
     LOG(INFO) << "Host port: " << host.get_port();
@@ -293,7 +293,7 @@ void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::Stri
 }
 
 void MetaDataUpgrade::printSpaces(const folly::StringPiece &val) {
-    auto oldProps = oldmeta::MetaServiceUtilsV1::parseSpace(val);
+    auto oldProps = meta::v1::MetaServiceUtilsV1::parseSpace(val);
     LOG(INFO) << "Space name: " << oldProps.get_space_name();
     LOG(INFO) << "Partition num: " << oldProps.get_partition_num();
     LOG(INFO) << "Replica factor: " << oldProps.get_replica_factor();
@@ -302,9 +302,9 @@ void MetaDataUpgrade::printSpaces(const folly::StringPiece &val) {
 }
 
 void MetaDataUpgrade::printParts(const folly::StringPiece &key, const folly::StringPiece &val) {
-    auto spaceId = oldmeta::MetaServiceUtilsV1::parsePartKeySpaceId(key);
-    auto partId = oldmeta::MetaServiceUtilsV1::parsePartKeyPartId(key);
-    auto oldHosts = oldmeta::MetaServiceUtilsV1::parsePartVal(val);
+    auto spaceId = meta::v1::MetaServiceUtilsV1::parsePartKeySpaceId(key);
+    auto partId = meta::v1::MetaServiceUtilsV1::parsePartKeyPartId(key);
+    auto oldHosts = meta::v1::MetaServiceUtilsV1::parsePartVal(val);
     LOG(INFO) << "Part spaceId: " << spaceId;
     LOG(INFO) << "Part      id: " << partId;
     for (auto &host : oldHosts) {
@@ -314,13 +314,13 @@ void MetaDataUpgrade::printParts(const folly::StringPiece &key, const folly::Str
 }
 
 void MetaDataUpgrade::printLeaders(const folly::StringPiece &key) {
-    auto host = oldmeta::MetaServiceUtilsV1::parseLeaderKey(key);
+    auto host = meta::v1::MetaServiceUtilsV1::parseLeaderKey(key);
     LOG(INFO) << "Leader host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
     LOG(INFO) << "Leader host port: " << host.get_port();
 }
 
 void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
-    auto oldSchema = oldmeta::MetaServiceUtilsV1::parseSchema(val);
+    auto oldSchema = meta::v1::MetaServiceUtilsV1::parseSchema(val);
     auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto schemaName = val.subpiece(sizeof(int32_t), nameLen).str();
     LOG(INFO) << "Schema name: " << schemaName;
@@ -332,19 +332,19 @@ void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
         Value defaultValue;
         if (colDef.default_value_ref().has_value()) {
             switch (colDef.get_type().get_type()) {
-                case oldmeta::cpp2::SupportedType::BOOL:
+                case meta::v1::cpp2::SupportedType::BOOL:
                     defaultValue = colDef.get_default_value()->get_bool_value();
                     break;
-                case oldmeta::cpp2::SupportedType::INT:
+                case meta::v1::cpp2::SupportedType::INT:
                     defaultValue = colDef.get_default_value()->get_int_value();
                     break;
-                case oldmeta::cpp2::SupportedType::DOUBLE:
+                case meta::v1::cpp2::SupportedType::DOUBLE:
                     defaultValue = colDef.get_default_value()->get_double_value();
                     break;
-                case oldmeta::cpp2::SupportedType::STRING:
+                case meta::v1::cpp2::SupportedType::STRING:
                     defaultValue = colDef.get_default_value()->get_string_value();
                     break;
-                case oldmeta::cpp2::SupportedType::TIMESTAMP:
+                case meta::v1::cpp2::SupportedType::TIMESTAMP:
                     defaultValue = colDef.get_default_value()->get_timestamp();
                     break;
                 default:
@@ -358,10 +358,10 @@ void MetaDataUpgrade::printSchemas(const folly::StringPiece &val) {
 }
 
 void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
-    auto oldItem = oldmeta::MetaServiceUtilsV1::parseIndex(val);
+    auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(val);
     LOG(INFO) << "Index   id: " << oldItem.get_index_id();
     LOG(INFO) << "Index name: " << oldItem.get_index_name();
-    if (oldItem.get_schema_id().getType() == oldmeta::cpp2::SchemaID::Type::tag_id) {
+    if (oldItem.get_schema_id().getType() == meta::v1::cpp2::SchemaID::Type::tag_id) {
         LOG(INFO) << "Index on tag id: " << oldItem.get_schema_id().get_tag_id();
     } else {
         LOG(INFO) << "Index on edgetype: " << oldItem.get_schema_id().get_edge_type();
@@ -375,30 +375,30 @@ void MetaDataUpgrade::printIndexes(const folly::StringPiece &val) {
 }
 
 void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::StringPiece &val) {
-    auto item = oldmeta::MetaServiceUtilsV1::parseConfigValue(val);
-    auto configName = oldmeta::MetaServiceUtilsV1::parseConfigKey(key);
+    auto item = meta::v1::MetaServiceUtilsV1::parseConfigValue(val);
+    auto configName = meta::v1::MetaServiceUtilsV1::parseConfigKey(key);
     Value configVal;
     switch (item.get_type()) {
-        case oldmeta::cpp2::ConfigType::INT64: {
+        case meta::v1::cpp2::ConfigType::INT64: {
             auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
             configVal.setInt(boost::get<int64_t>(value));
             break;
         }
-        case oldmeta::cpp2::ConfigType::DOUBLE: {
+        case meta::v1::cpp2::ConfigType::DOUBLE: {
             auto value = *reinterpret_cast<const double *>(item.get_value().data());
             configVal.setFloat(boost::get<double>(value));
             break;
         }
-        case oldmeta::cpp2::ConfigType::BOOL: {
+        case meta::v1::cpp2::ConfigType::BOOL: {
             auto value = *reinterpret_cast<const bool *>(item.get_value().data());
             configVal.setBool(boost::get<bool>(value) ? "True" : "False");
             break;
         }
-        case oldmeta::cpp2::ConfigType::STRING: {
+        case meta::v1::cpp2::ConfigType::STRING: {
             configVal.setStr(boost::get<std::string>(item.get_value()));
             break;
         }
-        case oldmeta::cpp2::ConfigType::NESTED: {
+        case meta::v1::cpp2::ConfigType::NESTED: {
             auto value = item.get_value();
             // transform to map value
             conf::Configuration conf;
@@ -426,9 +426,9 @@ void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::S
 }
 
 void MetaDataUpgrade::printJobDesc(const folly::StringPiece &key, const folly::StringPiece &val) {
-    auto jobId = oldmeta::MetaServiceUtilsV1::parseJobId(key);
+    auto jobId = meta::v1::MetaServiceUtilsV1::parseJobId(key);
     LOG(INFO) << "JobDesc id: " << jobId;
-    auto jobDesc = oldmeta::MetaServiceUtilsV1::parseJobDesc(val);
+    auto jobDesc = meta::v1::MetaServiceUtilsV1::parseJobDesc(val);
     auto cmdStr = std::get<0>(jobDesc);
     auto paras = std::get<1>(jobDesc);
     auto status = std::get<2>(jobDesc);

@@ -4,14 +4,13 @@
 * attached with Common Clause Condition 1.0, found in the LICENSES directory.
 */
 
-#include "meta/upgrade/thrift/MetaServiceUtilsV1.h"
+#include "meta/upgrade/v1/MetaServiceUtilsV1.h"
 #include "meta/processors/job/JobUtils.h"
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
-namespace nebula {
-namespace oldmeta {
+namespace nebula::meta::v1 {
 
 cpp2::SpaceProperties MetaServiceUtilsV1::parseSpace(folly::StringPiece rawData) {
     cpp2::SpaceProperties properties;
@@ -127,5 +126,5 @@ MetaServiceUtilsV1::parseJobDesc(const folly::StringPiece& rawVal) {
 
     return std::make_tuple(cmd, paras, status, tStart, tStop);
 }
-}  // namespace oldmeta
-}  // namespace nebula
+
+}  // namespace nebula::meta::v1
