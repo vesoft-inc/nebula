@@ -17,6 +17,7 @@ nebula_add_library(
     SlowOpTracker.cpp
     StringValue.cpp
     Memory.cpp
+    Arena.cpp
     ${gdb_debug_script}
 )
 

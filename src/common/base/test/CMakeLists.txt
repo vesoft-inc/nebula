@@ -114,3 +114,19 @@ nebula_add_test(
     SOURCES ObjectPoolTest.cpp
     LIBRARIES gtest gtest_main
 )
+
+nebula_add_executable(
+    NAME arena_bm
+    SOURCES ArenaBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+    LIBRARIES
+        follybenchmark
+        ${THRIFT_LIBRARIES}
+)
