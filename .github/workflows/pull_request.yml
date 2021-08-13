@@ -90,7 +90,6 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
-                  -DNEBULA_USE_LINKER=lld \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -104,7 +103,6 @@ jobs:
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
-                -DNEBULA_USE_LINKER=lld \
                 -B build
             echo "::set-output name=j::6"
             ;;
