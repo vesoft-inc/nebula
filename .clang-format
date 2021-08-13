@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# This is the output of clang-format-9.0 --style=google --dump-config,
+# This is the output of clang-format-10.0.0 --style=google --dump-config,
 # except for changes mentioned below.
 # We have locked the version of clang-format in order to avoid inconsistencies
 # in the format caused by developers using different clang-format versions.
@@ -21,7 +21,7 @@ AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowShortBlocksOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortLambdasOnASingleLine: All
@@ -66,6 +66,7 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
+DeriveLineEnding: true
 DerivePointerAlignment: true
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
@@ -78,14 +79,20 @@ IncludeBlocks:   Regroup
 IncludeCategories:
   - Regex:           '^<ext/.*\.h>'
     Priority:        2
+    SortPriority:    0
   - Regex:           '^<.*\.h>'
     Priority:        1
+    SortPriority:    0
   - Regex:           '^<.*'
     Priority:        2
+    SortPriority:    0
   - Regex:           '.*'
     Priority:        3
+    SortPriority:    0
 IncludeIsMainRegex: '([-_](test|unittest))?$'
+IncludeIsMainSourceRegex: ''
 IndentCaseLabels: true
+IndentGotoLabels: true
 IndentPPDirectives: None
 IndentWidth:     2
 IndentWrappedFunctionNames: false
@@ -149,17 +156,21 @@ SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyBlock: false
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 2
 SpacesInAngles:  false
+SpacesInConditionalStatement: false
 SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
 Standard:        Auto
 StatementMacros:
   - Q_UNUSED
   - QT_REQUIRE_VERSION
 TabWidth:        8
+UseCRLF:         false
 UseTab:          Never
 ...
